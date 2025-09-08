@@ -12,6 +12,7 @@ export const DisplayDirections = ["right", "left", "up", "down"] as const;
 export type DisplayDirection = (typeof DisplayDirections)[number];
 
 export type DisplayContextState = {
+  backgroundColorIndex: number;
   fillColorIndex: number;
   lineColorIndex: number;
   lineWidth: number;
@@ -59,6 +60,7 @@ export type DisplayContextStateKey = keyof DisplayContextState;
 export type PartialDisplayContextState = Partial<DisplayContextState>;
 
 export const DefaultDisplayContextState: DisplayContextState = {
+  backgroundColorIndex: 0,
   fillColorIndex: 1,
 
   lineColorIndex: 1,

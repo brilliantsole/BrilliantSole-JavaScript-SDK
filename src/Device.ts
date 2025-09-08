@@ -1576,6 +1576,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.selectFillColor;
   }
+  get selectDisplayBackgroundColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectBackgroundColor;
+  }
   get selectDisplayLineColor() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.selectLineColor;
@@ -1878,7 +1882,24 @@ class Device {
     return this.#displayManager.setSpritesAlignment;
   }
 
-  // FILL - curves, polygons, etc
+  get drawDisplayQuadraticBezierCurve() {
+    return this.#displayManager.drawQuadraticBezierCurve;
+  }
+  get drawDisplayQuadraticBezierCurves() {
+    return this.#displayManager.drawQuadraticBezierCurves;
+  }
+  get drawDisplayCubicBezierCurve() {
+    return this.#displayManager.drawCubicBezierCurve;
+  }
+  get drawDisplayCubicBezierCurves() {
+    return this.#displayManager.drawCubicBezierCurves;
+  }
+  get drawDisplayPath() {
+    return this.#displayManager.drawPath;
+  }
+  get drawDisplayClosedPath() {
+    return this.#displayManager.drawClosedPath;
+  }
 }
 
 export default Device;

@@ -5,6 +5,8 @@ import {
   DisplaySpriteColorPair,
   DisplayBitmap,
   DisplayWireframeEdge,
+  DisplayBezierCurve,
+  DisplayBezierCurveType,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
@@ -89,6 +91,10 @@ export interface DisplayManagerInterface {
 
   selectFillColor(
     fillColorIndex: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  selectBackgroundColor(
+    backgroundColorIndex: number,
     sendImmediately?: boolean
   ): Promise<void>;
   selectLineColor(
@@ -362,6 +368,49 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
 
+  drawCurve(
+    curveType: DisplayBezierCurveType,
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+  drawCurves(
+    curveType: DisplayBezierCurveType,
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+
+  drawQuadraticBezierCurve(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+  drawQuadraticBezierCurves(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+
+  drawCubicBezierCurve(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+  drawCubicBezierCurves(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+
+  _drawPath(
+    isClosed: boolean,
+    curves: DisplayBezierCurve[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+  drawPath(
+    curves: DisplayBezierCurve[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+  drawClosedPath(
+    curves: DisplayBezierCurve[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+
   drawSegment(
     startX: number,
     startY: number,
@@ -589,6 +638,15 @@ export async function runDisplayContextCommand(
       {
         const { fillColorIndex } = command;
         await displayManager.selectFillColor(fillColorIndex, sendImmediately);
+      }
+      break;
+    case "selectBackgroundColor":
+      {
+        const { backgroundColorIndex } = command;
+        await displayManager.selectBackgroundColor(
+          backgroundColorIndex,
+          sendImmediately
+        );
       }
       break;
     case "selectLineColor":

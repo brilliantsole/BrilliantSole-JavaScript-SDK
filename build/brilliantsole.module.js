@@ -3777,6 +3777,7 @@ const DisplayAlignments = ["start", "center", "end"];
 const DisplayAlignmentDirections = ["horizontal", "vertical"];
 const DisplayDirections = ["right", "left", "up", "down"];
 const DefaultDisplayContextState = {
+    backgroundColorIndex: 0,
     fillColorIndex: 1,
     lineColorIndex: 1,
     lineWidth: 0,
@@ -4013,6 +4014,25 @@ function assertValidDirection(direction) {
 }
 function assertValidAlignmentDirection(direction) {
     _console$o.assertEnumWithError(direction, DisplayAlignmentDirections);
+}
+const DisplayNumberOfControlPoints = {
+    segment: 2,
+    quadratic: 3,
+    cubic: 4,
+};
+function assertValidNumberOfControlPoints(curveType, controlPoints) {
+    const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+    _console$o.assertWithError(controlPoints.length == numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`);
+}
+function assertValidMinimumNumberOfControlPoints(curveType, controlPoints) {
+    const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+    _console$o.assertWithError(controlPoints.length >= numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected >=${numberOfControlPoints}`);
+}
+function assertValidPath(curves) {
+    curves.forEach((curve) => {
+        const { type, controlPoints } = curve;
+        assertValidNumberOfControlPoints(type, controlPoints);
+    });
 }
 function assertValidWireframe(points, edges) {
     _console$o.assertRangeWithError("numberOfPoints", points.length, 2, 255);
@@ -4820,10 +4840,10 @@ const DisplayContextCommandTypes = [
     "drawRegularPolygon",
     "drawPolygon",
     "drawWireframe",
-    "drawQuadraticCurve",
-    "drawQuadraticCurves",
-    "drawBezierCurve",
-    "drawBezierCurves",
+    "drawQuadraticBezierCurve",
+    "drawQuadraticBezierCurves",
+    "drawCubicBezierCurve",
+    "drawCubicBezierCurves",
     "drawPath",
     "drawClosedPath",
     "drawBitmap",
@@ -4877,10 +4897,10 @@ const DisplaySpriteContextCommandTypes = [
     "drawRegularPolygon",
     "drawPolygon",
     "drawWireframe",
-    "drawQuadraticCurve",
-    "drawQuadraticCurves",
-    "drawBezierCurve",
-    "drawBezierCurves",
+    "drawQuadraticBezierCurve",
+    "drawQuadraticBezierCurves",
+    "drawCubicBezierCurve",
+    "drawCubicBezierCurves",
     "drawPath",
     "drawClosedPath",
     "drawSegment",
@@ -4958,6 +4978,14 @@ function serializeContextCommand(displayManager, command) {
                 displayManager.assertValidColorIndex(fillColorIndex);
                 dataView = new DataView(new ArrayBuffer(1));
                 dataView.setUint8(0, fillColorIndex);
+            }
+            break;
+        case "selectBackgroundColor":
+            {
+                const { backgroundColorIndex } = command;
+                displayManager.assertValidColorIndex(backgroundColorIndex);
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, backgroundColorIndex);
             }
             break;
         case "selectLineColor":
@@ -5400,6 +5428,62 @@ function serializeContextCommand(displayManager, command) {
                     dataView.setUint8(offset++, edge.startIndex);
                     dataView.setUint8(offset++, edge.endIndex);
                 });
+            }
+            break;
+        case "drawQuadraticBezierCurve":
+        case "drawCubicBezierCurve":
+            {
+                const { controlPoints } = command;
+                assertValidNumberOfControlPoints(command.type == "drawCubicBezierCurve" ? "cubic" : "quadratic", controlPoints);
+                dataView = new DataView(new ArrayBuffer(4 * controlPoints.length));
+                let offset = 0;
+                controlPoints.forEach((controlPoint) => {
+                    dataView.setInt16(offset, controlPoint.x, true);
+                    offset += 2;
+                    dataView.setInt16(offset, controlPoint.y, true);
+                    offset += 2;
+                });
+            }
+            break;
+        case "drawQuadraticBezierCurves":
+        case "drawCubicBezierCurves":
+            {
+                const { controlPoints } = command;
+                assertValidMinimumNumberOfControlPoints(command.type == "drawQuadraticBezierCurves" ? "quadratic" : "cubic", controlPoints);
+                dataView = new DataView(new ArrayBuffer(1 + 4 * controlPoints.length));
+                let offset = 0;
+                dataView.setUint8(offset++, controlPoints.length);
+                controlPoints.forEach((controlPoint) => {
+                    dataView.setInt16(offset, controlPoint.x, true);
+                    offset += 2;
+                    dataView.setInt16(offset, controlPoint.y, true);
+                    offset += 2;
+                });
+            }
+            break;
+        case "drawPath":
+        case "drawClosedPath":
+            {
+                const { curves } = command;
+                assertValidPath(curves);
+                const dataViews = [];
+                curves.forEach((curve) => {
+                    const { type, controlPoints } = curve;
+                    let _dataView = new DataView(new ArrayBuffer(1 + 4 * controlPoints.length));
+                    let offset = 0;
+                    _dataView.setUint8(offset++, DisplayBezierCurveTypes.indexOf(type));
+                    controlPoints.forEach((controlPoint) => {
+                        _dataView.setInt16(offset, controlPoint.x, true);
+                        offset += 2;
+                        _dataView.setInt16(offset, controlPoint.y, true);
+                        offset += 2;
+                    });
+                    dataViews.push(_dataView);
+                });
+                const buffer = concatenateArrayBuffers(...dataViews);
+                const headerDataView = new DataView(new ArrayBuffer(2));
+                headerDataView.setUint16(0, buffer.byteLength, true);
+                dataView = new DataView(concatenateArrayBuffers(headerDataView, buffer));
             }
             break;
         case "drawSegment":
@@ -16055,6 +16139,12 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 await displayManager.selectFillColor(fillColorIndex, sendImmediately);
             }
             break;
+        case "selectBackgroundColor":
+            {
+                const { backgroundColorIndex } = command;
+                await displayManager.selectBackgroundColor(backgroundColorIndex, sendImmediately);
+            }
+            break;
         case "selectLineColor":
             {
                 const { lineColorIndex } = command;
@@ -16541,6 +16631,11 @@ const DisplayMessageTypes = [
     "setSpriteSheetName",
     "spriteSheetIndex",
 ];
+const DisplayBezierCurveTypes = [
+    "segment",
+    "quadratic",
+    "cubic",
+];
 const DisplayInformationValues = {
     type: DisplayTypes,
     pixelDepth: DisplayPixelDepths,
@@ -16610,6 +16705,9 @@ class DisplayManager {
         }
         differences.forEach((difference) => {
             switch (difference) {
+                case "backgroundColorIndex":
+                    this.selectBackgroundColor(newState.backgroundColorIndex);
+                    break;
                 case "fillColorIndex":
                     this.selectFillColor(newState.fillColorIndex);
                     break;
@@ -16882,6 +16980,24 @@ class DisplayManager {
             return;
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectFillColor", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
+        this.assertValidColorIndex(backgroundColorIndex);
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            backgroundColorIndex,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: "selectBackgroundColor",
+            backgroundColorIndex,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectBackgroundColor", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async selectLineColor(lineColorIndex, sendImmediately) {
@@ -17661,6 +17777,74 @@ class DisplayManager {
             return;
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawWireframe", dataView.buffer, sendImmediately);
+    }
+    async drawCurve(curveType, controlPoints, sendImmediately) {
+        assertValidNumberOfControlPoints(curveType, controlPoints);
+        const commandType = curveType == "cubic"
+            ? "drawCubicBezierCurve"
+            : "drawQuadraticBezierCurve";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            controlPoints,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+    }
+    async drawCurves(curveType, controlPoints, sendImmediately) {
+        assertValidMinimumNumberOfControlPoints(curveType, controlPoints);
+        const commandType = curveType == "cubic"
+            ? "drawCubicBezierCurves"
+            : "drawQuadraticBezierCurves";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            controlPoints,
+        });
+        if (!dataView) {
+            return;
+        }
+        if (dataView.byteLength > __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)) {
+            _console$j.error(`curve data ${dataView.byteLength} too large (max ${__classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)})`);
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+    }
+    async drawQuadraticBezierCurve(controlPoints, sendImmediately) {
+        await this.drawCurve("quadratic", controlPoints, sendImmediately);
+    }
+    async drawQuadraticBezierCurves(controlPoints, sendImmediately) {
+        await this.drawCurves("quadratic", controlPoints, sendImmediately);
+    }
+    async drawCubicBezierCurve(controlPoints, sendImmediately) {
+        await this.drawCurve("cubic", controlPoints, sendImmediately);
+    }
+    async drawCubicBezierCurves(controlPoints, sendImmediately) {
+        await this.drawCurves("cubic", controlPoints, sendImmediately);
+    }
+    async _drawPath(isClosed, curves, sendImmediately) {
+        assertValidPath(curves);
+        const commandType = isClosed
+            ? "drawClosedPath"
+            : "drawPath";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            curves,
+        });
+        if (!dataView) {
+            return;
+        }
+        if (dataView.byteLength > __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)) {
+            _console$j.error(`path data ${dataView.byteLength} too large (max ${__classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)})`);
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+    }
+    async drawPath(curves, sendImmediately) {
+        await this._drawPath(false, curves, sendImmediately);
+    }
+    async drawClosedPath(curves, sendImmediately) {
+        await this._drawPath(true, curves, sendImmediately);
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
         const dataView = serializeContextCommand(this, {
@@ -21220,6 +21404,10 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").selectFillColor;
     }
+    get selectDisplayBackgroundColor() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectBackgroundColor;
+    }
     get selectDisplayLineColor() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").selectLineColor;
@@ -21505,6 +21693,24 @@ class Device {
     get setDisplaySpritesAlignment() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpritesAlignment;
     }
+    get drawDisplayQuadraticBezierCurve() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawQuadraticBezierCurve;
+    }
+    get drawDisplayQuadraticBezierCurves() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawQuadraticBezierCurves;
+    }
+    get drawDisplayCubicBezierCurve() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawCubicBezierCurve;
+    }
+    get drawDisplayCubicBezierCurves() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawCubicBezierCurves;
+    }
+    get drawDisplayPath() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawPath;
+    }
+    get drawDisplayClosedPath() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawClosedPath;
+    }
 }
 _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
@@ -21709,7 +21915,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_contextStack, _DisplayCanvasHelper_saveContext, _DisplayCanvasHelper_restoreContext, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getRegularPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getPointsBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getWireframeBoundingBox, _DisplayCanvasHelper_drawWireframeToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_getSegmentsBoundingBox, _DisplayCanvasHelper__getSegmentsBoundingBox, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_drawSpritesToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_contextStack, _DisplayCanvasHelper_saveContext, _DisplayCanvasHelper_restoreContext, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getRegularPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getPointsBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getWireframeBoundingBox, _DisplayCanvasHelper_drawWireframeToCanvas, _DisplayCanvasHelper_drawCurveToCanvas, _DisplayCanvasHelper_drawCurvesToCanvas, _DisplayCanvasHelper_drawPathToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_getSegmentsBoundingBox, _DisplayCanvasHelper__getSegmentsBoundingBox, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_drawSpritesToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
@@ -22000,6 +22206,16 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.selectFillColor(fillColorIndex, sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
+        this.assertValidColorIndex(backgroundColorIndex);
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            backgroundColorIndex,
+        });
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.deviceDisplayManager.selectBackgroundColor(backgroundColorIndex, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
@@ -22513,6 +22729,48 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.drawWireframe(trimmedPoints, trimmedEdges, sendImmediately);
         }
+    }
+    async drawCurve(curveType, controlPoints, sendImmediately) {
+        assertValidNumberOfControlPoints(curveType, controlPoints);
+        const contextState = structuredClone(this.contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawCurveToCanvas).call(this, curveType, controlPoints, contextState));
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.deviceDisplayManager.drawCurve(curveType, controlPoints, sendImmediately);
+        }
+    }
+    async drawCurves(curveType, controlPoints, sendImmediately) {
+        assertValidMinimumNumberOfControlPoints(curveType, controlPoints);
+        const contextState = structuredClone(this.contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawCurvesToCanvas).call(this, curveType, controlPoints, contextState));
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.deviceDisplayManager.drawCurves(curveType, controlPoints, sendImmediately);
+        }
+    }
+    async drawQuadraticBezierCurve(controlPoints, sendImmediately) {
+        await this.drawCurve("quadratic", controlPoints, sendImmediately);
+    }
+    async drawQuadraticBezierCurves(controlPoints, sendImmediately) {
+        await this.drawCurves("quadratic", controlPoints, sendImmediately);
+    }
+    async drawCubicBezierCurve(controlPoints, sendImmediately) {
+        await this.drawCurve("cubic", controlPoints, sendImmediately);
+    }
+    async drawCubicBezierCurves(controlPoints, sendImmediately) {
+        await this.drawCurves("cubic", controlPoints, sendImmediately);
+    }
+    async _drawPath(isClosed, curves, sendImmediately) {
+        assertValidPath(curves);
+        const contextState = structuredClone(this.contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawPathToCanvas).call(this, isClosed, curves, contextState));
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.deviceDisplayManager._drawPath(isClosed, curves, sendImmediately);
+        }
+    }
+    async drawPath(curves, sendImmediately) {
+        await this._drawPath(false, curves, sendImmediately);
+    }
+    async drawClosedPath(curves, sendImmediately) {
+        await this._drawPath(true, curves, sendImmediately);
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
         if (startX == endX && startY == endY) {
@@ -23200,6 +23458,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     });
     __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, true, "f");
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
+}, _DisplayCanvasHelper_drawCurveToCanvas = function _DisplayCanvasHelper_drawCurveToCanvas(curveType, controlPoints, contextState) {
+}, _DisplayCanvasHelper_drawCurvesToCanvas = function _DisplayCanvasHelper_drawCurvesToCanvas(curveType, controlPoints, contextState) {
+}, _DisplayCanvasHelper_drawPathToCanvas = function _DisplayCanvasHelper_drawPathToCanvas(isClosed, curves, contextState) {
 }, _DisplayCanvasHelper_getLocalSegmentBoundingBox = function _DisplayCanvasHelper_getLocalSegmentBoundingBox(startX, startY, endX, endY, { lineWidth, segmentStartRadius, segmentEndRadius, segmentStartCap, segmentEndCap, }) {
     const outerPadding = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getOuterPadding).call(this, lineWidth);
     const dx = endX - startX;

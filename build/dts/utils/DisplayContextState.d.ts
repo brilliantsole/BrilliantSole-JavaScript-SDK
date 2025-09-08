@@ -7,6 +7,7 @@ export type DisplayAlignmentDirection = (typeof DisplayAlignmentDirections)[numb
 export declare const DisplayDirections: readonly ["right", "left", "up", "down"];
 export type DisplayDirection = (typeof DisplayDirections)[number];
 export type DisplayContextState = {
+    backgroundColorIndex: number;
     fillColorIndex: number;
     lineColorIndex: number;
     lineWidth: number;

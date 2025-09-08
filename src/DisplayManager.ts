@@ -38,6 +38,9 @@ import {
   assertValidAlignmentDirection,
   assertValidWireframe,
   trimWireframe,
+  assertValidNumberOfControlPoints,
+  assertValidMinimumNumberOfControlPoints,
+  assertValidPath,
 } from "./utils/DisplayUtils.ts";
 import {
   assertValidBitmapPixels,
@@ -184,6 +187,17 @@ export type DisplayWireframeEdge = {
 export type DisplaySegment = {
   start: Vector2;
   end: Vector2;
+};
+
+export const DisplayBezierCurveTypes = [
+  "segment",
+  "quadratic",
+  "cubic",
+] as const;
+export type DisplayBezierCurveType = (typeof DisplayBezierCurveTypes)[number];
+export type DisplayBezierCurve = {
+  type: DisplayBezierCurveType;
+  controlPoints: Vector2[];
 };
 
 export const DisplayInformationValues = {
@@ -339,6 +353,9 @@ class DisplayManager implements DisplayManagerInterface {
     }
     differences.forEach((difference) => {
       switch (difference) {
+        case "backgroundColorIndex":
+          this.selectBackgroundColor(newState.backgroundColorIndex!);
+          break;
         case "fillColorIndex":
           this.selectFillColor(newState.fillColorIndex!);
           break;
@@ -863,6 +880,31 @@ class DisplayManager implements DisplayManagerInterface {
     }
     await this.#sendDisplayContextCommand(
       "selectFillColor",
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onContextStateUpdate(differences);
+  }
+  async selectBackgroundColor(
+    backgroundColorIndex: number,
+    sendImmediately?: boolean
+  ) {
+    this.assertValidColorIndex(backgroundColorIndex);
+    const differences = this.#contextStateHelper.update({
+      backgroundColorIndex,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    const dataView = serializeContextCommand(this, {
+      type: "selectBackgroundColor",
+      backgroundColorIndex,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "selectBackgroundColor",
       dataView.buffer,
       sendImmediately
     );
@@ -2039,6 +2081,130 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
+  }
+
+  async drawCurve(
+    curveType: DisplayBezierCurveType,
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    assertValidNumberOfControlPoints(curveType, controlPoints);
+    const commandType: DisplayContextCommandType =
+      curveType == "cubic"
+        ? "drawCubicBezierCurve"
+        : "drawQuadraticBezierCurve";
+    const dataView = serializeContextCommand(this, {
+      type: commandType,
+      controlPoints,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      commandType,
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  async drawCurves(
+    curveType: DisplayBezierCurveType,
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    assertValidMinimumNumberOfControlPoints(curveType, controlPoints);
+    const commandType: DisplayContextCommandType =
+      curveType == "cubic"
+        ? "drawCubicBezierCurves"
+        : "drawQuadraticBezierCurves";
+    const dataView = serializeContextCommand(this, {
+      type: commandType,
+      controlPoints,
+    });
+    if (!dataView) {
+      return;
+    }
+    if (dataView.byteLength > this.#maxCommandDataLength) {
+      _console.error(
+        `curve data ${dataView.byteLength} too large (max ${
+          this.#maxCommandDataLength
+        })`
+      );
+      // FILL - split into multiple curves
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      commandType,
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+
+  async drawQuadraticBezierCurve(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    await this.drawCurve("quadratic", controlPoints, sendImmediately);
+  }
+  async drawQuadraticBezierCurves(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    await this.drawCurves("quadratic", controlPoints, sendImmediately);
+  }
+
+  async drawCubicBezierCurve(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    await this.drawCurve("cubic", controlPoints, sendImmediately);
+  }
+  async drawCubicBezierCurves(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    await this.drawCurves("cubic", controlPoints, sendImmediately);
+  }
+
+  async _drawPath(
+    isClosed: boolean,
+    curves: DisplayBezierCurve[],
+    sendImmediately?: boolean
+  ) {
+    assertValidPath(curves);
+
+    const commandType: DisplayContextCommandType = isClosed
+      ? "drawClosedPath"
+      : "drawPath";
+    const dataView = serializeContextCommand(this, {
+      type: commandType,
+      curves,
+    });
+    if (!dataView) {
+      return;
+    }
+    if (dataView.byteLength > this.#maxCommandDataLength) {
+      _console.error(
+        `path data ${dataView.byteLength} too large (max ${
+          this.#maxCommandDataLength
+        })`
+      );
+      // FILL - split into multiple paths
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      commandType,
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  async drawPath(curves: DisplayBezierCurve[], sendImmediately?: boolean) {
+    await this._drawPath(false, curves, sendImmediately);
+  }
+  async drawClosedPath(
+    curves: DisplayBezierCurve[],
+    sendImmediately?: boolean
+  ) {
+    await this._drawPath(true, curves, sendImmediately);
   }
 
   async drawSegment(

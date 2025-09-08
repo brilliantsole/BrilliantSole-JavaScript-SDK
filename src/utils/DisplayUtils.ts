@@ -1,4 +1,6 @@
 import {
+  DisplayBezierCurve,
+  DisplayBezierCurveType,
   DisplayBrightness,
   DisplayBrightnesses,
   DisplayPixelDepth,
@@ -261,6 +263,42 @@ export function assertValidAlignmentDirection(
   direction: DisplayAlignmentDirection
 ) {
   _console.assertEnumWithError(direction, DisplayAlignmentDirections);
+}
+
+export const DisplayNumberOfControlPoints: Record<
+  DisplayBezierCurveType,
+  number
+> = {
+  segment: 2,
+  quadratic: 3,
+  cubic: 4,
+};
+export function assertValidNumberOfControlPoints(
+  curveType: DisplayBezierCurveType,
+  controlPoints: Vector2[]
+) {
+  const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+  _console.assertWithError(
+    controlPoints.length == numberOfControlPoints,
+    `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`
+  );
+}
+export function assertValidMinimumNumberOfControlPoints(
+  curveType: DisplayBezierCurveType,
+  controlPoints: Vector2[]
+) {
+  const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+  _console.assertWithError(
+    controlPoints.length >= numberOfControlPoints,
+    `invalid number of control points ${controlPoints.length}, expected >=${numberOfControlPoints}`
+  );
+}
+
+export function assertValidPath(curves: DisplayBezierCurve[]) {
+  curves.forEach((curve) => {
+    const { type, controlPoints } = curve;
+    assertValidNumberOfControlPoints(type, controlPoints);
+  });
 }
 
 export function assertValidWireframe(

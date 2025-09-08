@@ -1,4 +1,6 @@
 import {
+  DisplayBezierCurve,
+  DisplayBezierCurveTypes,
   DisplayBitmap,
   DisplayBitmapColorPair,
   DisplaySpriteColorPair,
@@ -27,7 +29,10 @@ import {
   assertValidAlignment,
   assertValidColor,
   assertValidDirection,
+  assertValidMinimumNumberOfControlPoints,
+  assertValidNumberOfControlPoints,
   assertValidOpacity,
+  assertValidPath,
   assertValidSegmentCap,
   assertValidWireframe,
   DisplayColorRGB,
@@ -133,10 +138,10 @@ export const DisplayContextCommandTypes = [
 
   "drawWireframe",
 
-  "drawQuadraticCurve",
-  "drawQuadraticCurves",
-  "drawBezierCurve",
-  "drawBezierCurves",
+  "drawQuadraticBezierCurve",
+  "drawQuadraticBezierCurves",
+  "drawCubicBezierCurve",
+  "drawCubicBezierCurves",
 
   "drawPath",
   "drawClosedPath",
@@ -208,10 +213,10 @@ export const DisplaySpriteContextCommandTypes = [
 
   "drawWireframe",
 
-  "drawQuadraticCurve",
-  "drawQuadraticCurves",
-  "drawBezierCurve",
-  "drawBezierCurves",
+  "drawQuadraticBezierCurve",
+  "drawQuadraticBezierCurves",
+  "drawCubicBezierCurve",
+  "drawCubicBezierCurves",
 
   "drawPath",
   "drawClosedPath",
@@ -275,6 +280,11 @@ export interface SetDisplayVerticalAlignmentCommand
   verticalAlignment: DisplayAlignment;
 }
 
+export interface SelectDisplayBackgroundColorCommand
+  extends BaseDisplayContextCommand {
+  type: "selectBackgroundColor";
+  backgroundColorIndex: number;
+}
 export interface SelectDisplayFillColorCommand
   extends BaseDisplayContextCommand {
   type: "selectFillColor";
@@ -531,6 +541,21 @@ export interface DrawDisplaySegmentsCommand extends BaseDisplayContextCommand {
   points: Vector2[];
 }
 
+export interface DrawDisplayBezierCurveCommand
+  extends BaseDisplayContextCommand {
+  type:
+    | "drawQuadraticBezierCurve"
+    | "drawQuadraticBezierCurves"
+    | "drawCubicBezierCurve"
+    | "drawCubicBezierCurves";
+  controlPoints: Vector2[];
+}
+
+export interface DrawDisplayPathCommand extends BaseDisplayContextCommand {
+  type: "drawPath" | "drawClosedPath";
+  curves: DisplayBezierCurve[];
+}
+
 export interface DrawDisplayWireframeCommand extends BaseDisplayContextCommand {
   type: "drawWireframe";
   points: Vector2[];
@@ -585,6 +610,7 @@ export type DisplayContextCommand =
   | SetDisplayColorCommand
   | SetDisplayColorOpacityCommand
   | SetDisplayOpacityCommand
+  | SelectDisplayBackgroundColorCommand
   | SelectDisplayFillColorCommand
   | SelectDisplayLineColorCommand
   | SetDisplayLineWidthCommand
@@ -637,7 +663,9 @@ export type DisplayContextCommand =
   | SetDisplaySpritesAlignmentCommand
   | SetDisplaySpritesLineAlignmentCommand
   | SetDisplaySpritesLineHeightCommand
-  | DrawDisplayWireframeCommand;
+  | DrawDisplayWireframeCommand
+  | DrawDisplayBezierCurveCommand
+  | DrawDisplayPathCommand;
 
 export function serializeContextCommand(
   displayManager: DisplayManagerInterface,
@@ -715,6 +743,14 @@ export function serializeContextCommand(
         displayManager.assertValidColorIndex(fillColorIndex);
         dataView = new DataView(new ArrayBuffer(1));
         dataView.setUint8(0, fillColorIndex);
+      }
+      break;
+    case "selectBackgroundColor":
+      {
+        const { backgroundColorIndex } = command;
+        displayManager.assertValidColorIndex(backgroundColorIndex);
+        dataView = new DataView(new ArrayBuffer(1));
+        dataView.setUint8(0, backgroundColorIndex);
       }
       break;
     case "selectLineColor":
@@ -1180,6 +1216,74 @@ export function serializeContextCommand(
           dataView!.setUint8(offset++, edge.startIndex);
           dataView!.setUint8(offset++, edge.endIndex);
         });
+      }
+      break;
+    case "drawQuadraticBezierCurve":
+    case "drawCubicBezierCurve":
+      {
+        const { controlPoints } = command;
+        assertValidNumberOfControlPoints(
+          command.type == "drawCubicBezierCurve" ? "cubic" : "quadratic",
+          controlPoints
+        );
+        dataView = new DataView(new ArrayBuffer(4 * controlPoints.length));
+        let offset = 0;
+        controlPoints.forEach((controlPoint) => {
+          dataView!.setInt16(offset, controlPoint.x, true);
+          offset += 2;
+          dataView!.setInt16(offset, controlPoint.y, true);
+          offset += 2;
+        });
+      }
+      break;
+    case "drawQuadraticBezierCurves":
+    case "drawCubicBezierCurves":
+      {
+        const { controlPoints } = command;
+        assertValidMinimumNumberOfControlPoints(
+          command.type == "drawQuadraticBezierCurves" ? "quadratic" : "cubic",
+          controlPoints
+        );
+        dataView = new DataView(new ArrayBuffer(1 + 4 * controlPoints.length));
+        let offset = 0;
+        dataView.setUint8(offset++, controlPoints.length);
+        controlPoints.forEach((controlPoint) => {
+          dataView!.setInt16(offset, controlPoint.x, true);
+          offset += 2;
+          dataView!.setInt16(offset, controlPoint.y, true);
+          offset += 2;
+        });
+      }
+      break;
+    case "drawPath":
+    case "drawClosedPath":
+      {
+        // FIX -
+        const { curves } = command;
+        assertValidPath(curves);
+        const dataViews: DataView[] = [];
+        curves.forEach((curve) => {
+          const { type, controlPoints } = curve;
+          let _dataView = new DataView(
+            new ArrayBuffer(1 + 4 * controlPoints.length)
+          );
+          let offset = 0;
+          _dataView.setUint8(offset++, DisplayBezierCurveTypes.indexOf(type));
+          controlPoints.forEach((controlPoint) => {
+            _dataView.setInt16(offset, controlPoint.x, true);
+            offset += 2;
+            _dataView.setInt16(offset, controlPoint.y, true);
+            offset += 2;
+          });
+          dataViews.push(_dataView);
+        });
+
+        const buffer = concatenateArrayBuffers(...dataViews);
+        const headerDataView = new DataView(new ArrayBuffer(2));
+        headerDataView.setUint16(0, buffer.byteLength, true);
+        dataView = new DataView(
+          concatenateArrayBuffers(headerDataView, buffer)
+        );
       }
       break;
     case "drawSegment":

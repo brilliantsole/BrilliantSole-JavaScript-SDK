@@ -755,20 +755,33 @@ const selectMicrophoneOptgroup =
 selectMicrophoneSelect.addEventListener("input", () => {
   selectMicrophone(selectMicrophoneSelect.value);
 });
+
+selectMicrophoneSelect.addEventListener("click", async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const audioDevices = devices.filter((device) => device.kind == "audioinput");
+  console.log("audioDevices", audioDevices);
+  if (audioDevices.length == 1 && audioDevices[0].deviceId == "") {
+    console.log("getting audio");
+    const microphoneStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+    });
+    microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    updateMicrophoneSources();
+  }
+});
 const updateMicrophoneSources = async () => {
   const devices = await navigator.mediaDevices.enumerateDevices();
+  const audioDevices = devices.filter((device) => device.kind == "audioinput");
   selectMicrophoneOptgroup.innerHTML = "";
   selectMicrophoneOptgroup.appendChild(new Option("none"));
   if (device.hasMicrophone) {
     selectMicrophoneOptgroup.appendChild(new Option("device"));
   }
-  devices
-    .filter((device) => device.kind == "audioinput")
-    .forEach((audioInputDevice) => {
-      selectMicrophoneOptgroup.appendChild(
-        new Option(audioInputDevice.label, audioInputDevice.deviceId)
-      );
-    });
+  audioDevices.forEach((audioInputDevice) => {
+    selectMicrophoneOptgroup.appendChild(
+      new Option(audioInputDevice.label, audioInputDevice.deviceId)
+    );
+  });
   selectMicrophone.value = "none";
   selectMicrophone(selectMicrophone.value);
 };
@@ -809,7 +822,7 @@ const selectMicrophone = async (deviceId) => {
 const stopMicrophoneStream = () => {
   if (microphoneStream) {
     console.log("stopping microphoneStream");
-    microphoneStream.getVideoTracks().forEach((track) => track.stop());
+    microphoneStream.getAudioTracks().forEach((track) => track.stop());
   }
   microphoneStream = undefined;
   microphoneAudio.srcObject = undefined;

@@ -9,6 +9,8 @@ import {
   DisplayBitmap,
   DisplayWireframeEdge,
   DisplaySegment,
+  DisplayBezierCurve,
+  DisplayBezierCurveType,
 } from "../DisplayManager.ts";
 import {
   assertValidBitmapPixels,
@@ -74,6 +76,9 @@ import {
   assertValidDirection,
   assertValidWireframe,
   trimWireframe,
+  assertValidNumberOfControlPoints,
+  assertValidMinimumNumberOfControlPoints,
+  assertValidPath,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -84,7 +89,10 @@ import EventDispatcher, {
 import { addEventListeners, removeEventListeners } from "./EventUtils.ts";
 import { clamp, degToRad, normalizeRadians, Vector2 } from "./MathUtils.ts";
 import { wait } from "./Timer.ts";
-import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+import {
+  DisplayContextCommand,
+  DisplayContextCommandType,
+} from "./DisplayContextCommand.ts";
 import {
   DisplaySprite,
   DisplaySpritePaletteSwap,
@@ -782,6 +790,23 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.selectFillColor(
         fillColorIndex,
+        sendImmediately
+      );
+    }
+    this.#onContextStateUpdate(differences);
+  }
+  async selectBackgroundColor(
+    backgroundColorIndex: number,
+    sendImmediately?: boolean
+  ) {
+    this.assertValidColorIndex(backgroundColorIndex);
+    const differences = this.#contextStateHelper.update({
+      backgroundColorIndex,
+    });
+
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.selectBackgroundColor(
+        backgroundColorIndex,
         sendImmediately
       );
     }
@@ -2294,6 +2319,119 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
   }
+
+  #drawCurveToCanvas(
+    curveType: DisplayBezierCurveType,
+    controlPoints: Vector2[],
+    contextState: DisplayContextState
+  ) {
+    // FILL
+  }
+  async drawCurve(
+    curveType: DisplayBezierCurveType,
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    assertValidNumberOfControlPoints(curveType, controlPoints);
+    const contextState = structuredClone(this.contextState);
+    this.#rearDrawStack.push(() =>
+      this.#drawCurveToCanvas(curveType, controlPoints, contextState)
+    );
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.drawCurve(
+        curveType,
+        controlPoints,
+        sendImmediately
+      );
+    }
+  }
+  #drawCurvesToCanvas(
+    curveType: DisplayBezierCurveType,
+    controlPoints: Vector2[],
+    contextState: DisplayContextState
+  ) {
+    // FILL
+  }
+  async drawCurves(
+    curveType: DisplayBezierCurveType,
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    assertValidMinimumNumberOfControlPoints(curveType, controlPoints);
+    const contextState = structuredClone(this.contextState);
+    this.#rearDrawStack.push(() =>
+      this.#drawCurvesToCanvas(curveType, controlPoints, contextState)
+    );
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.drawCurves(
+        curveType,
+        controlPoints,
+        sendImmediately
+      );
+    }
+  }
+
+  async drawQuadraticBezierCurve(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    await this.drawCurve("quadratic", controlPoints, sendImmediately);
+  }
+  async drawQuadraticBezierCurves(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    await this.drawCurves("quadratic", controlPoints, sendImmediately);
+  }
+
+  async drawCubicBezierCurve(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    await this.drawCurve("cubic", controlPoints, sendImmediately);
+  }
+  async drawCubicBezierCurves(
+    controlPoints: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    await this.drawCurves("cubic", controlPoints, sendImmediately);
+  }
+
+  #drawPathToCanvas(
+    isClosed: boolean,
+    curves: DisplayBezierCurve[],
+    contextState: DisplayContextState
+  ) {
+    // FILL
+  }
+  async _drawPath(
+    isClosed: boolean,
+    curves: DisplayBezierCurve[],
+    sendImmediately?: boolean
+  ) {
+    assertValidPath(curves);
+    const contextState = structuredClone(this.contextState);
+    this.#rearDrawStack.push(() =>
+      this.#drawPathToCanvas(isClosed, curves, contextState)
+    );
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!._drawPath(
+        isClosed,
+        curves,
+        sendImmediately
+      );
+    }
+  }
+  async drawPath(curves: DisplayBezierCurve[], sendImmediately?: boolean) {
+    await this._drawPath(false, curves, sendImmediately);
+  }
+  async drawClosedPath(
+    curves: DisplayBezierCurve[],
+    sendImmediately?: boolean
+  ) {
+    await this._drawPath(true, curves, sendImmediately);
+  }
+
   #getLocalSegmentBoundingBox(
     startX: number,
     startY: number,

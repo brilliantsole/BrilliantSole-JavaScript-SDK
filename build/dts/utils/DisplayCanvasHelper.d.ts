@@ -1,5 +1,5 @@
 import Device from "../Device.ts";
-import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap, DisplayWireframeEdge } from "../DisplayManager.ts";
+import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap, DisplayWireframeEdge, DisplayBezierCurve, DisplayBezierCurveType } from "../DisplayManager.ts";
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplaySpriteLines, DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
@@ -131,6 +131,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     saveContext(sendImmediately?: boolean): Promise<void>;
     restoreContext(sendImmediately?: boolean): Promise<void>;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    selectBackgroundColor(backgroundColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;
     assertValidLineWidth(lineWidth: number): void;
     setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
@@ -201,6 +202,15 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     drawRegularPolygon(offsetX: number, offsetY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
     drawPolygon(offsetX: number, offsetY: number, points: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawWireframe(points: Vector2[], edges: DisplayWireframeEdge[], sendImmediately?: boolean): Promise<void>;
+    drawCurve(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawCurves(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawQuadraticBezierCurve(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawQuadraticBezierCurves(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawCubicBezierCurve(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawCubicBezierCurves(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    _drawPath(isClosed: boolean, curves: DisplayBezierCurve[], sendImmediately?: boolean): Promise<void>;
+    drawPath(curves: DisplayBezierCurve[], sendImmediately?: boolean): Promise<void>;
+    drawClosedPath(curves: DisplayBezierCurve[], sendImmediately?: boolean): Promise<void>;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): Promise<void>;
     drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawArc(offsetX: number, offsetY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
