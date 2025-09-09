@@ -275,9 +275,13 @@ export const DisplayNumberOfControlPoints: Record<
 };
 export function assertValidNumberOfControlPoints(
   curveType: DisplayBezierCurveType,
-  controlPoints: Vector2[]
+  controlPoints: Vector2[],
+  isPath = false
 ) {
-  const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+  let numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+  if (isPath) {
+    numberOfControlPoints -= 1;
+  }
   _console.assertWithError(
     controlPoints.length == numberOfControlPoints,
     `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`
@@ -295,9 +299,9 @@ export function assertValidMinimumNumberOfControlPoints(
 }
 
 export function assertValidPath(curves: DisplayBezierCurve[]) {
-  curves.forEach((curve) => {
+  curves.forEach((curve, index) => {
     const { type, controlPoints } = curve;
-    assertValidNumberOfControlPoints(type, controlPoints);
+    assertValidNumberOfControlPoints(type, controlPoints, index > 0);
   });
 }
 

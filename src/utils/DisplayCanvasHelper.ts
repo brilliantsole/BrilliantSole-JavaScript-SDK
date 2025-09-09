@@ -2160,9 +2160,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   #getPointsBoundingBox(
     points: Vector2[],
-    { lineWidth }: DisplayContextState
+    { lineWidth, verticalAlignment, horizontalAlignment }: DisplayContextState,
+    applyLineWidth = true,
+    applyAlignment = false
   ): DisplayBoundingBox {
-    const outerPadding = Math.ceil(lineWidth / 2);
+    const outerPadding = applyLineWidth ? this.#getOuterPadding(lineWidth) : 0;
 
     let minX = 0;
     let maxX = 0;
@@ -2187,8 +2189,62 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       width: maxX - minX + outerPadding * 2,
       height: maxY - minY + outerPadding * 2,
     };
+    if (applyAlignment) {
+      assertValidAlignment(horizontalAlignment);
+      assertValidAlignment(verticalAlignment);
+      switch (horizontalAlignment) {
+        case "start":
+          pointsBoundingBox.x = 0;
+          break;
+        case "center":
+          break;
+        case "end":
+          pointsBoundingBox.x = -pointsBoundingBox.width;
+          break;
+      }
+      switch (verticalAlignment) {
+        case "start":
+          pointsBoundingBox.y = 0;
+          break;
+        case "center":
+          break;
+        case "end":
+          pointsBoundingBox.y = -pointsBoundingBox.height;
+          break;
+      }
+    }
     _console.log("pointsBoundingBox", pointsBoundingBox);
     return pointsBoundingBox;
+  }
+  #alignBoundingBox(
+    boundingBox: DisplayBoundingBox,
+    { verticalAlignment, horizontalAlignment }: DisplayContextState
+  ): DisplayBoundingBox {
+    const alignedBoundingBox = structuredClone(boundingBox);
+    assertValidAlignment(horizontalAlignment);
+    assertValidAlignment(verticalAlignment);
+    switch (horizontalAlignment) {
+      case "start":
+        alignedBoundingBox.x = 0;
+        break;
+      case "center":
+        break;
+      case "end":
+        alignedBoundingBox.x = -alignedBoundingBox.width;
+        break;
+    }
+    switch (verticalAlignment) {
+      case "start":
+        alignedBoundingBox.y = 0;
+        break;
+      case "center":
+        break;
+      case "end":
+        alignedBoundingBox.y = -alignedBoundingBox.height;
+        break;
+    }
+    _console.log("alignedBoundingBox", alignedBoundingBox);
+    return alignedBoundingBox;
   }
   #drawPolygonToCanvas(
     offsetX: number,
@@ -2200,7 +2256,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#updateContext(contextState);
 
     this.#save();
-    const localBox = this.#getPointsBoundingBox(points, contextState);
+    const centeredLocalBox = this.#getPointsBoundingBox(
+      points,
+      contextState,
+      true,
+      false
+    );
+    const localBox = this.#alignBoundingBox(centeredLocalBox, contextState);
     const rotatedLocalBox = this.#rotateBoundingBox(
       localBox,
       contextState.rotation
@@ -2216,6 +2278,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#transformContext(offsetX, offsetY, contextState.rotation);
     this.#applyRotationClip(localBox, contextState);
+    this.context.translate(
+      localBox.x - centeredLocalBox.x,
+      localBox.y - centeredLocalBox.y
+    );
 
     this.context.beginPath();
     points.forEach((point, index) => {

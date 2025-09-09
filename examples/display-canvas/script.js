@@ -2248,36 +2248,36 @@ displayCanvasHelper.selectFillColor(1);
 displayCanvasHelper.selectLineColor(2);
 //displayCanvasHelper.setRotationCropTop(10);
 //displayCanvasHelper.setCropTop(10);
-displayCanvasHelper.setVerticalAlignment("center");
+displayCanvasHelper.setVerticalAlignment("start");
 displayCanvasHelper.setHorizontalAlignment("center");
 // displayCanvasHelper.drawRoundRect(100, 100, 100, 100, 20);
 displayCanvasHelper.setSegmentStartCap("round");
 displayCanvasHelper.setSegmentStartRadius(2);
 displayCanvasHelper.setSegmentEndRadius(2);
-// displayCanvasHelper.drawPolygon(200, 100, [
-//   { x: -10, y: -50 },
-//   { x: 50, y: -50 },
-//   { x: 50, y: 50 },
-//   { x: -50, y: 50 },
-// ]);
-displayCanvasHelper.drawWireframe(
-  [
-    { x: 100, y: 100 },
-    { x: 150, y: 100 },
-    { x: 50, y: 100 },
-    { x: 100, y: 150 },
-    { x: 100, y: 50 },
-  ],
-  [
-    { startIndex: 0, endIndex: 1 },
-    { startIndex: 0, endIndex: 2 },
-    { startIndex: 0, endIndex: 3 },
-    { startIndex: 0, endIndex: 4 },
-    { startIndex: 1, endIndex: 2 },
-    { startIndex: 2, endIndex: 3 },
-    { startIndex: 4, endIndex: 1 },
-  ]
-);
+displayCanvasHelper.drawPolygon(200, 100, [
+  { x: -10, y: -50 },
+  { x: 50, y: -50 },
+  { x: 50, y: 50 },
+  { x: -50, y: 50 },
+]);
+// displayCanvasHelper.drawWireframe(
+//   [
+//     { x: 100, y: 100 },
+//     { x: 150, y: 100 },
+//     { x: 50, y: 100 },
+//     { x: 100, y: 150 },
+//     { x: 100, y: 50 },
+//   ],
+//   [
+//     { startIndex: 0, endIndex: 1 },
+//     { startIndex: 0, endIndex: 2 },
+//     { startIndex: 0, endIndex: 3 },
+//     { startIndex: 0, endIndex: 4 },
+//     { startIndex: 1, endIndex: 2 },
+//     { startIndex: 2, endIndex: 3 },
+//     { startIndex: 4, endIndex: 1 },
+//   ]
+// );
 // displayCanvasHelper.drawRegularPolygon(100, 100, 50, 5);
 // displayCanvasHelper.drawSegment(100, 100, 120, 200);
 // displayCanvasHelper.drawSegments([

@@ -1258,31 +1258,47 @@ export function serializeContextCommand(
     case "drawPath":
     case "drawClosedPath":
       {
-        // FIX -
         const { curves } = command;
         assertValidPath(curves);
-        const dataViews: DataView[] = [];
-        curves.forEach((curve) => {
+        const typesDataView = new DataView(new ArrayBuffer(curves.length));
+        const controlPointsDataViews: DataView[] = [];
+
+        // [numberOfCurves, numberOfPoints, ...curveTypes, ...points]
+
+        let numberOfControlPoints = 0;
+        curves.forEach((curve, index) => {
           const { type, controlPoints } = curve;
-          let _dataView = new DataView(
-            new ArrayBuffer(1 + 4 * controlPoints.length)
+          typesDataView.setUint8(index, DisplayBezierCurveTypes.indexOf(type));
+
+          const controlPointsDataView = new DataView(
+            new ArrayBuffer(4 * controlPoints.length)
           );
           let offset = 0;
-          _dataView.setUint8(offset++, DisplayBezierCurveTypes.indexOf(type));
           controlPoints.forEach((controlPoint) => {
-            _dataView.setInt16(offset, controlPoint.x, true);
+            controlPointsDataView.setInt16(offset, controlPoint.x, true);
             offset += 2;
-            _dataView.setInt16(offset, controlPoint.y, true);
+            controlPointsDataView.setInt16(offset, controlPoint.y, true);
             offset += 2;
           });
-          dataViews.push(_dataView);
+          controlPointsDataViews.push(controlPointsDataView);
+
+          numberOfControlPoints += controlPoints.length;
         });
 
-        const buffer = concatenateArrayBuffers(...dataViews);
+        _console.log({ numberOfControlPoints });
+
+        const controlPointsBuffer = concatenateArrayBuffers(
+          ...controlPointsDataViews
+        );
         const headerDataView = new DataView(new ArrayBuffer(2));
-        headerDataView.setUint16(0, buffer.byteLength, true);
+        headerDataView.setUint8(0, curves.length);
+        headerDataView.setUint8(1, numberOfControlPoints);
         dataView = new DataView(
-          concatenateArrayBuffers(headerDataView, buffer)
+          concatenateArrayBuffers(
+            headerDataView,
+            typesDataView,
+            controlPointsBuffer
+          )
         );
       }
       break;

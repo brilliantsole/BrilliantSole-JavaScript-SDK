@@ -4011,8 +4011,11 @@ const DisplayNumberOfControlPoints = {
     quadratic: 3,
     cubic: 4,
 };
-function assertValidNumberOfControlPoints(curveType, controlPoints) {
-    const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+function assertValidNumberOfControlPoints(curveType, controlPoints, isPath = false) {
+    let numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+    if (isPath) {
+        numberOfControlPoints -= 1;
+    }
     _console$t.assertWithError(controlPoints.length == numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`);
 }
 function assertValidMinimumNumberOfControlPoints(curveType, controlPoints) {
@@ -4020,9 +4023,9 @@ function assertValidMinimumNumberOfControlPoints(curveType, controlPoints) {
     _console$t.assertWithError(controlPoints.length >= numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected >=${numberOfControlPoints}`);
 }
 function assertValidPath(curves) {
-    curves.forEach((curve) => {
+    curves.forEach((curve, index) => {
         const { type, controlPoints } = curve;
-        assertValidNumberOfControlPoints(type, controlPoints);
+        assertValidNumberOfControlPoints(type, controlPoints, index > 0);
     });
 }
 function assertValidWireframe(points, edges) {
@@ -4759,24 +4762,29 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { curves } = command;
                 assertValidPath(curves);
-                const dataViews = [];
-                curves.forEach((curve) => {
+                const typesDataView = new DataView(new ArrayBuffer(curves.length));
+                const controlPointsDataViews = [];
+                let numberOfControlPoints = 0;
+                curves.forEach((curve, index) => {
                     const { type, controlPoints } = curve;
-                    let _dataView = new DataView(new ArrayBuffer(1 + 4 * controlPoints.length));
+                    typesDataView.setUint8(index, DisplayBezierCurveTypes.indexOf(type));
+                    const controlPointsDataView = new DataView(new ArrayBuffer(4 * controlPoints.length));
                     let offset = 0;
-                    _dataView.setUint8(offset++, DisplayBezierCurveTypes.indexOf(type));
                     controlPoints.forEach((controlPoint) => {
-                        _dataView.setInt16(offset, controlPoint.x, true);
+                        controlPointsDataView.setInt16(offset, controlPoint.x, true);
                         offset += 2;
-                        _dataView.setInt16(offset, controlPoint.y, true);
+                        controlPointsDataView.setInt16(offset, controlPoint.y, true);
                         offset += 2;
                     });
-                    dataViews.push(_dataView);
+                    controlPointsDataViews.push(controlPointsDataView);
+                    numberOfControlPoints += controlPoints.length;
                 });
-                const buffer = concatenateArrayBuffers(...dataViews);
+                _console$s.log({ numberOfControlPoints });
+                const controlPointsBuffer = concatenateArrayBuffers(...controlPointsDataViews);
                 const headerDataView = new DataView(new ArrayBuffer(2));
-                headerDataView.setUint16(0, buffer.byteLength, true);
-                dataView = new DataView(concatenateArrayBuffers(headerDataView, buffer));
+                headerDataView.setUint8(0, curves.length);
+                headerDataView.setUint8(1, numberOfControlPoints);
+                dataView = new DataView(concatenateArrayBuffers(headerDataView, typesDataView, controlPointsBuffer));
             }
             break;
         case "drawSegment":
