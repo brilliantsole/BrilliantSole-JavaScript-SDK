@@ -1,5 +1,6 @@
 import {
   DisplayBezierCurve,
+  DisplayBezierCurveType,
   DisplayBezierCurveTypes,
   DisplayBitmap,
   DisplayBitmapColorPair,
@@ -29,7 +30,7 @@ import {
   assertValidAlignment,
   assertValidColor,
   assertValidDirection,
-  assertValidMinimumNumberOfControlPoints,
+  assertValidPathNumberOfControlPoints,
   assertValidNumberOfControlPoints,
   assertValidOpacity,
   assertValidPath,
@@ -68,6 +69,11 @@ export const DisplayContextCommandTypes = [
   "selectBackgroundColor",
   "selectFillColor",
   "selectLineColor",
+
+  "setIgnoreFill",
+  "setIgnoreLine",
+  "setFillBackground",
+
   "setLineWidth",
   "setRotation",
   "clearRotation",
@@ -158,6 +164,12 @@ export type DisplayContextCommandType =
 export const DisplaySpriteContextCommandTypes = [
   "selectFillColor",
   "selectLineColor",
+  "selectBackgroundColor",
+
+  "setIgnoreFill",
+  "setIgnoreLine",
+  "setFillBackground",
+
   "setLineWidth",
   "setRotation",
   "clearRotation",
@@ -294,6 +306,21 @@ export interface SelectDisplayLineColorCommand
   extends BaseDisplayContextCommand {
   type: "selectLineColor";
   lineColorIndex: number;
+}
+export interface SelectDisplayIgnoreFillCommand
+  extends BaseDisplayContextCommand {
+  type: "setIgnoreFill";
+  ignoreFill: boolean;
+}
+export interface SelectDisplayIgnoreLineCommand
+  extends BaseDisplayContextCommand {
+  type: "setIgnoreLine";
+  ignoreLine: boolean;
+}
+export interface SelectDisplayFillBackgroundCommand
+  extends BaseDisplayContextCommand {
+  type: "setFillBackground";
+  fillBackground: boolean;
 }
 export interface SetDisplayLineWidthCommand extends BaseDisplayContextCommand {
   type: "setLineWidth";
@@ -665,7 +692,10 @@ export type DisplayContextCommand =
   | SetDisplaySpritesLineHeightCommand
   | DrawDisplayWireframeCommand
   | DrawDisplayBezierCurveCommand
-  | DrawDisplayPathCommand;
+  | DrawDisplayPathCommand
+  | SelectDisplayIgnoreFillCommand
+  | SelectDisplayIgnoreLineCommand
+  | SelectDisplayFillBackgroundCommand;
 
 export function serializeContextCommand(
   displayManager: DisplayManagerInterface,
@@ -759,6 +789,27 @@ export function serializeContextCommand(
         displayManager.assertValidColorIndex(lineColorIndex);
         dataView = new DataView(new ArrayBuffer(1));
         dataView.setUint8(0, lineColorIndex);
+      }
+      break;
+    case "setIgnoreFill":
+      {
+        const { ignoreFill } = command;
+        dataView = new DataView(new ArrayBuffer(1));
+        dataView.setUint8(0, ignoreFill ? 1 : 0);
+      }
+      break;
+    case "setIgnoreLine":
+      {
+        const { ignoreLine } = command;
+        dataView = new DataView(new ArrayBuffer(1));
+        dataView.setUint8(0, ignoreLine ? 1 : 0);
+      }
+      break;
+    case "setFillBackground":
+      {
+        const { fillBackground } = command;
+        dataView = new DataView(new ArrayBuffer(1));
+        dataView.setUint8(0, fillBackground ? 1 : 0);
       }
       break;
     case "setLineWidth":
@@ -1222,10 +1273,9 @@ export function serializeContextCommand(
     case "drawCubicBezierCurve":
       {
         const { controlPoints } = command;
-        assertValidNumberOfControlPoints(
-          command.type == "drawCubicBezierCurve" ? "cubic" : "quadratic",
-          controlPoints
-        );
+        const curveType: DisplayBezierCurveType =
+          command.type == "drawCubicBezierCurve" ? "cubic" : "quadratic";
+        assertValidNumberOfControlPoints(curveType, controlPoints);
         dataView = new DataView(new ArrayBuffer(4 * controlPoints.length));
         let offset = 0;
         controlPoints.forEach((controlPoint) => {
@@ -1240,10 +1290,9 @@ export function serializeContextCommand(
     case "drawCubicBezierCurves":
       {
         const { controlPoints } = command;
-        assertValidMinimumNumberOfControlPoints(
-          command.type == "drawQuadraticBezierCurves" ? "quadratic" : "cubic",
-          controlPoints
-        );
+        const curveType: DisplayBezierCurveType =
+          command.type == "drawCubicBezierCurves" ? "cubic" : "quadratic";
+        assertValidPathNumberOfControlPoints(curveType, controlPoints);
         dataView = new DataView(new ArrayBuffer(1 + 4 * controlPoints.length));
         let offset = 0;
         dataView.setUint8(offset++, controlPoints.length);

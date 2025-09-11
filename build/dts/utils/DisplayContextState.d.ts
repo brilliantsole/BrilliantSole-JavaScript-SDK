@@ -10,6 +10,9 @@ export type DisplayContextState = {
     backgroundColorIndex: number;
     fillColorIndex: number;
     lineColorIndex: number;
+    ignoreFill: boolean;
+    ignoreLine: boolean;
+    fillBackground: boolean;
     lineWidth: number;
     rotation: number;
     horizontalAlignment: DisplayAlignment;

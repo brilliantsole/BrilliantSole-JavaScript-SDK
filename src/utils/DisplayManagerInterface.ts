@@ -103,6 +103,13 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
   setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
 
+  setIgnoreFill(ignoreFill: boolean, sendImmediately?: boolean): Promise<void>;
+  setIgnoreLine(ignoreLine: boolean, sendImmediately?: boolean): Promise<void>;
+  setFillBackground(
+    fillBackground: boolean,
+    sendImmediately?: boolean
+  ): Promise<void>;
+
   setAlignment(
     alignmentDirection: DisplayAlignmentDirection,
     alignment: DisplayAlignment,
@@ -634,12 +641,6 @@ export async function runDisplayContextCommand(
         await displayManager.setOpacity(opacity, sendImmediately);
       }
       break;
-    case "selectFillColor":
-      {
-        const { fillColorIndex } = command;
-        await displayManager.selectFillColor(fillColorIndex, sendImmediately);
-      }
-      break;
     case "selectBackgroundColor":
       {
         const { backgroundColorIndex } = command;
@@ -649,10 +650,34 @@ export async function runDisplayContextCommand(
         );
       }
       break;
+    case "selectFillColor":
+      {
+        const { fillColorIndex } = command;
+        await displayManager.selectFillColor(fillColorIndex, sendImmediately);
+      }
+      break;
     case "selectLineColor":
       {
         const { lineColorIndex } = command;
         await displayManager.selectLineColor(lineColorIndex, sendImmediately);
+      }
+      break;
+    case "setIgnoreFill":
+      {
+        const { ignoreFill } = command;
+        await displayManager.setIgnoreFill(ignoreFill, sendImmediately);
+      }
+      break;
+    case "setIgnoreLine":
+      {
+        const { ignoreLine } = command;
+        await displayManager.setIgnoreLine(ignoreLine, sendImmediately);
+      }
+      break;
+    case "setFillBackground":
+      {
+        const { fillBackground } = command;
+        await displayManager.setFillBackground(fillBackground, sendImmediately);
       }
       break;
     case "setLineWidth":

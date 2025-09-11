@@ -287,14 +287,14 @@ export function assertValidNumberOfControlPoints(
     `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`
   );
 }
-export function assertValidMinimumNumberOfControlPoints(
+export function assertValidPathNumberOfControlPoints(
   curveType: DisplayBezierCurveType,
   controlPoints: Vector2[]
 ) {
   const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
   _console.assertWithError(
-    controlPoints.length >= numberOfControlPoints,
-    `invalid number of control points ${controlPoints.length}, expected >=${numberOfControlPoints}`
+    (controlPoints.length - 1) % (numberOfControlPoints - 1) == 0,
+    `invalid number of path control points ${controlPoints.length} for path "${curveType}"`
   );
 }
 

@@ -15,8 +15,12 @@ export type DisplayContextState = {
   backgroundColorIndex: number;
   fillColorIndex: number;
   lineColorIndex: number;
-  lineWidth: number;
 
+  ignoreFill: boolean;
+  ignoreLine: boolean;
+  fillBackground: boolean;
+
+  lineWidth: number;
   rotation: number;
 
   horizontalAlignment: DisplayAlignment;
@@ -62,10 +66,13 @@ export type PartialDisplayContextState = Partial<DisplayContextState>;
 export const DefaultDisplayContextState: DisplayContextState = {
   backgroundColorIndex: 0,
   fillColorIndex: 1,
-
   lineColorIndex: 1,
-  lineWidth: 0,
 
+  ignoreFill: false,
+  ignoreLine: false,
+  fillBackground: false,
+
+  lineWidth: 0,
   rotation: 0,
 
   horizontalAlignment: "center",

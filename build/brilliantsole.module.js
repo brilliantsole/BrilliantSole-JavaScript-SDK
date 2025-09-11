@@ -3780,6 +3780,9 @@ const DefaultDisplayContextState = {
     backgroundColorIndex: 0,
     fillColorIndex: 1,
     lineColorIndex: 1,
+    ignoreFill: false,
+    ignoreLine: false,
+    fillBackground: false,
     lineWidth: 0,
     rotation: 0,
     horizontalAlignment: "center",
@@ -4027,9 +4030,9 @@ function assertValidNumberOfControlPoints(curveType, controlPoints, isPath = fal
     }
     _console$o.assertWithError(controlPoints.length == numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`);
 }
-function assertValidMinimumNumberOfControlPoints(curveType, controlPoints) {
+function assertValidPathNumberOfControlPoints(curveType, controlPoints) {
     const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
-    _console$o.assertWithError(controlPoints.length >= numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected >=${numberOfControlPoints}`);
+    _console$o.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, `invalid number of path control points ${controlPoints.length} for path "${curveType}"`);
 }
 function assertValidPath(curves) {
     curves.forEach((curve, index) => {
@@ -4789,6 +4792,9 @@ const DisplayContextCommandTypes = [
     "selectBackgroundColor",
     "selectFillColor",
     "selectLineColor",
+    "setIgnoreFill",
+    "setIgnoreLine",
+    "setFillBackground",
     "setLineWidth",
     "setRotation",
     "clearRotation",
@@ -4857,6 +4863,10 @@ const DisplayContextCommandTypes = [
 const DisplaySpriteContextCommandTypes = [
     "selectFillColor",
     "selectLineColor",
+    "selectBackgroundColor",
+    "setIgnoreFill",
+    "setIgnoreLine",
+    "setFillBackground",
     "setLineWidth",
     "setRotation",
     "clearRotation",
@@ -4997,6 +5007,27 @@ function serializeContextCommand(displayManager, command) {
                 displayManager.assertValidColorIndex(lineColorIndex);
                 dataView = new DataView(new ArrayBuffer(1));
                 dataView.setUint8(0, lineColorIndex);
+            }
+            break;
+        case "setIgnoreFill":
+            {
+                const { ignoreFill } = command;
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, ignoreFill ? 1 : 0);
+            }
+            break;
+        case "setIgnoreLine":
+            {
+                const { ignoreLine } = command;
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, ignoreLine ? 1 : 0);
+            }
+            break;
+        case "setFillBackground":
+            {
+                const { fillBackground } = command;
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, fillBackground ? 1 : 0);
             }
             break;
         case "setLineWidth":
@@ -5437,7 +5468,8 @@ function serializeContextCommand(displayManager, command) {
         case "drawCubicBezierCurve":
             {
                 const { controlPoints } = command;
-                assertValidNumberOfControlPoints(command.type == "drawCubicBezierCurve" ? "cubic" : "quadratic", controlPoints);
+                const curveType = command.type == "drawCubicBezierCurve" ? "cubic" : "quadratic";
+                assertValidNumberOfControlPoints(curveType, controlPoints);
                 dataView = new DataView(new ArrayBuffer(4 * controlPoints.length));
                 let offset = 0;
                 controlPoints.forEach((controlPoint) => {
@@ -5452,7 +5484,8 @@ function serializeContextCommand(displayManager, command) {
         case "drawCubicBezierCurves":
             {
                 const { controlPoints } = command;
-                assertValidMinimumNumberOfControlPoints(command.type == "drawQuadraticBezierCurves" ? "quadratic" : "cubic", controlPoints);
+                const curveType = command.type == "drawCubicBezierCurves" ? "cubic" : "quadratic";
+                assertValidPathNumberOfControlPoints(curveType, controlPoints);
                 dataView = new DataView(new ArrayBuffer(1 + 4 * controlPoints.length));
                 let offset = 0;
                 dataView.setUint8(offset++, controlPoints.length);
@@ -16141,22 +16174,40 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 await displayManager.setOpacity(opacity, sendImmediately);
             }
             break;
-        case "selectFillColor":
-            {
-                const { fillColorIndex } = command;
-                await displayManager.selectFillColor(fillColorIndex, sendImmediately);
-            }
-            break;
         case "selectBackgroundColor":
             {
                 const { backgroundColorIndex } = command;
                 await displayManager.selectBackgroundColor(backgroundColorIndex, sendImmediately);
             }
             break;
+        case "selectFillColor":
+            {
+                const { fillColorIndex } = command;
+                await displayManager.selectFillColor(fillColorIndex, sendImmediately);
+            }
+            break;
         case "selectLineColor":
             {
                 const { lineColorIndex } = command;
                 await displayManager.selectLineColor(lineColorIndex, sendImmediately);
+            }
+            break;
+        case "setIgnoreFill":
+            {
+                const { ignoreFill } = command;
+                await displayManager.setIgnoreFill(ignoreFill, sendImmediately);
+            }
+            break;
+        case "setIgnoreLine":
+            {
+                const { ignoreLine } = command;
+                await displayManager.setIgnoreLine(ignoreLine, sendImmediately);
+            }
+            break;
+        case "setFillBackground":
+            {
+                const { fillBackground } = command;
+                await displayManager.setFillBackground(fillBackground, sendImmediately);
             }
             break;
         case "setLineWidth":
@@ -16940,37 +16991,41 @@ class DisplayManager {
         return __classPrivateFieldGet(this, _DisplayManager_opacities, "f");
     }
     async setColorOpacity(colorIndex, opacity, sendImmediately) {
+        const commandType = "setColorOpacity";
         const dataView = serializeContextCommand(this, {
-            type: "setColorOpacity",
+            type: commandType,
             colorIndex,
             opacity,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setColorOpacity", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_opacities, "f")[colorIndex] = opacity;
         __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayColorOpacity", { colorIndex, opacity });
     }
     async setOpacity(opacity, sendImmediately) {
+        const commandType = "setOpacity";
         const dataView = serializeContextCommand(this, {
-            type: "setOpacity",
+            type: commandType,
             opacity,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setOpacity", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_opacities, "f").fill(opacity);
         __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayOpacity", { opacity });
     }
     async saveContext(sendImmediately) {
-        const dataView = serializeContextCommand(this, { type: "saveContext" });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "saveContext", dataView?.buffer, sendImmediately);
+        const commandType = "saveContext";
+        const dataView = serializeContextCommand(this, { type: commandType });
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView?.buffer, sendImmediately);
     }
     async restoreContext(sendImmediately) {
-        const dataView = serializeContextCommand(this, { type: "restoreContext" });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "restoreContext", dataView?.buffer, sendImmediately);
+        const commandType = "restoreContext";
+        const dataView = serializeContextCommand(this, { type: commandType });
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView?.buffer, sendImmediately);
     }
     async selectFillColor(fillColorIndex, sendImmediately) {
         this.assertValidColorIndex(fillColorIndex);
@@ -16980,14 +17035,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "selectFillColor";
         const dataView = serializeContextCommand(this, {
-            type: "selectFillColor",
+            type: commandType,
             fillColorIndex,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectFillColor", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
@@ -16998,14 +17054,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "selectBackgroundColor";
         const dataView = serializeContextCommand(this, {
-            type: "selectBackgroundColor",
+            type: commandType,
             backgroundColorIndex,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectBackgroundColor", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async selectLineColor(lineColorIndex, sendImmediately) {
@@ -17016,14 +17073,69 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "selectLineColor";
         const dataView = serializeContextCommand(this, {
-            type: "selectLineColor",
+            type: commandType,
             lineColorIndex,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectLineColor", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setIgnoreFill(ignoreFill, sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            ignoreFill,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setIgnoreFill";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            ignoreFill,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setIgnoreLine(ignoreLine, sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            ignoreLine,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setIgnoreLine";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            ignoreLine,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setFillBackground(fillBackground, sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            fillBackground,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setFillBackground";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            fillBackground,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     assertValidLineWidth(lineWidth) {
@@ -17037,14 +17149,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "setLineWidth";
         const dataView = serializeContextCommand(this, {
-            type: "setLineWidth",
+            type: commandType,
             lineWidth,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setLineWidth", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setAlignment(alignmentDirection, alignment, sendImmediately) {
@@ -17082,13 +17195,14 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "resetAlignment";
         const dataView = serializeContextCommand(this, {
-            type: "resetAlignment",
+            type: commandType,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetAlignment", dataView?.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setRotation(rotation, isRadians, sendImmediately) {
@@ -17101,15 +17215,16 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "setRotation";
         const dataView = serializeContextCommand(this, {
-            type: "setRotation",
+            type: commandType,
             rotation,
             isRadians,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotation", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async clearRotation(sendImmediately) {
@@ -17119,11 +17234,12 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
-        const dataView = serializeContextCommand(this, { type: "clearRotation" });
+        const commandType = "clearRotation";
+        const dataView = serializeContextCommand(this, { type: commandType });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRotation", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSegmentStartCap(segmentStartCap, sendImmediately) {
@@ -17134,14 +17250,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "setSegmentStartCap";
         const dataView = serializeContextCommand(this, {
-            type: "setSegmentStartCap",
+            type: commandType,
             segmentStartCap,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentStartCap", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSegmentEndCap(segmentEndCap, sendImmediately) {
@@ -17152,14 +17269,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "setSegmentEndCap";
         const dataView = serializeContextCommand(this, {
-            type: "setSegmentEndCap",
+            type: commandType,
             segmentEndCap,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentEndCap", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSegmentCap(segmentCap, sendImmediately) {
@@ -17171,14 +17289,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "setSegmentCap";
         const dataView = serializeContextCommand(this, {
-            type: "setSegmentCap",
+            type: commandType,
             segmentCap,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentCap", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSegmentStartRadius(segmentStartRadius, sendImmediately) {
@@ -17188,14 +17307,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "setSegmentStartRadius";
         const dataView = serializeContextCommand(this, {
-            type: "setSegmentStartRadius",
+            type: commandType,
             segmentStartRadius,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentStartRadius", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSegmentEndRadius(segmentEndRadius, sendImmediately) {
@@ -17205,14 +17325,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "setSegmentEndRadius";
         const dataView = serializeContextCommand(this, {
-            type: "setSegmentEndRadius",
+            type: commandType,
             segmentEndRadius,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentEndRadius", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSegmentRadius(segmentRadius, sendImmediately) {
@@ -17223,14 +17344,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "setSegmentRadius";
         const dataView = serializeContextCommand(this, {
-            type: "setSegmentRadius",
+            type: commandType,
             segmentRadius,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentRadius", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setCrop(cropDirection, crop, sendImmediately) {
@@ -17276,8 +17398,9 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
-        const dataView = serializeContextCommand(this, { type: "clearCrop" });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearCrop", dataView?.buffer, sendImmediately);
+        const commandType = "clearCrop";
+        const dataView = serializeContextCommand(this, { type: commandType });
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setRotationCrop(cropDirection, crop, sendImmediately) {
@@ -17322,10 +17445,11 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "clearRotationCrop";
         const dataView = serializeContextCommand(this, {
-            type: "clearRotationCrop",
+            type: commandType,
         });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRotationCrop", dataView?.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately) {
@@ -17339,15 +17463,16 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "selectBitmapColor";
         const dataView = serializeContextCommand(this, {
-            type: "selectBitmapColor",
+            type: commandType,
             bitmapColorIndex,
             colorIndex,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectBitmapColor", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     get bitmapColorIndices() {
@@ -17370,14 +17495,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "selectBitmapColors";
         const dataView = serializeContextCommand(this, {
-            type: "selectBitmapColors",
+            type: commandType,
             bitmapColorPairs,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectBitmapColors", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setBitmapColor(bitmapColorIndex, color, sendImmediately) {
@@ -17436,10 +17562,11 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "resetBitmapScale";
         const dataView = serializeContextCommand(this, {
-            type: "resetBitmapScale",
+            type: commandType,
         });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetBitmapScale", dataView?.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately) {
@@ -17453,15 +17580,16 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "selectSpriteColor";
         const dataView = serializeContextCommand(this, {
-            type: "selectSpriteColor",
+            type: commandType,
             spriteColorIndex,
             colorIndex,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectSpriteColor", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     get spriteColorIndices() {
@@ -17484,14 +17612,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "selectSpriteColors";
         const dataView = serializeContextCommand(this, {
-            type: "selectSpriteColors",
+            type: commandType,
             spriteColorPairs,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectSpriteColors", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSpriteColor(spriteColorIndex, color, sendImmediately) {
@@ -17508,10 +17637,11 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "resetSpriteColors";
         const dataView = serializeContextCommand(this, {
-            type: "resetSpriteColors",
+            type: commandType,
         });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteColors", dataView?.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
@@ -17564,10 +17694,11 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "resetSpriteScale";
         const dataView = serializeContextCommand(this, {
-            type: "resetSpriteScale",
+            type: commandType,
         });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteScale", dataView?.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSpritesLineHeight(spritesLineHeight, sendImmediately) {
@@ -17578,14 +17709,15 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        const commandType = "setSpritesLineHeight";
         const dataView = serializeContextCommand(this, {
-            type: "setSpritesLineHeight",
+            type: commandType,
             spritesLineHeight,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSpritesLineHeight", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSpritesDirectionGeneric(direction, isOrthogonal, sendImmediately) {
@@ -17679,8 +17811,9 @@ class DisplayManager {
         await this.setSpritesAlignmentGeneric(spritesLineAlignment, true, sendImmediately);
     }
     async clearRect(x, y, width, height, sendImmediately) {
+        const commandType = "clearRect";
         const dataView = serializeContextCommand(this, {
-            type: "clearRect",
+            type: commandType,
             x,
             y,
             width,
@@ -17689,11 +17822,12 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRect", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawRect(offsetX, offsetY, width, height, sendImmediately) {
+        const commandType = "drawRect";
         const dataView = serializeContextCommand(this, {
-            type: "drawRect",
+            type: commandType,
             offsetX,
             offsetY,
             width,
@@ -17702,11 +17836,12 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRect", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately) {
+        const commandType = "drawRoundRect";
         const dataView = serializeContextCommand(this, {
-            type: "drawRoundRect",
+            type: commandType,
             offsetX,
             offsetY,
             width,
@@ -17716,11 +17851,12 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRoundRect", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawCircle(offsetX, offsetY, radius, sendImmediately) {
+        const commandType = "drawCircle";
         const dataView = serializeContextCommand(this, {
-            type: "drawCircle",
+            type: commandType,
             offsetX,
             offsetY,
             radius,
@@ -17728,11 +17864,12 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawCircle", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately) {
+        const commandType = "drawEllipse";
         const dataView = serializeContextCommand(this, {
-            type: "drawEllipse",
+            type: commandType,
             offsetX,
             offsetY,
             radiusX,
@@ -17741,11 +17878,12 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawEllipse", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately) {
+        const commandType = "drawRegularPolygon";
         const dataView = serializeContextCommand(this, {
-            type: "drawRegularPolygon",
+            type: commandType,
             offsetX,
             offsetY,
             radius,
@@ -17754,12 +17892,13 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRegularPolygon", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawPolygon(offsetX, offsetY, points, sendImmediately) {
         _console$j.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+        const commandType = "drawPolygon";
         const dataView = serializeContextCommand(this, {
-            type: "drawPolygon",
+            type: commandType,
             offsetX,
             offsetY,
             points,
@@ -17767,13 +17906,14 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawPolygon", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawWireframe(points, edges, sendImmediately) {
         assertValidWireframe(points, edges);
         const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
+        const commandType = "drawWireframe";
         const dataView = serializeContextCommand(this, {
-            type: "drawWireframe",
+            type: commandType,
             points: trimmedPoints,
             edges: trimmedEdges,
         });
@@ -17784,7 +17924,7 @@ class DisplayManager {
             _console$j.error(`wireframe data ${dataView.byteLength} too large (max ${__classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)})`);
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawWireframe", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawCurve(curveType, controlPoints, sendImmediately) {
         assertValidNumberOfControlPoints(curveType, controlPoints);
@@ -17801,7 +17941,7 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawCurves(curveType, controlPoints, sendImmediately) {
-        assertValidMinimumNumberOfControlPoints(curveType, controlPoints);
+        assertValidPathNumberOfControlPoints(curveType, controlPoints);
         const commandType = curveType == "cubic"
             ? "drawCubicBezierCurves"
             : "drawQuadraticBezierCurves";
@@ -17855,8 +17995,9 @@ class DisplayManager {
         await this._drawPath(true, curves, sendImmediately);
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
+        const commandType = "drawSegment";
         const dataView = serializeContextCommand(this, {
-            type: "drawSegment",
+            type: commandType,
             startX,
             startY,
             endX,
@@ -17865,12 +18006,13 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSegment", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawSegments(points, sendImmediately) {
         _console$j.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+        const commandType = "drawSegments";
         const dataView = serializeContextCommand(this, {
-            type: "drawSegments",
+            type: commandType,
             points,
         });
         if (!dataView) {
@@ -17887,11 +18029,12 @@ class DisplayManager {
             await this.drawSegments(secondHalf, sendImmediately);
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSegments", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawArc(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
+        const commandType = "drawArc";
         const dataView = serializeContextCommand(this, {
-            type: "drawArc",
+            type: commandType,
             offsetX,
             offsetY,
             radius,
@@ -17902,11 +18045,12 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArc", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
+        const commandType = "drawArcEllipse";
         const dataView = serializeContextCommand(this, {
-            type: "drawArcEllipse",
+            type: commandType,
             offsetX,
             offsetY,
             radiusX,
@@ -17918,7 +18062,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArcEllipse", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     assertValidNumberOfColors(numberOfColors) {
         _console$j.assertRangeWithError("numberOfColors", numberOfColors, 2, this.numberOfColors);
@@ -17932,8 +18076,9 @@ class DisplayManager {
     }
     async drawBitmap(offsetX, offsetY, bitmap, sendImmediately) {
         this.assertValidBitmap(bitmap, true);
+        const commandType = "drawBitmap";
         const dataView = serializeContextCommand(this, {
-            type: "drawBitmap",
+            type: commandType,
             offsetX,
             offsetY,
             bitmap,
@@ -17941,7 +18086,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawBitmap", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async imageToBitmap(image, width, height, numberOfColors) {
         return imageToBitmap(image, width, height, this.colors, this.bitmapColorIndices, numberOfColors);
@@ -18031,14 +18176,15 @@ class DisplayManager {
             return;
         }
         const spriteSheetIndex = this.spriteSheetIndices[spriteSheetName];
+        const commandType = "selectSpriteSheet";
         const dataView = serializeContextCommand(this, {
-            type: "selectSpriteSheet",
+            type: commandType,
             spriteSheetIndex,
         });
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectSpriteSheet", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
@@ -18046,8 +18192,9 @@ class DisplayManager {
         let spriteIndex = this.selectedSpriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
         _console$j.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
         spriteIndex = spriteIndex;
+        const commandType = "drawSprite";
         const dataView = serializeContextCommand(this, {
-            type: "drawSprite",
+            type: commandType,
             offsetX,
             offsetY,
             spriteIndex,
@@ -18056,7 +18203,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSprite", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
         const spriteSerializedLines = [];
@@ -18081,9 +18228,10 @@ class DisplayManager {
             });
             spriteSerializedLines.push(serializedLine);
         });
-        console.log("spriteSerializedLines", spriteSerializedLines);
+        _console$j.log("spriteSerializedLines", spriteSerializedLines);
+        const commandType = "drawSprites";
         const dataView = serializeContextCommand(this, {
-            type: "drawSprites",
+            type: commandType,
             offsetX,
             offsetY,
             spriteSerializedLines: spriteSerializedLines,
@@ -18091,7 +18239,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSprites", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawSpritesString(offsetX, offsetY, string, requireAll, sendImmediately) {
         const spriteLines = this.stringToSpriteLines(string, requireAll);
@@ -21408,17 +21556,29 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").clearRect;
     }
-    get selectDisplayFillColor() {
-        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectFillColor;
-    }
     get selectDisplayBackgroundColor() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").selectBackgroundColor;
     }
+    get selectDisplayFillColor() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectFillColor;
+    }
     get selectDisplayLineColor() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").selectLineColor;
+    }
+    get setDisplayIgnoreFill() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setIgnoreFill;
+    }
+    get setDisplayIgnoreLine() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setIgnoreLine;
+    }
+    get setDisplayFillBackground() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setFillBackground;
     }
     get setDisplayLineWidth() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
@@ -21923,7 +22083,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_contextStack, _DisplayCanvasHelper_saveContext, _DisplayCanvasHelper_restoreContext, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getRegularPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getPointsBoundingBox, _DisplayCanvasHelper_alignBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getWireframeBoundingBox, _DisplayCanvasHelper_drawWireframeToCanvas, _DisplayCanvasHelper_drawCurveToCanvas, _DisplayCanvasHelper_drawCurvesToCanvas, _DisplayCanvasHelper_drawPathToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_getSegmentsBoundingBox, _DisplayCanvasHelper__getSegmentsBoundingBox, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_drawSpritesToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_contextStack, _DisplayCanvasHelper_saveContext, _DisplayCanvasHelper_restoreContext, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_ignoreCanvasContextStyle, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getRegularPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getPointsBoundingBox, _DisplayCanvasHelper_alignBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getWireframeBoundingBox, _DisplayCanvasHelper_drawWireframeToCanvas, _DisplayCanvasHelper_drawCurveToCanvas, _DisplayCanvasHelper_drawCurvesToCanvas, _DisplayCanvasHelper_drawPathToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_getSegmentsBoundingBox, _DisplayCanvasHelper__getSegmentsBoundingBox, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_drawSpritesToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
@@ -21970,6 +22130,7 @@ class DisplayCanvasHelper {
         _DisplayCanvasHelper_isReady.set(this, true);
         _DisplayCanvasHelper_contextStack.set(this, []);
         _DisplayCanvasHelper_clearBoundingBoxOnDraw.set(this, true);
+        _DisplayCanvasHelper_ignoreCanvasContextStyle.set(this, "rgba(0,0,0,0)");
         _DisplayCanvasHelper_bitmapCanvas.set(this, document.createElement("canvas"));
         _DisplayCanvasHelper_bitmapContext.set(this, void 0);
         _DisplayCanvasHelper_spriteSheets.set(this, {});
@@ -22207,16 +22368,6 @@ class DisplayCanvasHelper {
             await this.deviceDisplayManager.restoreContext(sendImmediately);
         }
     }
-    async selectFillColor(fillColorIndex, sendImmediately) {
-        this.assertValidColorIndex(fillColorIndex);
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
-            fillColorIndex,
-        });
-        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.deviceDisplayManager.selectFillColor(fillColorIndex, sendImmediately);
-        }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
-    }
     async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
         this.assertValidColorIndex(backgroundColorIndex);
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
@@ -22227,6 +22378,16 @@ class DisplayCanvasHelper {
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
+    async selectFillColor(fillColorIndex, sendImmediately) {
+        this.assertValidColorIndex(fillColorIndex);
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            fillColorIndex,
+        });
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.deviceDisplayManager.selectFillColor(fillColorIndex, sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
     async selectLineColor(lineColorIndex, sendImmediately) {
         this.assertValidColorIndex(lineColorIndex);
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
@@ -22234,6 +22395,33 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.selectLineColor(lineColorIndex, sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    async setIgnoreFill(ignoreFill, sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            ignoreFill,
+        });
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.deviceDisplayManager.setIgnoreFill(ignoreFill, sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    async setIgnoreLine(ignoreLine, sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            ignoreLine,
+        });
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.deviceDisplayManager.setIgnoreLine(ignoreLine, sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    async setFillBackground(fillBackground, sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            fillBackground,
+        });
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.deviceDisplayManager.setFillBackground(fillBackground, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
@@ -22678,7 +22866,8 @@ class DisplayCanvasHelper {
         await this.setSpritesAlignmentGeneric(spritesLineAlignment, true, sendImmediately);
     }
     async clearRect(x, y, width, height, sendImmediately) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearRectToCanvas).call(this, x, y, width, height));
+        const contextState = structuredClone(this.contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearRectToCanvas).call(this, x, y, width, height, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.clearRect(x, y, width, height, sendImmediately);
         }
@@ -22747,7 +22936,7 @@ class DisplayCanvasHelper {
         }
     }
     async drawCurves(curveType, controlPoints, sendImmediately) {
-        assertValidMinimumNumberOfControlPoints(curveType, controlPoints);
+        assertValidPathNumberOfControlPoints(curveType, controlPoints);
         const contextState = structuredClone(this.contextState);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawCurvesToCanvas).call(this, curveType, controlPoints, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
@@ -23003,7 +23192,7 @@ class DisplayCanvasHelper {
         return fontToSpriteSheet(this, font, fontSize, spriteSheetName);
     }
 }
-_DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_applyTransparency = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_contextStateHelper = new WeakMap(), _DisplayCanvasHelper_interval = new WeakMap(), _DisplayCanvasHelper_isReady = new WeakMap(), _DisplayCanvasHelper_contextStack = new WeakMap(), _DisplayCanvasHelper_clearBoundingBoxOnDraw = new WeakMap(), _DisplayCanvasHelper_bitmapCanvas = new WeakMap(), _DisplayCanvasHelper_bitmapContext = new WeakMap(), _DisplayCanvasHelper_spriteSheets = new WeakMap(), _DisplayCanvasHelper_spriteSheetIndices = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_ignoreDevice = new WeakMap(), _DisplayCanvasHelper_useSpriteColorIndices = new WeakMap(), _DisplayCanvasHelper_spriteContextStack = new WeakMap(), _DisplayCanvasHelper_spriteStack = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
+_DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_applyTransparency = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_contextStateHelper = new WeakMap(), _DisplayCanvasHelper_interval = new WeakMap(), _DisplayCanvasHelper_isReady = new WeakMap(), _DisplayCanvasHelper_contextStack = new WeakMap(), _DisplayCanvasHelper_clearBoundingBoxOnDraw = new WeakMap(), _DisplayCanvasHelper_ignoreCanvasContextStyle = new WeakMap(), _DisplayCanvasHelper_bitmapCanvas = new WeakMap(), _DisplayCanvasHelper_bitmapContext = new WeakMap(), _DisplayCanvasHelper_spriteSheets = new WeakMap(), _DisplayCanvasHelper_spriteSheetIndices = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_ignoreDevice = new WeakMap(), _DisplayCanvasHelper_useSpriteColorIndices = new WeakMap(), _DisplayCanvasHelper_spriteContextStack = new WeakMap(), _DisplayCanvasHelper_spriteStack = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_eventDispatcher, "f").dispatchEvent;
 }, _DisplayCanvasHelper_updateCanvas = function _DisplayCanvasHelper_updateCanvas() {
     if (!this.canvas) {
@@ -23148,9 +23337,12 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         return;
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(contextState);
-}, _DisplayCanvasHelper_clearRectToCanvas = function _DisplayCanvasHelper_clearRectToCanvas(x, y, width, height) {
+}, _DisplayCanvasHelper_clearRectToCanvas = function _DisplayCanvasHelper_clearRectToCanvas(x, y, width, height, { backgroundColorIndex, spriteColorIndices, fillBackground, }) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, 0);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_useSpriteColorIndices, "f")) {
+        backgroundColorIndex = spriteColorIndices[backgroundColorIndex];
+    }
+    this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, fillBackground ? backgroundColorIndex : 0);
     this.context.fillRect(x, y, width, height);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_save = function _DisplayCanvasHelper_save() {
@@ -23222,8 +23414,8 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     offsetBoundingBox.x += offsetX;
     offsetBoundingBox.y += offsetY;
     return offsetBoundingBox;
-}, _DisplayCanvasHelper_clearBoundingBox = function _DisplayCanvasHelper_clearBoundingBox({ x, y, width, height }) {
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearRectToCanvas).call(this, x, y, width, height);
+}, _DisplayCanvasHelper_clearBoundingBox = function _DisplayCanvasHelper_clearBoundingBox({ x, y, width, height }, contextState) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearRectToCanvas).call(this, x, y, width, height, contextState);
 }, _DisplayCanvasHelper_getOuterPadding = function _DisplayCanvasHelper_getOuterPadding(lineWidth) {
     return Math.ceil(lineWidth / 2);
 }, _DisplayCanvasHelper_getRectBoundingBox = function _DisplayCanvasHelper_getRectBoundingBox(width, height, { lineWidth, verticalAlignment, horizontalAlignment }, applyLineWidth = true) {
@@ -23287,13 +23479,17 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         (includeBrightness ? __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_brightnessOpacity_get) : 1));
 }, _DisplayCanvasHelper_colorIndexToRgbString = function _DisplayCanvasHelper_colorIndexToRgbString(colorIndex) {
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_hexToRgbStringWithOpacity).call(this, this.colors[colorIndex], __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getColorOpacity).call(this, colorIndex));
-}, _DisplayCanvasHelper_updateContext = function _DisplayCanvasHelper_updateContext({ lineWidth, fillColorIndex, lineColorIndex, spriteColorIndices, }) {
+}, _DisplayCanvasHelper_updateContext = function _DisplayCanvasHelper_updateContext({ lineWidth, fillColorIndex, lineColorIndex, spriteColorIndices, ignoreFill, ignoreLine, }) {
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_useSpriteColorIndices, "f")) {
         fillColorIndex = spriteColorIndices[fillColorIndex];
         lineColorIndex = spriteColorIndices[lineColorIndex];
     }
-    this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, fillColorIndex);
-    this.context.strokeStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, lineColorIndex);
+    this.context.fillStyle = ignoreFill
+        ? __classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreCanvasContextStyle, "f")
+        : __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, fillColorIndex);
+    this.context.strokeStyle = ignoreLine
+        ? __classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreCanvasContextStyle, "f")
+        : __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, lineColorIndex);
     this.context.lineWidth = lineWidth;
 }, _DisplayCanvasHelper_drawRectToCanvas = function _DisplayCanvasHelper_drawRectToCanvas(offsetX, offsetY, width, height, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
@@ -23303,7 +23499,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox, contextState);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
@@ -23325,7 +23521,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox, contextState);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
@@ -23363,7 +23559,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox, contextState);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
@@ -23472,7 +23668,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox, contextState);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
@@ -23507,7 +23703,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getWireframeBoundingBox).call(this, points, edges, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box, contextState);
     }
     __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, false, "f");
     edges.forEach((edge) => {
@@ -23562,7 +23758,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, startX, startY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f") && clearBoundingBox) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox, contextState);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_translateContext).call(this, startX, startY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateContext).call(this, rotation);
@@ -23668,7 +23864,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getSegmentsBoundingBox).call(this, points, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box, contextState);
     }
     __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, false, "f");
     points.forEach((point, index) => {
@@ -23696,7 +23892,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox, contextState);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
@@ -23729,7 +23925,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox, contextState);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
@@ -24057,7 +24253,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
         if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox, contextState);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);

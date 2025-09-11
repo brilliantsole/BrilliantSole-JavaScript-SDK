@@ -1279,7 +1279,7 @@ const draw = async () => {
     return;
   }
 
-  if (true) {
+  if (false) {
     await displayCanvasHelper.drawSegments(
       generateSineSegments(
         90,
@@ -2243,12 +2243,16 @@ displayCanvasHelper.selectBitmapColor(1, 1);
 displayCanvasHelper.selectBitmapColor(2, 2);
 displayCanvasHelper.setBitmapScale(10);
 displayCanvasHelper.setRotation(0);
-displayCanvasHelper.setLineWidth(3);
+displayCanvasHelper.setLineWidth(10);
+displayCanvasHelper.setIgnoreFill(false);
+displayCanvasHelper.setIgnoreLine(false);
+displayCanvasHelper.setFillBackground(false);
+displayCanvasHelper.selectBackgroundColor(3);
 displayCanvasHelper.selectFillColor(1);
 displayCanvasHelper.selectLineColor(2);
 //displayCanvasHelper.setRotationCropTop(10);
 //displayCanvasHelper.setCropTop(10);
-displayCanvasHelper.setVerticalAlignment("start");
+// displayCanvasHelper.setVerticalAlignment("start");
 displayCanvasHelper.setHorizontalAlignment("center");
 // displayCanvasHelper.drawRoundRect(100, 100, 100, 100, 20);
 displayCanvasHelper.setSegmentStartCap("round");

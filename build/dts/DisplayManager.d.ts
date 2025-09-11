@@ -134,7 +134,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -148,7 +148,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushContextCommands(): Promise<void>;
@@ -165,6 +165,9 @@ declare class DisplayManager implements DisplayManagerInterface {
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectBackgroundColor(backgroundColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    setIgnoreFill(ignoreFill: boolean, sendImmediately?: boolean): Promise<void>;
+    setIgnoreLine(ignoreLine: boolean, sendImmediately?: boolean): Promise<void>;
+    setFillBackground(fillBackground: boolean, sendImmediately?: boolean): Promise<void>;
     assertValidLineWidth(lineWidth: number): void;
     setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
     setAlignment(alignmentDirection: DisplayAlignmentDirection, alignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;

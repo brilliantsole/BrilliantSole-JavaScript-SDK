@@ -77,7 +77,7 @@ import {
   assertValidWireframe,
   trimWireframe,
   assertValidNumberOfControlPoints,
-  assertValidMinimumNumberOfControlPoints,
+  assertValidPathNumberOfControlPoints,
   assertValidPath,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
@@ -781,20 +781,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.deviceDisplayManager!.restoreContext(sendImmediately);
     }
   }
-  async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
-    this.assertValidColorIndex(fillColorIndex);
-    const differences = this.#contextStateHelper.update({
-      fillColorIndex,
-    });
-
-    if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.selectFillColor(
-        fillColorIndex,
-        sendImmediately
-      );
-    }
-    this.#onContextStateUpdate(differences);
-  }
   async selectBackgroundColor(
     backgroundColorIndex: number,
     sendImmediately?: boolean
@@ -803,10 +789,22 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       backgroundColorIndex,
     });
-
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.selectBackgroundColor(
         backgroundColorIndex,
+        sendImmediately
+      );
+    }
+    this.#onContextStateUpdate(differences);
+  }
+  async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
+    this.assertValidColorIndex(fillColorIndex);
+    const differences = this.#contextStateHelper.update({
+      fillColorIndex,
+    });
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.selectFillColor(
+        fillColorIndex,
         sendImmediately
       );
     }
@@ -821,6 +819,44 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.selectLineColor(
         lineColorIndex,
+        sendImmediately
+      );
+    }
+    this.#onContextStateUpdate(differences);
+  }
+  async setIgnoreFill(ignoreFill: boolean, sendImmediately?: boolean) {
+    const differences = this.#contextStateHelper.update({
+      ignoreFill,
+    });
+
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.setIgnoreFill(
+        ignoreFill,
+        sendImmediately
+      );
+    }
+    this.#onContextStateUpdate(differences);
+  }
+  async setIgnoreLine(ignoreLine: boolean, sendImmediately?: boolean) {
+    const differences = this.#contextStateHelper.update({
+      ignoreLine,
+    });
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.setIgnoreLine(
+        ignoreLine,
+        sendImmediately
+      );
+    }
+    this.#onContextStateUpdate(differences);
+  }
+  async setFillBackground(fillBackground: boolean, sendImmediately?: boolean) {
+    const differences = this.#contextStateHelper.update({
+      fillBackground,
+    });
+
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.setFillBackground(
+        fillBackground,
         sendImmediately
       );
     }
@@ -1586,10 +1622,25 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
   }
 
-  #clearRectToCanvas(x: number, y: number, width: number, height: number) {
+  #clearRectToCanvas(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    {
+      backgroundColorIndex,
+      spriteColorIndices,
+      fillBackground,
+    }: DisplayContextState
+  ) {
     this.#save();
+    if (this.#useSpriteColorIndices) {
+      backgroundColorIndex = spriteColorIndices[backgroundColorIndex];
+    }
     //this.context.resetTransform();
-    this.context.fillStyle = this.#colorIndexToRgbString(0);
+    this.context.fillStyle = this.#colorIndexToRgbString(
+      fillBackground ? backgroundColorIndex : 0
+    );
     //this.context.fillStyle = "red"; // remove when done debugigng
     this.context.fillRect(x, y, width, height);
     this.#restore();
@@ -1601,8 +1652,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     height: number,
     sendImmediately?: boolean
   ) {
+    const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
-      this.#clearRectToCanvas(x, y, width, height)
+      this.#clearRectToCanvas(x, y, width, height, contextState)
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.clearRect(
@@ -1710,8 +1762,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return offsetBoundingBox;
   }
   #clearBoundingBoxOnDraw = true;
-  #clearBoundingBox({ x, y, width, height }: DisplayBoundingBox) {
-    this.#clearRectToCanvas(x, y, width, height);
+  #clearBoundingBox(
+    { x, y, width, height }: DisplayBoundingBox,
+    contextState: DisplayContextState
+  ) {
+    this.#clearRectToCanvas(x, y, width, height, contextState);
   }
   #getOuterPadding(lineWidth: number) {
     return Math.ceil(lineWidth / 2);
@@ -1824,18 +1879,25 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#getColorOpacity(colorIndex)
     );
   }
+  #ignoreCanvasContextStyle = "rgba(0,0,0,0)";
   #updateContext({
     lineWidth,
     fillColorIndex,
     lineColorIndex,
     spriteColorIndices,
+    ignoreFill,
+    ignoreLine,
   }: DisplayContextState) {
     if (this.#useSpriteColorIndices) {
       fillColorIndex = spriteColorIndices[fillColorIndex];
       lineColorIndex = spriteColorIndices[lineColorIndex];
     }
-    this.context.fillStyle = this.#colorIndexToRgbString(fillColorIndex);
-    this.context.strokeStyle = this.#colorIndexToRgbString(lineColorIndex);
+    this.context.fillStyle = ignoreFill
+      ? this.#ignoreCanvasContextStyle
+      : this.#colorIndexToRgbString(fillColorIndex);
+    this.context.strokeStyle = ignoreLine
+      ? this.#ignoreCanvasContextStyle
+      : this.#colorIndexToRgbString(lineColorIndex);
     this.context.lineWidth = lineWidth;
   }
   #drawRectToCanvas(
@@ -1860,7 +1922,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     this.#applyClip(rotatedBox, contextState);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(rotatedBox);
+      this.#clearBoundingBox(rotatedBox, contextState);
     }
     this.#transformContext(offsetX, offsetY, contextState.rotation);
     this.#applyRotationClip(localBox, contextState);
@@ -1922,7 +1984,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     this.#applyClip(rotatedBox, contextState);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(rotatedBox);
+      this.#clearBoundingBox(rotatedBox, contextState);
     }
     this.#transformContext(offsetX, offsetY, contextState.rotation);
     this.#applyRotationClip(localBox, contextState);
@@ -2102,7 +2164,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     this.#applyClip(rotatedBox, contextState);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(rotatedBox);
+      this.#clearBoundingBox(rotatedBox, contextState);
     }
     this.#transformContext(offsetX, offsetY, contextState.rotation);
     this.#applyRotationClip(localBox, contextState);
@@ -2274,7 +2336,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     this.#applyClip(rotatedBox, contextState);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(rotatedBox);
+      this.#clearBoundingBox(rotatedBox, contextState);
     }
     this.#transformContext(offsetX, offsetY, contextState.rotation);
     this.#applyRotationClip(localBox, contextState);
@@ -2344,7 +2406,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#save();
     const box = this.#getWireframeBoundingBox(points, edges, contextState);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
+      this.#clearBoundingBox(box, contextState);
     }
 
     this.#clearBoundingBoxOnDraw = false;
@@ -2423,7 +2485,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     controlPoints: Vector2[],
     sendImmediately?: boolean
   ) {
-    assertValidMinimumNumberOfControlPoints(curveType, controlPoints);
+    assertValidPathNumberOfControlPoints(curveType, controlPoints);
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawCurvesToCanvas(curveType, controlPoints, contextState)
@@ -2594,7 +2656,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const rotatedBox = this.#offsetBoundingBox(rotatedLocalBox, startX, startY);
     this.#applyClip(rotatedBox, contextState);
     if (this.#clearBoundingBoxOnDraw && clearBoundingBox) {
-      this.#clearBoundingBox(rotatedBox);
+      this.#clearBoundingBox(rotatedBox, contextState);
     }
     this.#translateContext(startX, startY);
     this.#rotateContext(rotation);
@@ -2760,7 +2822,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#save();
     const box = this.#getSegmentsBoundingBox(points, contextState);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
+      this.#clearBoundingBox(box, contextState);
     }
 
     this.#clearBoundingBoxOnDraw = false;
@@ -2888,7 +2950,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     this.#applyClip(rotatedBox, contextState);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(rotatedBox);
+      this.#clearBoundingBox(rotatedBox, contextState);
     }
     this.#transformContext(offsetX, offsetY, contextState.rotation);
     this.#applyRotationClip(localBox, contextState);
@@ -3009,7 +3071,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     this.#applyClip(rotatedBox, contextState);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(rotatedBox);
+      this.#clearBoundingBox(rotatedBox, contextState);
     }
     this.#transformContext(offsetX, offsetY, contextState.rotation);
     this.#applyRotationClip(localBox, contextState);
@@ -3730,7 +3792,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
       this.#applyClip(rotatedBox, contextState);
       if (this.#clearBoundingBoxOnDraw) {
-        this.#clearBoundingBox(rotatedBox);
+        this.#clearBoundingBox(rotatedBox, contextState);
       }
       this.#transformContext(offsetX, offsetY, contextState.rotation);
       this.#applyRotationClip(localBox, contextState);

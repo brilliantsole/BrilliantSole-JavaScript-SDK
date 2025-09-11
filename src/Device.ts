@@ -1572,17 +1572,29 @@ class Device {
     return this.#displayManager.clearRect;
   }
 
-  get selectDisplayFillColor() {
-    this.#assertDisplayIsAvailable();
-    return this.#displayManager.selectFillColor;
-  }
   get selectDisplayBackgroundColor() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.selectBackgroundColor;
   }
+  get selectDisplayFillColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectFillColor;
+  }
   get selectDisplayLineColor() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.selectLineColor;
+  }
+  get setDisplayIgnoreFill() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setIgnoreFill;
+  }
+  get setDisplayIgnoreLine() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setIgnoreLine;
+  }
+  get setDisplayFillBackground() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setFillBackground;
   }
   get setDisplayLineWidth() {
     this.#assertDisplayIsAvailable();

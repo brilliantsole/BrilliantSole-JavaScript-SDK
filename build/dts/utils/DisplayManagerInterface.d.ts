@@ -42,6 +42,9 @@ export interface DisplayManagerInterface {
     selectBackgroundColor(backgroundColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;
     setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
+    setIgnoreFill(ignoreFill: boolean, sendImmediately?: boolean): Promise<void>;
+    setIgnoreLine(ignoreLine: boolean, sendImmediately?: boolean): Promise<void>;
+    setFillBackground(fillBackground: boolean, sendImmediately?: boolean): Promise<void>;
     setAlignment(alignmentDirection: DisplayAlignmentDirection, alignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
     setHorizontalAlignment(horizontalAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
     setVerticalAlignment(verticalAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
