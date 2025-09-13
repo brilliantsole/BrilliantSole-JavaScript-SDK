@@ -3393,7 +3393,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     command: DisplayContextCommand,
     contextState: DisplayContextState
   ) {
-    //_console.log("runSpriteCommand", command);
+    _console.log("runSpriteCommand", command);
     if (command.type == "drawSprite") {
       const spriteSheet = this.spriteSheets[contextState.spriteSheetName!];
       const sprite = spriteSheet.sprites[command.spriteIndex];

@@ -24165,6 +24165,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").drawImage(__classPrivateFieldGet(this, _DisplayCanvasHelper_bitmapCanvas, "f"), startX, startY, width, height);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_runSpriteCommand = function _DisplayCanvasHelper_runSpriteCommand(command, contextState) {
+    _console$6.log("runSpriteCommand", command);
     if (command.type == "drawSprite") {
         const spriteSheet = this.spriteSheets[contextState.spriteSheetName];
         const sprite = spriteSheet.sprites[command.spriteIndex];

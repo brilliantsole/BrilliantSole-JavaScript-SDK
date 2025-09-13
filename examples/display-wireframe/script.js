@@ -173,9 +173,13 @@ device.addEventListener("fileTransferStatus", () => {
 const scene = document.getElementById("scene");
 window.scene = scene;
 const entitiesToDraw = ["a-box", "a-plane", "a-sphere", "a-cylinder"];
-// entitiesToDraw.splice(1, 100);
-window.entitiesToDraw = entitiesToDraw;
-const drawScene = (scene) => {
+/** @type {BS.DisplaySpriteSheet} */
+const spriteSheet = {
+  name: "scene",
+  sprites: [],
+};
+let drawWireframeAsSprite = true;
+const drawScene = async (scene) => {
   const entities = Array.from(scene.querySelectorAll(entitiesToDraw.join(",")));
   let wireframe;
   for (let i in entities) {
@@ -187,13 +191,23 @@ const drawScene = (scene) => {
       wireframe = BS.mergeWireframes(wireframe, _wireframe);
     }
   }
-  console.log("wireframe", wireframe);
-  try {
-    displayCanvasHelper.drawWireframe(wireframe);
-  } catch (error) {
-    console.error(error);
+  if (drawWireframeAsSprite) {
+    spriteSheet.sprites.push({
+      name: "wireframe",
+      commands: [
+        { type: "selectFillColor", fillColorIndex: 1 },
+        { type: "setSegmentRadius", segmentRadius: 2 },
+        { type: "drawWireframe", wireframe },
+      ],
+    });
+    await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
+    await displayCanvasHelper.selectSpriteSheet("scene");
+    await displayCanvasHelper.selectSpriteColor(1, 1);
+    await displayCanvasHelper.drawSprite(0, 0, "wireframe");
+  } else {
+    await displayCanvasHelper.drawWireframe(wireframe);
   }
-  displayCanvasHelper.show();
+  await displayCanvasHelper.show();
 };
 window.drawScene = drawScene;
 function getWireframeEdges(entity) {
@@ -336,7 +350,7 @@ function getWireframeCulled(entity) {
 function getWireframe(entity) {
   const culledWireframe = getWireframeCulled(entity);
   const edgesWireframe = getWireframeEdges(entity);
-  console.log(culledWireframe.points, edgesWireframe.points);
+  // console.log(culledWireframe.points, edgesWireframe.points);
   return BS.intersectWireframes(culledWireframe, edgesWireframe);
 }
 window.getWireframe = getWireframe;
