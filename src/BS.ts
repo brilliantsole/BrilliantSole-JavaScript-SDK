@@ -113,6 +113,8 @@ export {
   DisplayBitmap,
   DisplaySpriteColorPair,
   DisplayWireframeEdge,
+  DisplayBezierCurveType,
+  DisplayBezierCurveTypes,
 } from "./DisplayManager.ts";
 
 export {
@@ -137,6 +139,7 @@ export {
   maxDisplayScale,
   DisplayColorRGB,
   pixelDepthToNumberOfColors,
+  displayCurveTypeToNumberOfControlPoints,
 } from "./utils/DisplayUtils.ts";
 
 export {

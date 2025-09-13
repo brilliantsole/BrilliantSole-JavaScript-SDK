@@ -343,6 +343,11 @@
         <input type="range" min="0" max="200" step="1" value="0" />
       </label>
 
+      <label id="drawSpriteBackgroundColor" class="verticalLabel">
+        <span>background color (<span class="value">0</span>)</span>
+        <input type="range" min="0" max="16" step="1" value="0" />
+      </label>
+
       <label id="drawSpritesLineHeight" class="verticalLabel">
         <span>sprites line height (<span class="value">0</span>px)</span>
         <input type="range" min="0" max="200" step="1" value="0" />
@@ -532,6 +537,11 @@
               <span>numberOfEdges</span>
               <input type="range" min="1" max="20" step="1" value="1" />
               <span class="value">1</span>
+            </label>
+            <label class="numberOfCurves" hidden>
+              <span>numberOfCurves</span>
+              <input type="range" min="0" max="10" step="1" value="0" />
+              <span class="value">0</span>
             </label>
             <label class="bitmapWidth" hidden>
               <span>bitmapWidth</span>
@@ -861,6 +871,16 @@
             <label class="endIndex verticalLabel">
               <span>endIndex (<span class="value">1</span>)</span>
               <input type="range" min="0" max="50" step="1" value="1" />
+            </label>
+          </div>
+        </template>
+        <template id="curveTemplate">
+          <div class="curve" hidden>
+            <label class="type verticalLabel">
+              <span>type (<span class="value"></span>)</span>
+              <select>
+                <optgroup label="curve type"></optgroup>
+              </select>
             </label>
           </div>
         </template>

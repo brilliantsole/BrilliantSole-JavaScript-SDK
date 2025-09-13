@@ -903,8 +903,11 @@ let draw = async () => {
     spritesLineAlignment,
     spritesDirection,
     spritesLineDirection,
+    backgroundColorIndex,
   } = drawSpriteParams;
 
+  await displayCanvasHelper.selectBackgroundColor(backgroundColorIndex);
+  await displayCanvasHelper.setFillBackground(backgroundColorIndex != 0);
   await displayCanvasHelper.setRotation(rotation);
   await displayCanvasHelper.setSpriteScaleX(scaleX);
   await displayCanvasHelper.setSpriteScaleY(scaleY);
@@ -1033,6 +1036,8 @@ const drawSpriteParams = {
   y: 50,
 
   rotation: 0,
+
+  backgroundColorIndex: 0,
 
   verticalAlignment: "center",
   horizontalAlignment: "center",
@@ -1338,6 +1343,23 @@ const setSpriteDrawRotationCropLeft = (drawSpriteRotationCropLeft) => {
 };
 drawSpriteRotationCropLeftInput.addEventListener("input", () => {
   setSpriteDrawRotationCropLeft(Number(drawSpriteRotationCropLeftInput.value));
+});
+
+const drawSpriteBackgroundColorContainer = document.getElementById(
+  "drawSpriteBackgroundColor"
+);
+const drawSpriteBackgroundColorInput =
+  drawSpriteBackgroundColorContainer.querySelector("input");
+const drawSpriteBackgroundColorSpan =
+  drawSpriteBackgroundColorContainer.querySelector(".value");
+const setSpriteDrawBackgroundColor = (drawSpriteBackgroundColor) => {
+  drawSpriteBackgroundColorInput.value = drawSpriteBackgroundColor;
+  drawSpriteBackgroundColorSpan.innerText = drawSpriteBackgroundColor;
+  drawSpriteParams.backgroundColorIndex = drawSpriteBackgroundColor;
+  draw();
+};
+drawSpriteBackgroundColorInput.addEventListener("input", () => {
+  setSpriteDrawBackgroundColor(Number(drawSpriteBackgroundColorInput.value));
 });
 
 const drawSpritesLineHeightContainer = document.getElementById(
@@ -2071,6 +2093,8 @@ const pointTemplate = document.getElementById("pointTemplate");
 /** @type {HTMLTemplateElement} */
 const edgeTemplate = document.getElementById("edgeTemplate");
 /** @type {HTMLTemplateElement} */
+const curveTemplate = document.getElementById("curveTemplate");
+/** @type {HTMLTemplateElement} */
 const bitmapColorPairTemplate = document.getElementById(
   "bitmapColorPairTemplate"
 );
@@ -2556,6 +2580,171 @@ const updateSpriteCommands = () => {
 
           spriteCommandContainer.appendChild(pointContainer);
         });
+      }
+
+      const includeCurves = "curves" in command;
+      if (includeCurves) {
+        const numberOfCurvesContainer =
+          spriteCommandContainer.querySelector(".numberOfCurves");
+        const numberOfCurvesInput =
+          numberOfCurvesContainer.querySelector("input");
+        numberOfCurvesInput.value = command.curves.length;
+        const numberOfCurvesSpan =
+          numberOfCurvesContainer.querySelector(".value");
+        numberOfCurvesSpan.innerText = command.curves.length;
+        numberOfCurvesContainer.removeAttribute("hidden");
+        numberOfCurvesContainer.addEventListener("input", () => {
+          const numberOfCurves = Number(numberOfCurvesInput.value);
+          //console.log({ numberOfCurves });
+          for (let curveIndex = 0; curveIndex < numberOfCurves; curveIndex++) {
+            let curve = command.curves[curveIndex];
+            if (!curve) {
+              const curve = {
+                type: "quadratic",
+                controlPoints: [
+                  { x: -50, y: 0 },
+                  { x: 0, y: 50 },
+                  { x: 50, y: 0 },
+                ],
+              };
+              if (curveIndex != 0) {
+                curve.controlPoints = curve.controlPoints.slice(0, -1);
+              }
+              command.curves[curveIndex] = curve;
+            }
+          }
+          command.curves.length = numberOfCurves;
+          curveContainers.forEach((curveContainer, index) => {
+            // console.log("curveContainer", curveContainer);
+            curveContainer.hidden = index >= command.curves.length;
+          });
+          numberOfCurvesSpan.innerText = command.curves.length;
+          draw();
+          updateSpriteCommands();
+        });
+
+        const curveContainers = [];
+        for (
+          let curveIndex = 0;
+          curveIndex < numberOfCurvesInput.max;
+          curveIndex++
+        ) {
+          const curveContainer = curveTemplate.content
+            .cloneNode(true)
+            .querySelector(".curve");
+
+          const curve = command.curves[curveIndex];
+          curveContainer.hidden = !Boolean(curve);
+
+          const typeContainer = curveContainer.querySelector(".type");
+          const typeSelect = typeContainer.querySelector("select");
+          const typeOptgroup = typeSelect.querySelector("optgroup");
+          BS.DisplayBezierCurveTypes.forEach((curveType) => {
+            typeOptgroup.appendChild(new Option(curveType));
+          });
+          const typeSpan = typeContainer.querySelector(".value");
+          if (curve) {
+            typeSelect.value = curve.type;
+            typeSpan.innerText = curve.type;
+          }
+          typeContainer.removeAttribute("hidden");
+          typeContainer.addEventListener("input", () => {
+            const curve = command.curves[curveIndex];
+            curve.type = typeSelect.value;
+            let numberOfControlPoints =
+              BS.displayCurveTypeToNumberOfControlPoints[curve.type];
+            if (curveIndex != 0) {
+              numberOfControlPoints -= 1;
+            }
+            curve.controlPoints.length = numberOfControlPoints;
+            controlPointContainers.forEach((controlPointContainer) => {
+              controlPointContainer.hidden = true;
+            });
+            controlPointContainers.length = numberOfControlPoints;
+            for (
+              let controlPointIndex = 0;
+              controlPointIndex < numberOfControlPoints;
+              controlPointIndex++
+            ) {
+              let controlPoint = curve.controlPoints[controlPointIndex];
+              if (!controlPoint) {
+                controlPoint = { x: 0, y: 0 };
+                curve.controlPoints[controlPointIndex] = controlPoint;
+              }
+
+              const controlPointContainer =
+                controlPointContainers[controlPointIndex];
+              if (controlPointContainer) {
+                controlPointContainer.hidden = false;
+              } else {
+                addControlPointContainer(controlPointIndex);
+              }
+            }
+            typeSpan.innerText = curve.type;
+            draw();
+          });
+
+          const controlPointContainers = [];
+          const addControlPointContainer = (controlPointIndex) => {
+            const controlPointContainer = pointTemplate.content
+              .cloneNode(true)
+              .querySelector(".point");
+            controlPointContainers.push(controlPointContainer);
+
+            const curve = command.curves[curveIndex];
+            const controlPoint = curve.controlPoints[controlPointIndex];
+            controlPointContainer.hidden = !Boolean(controlPoint);
+            console.log(
+              { controlPointIndex },
+              controlPoint,
+              controlPointContainer.hidden
+            );
+
+            const xContainer = controlPointContainer.querySelector(".x");
+            xContainer.removeAttribute("hidden");
+            const xInput = xContainer.querySelector("input");
+            const xSpan = xContainer.querySelector(".value");
+            if (controlPoint) {
+              xInput.value = controlPoint.x;
+              xSpan.innerText = controlPoint.x;
+            }
+            xContainer.addEventListener("input", () => {
+              const controlPoint =
+                command.curves[curveIndex].controlPoints[controlPointIndex];
+              controlPoint.x = Number(xInput.value);
+              xSpan.innerText = controlPoint.x;
+              draw();
+            });
+
+            const yContainer = controlPointContainer.querySelector(".y");
+            const yInput = yContainer.querySelector("input");
+            const ySpan = yContainer.querySelector(".value");
+            if (controlPoint) {
+              yInput.value = controlPoint.y;
+              ySpan.innerText = controlPoint.y;
+            }
+            yContainer.removeAttribute("hidden");
+            yContainer.addEventListener("input", () => {
+              const controlPoint =
+                command.curves[curveIndex].controlPoints[controlPointIndex];
+              controlPoint.y = Number(yInput.value);
+              ySpan.innerText = controlPoint.y;
+              draw();
+            });
+
+            curveContainer.appendChild(controlPointContainer);
+            controlPointContainers[controlPointIndex] = controlPointContainer;
+          };
+
+          if (curve) {
+            curve.controlPoints.forEach((controlPoint, controlPointIndex) => {
+              addControlPointContainer(controlPointIndex);
+            });
+          }
+
+          spriteCommandContainer.appendChild(curveContainer);
+          curveContainers[curveIndex] = curveContainer;
+        }
       }
 
       const includeBitmap = "bitmap" in command;

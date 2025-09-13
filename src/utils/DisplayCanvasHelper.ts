@@ -908,11 +908,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       [alignmentKey]: alignment,
     });
-    _console.log({
-      alignmentKey,
-      alignment,
-      differences,
-    });
+    // _console.log({
+    //   alignmentKey,
+    //   alignment,
+    //   differences,
+    // });
 
     // _console.log({ [cropCommand]: crop });
     if (this.device?.isConnected && !this.#ignoreDevice) {
@@ -2681,7 +2681,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     curves.forEach((curve, index) => {
       const isStart = index == 0;
       const { type, controlPoints } = curve;
-      _console.log({ type, controlPoints });
+      //_console.log({ type, controlPoints });
       if (isStart) {
         _controlPoints = controlPoints;
       } else {
@@ -2985,7 +2985,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       width: maxX - minX + outerPadding * 2,
       height: maxY - minY + outerPadding * 2,
     };
-    _console.log("segmentsBoundingBox", segmentsBoundingBox);
+    //_console.log("segmentsBoundingBox", segmentsBoundingBox);
     return segmentsBoundingBox;
   }
   #drawSegmentsToCanvas(points: Vector2[], contextState: DisplayContextState) {
@@ -4045,7 +4045,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     command: DisplayContextCommand,
     spriteSheet: DisplaySpriteSheet
   ) {
-    _console.log("runPreviewSpriteCommand", command);
+    //_console.log("runPreviewSpriteCommand", command);
     if (command.type == "drawSprite") {
       const sprite = spriteSheet.sprites[command.spriteIndex];
       if (sprite) {

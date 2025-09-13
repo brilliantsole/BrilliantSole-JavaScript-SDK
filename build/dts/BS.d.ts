@@ -16,11 +16,11 @@ export { FileType, FileTypes, FileTransferDirection, FileTransferDirections, } f
 export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, TfliteFileConfiguration as TfliteFileConfiguration, } from "./TfliteManager.ts";
 export { CameraConfiguration, CameraCommand, CameraCommands, CameraConfigurationType, CameraConfigurationTypes, } from "./CameraManager.ts";
 export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, } from "./MicrophoneManager.ts";
-export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, MinSpriteSheetNameLength, MaxSpriteSheetNameLength, DisplayBitmap, DisplaySpriteColorPair, DisplayWireframeEdge, } from "./DisplayManager.ts";
+export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, MinSpriteSheetNameLength, MaxSpriteSheetNameLength, DisplayBitmap, DisplaySpriteColorPair, DisplayWireframeEdge, DisplayBezierCurveType, DisplayBezierCurveTypes, } from "./DisplayManager.ts";
 export { DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, stringToSpriteLines, } from "./utils/DisplayManagerInterface.ts";
 export { wait } from "./utils/Timer.ts";
 export { DisplaySegmentCap, DisplaySegmentCaps, DisplayAlignment, DisplayAlignments, DisplayDirection, DisplayDirections, } from "./utils/DisplayContextState.ts";
-export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, } from "./utils/DisplayUtils.ts";
+export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, displayCurveTypeToNumberOfControlPoints, } from "./utils/DisplayUtils.ts";
 export { DisplayContextCommand, DisplayContextCommandType, DisplayContextCommandTypes, DisplaySpriteContextCommandType, DisplaySpriteContextCommandTypes, } from "./utils/DisplayContextCommand.ts";
 export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, } from "./utils/DisplaySpriteSheetUtils.ts";
 /** BROWSER_START */

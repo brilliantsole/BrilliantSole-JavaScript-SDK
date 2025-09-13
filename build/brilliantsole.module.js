@@ -22490,11 +22490,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             [alignmentKey]: alignment,
         });
-        _console$6.log({
-            alignmentKey,
-            alignment,
-            differences,
-        });
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setAlignment(alignmentDirection, alignment, sendImmediately);
         }
@@ -23766,7 +23761,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     }
     else {
         curvePoints.push(curvePoint);
-        _console$6.log(`appendCurvePoint curvePoints.length ${curvePoints.length}`);
     }
 }, _DisplayCanvasHelper_appendCurvePoints = function _DisplayCanvasHelper_appendCurvePoints(curvePoints, _curvePoints) {
     _curvePoints.forEach((curvePoint) => {
@@ -24011,7 +24005,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         width: maxX - minX + outerPadding * 2,
         height: maxY - minY + outerPadding * 2,
     };
-    _console$6.log("segmentsBoundingBox", segmentsBoundingBox);
     return segmentsBoundingBox;
 }, _DisplayCanvasHelper_drawSegmentsToCanvas = function _DisplayCanvasHelper_drawSegmentsToCanvas(points, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
@@ -24447,7 +24440,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(contextState);
 }, _DisplayCanvasHelper_runPreviewSpriteCommand = function _DisplayCanvasHelper_runPreviewSpriteCommand(command, spriteSheet) {
-    _console$6.log("runPreviewSpriteCommand", command);
     if (command.type == "drawSprite") {
         const sprite = spriteSheet.sprites[command.spriteIndex];
         if (sprite) {
@@ -25440,5 +25432,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.module.js.map
