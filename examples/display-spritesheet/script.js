@@ -2022,6 +2022,39 @@ const addSpriteCommand = () => {
           spriteColorPairs: [{ colorIndex: 1, spriteColorIndex: 1 }],
         });
         break;
+      case "drawCubicBezierCurve":
+        selectedSprite.commands.push({
+          type: "drawCubicBezierCurve",
+          controlPoints: [
+            { x: -50, y: 0 },
+            { x: -25, y: 50 },
+            { x: 25, y: -50 },
+            { x: 50, y: 0 },
+          ],
+        });
+        break;
+      case "drawQuadraticBezierCurve":
+        selectedSprite.commands.push({
+          type: "drawQuadraticBezierCurve",
+          controlPoints: [
+            { x: -50, y: 0 },
+            { x: 0, y: 50 },
+            { x: 50, y: 0 },
+          ],
+        });
+        break;
+      case "drawPath":
+        selectedSprite.commands.push({
+          type: "drawPath",
+          curves: [],
+        });
+        break;
+      case "drawClosedPath":
+        selectedSprite.commands.push({
+          type: "drawClosedPath",
+          curves: [],
+        });
+        break;
       default:
         console.error(`uncaught spriteCommandType ${spriteCommandType}`);
         break;
@@ -2486,6 +2519,43 @@ const updateSpriteCommands = () => {
           spriteCommandContainer.appendChild(edgeContainer);
           edgeContainers[i] = edgeContainer;
         }
+      }
+
+      const includeControlPoints = "controlPoints" in command;
+      if (includeControlPoints) {
+        //console.log(command.controlPoints);
+        command.controlPoints.forEach((controlPoint, index) => {
+          const pointContainer = pointTemplate.content
+            .cloneNode(true)
+            .querySelector(".point");
+          pointContainer.hidden = false;
+
+          const xContainer = pointContainer.querySelector(".x");
+          xContainer.removeAttribute("hidden");
+          const xInput = xContainer.querySelector("input");
+          const xSpan = xContainer.querySelector(".value");
+          xInput.value = controlPoint.x;
+          xSpan.innerText = controlPoint.x;
+          xContainer.addEventListener("input", () => {
+            controlPoint.x = Number(xInput.value);
+            xSpan.innerText = controlPoint.x;
+            draw();
+          });
+
+          const yContainer = pointContainer.querySelector(".y");
+          const yInput = yContainer.querySelector("input");
+          const ySpan = yContainer.querySelector(".value");
+          yInput.value = controlPoint.y;
+          ySpan.innerText = controlPoint.y;
+          yContainer.removeAttribute("hidden");
+          yContainer.addEventListener("input", () => {
+            controlPoint.y = Number(yInput.value);
+            ySpan.innerText = controlPoint.y;
+            draw();
+          });
+
+          spriteCommandContainer.appendChild(pointContainer);
+        });
       }
 
       const includeBitmap = "bitmap" in command;

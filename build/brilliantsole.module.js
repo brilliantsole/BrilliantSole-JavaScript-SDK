@@ -16493,6 +16493,42 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
         case "resetSpriteColors":
             await displayManager.resetSpriteColors(sendImmediately);
             break;
+        case "drawQuadraticBezierCurve":
+            {
+                const { controlPoints } = command;
+                await displayManager.drawQuadraticBezierCurve(controlPoints, sendImmediately);
+            }
+            break;
+        case "drawQuadraticBezierCurves":
+            {
+                const { controlPoints } = command;
+                await displayManager.drawQuadraticBezierCurves(controlPoints, sendImmediately);
+            }
+            break;
+        case "drawCubicBezierCurve":
+            {
+                const { controlPoints } = command;
+                await displayManager.drawCubicBezierCurve(controlPoints, sendImmediately);
+            }
+            break;
+        case "drawCubicBezierCurves":
+            {
+                const { controlPoints } = command;
+                await displayManager.drawCubicBezierCurves(controlPoints, sendImmediately);
+            }
+            break;
+        case "drawClosedPath":
+            {
+                const { curves } = command;
+                await displayManager.drawClosedPath(curves, sendImmediately);
+            }
+            break;
+        case "drawPath":
+            {
+                const { curves } = command;
+                await displayManager.drawPath(curves, sendImmediately);
+            }
+            break;
     }
 }
 async function runDisplayContextCommands(displayManager, commands, sendImmediately) {

@@ -81,7 +81,6 @@ import {
   assertValidPath,
   displayCurveTypeToNumberOfControlPoints,
   maxNumberOfDisplayCurvePoints,
-  displayCurveTolerance,
   displayCurveToleranceSquared,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
@@ -2464,7 +2463,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       _console.warn(`maxNumberOfDisplayCurvePoints exceeded`);
     } else {
       curvePoints.push(curvePoint);
-      _console.log(`appendCurvePoint curvePoints.length ${curvePoints.length}`);
+      // _console.log(`appendCurvePoint curvePoints.length ${curvePoints.length}`);
     }
   }
   #appendCurvePoints(curvePoints: Vector2[], _curvePoints: Vector2[]) {
