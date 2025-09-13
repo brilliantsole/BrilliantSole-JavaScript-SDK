@@ -1018,6 +1018,15 @@ function parseTimestamp(dataView, byteOffset) {
     }
     return timestamp;
 }
+function getVector2DistanceSquared(a, b) {
+    return (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+}
+function getVector2Midpoint(a, b) {
+    return {
+        x: (a.x + b.x) / 2,
+        y: (a.y + b.y) / 2,
+    };
+}
 function getVector3Length(vector) {
     const { x, y, z } = vector;
     return Math.sqrt(x ** 2 + y ** 2 + z ** 2);
@@ -4018,20 +4027,23 @@ function assertValidDirection(direction) {
 function assertValidAlignmentDirection(direction) {
     _console$o.assertEnumWithError(direction, DisplayAlignmentDirections);
 }
-const DisplayNumberOfControlPoints = {
+const displayCurveTypeToNumberOfControlPoints = {
     segment: 2,
     quadratic: 3,
     cubic: 4,
 };
+const displayCurveTolerance = 5.0;
+const displayCurveToleranceSquared = displayCurveTolerance ** 2;
+const maxNumberOfDisplayCurvePoints = 100;
 function assertValidNumberOfControlPoints(curveType, controlPoints, isPath = false) {
-    let numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+    let numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
     if (isPath) {
         numberOfControlPoints -= 1;
     }
     _console$o.assertWithError(controlPoints.length == numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`);
 }
 function assertValidPathNumberOfControlPoints(curveType, controlPoints) {
-    const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+    const numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
     _console$o.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, `invalid number of path control points ${controlPoints.length} for path "${curveType}"`);
 }
 function assertValidPath(curves) {
@@ -22083,7 +22095,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_contextStack, _DisplayCanvasHelper_saveContext, _DisplayCanvasHelper_restoreContext, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_ignoreCanvasContextStyle, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getRegularPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getPointsBoundingBox, _DisplayCanvasHelper_alignBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getWireframeBoundingBox, _DisplayCanvasHelper_drawWireframeToCanvas, _DisplayCanvasHelper_drawCurveToCanvas, _DisplayCanvasHelper_drawCurvesToCanvas, _DisplayCanvasHelper_drawPathToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_getSegmentsBoundingBox, _DisplayCanvasHelper__getSegmentsBoundingBox, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_drawSpritesToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_contextStack, _DisplayCanvasHelper_saveContext, _DisplayCanvasHelper_restoreContext, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_ignoreCanvasContextStyle, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getRegularPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getPointsBoundingBox, _DisplayCanvasHelper_alignBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getWireframeBoundingBox, _DisplayCanvasHelper_drawWireframeToCanvas, _DisplayCanvasHelper_appendCurvePoint, _DisplayCanvasHelper_appendCurvePoints, _DisplayCanvasHelper_generateQuadraticCurvePoints, _DisplayCanvasHelper_appendQuadraticCurvePoints, _DisplayCanvasHelper_generateCubicCurvePoints, _DisplayCanvasHelper_appendCubicCurvePoints, _DisplayCanvasHelper_generateGenericCurvePoints, _DisplayCanvasHelper_appendGenericCurvePoints, _DisplayCanvasHelper_drawCurveToCanvas, _DisplayCanvasHelper_drawCurvesToCanvas, _DisplayCanvasHelper_drawPathToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_getSegmentsBoundingBox, _DisplayCanvasHelper__getSegmentsBoundingBox, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_drawSpritesToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
@@ -23714,9 +23726,117 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     });
     __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, true, "f");
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
+}, _DisplayCanvasHelper_appendCurvePoint = function _DisplayCanvasHelper_appendCurvePoint(curvePoints, curvePoint) {
+    if (curvePoints.length >= maxNumberOfDisplayCurvePoints) {
+        _console$6.warn(`maxNumberOfDisplayCurvePoints exceeded`);
+    }
+    else {
+        curvePoints.push(curvePoint);
+        _console$6.log(`appendCurvePoint curvePoints.length ${curvePoints.length}`);
+    }
+}, _DisplayCanvasHelper_appendCurvePoints = function _DisplayCanvasHelper_appendCurvePoints(curvePoints, _curvePoints) {
+    _curvePoints.forEach((curvePoint) => {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendCurvePoint).call(this, curvePoints, curvePoint);
+    });
+}, _DisplayCanvasHelper_generateQuadraticCurvePoints = function _DisplayCanvasHelper_generateQuadraticCurvePoints(controlPoints) {
+    assertValidNumberOfControlPoints("quadratic", controlPoints);
+    const [p0, p1, p2] = controlPoints;
+    const c1 = {
+        x: p0.x + (2 / 3) * (p1.x - p0.x),
+        y: p0.y + (2 / 3) * (p1.y - p0.y),
+    };
+    const c2 = {
+        x: p2.x + (2 / 3) * (p1.x - p2.x),
+        y: p2.y + (2 / 3) * (p1.y - p2.y),
+    };
+    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateCubicCurvePoints).call(this, [p0, c1, c2, p2]);
+}, _DisplayCanvasHelper_appendQuadraticCurvePoints = function _DisplayCanvasHelper_appendQuadraticCurvePoints(curvePoints, controlPoints) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendCurvePoints).call(this, curvePoints, __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateQuadraticCurvePoints).call(this, controlPoints));
+}, _DisplayCanvasHelper_generateCubicCurvePoints = function _DisplayCanvasHelper_generateCubicCurvePoints(controlPoints) {
+    assertValidNumberOfControlPoints("cubic", controlPoints);
+    const [p0, p1, p2, p3] = controlPoints;
+    const curvePoints = [];
+    const p01 = getVector2Midpoint(p0, p1);
+    const p12 = getVector2Midpoint(p1, p2);
+    const p23 = getVector2Midpoint(p2, p3);
+    const p012 = getVector2Midpoint(p01, p12);
+    const p123 = getVector2Midpoint(p12, p23);
+    const mid = getVector2Midpoint(p012, p123);
+    const d2a = getVector2DistanceSquared(p1, mid);
+    const d2b = getVector2DistanceSquared(p2, mid);
+    if (d2a <= displayCurveToleranceSquared &&
+        d2b <= displayCurveToleranceSquared) {
+        curvePoints.push(p3);
+    }
+    else {
+        curvePoints.push(...__classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateCubicCurvePoints).call(this, [p0, p01, p012, mid]));
+        curvePoints.push(...__classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateCubicCurvePoints).call(this, [mid, p123, p23, p3]));
+    }
+    return curvePoints;
+}, _DisplayCanvasHelper_appendCubicCurvePoints = function _DisplayCanvasHelper_appendCubicCurvePoints(curvePoints, controlPoints) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendCurvePoints).call(this, curvePoints, __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateCubicCurvePoints).call(this, controlPoints));
+}, _DisplayCanvasHelper_generateGenericCurvePoints = function _DisplayCanvasHelper_generateGenericCurvePoints(curveType, controlPoints, isStart) {
+    assertValidNumberOfControlPoints(curveType, controlPoints);
+    let curvePoints = [];
+    if (isStart) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendCurvePoint).call(this, curvePoints, controlPoints[0]);
+    }
+    switch (curveType) {
+        case "segment":
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendCurvePoint).call(this, curvePoints, controlPoints[1]);
+            break;
+        case "quadratic":
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendQuadraticCurvePoints).call(this, curvePoints, controlPoints);
+            break;
+        case "cubic":
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendCubicCurvePoints).call(this, curvePoints, controlPoints);
+            break;
+    }
+    return curvePoints;
+}, _DisplayCanvasHelper_appendGenericCurvePoints = function _DisplayCanvasHelper_appendGenericCurvePoints(curvePoints, curveType, controlPoints, isStart) {
+    const _curvePoints = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateGenericCurvePoints).call(this, curveType, controlPoints, isStart);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendCurvePoints).call(this, curvePoints, _curvePoints);
 }, _DisplayCanvasHelper_drawCurveToCanvas = function _DisplayCanvasHelper_drawCurveToCanvas(curveType, controlPoints, contextState) {
+    const curvePoints = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateGenericCurvePoints).call(this, curveType, controlPoints, true);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSegmentsToCanvas).call(this, curvePoints, contextState);
 }, _DisplayCanvasHelper_drawCurvesToCanvas = function _DisplayCanvasHelper_drawCurvesToCanvas(curveType, controlPoints, contextState) {
+    assertValidPathNumberOfControlPoints(curveType, controlPoints);
+    const numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
+    const curvePointsJump = numberOfControlPoints - 1;
+    const numberOfCurves = (controlPoints.length - 1) / (numberOfControlPoints - 1);
+    _console$6.log({ numberOfControlPoints, curvePointsJump, numberOfCurves });
+    const curvePoints = [];
+    let curvePointOffset = 0;
+    for (let i = 0; i < numberOfCurves; i++) {
+        const isStart = i == 0;
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendGenericCurvePoints).call(this, curvePoints, curveType, controlPoints.slice(curvePointOffset, curvePointOffset + numberOfControlPoints), isStart);
+        curvePointOffset += curvePointsJump;
+    }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSegmentsToCanvas).call(this, curvePoints, contextState);
 }, _DisplayCanvasHelper_drawPathToCanvas = function _DisplayCanvasHelper_drawPathToCanvas(isClosed, curves, contextState) {
+    const curvePoints = [];
+    let _controlPoints;
+    curves.forEach((curve, index) => {
+        const isStart = index == 0;
+        const { type, controlPoints } = curve;
+        _console$6.log({ type, controlPoints });
+        if (isStart) {
+            _controlPoints = controlPoints;
+        }
+        else {
+            _controlPoints = [
+                _controlPoints[_controlPoints.length - 1],
+                ...controlPoints,
+            ];
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendGenericCurvePoints).call(this, curvePoints, type, _controlPoints, isStart);
+    });
+    if (isClosed) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawPolygonToCanvas).call(this, 0, 0, curvePoints, contextState);
+    }
+    else {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSegmentsToCanvas).call(this, curvePoints, contextState);
+    }
 }, _DisplayCanvasHelper_getLocalSegmentBoundingBox = function _DisplayCanvasHelper_getLocalSegmentBoundingBox(startX, startY, endX, endY, { lineWidth, segmentStartRadius, segmentEndRadius, segmentStartCap, segmentEndCap, }) {
     const outerPadding = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getOuterPadding).call(this, lineWidth);
     const dx = endX - startX;

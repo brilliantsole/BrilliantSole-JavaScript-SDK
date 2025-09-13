@@ -55,7 +55,10 @@ export type DisplayColorYCbCr = {
 export declare function assertValidAlignment(alignment: DisplayAlignment): void;
 export declare function assertValidDirection(direction: DisplayDirection): void;
 export declare function assertValidAlignmentDirection(direction: DisplayAlignmentDirection): void;
-export declare const DisplayNumberOfControlPoints: Record<DisplayBezierCurveType, number>;
+export declare const displayCurveTypeToNumberOfControlPoints: Record<DisplayBezierCurveType, number>;
+export declare const displayCurveTolerance = 5;
+export declare const displayCurveToleranceSquared: number;
+export declare const maxNumberOfDisplayCurvePoints = 100;
 export declare function assertValidNumberOfControlPoints(curveType: DisplayBezierCurveType, controlPoints: Vector2[], isPath?: boolean): void;
 export declare function assertValidPathNumberOfControlPoints(curveType: DisplayBezierCurveType, controlPoints: Vector2[]): void;
 export declare function assertValidPath(curves: DisplayBezierCurve[]): void;

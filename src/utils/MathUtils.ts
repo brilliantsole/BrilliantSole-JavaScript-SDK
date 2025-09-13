@@ -48,9 +48,20 @@ export function getVector2Length(vector: Vector2) {
   return Math.sqrt(x ** 2 + y ** 2);
 }
 
+export function getVector2DistanceSquared(a: Vector2, b: Vector2) {
+  return (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+}
+
 export function getVector2Angle(vector: Vector2) {
   const { x, y } = vector;
   return Math.atan2(y, x);
+}
+
+export function getVector2Midpoint(a: Vector2, b: Vector2): Vector2 {
+  return {
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2,
+  };
 }
 
 export function multiplyVector2ByScalar(

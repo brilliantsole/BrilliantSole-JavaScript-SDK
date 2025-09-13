@@ -79,6 +79,10 @@ import {
   assertValidNumberOfControlPoints,
   assertValidPathNumberOfControlPoints,
   assertValidPath,
+  displayCurveTypeToNumberOfControlPoints,
+  maxNumberOfDisplayCurvePoints,
+  displayCurveTolerance,
+  displayCurveToleranceSquared,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -87,7 +91,15 @@ import EventDispatcher, {
   EventMap,
 } from "./EventDispatcher.ts";
 import { addEventListeners, removeEventListeners } from "./EventUtils.ts";
-import { clamp, degToRad, normalizeRadians, Vector2 } from "./MathUtils.ts";
+import {
+  clamp,
+  degToRad,
+  getVector2DistanceSquared,
+  getVector2Length,
+  getVector2Midpoint,
+  normalizeRadians,
+  Vector2,
+} from "./MathUtils.ts";
 import { wait } from "./Timer.ts";
 import {
   DisplayContextCommand,
@@ -2448,12 +2460,124 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
 
+  #appendCurvePoint(curvePoints: Vector2[], curvePoint: Vector2) {
+    if (curvePoints.length >= maxNumberOfDisplayCurvePoints) {
+      _console.warn(`maxNumberOfDisplayCurvePoints exceeded`);
+    } else {
+      curvePoints.push(curvePoint);
+      _console.log(`appendCurvePoint curvePoints.length ${curvePoints.length}`);
+    }
+  }
+  #appendCurvePoints(curvePoints: Vector2[], _curvePoints: Vector2[]) {
+    _curvePoints.forEach((curvePoint) => {
+      this.#appendCurvePoint(curvePoints, curvePoint);
+    });
+  }
+
+  #generateQuadraticCurvePoints(controlPoints: Vector2[]) {
+    assertValidNumberOfControlPoints("quadratic", controlPoints);
+    const [p0, p1, p2] = controlPoints;
+    const c1: Vector2 = {
+      x: p0.x + (2 / 3) * (p1.x - p0.x),
+      y: p0.y + (2 / 3) * (p1.y - p0.y),
+    };
+    const c2: Vector2 = {
+      x: p2.x + (2 / 3) * (p1.x - p2.x),
+      y: p2.y + (2 / 3) * (p1.y - p2.y),
+    };
+    return this.#generateCubicCurvePoints([p0, c1, c2, p2]);
+  }
+  #appendQuadraticCurvePoints(
+    curvePoints: Vector2[],
+    controlPoints: Vector2[]
+  ) {
+    this.#appendCurvePoints(
+      curvePoints,
+      this.#generateQuadraticCurvePoints(controlPoints)
+    );
+  }
+
+  #generateCubicCurvePoints(controlPoints: Vector2[]): Vector2[] {
+    assertValidNumberOfControlPoints("cubic", controlPoints);
+    const [p0, p1, p2, p3] = controlPoints;
+    const curvePoints: Vector2[] = [];
+
+    const p01 = getVector2Midpoint(p0, p1);
+    const p12 = getVector2Midpoint(p1, p2);
+    const p23 = getVector2Midpoint(p2, p3);
+    const p012 = getVector2Midpoint(p01, p12);
+    const p123 = getVector2Midpoint(p12, p23);
+    const mid = getVector2Midpoint(p012, p123);
+
+    const d2a = getVector2DistanceSquared(p1, mid);
+    const d2b = getVector2DistanceSquared(p2, mid);
+
+    if (
+      d2a <= displayCurveToleranceSquared &&
+      d2b <= displayCurveToleranceSquared
+    ) {
+      curvePoints.push(p3);
+    } else {
+      curvePoints.push(...this.#generateCubicCurvePoints([p0, p01, p012, mid]));
+      curvePoints.push(...this.#generateCubicCurvePoints([mid, p123, p23, p3]));
+    }
+
+    return curvePoints;
+  }
+  #appendCubicCurvePoints(curvePoints: Vector2[], controlPoints: Vector2[]) {
+    this.#appendCurvePoints(
+      curvePoints,
+      this.#generateCubicCurvePoints(controlPoints)
+    );
+  }
+
+  #generateGenericCurvePoints(
+    curveType: DisplayBezierCurveType,
+    controlPoints: Vector2[],
+    isStart: boolean
+  ) {
+    assertValidNumberOfControlPoints(curveType, controlPoints);
+    let curvePoints: Vector2[] = [];
+    if (isStart) {
+      this.#appendCurvePoint(curvePoints, controlPoints[0]);
+    }
+    switch (curveType) {
+      case "segment":
+        this.#appendCurvePoint(curvePoints, controlPoints[1]);
+        break;
+      case "quadratic":
+        this.#appendQuadraticCurvePoints(curvePoints, controlPoints);
+        break;
+      case "cubic":
+        this.#appendCubicCurvePoints(curvePoints, controlPoints);
+        break;
+    }
+    return curvePoints;
+  }
+  #appendGenericCurvePoints(
+    curvePoints: Vector2[],
+    curveType: DisplayBezierCurveType,
+    controlPoints: Vector2[],
+    isStart: boolean
+  ) {
+    const _curvePoints = this.#generateGenericCurvePoints(
+      curveType,
+      controlPoints,
+      isStart
+    );
+    this.#appendCurvePoints(curvePoints, _curvePoints);
+  }
   #drawCurveToCanvas(
     curveType: DisplayBezierCurveType,
     controlPoints: Vector2[],
     contextState: DisplayContextState
   ) {
-    // FILL
+    const curvePoints = this.#generateGenericCurvePoints(
+      curveType,
+      controlPoints,
+      true
+    );
+    this.#drawSegmentsToCanvas(curvePoints, contextState);
   }
   async drawCurve(
     curveType: DisplayBezierCurveType,
@@ -2478,7 +2602,31 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     controlPoints: Vector2[],
     contextState: DisplayContextState
   ) {
-    // FILL
+    assertValidPathNumberOfControlPoints(curveType, controlPoints);
+    const numberOfControlPoints =
+      displayCurveTypeToNumberOfControlPoints[curveType];
+    const curvePointsJump = numberOfControlPoints - 1;
+    const numberOfCurves =
+      (controlPoints.length - 1) / (numberOfControlPoints - 1);
+    _console.log({ numberOfControlPoints, curvePointsJump, numberOfCurves });
+
+    const curvePoints: Vector2[] = [];
+    let curvePointOffset = 0;
+    for (let i = 0; i < numberOfCurves; i++) {
+      const isStart = i == 0;
+      this.#appendGenericCurvePoints(
+        curvePoints,
+        curveType,
+        controlPoints.slice(
+          curvePointOffset,
+          curvePointOffset + numberOfControlPoints
+        ),
+        isStart
+      );
+      curvePointOffset += curvePointsJump;
+    }
+    // _console.log({ curveType, controlPoints, curvePoints });
+    this.#drawSegmentsToCanvas(curvePoints, contextState);
   }
   async drawCurves(
     curveType: DisplayBezierCurveType,
@@ -2530,7 +2678,33 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     curves: DisplayBezierCurve[],
     contextState: DisplayContextState
   ) {
-    // FILL
+    const curvePoints: Vector2[] = [];
+    let _controlPoints: Vector2[];
+    curves.forEach((curve, index) => {
+      const isStart = index == 0;
+      const { type, controlPoints } = curve;
+      _console.log({ type, controlPoints });
+      if (isStart) {
+        _controlPoints = controlPoints;
+      } else {
+        _controlPoints = [
+          _controlPoints[_controlPoints.length - 1],
+          ...controlPoints,
+        ];
+      }
+      this.#appendGenericCurvePoints(
+        curvePoints,
+        type,
+        _controlPoints,
+        isStart
+      );
+    });
+
+    if (isClosed) {
+      this.#drawPolygonToCanvas(0, 0, curvePoints, contextState);
+    } else {
+      this.#drawSegmentsToCanvas(curvePoints, contextState);
+    }
   }
   async _drawPath(
     isClosed: boolean,

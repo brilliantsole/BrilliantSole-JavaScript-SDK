@@ -265,7 +265,7 @@ export function assertValidAlignmentDirection(
   _console.assertEnumWithError(direction, DisplayAlignmentDirections);
 }
 
-export const DisplayNumberOfControlPoints: Record<
+export const displayCurveTypeToNumberOfControlPoints: Record<
   DisplayBezierCurveType,
   number
 > = {
@@ -273,12 +273,17 @@ export const DisplayNumberOfControlPoints: Record<
   quadratic: 3,
   cubic: 4,
 };
+export const displayCurveTolerance = 5.0;
+export const displayCurveToleranceSquared = displayCurveTolerance ** 2;
+
+export const maxNumberOfDisplayCurvePoints = 100;
 export function assertValidNumberOfControlPoints(
   curveType: DisplayBezierCurveType,
   controlPoints: Vector2[],
   isPath = false
 ) {
-  let numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+  let numberOfControlPoints =
+    displayCurveTypeToNumberOfControlPoints[curveType];
   if (isPath) {
     numberOfControlPoints -= 1;
   }
@@ -291,7 +296,8 @@ export function assertValidPathNumberOfControlPoints(
   curveType: DisplayBezierCurveType,
   controlPoints: Vector2[]
 ) {
-  const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+  const numberOfControlPoints =
+    displayCurveTypeToNumberOfControlPoints[curveType];
   _console.assertWithError(
     (controlPoints.length - 1) % (numberOfControlPoints - 1) == 0,
     `invalid number of path control points ${controlPoints.length} for path "${curveType}"`

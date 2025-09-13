@@ -4009,20 +4009,20 @@ function assertValidDirection(direction) {
 function assertValidAlignmentDirection(direction) {
     _console$t.assertEnumWithError(direction, DisplayAlignmentDirections);
 }
-const DisplayNumberOfControlPoints = {
+const displayCurveTypeToNumberOfControlPoints = {
     segment: 2,
     quadratic: 3,
     cubic: 4,
 };
 function assertValidNumberOfControlPoints(curveType, controlPoints, isPath = false) {
-    let numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+    let numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
     if (isPath) {
         numberOfControlPoints -= 1;
     }
     _console$t.assertWithError(controlPoints.length == numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`);
 }
 function assertValidPathNumberOfControlPoints(curveType, controlPoints) {
-    const numberOfControlPoints = DisplayNumberOfControlPoints[curveType];
+    const numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
     _console$t.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, `invalid number of path control points ${controlPoints.length} for path "${curveType}"`);
 }
 function assertValidPath(curves) {
