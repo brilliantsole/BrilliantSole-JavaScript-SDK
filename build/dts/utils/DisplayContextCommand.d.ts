@@ -1,4 +1,4 @@
-import { DisplayBezierCurve, DisplayBitmap, DisplayBitmapColorPair, DisplaySpriteColorPair, DisplayWireframeEdge } from "../DisplayManager.ts";
+import { DisplayBezierCurve, DisplayBitmap, DisplayBitmapColorPair, DisplaySpriteColorPair, DisplayWireframe } from "../DisplayManager.ts";
 import { DisplayAlignment, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplayManagerInterface, DisplaySpriteSerializedLines } from "./DisplayManagerInterface.ts";
 import { DisplayColorRGB } from "./DisplayUtils.ts";
@@ -260,8 +260,7 @@ export interface DrawDisplayPathCommand extends BaseDisplayContextCommand {
 }
 export interface DrawDisplayWireframeCommand extends BaseDisplayContextCommand {
     type: "drawWireframe";
-    points: Vector2[];
-    edges: DisplayWireframeEdge[];
+    wireframe: DisplayWireframe;
 }
 export interface DrawDisplayArcCommand extends BaseOffsetPositionDisplayContextCommand {
     type: "drawArc";

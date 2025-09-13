@@ -140,6 +140,8 @@ export {
   DisplayColorRGB,
   pixelDepthToNumberOfColors,
   displayCurveTypeToNumberOfControlPoints,
+  mergeWireframes,
+  intersectWireframes,
 } from "./utils/DisplayUtils.ts";
 
 export {

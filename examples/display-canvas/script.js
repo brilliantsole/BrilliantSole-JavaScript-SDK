@@ -2264,15 +2264,15 @@ displayCanvasHelper.drawPolygon(200, 100, [
   { x: 50, y: 50 },
   { x: -50, y: 50 },
 ]);
-// displayCanvasHelper.drawWireframe(
-//   [
+// displayCanvasHelper.drawWireframe({
+//   points: [
 //     { x: 100, y: 100 },
 //     { x: 150, y: 100 },
 //     { x: 50, y: 100 },
 //     { x: 100, y: 150 },
 //     { x: 100, y: 50 },
 //   ],
-//   [
+//   edges: [
 //     { startIndex: 0, endIndex: 1 },
 //     { startIndex: 0, endIndex: 2 },
 //     { startIndex: 0, endIndex: 3 },
@@ -2280,8 +2280,8 @@ displayCanvasHelper.drawPolygon(200, 100, [
 //     { startIndex: 1, endIndex: 2 },
 //     { startIndex: 2, endIndex: 3 },
 //     { startIndex: 4, endIndex: 1 },
-//   ]
-// );
+//   ],
+// });
 // displayCanvasHelper.drawRegularPolygon(100, 100, 50, 5);
 // displayCanvasHelper.drawSegment(100, 100, 120, 200);
 // displayCanvasHelper.drawSegments([

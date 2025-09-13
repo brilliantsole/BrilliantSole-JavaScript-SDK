@@ -11,6 +11,7 @@ import {
   DisplaySegment,
   DisplayBezierCurve,
   DisplayBezierCurveType,
+  DisplayWireframe,
 } from "../DisplayManager.ts";
 import {
   assertValidBitmapPixels,
@@ -74,7 +75,6 @@ import {
   DisplayAlignmentDirectionToStateKey,
   assertValidAlignment,
   assertValidDirection,
-  assertValidWireframe,
   trimWireframe,
   assertValidNumberOfControlPoints,
   assertValidPathNumberOfControlPoints,
@@ -82,6 +82,7 @@ import {
   displayCurveTypeToNumberOfControlPoints,
   maxNumberOfDisplayCurvePoints,
   displayCurveToleranceSquared,
+  assertValidWireframe,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -94,16 +95,12 @@ import {
   clamp,
   degToRad,
   getVector2DistanceSquared,
-  getVector2Length,
   getVector2Midpoint,
   normalizeRadians,
   Vector2,
 } from "./MathUtils.ts";
 import { wait } from "./Timer.ts";
-import {
-  DisplayContextCommand,
-  DisplayContextCommandType,
-} from "./DisplayContextCommand.ts";
+import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
   DisplaySprite,
   DisplaySpritePaletteSwap,
@@ -2392,8 +2389,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   #getWireframeBoundingBox(
-    points: Vector2[],
-    edges: DisplayWireframeEdge[],
+    { edges, points }: DisplayWireframe,
     contextState: DisplayContextState
   ): DisplayBoundingBox {
     const segments: DisplaySegment[] = [];
@@ -2406,19 +2402,19 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return this.#_getSegmentsBoundingBox(segments, contextState);
   }
   #drawWireframeToCanvas(
-    points: Vector2[],
-    edges: DisplayWireframeEdge[],
+    wireframe: DisplayWireframe,
     contextState: DisplayContextState
   ) {
-    _console.log("drawWireframeToCanvas", { points, edges });
+    _console.log("drawWireframeToCanvas", wireframe);
     this.#updateContext(contextState);
 
     this.#save();
-    const box = this.#getWireframeBoundingBox(points, edges, contextState);
+    const box = this.#getWireframeBoundingBox(wireframe, contextState);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(box, contextState);
     }
 
+    const { points, edges } = wireframe;
     this.#clearBoundingBoxOnDraw = false;
     edges.forEach((edge) => {
       const { startIndex, endIndex } = edge;
@@ -2438,21 +2434,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#restore();
   }
-  async drawWireframe(
-    points: Vector2[],
-    edges: DisplayWireframeEdge[],
-    sendImmediately?: boolean
-  ) {
-    assertValidWireframe(points, edges);
-    const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
+  async drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean) {
+    assertValidWireframe(wireframe);
+    const trimmedWireframe = trimWireframe(wireframe);
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
-      this.#drawWireframeToCanvas(trimmedPoints, trimmedEdges, contextState)
+      this.#drawWireframeToCanvas(trimmedWireframe, contextState)
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.drawWireframe(
-        trimmedPoints,
-        trimmedEdges,
+        trimmedWireframe,
         sendImmediately
       );
     }

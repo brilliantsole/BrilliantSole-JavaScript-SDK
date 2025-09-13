@@ -9,6 +9,7 @@ export interface Vector2 {
     y: number;
 }
 export declare function getVector2Length(vector: Vector2): number;
+export declare function getVector2Distance(a: Vector2, b: Vector2): number;
 export declare function getVector2DistanceSquared(a: Vector2, b: Vector2): number;
 export declare function getVector2Angle(vector: Vector2): number;
 export declare function getVector2Midpoint(a: Vector2, b: Vector2): Vector2;

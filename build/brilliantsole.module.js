@@ -1018,6 +1018,9 @@ function parseTimestamp(dataView, byteOffset) {
     }
     return timestamp;
 }
+function getVector2Distance(a, b) {
+    return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+}
 function getVector2DistanceSquared(a, b) {
     return (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
 }
@@ -4052,7 +4055,7 @@ function assertValidPath(curves) {
         assertValidNumberOfControlPoints(type, controlPoints, index > 0);
     });
 }
-function assertValidWireframe(points, edges) {
+function assertValidWireframe({ points, edges }) {
     _console$o.assertRangeWithError("numberOfPoints", points.length, 2, 255);
     _console$o.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
     edges.forEach((edge, index) => {
@@ -4060,7 +4063,72 @@ function assertValidWireframe(points, edges) {
         _console$o.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
     });
 }
-function trimWireframe(points, edges) {
+function mergeWireframes(a, b) {
+    const wireframe = structuredClone(a);
+    const pointIndexOffset = a.points.length;
+    b.points.forEach((point) => {
+        wireframe.points.push(point);
+    });
+    b.edges.forEach(({ startIndex, endIndex }) => {
+        wireframe.edges.push({
+            startIndex: startIndex + pointIndexOffset,
+            endIndex: endIndex + pointIndexOffset,
+        });
+    });
+    return trimWireframe(wireframe);
+}
+function intersectWireframes(a, b, ignoreDirection = true) {
+    a = trimWireframe(a);
+    b = trimWireframe(b);
+    const wireframe = { points: [], edges: [] };
+    const aPointIndices = [];
+    const bPointIndices = [];
+    a.points.forEach((point, aPointIndex) => {
+        const bPointIndex = b.points.findIndex((_point) => {
+            const distance = getVector2Distance(point, _point);
+            return distance == 0;
+        });
+        if (bPointIndex != -1) {
+            aPointIndices.push(aPointIndex);
+            bPointIndices.push(bPointIndex);
+            wireframe.points.push(structuredClone(point));
+        }
+    });
+    a.edges.forEach((aEdge) => {
+        if (!aPointIndices.includes(aEdge.startIndex) ||
+            !aPointIndices.includes(aEdge.endIndex)) {
+            return;
+        }
+        const startIndex = aPointIndices.indexOf(aEdge.startIndex);
+        const endIndex = aPointIndices.indexOf(aEdge.endIndex);
+        const bEdge = b.edges.find((bEdge) => {
+            if (!bPointIndices.includes(bEdge.startIndex) ||
+                !bPointIndices.includes(bEdge.endIndex)) {
+                return false;
+            }
+            const bStartIndex = bPointIndices.indexOf(bEdge.startIndex);
+            const bEndIndex = bPointIndices.indexOf(bEdge.endIndex);
+            if (ignoreDirection) {
+                return ((startIndex == bStartIndex && endIndex == bEndIndex) ||
+                    (startIndex == bEndIndex && endIndex == bStartIndex));
+            }
+            else {
+                return startIndex == bStartIndex && endIndex == bEndIndex;
+            }
+        });
+        if (!bEdge) {
+            return;
+        }
+        wireframe.edges.push({
+            startIndex,
+            endIndex,
+        });
+    });
+    return wireframe;
+}
+function trimWireframe(wireframe) {
+    _console$o.log("trimming wireframe", wireframe);
+    const { points, edges } = wireframe;
     const trimmedPoints = [];
     const trimmedEdges = [];
     edges.forEach((edge) => {
@@ -4069,13 +4137,11 @@ function trimWireframe(points, edges) {
         let endPoint = points[endIndex];
         let trimmedStartIndex = trimmedPoints.findIndex(({ x, y }) => startPoint.x == x && startPoint.y == y);
         if (trimmedStartIndex == -1) {
-            _console$o.log("adding startPoint", startPoint);
             trimmedPoints.push(startPoint);
             trimmedStartIndex = trimmedPoints.length - 1;
         }
         let trimmedEndIndex = trimmedPoints.findIndex(({ x, y }) => endPoint.x == x && endPoint.y == y);
         if (trimmedEndIndex == -1) {
-            _console$o.log("adding endPoint", endPoint);
             trimmedPoints.push(endPoint);
             trimmedEndIndex = trimmedPoints.length - 1;
         }
@@ -4085,13 +4151,12 @@ function trimWireframe(points, edges) {
         };
         let trimmedEdgeIndex = trimmedEdges.findIndex(({ startIndex, endIndex }) => startIndex == trimmedEdge.startIndex && endIndex == trimmedEdge.endIndex);
         if (trimmedEdgeIndex == -1) {
-            _console$o.log("adding edge", trimmedEdge);
             trimmedEdges.push(trimmedEdge);
             trimmedEdgeIndex = trimmedEdges.length - 1;
         }
     });
     _console$o.log("trimmedWireframe", trimmedPoints, trimmedEdges);
-    return { trimmedPoints, trimmedEdges };
+    return { points: trimmedPoints, edges: trimmedEdges };
 }
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -5456,8 +5521,9 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawWireframe":
             {
-                const { points, edges } = command;
-                assertValidWireframe(points, edges);
+                const { wireframe } = command;
+                const { points, edges } = wireframe;
+                assertValidWireframe(wireframe);
                 dataView = new DataView(new ArrayBuffer(1 + 4 * points.length + 1 + 2 * edges.length));
                 let offset = 0;
                 dataView.setUint8(offset++, points.length);
@@ -16438,8 +16504,8 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawWireframe":
             {
-                const { points, edges } = command;
-                await displayManager.drawWireframe(points, edges, sendImmediately);
+                const { wireframe } = command;
+                await displayManager.drawWireframe(wireframe, sendImmediately);
             }
             break;
         case "drawSegment":
@@ -17954,14 +18020,13 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
-    async drawWireframe(points, edges, sendImmediately) {
-        assertValidWireframe(points, edges);
-        const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
+    async drawWireframe(wireframe, sendImmediately) {
+        assertValidWireframe(wireframe);
+        const trimmedWireframe = trimWireframe(wireframe);
         const commandType = "drawWireframe";
         const dataView = serializeContextCommand(this, {
             type: commandType,
-            points: trimmedPoints,
-            edges: trimmedEdges,
+            wireframe: trimmedWireframe,
         });
         if (!dataView) {
             return;
@@ -22959,13 +23024,13 @@ class DisplayCanvasHelper {
             await this.deviceDisplayManager.drawPolygon(offsetX, offsetY, points, sendImmediately);
         }
     }
-    async drawWireframe(points, edges, sendImmediately) {
-        assertValidWireframe(points, edges);
-        const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
+    async drawWireframe(wireframe, sendImmediately) {
+        assertValidWireframe(wireframe);
+        const trimmedWireframe = trimWireframe(wireframe);
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawWireframeToCanvas).call(this, trimmedPoints, trimmedEdges, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawWireframeToCanvas).call(this, trimmedWireframe, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.deviceDisplayManager.drawWireframe(trimmedPoints, trimmedEdges, sendImmediately);
+            await this.deviceDisplayManager.drawWireframe(trimmedWireframe, sendImmediately);
         }
     }
     async drawCurve(curveType, controlPoints, sendImmediately) {
@@ -23729,7 +23794,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
-}, _DisplayCanvasHelper_getWireframeBoundingBox = function _DisplayCanvasHelper_getWireframeBoundingBox(points, edges, contextState) {
+}, _DisplayCanvasHelper_getWireframeBoundingBox = function _DisplayCanvasHelper_getWireframeBoundingBox({ edges, points }, contextState) {
     const segments = [];
     edges.forEach((edge) => {
         const { startIndex, endIndex } = edge;
@@ -23738,14 +23803,15 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         segments.push({ start: point, end: nextPoint });
     });
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper__getSegmentsBoundingBox).call(this, segments, contextState);
-}, _DisplayCanvasHelper_drawWireframeToCanvas = function _DisplayCanvasHelper_drawWireframeToCanvas(points, edges, contextState) {
-    _console$6.log("drawWireframeToCanvas", { points, edges });
+}, _DisplayCanvasHelper_drawWireframeToCanvas = function _DisplayCanvasHelper_drawWireframeToCanvas(wireframe, contextState) {
+    _console$6.log("drawWireframeToCanvas", wireframe);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getWireframeBoundingBox).call(this, points, edges, contextState);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getWireframeBoundingBox).call(this, wireframe, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box, contextState);
     }
+    const { points, edges } = wireframe;
     __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, false, "f");
     edges.forEach((edge) => {
         const { startIndex, endIndex } = edge;
@@ -23847,7 +23913,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     curves.forEach((curve, index) => {
         const isStart = index == 0;
         const { type, controlPoints } = curve;
-        _console$6.log({ type, controlPoints });
         if (isStart) {
             _controlPoints = controlPoints;
         }
@@ -25432,5 +25497,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

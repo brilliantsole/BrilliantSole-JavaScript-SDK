@@ -1,5 +1,5 @@
 import Device from "../Device.ts";
-import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap, DisplayWireframeEdge, DisplayBezierCurve, DisplayBezierCurveType } from "../DisplayManager.ts";
+import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap, DisplayBezierCurve, DisplayBezierCurveType, DisplayWireframe } from "../DisplayManager.ts";
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplaySpriteLines, DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
@@ -83,24 +83,24 @@ export type DisplayBoundingBox = {
 declare class DisplayCanvasHelper implements DisplayManagerInterface {
     #private;
     constructor();
-    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T, listener: (event: {
+    get addEventListener(): <T extends "device" | "deviceIsConnected" | "deviceNotConnected" | "deviceConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "device" | "deviceIsConnected" | "deviceNotConnected" | "deviceConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T) => Promise<{
+    get waitForEvent(): <T extends "device" | "deviceIsConnected" | "deviceNotConnected" | "deviceConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T) => Promise<{
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T) => void;
+    get removeEventListeners(): <T extends "device" | "deviceIsConnected" | "deviceNotConnected" | "deviceConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
@@ -204,7 +204,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     drawEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): Promise<void>;
     drawRegularPolygon(offsetX: number, offsetY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
     drawPolygon(offsetX: number, offsetY: number, points: Vector2[], sendImmediately?: boolean): Promise<void>;
-    drawWireframe(points: Vector2[], edges: DisplayWireframeEdge[], sendImmediately?: boolean): Promise<void>;
+    drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean): Promise<void>;
     drawCurve(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawCurves(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawQuadraticBezierCurve(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;

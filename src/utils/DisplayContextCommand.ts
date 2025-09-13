@@ -5,6 +5,7 @@ import {
   DisplayBitmap,
   DisplayBitmapColorPair,
   DisplaySpriteColorPair,
+  DisplayWireframe,
   DisplayWireframeEdge,
 } from "../DisplayManager.ts";
 import {
@@ -585,8 +586,7 @@ export interface DrawDisplayPathCommand extends BaseDisplayContextCommand {
 
 export interface DrawDisplayWireframeCommand extends BaseDisplayContextCommand {
   type: "drawWireframe";
-  points: Vector2[];
-  edges: DisplayWireframeEdge[];
+  wireframe: DisplayWireframe;
 }
 
 export interface DrawDisplayArcCommand
@@ -1248,8 +1248,9 @@ export function serializeContextCommand(
       break;
     case "drawWireframe":
       {
-        const { points, edges } = command;
-        assertValidWireframe(points, edges);
+        const { wireframe } = command;
+        const { points, edges } = wireframe;
+        assertValidWireframe(wireframe);
         // [numberOfPoints, ...points, numberOfEdges, ...edges]
         dataView = new DataView(
           new ArrayBuffer(1 + 4 * points.length + 1 + 2 * edges.length)

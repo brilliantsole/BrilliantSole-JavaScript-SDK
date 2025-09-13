@@ -7,6 +7,7 @@ import {
   DisplayWireframeEdge,
   DisplayBezierCurve,
   DisplayBezierCurveType,
+  DisplayWireframe,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
@@ -370,8 +371,7 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
 
   drawWireframe(
-    points: Vector2[],
-    edges: DisplayWireframeEdge[],
+    wireframe: DisplayWireframe,
     sendImmediately?: boolean
   ): Promise<void>;
 
@@ -976,8 +976,8 @@ export async function runDisplayContextCommand(
       break;
     case "drawWireframe":
       {
-        const { points, edges } = command;
-        await displayManager.drawWireframe(points, edges, sendImmediately);
+        const { wireframe } = command;
+        await displayManager.drawWireframe(wireframe, sendImmediately);
       }
       break;
     case "drawSegment":

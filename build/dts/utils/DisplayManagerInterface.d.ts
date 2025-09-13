@@ -1,5 +1,5 @@
 import { Font } from "opentype.js";
-import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap, DisplayWireframeEdge, DisplayBezierCurve, DisplayBezierCurveType } from "../DisplayManager.ts";
+import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap, DisplayBezierCurve, DisplayBezierCurveType, DisplayWireframe } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
@@ -109,7 +109,7 @@ export interface DisplayManagerInterface {
     drawEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): Promise<void>;
     drawRegularPolygon(offsetX: number, offsetY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
     drawPolygon(offsetX: number, offsetY: number, points: Vector2[], sendImmediately?: boolean): Promise<void>;
-    drawWireframe(points: Vector2[], edges: DisplayWireframeEdge[], sendImmediately?: boolean): Promise<void>;
+    drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean): Promise<void>;
     drawCurve(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawCurves(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawQuadraticBezierCurve(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;

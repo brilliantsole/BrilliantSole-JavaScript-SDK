@@ -48,6 +48,10 @@ export function getVector2Length(vector: Vector2) {
   return Math.sqrt(x ** 2 + y ** 2);
 }
 
+export function getVector2Distance(a: Vector2, b: Vector2) {
+  return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+}
+
 export function getVector2DistanceSquared(a: Vector2, b: Vector2) {
   return (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
 }

@@ -188,6 +188,10 @@ export type DisplaySegment = {
   start: Vector2;
   end: Vector2;
 };
+export type DisplayWireframe = {
+  points: Vector2[];
+  edges: DisplayWireframeEdge[];
+};
 
 export const DisplayBezierCurveTypes = [
   "segment",
@@ -2153,18 +2157,13 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
 
-  async drawWireframe(
-    points: Vector2[],
-    edges: DisplayWireframeEdge[],
-    sendImmediately?: boolean
-  ) {
-    assertValidWireframe(points, edges);
-    const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
+  async drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean) {
+    assertValidWireframe(wireframe);
+    const trimmedWireframe = trimWireframe(wireframe);
     const commandType: DisplayContextCommandType = "drawWireframe";
     const dataView = serializeContextCommand(this, {
       type: commandType,
-      points: trimmedPoints,
-      edges: trimmedEdges,
+      wireframe: trimmedWireframe,
     });
     if (!dataView) {
       return;

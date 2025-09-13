@@ -1760,17 +1760,19 @@ const addSpriteCommand = () => {
       case "drawWireframe":
         selectedSprite.commands.push({
           type: "drawWireframe",
-          points: [
-            { x: 0, y: 0 },
-            { x: 0, y: -25 },
-            { x: 25, y: 25 },
-            { x: -25, y: 25 },
-          ],
-          edges: [
-            { startIndex: 0, endIndex: 1 },
-            { startIndex: 0, endIndex: 2 },
-            { startIndex: 0, endIndex: 3 },
-          ],
+          wireframe: {
+            points: [
+              { x: 0, y: 0 },
+              { x: 0, y: -25 },
+              { x: 25, y: 25 },
+              { x: -25, y: 25 },
+            ],
+            edges: [
+              { startIndex: 0, endIndex: 1 },
+              { startIndex: 0, endIndex: 2 },
+              { startIndex: 0, endIndex: 3 },
+            ],
+          },
         });
         break;
       case "drawSegment":
@@ -2396,6 +2398,7 @@ const updateSpriteCommands = () => {
         });
       }
 
+      // FIX - include command.wireframe.points
       const includePoints = "points" in command;
       if (includePoints) {
         const numberOfPointsContainer =
@@ -2469,32 +2472,32 @@ const updateSpriteCommands = () => {
         }
       }
 
-      const includeEdges = "edges" in command;
+      const includeEdges = "edges" in command.wireframe;
       if (includeEdges) {
         const numberOfEdgesContainer =
           spriteCommandContainer.querySelector(".numberOfEdges");
         const numberOfEdgesInput =
           numberOfEdgesContainer.querySelector("input");
-        numberOfEdgesInput.value = command.edges.length;
+        numberOfEdgesInput.value = command.wireframe.edges.length;
         const numberOfEdgesSpan =
           numberOfEdgesContainer.querySelector(".value");
-        numberOfEdgesSpan.innerText = command.edges.length;
+        numberOfEdgesSpan.innerText = command.wireframe.edges.length;
         numberOfEdgesContainer.removeAttribute("hidden");
         numberOfEdgesContainer.addEventListener("input", () => {
           const numberOfEdges = Number(numberOfEdgesInput.value);
           // console.log({ numberOfEdges });
           for (let i = 0; i < numberOfEdges; i++) {
-            let edge = command.edges[i];
+            let edge = command.wireframe.edges[i];
             if (!edge) {
-              command.edges[i] = { startIndex: 0, endIndex: 1 };
+              command.wireframe.edges[i] = { startIndex: 0, endIndex: 1 };
             }
           }
-          command.edges.length = numberOfEdges;
+          command.wireframe.edges.length = numberOfEdges;
           edgeContainers.forEach((edgeContainer, index) => {
             // console.log("edgeContainer", edgeContainer);
-            edgeContainer.hidden = index >= command.edges.length;
+            edgeContainer.hidden = index >= command.wireframe.edges.length;
           });
-          numberOfEdgesSpan.innerText = command.edges.length;
+          numberOfEdgesSpan.innerText = command.wireframe.edges.length;
           draw();
         });
 
@@ -2504,7 +2507,7 @@ const updateSpriteCommands = () => {
             .cloneNode(true)
             .querySelector(".edge");
 
-          const edge = command.edges[i];
+          const edge = command.wireframe.edges[i];
           edgeContainer.hidden = !Boolean(edge);
 
           const startIndexContainer =
@@ -2518,7 +2521,7 @@ const updateSpriteCommands = () => {
             startIndexSpan.innerText = edge.startIndex;
           }
           startIndexContainer.addEventListener("input", () => {
-            const edge = command.edges[i];
+            const edge = command.wireframe.edges[i];
             edge.startIndex = Number(startIndexInput.value);
             startIndexSpan.innerText = edge.startIndex;
             draw();
@@ -2534,7 +2537,7 @@ const updateSpriteCommands = () => {
           }
           endIndexContainer.removeAttribute("hidden");
           endIndexContainer.addEventListener("input", () => {
-            const edge = command.edges[i];
+            const edge = command.wireframe.edges[i];
             edge.endIndex = Number(endIndexInput.value);
             endIndexSpan.innerText = edge.endIndex;
             draw();

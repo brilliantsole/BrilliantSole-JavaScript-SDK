@@ -1,4 +1,4 @@
-import { DisplayBezierCurve, DisplayBezierCurveType, DisplayBrightness, DisplayPixelDepth, DisplayWireframeEdge } from "../DisplayManager.ts";
+import { DisplayBezierCurve, DisplayBezierCurveType, DisplayBrightness, DisplayPixelDepth, DisplayWireframe } from "../DisplayManager.ts";
 import { DisplayContextCommandType } from "./DisplayContextCommand.ts";
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { Vector2 } from "./MathUtils.ts";
@@ -62,8 +62,7 @@ export declare const maxNumberOfDisplayCurvePoints = 100;
 export declare function assertValidNumberOfControlPoints(curveType: DisplayBezierCurveType, controlPoints: Vector2[], isPath?: boolean): void;
 export declare function assertValidPathNumberOfControlPoints(curveType: DisplayBezierCurveType, controlPoints: Vector2[]): void;
 export declare function assertValidPath(curves: DisplayBezierCurve[]): void;
-export declare function assertValidWireframe(points: Vector2[], edges: DisplayWireframeEdge[]): void;
-export declare function trimWireframe(points: Vector2[], edges: DisplayWireframeEdge[]): {
-    trimmedPoints: Vector2[];
-    trimmedEdges: DisplayWireframeEdge[];
-};
+export declare function assertValidWireframe({ points, edges }: DisplayWireframe): void;
+export declare function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe): DisplayWireframe;
+export declare function intersectWireframes(a: DisplayWireframe, b: DisplayWireframe, ignoreDirection?: boolean): DisplayWireframe;
+export declare function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe;

@@ -20,7 +20,7 @@ export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmapColor
 export { DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, stringToSpriteLines, } from "./utils/DisplayManagerInterface.ts";
 export { wait } from "./utils/Timer.ts";
 export { DisplaySegmentCap, DisplaySegmentCaps, DisplayAlignment, DisplayAlignments, DisplayDirection, DisplayDirections, } from "./utils/DisplayContextState.ts";
-export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, displayCurveTypeToNumberOfControlPoints, } from "./utils/DisplayUtils.ts";
+export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, displayCurveTypeToNumberOfControlPoints, mergeWireframes, intersectWireframes, } from "./utils/DisplayUtils.ts";
 export { DisplayContextCommand, DisplayContextCommandType, DisplayContextCommandTypes, DisplaySpriteContextCommandType, DisplaySpriteContextCommandTypes, } from "./utils/DisplayContextCommand.ts";
 export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, } from "./utils/DisplaySpriteSheetUtils.ts";
 /** BROWSER_START */

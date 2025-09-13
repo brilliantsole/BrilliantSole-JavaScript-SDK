@@ -49,6 +49,10 @@ export type DisplaySegment = {
     start: Vector2;
     end: Vector2;
 };
+export type DisplayWireframe = {
+    points: Vector2[];
+    edges: DisplayWireframeEdge[];
+};
 export declare const DisplayBezierCurveTypes: readonly ["segment", "quadratic", "cubic"];
 export type DisplayBezierCurveType = (typeof DisplayBezierCurveTypes)[number];
 export type DisplayBezierCurve = {
@@ -125,7 +129,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "spriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "getSpriteSheetName" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "displayCommand" | "setDisplayBrightness" | "displayContextCommands" | "setSpriteSheetName" | "spriteSheetIndex">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
@@ -234,7 +238,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     drawEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): Promise<void>;
     drawRegularPolygon(offsetX: number, offsetY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
     drawPolygon(offsetX: number, offsetY: number, points: Vector2[], sendImmediately?: boolean): Promise<void>;
-    drawWireframe(points: Vector2[], edges: DisplayWireframeEdge[], sendImmediately?: boolean): Promise<void>;
+    drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean): Promise<void>;
     drawCurve(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawCurves(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawQuadraticBezierCurve(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;

@@ -5,6 +5,7 @@ import {
   DisplayBrightnesses,
   DisplayPixelDepth,
   DisplayPixelDepths,
+  DisplayWireframe,
   DisplayWireframeEdge,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
@@ -20,7 +21,12 @@ import {
   DisplaySegmentCap,
   DisplaySegmentCaps,
 } from "./DisplayContextState.ts";
-import { Int16Max, Uint16Max, Vector2 } from "./MathUtils.ts";
+import {
+  getVector2Distance,
+  Int16Max,
+  Uint16Max,
+  Vector2,
+} from "./MathUtils.ts";
 
 const _console = createConsole("DisplayUtils", { log: false });
 
@@ -311,10 +317,7 @@ export function assertValidPath(curves: DisplayBezierCurve[]) {
   });
 }
 
-export function assertValidWireframe(
-  points: Vector2[],
-  edges: DisplayWireframeEdge[]
-) {
+export function assertValidWireframe({ points, edges }: DisplayWireframe) {
   _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
   _console.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
 
@@ -334,10 +337,90 @@ export function assertValidWireframe(
   });
 }
 
-export function trimWireframe(
-  points: Vector2[],
-  edges: DisplayWireframeEdge[]
+export function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe) {
+  const wireframe: DisplayWireframe = structuredClone(a);
+  const pointIndexOffset = a.points.length;
+  b.points.forEach((point) => {
+    wireframe.points.push(point);
+  });
+  b.edges.forEach(({ startIndex, endIndex }) => {
+    wireframe.edges.push({
+      startIndex: startIndex + pointIndexOffset,
+      endIndex: endIndex + pointIndexOffset,
+    });
+  });
+  return trimWireframe(wireframe);
+}
+
+export function intersectWireframes(
+  a: DisplayWireframe,
+  b: DisplayWireframe,
+  ignoreDirection = true
 ) {
+  a = trimWireframe(a);
+  b = trimWireframe(b);
+  //_console.log("intersectWireframes", a, b);
+  const wireframe: DisplayWireframe = { points: [], edges: [] };
+  const pointIndices: { a: number; b: number }[] = [];
+  const aPointIndices: number[] = [];
+  const bPointIndices: number[] = [];
+  a.points.forEach((point, aPointIndex) => {
+    const bPointIndex = b.points.findIndex((_point) => {
+      const distance = getVector2Distance(point, _point);
+      return distance == 0;
+    });
+    if (bPointIndex != -1) {
+      pointIndices.push({ a: aPointIndex, b: bPointIndex });
+      aPointIndices.push(aPointIndex);
+      bPointIndices.push(bPointIndex);
+      wireframe.points.push(structuredClone(point));
+    }
+  });
+  a.edges.forEach((aEdge) => {
+    if (
+      !aPointIndices.includes(aEdge.startIndex) ||
+      !aPointIndices.includes(aEdge.endIndex)
+    ) {
+      return;
+    }
+    const startIndex = aPointIndices.indexOf(aEdge.startIndex);
+    const endIndex = aPointIndices.indexOf(aEdge.endIndex);
+
+    const bEdge = b.edges.find((bEdge) => {
+      if (
+        !bPointIndices.includes(bEdge.startIndex) ||
+        !bPointIndices.includes(bEdge.endIndex)
+      ) {
+        return false;
+      }
+      const bStartIndex = bPointIndices.indexOf(bEdge.startIndex);
+      const bEndIndex = bPointIndices.indexOf(bEdge.endIndex);
+      if (ignoreDirection) {
+        return (
+          (startIndex == bStartIndex && endIndex == bEndIndex) ||
+          (startIndex == bEndIndex && endIndex == bStartIndex)
+        );
+      } else {
+        return startIndex == bStartIndex && endIndex == bEndIndex;
+      }
+    });
+
+    if (!bEdge) {
+      return;
+    }
+
+    wireframe.edges.push({
+      startIndex,
+      endIndex,
+    });
+  });
+  //_console.log("intersectedWireframe", wireframe);
+  return wireframe;
+}
+
+export function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe {
+  _console.log("trimming wireframe", wireframe);
+  const { points, edges } = wireframe;
   const trimmedPoints: Vector2[] = [];
   const trimmedEdges: DisplayWireframeEdge[] = [];
   edges.forEach((edge) => {
@@ -349,7 +432,7 @@ export function trimWireframe(
       ({ x, y }) => startPoint.x == x && startPoint.y == y
     );
     if (trimmedStartIndex == -1) {
-      _console.log("adding startPoint", startPoint);
+      //_console.log("adding startPoint", startPoint);
       trimmedPoints.push(startPoint);
       trimmedStartIndex = trimmedPoints.length - 1;
     }
@@ -358,7 +441,7 @@ export function trimWireframe(
       ({ x, y }) => endPoint.x == x && endPoint.y == y
     );
     if (trimmedEndIndex == -1) {
-      _console.log("adding endPoint", endPoint);
+      //_console.log("adding endPoint", endPoint);
       trimmedPoints.push(endPoint);
       trimmedEndIndex = trimmedPoints.length - 1;
     }
@@ -372,11 +455,11 @@ export function trimWireframe(
         startIndex == trimmedEdge.startIndex && endIndex == trimmedEdge.endIndex
     );
     if (trimmedEdgeIndex == -1) {
-      _console.log("adding edge", trimmedEdge);
+      //_console.log("adding edge", trimmedEdge);
       trimmedEdges.push(trimmedEdge);
       trimmedEdgeIndex = trimmedEdges.length - 1;
     }
   });
   _console.log("trimmedWireframe", trimmedPoints, trimmedEdges);
-  return { trimmedPoints, trimmedEdges };
+  return { points: trimmedPoints, edges: trimmedEdges };
 }

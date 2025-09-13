@@ -997,6 +997,9 @@ function parseTimestamp(dataView, byteOffset) {
     }
     return timestamp;
 }
+function getVector2Distance(a, b) {
+    return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+}
 function getVector3Length(vector) {
     const { x, y, z } = vector;
     return Math.sqrt(x ** 2 + y ** 2 + z ** 2);
@@ -4031,7 +4034,7 @@ function assertValidPath(curves) {
         assertValidNumberOfControlPoints(type, controlPoints, index > 0);
     });
 }
-function assertValidWireframe(points, edges) {
+function assertValidWireframe({ points, edges }) {
     _console$t.assertRangeWithError("numberOfPoints", points.length, 2, 255);
     _console$t.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
     edges.forEach((edge, index) => {
@@ -4039,7 +4042,72 @@ function assertValidWireframe(points, edges) {
         _console$t.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
     });
 }
-function trimWireframe(points, edges) {
+function mergeWireframes(a, b) {
+    const wireframe = structuredClone(a);
+    const pointIndexOffset = a.points.length;
+    b.points.forEach((point) => {
+        wireframe.points.push(point);
+    });
+    b.edges.forEach(({ startIndex, endIndex }) => {
+        wireframe.edges.push({
+            startIndex: startIndex + pointIndexOffset,
+            endIndex: endIndex + pointIndexOffset,
+        });
+    });
+    return trimWireframe(wireframe);
+}
+function intersectWireframes(a, b, ignoreDirection = true) {
+    a = trimWireframe(a);
+    b = trimWireframe(b);
+    const wireframe = { points: [], edges: [] };
+    const aPointIndices = [];
+    const bPointIndices = [];
+    a.points.forEach((point, aPointIndex) => {
+        const bPointIndex = b.points.findIndex((_point) => {
+            const distance = getVector2Distance(point, _point);
+            return distance == 0;
+        });
+        if (bPointIndex != -1) {
+            aPointIndices.push(aPointIndex);
+            bPointIndices.push(bPointIndex);
+            wireframe.points.push(structuredClone(point));
+        }
+    });
+    a.edges.forEach((aEdge) => {
+        if (!aPointIndices.includes(aEdge.startIndex) ||
+            !aPointIndices.includes(aEdge.endIndex)) {
+            return;
+        }
+        const startIndex = aPointIndices.indexOf(aEdge.startIndex);
+        const endIndex = aPointIndices.indexOf(aEdge.endIndex);
+        const bEdge = b.edges.find((bEdge) => {
+            if (!bPointIndices.includes(bEdge.startIndex) ||
+                !bPointIndices.includes(bEdge.endIndex)) {
+                return false;
+            }
+            const bStartIndex = bPointIndices.indexOf(bEdge.startIndex);
+            const bEndIndex = bPointIndices.indexOf(bEdge.endIndex);
+            if (ignoreDirection) {
+                return ((startIndex == bStartIndex && endIndex == bEndIndex) ||
+                    (startIndex == bEndIndex && endIndex == bStartIndex));
+            }
+            else {
+                return startIndex == bStartIndex && endIndex == bEndIndex;
+            }
+        });
+        if (!bEdge) {
+            return;
+        }
+        wireframe.edges.push({
+            startIndex,
+            endIndex,
+        });
+    });
+    return wireframe;
+}
+function trimWireframe(wireframe) {
+    _console$t.log("trimming wireframe", wireframe);
+    const { points, edges } = wireframe;
     const trimmedPoints = [];
     const trimmedEdges = [];
     edges.forEach((edge) => {
@@ -4048,13 +4116,11 @@ function trimWireframe(points, edges) {
         let endPoint = points[endIndex];
         let trimmedStartIndex = trimmedPoints.findIndex(({ x, y }) => startPoint.x == x && startPoint.y == y);
         if (trimmedStartIndex == -1) {
-            _console$t.log("adding startPoint", startPoint);
             trimmedPoints.push(startPoint);
             trimmedStartIndex = trimmedPoints.length - 1;
         }
         let trimmedEndIndex = trimmedPoints.findIndex(({ x, y }) => endPoint.x == x && endPoint.y == y);
         if (trimmedEndIndex == -1) {
-            _console$t.log("adding endPoint", endPoint);
             trimmedPoints.push(endPoint);
             trimmedEndIndex = trimmedPoints.length - 1;
         }
@@ -4064,13 +4130,12 @@ function trimWireframe(points, edges) {
         };
         let trimmedEdgeIndex = trimmedEdges.findIndex(({ startIndex, endIndex }) => startIndex == trimmedEdge.startIndex && endIndex == trimmedEdge.endIndex);
         if (trimmedEdgeIndex == -1) {
-            _console$t.log("adding edge", trimmedEdge);
             trimmedEdges.push(trimmedEdge);
             trimmedEdgeIndex = trimmedEdges.length - 1;
         }
     });
     _console$t.log("trimmedWireframe", trimmedPoints, trimmedEdges);
-    return { trimmedPoints, trimmedEdges };
+    return { points: trimmedPoints, edges: trimmedEdges };
 }
 
 const _console$s = createConsole("DisplayContextCommand", { log: false });
@@ -4737,8 +4802,9 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawWireframe":
             {
-                const { points, edges } = command;
-                assertValidWireframe(points, edges);
+                const { wireframe } = command;
+                const { points, edges } = wireframe;
+                assertValidWireframe(wireframe);
                 dataView = new DataView(new ArrayBuffer(1 + 4 * points.length + 1 + 2 * edges.length));
                 let offset = 0;
                 dataView.setUint8(offset++, points.length);
@@ -5694,8 +5760,8 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawWireframe":
             {
-                const { points, edges } = command;
-                await displayManager.drawWireframe(points, edges, sendImmediately);
+                const { wireframe } = command;
+                await displayManager.drawWireframe(wireframe, sendImmediately);
             }
             break;
         case "drawSegment":
@@ -7210,14 +7276,13 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
-    async drawWireframe(points, edges, sendImmediately) {
-        assertValidWireframe(points, edges);
-        const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
+    async drawWireframe(wireframe, sendImmediately) {
+        assertValidWireframe(wireframe);
+        const trimmedWireframe = trimWireframe(wireframe);
         const commandType = "drawWireframe";
         const dataView = serializeContextCommand(this, {
             type: commandType,
-            points: trimmedPoints,
-            edges: trimmedEdges,
+            wireframe: trimmedWireframe,
         });
         if (!dataView) {
             return;
@@ -13134,5 +13199,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, getFontUnicodeRange, hexToRGB, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, getFontUnicodeRange, hexToRGB, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.node.module.js.map
