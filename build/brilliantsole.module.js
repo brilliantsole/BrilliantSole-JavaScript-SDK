@@ -4875,10 +4875,8 @@ const DisplayContextCommandTypes = [
 const DisplaySpriteContextCommandTypes = [
     "selectFillColor",
     "selectLineColor",
-    "selectBackgroundColor",
     "setIgnoreFill",
     "setIgnoreLine",
-    "setFillBackground",
     "setLineWidth",
     "setRotation",
     "clearRotation",
@@ -24413,6 +24411,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(contextState);
 }, _DisplayCanvasHelper_runPreviewSpriteCommand = function _DisplayCanvasHelper_runPreviewSpriteCommand(command, spriteSheet) {
+    _console$6.log("runPreviewSpriteCommand", command);
     if (command.type == "drawSprite") {
         const sprite = spriteSheet.sprites[command.spriteIndex];
         if (sprite) {

@@ -164,11 +164,11 @@ export type DisplayContextCommandType =
 export const DisplaySpriteContextCommandTypes = [
   "selectFillColor",
   "selectLineColor",
-  "selectBackgroundColor",
+  // "selectBackgroundColor",
 
   "setIgnoreFill",
   "setIgnoreLine",
-  "setFillBackground",
+  // "setFillBackground",
 
   "setLineWidth",
   "setRotation",

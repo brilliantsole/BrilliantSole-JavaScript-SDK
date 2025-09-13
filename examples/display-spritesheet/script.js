@@ -1839,6 +1839,30 @@ const addSpriteCommand = () => {
           fillColorIndex: 1,
         });
         break;
+      case "selectBackgroundColor":
+        selectedSprite.commands.push({
+          type: "selectBackgroundColor",
+          backgroundColorIndex: 0,
+        });
+        break;
+      case "setFillBackground":
+        selectedSprite.commands.push({
+          type: "setFillBackground",
+          fillBackground: false,
+        });
+        break;
+      case "setIgnoreFill":
+        selectedSprite.commands.push({
+          type: "setIgnoreFill",
+          ignoreFill: false,
+        });
+        break;
+      case "setIgnoreLine":
+        selectedSprite.commands.push({
+          type: "setIgnoreLine",
+          ignoreLine: false,
+        });
+        break;
       case "selectBitmapColor":
         selectedSprite.commands.push({
           type: "selectBitmapColor",
@@ -2849,13 +2873,13 @@ const updateSpriteCommands = () => {
         lineColorIndexInput.addEventListener("input", () => {
           command.lineColorIndex = Number(lineColorIndexInput.value);
           lineColorIndexSpan.innerText = command.lineColorIndex;
-          updateFillColorIndexColor();
+          updateLineColorIndexColor();
           draw();
         });
 
         const lineColorIndexColor =
           lineColorIndexContainer.querySelector(".color");
-        const updateFillColorIndexColor = () => {
+        const updateLineColorIndexColor = () => {
           console.log(
             "lineColor",
             command.lineColorIndex,
@@ -2866,7 +2890,89 @@ const updateSpriteCommands = () => {
           lineColorIndexColor.value =
             displayCanvasHelper.spriteColors[command.lineColorIndex];
         };
-        updateFillColorIndexColor();
+        updateLineColorIndexColor();
+      }
+
+      const includeBackgroundColorIndex = "backgroundColorIndex" in command;
+      if (includeBackgroundColorIndex) {
+        const backgroundColorIndexContainer =
+          spriteCommandContainer.querySelector(".backgroundColorIndex");
+        const backgroundColorIndexInput =
+          backgroundColorIndexContainer.querySelector(".input");
+        backgroundColorIndexInput.value = command.backgroundColorIndex;
+        const backgroundColorIndexSpan =
+          backgroundColorIndexContainer.querySelector(".value");
+        backgroundColorIndexSpan.innerText = command.backgroundColorIndex;
+        backgroundColorIndexContainer.removeAttribute("hidden");
+        backgroundColorIndexInput.addEventListener("input", () => {
+          command.backgroundColorIndex = Number(
+            backgroundColorIndexInput.value
+          );
+          backgroundColorIndexSpan.innerText = command.backgroundColorIndex;
+          updateBackgroundColorIndexColor();
+          draw();
+        });
+
+        const backgroundColorIndexColor =
+          backgroundColorIndexContainer.querySelector(".color");
+        const updateBackgroundColorIndexColor = () => {
+          console.log(
+            "backgroundColor",
+            command.backgroundColorIndex,
+            displayCanvasHelper.spriteColors[command.backgroundColorIndex],
+            backgroundColorIndexColor
+          );
+          backgroundColorIndexColor.dataset.colorIndex =
+            command.backgroundColorIndex;
+          backgroundColorIndexColor.value =
+            displayCanvasHelper.spriteColors[command.backgroundColorIndex];
+        };
+        updateBackgroundColorIndexColor();
+      }
+
+      const includeSetFillBackground = "fillBackground" in command;
+      if (includeSetFillBackground) {
+        const setFillBackgroundCommandContainer =
+          spriteCommandContainer.querySelector(".setFillBackground");
+        setFillBackgroundCommandContainer.removeAttribute("hidden");
+
+        const setFillBackgroundInput =
+          setFillBackgroundCommandContainer.querySelector(" .input");
+        setFillBackgroundInput.checked = command.fillBackground;
+        setFillBackgroundInput.addEventListener("input", () => {
+          command.fillBackground = setFillBackgroundInput.checked;
+          draw();
+        });
+      }
+
+      const includeSetIgnoreFill = "ignoreFill" in command;
+      if (includeSetIgnoreFill) {
+        const setIgnoreFillCommandContainer =
+          spriteCommandContainer.querySelector(".setIgnoreFill");
+        setIgnoreFillCommandContainer.removeAttribute("hidden");
+
+        const setIgnoreFillInput =
+          setIgnoreFillCommandContainer.querySelector(" .input");
+        setIgnoreFillInput.checked = command.ignoreFill;
+        setIgnoreFillInput.addEventListener("input", () => {
+          command.ignoreFill = setIgnoreFillInput.checked;
+          draw();
+        });
+      }
+
+      const includeSetIgnoreLine = "ignoreLine" in command;
+      if (includeSetIgnoreLine) {
+        const setIgnoreLineCommandContainer =
+          spriteCommandContainer.querySelector(".setIgnoreLine");
+        setIgnoreLineCommandContainer.removeAttribute("hidden");
+
+        const setIgnoreLineInput =
+          setIgnoreLineCommandContainer.querySelector(" .input");
+        setIgnoreLineInput.checked = command.ignoreLine;
+        setIgnoreLineInput.addEventListener("input", () => {
+          command.ignoreLine = setIgnoreLineInput.checked;
+          draw();
+        });
       }
 
       const includeBitmapColorIndex = "bitmapColorIndex" in command;

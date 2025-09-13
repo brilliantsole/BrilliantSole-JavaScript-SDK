@@ -4156,10 +4156,8 @@ const DisplayContextCommandTypes = [
 const DisplaySpriteContextCommandTypes = [
     "selectFillColor",
     "selectLineColor",
-    "selectBackgroundColor",
     "setIgnoreFill",
     "setIgnoreLine",
-    "setFillBackground",
     "setLineWidth",
     "setRotation",
     "clearRotation",

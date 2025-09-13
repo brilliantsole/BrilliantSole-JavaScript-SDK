@@ -2260,6 +2260,38 @@ device.addEventListener("isConnected", () => {
   lineColorSelect.disabled = !enabled;
 });
 
+const backgroundColorContainer = document.getElementById("backgroundColor");
+const backgroundColorSelect = backgroundColorContainer.querySelector("select");
+const backgroundColorOptgroup = backgroundColorSelect.querySelector("optgroup");
+let backgroundColorIndex = 0;
+device.addEventListener("connected", () => {
+  if (!device.isDisplayAvailable) {
+    return;
+  }
+  backgroundColorOptgroup.innerHTML = "";
+  for (
+    let colorIndex = 0;
+    colorIndex < device.numberOfDisplayColors;
+    colorIndex++
+  ) {
+    backgroundColorOptgroup.appendChild(new Option(colorIndex));
+  }
+  backgroundColorSelect.value = backgroundColorIndex;
+});
+const backgroundColorInput = backgroundColorContainer.querySelector("input");
+backgroundColorSelect.addEventListener("input", () => {
+  backgroundColorIndex = Number(backgroundColorSelect.value);
+  console.log({ backgroundColorIndex });
+  device.setDisplayFillBackground(backgroundColorIndex != 0);
+  device.selectDisplayBackgroundColor(backgroundColorIndex);
+  drawShape();
+  backgroundColorInput.value = device.displayColors[backgroundColorIndex];
+});
+device.addEventListener("isConnected", () => {
+  const enabled = device.isConnected && device.isDisplayAvailable;
+  backgroundColorSelect.disabled = !enabled;
+});
+
 let drawWhenReady = false;
 let lastDrawTime = 0;
 let lastDrawReadyTime = 0;

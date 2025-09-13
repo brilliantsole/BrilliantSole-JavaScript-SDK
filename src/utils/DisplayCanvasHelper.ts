@@ -865,7 +865,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       fillBackground,
     });
-
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.setFillBackground(
         fillBackground,
@@ -4047,7 +4046,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     command: DisplayContextCommand,
     spriteSheet: DisplaySpriteSheet
   ) {
-    // _console.log("runPreviewSpriteCommand", command);
+    _console.log("runPreviewSpriteCommand", command);
     if (command.type == "drawSprite") {
       const sprite = spriteSheet.sprites[command.spriteIndex];
       if (sprite) {
