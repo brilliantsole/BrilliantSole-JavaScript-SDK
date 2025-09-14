@@ -2472,7 +2472,8 @@ const updateSpriteCommands = () => {
         }
       }
 
-      const includeEdges = "edges" in command.wireframe;
+      const includeEdges =
+        "wireframe" in command && "edges" in command.wireframe;
       if (includeEdges) {
         const numberOfEdgesContainer =
           spriteCommandContainer.querySelector(".numberOfEdges");

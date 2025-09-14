@@ -132,10 +132,12 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  const text = textarea.value;
-  console.log(`drawing "${text}"`);
+  switch (mode) {
+    case "scene":
+      await drawScene(scene);
+      break;
+  }
 
-  // FILL
   await displayCanvasHelper.show();
 };
 
@@ -145,6 +147,11 @@ displayCanvasHelper.addEventListener("ready", () => {
     isWaitingToRedraw = false;
     draw();
   }
+});
+
+const drawButton = document.getElementById("draw");
+drawButton.addEventListener("click", () => {
+  draw();
 });
 
 // DRAW PARAMS
@@ -178,12 +185,16 @@ const spriteSheet = {
   name: "scene",
   sprites: [],
 };
-let drawWireframeAsSprite = true;
+window.spriteSheet = spriteSheet;
+window.drawWireframeAsSprite = false;
 const drawScene = async (scene) => {
   const entities = Array.from(scene.querySelectorAll(entitiesToDraw.join(",")));
   let wireframe;
   for (let i in entities) {
     const entity = entities[i];
+    if (!entity.object3D.visible) {
+      continue;
+    }
     const _wireframe = getWireframe(entity);
     if (!wireframe) {
       wireframe = _wireframe;
@@ -192,22 +203,23 @@ const drawScene = async (scene) => {
     }
   }
   if (drawWireframeAsSprite) {
-    spriteSheet.sprites.push({
+    spriteSheet.sprites[0] = {
       name: "wireframe",
+      width: 640,
+      height: 400,
       commands: [
         { type: "selectFillColor", fillColorIndex: 1 },
-        { type: "setSegmentRadius", segmentRadius: 2 },
+        { type: "setSegmentRadius", segmentRadius: 1 },
         { type: "drawWireframe", wireframe },
       ],
-    });
+    };
     await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
     await displayCanvasHelper.selectSpriteSheet("scene");
     await displayCanvasHelper.selectSpriteColor(1, 1);
-    await displayCanvasHelper.drawSprite(0, 0, "wireframe");
+    await displayCanvasHelper.drawSprite(640 / 2, 400 / 2, "wireframe");
   } else {
     await displayCanvasHelper.drawWireframe(wireframe);
   }
-  await displayCanvasHelper.show();
 };
 window.drawScene = drawScene;
 function getWireframeEdges(entity) {
@@ -244,8 +256,14 @@ function getWireframeEdges(entity) {
     // Skip vertices behind camera
     if (projected.z < -1 || projected.z > 1) continue;
 
-    const x = (projected.x * 0.5 + 0.5) * canvas.width;
-    const y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
+    let x, y;
+    if (drawWireframeAsSprite) {
+      x = (projected.x * 0.5 + 0.0) * canvas.width;
+      y = (1 - (projected.y * 0.5 + 1.0)) * canvas.height;
+    } else {
+      x = (projected.x * 0.5 + 0.5) * canvas.width;
+      y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
+    }
 
     oldToNewIndex.set(i, points.length);
     points.push({ x, y });
@@ -303,8 +321,14 @@ function getWireframeCulled(entity) {
 
     if (projected.z < -1 || projected.z > 1) continue;
 
-    const x = (projected.x * 0.5 + 0.5) * canvas.width;
-    const y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
+    let x, y;
+    if (drawWireframeAsSprite) {
+      x = (projected.x * 0.5 + 0.0) * canvas.width;
+      y = (1 - (projected.y * 0.5 + 1.0)) * canvas.height;
+    } else {
+      x = (projected.x * 0.5 + 0.5) * canvas.width;
+      y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
+    }
 
     oldToNewIndex.set(i, points.length);
     points.push({ x, y });
@@ -352,6 +376,7 @@ function getWireframe(entity) {
   const edgesWireframe = getWireframeEdges(entity);
   // console.log(culledWireframe.points, edgesWireframe.points);
   return BS.intersectWireframes(culledWireframe, edgesWireframe);
+  return culledWireframe;
 }
 window.getWireframe = getWireframe;
 
@@ -405,3 +430,29 @@ const setMode = (newMode) => {
   }
 };
 setMode(modes[0]);
+
+// AUTODRAW
+const autoDrawInput = document.getElementById("autoDraw");
+autoDrawInput.addEventListener("input", () => {
+  setAutoDraw(autoDrawInput.checked);
+});
+let autoDraw = autoDrawInput.checked;
+const setAutoDraw = (newAutoDraw) => {
+  autoDraw = newAutoDraw;
+  console.log({ autoDraw });
+  autoDrawInput.checked = autoDraw;
+  if (autoDraw) {
+    draw();
+  }
+};
+
+displayCanvasHelper.addEventListener("ready", () => {
+  isDrawing = false;
+  if (isWaitingToRedraw || autoDraw) {
+    isWaitingToRedraw = false;
+    draw();
+  }
+});
+
+// DID LOAD
+didLoad = true;

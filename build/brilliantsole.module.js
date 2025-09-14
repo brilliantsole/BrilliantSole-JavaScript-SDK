@@ -23196,6 +23196,8 @@ class DisplayCanvasHelper {
         _console$6.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
         let sprite = this.selectedSpriteSheet?.sprites.find((sprite) => sprite.name == spriteName);
         _console$6.assertWithError(sprite, `sprite "${spriteName}" not found`);
+        _console$6.assertWithError("width" in sprite, "sprite has no width");
+        _console$6.assertWithError("height" in sprite, "sprite has no height");
         const contextState = structuredClone(this.contextState);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSpriteToCanvas).call(this, offsetX, offsetY, sprite, contextState);
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
@@ -24188,8 +24190,8 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
 }, _DisplayCanvasHelper_drawSpriteToCanvas = function _DisplayCanvasHelper_drawSpriteToCanvas(offsetX, offsetY, sprite, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, true);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, true);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, false);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, offsetX, offsetY, sprite, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, false);
     sprite.commands.forEach((command) => {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runSpriteCommand).call(this, command, contextState);
     });

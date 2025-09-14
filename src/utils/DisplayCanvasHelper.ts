@@ -1906,6 +1906,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       ? this.#ignoreCanvasContextStyle
       : this.#colorIndexToRgbString(lineColorIndex);
     this.context.lineWidth = lineWidth;
+    // _console.log({ fillColorIndex, lineColorIndex, lineWidth });
+    // _console.log({fillStyle: this.context.fillStyle, strokeStyle: this.context.strokeStyle})
   }
   #drawRectToCanvas(
     offsetX: number,
@@ -3427,8 +3429,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     this.#setIgnoreDevice(true);
     this.#setUseSpriteColorIndices(true);
-    this.#setClearCanvasBoundingBoxOnDraw(false);
     this.#saveContextForSprite(offsetX, offsetY, sprite, contextState);
+    this.#setClearCanvasBoundingBoxOnDraw(false);
 
     sprite.commands.forEach((command) => {
       this.#runSpriteCommand(command, contextState);
@@ -3453,6 +3455,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       (sprite) => sprite.name == spriteName
     );
     _console.assertWithError(sprite, `sprite "${spriteName}" not found`);
+    _console.assertWithError("width" in sprite!, "sprite has no width");
+    _console.assertWithError("height" in sprite!, "sprite has no height");
 
     const contextState = structuredClone(this.contextState);
     this.#drawSpriteToCanvas(offsetX, offsetY, sprite!, contextState);

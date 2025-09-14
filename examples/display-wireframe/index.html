@@ -65,6 +65,13 @@
         <optgroup label="select mode"></optgroup>
       </select>
     </label>
+
+    <button id="draw">draw</button>
+
+    <label>
+      auto draw
+      <input type="checkbox" id="autoDraw" />
+    </label>
     <br />
 
     <label>
@@ -83,6 +90,8 @@
       device-orientation-permission-ui="enabled: false"
       renderer="colorManagement: true;"
     >
+      <a-camera position="0 1.6 0"></a-camera>
+
       <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
       <a-sphere
         position="0 1.25 -5"
@@ -90,6 +99,7 @@
         segments-width="4"
         radius="1.25"
         color="#EF2D5E"
+        visible="true"
       ></a-sphere>
       <a-cylinder
         position="1 0.75 -3"
@@ -98,6 +108,7 @@
         segments-height="4"
         segments-radial="5"
         color="#FFC65D"
+        visible="true"
       ></a-cylinder>
       <a-plane
         position="0 0 -4"
