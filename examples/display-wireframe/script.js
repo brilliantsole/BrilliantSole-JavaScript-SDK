@@ -1,5 +1,9 @@
 import * as BS from "../../build/brilliantsole.module.js";
 
+/** @typedef {import("../utils/three/three.module.min").Vector3} TVector3 */
+/** @typedef {import("../utils/three/three.module.min").Quaternion} TQuaternion */
+/** @typedef {import("../utils/three/three.module.min").Euler} TEuler */
+
 // DEVICE
 const device = new BS.Device();
 window.device = device;
@@ -32,6 +36,7 @@ const displayCanvas = document.getElementById("display");
 
 // DISPLAY CANVAS HELPER
 const displayCanvasHelper = new BS.DisplayCanvasHelper();
+displayCanvasHelper.setSegmentRadius(2, true);
 // displayCanvasHelper.setBrightness("veryLow");
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
@@ -136,6 +141,9 @@ const draw = async () => {
     case "scene":
       await drawScene(scene);
       break;
+    case "punch":
+      await drawScene(punchScene);
+      break;
   }
 
   await displayCanvasHelper.show();
@@ -178,6 +186,8 @@ device.addEventListener("fileTransferStatus", () => {
 
 // SCENE MODE
 const scene = document.getElementById("scene");
+let _scene;
+let _cameraRig;
 window.scene = scene;
 const entitiesToDraw = ["a-box", "a-plane", "a-sphere", "a-cylinder"];
 /** @type {BS.DisplaySpriteSheet} */
@@ -188,7 +198,10 @@ const spriteSheet = {
 window.spriteSheet = spriteSheet;
 window.drawWireframeAsSprite = false;
 const drawScene = async (scene) => {
-  const entities = Array.from(scene.querySelectorAll(entitiesToDraw.join(",")));
+  let entities = Array.from(scene.querySelectorAll(entitiesToDraw.join(",")));
+  // entities.push(modelEntity);
+  // entities = [modelEntity];
+  console.log(entities);
   let wireframe;
   for (let i in entities) {
     const entity = entities[i];
@@ -209,7 +222,7 @@ const drawScene = async (scene) => {
       height: 400,
       commands: [
         { type: "selectFillColor", fillColorIndex: 1 },
-        { type: "setSegmentRadius", segmentRadius: 1 },
+        { type: "setSegmentRadius", segmentRadius: 2 },
         { type: "drawWireframe", wireframe },
       ],
     };
@@ -224,67 +237,74 @@ const drawScene = async (scene) => {
 window.drawScene = drawScene;
 function getWireframeEdges(entity) {
   const canvas = displayCanvasHelper.canvas;
-  const mesh = entity.getObject3D("mesh");
-  if (!mesh || !mesh.geometry) return { points: [], edges: [] };
+  const root = entity.getObject3D("mesh");
+  if (!root) return { points: [], edges: [] };
 
   const camera = entity
     .closest("a-scene")
     .querySelector("[camera]")
     .getObject3D("camera");
   if (!camera) return { points: [], edges: [] };
-
-  const geometry = mesh.geometry.index
-    ? mesh.geometry.toNonIndexed()
-    : mesh.geometry;
-
-  const edgesGeo = new THREE.EdgesGeometry(geometry);
-  const pos = edgesGeo.attributes.position;
 
   const points = [];
   const edges = [];
-  const oldToNewIndex = new Map();
-
-  const v = new THREE.Vector3();
   const projected = new THREE.Vector3();
+  const v = new THREE.Vector3();
 
-  // Project vertices
-  for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i);
-    v.applyMatrix4(mesh.matrixWorld);
-    projected.copy(v).project(camera);
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh) || !child.geometry) return;
 
-    // Skip vertices behind camera
-    if (projected.z < -1 || projected.z > 1) continue;
+    const mesh = child;
+    const geometry = mesh.geometry.index
+      ? mesh.geometry.toNonIndexed()
+      : mesh.geometry;
 
-    let x, y;
-    if (drawWireframeAsSprite) {
-      x = (projected.x * 0.5 + 0.0) * canvas.width;
-      y = (1 - (projected.y * 0.5 + 1.0)) * canvas.height;
-    } else {
-      x = (projected.x * 0.5 + 0.5) * canvas.width;
-      y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
+    // Generate edges from geometry
+    const edgesGeo = new THREE.EdgesGeometry(geometry, 15);
+    const pos = edgesGeo.attributes.position;
+
+    const oldToNewIndex = new Map();
+
+    // Project vertices
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i);
+      v.applyMatrix4(mesh.matrixWorld);
+      projected.copy(v).project(camera);
+
+      // Skip vertices behind/too far
+      if (projected.z < -1 || projected.z > 1) continue;
+
+      let x, y;
+      if (drawWireframeAsSprite) {
+        x = (projected.x * 0.5 + 0.0) * canvas.width;
+        y = (1 - (projected.y * 0.5 + 1.0)) * canvas.height;
+      } else {
+        x = (projected.x * 0.5 + 0.5) * canvas.width;
+        y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
+      }
+
+      oldToNewIndex.set(i, points.length);
+      points.push({ x, y });
     }
 
-    oldToNewIndex.set(i, points.length);
-    points.push({ x, y });
-  }
-
-  // Each consecutive pair of vertices is an edge in EdgesGeometry
-  for (let i = 0; i < pos.count; i += 2) {
-    if (oldToNewIndex.has(i) && oldToNewIndex.has(i + 1)) {
-      edges.push({
-        startIndex: oldToNewIndex.get(i),
-        endIndex: oldToNewIndex.get(i + 1),
-      });
+    // Each consecutive pair of vertices = an edge
+    for (let i = 0; i < pos.count; i += 2) {
+      if (oldToNewIndex.has(i) && oldToNewIndex.has(i + 1)) {
+        edges.push({
+          startIndex: oldToNewIndex.get(i),
+          endIndex: oldToNewIndex.get(i + 1),
+        });
+      }
     }
-  }
+  });
 
   return { points, edges };
 }
+
 function getWireframeCulled(entity) {
   const canvas = displayCanvasHelper.canvas;
-  const mesh = entity.getObject3D("mesh");
-  if (!mesh || !mesh.geometry) return { points: [], edges: [] };
+  const root = entity.getObject3D("mesh");
+  if (!root) return { points: [], edges: [] };
 
   const camera = entity
     .closest("a-scene")
@@ -292,77 +312,84 @@ function getWireframeCulled(entity) {
     .getObject3D("camera");
   if (!camera) return { points: [], edges: [] };
 
-  const geometry = mesh.geometry.index
-    ? mesh.geometry.toNonIndexed()
-    : mesh.geometry;
-  const pos = geometry.attributes.position;
-
   const points = [];
   const edgesSet = new Set();
-  const oldToNewIndex = new Map();
+  const camPos = new THREE.Vector3();
+  camera.getWorldPosition(camPos);
 
+  // Shared temp vectors
   const vA = new THREE.Vector3();
   const vB = new THREE.Vector3();
   const vC = new THREE.Vector3();
   const ab = new THREE.Vector3();
   const ac = new THREE.Vector3();
   const normal = new THREE.Vector3();
-  const camPos = new THREE.Vector3();
-  camera.getWorldPosition(camPos);
-
   const projected = new THREE.Vector3();
 
-  // Project vertices and store indices
-  for (let i = 0; i < pos.count; i++) {
-    const v = new THREE.Vector3()
-      .fromBufferAttribute(pos, i)
-      .applyMatrix4(mesh.matrixWorld);
-    projected.copy(v).project(camera);
+  let pointOffset = 0;
 
-    if (projected.z < -1 || projected.z > 1) continue;
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh) || !child.geometry) return;
 
-    let x, y;
-    if (drawWireframeAsSprite) {
-      x = (projected.x * 0.5 + 0.0) * canvas.width;
-      y = (1 - (projected.y * 0.5 + 1.0)) * canvas.height;
-    } else {
-      x = (projected.x * 0.5 + 0.5) * canvas.width;
-      y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
+    const mesh = child;
+    const geometry = mesh.geometry.index
+      ? mesh.geometry.toNonIndexed()
+      : mesh.geometry;
+    const pos = geometry.attributes.position;
+
+    const oldToNewIndex = new Map();
+
+    // Project vertices and store indices
+    for (let i = 0; i < pos.count; i++) {
+      const v = new THREE.Vector3()
+        .fromBufferAttribute(pos, i)
+        .applyMatrix4(mesh.matrixWorld);
+      projected.copy(v).project(camera);
+
+      if (projected.z < -1 || projected.z > 1) continue;
+
+      let x, y;
+      if (drawWireframeAsSprite) {
+        x = (projected.x * 0.5 + 0.0) * canvas.width;
+        y = (1 - (projected.y * 0.5 + 1.0)) * canvas.height;
+      } else {
+        x = (projected.x * 0.5 + 0.5) * canvas.width;
+        y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
+      }
+
+      oldToNewIndex.set(i, points.length);
+      points.push({ x, y });
     }
 
-    oldToNewIndex.set(i, points.length);
-    points.push({ x, y });
-  }
+    // Build edges for front-facing triangles
+    for (let i = 0; i < pos.count; i += 3) {
+      vA.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+      vB.fromBufferAttribute(pos, i + 1).applyMatrix4(mesh.matrixWorld);
+      vC.fromBufferAttribute(pos, i + 2).applyMatrix4(mesh.matrixWorld);
 
-  // Build edges for front-facing triangles
-  for (let i = 0; i < pos.count; i += 3) {
-    vA.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
-    vB.fromBufferAttribute(pos, i + 1).applyMatrix4(mesh.matrixWorld);
-    vC.fromBufferAttribute(pos, i + 2).applyMatrix4(mesh.matrixWorld);
+      ab.subVectors(vB, vA);
+      ac.subVectors(vC, vA);
+      normal.crossVectors(ab, ac).normalize();
 
-    ab.subVectors(vB, vA);
-    ac.subVectors(vC, vA);
-    normal.crossVectors(ab, ac).normalize();
-
-    const toCam = camPos.clone().sub(vA);
-
-    if (normal.dot(toCam) > 0) {
-      // Add edges
-      [
-        [i, i + 1],
-        [i + 1, i + 2],
-        [i + 2, i],
-      ].forEach(([a, b]) => {
-        if (oldToNewIndex.has(a) && oldToNewIndex.has(b)) {
-          const key =
-            oldToNewIndex.get(a) < oldToNewIndex.get(b)
-              ? `${oldToNewIndex.get(a)},${oldToNewIndex.get(b)}`
-              : `${oldToNewIndex.get(b)},${oldToNewIndex.get(a)}`;
-          edgesSet.add(key);
-        }
-      });
+      const toCam = camPos.clone().sub(vA);
+      if (normal.dot(toCam) > 0) {
+        [
+          [i, i + 1],
+          [i + 1, i + 2],
+          [i + 2, i],
+        ].forEach(([a, b]) => {
+          if (oldToNewIndex.has(a) && oldToNewIndex.has(b)) {
+            const ai = oldToNewIndex.get(a);
+            const bi = oldToNewIndex.get(b);
+            const key = ai < bi ? `${ai},${bi}` : `${bi},${ai}`;
+            edgesSet.add(key);
+          }
+        });
+      }
     }
-  }
+
+    pointOffset = points.length;
+  });
 
   const edges = Array.from(edgesSet).map((str) => {
     const [a, b] = str.split(",").map(Number);
@@ -371,6 +398,7 @@ function getWireframeCulled(entity) {
 
   return { points, edges };
 }
+
 function getWireframe(entity) {
   const culledWireframe = getWireframeCulled(entity);
   const edgesWireframe = getWireframeEdges(entity);
@@ -381,7 +409,16 @@ function getWireframe(entity) {
 window.getWireframe = getWireframe;
 
 // PUNCH MODE
-// FILL
+/** @type {HTMLIFrameElement} */
+const punchIframe = document.getElementById("punch");
+window.punchIframe = punchIframe;
+let punchScene;
+punchIframe.addEventListener("load", () => {
+  punchScene = punchIframe.contentWindow.document.querySelector("a-scene");
+  window.punchScene = punchScene;
+  punchScene.style.width = "100%";
+  punchScene.style.height = "100%";
+});
 
 // HAND TRACKING MODE
 // FILL
@@ -408,15 +445,21 @@ modeSelect.addEventListener("input", () => {
 });
 const setMode = (newMode) => {
   mode = newMode;
+  modeSelect.value = mode;
   console.log({ mode });
   scene.classList.add("hidden");
+  punchIframe.classList.add("hidden");
 
   switch (mode) {
     case "scene":
       scene.classList.remove("hidden");
+      _scene = scene;
+      _cameraRig = scene.querySelector("[camera]").parentEl;
       break;
     case "punch":
-      // FILL
+      punchIframe.classList.remove("hidden");
+      _scene = punchScene;
+      _cameraRig = punchScene.querySelector("[camera]");
       break;
     case "hand":
       // FILL
@@ -429,7 +472,11 @@ const setMode = (newMode) => {
       break;
   }
 };
-setMode(modes[0]);
+scene.addEventListener("loaded", () => {
+  setTimeout(() => {
+    setMode(modes[0]);
+  });
+});
 
 // AUTODRAW
 const autoDrawInput = document.getElementById("autoDraw");
@@ -452,6 +499,65 @@ displayCanvasHelper.addEventListener("ready", () => {
     isWaitingToRedraw = false;
     draw();
   }
+});
+
+// ORIENTATION
+const toggleOrientationCheckbox = document.getElementById("toggleOrientation");
+toggleOrientationCheckbox.addEventListener("input", () => {
+  setOrientation(toggleOrientationCheckbox.checked);
+});
+let orientationEnabled = false;
+const orientationSensorRate = 40;
+const setOrientation = (newOrientationEnabled) => {
+  orientationEnabled = newOrientationEnabled;
+  console.log({ orientationEnabled });
+  updateOrientation();
+
+  if (orientationEnabled) {
+    _cameraRig.removeAttribute("look-controls");
+  } else {
+    _cameraRig.setAttribute("look-controls", "");
+  }
+};
+device.addEventListener("connected", () => {
+  updateOrientation();
+});
+const updateOrientation = () => {
+  if (device.isConnected) {
+    device.setSensorConfiguration({
+      orientation: orientationEnabled ? orientationSensorRate : 0,
+    });
+  }
+};
+
+let offsetYaw = 0;
+/** @type {TVector3} */
+const orientationVector3 = new THREE.Vector3();
+/** @type {TEuler} */
+const orientationEuler = new THREE.Euler(0, 0, 0, "YXZ");
+device.addEventListener("orientation", (event) => {
+  const { orientation } = event.message;
+
+  orientationVector3
+    .set(orientation.pitch, orientation.heading, orientation.roll)
+    .multiplyScalar(Math.PI / 180);
+  orientationEuler.setFromVector3(orientationVector3);
+
+  _cameraRig.object3D.rotation.set(
+    orientationEuler.x,
+    orientationEuler.y - offsetYaw,
+    orientationEuler.z
+  );
+});
+
+const calibrateOrientationButton = document.getElementById(
+  "calibrateOrientation"
+);
+const calibrateOrientation = () => {
+  offsetYaw = orientationEuler.y;
+};
+calibrateOrientationButton.addEventListener("click", () => {
+  calibrateOrientation();
 });
 
 // DID LOAD

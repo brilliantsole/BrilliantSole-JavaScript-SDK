@@ -2407,7 +2407,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     wireframe: DisplayWireframe,
     contextState: DisplayContextState
   ) {
-    _console.log("drawWireframeToCanvas", wireframe);
+    // _console.log("drawWireframeToCanvas", wireframe);
     this.#updateContext(contextState);
 
     this.#save();

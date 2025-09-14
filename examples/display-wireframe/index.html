@@ -20,10 +20,15 @@
       display: none;
     }
 
-    a-scene {
+    a-scene,
+    iframe {
       width: 640px;
       height: 400px;
       display: inline-block;
+    }
+
+    iframe {
+      border: none;
     }
 
     #displayColors {
@@ -72,6 +77,15 @@
       auto draw
       <input type="checkbox" id="autoDraw" />
     </label>
+
+    <label>
+      enable orientation
+      <input type="checkbox" id="toggleOrientation" />
+    </label>
+
+    <label>
+      <button id="calibrateOrientation">calibrate orientation</button>
+    </label>
     <br />
 
     <label>
@@ -90,7 +104,13 @@
       device-orientation-permission-ui="enabled: false"
       renderer="colorManagement: true;"
     >
-      <a-camera position="0 1.6 0"></a-camera>
+      <a-entity look-controls wasd-controls>
+        <a-camera
+          look-controls="enabled: false"
+          wasd-controls="enabled: false;"
+          position="0 1.6 0"
+        ></a-camera>
+      </a-entity>
 
       <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
       <a-sphere
@@ -101,6 +121,14 @@
         color="#EF2D5E"
         visible="true"
       ></a-sphere>
+      <a-box
+        position="1 0.75 -3"
+        height="1.5"
+        width="0.75"
+        depth="0.75"
+        rotation="0 0 0"
+        color="#FFC65D"
+      ></a-box>
       <a-cylinder
         position="1 0.75 -3"
         radius="0.5"
@@ -108,7 +136,7 @@
         segments-height="4"
         segments-radial="5"
         color="#FFC65D"
-        visible="true"
+        visible="false"
       ></a-cylinder>
       <a-plane
         position="0 0 -4"
@@ -117,7 +145,10 @@
         height="4"
         color="#7BC8A4"
       ></a-plane>
+
       <a-sky color="#ECECEC"></a-sky>
     </a-scene>
+
+    <iframe src="../punch/" id="punch"></iframe>
   </body>
 </html>

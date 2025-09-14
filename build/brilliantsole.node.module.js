@@ -1188,7 +1188,7 @@ class PressureSensorDataManager {
 }
 _PressureSensorDataManager_positions = new WeakMap(), _PressureSensorDataManager_sensorRangeHelpers = new WeakMap(), _PressureSensorDataManager_normalizedSumRangeHelper = new WeakMap(), _PressureSensorDataManager_centerOfPressureHelper = new WeakMap();
 
-const _console$H = createConsole("MotionSensorDataManager", { log: false });
+const _console$H = createConsole("MotionSensorDataManager", { log: tr });
 const MotionSensorTypes = [
     "acceleration",
     "gravity",

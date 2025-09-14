@@ -23806,7 +23806,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     });
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper__getSegmentsBoundingBox).call(this, segments, contextState);
 }, _DisplayCanvasHelper_drawWireframeToCanvas = function _DisplayCanvasHelper_drawWireframeToCanvas(wireframe, contextState) {
-    _console$6.log("drawWireframeToCanvas", wireframe);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getWireframeBoundingBox).call(this, wireframe, contextState);
