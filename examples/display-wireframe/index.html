@@ -82,9 +82,17 @@
       enable orientation
       <input type="checkbox" id="toggleOrientation" />
     </label>
-
     <label>
       <button id="calibrateOrientation">calibrate orientation</button>
+    </label>
+
+    <button id="toggleRotatorConnection">connect to rotator</button>
+    <label>
+      enable rotator
+      <input type="checkbox" id="toggleRotator" />
+    </label>
+    <label>
+      <button id="calibrateRotator">calibrate rotator</button>
     </label>
     <br />
 
@@ -112,7 +120,12 @@
         ></a-camera>
       </a-entity>
 
-      <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
+      <a-box
+        class="rotator"
+        position="-1 0.5 -3"
+        rotation="0 45 0"
+        color="#4CC3D9"
+      ></a-box>
       <a-sphere
         position="0 1.25 -5"
         segments-height="4"

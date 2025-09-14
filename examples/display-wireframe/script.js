@@ -186,7 +186,6 @@ device.addEventListener("fileTransferStatus", () => {
 
 // SCENE MODE
 const scene = document.getElementById("scene");
-let _scene;
 let _cameraRig;
 window.scene = scene;
 const entitiesToDraw = ["a-box", "a-plane", "a-sphere", "a-cylinder"];
@@ -453,12 +452,10 @@ const setMode = (newMode) => {
   switch (mode) {
     case "scene":
       scene.classList.remove("hidden");
-      _scene = scene;
       _cameraRig = scene.querySelector("[camera]").parentEl;
       break;
     case "punch":
       punchIframe.classList.remove("hidden");
-      _scene = punchScene;
       _cameraRig = punchScene.querySelector("[camera]");
       break;
     case "hand":
@@ -530,7 +527,7 @@ const updateOrientation = () => {
   }
 };
 
-let offsetYaw = 0;
+let orientationOffsetYaw = 0;
 /** @type {TVector3} */
 const orientationVector3 = new THREE.Vector3();
 /** @type {TEuler} */
@@ -545,7 +542,7 @@ device.addEventListener("orientation", (event) => {
 
   _cameraRig.object3D.rotation.set(
     orientationEuler.x,
-    orientationEuler.y - offsetYaw,
+    orientationEuler.y - orientationOffsetYaw,
     orientationEuler.z
   );
 });
@@ -554,10 +551,78 @@ const calibrateOrientationButton = document.getElementById(
   "calibrateOrientation"
 );
 const calibrateOrientation = () => {
-  offsetYaw = orientationEuler.y;
+  orientationOffsetYaw = orientationEuler.y;
 };
 calibrateOrientationButton.addEventListener("click", () => {
   calibrateOrientation();
+});
+
+// ROTATOR
+const rotator = new BS.Device();
+
+const toggleRotatorConnectionButton = document.getElementById(
+  "toggleRotatorConnection"
+);
+toggleRotatorConnectionButton.addEventListener("click", () =>
+  rotator.toggleConnection()
+);
+rotator.addEventListener("connectionStatus", () => {
+  let disabled = false;
+  let innerText = rotator.connectionStatus;
+  switch (rotator.connectionStatus) {
+    case "notConnected":
+      innerText = "connect";
+      break;
+    case "connected":
+      innerText = "disconnect";
+      break;
+  }
+  toggleRotatorConnectionButton.disabled = disabled;
+  toggleRotatorConnectionButton.innerText = innerText;
+});
+
+const toggleRotatorCheckbox = document.getElementById("toggleRotator");
+toggleRotatorCheckbox.addEventListener("input", () => {
+  setRotator(toggleRotatorCheckbox.checked);
+});
+let rotatorEnabled = false;
+const rotatorSensorRate = 20;
+const setRotator = (newRotatorEnabled) => {
+  rotatorEnabled = newRotatorEnabled;
+  console.log({ rotatorEnabled });
+  updateRotator();
+};
+rotator.addEventListener("connected", () => {
+  updateRotator();
+});
+const updateRotator = () => {
+  if (rotator.isConnected) {
+    rotator.setSensorConfiguration({
+      gameRotation: rotatorEnabled ? rotatorSensorRate : 0,
+    });
+  }
+};
+
+const rotatorEntity = scene.querySelector(".rotator");
+/** @type {TQuaternion} */
+const rotatorQuaternion = new THREE.Quaternion();
+/** @type {TQuaternion} */
+const rotatorOffsetQuaternion = new THREE.Quaternion();
+rotator.addEventListener("gameRotation", (event) => {
+  const { gameRotation } = event.message;
+  rotatorQuaternion.copy(gameRotation);
+  rotatorEntity.object3D.quaternion.multiplyQuaternions(
+    rotatorOffsetQuaternion,
+    rotatorQuaternion
+  );
+});
+
+const calibrateRotatorButton = document.getElementById("calibrateRotator");
+const calibrateRotator = () => {
+  rotatorOffsetQuaternion.copy(rotatorQuaternion).invert();
+};
+calibrateRotatorButton.addEventListener("click", () => {
+  calibrateRotator();
 });
 
 // DID LOAD
