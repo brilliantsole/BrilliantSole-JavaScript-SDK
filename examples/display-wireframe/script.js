@@ -144,29 +144,24 @@ const draw = async () => {
     case "punch":
       await drawScene(punchScene);
       break;
+    case "face":
+      await drawFace();
+      break;
+    case "pose":
+      await drawPose();
+      break;
+    case "hand":
+      await drawHand();
+      break;
   }
 
   await displayCanvasHelper.show();
 };
 
-displayCanvasHelper.addEventListener("ready", () => {
-  isDrawing = false;
-  if (isWaitingToRedraw) {
-    isWaitingToRedraw = false;
-    draw();
-  }
-});
-
 const drawButton = document.getElementById("draw");
 drawButton.addEventListener("click", () => {
   draw();
 });
-
-// DRAW PARAMS
-
-const drawSpriteParams = {
-  // FILL
-};
 
 // PROGRESS
 
@@ -236,74 +231,67 @@ const drawScene = async (scene) => {
 window.drawScene = drawScene;
 function getWireframeEdges(entity) {
   const canvas = displayCanvasHelper.canvas;
-  const root = entity.getObject3D("mesh");
-  if (!root) return { points: [], edges: [] };
+  const mesh = entity.getObject3D("mesh");
+  if (!mesh || !mesh.geometry) return { points: [], edges: [] };
 
   const camera = entity
     .closest("a-scene")
     .querySelector("[camera]")
     .getObject3D("camera");
   if (!camera) return { points: [], edges: [] };
+
+  const geometry = mesh.geometry.index
+    ? mesh.geometry.toNonIndexed()
+    : mesh.geometry;
+
+  const edgesGeo = new THREE.EdgesGeometry(geometry);
+  const pos = edgesGeo.attributes.position;
 
   const points = [];
   const edges = [];
-  const projected = new THREE.Vector3();
+  const oldToNewIndex = new Map();
+
   const v = new THREE.Vector3();
+  const projected = new THREE.Vector3();
 
-  root.traverse((child) => {
-    if (!(child instanceof THREE.Mesh) || !child.geometry) return;
+  // Project vertices
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    v.applyMatrix4(mesh.matrixWorld);
+    projected.copy(v).project(camera);
 
-    const mesh = child;
-    const geometry = mesh.geometry.index
-      ? mesh.geometry.toNonIndexed()
-      : mesh.geometry;
+    // Skip vertices behind camera
+    if (projected.z < -1 || projected.z > 1) continue;
 
-    // Generate edges from geometry
-    const edgesGeo = new THREE.EdgesGeometry(geometry, 15);
-    const pos = edgesGeo.attributes.position;
-
-    const oldToNewIndex = new Map();
-
-    // Project vertices
-    for (let i = 0; i < pos.count; i++) {
-      v.fromBufferAttribute(pos, i);
-      v.applyMatrix4(mesh.matrixWorld);
-      projected.copy(v).project(camera);
-
-      // Skip vertices behind/too far
-      if (projected.z < -1 || projected.z > 1) continue;
-
-      let x, y;
-      if (drawWireframeAsSprite) {
-        x = (projected.x * 0.5 + 0.0) * canvas.width;
-        y = (1 - (projected.y * 0.5 + 1.0)) * canvas.height;
-      } else {
-        x = (projected.x * 0.5 + 0.5) * canvas.width;
-        y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
-      }
-
-      oldToNewIndex.set(i, points.length);
-      points.push({ x, y });
+    let x, y;
+    if (drawWireframeAsSprite) {
+      x = (projected.x * 0.5 + 0.0) * canvas.width;
+      y = (1 - (projected.y * 0.5 + 1.0)) * canvas.height;
+    } else {
+      x = (projected.x * 0.5 + 0.5) * canvas.width;
+      y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
     }
 
-    // Each consecutive pair of vertices = an edge
-    for (let i = 0; i < pos.count; i += 2) {
-      if (oldToNewIndex.has(i) && oldToNewIndex.has(i + 1)) {
-        edges.push({
-          startIndex: oldToNewIndex.get(i),
-          endIndex: oldToNewIndex.get(i + 1),
-        });
-      }
+    oldToNewIndex.set(i, points.length);
+    points.push({ x, y });
+  }
+
+  // Each consecutive pair of vertices is an edge in EdgesGeometry
+  for (let i = 0; i < pos.count; i += 2) {
+    if (oldToNewIndex.has(i) && oldToNewIndex.has(i + 1)) {
+      edges.push({
+        startIndex: oldToNewIndex.get(i),
+        endIndex: oldToNewIndex.get(i + 1),
+      });
     }
-  });
+  }
 
   return { points, edges };
 }
-
 function getWireframeCulled(entity) {
   const canvas = displayCanvasHelper.canvas;
-  const root = entity.getObject3D("mesh");
-  if (!root) return { points: [], edges: [] };
+  const mesh = entity.getObject3D("mesh");
+  if (!mesh || !mesh.geometry) return { points: [], edges: [] };
 
   const camera = entity
     .closest("a-scene")
@@ -311,84 +299,77 @@ function getWireframeCulled(entity) {
     .getObject3D("camera");
   if (!camera) return { points: [], edges: [] };
 
+  const geometry = mesh.geometry.index
+    ? mesh.geometry.toNonIndexed()
+    : mesh.geometry;
+  const pos = geometry.attributes.position;
+
   const points = [];
   const edgesSet = new Set();
-  const camPos = new THREE.Vector3();
-  camera.getWorldPosition(camPos);
+  const oldToNewIndex = new Map();
 
-  // Shared temp vectors
   const vA = new THREE.Vector3();
   const vB = new THREE.Vector3();
   const vC = new THREE.Vector3();
   const ab = new THREE.Vector3();
   const ac = new THREE.Vector3();
   const normal = new THREE.Vector3();
+  const camPos = new THREE.Vector3();
+  camera.getWorldPosition(camPos);
+
   const projected = new THREE.Vector3();
 
-  let pointOffset = 0;
+  // Project vertices and store indices
+  for (let i = 0; i < pos.count; i++) {
+    const v = new THREE.Vector3()
+      .fromBufferAttribute(pos, i)
+      .applyMatrix4(mesh.matrixWorld);
+    projected.copy(v).project(camera);
 
-  root.traverse((child) => {
-    if (!(child instanceof THREE.Mesh) || !child.geometry) return;
+    if (projected.z < -1 || projected.z > 1) continue;
 
-    const mesh = child;
-    const geometry = mesh.geometry.index
-      ? mesh.geometry.toNonIndexed()
-      : mesh.geometry;
-    const pos = geometry.attributes.position;
-
-    const oldToNewIndex = new Map();
-
-    // Project vertices and store indices
-    for (let i = 0; i < pos.count; i++) {
-      const v = new THREE.Vector3()
-        .fromBufferAttribute(pos, i)
-        .applyMatrix4(mesh.matrixWorld);
-      projected.copy(v).project(camera);
-
-      if (projected.z < -1 || projected.z > 1) continue;
-
-      let x, y;
-      if (drawWireframeAsSprite) {
-        x = (projected.x * 0.5 + 0.0) * canvas.width;
-        y = (1 - (projected.y * 0.5 + 1.0)) * canvas.height;
-      } else {
-        x = (projected.x * 0.5 + 0.5) * canvas.width;
-        y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
-      }
-
-      oldToNewIndex.set(i, points.length);
-      points.push({ x, y });
+    let x, y;
+    if (drawWireframeAsSprite) {
+      x = (projected.x * 0.5 + 0.0) * canvas.width;
+      y = (1 - (projected.y * 0.5 + 1.0)) * canvas.height;
+    } else {
+      x = (projected.x * 0.5 + 0.5) * canvas.width;
+      y = (1 - (projected.y * 0.5 + 0.5)) * canvas.height;
     }
 
-    // Build edges for front-facing triangles
-    for (let i = 0; i < pos.count; i += 3) {
-      vA.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
-      vB.fromBufferAttribute(pos, i + 1).applyMatrix4(mesh.matrixWorld);
-      vC.fromBufferAttribute(pos, i + 2).applyMatrix4(mesh.matrixWorld);
+    oldToNewIndex.set(i, points.length);
+    points.push({ x, y });
+  }
 
-      ab.subVectors(vB, vA);
-      ac.subVectors(vC, vA);
-      normal.crossVectors(ab, ac).normalize();
+  // Build edges for front-facing triangles
+  for (let i = 0; i < pos.count; i += 3) {
+    vA.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+    vB.fromBufferAttribute(pos, i + 1).applyMatrix4(mesh.matrixWorld);
+    vC.fromBufferAttribute(pos, i + 2).applyMatrix4(mesh.matrixWorld);
 
-      const toCam = camPos.clone().sub(vA);
-      if (normal.dot(toCam) > 0) {
-        [
-          [i, i + 1],
-          [i + 1, i + 2],
-          [i + 2, i],
-        ].forEach(([a, b]) => {
-          if (oldToNewIndex.has(a) && oldToNewIndex.has(b)) {
-            const ai = oldToNewIndex.get(a);
-            const bi = oldToNewIndex.get(b);
-            const key = ai < bi ? `${ai},${bi}` : `${bi},${ai}`;
-            edgesSet.add(key);
-          }
-        });
-      }
+    ab.subVectors(vB, vA);
+    ac.subVectors(vC, vA);
+    normal.crossVectors(ab, ac).normalize();
+
+    const toCam = camPos.clone().sub(vA);
+
+    if (normal.dot(toCam) > 0) {
+      // Add edges
+      [
+        [i, i + 1],
+        [i + 1, i + 2],
+        [i + 2, i],
+      ].forEach(([a, b]) => {
+        if (oldToNewIndex.has(a) && oldToNewIndex.has(b)) {
+          const key =
+            oldToNewIndex.get(a) < oldToNewIndex.get(b)
+              ? `${oldToNewIndex.get(a)},${oldToNewIndex.get(b)}`
+              : `${oldToNewIndex.get(b)},${oldToNewIndex.get(a)}`;
+          edgesSet.add(key);
+        }
+      });
     }
-
-    pointOffset = points.length;
-  });
+  }
 
   const edges = Array.from(edgesSet).map((str) => {
     const [a, b] = str.split(",").map(Number);
@@ -419,18 +400,392 @@ punchIframe.addEventListener("load", () => {
   punchScene.style.height = "100%";
 });
 
+// CAMERA
+const cameraContainer = document.getElementById("cameraContainer");
+/** @type {HTMLVideoElement} */
+const cameraVideo = document.getElementById("cameraVideo");
+cameraVideo.volume = 0.0001;
+cameraVideo.addEventListener("loadedmetadata", () => {
+  const { videoWidth, videoHeight } = cameraVideo;
+  cameraVideo.removeAttribute("hidden");
+  console.log({ videoWidth, videoHeight });
+  cameraCanvas.width = videoWidth;
+  cameraCanvas.height = videoHeight;
+  if (trackingModes.includes(mode)) {
+    trackingRenderLoop();
+  }
+});
+const toggleMirrorCameraButton = document.getElementById("toggleMirrorCamera");
+let mirrorCamera = false;
+const setMirrorCamera = (newMirrorCamera) => {
+  mirrorCamera = newMirrorCamera;
+  // console.log({ mirrorCamera });
+  cameraContainer.style.transform = mirrorCamera ? "scaleX(-1)" : "";
+  toggleMirrorCameraButton.innerText = mirrorCamera
+    ? "unmirror camera"
+    : "mirror camera";
+};
+toggleMirrorCameraButton.addEventListener("click", () => {
+  setMirrorCamera(!mirrorCamera);
+});
+setMirrorCamera(true);
+
+/** @type {HTMLSelectElement} */
+const cameraInput = document.getElementById("cameraInput");
+const cameraInputOptgroup = cameraInput.querySelector("optgroup");
+cameraInput.addEventListener("input", () => {
+  selectCameraInput(cameraInput.value);
+});
+
+cameraInput.addEventListener("click", async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoDevices = devices.filter((device) => device.kind == "videoinput");
+  console.log("videoDevices", videoDevices);
+  if (videoDevices.length == 1 && videoDevices[0].deviceId == "") {
+    console.log("getting camera");
+    const cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+    });
+    cameraStream.getVideoTracks().forEach((track) => track.stop());
+    updateCameraSources();
+  }
+});
+
+const updateCameraSources = async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  cameraInputOptgroup.innerHTML = "";
+  cameraInputOptgroup.appendChild(new Option("none"));
+  devices
+    .filter((device) => device.kind == "videoinput")
+    .forEach((videoInputDevice) => {
+      cameraInputOptgroup.appendChild(
+        new Option(videoInputDevice.label, videoInputDevice.deviceId)
+      );
+    });
+  cameraInput.value = "none";
+  selectCameraInput(cameraInput.value);
+};
+/** @type {MediaStream?} */
+let cameraStream;
+const selectCameraInput = async (deviceId) => {
+  stopCameraStream();
+  if (deviceId != "none") {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        deviceId: { exact: deviceId },
+        aspectRatio: displayCanvasHelper.aspectRatio,
+      },
+    });
+
+    cameraVideo.srcObject = cameraStream;
+    console.log("got cameraStream", deviceId, cameraStream);
+  }
+};
+const stopCameraStream = () => {
+  if (cameraStream) {
+    console.log("stopping cameraStream");
+    cameraStream.getVideoTracks().forEach((track) => track.stop());
+  }
+  cameraStream = undefined;
+  cameraVideo.srcObject = undefined;
+  cameraVideo.setAttribute("hidden", "");
+};
+navigator.mediaDevices.addEventListener("devicechange", () =>
+  updateCameraSources()
+);
+updateCameraSources();
+
+let lastTrackingTime;
+let drawingUtils;
+const trackingModes = ["face", "hand", "pose"];
+const landmarkers = {};
+const results = {};
+let isTracking = false;
+const trackingRenderLoop = () => {
+  if (isTracking) {
+    return;
+  }
+  isTracking = true;
+  const landMarker = landmarkers[mode];
+  if (
+    cameraVideo.currentTime !== lastTrackingTime &&
+    cameraStream &&
+    !cameraVideo.paused &&
+    landMarker
+  ) {
+    const result = landMarker.detectForVideo(cameraVideo, performance.now());
+    //console.log("result", result);
+    lastTrackingTime = cameraVideo.currentTime;
+    results[mode] = result;
+
+    const context = cameraContext;
+    const canvas = cameraCanvas;
+
+    if (!drawingUtils) {
+      drawingUtils = new DrawingUtils(context);
+      window.drawingUtils = drawingUtils;
+    }
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    switch (mode) {
+      case "face":
+        for (const landmarks of result.faceLandmarks) {
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_TESSELATION,
+            { color: "#C0C0C070", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,
+            { color: "#FF3030", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW,
+            { color: "#FF3030", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_LEFT_EYE,
+            { color: "#30FF30", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
+            { color: "#30FF30", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_FACE_OVAL,
+            { color: "#E0E0E0", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_LIPS,
+            { color: "#E0E0E0", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS,
+            { color: "#FF3030", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS,
+            { color: "#30FF30", lineWidth: 1 }
+          );
+        }
+        break;
+      case "hand":
+        for (const landmarks of result.landmarks) {
+          drawConnectors(context, landmarks, HAND_CONNECTIONS, {
+            color: "#00FF00",
+            lineWidth: 3,
+          });
+          drawLandmarks(context, landmarks, {
+            color: "#FF0000",
+            lineWidth: 0,
+            radius: 3,
+          });
+        }
+        break;
+      case "pose":
+        for (const landmark of result.landmarks) {
+          drawingUtils.drawLandmarks(landmark, {
+            radius: (data) => DrawingUtils.lerp(data.from.z, -0.15, 0.1, 2, 1),
+          });
+          drawingUtils.drawConnectors(
+            landmark,
+            PoseLandmarker.POSE_CONNECTIONS
+          );
+        }
+        break;
+    }
+
+    if (autoDraw) {
+      draw();
+    }
+  }
+  isTracking = false;
+
+  if (trackingModes.includes(mode)) {
+    requestAnimationFrame(() => {
+      trackingRenderLoop();
+    });
+  }
+};
+window.trackingRenderLoop = trackingRenderLoop;
+
+// CAMERA CANVAS
+/** @type {HTMLCanvasElement} */
+const cameraCanvas = document.getElementById("cameraCanvas");
+const cameraContext = cameraCanvas.getContext("2d");
+
+// VISION
+import {
+  HandLandmarker,
+  FilesetResolver,
+  FaceLandmarker,
+  DrawingUtils,
+  PoseLandmarker,
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+let runningMode = "LIVE_STREAM";
+
 // HAND TRACKING MODE
-// FILL
+let handLandmarker = undefined;
+
+const createHandLandmarker = async () => {
+  if (handLandmarker) {
+    return;
+  }
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+  );
+  handLandmarker = await HandLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+      delegate: "GPU",
+    },
+    runningMode: runningMode,
+    numHands: 1,
+    /**
+     * The minimum confidence score for the hand detection to be considered successful in palm detection model.
+     */
+    minHandDetectionConfidence: 0.5,
+    /**
+     * The minimum confidence score for the hand presence score in the hand landmark detection model.
+     * In Video mode and Live stream mode, if the hand presence confidence score from the hand landmark model is below this threshold,
+     * Hand Landmarker triggers the palm detection model.
+     * Otherwise, a lightweight hand tracking algorithm determines the location of the hand(s) for subsequent landmark detections.
+     */
+    minHandPresenceConfidence: 0.5,
+    /**
+     * The minimum confidence score for the hand tracking to be considered successful.
+     * This is the bounding box IoU threshold between hands in the current frame and the last frame.
+     * In Video mode and Stream mode of Hand Landmarker, if the tracking fails, Hand Landmarker triggers hand detection.
+     * Otherwise, it skips the hand detection.
+     */
+    minTrackingConfidence: 0.5,
+  });
+  console.log("created handLandmarker", handLandmarker);
+  landmarkers.hand = handLandmarker;
+};
+
+const drawHand = async () => {
+  const result = results["hand"];
+  if (!result) {
+    return;
+  }
+  if (result.landmarks.length == 0) {
+    return;
+  }
+  console.log("drawHand");
+  /** @type {BS.DisplayWireframe} */
+  const wireframe = {
+    points: [],
+    edges: [],
+  };
+  let pointIndexOffset = 0;
+  for (const landmarks of result.landmarks) {
+    console.log("landmarks", landmarks);
+    landmarks.forEach(({ x, y, z }, index) => {
+      if (mirrorCamera) {
+        x = 1 - x;
+      }
+      x *= displayCanvasHelper.width;
+      y *= displayCanvasHelper.height;
+      wireframe.points.push({ x, y });
+    });
+    HAND_CONNECTIONS.forEach(([startIndex, endIndex]) => {
+      startIndex += pointIndexOffset;
+      endIndex += pointIndexOffset;
+      wireframe.edges.push({ startIndex, endIndex });
+    });
+    pointIndexOffset += landmarks.length;
+  }
+  await displayCanvasHelper.drawWireframe(wireframe);
+};
 
 // FACE TRACKING MODE
-// FILL
+let faceLandmarker;
+const createFaceLandmarker = async () => {
+  const filesetResolver = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+  );
+  faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+    baseOptions: {
+      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+      delegate: "GPU",
+    },
+    outputFaceBlendshapes: true,
+    runningMode,
+    numFaces: 1,
+    minFaceDetectionConfidence: 0.5,
+    minFacePresenceConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+    outputFacialTransformationMatrixes: false,
+  });
+  console.log("created faceLandmarker", faceLandmarker);
+  landmarkers.face = faceLandmarker;
+};
 
-// BODY TRACKING MODE
-// FILL
+const drawFace = async () => {
+  const result = results["face"];
+  if (!result) {
+    return;
+  }
+  console.log("drawFace");
+  /** @type {BS.DisplayWireframe} */
+  const wireframe = {
+    points: [],
+    edges: [],
+  };
+  // FILL
+  await displayCanvasHelper.drawWireframe(wireframe);
+};
+
+// POSE MODE
+let poseLandmarker;
+
+const createPoseLandmarker = async () => {
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+  );
+  poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/latest/pose_landmarker_heavy.task`,
+      delegate: "GPU",
+    },
+    runningMode: runningMode,
+    numPoses: 1,
+    minPoseDetectionConfidence: 0.5,
+    minPosePresenceConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+    outputSegmentationMasks: false,
+  });
+  console.log("created poseLandmarker", poseLandmarker);
+  landmarkers.pose = poseLandmarker;
+};
+
+const drawPose = async () => {
+  const result = results["pose"];
+  if (!result) {
+    return;
+  }
+  console.log("drawPose");
+  /** @type {BS.DisplayWireframe} */
+  const wireframe = {
+    points: [],
+    edges: [],
+  };
+  // FILL
+  await displayCanvasHelper.drawWireframe(wireframe);
+};
 
 // MODES
 
-const modes = ["scene", "punch", "hand", "face", "body"];
+const modes = ["scene", "punch", "hand", "face", "pose"];
 let mode = modes[0];
 const modeSelect = document.getElementById("modeSelect");
 const modeOptgroup = modeSelect.querySelector("optgroup");
@@ -448,6 +803,7 @@ const setMode = (newMode) => {
   console.log({ mode });
   scene.classList.add("hidden");
   punchIframe.classList.add("hidden");
+  cameraContainer.classList.add("hidden");
 
   switch (mode) {
     case "scene":
@@ -459,19 +815,26 @@ const setMode = (newMode) => {
       _cameraRig = punchScene.querySelector("[camera]");
       break;
     case "hand":
-      // FILL
+      cameraContainer.classList.remove("hidden");
+      createHandLandmarker();
       break;
     case "face":
-      // FILL
+      cameraContainer.classList.remove("hidden");
+      createFaceLandmarker();
       break;
-    case "body":
-      // FILL
+    case "pose":
+      cameraContainer.classList.remove("hidden");
+      createPoseLandmarker();
       break;
+  }
+
+  if (trackingModes.includes(mode)) {
+    trackingRenderLoop();
   }
 };
 scene.addEventListener("loaded", () => {
   setTimeout(() => {
-    setMode(modes[0]);
+    setMode(modes[2]);
   });
 });
 

@@ -113,6 +113,7 @@ export {
   DisplayBitmap,
   DisplaySpriteColorPair,
   DisplayWireframeEdge,
+  DisplayWireframe,
   DisplayBezierCurveType,
   DisplayBezierCurveTypes,
 } from "./DisplayManager.ts";

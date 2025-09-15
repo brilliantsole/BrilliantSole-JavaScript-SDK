@@ -3,6 +3,14 @@
     <title>Display Wireframe | BrilliantSole JavaScript SDK</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
+      crossorigin="anonymous"
+    ></script>
     <script type="module" src="./script.js"></script>
     <script src="../utils/aframe/aframe-master.min.js"></script>
   </head>
@@ -17,7 +25,7 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
 
     a-scene,
@@ -36,6 +44,20 @@
     }
     .displayColor {
       display: inline-block;
+    }
+
+    #cameraContainer {
+      position: relative;
+      display: inline-block;
+      width: 640;
+      height: 400;
+      background-color: black;
+    }
+
+    #cameraContainer * {
+      width: 100%;
+      height: 100%;
+      position: absolute;
     }
   </style>
   <body>
@@ -94,6 +116,15 @@
     <label>
       <button id="calibrateRotator">calibrate rotator</button>
     </label>
+
+    <label>
+      camera
+      <select id="cameraInput">
+        <optgroup label="select camera"></optgroup>
+      </select>
+    </label>
+    <button id="toggleMirrorCamera">mirror camera</button>
+
     <br />
 
     <label>
@@ -163,5 +194,10 @@
     </a-scene>
 
     <iframe src="../punch/" id="punch"></iframe>
+
+    <div id="cameraContainer">
+      <video hidden id="cameraVideo" autoplay playsinline></video>
+      <canvas id="cameraCanvas"></canvas>
+    </div>
   </body>
 </html>
