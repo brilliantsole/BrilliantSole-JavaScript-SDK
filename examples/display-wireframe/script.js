@@ -430,6 +430,18 @@ toggleMirrorCameraButton.addEventListener("click", () => {
 });
 setMirrorCamera(true);
 
+const toggleCanvasButton = document.getElementById("toggleCanvas");
+let showCanvas = true;
+const setShowCanvas = (newShowCanvas) => {
+  showCanvas = newShowCanvas;
+  console.log({ showCanvas });
+  cameraCanvas.style.display = showCanvas ? "" : "none";
+  toggleCanvasButton.innerText = showCanvas ? "hide canvas" : "show canvas";
+};
+toggleCanvasButton.addEventListener("click", () => {
+  setShowCanvas(!showCanvas);
+});
+
 /** @type {HTMLSelectElement} */
 const cameraInput = document.getElementById("cameraInput");
 const cameraInputOptgroup = cameraInput.querySelector("optgroup");
@@ -631,7 +643,8 @@ import {
   PoseLandmarker,
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
 let runningMode = "LIVE_STREAM";
-
+window.PoseLandmarker = PoseLandmarker;
+window.FaceLandmarker = FaceLandmarker;
 // HAND TRACKING MODE
 let handLandmarker = undefined;
 
@@ -681,14 +694,13 @@ const drawHand = async () => {
     return;
   }
   console.log("drawHand");
-  /** @type {BS.DisplayWireframe} */
-  const wireframe = {
-    points: [],
-    edges: [],
-  };
-  let pointIndexOffset = 0;
   for (const landmarks of result.landmarks) {
-    console.log("landmarks", landmarks);
+    // console.log("landmarks", landmarks);
+    /** @type {BS.DisplayWireframe} */
+    const wireframe = {
+      points: [],
+      edges: [],
+    };
     landmarks.forEach(({ x, y, z }, index) => {
       if (mirrorCamera) {
         x = 1 - x;
@@ -698,13 +710,10 @@ const drawHand = async () => {
       wireframe.points.push({ x, y });
     });
     HAND_CONNECTIONS.forEach(([startIndex, endIndex]) => {
-      startIndex += pointIndexOffset;
-      endIndex += pointIndexOffset;
       wireframe.edges.push({ startIndex, endIndex });
     });
-    pointIndexOffset += landmarks.length;
+    await displayCanvasHelper.drawWireframe(wireframe);
   }
-  await displayCanvasHelper.drawWireframe(wireframe);
 };
 
 // FACE TRACKING MODE
@@ -730,19 +739,172 @@ const createFaceLandmarker = async () => {
   landmarkers.face = faceLandmarker;
 };
 
+function subdivideArray(arr, subdivisions) {
+  if (subdivisions < 1) throw new Error("subdivisions must be >= 1");
+  if (arr.length < 2) return arr;
+
+  const result = [];
+  const step = (arr.length - 1) / subdivisions;
+
+  for (let i = 0; i <= subdivisions; i++) {
+    const index = Math.round(i * step);
+    result.push(arr[index]);
+  }
+
+  return result;
+}
+const addEdgesToWireframe = (
+  wireframe,
+  landmarkEdges,
+  intervalOrSubdivision
+) => {
+  const isFace = landmarkEdges == FaceLandmarker.FACE_LANDMARKS_FACE_OVAL;
+  const isLips = landmarkEdges == FaceLandmarker.FACE_LANDMARKS_LIPS;
+  const isLeftEyebrow =
+    landmarkEdges == FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW;
+  const isRightEyebrow =
+    landmarkEdges == FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW;
+  const isEyebrow = isLeftEyebrow || isRightEyebrow;
+  const isLeftEye = landmarkEdges == FaceLandmarker.FACE_LANDMARKS_LEFT_EYE;
+  const isRightEye = landmarkEdges == FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE;
+  const isEye = isLeftEye || isRightEye;
+
+  let splitLandmarkEdges = [];
+  let latestSplitLandmarkEdges;
+  landmarkEdges.forEach(({ start, end }) => {
+    const edge = { start, end };
+    if (!latestSplitLandmarkEdges) {
+      latestSplitLandmarkEdges = [];
+      splitLandmarkEdges.push(latestSplitLandmarkEdges);
+    } else {
+      const previousEdge =
+        latestSplitLandmarkEdges[latestSplitLandmarkEdges.length - 1];
+      if (previousEdge && previousEdge.end != edge.start) {
+        latestSplitLandmarkEdges = [];
+        splitLandmarkEdges.push(latestSplitLandmarkEdges);
+      }
+    }
+    latestSplitLandmarkEdges.push(edge);
+  });
+
+  if (isLips) {
+    splitLandmarkEdges = splitLandmarkEdges.filter((_, i) => i == 2 || i == 3);
+  }
+
+  let starts = [];
+  let ends = [];
+  splitLandmarkEdges.forEach((landmarkEdges) => {
+    if (isLips || isEye || isEyebrow || isFace) {
+      let points = [];
+      landmarkEdges.forEach(({ start: startIndex, end: endIndex }, index) => {
+        const isEnd = index == landmarkEdges.length - 1;
+        points.push(startIndex);
+        if (isEnd) {
+          points.push(endIndex);
+        }
+      });
+      points = subdivideArray(points, intervalOrSubdivision);
+      points.forEach((pointIndex, index) => {
+        const isStart = index == 0;
+        const isEnd = index == points.length - 1;
+        if (isStart) {
+          return;
+        }
+        const isStartEdge = index == 1;
+        const previousPointIndex = points[index - 1];
+        const edge = { startIndex: previousPointIndex, endIndex: pointIndex };
+        if (isStartEdge) {
+          starts.push(edge);
+        }
+        if (isEnd) {
+          ends.push(edge);
+        }
+        wireframe.edges.push(edge);
+      });
+    } else {
+      landmarkEdges.forEach(({ start: startIndex, end: endIndex }, index) => {
+        const isStart = index == 0;
+        const isEnd = index == landmarkEdges.length - 1;
+        const edge = { startIndex, endIndex };
+        const skip = index % intervalOrSubdivision != 0;
+
+        if (isStart) {
+          starts.push(edge);
+        }
+        if (isEnd) {
+          ends.push(edge);
+        }
+
+        if (skip && !isEnd) {
+          return;
+        }
+        if (!isStart) {
+          const previousEdge = wireframe.edges[wireframe.edges.length - 1];
+          previousEdge.endIndex = startIndex;
+        }
+        if (isEnd && skip) {
+          const previousEdge = wireframe.edges[wireframe.edges.length - 1];
+          previousEdge.endIndex = endIndex;
+          return;
+        }
+        wireframe.edges.push(edge);
+      });
+    }
+  });
+
+  if (false && isEyebrow) {
+    wireframe.edges.push({
+      startIndex: starts[0].startIndex,
+      endIndex: starts[1].startIndex,
+    });
+    wireframe.edges.push({
+      startIndex: ends[0].endIndex,
+      endIndex: ends[1].endIndex,
+    });
+  }
+};
 const drawFace = async () => {
   const result = results["face"];
   if (!result) {
     return;
   }
   console.log("drawFace");
-  /** @type {BS.DisplayWireframe} */
-  const wireframe = {
-    points: [],
-    edges: [],
-  };
-  // FILL
-  await displayCanvasHelper.drawWireframe(wireframe);
+  for (const landmarks of result.faceLandmarks) {
+    // console.log("landmarks", landmarks);
+    /** @type {BS.DisplayWireframe} */
+    const wireframe = {
+      points: [],
+      edges: [],
+    };
+    landmarks.forEach(({ x, y, z }, index) => {
+      if (mirrorCamera) {
+        x = 1 - x;
+      }
+      x *= displayCanvasHelper.width;
+      y *= displayCanvasHelper.height;
+      wireframe.points.push({ x, y });
+    });
+    addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, 7);
+    addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_LIPS, 3);
+    addEdgesToWireframe(
+      wireframe,
+      FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
+      2
+    );
+    addEdgesToWireframe(
+      wireframe,
+      FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW,
+      2
+    );
+    addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, 2);
+    addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, 2);
+
+    addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS, 1);
+    addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS, 1);
+
+    console.log("face wireframe", wireframe);
+    await displayCanvasHelper.drawWireframe(wireframe);
+  }
 };
 
 // POSE MODE
@@ -774,13 +936,26 @@ const drawPose = async () => {
     return;
   }
   console.log("drawPose");
-  /** @type {BS.DisplayWireframe} */
-  const wireframe = {
-    points: [],
-    edges: [],
-  };
-  // FILL
-  await displayCanvasHelper.drawWireframe(wireframe);
+  for (const landmarks of result.landmarks) {
+    // console.log("landmarks", landmarks);
+    /** @type {BS.DisplayWireframe} */
+    const wireframe = {
+      points: [],
+      edges: [],
+    };
+    landmarks.forEach(({ x, y, z }, index) => {
+      if (mirrorCamera) {
+        x = 1 - x;
+      }
+      x *= displayCanvasHelper.width;
+      y *= displayCanvasHelper.height;
+      wireframe.points.push({ x, y });
+    });
+    PoseLandmarker.POSE_CONNECTIONS.forEach(({ start, end }) => {
+      wireframe.edges.push({ startIndex: start, endIndex: end });
+    });
+    await displayCanvasHelper.drawWireframe(wireframe);
+  }
 };
 
 // MODES
@@ -834,7 +1009,7 @@ const setMode = (newMode) => {
 };
 scene.addEventListener("loaded", () => {
   setTimeout(() => {
-    setMode(modes[2]);
+    setMode(modes[3]);
   });
 });
 

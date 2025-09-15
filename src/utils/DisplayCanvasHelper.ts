@@ -2437,15 +2437,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restore();
   }
   async drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean) {
+    wireframe = trimWireframe(wireframe);
     assertValidWireframe(wireframe);
-    const trimmedWireframe = trimWireframe(wireframe);
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
-      this.#drawWireframeToCanvas(trimmedWireframe, contextState)
+      this.#drawWireframeToCanvas(wireframe, contextState)
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.drawWireframe(
-        trimmedWireframe,
+        wireframe,
         sendImmediately
       );
     }

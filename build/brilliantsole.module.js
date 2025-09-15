@@ -23025,12 +23025,12 @@ class DisplayCanvasHelper {
         }
     }
     async drawWireframe(wireframe, sendImmediately) {
+        wireframe = trimWireframe(wireframe);
         assertValidWireframe(wireframe);
-        const trimmedWireframe = trimWireframe(wireframe);
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawWireframeToCanvas).call(this, trimmedWireframe, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawWireframeToCanvas).call(this, wireframe, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.deviceDisplayManager.drawWireframe(trimmedWireframe, sendImmediately);
+            await this.deviceDisplayManager.drawWireframe(wireframe, sendImmediately);
         }
     }
     async drawCurve(curveType, controlPoints, sendImmediately) {
