@@ -1009,7 +1009,7 @@ const setMode = (newMode) => {
 };
 scene.addEventListener("loaded", () => {
   setTimeout(() => {
-    setMode(modes[3]);
+    setMode(modes[0]);
   });
 });
 
