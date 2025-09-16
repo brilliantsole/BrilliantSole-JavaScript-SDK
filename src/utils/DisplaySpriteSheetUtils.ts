@@ -15,6 +15,7 @@ import opentype, { Glyph, Font } from "opentype.js";
 import { decompress } from "woff2-encoder";
 import RangeHelper from "./RangeHelper.ts";
 import { pointInPolygon, Vector2 } from "./MathUtils.ts";
+import { simplifyPath } from "./PathUtils.ts";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
 
@@ -262,7 +263,7 @@ export async function fontToSpriteSheet(
     const bitmapWidth = Math.round((bbox.x2 - bbox.x1) * fontScale);
     const bitmapHeight = Math.round((bbox.y2 - bbox.y1) * fontScale);
 
-    const bitmapX = Math.round(bbox.x1 * fontScale);
+    const bitmapX = Math.round((spriteWidth - bitmapWidth) / 2);
     const bitmapY = Math.round(
       (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY)
     );
@@ -276,13 +277,15 @@ export async function fontToSpriteSheet(
       let curves: DisplayBezierCurve[] = [];
       let startPoint: Vector2 = { x: 0, y: 0 };
 
-      const pathCommands: {
+      const pathCommandObjects: {
         command: DisplayContextCommand;
         area: number;
         points: Vector2[];
       }[] = [];
 
-      path.commands.forEach((cmd) => {
+      let pathCommands = path.commands;
+      pathCommands = simplifyPath(pathCommands);
+      pathCommands.forEach((cmd) => {
         switch (cmd.type) {
           case "M": // moveTo
             startPoint.x = cmd.x;
@@ -336,7 +339,7 @@ export async function fontToSpriteSheet(
 
             const isSegments = curves.every((c) => c.type === "segment");
             if (isSegments) {
-              pathCommands.push({
+              pathCommandObjects.push({
                 command: {
                   type: "drawPolygon",
                   points: controlPoints,
@@ -347,7 +350,7 @@ export async function fontToSpriteSheet(
                 area,
               });
             } else {
-              pathCommands.push({
+              pathCommandObjects.push({
                 command: {
                   type: "drawClosedPath",
                   curves,
@@ -363,14 +366,16 @@ export async function fontToSpriteSheet(
         }
       });
 
-      if (pathCommands.length > 0) {
-        pathCommands.sort((a, b) => {
-          return pointInPolygon(a.points[0], b.points) ? -1 : 1;
+      if (pathCommandObjects.length > 0) {
+        pathCommandObjects.sort((a, b) => {
+          return a.points.every((aPoint) => pointInPolygon(aPoint, b.points))
+            ? 1
+            : -1;
         });
 
         let isDrawingHole = false;
-        let isHoleAreaPositive = pathCommands[0].area < 0;
-        pathCommands.forEach(({ area, command }) => {
+        let isHoleAreaPositive = pathCommandObjects[0].area < 0;
+        pathCommandObjects.forEach(({ area, command }) => {
           const isHole = isHoleAreaPositive ? area > 0 : area < 0;
           if (isDrawingHole != isHole) {
             isDrawingHole = isHole;
