@@ -2698,11 +2698,11 @@ const updateSpriteCommands = () => {
             const curve = command.curves[curveIndex];
             const controlPoint = curve.controlPoints[controlPointIndex];
             controlPointContainer.hidden = !Boolean(controlPoint);
-            console.log(
-              { controlPointIndex },
-              controlPoint,
-              controlPointContainer.hidden
-            );
+            // console.log(
+            //   { controlPointIndex },
+            //   controlPoint,
+            //   controlPointContainer.hidden
+            // );
 
             const xContainer = controlPointContainer.querySelector(".x");
             xContainer.removeAttribute("hidden");
@@ -4061,7 +4061,7 @@ const toggleUseUploadedSpriteSheetButton = document.getElementById(
   "toggleUseUploadedSpriteSheet"
 );
 toggleUseUploadedSpriteSheetButton.addEventListener("click", () => {
-  setUseUploadedSpriteSheet(!useUploadedSpriteSheet);
+  setUseUploadedSpriteSheet(toggleUseUploadedSpriteSheetButton.checked);
 });
 displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
   updateToggleUseUploadedSpriteSheetButton();
@@ -4192,13 +4192,16 @@ loadFontInput.addEventListener("input", async () => {
   const font = await BS.parseFont(arrayBuffer);
   const fontSpriteSheet = await displayCanvasHelper.fontToSpriteSheet(
     font,
-    fontSize
+    fontSize,
+    undefined,
+    { usePath: fontUsePath }
   );
   setSpriteSheetName(fontSpriteSheet.name);
   spriteSheet.sprites = fontSpriteSheet.sprites;
   setSpriteIndex(0);
   console.log("fontSpriteSheet", fontSpriteSheet);
   loadFontInput.value = "";
+  updateSelectSpriteSelect();
 });
 
 let fontSize = 36;
@@ -4212,9 +4215,19 @@ const setFontSize = (newFontSize) => {
   // console.log({ fontSize });
   fontSizeSpan.innerText = fontSize;
   fontSizeInput.value = fontSize;
+  setSpritesLineHeight(fontSize);
 };
 setFontSize(fontSize);
-setSpritesLineHeight(fontSize);
+
+const setFontUsePath = (newFontUsePath) => {
+  fontUsePath = newFontUsePath;
+  console.log({ fontUsePath });
+};
+const fontUsePathInput = document.getElementById("fontUsePath");
+fontUsePathInput.addEventListener("input", () => {
+  setFontUsePath(fontUsePathInput.checked);
+});
+let fontUsePath = fontUsePathInput.checked;
 
 // DRAW SPRITES
 

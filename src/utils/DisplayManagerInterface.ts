@@ -24,6 +24,7 @@ import {
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
+  FontToSpriteSheetOptions,
   reduceSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 import {
@@ -579,7 +580,8 @@ export interface DisplayManagerInterface {
   fontToSpriteSheet(
     font: Font,
     fontSize: number,
-    spriteSheetName?: string
+    spriteSheetName?: string,
+    options?: FontToSpriteSheetOptions
   ): Promise<DisplaySpriteSheet>;
 }
 

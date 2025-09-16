@@ -108,6 +108,7 @@ import {
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
   fontToSpriteSheet,
+  FontToSpriteSheetOptions,
   serializeSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 import { Font } from "opentype.js";
@@ -2284,7 +2285,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
           break;
       }
     }
-    _console.log("pointsBoundingBox", pointsBoundingBox);
+    //_console.log("pointsBoundingBox", pointsBoundingBox);
     return pointsBoundingBox;
   }
   #alignBoundingBox(
@@ -2314,7 +2315,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         alignedBoundingBox.y = -alignedBoundingBox.height;
         break;
     }
-    _console.log("alignedBoundingBox", alignedBoundingBox);
+    //_console.log("alignedBoundingBox", alignedBoundingBox);
     return alignedBoundingBox;
   }
   #drawPolygonToCanvas(
@@ -2323,7 +2324,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     points: Vector2[],
     contextState: DisplayContextState
   ) {
-    _console.log("drawPolygonToCanvas", { offsetX, offsetY, points });
+    //_console.log("drawPolygonToCanvas", { offsetX, offsetY, points });
     this.#updateContext(contextState);
 
     this.#save();
@@ -2453,7 +2454,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   #appendCurvePoint(curvePoints: Vector2[], curvePoint: Vector2) {
     if (curvePoints.length >= maxNumberOfDisplayCurvePoints) {
-      _console.warn(`maxNumberOfDisplayCurvePoints exceeded`);
+      _console.warn(
+        `numberOfDisplayCurvePoints ${curvePoints.length} exceeded (max ${maxNumberOfDisplayCurvePoints})`
+      );
     } else {
       curvePoints.push(curvePoint);
       // _console.log(`appendCurvePoint curvePoints.length ${curvePoints.length}`);
@@ -2691,6 +2694,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     });
 
+    contextState.verticalAlignment = "center";
+    contextState.horizontalAlignment = "center";
     if (isClosed) {
       this.#drawPolygonToCanvas(0, 0, curvePoints, contextState);
     } else {
@@ -4189,9 +4194,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   async fontToSpriteSheet(
     font: Font,
     fontSize: number,
-    spriteSheetName?: string
+    spriteSheetName?: string,
+    options?: FontToSpriteSheetOptions
   ) {
-    return fontToSpriteSheet(this, font, fontSize, spriteSheetName);
+    return fontToSpriteSheet(this, font, fontSize, spriteSheetName, options);
   }
 }
 export default DisplayCanvasHelper;

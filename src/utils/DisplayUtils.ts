@@ -28,7 +28,7 @@ import {
   Vector2,
 } from "./MathUtils.ts";
 
-const _console = createConsole("DisplayUtils", { log: false });
+const _console = createConsole("DisplayUtils", { log: true });
 
 export function formatRotation(
   rotation: number,
@@ -58,7 +58,7 @@ export function formatRotation(
 
 export function roundToStep(value: number, step: number) {
   const roundedValue = Math.round(value / step) * step;
-  _console.log(value, step, roundedValue);
+  //_console.log(value, step, roundedValue);
   return roundedValue;
 }
 
@@ -67,7 +67,7 @@ export const maxDisplayScale = 50;
 export const displayScaleStep = 0.002;
 export function formatScale(bitmapScale: number) {
   bitmapScale /= displayScaleStep;
-  _console.log({ formattedBitmapScale: bitmapScale });
+  //_console.log({ formattedBitmapScale: bitmapScale });
   return bitmapScale;
 }
 export function roundScale(bitmapScale: number) {
@@ -279,10 +279,10 @@ export const displayCurveTypeToNumberOfControlPoints: Record<
   quadratic: 3,
   cubic: 4,
 };
-export const displayCurveTolerance = 5.0;
+export const displayCurveTolerance = 1.0;
 export const displayCurveToleranceSquared = displayCurveTolerance ** 2;
 
-export const maxNumberOfDisplayCurvePoints = 100;
+export const maxNumberOfDisplayCurvePoints = 150;
 export function assertValidNumberOfControlPoints(
   curveType: DisplayBezierCurveType,
   controlPoints: Vector2[],

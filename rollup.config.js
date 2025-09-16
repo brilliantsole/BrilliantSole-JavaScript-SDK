@@ -68,7 +68,14 @@ if (production) {
   _plugins.push(replaceEnvironment());
 }
 
-const _browserPlugins = [resolve(), commonjs(), removeLines("browser")];
+const _browserPlugins = [
+  resolve({
+    browser: true,
+    preferBuiltins: false,
+  }),
+  commonjs(),
+  removeLines("browser"),
+];
 const _nodePlugins = [removeLines("node")];
 const nodeExternal = [
   "webbluetooth",

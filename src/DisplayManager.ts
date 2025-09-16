@@ -101,6 +101,7 @@ import {
   fontToSpriteSheet,
   serializeSpriteSheet,
   DisplaySpriteSheet,
+  FontToSpriteSheetOptions,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { Font } from "opentype.js";
 import { wait } from "./utils/Timer.ts";
@@ -2930,9 +2931,10 @@ class DisplayManager implements DisplayManagerInterface {
   async fontToSpriteSheet(
     font: Font,
     fontSize: number,
-    spriteSheetName?: string
+    spriteSheetName?: string,
+    options?: FontToSpriteSheetOptions
   ) {
-    return fontToSpriteSheet(this, font, fontSize, spriteSheetName);
+    return fontToSpriteSheet(this, font, fontSize, spriteSheetName, options);
   }
 
   // MTU

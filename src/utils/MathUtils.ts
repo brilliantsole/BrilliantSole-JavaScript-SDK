@@ -151,3 +151,19 @@ export const twoPi = Math.PI * 2;
 export function normalizeRadians(rad: number): number {
   return ((rad % twoPi) + twoPi) % twoPi;
 }
+
+export function pointInPolygon(pt: Vector2, polygon: Vector2[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x,
+      yi = polygon[i].y;
+    const xj = polygon[j].x,
+      yj = polygon[j].y;
+
+    const intersect =
+      yi > pt.y !== yj > pt.y &&
+      pt.x < ((xj - xi) * (pt.y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}

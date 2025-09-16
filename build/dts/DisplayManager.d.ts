@@ -6,7 +6,7 @@ import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, Displ
 import { DisplayContextCommand } from "./utils/DisplayContextCommand.ts";
 import { DisplaySpriteLines, DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
-import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, DisplaySpriteSheet } from "./utils/DisplaySpriteSheetUtils.ts";
+import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, DisplaySpriteSheet, FontToSpriteSheetOptions } from "./utils/DisplaySpriteSheetUtils.ts";
 import { Font } from "opentype.js";
 export declare const DefaultNumberOfDisplayColors = 16;
 export declare const DisplayCommands: readonly ["sleep", "wake"];
@@ -138,7 +138,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "asleep" | "awake";
+    get displayStatus(): "awake" | "asleep";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -152,7 +152,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushContextCommands(): Promise<void>;
@@ -304,7 +304,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     reset(): void;
-    fontToSpriteSheet(font: Font, fontSize: number, spriteSheetName?: string): Promise<DisplaySpriteSheet>;
+    fontToSpriteSheet(font: Font, fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
     get mtu(): number;
     set mtu(newMtu: number);
     get isServerSide(): boolean;

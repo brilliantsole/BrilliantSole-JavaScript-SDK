@@ -1,4 +1,8 @@
-import { DisplayBitmap } from "../DisplayManager.ts";
+import {
+  DisplayBezierCurve,
+  DisplayBezierCurveType,
+  DisplayBitmap,
+} from "../DisplayManager.ts";
 import { concatenateArrayBuffers } from "./ArrayBufferUtils.ts";
 import { createConsole } from "./Console.ts";
 import { quantizeCanvas } from "./DisplayBitmapUtils.ts";
@@ -10,6 +14,7 @@ import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import opentype, { Glyph, Font } from "opentype.js";
 import { decompress } from "woff2-encoder";
 import RangeHelper from "./RangeHelper.ts";
+import { pointInPolygon, Vector2 } from "./MathUtils.ts";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
 
@@ -98,17 +103,19 @@ export function parseSpriteSheet(dataView: DataView) {
   // FILL
 }
 
-type FontToSpriteSheetOptions = {
+export type FontToSpriteSheetOptions = {
   stroke?: boolean;
   strokeWidth?: number;
   unicodeOnly?: boolean;
   englishOnly?: boolean;
+  usePath?: boolean;
 };
-const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
+export const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
   stroke: false,
   strokeWidth: 1,
   unicodeOnly: true,
   englishOnly: true,
+  usePath: false,
 };
 
 function isWoff2(arrayBuffer: ArrayBuffer) {
@@ -161,15 +168,26 @@ function isEnglishLetter(unicode: number) {
 
 const englishRegex = /^[A-Za-z0-9 !"#$%&'()*+,\-./:;?@[\]^_`{|}~\\]+$/;
 
+function contourArea(points: Vector2[]) {
+  let area = 0;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    area += (points[j].x - points[i].x) * (points[j].y + points[i].y);
+  }
+  return area;
+}
+
 export async function fontToSpriteSheet(
   displayManager: DisplayManagerInterface,
   font: Font,
   fontSize: number,
   spriteSheetName?: string,
-  options: FontToSpriteSheetOptions = defaultFontToSpriteSheetOptions
+  options?: FontToSpriteSheetOptions
 ) {
   _console.assertTypeWithError(fontSize, "number");
 
+  options = options
+    ? { ...defaultFontToSpriteSheetOptions, ...options }
+    : defaultFontToSpriteSheetOptions;
   const fontScale = (1 / font.unitsPerEm) * fontSize;
 
   spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
@@ -220,8 +238,6 @@ export async function fontToSpriteSheet(
     }
 
     const bbox = glyph.getBoundingBox();
-    const bitmapWidth = Math.round((bbox.x2 - bbox.x1) * fontScale);
-    const bitmapHeight = Math.round((bbox.y2 - bbox.y1) * fontScale);
 
     const spriteWidth = Math.round(
       Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
@@ -230,67 +246,190 @@ export async function fontToSpriteSheet(
     const spriteHeight = Math.floor(maxSpriteHeight);
 
     const commands: DisplayContextCommand[] = [];
-    if (bitmapWidth > 0 && bitmapHeight > 0) {
-      canvas.width = bitmapWidth;
-      canvas.height = bitmapHeight;
-      ctx.imageSmoothingEnabled = false;
 
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const path = glyph.getPath(
+      -bbox.x1 * fontScale,
+      bbox.y2 * fontScale,
+      fontSize
+    );
+    if (options.stroke) {
+      path.stroke = "white";
+      path.strokeWidth = options.strokeWidth || 1;
+    } else {
+      path.fill = "white";
+    }
 
-      const path = glyph.getPath(
-        -bbox.x1 * fontScale,
-        bbox.y2 * fontScale,
-        fontSize
-      );
-      if (options.stroke) {
-        path.stroke = "white";
-        path.strokeWidth = options.strokeWidth || 1;
-      } else {
-        path.fill = "white";
-      }
-      path.draw(ctx);
-      const { colorIndices } = await quantizeCanvas(canvas, 2, [
-        "#000000",
-        "#ffffff",
-      ]);
-      const bitmap: DisplayBitmap = {
-        width: bitmapWidth,
-        height: bitmapHeight,
-        numberOfColors: 2,
-        pixels: colorIndices,
+    const bitmapWidth = Math.round((bbox.x2 - bbox.x1) * fontScale);
+    const bitmapHeight = Math.round((bbox.y2 - bbox.y1) * fontScale);
+
+    const bitmapX = Math.round(bbox.x1 * fontScale);
+    const bitmapY = Math.round(
+      (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY)
+    );
+
+    if (options.usePath) {
+      const pathOffset: Vector2 = {
+        x: -bitmapWidth / 2 + bitmapX,
+        y: -bitmapHeight / 2 + bitmapY,
       };
+      _console.log(`${name} path.commands`, path.commands);
+      let curves: DisplayBezierCurve[] = [];
+      let startPoint: Vector2 = { x: 0, y: 0 };
 
-      commands.push({
-        type: "selectBitmapColor",
-        bitmapColorIndex: 1,
-        colorIndex: 1,
+      const pathCommands: {
+        command: DisplayContextCommand;
+        area: number;
+        points: Vector2[];
+      }[] = [];
+
+      path.commands.forEach((cmd) => {
+        switch (cmd.type) {
+          case "M": // moveTo
+            startPoint.x = cmd.x;
+            startPoint.y = cmd.y;
+            break;
+
+          case "L": // lineTo
+            {
+              const controlPoints: Vector2[] = [{ x: cmd.x, y: cmd.y }];
+              if (curves.length === 0) controlPoints.unshift({ ...startPoint });
+              curves.push({ type: "segment", controlPoints });
+            }
+            break;
+
+          case "C": // cubic Bezier
+            {
+              const controlPoints: Vector2[] = [
+                { x: cmd.x1, y: cmd.y1 },
+                { x: cmd.x2, y: cmd.y2 },
+                { x: cmd.x, y: cmd.y },
+              ];
+              if (curves.length === 0) controlPoints.unshift({ ...startPoint });
+              curves.push({ type: "cubic", controlPoints });
+            }
+            break;
+
+          case "Q": // quadratic Bezier
+            {
+              const controlPoints: Vector2[] = [
+                { x: cmd.x1, y: cmd.y1 },
+                { x: cmd.x, y: cmd.y },
+              ];
+              if (curves.length === 0) controlPoints.unshift({ ...startPoint });
+              curves.push({ type: "quadratic", controlPoints });
+            }
+            break;
+
+          case "Z": // closePath
+            if (curves.length === 0) break;
+
+            // Flatten all control points
+            const controlPoints = curves.flatMap((c) => c.controlPoints);
+
+            // Apply path offset
+            controlPoints.forEach((pt) => {
+              pt.x = Math.round(pt.x + pathOffset.x);
+              pt.y = Math.round(pt.y + pathOffset.y);
+            });
+
+            const area = contourArea(controlPoints);
+
+            const isSegments = curves.every((c) => c.type === "segment");
+            if (isSegments) {
+              pathCommands.push({
+                command: {
+                  type: "drawPolygon",
+                  points: controlPoints,
+                  offsetX: 0,
+                  offsetY: 0,
+                },
+                points: controlPoints,
+                area,
+              });
+            } else {
+              pathCommands.push({
+                command: {
+                  type: "drawClosedPath",
+                  curves,
+                },
+                area,
+                points: controlPoints,
+              });
+            }
+
+            // Reset curves
+            curves = [];
+            break;
+        }
       });
-      if (false) {
-        // debugging
-        commands.push({
-          type: "selectFillColor",
-          fillColorIndex: 2,
+
+      if (pathCommands.length > 0) {
+        pathCommands.sort((a, b) => {
+          return pointInPolygon(a.points[0], b.points) ? -1 : 1;
         });
-        commands.push({
-          type: "drawRect",
-          offsetX: 0,
-          offsetY: 0,
-          width: spriteWidth,
-          height: spriteHeight,
+
+        let isDrawingHole = false;
+        let isHoleAreaPositive = pathCommands[0].area < 0;
+        pathCommands.forEach(({ area, command }) => {
+          const isHole = isHoleAreaPositive ? area > 0 : area < 0;
+          if (isDrawingHole != isHole) {
+            isDrawingHole = isHole;
+            commands.push({
+              type: "selectFillColor",
+              fillColorIndex: isHole ? 0 : 1,
+            });
+          }
+          commands.push(command);
         });
       }
+    } else {
+      if (bitmapWidth > 0 && bitmapHeight > 0) {
+        canvas.width = bitmapWidth;
+        canvas.height = bitmapHeight;
+        ctx.imageSmoothingEnabled = false;
 
-      let bitmapX = Math.round(bbox.x1 * fontScale);
-      let bitmapY = Math.round(
-        (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY)
-      );
-      commands.push({
-        type: "drawBitmap",
-        offsetX: bitmapX,
-        offsetY: bitmapY,
-        bitmap,
-      });
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        path.draw(ctx);
+        const { colorIndices } = await quantizeCanvas(canvas, 2, [
+          "#000000",
+          "#ffffff",
+        ]);
+        const bitmap: DisplayBitmap = {
+          width: bitmapWidth,
+          height: bitmapHeight,
+          numberOfColors: 2,
+          pixels: colorIndices,
+        };
+
+        commands.push({
+          type: "selectBitmapColor",
+          bitmapColorIndex: 1,
+          colorIndex: 1,
+        });
+        if (false) {
+          // debugging
+          commands.push({
+            type: "selectFillColor",
+            fillColorIndex: 2,
+          });
+          commands.push({
+            type: "drawRect",
+            offsetX: 0,
+            offsetY: 0,
+            width: spriteWidth,
+            height: spriteHeight,
+          });
+        }
+
+        commands.push({
+          type: "drawBitmap",
+          offsetX: bitmapX,
+          offsetY: bitmapY,
+          bitmap,
+        });
+      }
     }
 
     const sprite: DisplaySprite = {

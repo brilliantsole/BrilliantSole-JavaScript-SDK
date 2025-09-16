@@ -6,7 +6,7 @@ import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
-import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
+import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, FontToSpriteSheetOptions } from "./DisplaySpriteSheetUtils.ts";
 import { Font } from "opentype.js";
 export declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update", "ready", "device", "deviceIsConnected", "deviceConnected", "deviceNotConnected", "deviceSpriteSheetUploadStart", "deviceSpriteSheetUploadProgress", "deviceSpriteSheetUploadComplete"];
 export type DisplayCanvasHelperEventType = (typeof DisplayCanvasHelperEventTypes)[number];
@@ -267,6 +267,6 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
         colorIndices: number[];
     }>;
     serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
-    fontToSpriteSheet(font: Font, fontSize: number, spriteSheetName?: string): Promise<DisplaySpriteSheet>;
+    fontToSpriteSheet(font: Font, fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
 }
 export default DisplayCanvasHelper;
