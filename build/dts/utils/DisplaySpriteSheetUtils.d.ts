@@ -40,6 +40,7 @@ export type FontToSpriteSheetOptions = {
     unicodeOnly?: boolean;
     englishOnly?: boolean;
     usePath?: boolean;
+    strings?: string[];
 };
 export declare const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions;
 export declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;

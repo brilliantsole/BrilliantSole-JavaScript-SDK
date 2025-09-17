@@ -110,6 +110,7 @@ export type FontToSpriteSheetOptions = {
   unicodeOnly?: boolean;
   englishOnly?: boolean;
   usePath?: boolean;
+  strings?: string[];
 };
 export const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
   stroke: false,
@@ -117,6 +118,7 @@ export const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
   unicodeOnly: true,
   englishOnly: true,
   usePath: false,
+  strings: [],
 };
 
 function isWoff2(arrayBuffer: ArrayBuffer) {
@@ -205,6 +207,7 @@ export async function fontToSpriteSheet(
   const glyphs: Glyph[] = [];
   for (let index = 0; index < font.glyphs.length; index++) {
     const glyph = font.glyphs.get(index);
+    //console.log(glyph);
     if (options.unicodeOnly || options.englishOnly) {
       if (glyph.unicode == undefined) {
         continue;
@@ -284,7 +287,7 @@ export async function fontToSpriteSheet(
       }[] = [];
 
       let pathCommands = path.commands;
-      pathCommands = simplifyPath(pathCommands);
+      //pathCommands = simplifyPath(pathCommands);
       pathCommands.forEach((cmd) => {
         switch (cmd.type) {
           case "M": // moveTo
