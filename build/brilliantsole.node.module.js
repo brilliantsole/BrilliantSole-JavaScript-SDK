@@ -6283,12 +6283,9 @@ function stringToSpriteLines(string, spriteSheets, requireAll = false) {
             else {
                 lineSubstring = lineSubstring.substring(1);
             }
-            _console$p.log("new substring", lineSubstring);
         }
-        _console$p.log("spriteLine", spriteLine);
         return spriteLine;
     });
-    _console$p.log(`spriteLines for "${string}"`, spriteLines);
     return spriteLines;
 }
 

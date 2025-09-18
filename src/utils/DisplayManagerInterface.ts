@@ -1398,7 +1398,7 @@ export function stringToSpriteLines(
           }
         });
       }
-      _console.log("longestSprite", longestSprite);
+      //_console.log("longestSprite", longestSprite);
       if (requireAll) {
         _console.assertWithError(
           longestSprite,
@@ -1423,11 +1423,11 @@ export function stringToSpriteLines(
         lineSubstring = lineSubstring.substring(1);
       }
 
-      _console.log("new substring", lineSubstring);
+      //_console.log("new substring", lineSubstring);
     }
-    _console.log("spriteLine", spriteLine);
+    //_console.log("spriteLine", spriteLine);
     return spriteLine;
   });
-  _console.log(`spriteLines for "${string}"`, spriteLines);
+  //_console.log(`spriteLines for "${string}"`, spriteLines);
   return spriteLines;
 }

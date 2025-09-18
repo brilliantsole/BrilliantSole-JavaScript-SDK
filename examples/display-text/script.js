@@ -146,6 +146,11 @@ displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
   isUploading = false;
 });
 
+let nonEnglishSpriteSheetIndex = 0;
+let maxNumberOfNonEnglishSpriteSheets = 20;
+/** @type {{spriteSheet: BS.DisplaySpriteSheet, characters: string[]}[]} */
+const nonEnglishSpriteSheets = new Array(maxNumberOfNonEnglishSpriteSheets);
+window.nonEnglishSpriteSheets = nonEnglishSpriteSheets;
 let didLoad = false;
 const draw = async () => {
   if (isUploading) {
@@ -165,24 +170,38 @@ const draw = async () => {
   const text = textarea.value;
   console.log(`drawing "${text}"`);
 
-  // FILL - check if there are
-  const nonEnglishGlyphCharacters = Array.from(text).filter(
+  const nonEnglishCharacters = Array.from(text).filter(
     (char) => selectedFont.charToGlyph(char).unicode == undefined
   );
-  if (nonEnglishGlyphCharacters.length > 0) {
-    console.log("nonEnglishGlyphCharacters", nonEnglishGlyphCharacters);
-    const nonEnglishSpriteSheet = await BS.fontToSpriteSheet(
-      selectedFonts,
-      fontSize,
-      "notEnglish",
-      {
-        englishOnly: false,
-        string: nonEnglishGlyphCharacters.join(""),
-        usePath: true,
-      }
-    );
-    console.log("nonEnglishSpriteSheet", nonEnglishSpriteSheet);
-    await displayCanvasHelper.uploadSpriteSheet(nonEnglishSpriteSheet);
+  if (nonEnglishCharacters.length > 0) {
+    nonEnglishSpriteSheets[nonEnglishSpriteSheetIndex] = undefined;
+
+    console.log("nonEnglishGlyphCharacters", nonEnglishCharacters);
+    const newNonEnglishCharacters = nonEnglishCharacters.filter((char) => {
+      return !nonEnglishSpriteSheets
+        .filter(Boolean)
+        .some(({ characters }) => characters.includes(char));
+    });
+    console.log("newNonEnglishCharacters", newNonEnglishCharacters);
+    if (newNonEnglishCharacters.length > 0) {
+      const nonEnglishSpriteSheet = await BS.fontToSpriteSheet(
+        selectedFonts,
+        fontSize,
+        `notEnglish${nonEnglishSpriteSheetIndex}`,
+        {
+          englishOnly: false,
+          string: newNonEnglishCharacters.join(""),
+          usePath: true,
+        }
+      );
+      console.log("nonEnglishSpriteSheet", nonEnglishSpriteSheet);
+      await displayCanvasHelper.uploadSpriteSheet(nonEnglishSpriteSheet);
+      nonEnglishSpriteSheets[nonEnglishSpriteSheetIndex++] = {
+        spriteSheet: nonEnglishSpriteSheet,
+        characters: newNonEnglishCharacters,
+      };
+      nonEnglishSpriteSheetIndex %= maxNumberOfNonEnglishSpriteSheets;
+    }
   }
 
   const {
