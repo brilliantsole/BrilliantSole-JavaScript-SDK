@@ -6,8 +6,7 @@ import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, Displ
 import { DisplayContextCommand } from "./utils/DisplayContextCommand.ts";
 import { DisplaySpriteLines, DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
-import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, DisplaySpriteSheet, FontToSpriteSheetOptions } from "./utils/DisplaySpriteSheetUtils.ts";
-import { Font } from "opentype.js";
+import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, DisplaySpriteSheet } from "./utils/DisplaySpriteSheetUtils.ts";
 export declare const DefaultNumberOfDisplayColors = 16;
 export declare const DisplayCommands: readonly ["sleep", "wake"];
 export type DisplayCommand = (typeof DisplayCommands)[number];
@@ -304,7 +303,6 @@ declare class DisplayManager implements DisplayManagerInterface {
     selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     reset(): void;
-    fontToSpriteSheet(font: Font, fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
     get mtu(): number;
     set mtu(newMtu: number);
     get isServerSide(): boolean;

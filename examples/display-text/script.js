@@ -165,6 +165,26 @@ const draw = async () => {
   const text = textarea.value;
   console.log(`drawing "${text}"`);
 
+  // FILL - check if there are
+  const nonEnglishGlyphCharacters = Array.from(text).filter(
+    (char) => selectedFont.charToGlyph(char).unicode == undefined
+  );
+  if (nonEnglishGlyphCharacters.length > 0) {
+    console.log("nonEnglishGlyphCharacters", nonEnglishGlyphCharacters);
+    const nonEnglishSpriteSheet = await BS.fontToSpriteSheet(
+      selectedFonts,
+      fontSize,
+      "notEnglish",
+      {
+        englishOnly: false,
+        string: nonEnglishGlyphCharacters.join(""),
+        usePath: true,
+      }
+    );
+    console.log("nonEnglishSpriteSheet", nonEnglishSpriteSheet);
+    await displayCanvasHelper.uploadSpriteSheet(nonEnglishSpriteSheet);
+  }
+
   const {
     verticalAlignment,
     horizontalAlignment,
@@ -627,7 +647,7 @@ const loadFont = async (arrayBuffer) => {
     await addFont(font);
   }
 };
-
+3;
 /** @type {Object.<string, BS.Font[]>} */
 const fonts = {};
 /** @type {Object.<string, BS.Font[]>} */
@@ -638,7 +658,7 @@ window.englishFontSpriteSheets = englishFontSpriteSheets;
 
 /** @type {Map.<BS.Font, {min: number, max: number}>} */
 const fontUnicodeRanges = new Map();
-const fontSize = 36;
+const fontSize = 72;
 drawSpriteParams.spritesLineHeight = fontSize;
 window.fonts = fonts;
 /** @param {BS.Font} font */
@@ -654,22 +674,20 @@ const addFont = async (font) => {
   fonts[fullName] = fonts[fullName] || [];
   fonts[fullName].push(font);
 
-  console.log(`added font "${fullName}"`, range);
+  //console.log(`added font "${fullName}"`, range);
 
   const isEnglish = range.min <= 65 && range.max >= 122;
   if (isEnglish) {
     7;
     englishFonts[fullName] = englishFonts[fullName] || [];
     englishFonts[fullName].push(font);
-    console.log(`added english font "${fullName}"`);
+    //console.log(`added english font "${fullName}"`);
 
-    const spriteSheet = await displayCanvasHelper.fontToSpriteSheet(
-      font,
-      fontSize,
-      "english"
-    );
+    const spriteSheet = await BS.fontToSpriteSheet(font, fontSize, "english", {
+      usePath: true,
+    });
     englishFontSpriteSheets[fullName] = spriteSheet;
-    console.log(`added english font spriteSheet "${fullName}"`, spriteSheet);
+    //console.log(`added english font spriteSheet "${fullName}"`, spriteSheet);
     await updateFontSelect();
     await selectFont(fullName);
   }
@@ -692,14 +710,19 @@ selectFontSelect.addEventListener("input", async () => {
 
 /** @type {BS.Font?} */
 let selectedFont;
+/** @type {BS.Font[]?} */
+let selectedFonts;
 const selectFont = async (newFontName) => {
   const newFont = englishFonts[newFontName][0];
   selectedFont = newFont;
-  console.log(`selected font "${newFontName}"`, selectedFont);
+  selectedFonts = Object.values(fonts).find((fonts) =>
+    fonts.includes(selectedFont)
+  );
+  //console.log(`selected font "${newFontName}"`, selectedFont);
+  //console.log(`selected fonts`, selectedFonts);
   selectFontSelect.value = newFontName;
   await displayCanvasHelper.uploadSpriteSheet(
-    englishFontSpriteSheets[newFontName],
-    true
+    englishFontSpriteSheets[newFontName]
   );
   await draw();
 };
@@ -730,18 +753,18 @@ window.addEventListener("drop", async (e) => {
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Mozilla+Text");
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Inter");
-// await loadFontUrl(
-//   "https://fonts.googleapis.com/css2?family=Noto+Sans+JP",
-//   false
-// );
-// await loadFontUrl(
-//   "https://fonts.googleapis.com/css2?family=Noto+Sans+KR",
-//   false
-// );
-// await loadFontUrl(
-//   "https://fonts.googleapis.com/css2?family=Noto+Sans+SC",
-//   false
-// );
+await loadFontUrl(
+  "https://fonts.googleapis.com/css2?family=Noto+Sans+JP",
+  false
+);
+await loadFontUrl(
+  "https://fonts.googleapis.com/css2?family=Noto+Sans+KR",
+  false
+);
+await loadFontUrl(
+  "https://fonts.googleapis.com/css2?family=Noto+Sans+SC",
+  false
+);
 
 didLoad = true;
 

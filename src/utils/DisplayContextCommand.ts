@@ -1133,17 +1133,15 @@ export function serializeContextCommand(
     case "setSpritesSpacing":
       {
         const { spritesSpacing } = command;
-        displayManager.assertValidLineWidth(spritesSpacing);
         dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, spritesSpacing, true);
+        dataView.setInt16(0, spritesSpacing, true);
       }
       break;
     case "setSpritesLineSpacing":
       {
         const { spritesLineSpacing } = command;
-        displayManager.assertValidLineWidth(spritesLineSpacing);
         dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, spritesLineSpacing, true);
+        dataView.setInt16(0, spritesLineSpacing, true);
       }
       break;
     case "setSpritesAlignment":

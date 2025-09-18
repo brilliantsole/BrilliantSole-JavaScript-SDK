@@ -107,8 +107,6 @@ import {
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
-  fontToSpriteSheet,
-  FontToSpriteSheetOptions,
   serializeSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 import { Font } from "opentype.js";
@@ -1559,7 +1557,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     isOrthogonal: boolean,
     sendImmediately?: boolean
   ) {
-    this.assertValidLineWidth(spacing);
     const stateKey: DisplayContextStateKey = isOrthogonal
       ? "spritesLineSpacing"
       : "spritesSpacing";
@@ -4189,15 +4186,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer {
     return serializeSpriteSheet(this, spriteSheet);
-  }
-
-  async fontToSpriteSheet(
-    font: Font,
-    fontSize: number,
-    spriteSheetName?: string,
-    options?: FontToSpriteSheetOptions
-  ) {
-    return fontToSpriteSheet(this, font, fontSize, spriteSheetName, options);
   }
 }
 export default DisplayCanvasHelper;

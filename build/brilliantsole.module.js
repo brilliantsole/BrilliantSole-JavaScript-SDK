@@ -5416,17 +5416,15 @@ function serializeContextCommand(displayManager, command) {
         case "setSpritesSpacing":
             {
                 const { spritesSpacing } = command;
-                displayManager.assertValidLineWidth(spritesSpacing);
                 dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, spritesSpacing, true);
+                dataView.setInt16(0, spritesSpacing, true);
             }
             break;
         case "setSpritesLineSpacing":
             {
                 const { spritesLineSpacing } = command;
-                displayManager.assertValidLineWidth(spritesLineSpacing);
                 dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, spritesLineSpacing, true);
+                dataView.setInt16(0, spritesLineSpacing, true);
             }
             break;
         case "setSpritesAlignment":
@@ -15589,6 +15587,133 @@ var A,g=(A="file:///build/woff2-wasm.js",function(g={}){g.ready=new Promise((A,g
         }`;D&&(Y+="var destructors = [];\n");var c=D?"destructors":"null",h=["throwBindingError","invoker","fn","runDestructors","retType","classParam"],F=[f,B,I,AD,g[0],g[1]];w&&(Y+="var thisWired = classParam.toWireType("+c+", this);\n");for(var G=0;G<E-2;++G)Y+="var arg"+G+"Wired = argType"+G+".toWireType("+c+", arg"+G+"); // "+g[G+2].name+"\n",h.push("argType"+G),F.push(g[G+2]);if(w&&(L="thisWired"+(L.length>0?", ":"")+L),Y+=(i||Q?"var rv = ":"")+"invoker(fn"+(L.length>0?", ":"")+L+");\n",D)Y+="runDestructors(destructors);\n";else for(var G=w?1:2;G<g.length;++G){var s=1===G?"thisWired":"arg"+(G-2)+"Wired";null!==g[G].destructorFunction&&(Y+=s+"_dtor("+s+"); // "+g[G].name+"\n",h.push(s+"_dtor"),F.push(g[G].destructorFunction));}return i&&(Y+="var ret = retType.fromWireType(rv);\nreturn ret;\n"),Y+="}\n",h.push(Y),(function(A,g){if(!(A instanceof Function))throw TypeError(`new_ called with constructor type ${typeof A} which is not a function`);var C=AG(A.name||"unknownFunctionName",function(){});C.prototype=A.prototype;var B=new C,I=A.apply(B,g);return I instanceof Object?I:B})(Function,h).apply(null,F)}(A,[C[0],null].concat(C.slice(1)),0,I,Q,E),g-1),[]});},b:(A,g,C,B,I)=>{g=P(g);var Q=A=>A;if(0===B){var E=32-8*C;Q=A=>A<<E>>>E;}var w=g.includes("unsigned"),D=(A,g)=>{};AA(A,{name:g,fromWireType:Q,toWireType:w?function(A,g){return D(g,this.name),g>>>0}:function(A,g){return D(g,this.name),g},argPackAdvance:8,readValueFromPointer:AH(g,C,0!==B),destructorFunction:null});},a:(A,g,C)=>{var B=[Int8Array,Uint8Array,Int16Array,Uint16Array,Int32Array,Uint32Array,Float32Array,Float64Array][g];function I(A){var g=L[A>>2],C=L[A+4>>2];return new B(w.buffer,C,g)}AA(A,{name:C=P(C),fromWireType:I,argPackAdvance:8,readValueFromPointer:I},{ignoreDuplicateRegistrations:!0});},g:(A,g)=>{var C="std::string"===(g=P(g));AA(A,{name:g,fromWireType(A){var g,B=L[A>>2],I=A+4;if(C)for(var Q=I,E=0;E<=B;++E){var w=I+E;if(E==B||0==D[w]){var G=w-Q,i=Ay(Q,G);void 0===g?g=i:g+="\x00"+i,Q=w+1;}}else {for(var o=Array(B),E=0;E<B;++E)o[E]=String.fromCharCode(D[I+E]);g=o.join("");}return AO(A),g},toWireType(A,g){g instanceof ArrayBuffer&&(g=new Uint8Array(g));var B,I="string"==typeof g;I||g instanceof Uint8Array||g instanceof Uint8ClampedArray||g instanceof Int8Array||f("Cannot pass non-string to std::string"),B=C&&I?AM(g):g.length;var Q=Av(4+B+1),E=Q+4;if(L[Q>>2]=B,C&&I)AZ(g,E,B+1);else if(I)for(var w=0;w<B;++w){var G=g.charCodeAt(w);G>255&&(AO(E),f("String has UTF-16 code units that do not fit in 8 bits")),D[E+w]=G;}else for(var w=0;w<B;++w)D[E+w]=g[w];return null!==A&&A.push(AO,Q),Q},argPackAdvance:8,readValueFromPointer:Ak,destructorFunction(A){AO(A);}});},d:(A,g,C)=>{var B,I,Q,E,w;C=P(C),2===g?(B=Ap,I=Ab,E=Al,Q=()=>i,w=1):4===g&&(B=AS,I=Am,E=Aq,Q=()=>L,w=2),AA(A,{name:C,fromWireType:A=>{for(var C,I=L[A>>2],E=Q(),D=A+4,G=0;G<=I;++G){var i=A+4+G*g;if(G==I||0==E[i>>w]){var o=i-D,Y=B(D,o);void 0===C?C=Y:C+="\x00"+Y,D=i+g;}}return AO(A),C},toWireType:(A,B)=>{"string"!=typeof B&&f(`Cannot pass non-string to C++ string type ${C}`);var Q=E(B),D=Av(4+Q+g);return L[D>>2]=Q>>w,I(B,D+4,Q+g),null!==A&&A.push(AO,D),D},argPackAdvance:8,readValueFromPointer:AQ,destructorFunction(A){AO(A);}});},j:(A,g)=>{AA(A,{isVoid:!0,name:g=P(g),argPackAdvance:0,fromWireType:()=>void 0,toWireType:(A,g)=>void 0});},l:AB,m:A=>{A>4&&(AC.get(A).refcount+=1);},h:(A,g)=>{var C=(A=At(A,"_emval_take_value")).readValueFromPointer(g);return AI.toHandle(C)},o:()=>{X("");},q:(A,g,C)=>D.copyWithin(A,g,g+C),p:A=>{var g=D.length;A>>>=0;var C=AV();if(A>C)return !1;for(var B=(A,g)=>A+(g-A%g)%g,I=1;I<=4;I*=2){var Q=g*(1+.2/I);if(Q=Math.min(Q,A+100663296),AX(Math.min(C,B(Math.max(A,Q),65536))))return !0}return !1},k:(A,g)=>{An(A);}},Aj=function(){var A,C={a:Ax};function w(A,C){var B;return E=(Aj=A.exports).s,b(),K=Aj.u,B=Aj.t,S.unshift(B),function(A){if(q--,g.monitorRunDependencies&&g.monitorRunDependencies(q),0==q&&(V)){var C=V;V=null,C();}}(),Aj}if(q++,g.monitorRunDependencies&&g.monitorRunDependencies(q),g.instantiateWasm)try{return g.instantiateWasm(C,w)}catch(A){y(`Module.instantiateWasm callback failed with error: ${A}`),B(A);}return (A=h,Promise.resolve().then(()=>(function(A){if(A==h&&Q)return new Uint8Array(Q);var g=function(A){if(n(A))return function(A){try{for(var g=atob(A),C=new Uint8Array(g.length),B=0;B<g.length;++B)C[B]=g.charCodeAt(B);return C}catch(A){throw Error("Converting base64 string to bytes failed.")}}(A.slice(u.length))}(A);if(g)return g;throw "both async and sync fetching of the wasm failed"})(A)).then(A=>WebAssembly.instantiate(A,C)).then(A=>A).then(function(A){w(A.instance);},A=>{y(`failed to asynchronously prepare wasm: ${A}`),X(A);})).catch(B),{}}(),Av=A=>(Av=Aj.v)(A),AO=A=>(AO=Aj.w)(A),Ar=A=>(Ar=Aj.x)(A),AP=(g.__embind_initialize_bindings=()=>(g.__embind_initialize_bindings=Aj.y)(),A=>(AP=Aj.z)(A));function Az(){!(q>0)&&(function(){if(g.preRun)for("function"==typeof g.preRun&&(g.preRun=[g.preRun]);g.preRun.length;){var A;A=g.preRun.shift(),l.unshift(A);}j(l);}(),q>0||(g.setStatus?(g.setStatus("Running..."),setTimeout(function(){setTimeout(function(){g.setStatus("");},1),A();},1)):A()));function A(){!R&&(R=!0,g.calledRun=!0,p||(j(S),C(g),g.onRuntimeInitialized&&g.onRuntimeInitialized(),function(){if(g.postRun)for("function"==typeof g.postRun&&(g.postRun=[g.postRun]);g.postRun.length;){var A;A=g.postRun.shift(),m.unshift(A);}j(m);}()));}}if(V=function A(){R||Az(),R||(V=A);},g.preInit)for("function"==typeof g.preInit&&(g.preInit=[g.preInit]);g.preInit.length>0;)g.preInit.pop()();return Az(),g.ready});let C=new Promise(A=>{g({onRuntimeInitialized(){A(this);}});});
 async function B(){let A=await C;return new Promise(g=>{setTimeout(()=>{g(A);},0);})}async function Q(A){let g=await B(),C=await g.decompress(A);if(!C)throw Error("Failed to decompress the font data.");return Uint8Array.from(C)}
 
+createConsole("PathUtils", { log: false });
+function perpendicularDistance(p, p1, p2) {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    if (dx === 0 && dy === 0)
+        return Math.hypot(p.x - p1.x, p.y - p1.y);
+    const t = ((p.x - p1.x) * dx + (p.y - p1.y) * dy) / (dx * dx + dy * dy);
+    const projX = p1.x + t * dx;
+    const projY = p1.y + t * dy;
+    return Math.hypot(p.x - projX, p.y - projY);
+}
+function rdp(points, epsilon) {
+    if (points.length < 3)
+        return points;
+    let maxDist = 0;
+    let index = 0;
+    for (let i = 1; i < points.length - 1; i++) {
+        const d = perpendicularDistance(points[i], points[0], points[points.length - 1]);
+        if (d > maxDist) {
+            maxDist = d;
+            index = i;
+        }
+    }
+    if (maxDist > epsilon) {
+        const left = rdp(points.slice(0, index + 1), epsilon);
+        const right = rdp(points.slice(index), epsilon);
+        return left.slice(0, -1).concat(right);
+    }
+    return [points[0], points[points.length - 1]];
+}
+function sampleQuadratic(p0, p1, p2, steps = 5) {
+    const points = [];
+    for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = (1 - t) ** 2 * p0.x + 2 * (1 - t) * t * p1.x + t ** 2 * p2.x;
+        const y = (1 - t) ** 2 * p0.y + 2 * (1 - t) * t * p1.y + t ** 2 * p2.y;
+        points.push({ x, y });
+    }
+    return points;
+}
+function sampleCubic(p0, p1, p2, p3, steps = 5) {
+    const points = [];
+    for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const mt = 1 - t;
+        const x = mt ** 3 * p0.x +
+            3 * mt ** 2 * t * p1.x +
+            3 * mt * t ** 2 * p2.x +
+            t ** 3 * p3.x;
+        const y = mt ** 3 * p0.y +
+            3 * mt ** 2 * t * p1.y +
+            3 * mt * t ** 2 * p2.y +
+            t ** 3 * p3.y;
+        points.push({ x, y });
+    }
+    return points;
+}
+function areCollinear(p1, p2, p3, epsilon = 1e-6) {
+    const dx1 = p2.x - p1.x;
+    const dy1 = p2.y - p1.y;
+    const dx2 = p3.x - p2.x;
+    const dy2 = p3.y - p2.y;
+    const cross = dx1 * dy2 - dy1 * dx2;
+    return Math.abs(cross) < epsilon;
+}
+function simplifyPath(commands, epsilon = 1) {
+    const simplified = [];
+    let cursor = { x: 0, y: 0 };
+    for (let i = 0; i < commands.length; i++) {
+        const cmd = commands[i];
+        switch (cmd.type) {
+            case "M":
+                simplified.push({ ...cmd });
+                cursor = { x: cmd.x, y: cmd.y };
+                break;
+            case "L": {
+                const nextPoint = { x: cmd.x, y: cmd.y };
+                const lastCmd = simplified[simplified.length - 1];
+                if (lastCmd &&
+                    lastCmd.type === "L" &&
+                    simplified.length >= 2 &&
+                    areCollinear(simplified[simplified.length - 2], lastCmd, nextPoint)) {
+                    simplified.pop();
+                }
+                simplified.push({ ...cmd });
+                cursor = nextPoint;
+                break;
+            }
+            case "Q": {
+                const p0 = cursor;
+                const p1 = { x: cmd.x1, y: cmd.y1 };
+                const p2 = { x: cmd.x, y: cmd.y };
+                const sampled = sampleQuadratic(p0, p1, p2, 5);
+                const simplifiedPoints = rdp(sampled, epsilon);
+                if (simplifiedPoints.length === 2) {
+                    simplified.push({ type: "L", x: p2.x, y: p2.y });
+                }
+                else {
+                    simplified.push({ ...cmd });
+                }
+                cursor = p2;
+                break;
+            }
+            case "C": {
+                const p0 = cursor;
+                const p1 = { x: cmd.x1, y: cmd.y1 };
+                const p2 = { x: cmd.x2, y: cmd.y2 };
+                const p3 = { x: cmd.x, y: cmd.y };
+                const sampled = sampleCubic(p0, p1, p2, p3, 5);
+                const simplifiedPoints = rdp(sampled, epsilon);
+                if (simplifiedPoints.length === 2) {
+                    simplified.push({ type: "L", x: p3.x, y: p3.y });
+                }
+                else {
+                    simplified.push({ ...cmd });
+                }
+                cursor = p3;
+                break;
+            }
+            case "Z":
+                simplified.push({ ...cmd });
+                break;
+        }
+    }
+    return simplified;
+}
+
 const _console$m = createConsole("DisplaySpriteSheetUtils", { log: true });
 const spriteHeaderLength = 3 * 2;
 function calculateSpriteSheetHeaderLength(numberOfSprites) {
@@ -15626,7 +15751,6 @@ const defaultFontToSpriteSheetOptions = {
     unicodeOnly: true,
     englishOnly: true,
     usePath: false,
-    strings: [],
 };
 function isWoff2(arrayBuffer) {
     if (arrayBuffer.byteLength < 4)
@@ -15669,12 +15793,13 @@ function contourArea(points) {
     }
     return area;
 }
-async function fontToSpriteSheet(displayManager, font, fontSize, spriteSheetName, options) {
+async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
     _console$m.assertTypeWithError(fontSize, "number");
     options = options
         ? { ...defaultFontToSpriteSheetOptions, ...options }
         : defaultFontToSpriteSheetOptions;
-    const fontScale = (1 / font.unitsPerEm) * fontSize;
+    const fonts = Array.isArray(font) ? font : [font];
+    font = fonts[0];
     spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
     const spriteSheet = {
         name: spriteSheetName,
@@ -15682,195 +15807,215 @@ async function fontToSpriteSheet(displayManager, font, fontSize, spriteSheetName
     };
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    let minSpriteY = Infinity;
-    let maxSpriteY = -Infinity;
-    const glyphs = [];
-    for (let index = 0; index < font.glyphs.length; index++) {
-        const glyph = font.glyphs.get(index);
-        if (options.unicodeOnly || options.englishOnly) {
-            if (glyph.unicode == undefined) {
-                continue;
-            }
+    for (let font of fonts) {
+        const fontScale = (1 / font.unitsPerEm) * fontSize;
+        let minSpriteY = Infinity;
+        let maxSpriteY = -Infinity;
+        const glyphs = [];
+        let filteredGlyphs;
+        if (options.string) {
+            filteredGlyphs = font
+                .stringToGlyphs(options.string)
+                .filter((glyph) => glyph.unicode != undefined);
         }
-        if (options.englishOnly) {
-            if (!englishRegex.test(String.fromCharCode(glyph.unicode))) {
-                continue;
-            }
-        }
-        const bbox = glyph.getBoundingBox();
-        minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
-        maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
-        glyphs.push(glyph);
-    }
-    const maxSpriteHeight = maxSpriteY - minSpriteY;
-    for (let i = 0; i < glyphs.length; i++) {
-        const glyph = glyphs[i];
-        let name = glyph.name;
-        if (options.unicodeOnly) {
-            name = String.fromCharCode(glyph.unicode);
-        }
-        if (typeof name != "string") {
-            continue;
-        }
-        const bbox = glyph.getBoundingBox();
-        const spriteWidth = Math.round(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
-            fontScale);
-        const spriteHeight = Math.floor(maxSpriteHeight);
-        const commands = [];
-        const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
-        if (options.stroke) {
-            path.stroke = "white";
-            path.strokeWidth = options.strokeWidth || 1;
-        }
-        else {
-            path.fill = "white";
-        }
-        const bitmapWidth = Math.round((bbox.x2 - bbox.x1) * fontScale);
-        const bitmapHeight = Math.round((bbox.y2 - bbox.y1) * fontScale);
-        const bitmapX = Math.round((spriteWidth - bitmapWidth) / 2);
-        const bitmapY = Math.round((spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY));
-        if (options.usePath) {
-            const pathOffset = {
-                x: -bitmapWidth / 2 + bitmapX,
-                y: -bitmapHeight / 2 + bitmapY,
-            };
-            _console$m.log(`${name} path.commands`, path.commands);
-            let curves = [];
-            let startPoint = { x: 0, y: 0 };
-            const pathCommandObjects = [];
-            let pathCommands = path.commands;
-            pathCommands.forEach((cmd) => {
-                switch (cmd.type) {
-                    case "M":
-                        startPoint.x = cmd.x;
-                        startPoint.y = cmd.y;
-                        break;
-                    case "L":
-                        {
-                            const controlPoints = [{ x: cmd.x, y: cmd.y }];
-                            if (curves.length === 0)
-                                controlPoints.unshift({ ...startPoint });
-                            curves.push({ type: "segment", controlPoints });
-                        }
-                        break;
-                    case "C":
-                        {
-                            const controlPoints = [
-                                { x: cmd.x1, y: cmd.y1 },
-                                { x: cmd.x2, y: cmd.y2 },
-                                { x: cmd.x, y: cmd.y },
-                            ];
-                            if (curves.length === 0)
-                                controlPoints.unshift({ ...startPoint });
-                            curves.push({ type: "cubic", controlPoints });
-                        }
-                        break;
-                    case "Q":
-                        {
-                            const controlPoints = [
-                                { x: cmd.x1, y: cmd.y1 },
-                                { x: cmd.x, y: cmd.y },
-                            ];
-                            if (curves.length === 0)
-                                controlPoints.unshift({ ...startPoint });
-                            curves.push({ type: "quadratic", controlPoints });
-                        }
-                        break;
-                    case "Z":
-                        if (curves.length === 0)
-                            break;
-                        const controlPoints = curves.flatMap((c) => c.controlPoints);
-                        controlPoints.forEach((pt) => {
-                            pt.x = Math.round(pt.x + pathOffset.x);
-                            pt.y = Math.round(pt.y + pathOffset.y);
-                        });
-                        const area = contourArea(controlPoints);
-                        const isSegments = curves.every((c) => c.type === "segment");
-                        if (isSegments) {
-                            pathCommandObjects.push({
-                                command: {
-                                    type: "drawPolygon",
-                                    points: controlPoints,
-                                    offsetX: 0,
-                                    offsetY: 0,
-                                },
-                                points: controlPoints,
-                                area,
-                            });
-                        }
-                        else {
-                            pathCommandObjects.push({
-                                command: {
-                                    type: "drawClosedPath",
-                                    curves,
-                                },
-                                area,
-                                points: controlPoints,
-                            });
-                        }
-                        curves = [];
-                        break;
+        for (let index = 0; index < font.glyphs.length; index++) {
+            const glyph = font.glyphs.get(index);
+            const hasUnicode = glyph.unicode != undefined;
+            if (filteredGlyphs) {
+                if (!filteredGlyphs.includes(glyph)) {
+                    continue;
                 }
-            });
-            if (pathCommandObjects.length > 0) {
-                pathCommandObjects.sort((a, b) => {
-                    return a.points.every((aPoint) => pointInPolygon(aPoint, b.points))
-                        ? 1
-                        : -1;
-                });
-                let isDrawingHole = false;
-                let isHoleAreaPositive = pathCommandObjects[0].area < 0;
-                pathCommandObjects.forEach(({ area, command }) => {
-                    const isHole = isHoleAreaPositive ? area > 0 : area < 0;
-                    if (isDrawingHole != isHole) {
-                        isDrawingHole = isHole;
-                        commands.push({
-                            type: "selectFillColor",
-                            fillColorIndex: isHole ? 0 : 1,
-                        });
-                    }
-                    commands.push(command);
-                });
             }
+            if (options.unicodeOnly || options.englishOnly) {
+                if (!hasUnicode) {
+                    continue;
+                }
+            }
+            if (options.script && hasUnicode) {
+                const regex = new RegExp(`\\p{Script=${options.script}}`, "u");
+                if (!regex.test(String.fromCharCode(glyph.unicode))) {
+                    continue;
+                }
+            }
+            if (options.englishOnly) {
+                if (!englishRegex.test(String.fromCharCode(glyph.unicode))) {
+                    continue;
+                }
+            }
+            const bbox = glyph.getBoundingBox();
+            minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
+            maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
+            glyphs.push(glyph);
         }
-        else {
-            if (bitmapWidth > 0 && bitmapHeight > 0) {
-                canvas.width = bitmapWidth;
-                canvas.height = bitmapHeight;
-                ctx.imageSmoothingEnabled = false;
-                ctx.fillStyle = "black";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                path.draw(ctx);
-                const { colorIndices } = await quantizeCanvas(canvas, 2, [
-                    "#000000",
-                    "#ffffff",
-                ]);
-                const bitmap = {
-                    width: bitmapWidth,
-                    height: bitmapHeight,
-                    numberOfColors: 2,
-                    pixels: colorIndices,
+        const maxSpriteHeight = maxSpriteY - minSpriteY;
+        for (let i = 0; i < glyphs.length; i++) {
+            const glyph = glyphs[i];
+            let name = glyph.name;
+            if (glyph.unicode != undefined) {
+                name = String.fromCharCode(glyph.unicode);
+            }
+            if (typeof name != "string") {
+                continue;
+            }
+            const bbox = glyph.getBoundingBox();
+            const spriteWidth = Math.floor(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) * fontScale);
+            const spriteHeight = Math.floor(maxSpriteHeight);
+            const commands = [];
+            const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
+            if (options.stroke) {
+                path.stroke = "white";
+                path.strokeWidth = options.strokeWidth || 1;
+            }
+            else {
+                path.fill = "white";
+            }
+            const bitmapWidth = Math.floor((bbox.x2 - bbox.x1) * fontScale);
+            const bitmapHeight = Math.floor((bbox.y2 - bbox.y1) * fontScale);
+            const bitmapX = Math.floor((spriteWidth - bitmapWidth) / 2);
+            const bitmapY = Math.floor((spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY));
+            if (options.usePath) {
+                const pathOffset = {
+                    x: -bitmapWidth / 2 + bitmapX,
+                    y: -bitmapHeight / 2 + bitmapY,
                 };
-                commands.push({
-                    type: "selectBitmapColor",
-                    bitmapColorIndex: 1,
-                    colorIndex: 1,
+                let curves = [];
+                let startPoint = { x: 0, y: 0 };
+                const pathCommandObjects = [];
+                let pathCommands = path.commands;
+                pathCommands = simplifyPath(pathCommands);
+                pathCommands.forEach((cmd) => {
+                    switch (cmd.type) {
+                        case "M":
+                            startPoint.x = cmd.x;
+                            startPoint.y = cmd.y;
+                            break;
+                        case "L":
+                            {
+                                const controlPoints = [{ x: cmd.x, y: cmd.y }];
+                                if (curves.length === 0)
+                                    controlPoints.unshift({ ...startPoint });
+                                curves.push({ type: "segment", controlPoints });
+                            }
+                            break;
+                        case "C":
+                            {
+                                const controlPoints = [
+                                    { x: cmd.x1, y: cmd.y1 },
+                                    { x: cmd.x2, y: cmd.y2 },
+                                    { x: cmd.x, y: cmd.y },
+                                ];
+                                if (curves.length === 0)
+                                    controlPoints.unshift({ ...startPoint });
+                                curves.push({ type: "cubic", controlPoints });
+                            }
+                            break;
+                        case "Q":
+                            {
+                                const controlPoints = [
+                                    { x: cmd.x1, y: cmd.y1 },
+                                    { x: cmd.x, y: cmd.y },
+                                ];
+                                if (curves.length === 0)
+                                    controlPoints.unshift({ ...startPoint });
+                                curves.push({ type: "quadratic", controlPoints });
+                            }
+                            break;
+                        case "Z":
+                            if (curves.length === 0)
+                                break;
+                            const controlPoints = curves.flatMap((c) => c.controlPoints);
+                            controlPoints.forEach((pt) => {
+                                pt.x = Math.floor(pt.x + pathOffset.x);
+                                pt.y = Math.floor(pt.y + pathOffset.y);
+                            });
+                            const area = contourArea(controlPoints);
+                            const isSegments = curves.every((c) => c.type === "segment");
+                            if (isSegments) {
+                                pathCommandObjects.push({
+                                    command: {
+                                        type: "drawPolygon",
+                                        points: controlPoints,
+                                        offsetX: 0,
+                                        offsetY: 0,
+                                    },
+                                    points: controlPoints,
+                                    area,
+                                });
+                            }
+                            else {
+                                pathCommandObjects.push({
+                                    command: {
+                                        type: "drawClosedPath",
+                                        curves,
+                                    },
+                                    area,
+                                    points: controlPoints,
+                                });
+                            }
+                            curves = [];
+                            break;
+                    }
                 });
-                commands.push({
-                    type: "drawBitmap",
-                    offsetX: bitmapX,
-                    offsetY: bitmapY,
-                    bitmap,
-                });
+                if (pathCommandObjects.length > 0) {
+                    pathCommandObjects.sort((a, b) => {
+                        return a.points.every((aPoint) => pointInPolygon(aPoint, b.points))
+                            ? 1
+                            : -1;
+                    });
+                    let isDrawingHole = false;
+                    let isHoleAreaPositive = pathCommandObjects[0].area < 0;
+                    pathCommandObjects.forEach(({ area, command }) => {
+                        const isHole = isHoleAreaPositive ? area > 0 : area < 0;
+                        if (isDrawingHole != isHole) {
+                            isDrawingHole = isHole;
+                            commands.push({
+                                type: "selectFillColor",
+                                fillColorIndex: isHole ? 0 : 1,
+                            });
+                        }
+                        commands.push(command);
+                    });
+                }
             }
+            else {
+                if (bitmapWidth > 0 && bitmapHeight > 0) {
+                    canvas.width = bitmapWidth;
+                    canvas.height = bitmapHeight;
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.fillStyle = "black";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    path.draw(ctx);
+                    const { colorIndices } = await quantizeCanvas(canvas, 2, [
+                        "#000000",
+                        "#ffffff",
+                    ]);
+                    const bitmap = {
+                        width: bitmapWidth,
+                        height: bitmapHeight,
+                        numberOfColors: 2,
+                        pixels: colorIndices,
+                    };
+                    commands.push({
+                        type: "selectBitmapColor",
+                        bitmapColorIndex: 1,
+                        colorIndex: 1,
+                    });
+                    commands.push({
+                        type: "drawBitmap",
+                        offsetX: bitmapX,
+                        offsetY: bitmapY,
+                        bitmap,
+                    });
+                }
+            }
+            const sprite = {
+                name,
+                commands,
+                width: spriteWidth,
+                height: spriteHeight,
+            };
+            spriteSheet.sprites.push(sprite);
         }
-        const sprite = {
-            name,
-            commands,
-            width: spriteWidth,
-            height: spriteHeight,
-        };
-        spriteSheet.sprites.push(sprite);
     }
     return spriteSheet;
 }
@@ -17991,7 +18136,6 @@ class DisplayManager {
         await this.setSpritesDirectionGeneric(spritesLineDirection, true, sendImmediately);
     }
     async setSpritesSpacingGeneric(spacing, isOrthogonal, sendImmediately) {
-        this.assertValidLineWidth(spacing);
         const stateKey = isOrthogonal
             ? "spritesLineSpacing"
             : "spritesSpacing";
@@ -18557,9 +18701,6 @@ class DisplayManager {
         this.isServerSide = false;
         Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")[spriteSheetName]);
         Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[spriteSheetName]);
-    }
-    async fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
-        return fontToSpriteSheet(this, font, fontSize, spriteSheetName, options);
     }
     get mtu() {
         return __classPrivateFieldGet(this, _DisplayManager_mtu, "f");
@@ -23062,7 +23203,6 @@ class DisplayCanvasHelper {
         await this.setSpritesDirectionGeneric(spritesLineDirection, true, sendImmediately);
     }
     async setSpritesSpacingGeneric(spacing, isOrthogonal, sendImmediately) {
-        this.assertValidLineWidth(spacing);
         const stateKey = isOrthogonal
             ? "spritesLineSpacing"
             : "spritesSpacing";
@@ -23423,9 +23563,6 @@ class DisplayCanvasHelper {
     }
     serializeSpriteSheet(spriteSheet) {
         return serializeSpriteSheet(this, spriteSheet);
-    }
-    async fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
-        return fontToSpriteSheet(this, font, fontSize, spriteSheetName, options);
     }
 }
 _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_applyTransparency = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_contextStateHelper = new WeakMap(), _DisplayCanvasHelper_interval = new WeakMap(), _DisplayCanvasHelper_isReady = new WeakMap(), _DisplayCanvasHelper_contextStack = new WeakMap(), _DisplayCanvasHelper_clearBoundingBoxOnDraw = new WeakMap(), _DisplayCanvasHelper_ignoreCanvasContextStyle = new WeakMap(), _DisplayCanvasHelper_bitmapCanvas = new WeakMap(), _DisplayCanvasHelper_bitmapContext = new WeakMap(), _DisplayCanvasHelper_spriteSheets = new WeakMap(), _DisplayCanvasHelper_spriteSheetIndices = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_ignoreDevice = new WeakMap(), _DisplayCanvasHelper_useSpriteColorIndices = new WeakMap(), _DisplayCanvasHelper_spriteContextStack = new WeakMap(), _DisplayCanvasHelper_spriteStack = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
@@ -25626,5 +25763,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

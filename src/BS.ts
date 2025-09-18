@@ -161,6 +161,7 @@ export {
   parseFont,
   getFontUnicodeRange,
   stringToSprites,
+  fontToSpriteSheet,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 
 /** BROWSER_START */
@@ -173,7 +174,7 @@ export {
 /** BROWSER_END */
 
 /** BROWSER_START */
-export { Font } from "opentype.js";
+export { Font, Glyph } from "opentype.js";
 /** BROWSER_END */
 
 /** BROWSER_START */

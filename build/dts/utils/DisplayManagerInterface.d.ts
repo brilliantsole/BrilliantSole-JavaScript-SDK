@@ -1,8 +1,7 @@
-import { Font } from "opentype.js";
 import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap, DisplayBezierCurve, DisplayBezierCurveType, DisplayWireframe } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
-import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, FontToSpriteSheetOptions } from "./DisplaySpriteSheetUtils.ts";
+import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
 export type DisplaySpriteSubLine = {
@@ -167,7 +166,6 @@ export interface DisplayManagerInterface {
     selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
-    fontToSpriteSheet(font: Font, fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
 }
 export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
 export declare function runDisplayContextCommands(displayManager: DisplayManagerInterface, commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;

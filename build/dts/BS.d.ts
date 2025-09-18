@@ -22,12 +22,12 @@ export { wait } from "./utils/Timer.ts";
 export { DisplaySegmentCap, DisplaySegmentCaps, DisplayAlignment, DisplayAlignments, DisplayDirection, DisplayDirections, } from "./utils/DisplayContextState.ts";
 export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, displayCurveTypeToNumberOfControlPoints, mergeWireframes, intersectWireframes, } from "./utils/DisplayUtils.ts";
 export { DisplayContextCommand, DisplayContextCommandType, DisplayContextCommandTypes, DisplaySpriteContextCommandType, DisplaySpriteContextCommandTypes, } from "./utils/DisplayContextCommand.ts";
-export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, } from "./utils/DisplaySpriteSheetUtils.ts";
+export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, fontToSpriteSheet, } from "./utils/DisplaySpriteSheetUtils.ts";
 /** BROWSER_START */
 export { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, } from "./utils/DisplayCanvasHelper.ts";
 /** BROWSER_END */
 /** BROWSER_START */
-export { Font } from "opentype.js";
+export { Font, Glyph } from "opentype.js";
 /** BROWSER_END */
 /** BROWSER_START */
 export { resizeAndQuantizeImage, quantizeImage, imageToSprite, imageToSpriteSheet, canvasToSprite, canvasToSpriteSheet, resizeImage, imageToBitmaps, canvasToBitmaps, } from "./utils/DisplayBitmapUtils.ts";

@@ -4190,11 +4190,14 @@ loadFontInput.addEventListener("input", async () => {
   if (!file) return;
   const arrayBuffer = await file.arrayBuffer();
   const font = await BS.parseFont(arrayBuffer);
-  const fontSpriteSheet = await displayCanvasHelper.fontToSpriteSheet(
+  const fontSpriteSheet = await BS.fontToSpriteSheet(
     font,
     fontSize,
     undefined,
-    { usePath: fontUsePath }
+    {
+      usePath: fontUsePath,
+      englishOnly: true,
+    }
   );
   setSpriteSheetName(fontSpriteSheet.name);
   spriteSheet.sprites = fontSpriteSheet.sprites;

@@ -1,4 +1,3 @@
-import { Font } from "opentype.js";
 import {
   DisplayBitmapColorPair,
   DisplayBrightness,
@@ -24,7 +23,6 @@ import {
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
-  FontToSpriteSheetOptions,
   reduceSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 import {
@@ -576,13 +574,6 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
-
-  fontToSpriteSheet(
-    font: Font,
-    fontSize: number,
-    spriteSheetName?: string,
-    options?: FontToSpriteSheetOptions
-  ): Promise<DisplaySpriteSheet>;
 }
 
 export async function runDisplayContextCommand(

@@ -98,12 +98,9 @@ import {
   DisplaySpritePaletteSwap,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
-  fontToSpriteSheet,
   serializeSpriteSheet,
   DisplaySpriteSheet,
-  FontToSpriteSheetOptions,
 } from "./utils/DisplaySpriteSheetUtils.ts";
-import { Font } from "opentype.js";
 import { wait } from "./utils/Timer.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
@@ -1897,7 +1894,6 @@ class DisplayManager implements DisplayManagerInterface {
     isOrthogonal: boolean,
     sendImmediately?: boolean
   ) {
-    this.assertValidLineWidth(spacing);
     const stateKey: DisplayContextStateKey = isOrthogonal
       ? "spritesLineSpacing"
       : "spritesSpacing";
@@ -2926,15 +2922,6 @@ class DisplayManager implements DisplayManagerInterface {
     Object.keys(this.#spriteSheets).forEach(
       (spriteSheetName) => delete this.#spriteSheets[spriteSheetName]
     );
-  }
-
-  async fontToSpriteSheet(
-    font: Font,
-    fontSize: number,
-    spriteSheetName?: string,
-    options?: FontToSpriteSheetOptions
-  ) {
-    return fontToSpriteSheet(this, font, fontSize, spriteSheetName, options);
   }
 
   // MTU
