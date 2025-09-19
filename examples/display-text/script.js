@@ -170,9 +170,9 @@ const draw = async () => {
   const text = textarea.value;
   console.log(`drawing "${text}"`);
 
-  const nonEnglishCharacters = Array.from(text).filter(
-    (char) => selectedFont.charToGlyph(char).unicode == undefined
-  );
+  const nonEnglishCharacters = Array.from(text)
+    .filter((char) => selectedFont.charToGlyph(char).unicode == undefined)
+    .filter((char) => char != `\n`);
   console.log("nonEnglishGlyphCharacters", nonEnglishCharacters);
   if (nonEnglishCharacters.length > 0) {
     nonEnglishSpriteSheets[nonEnglishSpriteSheetIndex] = undefined;
@@ -675,7 +675,7 @@ window.englishFontSpriteSheets = englishFontSpriteSheets;
 
 /** @type {Map.<BS.Font, {min: number, max: number}>} */
 const fontUnicodeRanges = new Map();
-const fontSize = 36;
+const fontSize = 48;
 drawSpriteParams.spritesLineHeight = fontSize;
 window.fonts = fonts;
 /** @param {BS.Font} font */
@@ -952,9 +952,11 @@ const loadModel = async () => {
   console.log("created model", model);
 };
 
-let latestString;
+let latestLowercaseString;
 let latestStringRepetition = 0;
 let latestStringRepetitionThreshold = 2;
+let transcription = "";
+let formattedTranscription = "";
 const ignoreStrings = ["[BLANK_AUDIO]", "[inaudible]"].map((string) =>
   string.toLowerCase()
 );
@@ -1023,71 +1025,69 @@ const startTranscribing = async () => {
             skip_special_tokens: true,
           });
 
-          console.log("outputText", outputText);
+          //console.log("outputText", outputText);
 
-          let textareaString = "";
           let numberOfCharacters = 0;
-          if (targetLanguage) {
-            textareaString = outputText[outputText.length - 1];
-          } else {
-            outputText[outputText.length - 1]
-              .split(" ")
-              .filter((string) => string != " ")
-              .filter((string) => string.length > 0)
-              .forEach((word, index) => {
-                if (index > 0) {
-                  if (
-                    numberOfCharacters + word.length >
-                    drawCharactersPerLine
-                  ) {
-                    textareaString += `\n`;
-                    numberOfCharacters = 0;
-                  } else {
-                    textareaString += " ";
-                    numberOfCharacters += 1;
-                  }
+          transcription = outputText[outputText.length - 1];
+          console.log({ transcription });
+          formattedTranscription = "";
+          transcription
+            .split(" ")
+            .filter((string) => string != " ")
+            .filter((string) => string.length > 0)
+            .forEach((word, index) => {
+              if (index > 0) {
+                if (numberOfCharacters + word.length > drawCharactersPerLine) {
+                  formattedTranscription += `\n`;
+                  numberOfCharacters = 0;
+                } else {
+                  formattedTranscription += " ";
+                  numberOfCharacters += 1;
                 }
-                textareaString += word;
-                numberOfCharacters += word.length;
-              });
-          }
-          const _textareaString = textareaString.toLowerCase();
+              }
+              formattedTranscription += word;
+              numberOfCharacters += word.length;
+            });
+          const lowercaseTranscription = transcription.toLowerCase();
           const ignoreString = ignoreStrings.some((string) =>
-            _textareaString.includes(string)
+            lowercaseTranscription.includes(string)
           );
           if (
             !ignoreString &&
             !isDrawing &&
-            (latestString != _textareaString || targetLanguage)
+            (latestLowercaseString != lowercaseTranscription || shouldTranslate)
           ) {
-            if (targetLanguage && translator) {
-              if (latestString == _textareaString) {
+            if (shouldTranslate) {
+              if (latestLowercaseString == lowercaseTranscription) {
                 latestStringRepetition++;
               } else {
                 latestStringRepetition = 0;
               }
               if (latestStringRepetition == latestStringRepetitionThreshold) {
                 await stopTranscribing();
-                const translation = await translate(textareaString);
-                let _textareaString = "";
-                let _numberOfCharacters = 0;
+                const translation = await translate(transcription);
+                let formattedTranslation = "";
+                let numberOfForeignCharacters = 0;
                 Array.from(translation).forEach((char) => {
-                  if (_numberOfCharacters >= drawCharactersPerLine) {
-                    _textareaString += `\n`;
-                    _numberOfCharacters = 0;
+                  if (numberOfForeignCharacters >= drawCharactersPerLine) {
+                    formattedTranslation += `\n`;
+                    numberOfForeignCharacters = 0;
                   }
-                  _textareaString += char;
-                  _numberOfCharacters++;
+                  formattedTranslation += char;
+                  numberOfForeignCharacters++;
                 });
-                textarea.value = _textareaString;
+                textarea.value = `${formattedTranslation}\n\n${formattedTranscription}`;
                 await draw();
                 await startTranscribing();
+              } else {
+                textarea.value = formattedTranscription;
+                await draw();
               }
             } else {
-              textarea.value = textareaString;
+              textarea.value = formattedTranscription;
               await draw();
             }
-            latestString = _textareaString;
+            latestLowercaseString = lowercaseTranscription;
           }
 
           isProcessing = false;
