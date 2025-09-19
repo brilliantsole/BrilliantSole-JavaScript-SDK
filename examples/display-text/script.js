@@ -444,9 +444,7 @@ const setSpritesLineDirection = (drawSpritesLineDirection) => {
   console.log({ drawSpritesLineDirection });
   drawSpritesLineDirectionSelect.value = drawSpritesLineDirection;
   drawSpriteParams.spritesLineDirection = drawSpritesLineDirection;
-  if (shouldDrawAllSprites) {
-    draw();
-  }
+  draw();
 };
 drawSpritesLineDirectionSelect.addEventListener("input", () => {
   setSpritesLineDirection(drawSpritesLineDirectionSelect.value);
@@ -677,7 +675,7 @@ window.englishFontSpriteSheets = englishFontSpriteSheets;
 
 /** @type {Map.<BS.Font, {min: number, max: number}>} */
 const fontUnicodeRanges = new Map();
-const fontSize = 72;
+const fontSize = 36;
 drawSpriteParams.spritesLineHeight = fontSize;
 window.fonts = fonts;
 /** @param {BS.Font} font */
@@ -954,6 +952,12 @@ const loadModel = async () => {
   console.log("created model", model);
 };
 
+let latestString;
+let latestStringRepetition = 0;
+let latestStringRepetitionThreshold = 2;
+const ignoreStrings = ["[BLANK_AUDIO]", "[inaudible]"].map((string) =>
+  string.toLowerCase()
+);
 const startTranscribing = async () => {
   if (!loadedModel) {
     await loadModel();
@@ -962,6 +966,7 @@ const startTranscribing = async () => {
     await stopTranscribing();
   }
   mediaRecorder = new MediaRecorder(microphoneStream);
+  console.log("mediaRecorder", mediaRecorder.mimeType);
   mediaRecorder.ondataavailable = (e) => {
     const MAX_SAMPLES = WHISPER_SAMPLING_RATE * maxAudioLength;
 
@@ -1022,31 +1027,67 @@ const startTranscribing = async () => {
 
           let textareaString = "";
           let numberOfCharacters = 0;
-          outputText[outputText.length - 1]
-            .split(" ")
-            .filter((string) => string != " ")
-            .filter((string) => string.length > 0)
-            .forEach((word, index) => {
-              if (index > 0) {
-                // FILL - break line for foreign languages (no spaces)
-                if (numberOfCharacters + word.length > drawCharactersPerLine) {
-                  textareaString += `\n`;
-                  numberOfCharacters = 0;
-                } else {
-                  textareaString += " ";
-                  numberOfCharacters += 1;
+          if (targetLanguage) {
+            textareaString = outputText[outputText.length - 1];
+          } else {
+            outputText[outputText.length - 1]
+              .split(" ")
+              .filter((string) => string != " ")
+              .filter((string) => string.length > 0)
+              .forEach((word, index) => {
+                if (index > 0) {
+                  if (
+                    numberOfCharacters + word.length >
+                    drawCharactersPerLine
+                  ) {
+                    textareaString += `\n`;
+                    numberOfCharacters = 0;
+                  } else {
+                    textareaString += " ";
+                    numberOfCharacters += 1;
+                  }
                 }
-              }
-              textareaString += word;
-              numberOfCharacters += word.length;
-            });
-          if (textarea.value != textareaString) {
+                textareaString += word;
+                numberOfCharacters += word.length;
+              });
+          }
+          const _textareaString = textareaString.toLowerCase();
+          const ignoreString = ignoreStrings.some((string) =>
+            _textareaString.includes(string)
+          );
+          if (
+            !ignoreString &&
+            !isDrawing &&
+            (latestString != _textareaString || targetLanguage)
+          ) {
             if (targetLanguage && translator) {
-              textarea.value = await translate(textareaString);
+              if (latestString == _textareaString) {
+                latestStringRepetition++;
+              } else {
+                latestStringRepetition = 0;
+              }
+              if (latestStringRepetition == latestStringRepetitionThreshold) {
+                await stopTranscribing();
+                const translation = await translate(textareaString);
+                let _textareaString = "";
+                let _numberOfCharacters = 0;
+                Array.from(translation).forEach((char) => {
+                  if (_numberOfCharacters >= drawCharactersPerLine) {
+                    _textareaString += `\n`;
+                    _numberOfCharacters = 0;
+                  }
+                  _textareaString += char;
+                  _numberOfCharacters++;
+                });
+                textarea.value = _textareaString;
+                await draw();
+                await startTranscribing();
+              }
             } else {
               textarea.value = textareaString;
+              await draw();
             }
-            await draw();
+            latestString = _textareaString;
           }
 
           isProcessing = false;
@@ -1315,8 +1356,25 @@ const LANGUAGES = {
   Zulu: "zul_Latn",
 };
 
+let shouldTranslate = false;
+const toggleTranslateCheckbox = document.getElementById("toggleTranslate");
+toggleTranslateCheckbox.addEventListener("input", () => {
+  setShouldTranslate(toggleTranslateCheckbox.checked);
+});
+const setShouldTranslate = async (newShouldTranslate) => {
+  shouldTranslate = newShouldTranslate;
+  toggleTranslateCheckbox.checked = shouldTranslate;
+  console.log({ shouldTranslate });
+  if (shouldTranslate) {
+    await createTranslator();
+  }
+};
+
 let translator;
 const createTranslator = async () => {
+  if (translator) {
+    return;
+  }
   console.log("creating translator");
   translator = await pipeline("translation", "Xenova/nllb-200-distilled-600M", {
     //progress_callback: translator_progress_callback,
@@ -1329,8 +1387,7 @@ const translator_progress_callback = (x) => {
   console.log("translator_progress_callback", x);
 };
 
-createTranslator();
-
+let isTranslating = false;
 const translate = async (string) => {
   if (!translator) {
     console.warn("translator not created yet");
@@ -1340,6 +1397,10 @@ const translate = async (string) => {
     console.warn("undefined targetLanguage");
     return;
   }
+  if (isTranslating) {
+    return;
+  }
+  isTranslating = true;
   console.log(`translating "${string}" to ${targetLanguage}...`);
   const result = await translator(string, {
     src_lang: LANGUAGES["English"],
@@ -1348,6 +1409,7 @@ const translate = async (string) => {
   console.log("result", result);
   const translation = result[0].translation_text;
   console.log(`translation: "${translation}"`);
+  isTranslating = false;
   return translation;
 };
 window.translate = translate;
