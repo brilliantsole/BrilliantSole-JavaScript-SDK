@@ -661,7 +661,7 @@ const createHandLandmarker = async () => {
       delegate: "GPU",
     },
     runningMode: runningMode,
-    numHands: 1,
+    numHands: 2,
     /**
      * The minimum confidence score for the hand detection to be considered successful in palm detection model.
      */

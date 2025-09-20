@@ -1279,7 +1279,7 @@ const draw = async () => {
     return;
   }
 
-  if (false) {
+  if (true) {
     await displayCanvasHelper.drawSegments(
       generateSineSegments(
         90,
@@ -2258,11 +2258,11 @@ displayCanvasHelper.setHorizontalAlignment("center");
 displayCanvasHelper.setSegmentStartCap("round");
 displayCanvasHelper.setSegmentStartRadius(2);
 displayCanvasHelper.setSegmentEndRadius(2);
-displayCanvasHelper.drawPolygon(200, 100, [
-  { x: -10, y: -50 },
-  { x: 50, y: -50 },
-  { x: 50, y: 50 },
-  { x: -50, y: 50 },
+displayCanvasHelper.drawPolygon([
+  { x: 100, y: 100 },
+  { x: 200, y: 100 },
+  { x: 200, y: 200 },
+  { x: 100, y: 200 },
 ]);
 // displayCanvasHelper.drawWireframe({
 //   points: [

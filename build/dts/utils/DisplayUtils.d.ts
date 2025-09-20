@@ -66,3 +66,5 @@ export declare function assertValidWireframe({ points, edges }: DisplayWireframe
 export declare function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe): DisplayWireframe;
 export declare function intersectWireframes(a: DisplayWireframe, b: DisplayWireframe, ignoreDirection?: boolean): DisplayWireframe;
 export declare function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe;
+export declare function getPointDataType(points: Vector2[]): "int8" | "int16" | "float";
+export declare function serializePoints(points: Vector2[]): DataView;

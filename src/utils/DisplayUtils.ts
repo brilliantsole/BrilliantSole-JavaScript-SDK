@@ -5,6 +5,10 @@ import {
   DisplayBrightnesses,
   DisplayPixelDepth,
   DisplayPixelDepths,
+  DisplayPointDataType,
+  DisplayPointDataTypes,
+  displayPointDataTypeToRange,
+  displayPointDataTypeToSize,
   DisplayWireframe,
   DisplayWireframeEdge,
 } from "../DisplayManager.ts";
@@ -27,6 +31,7 @@ import {
   Uint16Max,
   Vector2,
 } from "./MathUtils.ts";
+import RangeHelper from "./RangeHelper.ts";
 
 const _console = createConsole("DisplayUtils", { log: true });
 
@@ -462,4 +467,53 @@ export function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe {
   });
   _console.log("trimmedWireframe", trimmedPoints, trimmedEdges);
   return { points: trimmedPoints, edges: trimmedEdges };
+}
+
+export function getPointDataType(points: Vector2[]) {
+  const range = new RangeHelper();
+  points.forEach(({ x, y }) => {
+    range.update(x);
+    range.update(y);
+  });
+  const pointDataType = DisplayPointDataTypes.find((pointDataType) => {
+    const { min, max } = displayPointDataTypeToRange[pointDataType];
+    return range.min >= min && range.max <= max;
+  })!;
+  _console.log("pointDataType", pointDataType, points);
+  return pointDataType!;
+}
+export function serializePoints(points: Vector2[]) {
+  const pointDataType = getPointDataType(points);
+  _console.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+  const pointDataSize = displayPointDataTypeToSize[pointDataType];
+  const dataView = new DataView(
+    new ArrayBuffer(1 + 1 + points.length * pointDataSize)
+  );
+  _console.log("serializing points...", points, dataView.byteLength);
+  let offset = 0;
+  dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
+  dataView.setUint8(offset++, points.length);
+  points.forEach(({ x, y }) => {
+    switch (pointDataType) {
+      case "int8":
+        dataView.setInt8(offset, x);
+        offset += 1;
+        dataView.setInt8(offset, y);
+        offset += 1;
+        break;
+      case "int16":
+        dataView.setInt16(offset, x, true);
+        offset += 2;
+        dataView.setInt16(offset, y, true);
+        offset += 2;
+        break;
+      case "float":
+        dataView.setFloat32(offset, x, true);
+        offset += 4;
+        dataView.setFloat32(offset, y, true);
+        offset += 4;
+        break;
+    }
+  });
+  return dataView;
 }

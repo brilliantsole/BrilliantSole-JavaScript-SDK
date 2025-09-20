@@ -58,6 +58,13 @@ export type DisplayBezierCurve = {
     type: DisplayBezierCurveType;
     controlPoints: Vector2[];
 };
+export declare const DisplayPointDataTypes: readonly ["int8", "int16", "float"];
+export type DisplayPointDataType = (typeof DisplayPointDataTypes)[number];
+export declare const displayPointDataTypeToSize: Record<DisplayPointDataType, number>;
+export declare const displayPointDataTypeToRange: Record<DisplayPointDataType, {
+    min: number;
+    max: number;
+}>;
 export declare const DisplayInformationValues: {
     type: readonly ["none", "generic", "monocularLeft", "monocularRight", "binocular"];
     pixelDepth: readonly ["1", "2", "4"];

@@ -202,6 +202,23 @@ export type DisplayBezierCurve = {
   controlPoints: Vector2[];
 };
 
+export const DisplayPointDataTypes = ["int8", "int16", "float"] as const;
+export type DisplayPointDataType = (typeof DisplayPointDataTypes)[number];
+export const displayPointDataTypeToSize: Record<DisplayPointDataType, number> =
+  {
+    int8: 1 * 2,
+    int16: 2 * 2,
+    float: 4 * 2,
+  };
+export const displayPointDataTypeToRange: Record<
+  DisplayPointDataType,
+  { min: number; max: number }
+> = {
+  int8: { min: -(2 ** 7), max: 2 ** 7 - 1 },
+  int16: { min: -(2 ** 15), max: 2 ** 15 - 1 },
+  float: { min: -Infinity, max: Infinity },
+};
+
 export const DisplayInformationValues = {
   type: DisplayTypes,
   pixelDepth: DisplayPixelDepths,

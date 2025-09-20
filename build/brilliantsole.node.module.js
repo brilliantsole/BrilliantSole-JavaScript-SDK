@@ -4157,6 +4157,52 @@ function trimWireframe(wireframe) {
     _console$t.log("trimmedWireframe", trimmedPoints, trimmedEdges);
     return { points: trimmedPoints, edges: trimmedEdges };
 }
+function getPointDataType(points) {
+    const range = new RangeHelper();
+    points.forEach(({ x, y }) => {
+        range.update(x);
+        range.update(y);
+    });
+    const pointDataType = DisplayPointDataTypes.find((pointDataType) => {
+        const { min, max } = displayPointDataTypeToRange[pointDataType];
+        return range.min >= min && range.max <= max;
+    });
+    _console$t.log("pointDataType", pointDataType, points);
+    return pointDataType;
+}
+function serializePoints(points) {
+    const pointDataType = getPointDataType(points);
+    _console$t.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+    const pointDataSize = displayPointDataTypeToSize[pointDataType];
+    const dataView = new DataView(new ArrayBuffer(1 + 1 + points.length * pointDataSize));
+    _console$t.log("serializing points...", points, dataView.byteLength);
+    let offset = 0;
+    dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
+    dataView.setUint8(offset++, points.length);
+    points.forEach(({ x, y }) => {
+        switch (pointDataType) {
+            case "int8":
+                dataView.setInt8(offset, x);
+                offset += 1;
+                dataView.setInt8(offset, y);
+                offset += 1;
+                break;
+            case "int16":
+                dataView.setInt16(offset, x, true);
+                offset += 2;
+                dataView.setInt16(offset, y, true);
+                offset += 2;
+                break;
+            case "float":
+                dataView.setFloat32(offset, x, true);
+                offset += 4;
+                dataView.setFloat32(offset, y, true);
+                offset += 4;
+                break;
+        }
+    });
+    return dataView;
+}
 
 const _console$s = createConsole("DisplayContextCommand", { log: false });
 const DisplayContextCommandTypes = [
@@ -4802,16 +4848,7 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { points } = command;
                 _console$s.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-                const dataViewLength = 1 + points.length * 4;
-                dataView = new DataView(new ArrayBuffer(dataViewLength));
-                let offset = 0;
-                dataView.setUint8(offset++, points.length);
-                points.forEach((point) => {
-                    dataView.setInt16(offset, point.x, true);
-                    offset += 2;
-                    dataView.setInt16(offset, point.y, true);
-                    offset += 2;
-                });
+                dataView = serializePoints(points);
             }
             break;
         case "drawWireframe":
@@ -4819,20 +4856,15 @@ function serializeContextCommand(displayManager, command) {
                 const { wireframe } = command;
                 const { points, edges } = wireframe;
                 assertValidWireframe(wireframe);
-                dataView = new DataView(new ArrayBuffer(1 + 4 * points.length + 1 + 2 * edges.length));
-                let offset = 0;
-                dataView.setUint8(offset++, points.length);
-                points.forEach((point) => {
-                    dataView.setInt16(offset, point.x, true);
-                    offset += 2;
-                    dataView.setInt16(offset, point.y, true);
-                    offset += 2;
-                });
-                dataView.setUint8(offset++, edges.length);
+                const pointsDataView = serializePoints(points);
+                const edgesDataView = new DataView(new ArrayBuffer(1 + 2 * edges.length));
+                let edgesDataOffset = 0;
+                edgesDataView.setUint8(edgesDataOffset++, edges.length);
                 edges.forEach((edge) => {
-                    dataView.setUint8(offset++, edge.startIndex);
-                    dataView.setUint8(offset++, edge.endIndex);
+                    edgesDataView.setUint8(edgesDataOffset++, edge.startIndex);
+                    edgesDataView.setUint8(edgesDataOffset++, edge.endIndex);
                 });
+                dataView = new DataView(concatenateArrayBuffers(pointsDataView, edgesDataView));
             }
             break;
         case "drawQuadraticBezierCurve":
@@ -4857,15 +4889,7 @@ function serializeContextCommand(displayManager, command) {
                 const { controlPoints } = command;
                 const curveType = command.type == "drawCubicBezierCurves" ? "cubic" : "quadratic";
                 assertValidPathNumberOfControlPoints(curveType, controlPoints);
-                dataView = new DataView(new ArrayBuffer(1 + 4 * controlPoints.length));
-                let offset = 0;
-                dataView.setUint8(offset++, controlPoints.length);
-                controlPoints.forEach((controlPoint) => {
-                    dataView.setInt16(offset, controlPoint.x, true);
-                    offset += 2;
-                    dataView.setInt16(offset, controlPoint.y, true);
-                    offset += 2;
-                });
+                dataView = serializePoints(controlPoints);
             }
             break;
         case "drawPath":
@@ -4879,14 +4903,7 @@ function serializeContextCommand(displayManager, command) {
                 curves.forEach((curve, index) => {
                     const { type, controlPoints } = curve;
                     typesDataView.setUint8(index, DisplayBezierCurveTypes.indexOf(type));
-                    const controlPointsDataView = new DataView(new ArrayBuffer(4 * controlPoints.length));
-                    let offset = 0;
-                    controlPoints.forEach((controlPoint) => {
-                        controlPointsDataView.setInt16(offset, controlPoint.x, true);
-                        offset += 2;
-                        controlPointsDataView.setInt16(offset, controlPoint.y, true);
-                        offset += 2;
-                    });
+                    const controlPointsDataView = serializePoints(controlPoints);
                     controlPointsDataViews.push(controlPointsDataView);
                     numberOfControlPoints += controlPoints.length;
                 });
@@ -4912,16 +4929,7 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { points } = command;
                 _console$s.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-                const dataViewLength = 1 + points.length * 4;
-                dataView = new DataView(new ArrayBuffer(dataViewLength));
-                let offset = 0;
-                dataView.setUint8(offset++, points.length);
-                points.forEach((point) => {
-                    dataView.setInt16(offset, point.x, true);
-                    offset += 2;
-                    dataView.setInt16(offset, point.y, true);
-                    offset += 2;
-                });
+                dataView = serializePoints(points);
             }
             break;
         case "drawArc":
@@ -6425,6 +6433,17 @@ const DisplayBezierCurveTypes = [
     "quadratic",
     "cubic",
 ];
+const DisplayPointDataTypes = ["int8", "int16", "float"];
+const displayPointDataTypeToSize = {
+    int8: 1 * 2,
+    int16: 2 * 2,
+    float: 4 * 2,
+};
+const displayPointDataTypeToRange = {
+    int8: { min: -(2 ** 7), max: 2 ** 7 - 1 },
+    int16: { min: -(2 ** 15), max: 2 ** 15 - 1 },
+    float: { min: -Infinity, max: Infinity },
+};
 const DisplayInformationValues = {
     type: DisplayTypes,
     pixelDepth: DisplayPixelDepths,
