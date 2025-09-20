@@ -4800,15 +4800,11 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawPolygon":
             {
-                const { offsetX, offsetY, points } = command;
+                const { points } = command;
                 _console$s.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-                const dataViewLength = 2 * 2 + 1 + points.length * 4;
+                const dataViewLength = 1 + points.length * 4;
                 dataView = new DataView(new ArrayBuffer(dataViewLength));
                 let offset = 0;
-                dataView.setInt16(offset, offsetX, true);
-                offset += 2;
-                dataView.setInt16(offset, offsetY, true);
-                offset += 2;
                 dataView.setUint8(offset++, points.length);
                 points.forEach((point) => {
                     dataView.setInt16(offset, point.x, true);
@@ -5413,8 +5409,6 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                                     command: {
                                         type: "drawPolygon",
                                         points: controlPoints,
-                                        offsetX: 0,
-                                        offsetY: 0,
                                     },
                                     points: controlPoints,
                                     area,
@@ -6164,8 +6158,8 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawPolygon":
             {
-                const { offsetX, offsetY, points } = command;
-                await displayManager.drawPolygon(offsetX, offsetY, points, sendImmediately);
+                const { points } = command;
+                await displayManager.drawPolygon(points, sendImmediately);
             }
             break;
         case "drawRegularPolygon":
@@ -7629,13 +7623,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
-    async drawPolygon(offsetX, offsetY, points, sendImmediately) {
+    async drawPolygon(points, sendImmediately) {
         _console$o.assertRangeWithError("numberOfPoints", points.length, 2, 255);
         const commandType = "drawPolygon";
         const dataView = serializeContextCommand(this, {
             type: commandType,
-            offsetX,
-            offsetY,
             points,
         });
         if (!dataView) {

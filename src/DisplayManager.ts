@@ -2130,18 +2130,11 @@ class DisplayManager implements DisplayManagerInterface {
       sendImmediately
     );
   }
-  async drawPolygon(
-    offsetX: number,
-    offsetY: number,
-    points: Vector2[],
-    sendImmediately?: boolean
-  ) {
+  async drawPolygon(points: Vector2[], sendImmediately?: boolean) {
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
     const commandType: DisplayContextCommandType = "drawPolygon";
     const dataView = serializeContextCommand(this, {
       type: commandType,
-      offsetX,
-      offsetY,
       points,
     });
     if (!dataView) {

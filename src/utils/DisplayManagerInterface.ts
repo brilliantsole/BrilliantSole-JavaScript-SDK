@@ -348,12 +348,7 @@ export interface DisplayManagerInterface {
     numberOfSides: number,
     sendImmediately?: boolean
   ): Promise<void>;
-  drawPolygon(
-    offsetX: number,
-    offsetY: number,
-    points: Vector2[],
-    sendImmediately?: boolean
-  ): Promise<void>;
+  drawPolygon(points: Vector2[], sendImmediately?: boolean): Promise<void>;
 
   drawWireframe(
     wireframe: DisplayWireframe,
@@ -940,13 +935,8 @@ export async function runDisplayContextCommand(
       break;
     case "drawPolygon":
       {
-        const { offsetX, offsetY, points } = command;
-        await displayManager.drawPolygon(
-          offsetX,
-          offsetY,
-          points,
-          sendImmediately
-        );
+        const { points } = command;
+        await displayManager.drawPolygon(points, sendImmediately);
       }
       break;
     case "drawRegularPolygon":

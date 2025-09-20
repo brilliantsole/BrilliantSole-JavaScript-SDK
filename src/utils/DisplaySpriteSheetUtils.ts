@@ -395,8 +395,6 @@ export async function fontToSpriteSheet(
                   command: {
                     type: "drawPolygon",
                     points: controlPoints,
-                    offsetX: 0,
-                    offsetY: 0,
                   },
                   points: controlPoints,
                   area,

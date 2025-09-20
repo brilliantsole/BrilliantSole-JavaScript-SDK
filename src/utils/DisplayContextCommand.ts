@@ -550,8 +550,7 @@ export interface DrawDisplayRegularPolygonCommand
   radius: number;
   numberOfSides: number;
 }
-export interface DrawDisplayPolygonCommand
-  extends BaseOffsetPositionDisplayContextCommand {
+export interface DrawDisplayPolygonCommand extends BaseDisplayContextCommand {
   type: "drawPolygon";
   points: Vector2[];
 }
@@ -1224,15 +1223,11 @@ export function serializeContextCommand(
       break;
     case "drawPolygon":
       {
-        const { offsetX, offsetY, points } = command;
+        const { points } = command;
         _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-        const dataViewLength = 2 * 2 + 1 + points.length * 4; // [offsetX, offsetY, numberOfPoints, ...points]
+        const dataViewLength = 1 + points.length * 4; // [offsetX, offsetY, numberOfPoints, ...points]
         dataView = new DataView(new ArrayBuffer(dataViewLength));
         let offset = 0;
-        dataView.setInt16(offset, offsetX, true);
-        offset += 2;
-        dataView.setInt16(offset, offsetY, true);
-        offset += 2;
         dataView.setUint8(offset++, points.length);
         points.forEach((point) => {
           dataView!.setInt16(offset, point.x, true);

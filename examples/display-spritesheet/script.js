@@ -1738,8 +1738,6 @@ const addSpriteCommand = () => {
       case "drawPolygon":
         selectedSprite.commands.push({
           type: "drawPolygon",
-          offsetX: 0,
-          offsetY: 0,
           points: [
             { x: 0, y: 0 },
             { x: 0, y: 25 },

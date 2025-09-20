@@ -236,7 +236,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     drawCircle(offsetX: number, offsetY: number, radius: number, sendImmediately?: boolean): Promise<void>;
     drawEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): Promise<void>;
     drawRegularPolygon(offsetX: number, offsetY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
-    drawPolygon(offsetX: number, offsetY: number, points: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawPolygon(points: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean): Promise<void>;
     drawCurve(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawCurves(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;

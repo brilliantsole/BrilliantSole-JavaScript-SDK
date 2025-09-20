@@ -236,7 +236,7 @@ export interface DrawDisplayRegularPolygonCommand extends BaseOffsetPositionDisp
     radius: number;
     numberOfSides: number;
 }
-export interface DrawDisplayPolygonCommand extends BaseOffsetPositionDisplayContextCommand {
+export interface DrawDisplayPolygonCommand extends BaseDisplayContextCommand {
     type: "drawPolygon";
     points: Vector2[];
 }

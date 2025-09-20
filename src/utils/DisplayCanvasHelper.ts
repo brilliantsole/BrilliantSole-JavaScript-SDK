@@ -2369,23 +2369,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#restore();
   }
-  async drawPolygon(
-    offsetX: number,
-    offsetY: number,
-    points: Vector2[],
-    sendImmediately?: boolean
-  ) {
+  async drawPolygon(points: Vector2[], sendImmediately?: boolean) {
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
-      this.#drawPolygonToCanvas(offsetX, offsetY, points, contextState)
+      this.#drawPolygonToCanvas(0, 0, points, contextState)
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.drawPolygon(
-        offsetX,
-        offsetY,
-        points,
-        sendImmediately
-      );
+      await this.deviceDisplayManager!.drawPolygon(points, sendImmediately);
     }
   }
   #getWireframeBoundingBox(

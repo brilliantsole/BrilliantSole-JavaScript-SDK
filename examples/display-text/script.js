@@ -245,7 +245,6 @@ const draw = async (willTranslate) => {
     drawMaxBreadth
   );
   await displayCanvasHelper.show();
-  console.log("lol");
 };
 
 displayCanvasHelper.addEventListener("ready", () => {
