@@ -23,10 +23,8 @@ import {
   DisplaySegmentCap,
   DisplaySegmentCaps,
 } from "./DisplayContextState.ts";
-import {
-  DisplayManagerInterface,
-  DisplaySpriteSerializedLines,
-} from "./DisplayManagerInterface.ts";
+import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
+import { DisplaySpriteSerializedLines } from "./DisplaySpriteSheetUtils.ts";
 import {
   assertValidAlignment,
   assertValidColor,

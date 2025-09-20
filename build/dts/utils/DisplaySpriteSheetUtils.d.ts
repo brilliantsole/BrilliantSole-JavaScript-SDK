@@ -1,6 +1,22 @@
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import opentype, { Font } from "opentype.js";
+import { Vector2 } from "./MathUtils.ts";
+import { DisplayBoundingBox } from "./DisplayCanvasHelper.ts";
+import { DisplayContextState } from "./DisplayContextState.ts";
+export type DisplaySpriteSubLine = {
+    spriteSheetName: string;
+    spriteNames: string[];
+};
+export type DisplaySpriteLine = DisplaySpriteSubLine[];
+export type DisplaySpriteLines = DisplaySpriteLine[];
+export type DisplaySpriteSerializedSubLine = {
+    spriteSheetIndex: number;
+    spriteIndices: number[];
+    use2Bytes: boolean;
+};
+export type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
+export type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
 export type DisplaySpritePaletteSwap = {
     name: string;
     numberOfColors: number;
@@ -50,3 +66,7 @@ export declare function fontToSpriteSheet(font: Font | Font[], fontSize: number,
 export declare function stringToSprites(string: string, spriteSheet: DisplaySpriteSheet, requireAll?: boolean): DisplaySprite[];
 export declare function getReferencedSprites(sprite: DisplaySprite, spriteSheet: DisplaySpriteSheet): DisplaySprite[];
 export declare function reduceSpriteSheet(spriteSheet: DisplaySpriteSheet, spriteNames: string | string[], requireAll?: boolean): DisplaySpriteSheet;
+export declare function stringToSpriteLines(string: string, spriteSheets: Record<string, DisplaySpriteSheet>, contextState: DisplayContextState, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLines;
+export declare function getSpriteLinesBoundingBox(spriteLines: DisplaySpriteLines, spriteSheets: Record<string, DisplaySpriteSheet>, contextState: DisplayContextState): DisplayBoundingBox;
+export declare function getSpriteLinesOffset(spriteLines: DisplaySpriteLines, lineIndex: number, subLineIndex: number, contextState: DisplayContextState): Vector2;
+export declare function splitStringInto(string: string, spriteSheets: Record<string, DisplaySpriteSheet>, separators?: string[], requireAll?: boolean): void;

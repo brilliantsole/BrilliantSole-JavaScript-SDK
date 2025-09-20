@@ -118,13 +118,6 @@ export {
   DisplayBezierCurveTypes,
 } from "./DisplayManager.ts";
 
-export {
-  DisplaySpriteSubLine,
-  DisplaySpriteLine,
-  DisplaySpriteLines,
-  stringToSpriteLines,
-} from "./utils/DisplayManagerInterface.ts";
-
 export { wait } from "./utils/Timer.ts";
 
 export {
@@ -162,6 +155,9 @@ export {
   getFontUnicodeRange,
   stringToSprites,
   fontToSpriteSheet,
+  DisplaySpriteSubLine,
+  DisplaySpriteLine,
+  DisplaySpriteLines,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 
 /** BROWSER_START */

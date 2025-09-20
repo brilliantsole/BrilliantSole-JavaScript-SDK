@@ -1006,7 +1006,7 @@ const drawSprites = async () => {
       _drawSpritesText += sprite.name;
     });
     console.log("spriteLines", _drawSpritesText);
-    await displayCanvasHelper.drawSpritesString(x, y, _drawSpritesText, false);
+    await displayCanvasHelper.drawSpritesString(x, y, _drawSpritesText);
     await displayCanvasHelper.show();
   }
 };

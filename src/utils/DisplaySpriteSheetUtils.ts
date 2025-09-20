@@ -12,8 +12,29 @@ import { decompress } from "woff2-encoder";
 import RangeHelper from "./RangeHelper.ts";
 import { pointInPolygon, Vector2 } from "./MathUtils.ts";
 import { simplifyPath } from "./PathUtils.ts";
+import { DisplayBoundingBox } from "./DisplayCanvasHelper.ts";
+import {
+  DisplayContextState,
+  isDirectionHorizontal,
+  isDirectionPositive,
+} from "./DisplayContextState.ts";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
+
+export type DisplaySpriteSubLine = {
+  spriteSheetName: string;
+  spriteNames: string[];
+};
+export type DisplaySpriteLine = DisplaySpriteSubLine[];
+export type DisplaySpriteLines = DisplaySpriteLine[];
+
+export type DisplaySpriteSerializedSubLine = {
+  spriteSheetIndex: number;
+  spriteIndices: number[];
+  use2Bytes: boolean;
+};
+export type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
+export type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
 
 export type DisplaySpritePaletteSwap = {
   name: string;
@@ -244,7 +265,10 @@ export async function fontToSpriteSheet(
 
     const maxSpriteHeight = maxSpriteY - minSpriteY;
 
-    //_console.log({ minSpriteY, maxSpriteY, maxSpriteHeight });
+    _console.log({
+      fontName: font.getEnglishName("fullName"),
+      maxSpriteHeight,
+    });
 
     for (let i = 0; i < glyphs.length; i++) {
       const glyph = glyphs[i];
@@ -277,7 +301,10 @@ export async function fontToSpriteSheet(
       );
       if (options.stroke) {
         path.stroke = "white";
-        path.strokeWidth = options.strokeWidth || 1;
+        const strokeWidth = options.strokeWidth || 1;
+        path.strokeWidth = strokeWidth;
+        commands.push({ type: "setLineWidth", lineWidth: strokeWidth });
+        // FIX - lineColor and fillColor
       } else {
         path.fill = "white";
       }
@@ -289,6 +316,17 @@ export async function fontToSpriteSheet(
       const bitmapY = Math.floor(
         (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY)
       );
+
+      if (name == "H") {
+        console.log("H", bbox, {
+          bitmapWidth,
+          bitmapHeight,
+          bitmapX,
+          bitmapY,
+          spriteWidth,
+          spriteHeight,
+        });
+      }
 
       if (options.usePath) {
         const pathOffset: Vector2 = {
@@ -556,4 +594,190 @@ export function reduceSpriteSheet(
   });
   _console.log("reducedSpriteSheet", reducedSpriteSheet);
   return reducedSpriteSheet;
+}
+
+export function stringToSpriteLines(
+  string: string,
+  spriteSheets: Record<string, DisplaySpriteSheet>,
+  contextState: DisplayContextState,
+  requireAll = false,
+  maxLineBreadth = Infinity,
+  separators = [" "]
+): DisplaySpriteLines {
+  _console.log("stringToSpriteLines", string);
+  const isSpritesDirectionHorizontal = isDirectionHorizontal(
+    contextState.spritesDirection
+  );
+  const isSpritesLineDirectionHorizontal = isDirectionHorizontal(
+    contextState.spritesLineDirection
+  );
+  const areSpritesDirectionsOrthogonal =
+    isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
+
+  const lineStrings = string.split("\n");
+  let lineBreadth = 0;
+
+  const sprites: {
+    sprite: DisplaySprite;
+    spriteSheet: DisplaySpriteSheet;
+  }[][] = [];
+  let latestSeparatorIndex = -1;
+  let latestSeparator: string | undefined;
+  let latestSeparatorLineBreadth: number | undefined;
+  const spritesLineIndices: number[][] = [];
+
+  lineStrings.forEach((lineString) => {
+    sprites.push([]);
+    spritesLineIndices.push([]);
+    const i = sprites.length - 1;
+    if (areSpritesDirectionsOrthogonal) {
+      lineBreadth = 0;
+    } else {
+      lineBreadth += contextState.spritesLineSpacing;
+    }
+
+    let lineSubstring = lineString;
+    while (lineSubstring.length > 0) {
+      let longestSprite: DisplaySprite | undefined;
+      let longestSpriteSheet: DisplaySpriteSheet | undefined;
+      for (let spriteSheetName in spriteSheets) {
+        const spriteSheet = spriteSheets[spriteSheetName];
+        spriteSheet.sprites.forEach((sprite) => {
+          if (lineSubstring.startsWith(sprite.name)) {
+            if (
+              !longestSprite ||
+              sprite.name.length > longestSprite.name.length
+            ) {
+              longestSprite = sprite;
+              longestSpriteSheet = spriteSheet;
+            }
+          }
+        });
+      }
+      //_console.log("longestSprite", longestSprite);
+      if (requireAll) {
+        _console.assertWithError(
+          longestSprite,
+          `couldn't find sprite with name prefixing "${lineSubstring}"`
+        );
+      }
+
+      if (longestSprite && longestSpriteSheet) {
+        const isSeparator =
+          separators.length > 0
+            ? separators.includes(longestSprite.name)
+            : true;
+
+        sprites[i].push({
+          sprite: longestSprite,
+          spriteSheet: longestSpriteSheet,
+        });
+
+        // _console.log({
+        //   name: longestSprite!.name,
+        //   isSeparator,
+        //   lineBreadth,
+        //   latestSeparatorIndex,
+        //   latestSeparatorLineBreadth,
+        //   latestSeparator,
+        //   index: sprites[i].length - 1,
+        // });
+
+        let newLineBreadth = lineBreadth;
+        if (isSpritesDirectionHorizontal) {
+          newLineBreadth += longestSprite.width;
+        } else {
+          newLineBreadth += longestSprite.height;
+        }
+        newLineBreadth += contextState.spritesSpacing;
+        if (newLineBreadth >= maxLineBreadth) {
+          if (isSeparator) {
+            if (longestSprite.name.trim().length == 0) {
+              sprites[i].pop();
+            }
+            spritesLineIndices[i].push(sprites[i].length);
+            lineBreadth = 0;
+          } else {
+            if (latestSeparatorIndex != -1) {
+              spritesLineIndices[i].push(latestSeparatorIndex);
+              lineBreadth = newLineBreadth - latestSeparatorLineBreadth!;
+            } else {
+              spritesLineIndices[i].push(sprites[i].length - 1);
+              lineBreadth = 0;
+            }
+          }
+          latestSeparatorIndex = -1;
+          latestSeparator = undefined;
+        } else {
+          lineBreadth = newLineBreadth;
+
+          if (isSeparator) {
+            latestSeparator = longestSprite.name;
+            latestSeparatorIndex = sprites[i].length - 1;
+            //_console.log({ latestSeparatorIndex });
+            latestSeparatorLineBreadth = lineBreadth;
+          }
+        }
+
+        lineSubstring = lineSubstring.substring(longestSprite!.name.length);
+      } else {
+        lineSubstring = lineSubstring.substring(1);
+      }
+    }
+  });
+
+  const spriteLines: DisplaySpriteLine[] = [];
+  sprites.forEach((_sprites, i) => {
+    let spriteLine: DisplaySpriteLine = [];
+    spriteLines.push(spriteLine);
+
+    let spriteSubLine: DisplaySpriteSubLine | undefined;
+
+    _sprites.forEach(({ sprite, spriteSheet }, index) => {
+      if (spritesLineIndices[i].includes(index)) {
+        spriteLine = [];
+        spriteLines.push(spriteLine);
+        spriteSubLine = undefined;
+      }
+
+      if (!spriteSubLine || spriteSubLine.spriteSheetName != spriteSheet.name) {
+        spriteSubLine = {
+          spriteSheetName: spriteSheet.name,
+          spriteNames: [],
+        };
+        spriteLine.push(spriteSubLine);
+      }
+      spriteSubLine.spriteNames.push(sprite.name);
+    });
+  });
+  _console.log(`spriteLines for "${string}"`, spriteLines);
+  return spriteLines;
+}
+
+export function getSpriteLinesBoundingBox(
+  spriteLines: DisplaySpriteLines,
+  spriteSheets: Record<string, DisplaySpriteSheet>,
+  contextState: DisplayContextState
+): DisplayBoundingBox {
+  const boundingBox: DisplayBoundingBox = { x: 0, y: 0, width: 0, height: 0 };
+  // FILL
+  return boundingBox;
+}
+export function getSpriteLinesOffset(
+  spriteLines: DisplaySpriteLines,
+  lineIndex: number,
+  subLineIndex: number,
+  contextState: DisplayContextState
+): Vector2 {
+  const offset: Vector2 = { x: 0, y: 0 };
+  // FILL -
+  return offset;
+}
+export function splitStringInto(
+  string: string,
+  spriteSheets: Record<string, DisplaySpriteSheet>,
+  separators = [" ", "\n"],
+  requireAll = false
+) {
+  // FILL
 }

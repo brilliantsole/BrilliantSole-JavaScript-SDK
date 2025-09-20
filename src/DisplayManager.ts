@@ -74,7 +74,6 @@ import {
   assertSpritePaletteSwap,
   assertSpriteSheetPalette,
   assertSpriteSheetPaletteSwap,
-  DisplaySpriteLines,
   DisplayManagerInterface,
   drawSpriteFromSpriteSheet,
   getSprite,
@@ -86,10 +85,6 @@ import {
   selectSpritePaletteSwap,
   selectSpriteSheetPalette,
   selectSpriteSheetPaletteSwap,
-  DisplaySpriteSerializedLines,
-  DisplaySpriteSerializedLine,
-  DisplaySpriteSerializedSubLine,
-  stringToSpriteLines,
 } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
@@ -100,6 +95,11 @@ import {
   DisplaySpriteSheetPaletteSwap,
   serializeSpriteSheet,
   DisplaySpriteSheet,
+  DisplaySpriteLines,
+  stringToSpriteLines,
+  DisplaySpriteSerializedSubLine,
+  DisplaySpriteSerializedLine,
+  DisplaySpriteSerializedLines,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { wait } from "./utils/Timer.ts";
 
@@ -2756,16 +2756,32 @@ class DisplayManager implements DisplayManagerInterface {
     offsetY: number,
     string: string,
     requireAll?: boolean,
+    maxLineBreadth?: number,
+    separators?: string[],
     sendImmediately?: boolean
   ) {
-    const spriteLines = this.stringToSpriteLines(string, requireAll);
+    const spriteLines = this.stringToSpriteLines(
+      string,
+      requireAll,
+      maxLineBreadth,
+      separators
+    );
     await this.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
   }
   stringToSpriteLines(
     string: string,
-    requireAll?: boolean
+    requireAll?: boolean,
+    maxLineBreadth?: number,
+    separators?: string[]
   ): DisplaySpriteLines {
-    return stringToSpriteLines(string, this.spriteSheets, requireAll);
+    return stringToSpriteLines(
+      string,
+      this.spriteSheets,
+      this.contextState,
+      requireAll,
+      maxLineBreadth,
+      separators
+    );
   }
 
   async drawSpriteFromSpriteSheet(

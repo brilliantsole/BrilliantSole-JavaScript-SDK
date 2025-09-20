@@ -43,7 +43,6 @@ import {
   assertSpritePaletteSwap,
   assertSpriteSheetPalette,
   assertSpriteSheetPaletteSwap,
-  DisplaySpriteLines,
   DisplayManagerInterface,
   drawSpriteFromSpriteSheet,
   getSprite,
@@ -55,7 +54,6 @@ import {
   selectSpritePaletteSwap,
   selectSpriteSheetPalette,
   selectSpriteSheetPaletteSwap,
-  stringToSpriteLines,
 } from "./DisplayManagerInterface.ts";
 import {
   assertValidColor,
@@ -103,11 +101,13 @@ import { wait } from "./Timer.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
   DisplaySprite,
+  DisplaySpriteLines,
   DisplaySpritePaletteSwap,
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
   serializeSpriteSheet,
+  stringToSpriteLines,
 } from "./DisplaySpriteSheetUtils.ts";
 import { Font } from "opentype.js";
 
@@ -2599,7 +2599,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const curvePointsJump = numberOfControlPoints - 1;
     const numberOfCurves =
       (controlPoints.length - 1) / (numberOfControlPoints - 1);
-    _console.log({ numberOfControlPoints, curvePointsJump, numberOfCurves });
+    //_console.log({ numberOfControlPoints, curvePointsJump, numberOfCurves });
 
     const curvePoints: Vector2[] = [];
     let curvePointOffset = 0;
@@ -3475,7 +3475,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #drawSpritesToCanvas(
     offsetX: number,
     offsetY: number,
-    spritesLines: DisplaySpriteLines,
+    spriteLines: DisplaySpriteLines,
     contextState: DisplayContextState
   ) {
     this.#setIgnoreDevice(true);
@@ -3518,8 +3518,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     const _spritesLines: DisplaySprite[][] = [];
 
-    spritesLines.forEach((spriteLine, lineIndex) => {
-      const _spriteLine: DisplaySprite[] = [];
+    spriteLines.forEach((spriteLine, lineIndex) => {
+      const _spritesLine: DisplaySprite[] = [];
 
       let spritesLineBreadth = 0;
 
@@ -3537,8 +3537,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
             sprite,
             `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`
           );
-          const spriteIndex = _spriteLine.length;
-          _spriteLine.push(sprite);
+          const spriteIndex = _spritesLine.length;
+          _spritesLine.push(sprite);
           spritesLineBreadth += isSpritesDirectionHorizontal
             ? sprite.width
             : sprite.height;
@@ -3561,30 +3561,30 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
       spritesSize[depthSizeKey] += contextState.spritesLineSpacing;
 
-      _console.log({
-        lineIndex,
-        spritesBreadth: spritesSize[breadthSizeKey],
-        spritesDepth: spritesSize[depthSizeKey],
-      });
+      // _console.log({
+      //   lineIndex,
+      //   spritesBreadth: spritesSize[breadthSizeKey],
+      //   spritesDepth: spritesSize[depthSizeKey],
+      // });
 
       spritesLineBreadths.push(spritesLineBreadth);
-      _spritesLines.push(_spriteLine);
+      _spritesLines.push(_spritesLine);
     });
     spritesSize[depthSizeKey] -= contextState.spritesLineSpacing;
     const numberOfLines = _spritesLines.length;
 
-    _console.log({
-      numberOfLines,
-      spritesWidth: spritesSize.width,
-      spritesHeight: spritesSize.height,
-    });
+    // _console.log({
+    //   numberOfLines,
+    //   spritesWidth: spritesSize.width,
+    //   spritesHeight: spritesSize.height,
+    // });
 
     const spritesScaledWidth =
       spritesSize.width * Math.abs(contextState.spriteScaleX);
     const spritesScaledHeight =
       spritesSize.height * Math.abs(contextState.spriteScaleY);
 
-    _console.log({ spritesScaledWidth, spritesScaledHeight });
+    //_console.log({ spritesScaledWidth, spritesScaledHeight });
 
     this.#setCanvasContextTransform(
       offsetX,
@@ -3838,16 +3838,32 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     offsetY: number,
     string: string,
     requireAll?: boolean,
+    maxLineBreadth?: number,
+    separators?: string[],
     sendImmediately?: boolean
   ) {
-    const spriteLines = this.stringToSpriteLines(string, requireAll);
+    const spriteLines = this.stringToSpriteLines(
+      string,
+      requireAll,
+      maxLineBreadth,
+      separators
+    );
     await this.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
   }
   stringToSpriteLines(
     string: string,
-    requireAll?: boolean
+    requireAll?: boolean,
+    maxLineBreadth?: number,
+    separators?: string[]
   ): DisplaySpriteLines {
-    return stringToSpriteLines(string, this.spriteSheets, requireAll);
+    return stringToSpriteLines(
+      string,
+      this.spriteSheets,
+      this.contextState,
+      requireAll,
+      maxLineBreadth,
+      separators
+    );
   }
 
   // BRIGHTNESS

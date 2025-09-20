@@ -3840,6 +3840,16 @@ const DefaultDisplayContextState = {
     spritesAlignment: "end",
     spritesLineAlignment: "start",
 };
+function isDirectionHorizontal(direction) {
+    switch (direction) {
+        case "right":
+        case "left":
+            return true;
+        case "down":
+        case "up":
+            return false;
+    }
+}
 
 function deepEqual(obj1, obj2) {
     if (obj1 === obj2) {
@@ -5310,6 +5320,10 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
             glyphs.push(glyph);
         }
         const maxSpriteHeight = maxSpriteY - minSpriteY;
+        _console$r.log({
+            fontName: font.getEnglishName("fullName"),
+            maxSpriteHeight,
+        });
         for (let i = 0; i < glyphs.length; i++) {
             const glyph = glyphs[i];
             let name = glyph.name;
@@ -5326,7 +5340,9 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
             const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
             if (options.stroke) {
                 path.stroke = "white";
-                path.strokeWidth = options.strokeWidth || 1;
+                const strokeWidth = options.strokeWidth || 1;
+                path.strokeWidth = strokeWidth;
+                commands.push({ type: "setLineWidth", lineWidth: strokeWidth });
             }
             else {
                 path.fill = "white";
@@ -5335,6 +5351,16 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
             const bitmapHeight = Math.floor((bbox.y2 - bbox.y1) * fontScale);
             const bitmapX = Math.floor((spriteWidth - bitmapWidth) / 2);
             const bitmapY = Math.floor((spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY));
+            if (name == "H") {
+                console.log("H", bbox, {
+                    bitmapWidth,
+                    bitmapHeight,
+                    bitmapX,
+                    bitmapY,
+                    spriteWidth,
+                    spriteHeight,
+                });
+            }
             if (options.usePath) {
                 const pathOffset = {
                     x: -bitmapWidth / 2 + bitmapX,
@@ -5536,6 +5562,121 @@ function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
     });
     _console$r.log("reducedSpriteSheet", reducedSpriteSheet);
     return reducedSpriteSheet;
+}
+function stringToSpriteLines(string, spriteSheets, contextState, requireAll = false, maxLineBreadth = Infinity, separators = [" "]) {
+    _console$r.log("stringToSpriteLines", string);
+    const isSpritesDirectionHorizontal = isDirectionHorizontal(contextState.spritesDirection);
+    const isSpritesLineDirectionHorizontal = isDirectionHorizontal(contextState.spritesLineDirection);
+    const areSpritesDirectionsOrthogonal = isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
+    const lineStrings = string.split("\n");
+    let lineBreadth = 0;
+    const sprites = [];
+    let latestSeparatorIndex = -1;
+    let latestSeparatorLineBreadth;
+    const spritesLineIndices = [];
+    lineStrings.forEach((lineString) => {
+        sprites.push([]);
+        spritesLineIndices.push([]);
+        const i = sprites.length - 1;
+        if (areSpritesDirectionsOrthogonal) {
+            lineBreadth = 0;
+        }
+        else {
+            lineBreadth += contextState.spritesLineSpacing;
+        }
+        let lineSubstring = lineString;
+        while (lineSubstring.length > 0) {
+            let longestSprite;
+            let longestSpriteSheet;
+            for (let spriteSheetName in spriteSheets) {
+                const spriteSheet = spriteSheets[spriteSheetName];
+                spriteSheet.sprites.forEach((sprite) => {
+                    if (lineSubstring.startsWith(sprite.name)) {
+                        if (!longestSprite ||
+                            sprite.name.length > longestSprite.name.length) {
+                            longestSprite = sprite;
+                            longestSpriteSheet = spriteSheet;
+                        }
+                    }
+                });
+            }
+            if (requireAll) {
+                _console$r.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${lineSubstring}"`);
+            }
+            if (longestSprite && longestSpriteSheet) {
+                const isSeparator = separators.length > 0
+                    ? separators.includes(longestSprite.name)
+                    : true;
+                sprites[i].push({
+                    sprite: longestSprite,
+                    spriteSheet: longestSpriteSheet,
+                });
+                let newLineBreadth = lineBreadth;
+                if (isSpritesDirectionHorizontal) {
+                    newLineBreadth += longestSprite.width;
+                }
+                else {
+                    newLineBreadth += longestSprite.height;
+                }
+                newLineBreadth += contextState.spritesSpacing;
+                if (newLineBreadth >= maxLineBreadth) {
+                    if (isSeparator) {
+                        if (longestSprite.name.trim().length == 0) {
+                            sprites[i].pop();
+                        }
+                        spritesLineIndices[i].push(sprites[i].length);
+                        lineBreadth = 0;
+                    }
+                    else {
+                        if (latestSeparatorIndex != -1) {
+                            spritesLineIndices[i].push(latestSeparatorIndex);
+                            lineBreadth = newLineBreadth - latestSeparatorLineBreadth;
+                        }
+                        else {
+                            spritesLineIndices[i].push(sprites[i].length - 1);
+                            lineBreadth = 0;
+                        }
+                    }
+                    latestSeparatorIndex = -1;
+                }
+                else {
+                    lineBreadth = newLineBreadth;
+                    if (isSeparator) {
+                        longestSprite.name;
+                        latestSeparatorIndex = sprites[i].length - 1;
+                        latestSeparatorLineBreadth = lineBreadth;
+                    }
+                }
+                lineSubstring = lineSubstring.substring(longestSprite.name.length);
+            }
+            else {
+                lineSubstring = lineSubstring.substring(1);
+            }
+        }
+    });
+    const spriteLines = [];
+    sprites.forEach((_sprites, i) => {
+        let spriteLine = [];
+        spriteLines.push(spriteLine);
+        let spriteSubLine;
+        _sprites.forEach(({ sprite, spriteSheet }, index) => {
+            if (spritesLineIndices[i].includes(index)) {
+                spriteLine = [];
+                spriteLines.push(spriteLine);
+                spriteSubLine = undefined;
+            }
+            if (!spriteSubLine || spriteSubLine.spriteSheetName != spriteSheet.name) {
+                spriteSubLine = {
+                    spriteSheetName: spriteSheet.name,
+                    spriteNames: [],
+                };
+                spriteLine.push(spriteSubLine);
+            }
+            spriteSubLine.spriteNames.push(sprite.name);
+        });
+    });
+    _console$r.log(`spriteLines for "${string}"`, spriteLines);
+    return spriteLines;
 }
 
 const _console$q = createConsole("DisplayBitmapUtils", { log: true });
@@ -6242,51 +6383,6 @@ async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offse
     if (paletteName != undefined) {
         await displayManagerInterface.selectSpriteSheetPalette(paletteName);
     }
-}
-function stringToSpriteLines(string, spriteSheets, requireAll = false) {
-    const lineStrings = string.split("\n");
-    const spriteLines = lineStrings.map((lineString) => {
-        const spriteLine = [];
-        let spriteSubLine;
-        let lineSubstring = lineString;
-        while (lineSubstring.length > 0) {
-            let longestSprite;
-            let longestSpriteSheet;
-            for (let spriteSheetName in spriteSheets) {
-                const spriteSheet = spriteSheets[spriteSheetName];
-                spriteSheet.sprites.forEach((sprite) => {
-                    if (lineSubstring.startsWith(sprite.name)) {
-                        if (!longestSprite ||
-                            sprite.name.length > longestSprite.name.length) {
-                            longestSprite = sprite;
-                            longestSpriteSheet = spriteSheet;
-                        }
-                    }
-                });
-            }
-            _console$p.log("longestSprite", longestSprite);
-            if (requireAll) {
-                _console$p.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${lineSubstring}"`);
-            }
-            if (longestSprite && longestSpriteSheet) {
-                if (!spriteSubLine ||
-                    spriteSubLine.spriteSheetName != longestSpriteSheet.name) {
-                    spriteSubLine = {
-                        spriteSheetName: longestSpriteSheet.name,
-                        spriteNames: [],
-                    };
-                    spriteLine.push(spriteSubLine);
-                }
-                spriteSubLine.spriteNames.push(longestSprite.name);
-                lineSubstring = lineSubstring.substring(longestSprite.name.length);
-            }
-            else {
-                lineSubstring = lineSubstring.substring(1);
-            }
-        }
-        return spriteLine;
-    });
-    return spriteLines;
 }
 
 var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_lastReadyTime, _DisplayManager_lastShowRequestTime, _DisplayManager_minReadyInterval, _DisplayManager_waitBeforeReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu, _DisplayManager_isServerSide;
@@ -7877,12 +7973,12 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
-    async drawSpritesString(offsetX, offsetY, string, requireAll, sendImmediately) {
-        const spriteLines = this.stringToSpriteLines(string, requireAll);
+    async drawSpritesString(offsetX, offsetY, string, requireAll, maxLineBreadth, separators, sendImmediately) {
+        const spriteLines = this.stringToSpriteLines(string, requireAll, maxLineBreadth, separators);
         await this.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
     }
-    stringToSpriteLines(string, requireAll) {
-        return stringToSpriteLines(string, this.spriteSheets, requireAll);
+    stringToSpriteLines(string, requireAll, maxLineBreadth, separators) {
+        return stringToSpriteLines(string, this.spriteSheets, this.contextState, requireAll, maxLineBreadth, separators);
     }
     async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
         return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
@@ -13465,5 +13561,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, hexToRGB, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, hexToRGB, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.node.module.js.map

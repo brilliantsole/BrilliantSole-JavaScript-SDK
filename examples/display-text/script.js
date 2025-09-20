@@ -36,6 +36,8 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 // displayCanvasHelper.setBrightness("veryLow");
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
+displayCanvasHelper.setFillBackground(true, true);
+displayCanvasHelper.selectSpriteColor(0, 2, true);
 
 device.addEventListener("connected", () => {
   if (device.isDisplayAvailable) {
@@ -152,7 +154,7 @@ let maxNumberOfNonEnglishSpriteSheets = 20;
 const nonEnglishSpriteSheets = new Array(maxNumberOfNonEnglishSpriteSheets);
 window.nonEnglishSpriteSheets = nonEnglishSpriteSheets;
 let didLoad = false;
-const draw = async () => {
+const draw = async (willTranslate) => {
   if (isUploading) {
     return;
   }
@@ -231,9 +233,19 @@ const draw = async () => {
   await displayCanvasHelper.setSpritesSpacing(spritesSpacing);
   await displayCanvasHelper.setSpritesLineSpacing(spritesLineSpacing);
   await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
-  await displayCanvasHelper.selectSpriteColor(1, selectedColorIndex);
-  await displayCanvasHelper.drawSpritesString(x, y, text);
+  await displayCanvasHelper.selectSpriteColor(
+    1,
+    willTranslate ? 3 : selectedColorIndex
+  );
+  await displayCanvasHelper.drawSpritesString(
+    x,
+    y,
+    text,
+    false,
+    drawMaxBreadth
+  );
   await displayCanvasHelper.show();
+  console.log("lol");
 };
 
 displayCanvasHelper.addEventListener("ready", () => {
@@ -263,7 +275,7 @@ const drawSpriteParams = {
   spritesSpacing: 0,
   spritesLineSpacing: 0,
 
-  spritesAlignment: "end",
+  spritesAlignment: "start",
   spritesLineAlignment: "start",
 
   spritesDirection: "right",
@@ -506,24 +518,21 @@ drawSpritesLineSpacingInput.addEventListener("input", () => {
   setSpritesLineSpacing(Number(drawSpritesLineSpacingInput.value));
 });
 
-const drawCharactersPerLineContainer = document.getElementById(
-  "drawCharactersPerLine"
-);
-const drawCharactersPerLineInput =
-  drawCharactersPerLineContainer.querySelector("input");
-const drawCharactersPerLineSpan =
-  drawCharactersPerLineContainer.querySelector(".value");
-let drawCharactersPerLine;
-const setCharactersPerLine = (newDrawCharactersPerLine) => {
-  drawCharactersPerLine = newDrawCharactersPerLine;
-  console.log({ drawCharactersPerLine });
-  drawCharactersPerLineInput.value = drawCharactersPerLine;
-  drawCharactersPerLineSpan.innerText = drawCharactersPerLine;
+const drawMaxBreadthContainer = document.getElementById("drawMaxBreadth");
+const drawMaxBreadthInput = drawMaxBreadthContainer.querySelector("input");
+const drawMaxBreadthSpan = drawMaxBreadthContainer.querySelector(".value");
+let drawMaxBreadth;
+const setMaxBreadth = (newDrawMaxBreadth) => {
+  drawMaxBreadth = newDrawMaxBreadth;
+  console.log({ drawMaxBreadth });
+  drawMaxBreadthInput.value = drawMaxBreadth;
+  drawMaxBreadthSpan.innerText = drawMaxBreadth;
+  draw();
 };
-drawCharactersPerLineInput.addEventListener("input", () => {
-  setCharactersPerLine(Number(drawCharactersPerLineInput.value));
+drawMaxBreadthInput.addEventListener("input", () => {
+  setMaxBreadth(Number(drawMaxBreadthInput.value));
 });
-setCharactersPerLine(Number(drawCharactersPerLineInput.value));
+setMaxBreadth(Number(drawMaxBreadthInput.value));
 
 const maxAudioLengthContainer = document.getElementById("maxAudioLength");
 const maxAudioLengthInput = maxAudioLengthContainer.querySelector("input");
@@ -691,17 +700,17 @@ const addFont = async (font) => {
   fonts[fullName] = fonts[fullName] || [];
   fonts[fullName].push(font);
 
-  //console.log(`added font "${fullName}"`, range);
+  // console.log(`added font "${fullName}"`, range);
 
   const isEnglish = range.min <= 65 && range.max >= 122;
   if (isEnglish) {
-    7;
     englishFonts[fullName] = englishFonts[fullName] || [];
     englishFonts[fullName].push(font);
-    //console.log(`added english font "${fullName}"`);
+    // console.log(`added english font "${fullName}"`);
 
     const spriteSheet = await BS.fontToSpriteSheet(font, fontSize, "english", {
       usePath: true,
+      englishOnly: true,
     });
     englishFontSpriteSheets[fullName] = spriteSheet;
     //console.log(`added english font spriteSheet "${fullName}"`, spriteSheet);
@@ -749,7 +758,7 @@ const selectFont = async (newFontName) => {
   }
   if (didLoad) {
     console.log(`selected font "${newFontName}"`, selectedFont);
-    console.log(`selected fonts`, selectedFonts);
+    //console.log(`selected fonts`, selectedFonts);
     console.log({ targetLanguage });
   }
   selectFontSelect.value = newFontName;
@@ -1027,27 +1036,9 @@ const startTranscribing = async () => {
 
           //console.log("outputText", outputText);
 
-          let numberOfCharacters = 0;
           transcription = outputText[outputText.length - 1];
           console.log({ transcription });
-          formattedTranscription = "";
-          transcription
-            .split(" ")
-            .filter((string) => string != " ")
-            .filter((string) => string.length > 0)
-            .forEach((word, index) => {
-              if (index > 0) {
-                if (numberOfCharacters + word.length > drawCharactersPerLine) {
-                  formattedTranscription += `\n`;
-                  numberOfCharacters = 0;
-                } else {
-                  formattedTranscription += " ";
-                  numberOfCharacters += 1;
-                }
-              }
-              formattedTranscription += word;
-              numberOfCharacters += word.length;
-            });
+          formattedTranscription = transcription;
           const lowercaseTranscription = transcription.toLowerCase();
           const ignoreString = ignoreStrings.some((string) =>
             lowercaseTranscription.includes(string)
@@ -1065,17 +1056,9 @@ const startTranscribing = async () => {
               }
               if (latestStringRepetition == latestStringRepetitionThreshold) {
                 await stopTranscribing();
+                await draw(true);
                 const translation = await translate(transcription);
-                let formattedTranslation = "";
-                let numberOfForeignCharacters = 0;
-                Array.from(translation).forEach((char) => {
-                  if (numberOfForeignCharacters >= drawCharactersPerLine) {
-                    formattedTranslation += `\n`;
-                    numberOfForeignCharacters = 0;
-                  }
-                  formattedTranslation += char;
-                  numberOfForeignCharacters++;
-                });
+                let formattedTranslation = translation;
                 textarea.value = `${formattedTranslation}\n\n${formattedTranscription}`;
                 await draw();
                 await startTranscribing();

@@ -19,6 +19,7 @@ import {
 } from "./DisplayContextState.ts";
 import {
   DisplaySprite,
+  DisplaySpriteLines,
   DisplaySpritePaletteSwap,
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
@@ -33,21 +34,6 @@ import {
 import { degToRad, Vector2 } from "./MathUtils.ts";
 
 const _console = createConsole("DisplayManagerInterface", { log: true });
-
-export type DisplaySpriteSubLine = {
-  spriteSheetName: string;
-  spriteNames: string[];
-};
-export type DisplaySpriteLine = DisplaySpriteSubLine[];
-export type DisplaySpriteLines = DisplaySpriteLine[];
-
-export type DisplaySpriteSerializedSubLine = {
-  spriteSheetIndex: number;
-  spriteIndices: number[];
-  use2Bytes: boolean;
-};
-export type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
-export type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
 
 export interface DisplayManagerInterface {
   get isReady(): boolean;
@@ -509,7 +495,12 @@ export interface DisplayManagerInterface {
     spriteName: string,
     sendImmediately?: boolean
   ): Promise<void>;
-  stringToSpriteLines(string: string, requireAll?: boolean): DisplaySpriteLines;
+  stringToSpriteLines(
+    string: string,
+    requireAll?: boolean,
+    maxLineBreadth?: number,
+    separators?: string[]
+  ): DisplaySpriteLines;
   drawSprites(
     offsetX: number,
     offsetY: number,
@@ -520,6 +511,9 @@ export interface DisplayManagerInterface {
     offsetX: number,
     offsetY: number,
     string: string,
+    requireAll?: boolean,
+    maxLineBreadth?: number,
+    separators?: string[],
     sendImmediately?: boolean
   ): Promise<void>;
   assertLoadedSpriteSheet(spriteSheetName: string): void;
@@ -1369,65 +1363,4 @@ export async function drawSpriteFromSpriteSheet(
   if (paletteName != undefined) {
     await displayManagerInterface.selectSpriteSheetPalette(paletteName);
   }
-}
-
-export function stringToSpriteLines(
-  string: string,
-  spriteSheets: Record<string, DisplaySpriteSheet>,
-  requireAll = false
-): DisplaySpriteLines {
-  const lineStrings = string.split("\n");
-  const spriteLines = lineStrings.map((lineString) => {
-    const spriteLine: DisplaySpriteLine = [];
-    let spriteSubLine: DisplaySpriteSubLine | undefined;
-    let lineSubstring = lineString;
-    while (lineSubstring.length > 0) {
-      let longestSprite: DisplaySprite | undefined;
-      let longestSpriteSheet: DisplaySpriteSheet | undefined;
-      for (let spriteSheetName in spriteSheets) {
-        const spriteSheet = spriteSheets[spriteSheetName];
-        spriteSheet.sprites.forEach((sprite) => {
-          if (lineSubstring.startsWith(sprite.name)) {
-            if (
-              !longestSprite ||
-              sprite.name.length > longestSprite.name.length
-            ) {
-              longestSprite = sprite;
-              longestSpriteSheet = spriteSheet;
-            }
-          }
-        });
-      }
-      //_console.log("longestSprite", longestSprite);
-      if (requireAll) {
-        _console.assertWithError(
-          longestSprite,
-          `couldn't find sprite with name prefixing "${lineSubstring}"`
-        );
-      }
-
-      if (longestSprite && longestSpriteSheet) {
-        if (
-          !spriteSubLine ||
-          spriteSubLine.spriteSheetName != longestSpriteSheet.name
-        ) {
-          spriteSubLine = {
-            spriteSheetName: longestSpriteSheet.name,
-            spriteNames: [],
-          };
-          spriteLine.push(spriteSubLine);
-        }
-        spriteSubLine.spriteNames.push(longestSprite.name);
-        lineSubstring = lineSubstring.substring(longestSprite!.name.length);
-      } else {
-        lineSubstring = lineSubstring.substring(1);
-      }
-
-      //_console.log("new substring", lineSubstring);
-    }
-    //_console.log("spriteLine", spriteLine);
-    return spriteLine;
-  });
-  //_console.log(`spriteLines for "${string}"`, spriteLines);
-  return spriteLines;
 }
