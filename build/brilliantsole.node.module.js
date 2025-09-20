@@ -5351,16 +5351,6 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
             const bitmapHeight = Math.floor((bbox.y2 - bbox.y1) * fontScale);
             const bitmapX = Math.floor((spriteWidth - bitmapWidth) / 2);
             const bitmapY = Math.floor((spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY));
-            if (name == "H") {
-                console.log("H", bbox, {
-                    bitmapWidth,
-                    bitmapHeight,
-                    bitmapX,
-                    bitmapY,
-                    spriteWidth,
-                    spriteHeight,
-                });
-            }
             if (options.usePath) {
                 const pathOffset = {
                     x: -bitmapWidth / 2 + bitmapX,
@@ -5570,9 +5560,17 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
     const areSpritesDirectionsOrthogonal = isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
     const lineStrings = string.split("\n");
     let lineBreadth = 0;
+    if (isSpritesLineDirectionHorizontal) {
+        maxLineBreadth /= contextState.spriteScaleX;
+    }
+    else {
+        maxLineBreadth /= contextState.spriteScaleY;
+    }
     const sprites = [];
     let latestSeparatorIndex = -1;
+    let latestSeparator;
     let latestSeparatorLineBreadth;
+    let latestSeparatorBreadth;
     const spritesLineIndices = [];
     lineStrings.forEach((lineString) => {
         sprites.push([]);
@@ -5612,12 +5610,10 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
                     spriteSheet: longestSpriteSheet,
                 });
                 let newLineBreadth = lineBreadth;
-                if (isSpritesDirectionHorizontal) {
-                    newLineBreadth += longestSprite.width;
-                }
-                else {
-                    newLineBreadth += longestSprite.height;
-                }
+                const longestSpriteBreadth = isSpritesDirectionHorizontal
+                    ? longestSprite.width
+                    : longestSprite.height;
+                newLineBreadth += longestSpriteBreadth;
                 newLineBreadth += contextState.spritesSpacing;
                 if (newLineBreadth >= maxLineBreadth) {
                     if (isSeparator) {
@@ -5629,6 +5625,10 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
                     }
                     else {
                         if (latestSeparatorIndex != -1) {
+                            if (latestSeparator.trim().length == 0) {
+                                sprites[i].splice(latestSeparatorIndex, 1);
+                                lineBreadth -= latestSeparatorBreadth;
+                            }
                             spritesLineIndices[i].push(latestSeparatorIndex);
                             lineBreadth = newLineBreadth - latestSeparatorLineBreadth;
                         }
@@ -5638,13 +5638,15 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
                         }
                     }
                     latestSeparatorIndex = -1;
+                    latestSeparator = undefined;
                 }
                 else {
                     lineBreadth = newLineBreadth;
                     if (isSeparator) {
-                        longestSprite.name;
+                        latestSeparator = longestSprite.name;
                         latestSeparatorIndex = sprites[i].length - 1;
                         latestSeparatorLineBreadth = lineBreadth;
+                        latestSeparatorBreadth = longestSpriteBreadth;
                     }
                 }
                 lineSubstring = lineSubstring.substring(longestSprite.name.length);

@@ -317,17 +317,6 @@ export async function fontToSpriteSheet(
         (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY)
       );
 
-      if (name == "H") {
-        console.log("H", bbox, {
-          bitmapWidth,
-          bitmapHeight,
-          bitmapX,
-          bitmapY,
-          spriteWidth,
-          spriteHeight,
-        });
-      }
-
       if (options.usePath) {
         const pathOffset: Vector2 = {
           x: -bitmapWidth / 2 + bitmapX,
@@ -617,6 +606,12 @@ export function stringToSpriteLines(
   const lineStrings = string.split("\n");
   let lineBreadth = 0;
 
+  if (isSpritesLineDirectionHorizontal) {
+    maxLineBreadth /= contextState.spriteScaleX;
+  } else {
+    maxLineBreadth /= contextState.spriteScaleY;
+  }
+
   const sprites: {
     sprite: DisplaySprite;
     spriteSheet: DisplaySpriteSheet;
@@ -624,6 +619,7 @@ export function stringToSpriteLines(
   let latestSeparatorIndex = -1;
   let latestSeparator: string | undefined;
   let latestSeparatorLineBreadth: number | undefined;
+  let latestSeparatorBreadth: number | undefined;
   const spritesLineIndices: number[][] = [];
 
   lineStrings.forEach((lineString) => {
@@ -684,11 +680,10 @@ export function stringToSpriteLines(
         // });
 
         let newLineBreadth = lineBreadth;
-        if (isSpritesDirectionHorizontal) {
-          newLineBreadth += longestSprite.width;
-        } else {
-          newLineBreadth += longestSprite.height;
-        }
+        const longestSpriteBreadth = isSpritesDirectionHorizontal
+          ? longestSprite.width
+          : longestSprite.height;
+        newLineBreadth += longestSpriteBreadth;
         newLineBreadth += contextState.spritesSpacing;
         if (newLineBreadth >= maxLineBreadth) {
           if (isSeparator) {
@@ -699,6 +694,11 @@ export function stringToSpriteLines(
             lineBreadth = 0;
           } else {
             if (latestSeparatorIndex != -1) {
+              if (latestSeparator!.trim().length == 0) {
+                sprites[i].splice(latestSeparatorIndex, 1);
+                lineBreadth -= latestSeparatorBreadth!;
+                latestSeparatorIndex;
+              }
               spritesLineIndices[i].push(latestSeparatorIndex);
               lineBreadth = newLineBreadth - latestSeparatorLineBreadth!;
             } else {
@@ -716,6 +716,7 @@ export function stringToSpriteLines(
             latestSeparatorIndex = sprites[i].length - 1;
             //_console.log({ latestSeparatorIndex });
             latestSeparatorLineBreadth = lineBreadth;
+            latestSeparatorBreadth = longestSpriteBreadth;
           }
         }
 
