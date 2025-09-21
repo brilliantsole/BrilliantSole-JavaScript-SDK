@@ -378,6 +378,15 @@ class DisplayManager implements DisplayManagerInterface {
         case "backgroundColorIndex":
           this.selectBackgroundColor(newState.backgroundColorIndex!);
           break;
+        case "fillBackground":
+          this.setFillBackground(newState.fillBackground!);
+          break;
+        case "ignoreFill":
+          this.setIgnoreFill(newState.ignoreFill!);
+          break;
+        case "ignoreLine":
+          this.setIgnoreLine(newState.ignoreLine!);
+          break;
         case "fillColorIndex":
           this.selectFillColor(newState.fillColorIndex!);
           break;

@@ -15867,10 +15867,6 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
             glyphs.push(glyph);
         }
         const maxSpriteHeight = maxSpriteY - minSpriteY;
-        _console$m.log({
-            fontName: font.getEnglishName("fullName"),
-            maxSpriteHeight,
-        });
         for (let i = 0; i < glyphs.length; i++) {
             const glyph = glyphs[i];
             let name = glyph.name;
@@ -17261,6 +17257,15 @@ class DisplayManager {
             switch (difference) {
                 case "backgroundColorIndex":
                     this.selectBackgroundColor(newState.backgroundColorIndex);
+                    break;
+                case "fillBackground":
+                    this.setFillBackground(newState.fillBackground);
+                    break;
+                case "ignoreFill":
+                    this.setIgnoreFill(newState.ignoreFill);
+                    break;
+                case "ignoreLine":
+                    this.setIgnoreLine(newState.ignoreLine);
                     break;
                 case "fillColorIndex":
                     this.selectFillColor(newState.fillColorIndex);

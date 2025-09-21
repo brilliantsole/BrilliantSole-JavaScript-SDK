@@ -155,7 +155,7 @@ let maxNumberOfNonEnglishSpriteSheets = 20;
 const nonEnglishSpriteSheets = new Array(maxNumberOfNonEnglishSpriteSheets);
 window.nonEnglishSpriteSheets = nonEnglishSpriteSheets;
 let didLoad = false;
-const draw = async (willTranslate) => {
+const draw = async () => {
   if (isUploading) {
     return;
   }
@@ -234,10 +234,7 @@ const draw = async (willTranslate) => {
   await displayCanvasHelper.setSpritesSpacing(spritesSpacing);
   await displayCanvasHelper.setSpritesLineSpacing(spritesLineSpacing);
   await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
-  await displayCanvasHelper.selectSpriteColor(
-    1,
-    willTranslate ? 3 : selectedColorIndex
-  );
+  await displayCanvasHelper.selectSpriteColor(1, selectedColorIndex);
   if (true) {
     await displayCanvasHelper.drawSpritesString(
       x,
@@ -247,8 +244,10 @@ const draw = async (willTranslate) => {
       drawMaxBreadth
     );
   } else {
-    await displayCanvasHelper.selectSpriteSheet("english");
-    await displayCanvasHelper.drawSprite(x, y, text[0]);
+    if (text.length > 0) {
+      await displayCanvasHelper.selectSpriteSheet("english");
+      await displayCanvasHelper.drawSprite(x, y, text[0]);
+    }
   }
   await displayCanvasHelper.show();
 };
@@ -1041,7 +1040,7 @@ const startTranscribing = async () => {
 
           //console.log("outputText", outputText);
 
-          transcription = outputText[outputText.length - 1];
+          transcription = outputText[outputText.length - 1].trim();
           console.log({ transcription });
           formattedTranscription = transcription;
           const lowercaseTranscription = transcription.toLowerCase();

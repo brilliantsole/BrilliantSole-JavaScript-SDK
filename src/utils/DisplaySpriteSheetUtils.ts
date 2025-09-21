@@ -265,10 +265,10 @@ export async function fontToSpriteSheet(
 
     const maxSpriteHeight = maxSpriteY - minSpriteY;
 
-    _console.log({
-      fontName: font.getEnglishName("fullName"),
-      maxSpriteHeight,
-    });
+    // _console.log({
+    //   fontName: font.getEnglishName("fullName"),
+    //   maxSpriteHeight,
+    // });
 
     for (let i = 0; i < glyphs.length; i++) {
       const glyph = glyphs[i];
