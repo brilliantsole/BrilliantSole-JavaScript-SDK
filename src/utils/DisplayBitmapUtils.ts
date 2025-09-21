@@ -626,11 +626,11 @@ export async function canvasToSpriteSheet(
     const maxSpriteHeight = Math.floor(
       maxPixelDataLength / imageRowPixelDataLength
     );
-    _console.log({
-      maxPixelDataLength,
-      imageRowPixelDataLength,
-      maxSpriteHeight,
-    });
+    // _console.log({
+    //   maxPixelDataLength,
+    //   imageRowPixelDataLength,
+    //   maxSpriteHeight,
+    // });
 
     if (maxSpriteHeight >= height) {
       _console.log("image is small enough for a single sprite");

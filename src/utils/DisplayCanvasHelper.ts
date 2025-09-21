@@ -1646,6 +1646,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.context.fillStyle = this.#colorIndexToRgbString(
       fillBackground ? backgroundColorIndex : 0
     );
+    _console.log({
+      useSpriteColorIndices: this.#useSpriteColorIndices,
+      backgroundColorIndex,
+      fillBackground,
+      fillStyle: this.context.fillStyle,
+    });
     //this.context.fillStyle = "red"; // remove when done debugigng
     this.context.fillRect(x, y, width, height);
     this.#restore();
@@ -2446,7 +2452,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     } else {
       curvePoints.push(curvePoint);
-      // _console.log(`appendCurvePoint curvePoints.length ${curvePoints.length}`);
+      //_console.log(`appendCurvePoint curvePoints.length ${curvePoints.length}`);
     }
   }
   #appendCurvePoints(curvePoints: Vector2[], _curvePoints: Vector2[]) {
@@ -2458,15 +2464,34 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #generateQuadraticCurvePoints(controlPoints: Vector2[]) {
     assertValidNumberOfControlPoints("quadratic", controlPoints);
     const [p0, p1, p2] = controlPoints;
-    const c1: Vector2 = {
-      x: p0.x + (2 / 3) * (p1.x - p0.x),
-      y: p0.y + (2 / 3) * (p1.y - p0.y),
-    };
-    const c2: Vector2 = {
-      x: p2.x + (2 / 3) * (p1.x - p2.x),
-      y: p2.y + (2 / 3) * (p1.y - p2.y),
-    };
-    return this.#generateCubicCurvePoints([p0, c1, c2, p2]);
+    if (false) {
+      const c1: Vector2 = {
+        x: p0.x + (2 / 3) * (p1.x - p0.x),
+        y: p0.y + (2 / 3) * (p1.y - p0.y),
+      };
+      const c2: Vector2 = {
+        x: p2.x + (2 / 3) * (p1.x - p2.x),
+        y: p2.y + (2 / 3) * (p1.y - p2.y),
+      };
+      return this.#generateCubicCurvePoints([p0, c1, c2, p2]);
+    } else {
+      const curvePoints: Vector2[] = [];
+
+      const p01 = getVector2Midpoint(p0, p1);
+      const p12 = getVector2Midpoint(p1, p2);
+      const mid = getVector2Midpoint(p01, p12);
+
+      const d2 = getVector2DistanceSquared(p1, mid);
+
+      if (d2 <= displayCurveToleranceSquared) {
+        curvePoints.push(p2);
+      } else {
+        curvePoints.push(...this.#generateQuadraticCurvePoints([p0, p01, mid]));
+        curvePoints.push(...this.#generateQuadraticCurvePoints([mid, p12, p2]));
+      }
+
+      return curvePoints;
+    }
   }
   #appendQuadraticCurvePoints(
     curvePoints: Vector2[],
@@ -3420,8 +3445,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     contextState: DisplayContextState
   ) {
     this.#setIgnoreDevice(true);
-    this.#setUseSpriteColorIndices(true);
     this.#saveContextForSprite(offsetX, offsetY, sprite, contextState);
+    this.#setUseSpriteColorIndices(true);
     this.#setClearCanvasBoundingBoxOnDraw(false);
 
     sprite.commands.forEach((command) => {
@@ -3468,9 +3493,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spriteLines: DisplaySpriteLines,
     contextState: DisplayContextState
   ) {
-    this.#setIgnoreDevice(true);
-    this.#setUseSpriteColorIndices(true);
-
     const spritesSize = { width: 0, height: 0 };
 
     const isSpritesDirectionPositive = isDirectionPositive(
@@ -3576,6 +3598,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     //_console.log({ spritesScaledWidth, spritesScaledHeight });
 
+    this.#setIgnoreDevice(true);
     this.#setCanvasContextTransform(
       offsetX,
       offsetY,
@@ -3583,6 +3606,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       spritesSize.height,
       contextState
     );
+    this.#setUseSpriteColorIndices(true);
     this.#setClearCanvasBoundingBoxOnDraw(false);
 
     this.#saveContext();

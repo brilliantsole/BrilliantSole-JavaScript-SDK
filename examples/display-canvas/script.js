@@ -2243,7 +2243,7 @@ displayCanvasHelper.selectBitmapColor(1, 1);
 displayCanvasHelper.selectBitmapColor(2, 2);
 displayCanvasHelper.setBitmapScale(10);
 displayCanvasHelper.setRotation(0);
-displayCanvasHelper.setLineWidth(10);
+displayCanvasHelper.setLineWidth(0);
 displayCanvasHelper.setIgnoreFill(false);
 displayCanvasHelper.setIgnoreLine(false);
 // displayCanvasHelper.setFillBackground(false);

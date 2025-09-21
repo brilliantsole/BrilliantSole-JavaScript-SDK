@@ -4170,15 +4170,21 @@ function getPointDataType(points) {
     _console$t.log("pointDataType", pointDataType, points);
     return pointDataType;
 }
-function serializePoints(points) {
-    const pointDataType = getPointDataType(points);
+function serializePoints(points, pointDataType, isPath = false) {
+    pointDataType = pointDataType || getPointDataType(points);
     _console$t.assertEnumWithError(pointDataType, DisplayPointDataTypes);
     const pointDataSize = displayPointDataTypeToSize[pointDataType];
-    const dataView = new DataView(new ArrayBuffer(1 + 1 + points.length * pointDataSize));
-    _console$t.log("serializing points...", points, dataView.byteLength);
+    let dataViewLength = points.length * pointDataSize;
+    if (!isPath) {
+        dataViewLength += 2;
+    }
+    const dataView = new DataView(new ArrayBuffer(dataViewLength));
+    _console$t.log(`serializing ${points.length} ${pointDataType} points (${dataView.byteLength} bytes)...`);
     let offset = 0;
-    dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
-    dataView.setUint8(offset++, points.length);
+    if (!isPath) {
+        dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
+        dataView.setUint8(offset++, points.length);
+    }
     points.forEach(({ x, y }) => {
         switch (pointDataType) {
             case "int8":
@@ -4897,21 +4903,30 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { curves } = command;
                 assertValidPath(curves);
-                const typesDataView = new DataView(new ArrayBuffer(curves.length));
+                const typesDataView = new DataView(new ArrayBuffer(Math.ceil(curves.length / displayCurveTypesPerByte)));
                 const controlPointsDataViews = [];
-                let numberOfControlPoints = 0;
+                const allControlPoints = [];
+                curves.forEach((curve) => {
+                    allControlPoints.push(...curve.controlPoints);
+                });
+                const pointDataType = getPointDataType(allControlPoints);
+                const numberOfControlPoints = allControlPoints.length;
+                _console$s.log({ numberOfControlPoints });
                 curves.forEach((curve, index) => {
                     const { type, controlPoints } = curve;
-                    typesDataView.setUint8(index, DisplayBezierCurveTypes.indexOf(type));
-                    const controlPointsDataView = serializePoints(controlPoints);
+                    const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
+                    const typeBitShift = (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
+                    let typeValue = typesDataView.getUint8(typeByteIndex) || 0;
+                    typeValue |= DisplayBezierCurveTypes.indexOf(type) << typeBitShift;
+                    typesDataView.setUint8(typeByteIndex, typeValue);
+                    const controlPointsDataView = serializePoints(controlPoints, pointDataType, true);
                     controlPointsDataViews.push(controlPointsDataView);
-                    numberOfControlPoints += controlPoints.length;
                 });
-                _console$s.log({ numberOfControlPoints });
                 const controlPointsBuffer = concatenateArrayBuffers(...controlPointsDataViews);
-                const headerDataView = new DataView(new ArrayBuffer(2));
-                headerDataView.setUint8(0, curves.length);
-                headerDataView.setUint8(1, numberOfControlPoints);
+                const headerDataView = new DataView(new ArrayBuffer(3));
+                headerDataView.setUint8(0, DisplayPointDataTypes.indexOf(pointDataType));
+                headerDataView.setUint8(1, curves.length);
+                headerDataView.setUint8(2, numberOfControlPoints);
                 dataView = new DataView(concatenateArrayBuffers(headerDataView, typesDataView, controlPointsBuffer));
             }
             break;
@@ -6433,6 +6448,8 @@ const DisplayBezierCurveTypes = [
     "quadratic",
     "cubic",
 ];
+const displayCurveTypeBitWidth = 2;
+const displayCurveTypesPerByte = 8 / displayCurveTypeBitWidth;
 const DisplayPointDataTypes = ["int8", "int16", "float"];
 const displayPointDataTypeToSize = {
     int8: 1 * 2,

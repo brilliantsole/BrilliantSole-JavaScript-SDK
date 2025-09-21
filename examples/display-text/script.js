@@ -37,6 +37,7 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 displayCanvasHelper.setFillBackground(true, true);
+displayCanvasHelper.selectBackgroundColor(2, true);
 displayCanvasHelper.selectSpriteColor(0, 2, true);
 
 device.addEventListener("connected", () => {
@@ -237,13 +238,18 @@ const draw = async (willTranslate) => {
     1,
     willTranslate ? 3 : selectedColorIndex
   );
-  await displayCanvasHelper.drawSpritesString(
-    x,
-    y,
-    text,
-    false,
-    drawMaxBreadth
-  );
+  if (true) {
+    await displayCanvasHelper.drawSpritesString(
+      x,
+      y,
+      text,
+      false,
+      drawMaxBreadth
+    );
+  } else {
+    await displayCanvasHelper.selectSpriteSheet("english");
+    await displayCanvasHelper.drawSprite(x, y, text[0]);
+  }
   await displayCanvasHelper.show();
 };
 
@@ -1055,6 +1061,7 @@ const startTranscribing = async () => {
               }
               if (latestStringRepetition == latestStringRepetitionThreshold) {
                 await stopTranscribing();
+                textarea.value = `[TRANSLATING...]\n\n${formattedTranscription}`;
                 await draw(true);
                 const translation = await translate(transcription);
                 let formattedTranslation = translation;

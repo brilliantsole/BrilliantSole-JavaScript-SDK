@@ -202,6 +202,9 @@ export type DisplayBezierCurve = {
   controlPoints: Vector2[];
 };
 
+export const displayCurveTypeBitWidth = 2;
+export const displayCurveTypesPerByte = 8 / displayCurveTypeBitWidth;
+
 export const DisplayPointDataTypes = ["int8", "int16", "float"] as const;
 export type DisplayPointDataType = (typeof DisplayPointDataTypes)[number];
 export const displayPointDataTypeToSize: Record<DisplayPointDataType, number> =

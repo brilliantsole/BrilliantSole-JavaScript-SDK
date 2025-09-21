@@ -1,4 +1,4 @@
-import { DisplayBezierCurve, DisplayBezierCurveType, DisplayBrightness, DisplayPixelDepth, DisplayWireframe } from "../DisplayManager.ts";
+import { DisplayBezierCurve, DisplayBezierCurveType, DisplayBrightness, DisplayPixelDepth, DisplayPointDataType, DisplayWireframe } from "../DisplayManager.ts";
 import { DisplayContextCommandType } from "./DisplayContextCommand.ts";
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { Vector2 } from "./MathUtils.ts";
@@ -66,5 +66,5 @@ export declare function assertValidWireframe({ points, edges }: DisplayWireframe
 export declare function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe): DisplayWireframe;
 export declare function intersectWireframes(a: DisplayWireframe, b: DisplayWireframe, ignoreDirection?: boolean): DisplayWireframe;
 export declare function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe;
-export declare function getPointDataType(points: Vector2[]): "int8" | "int16" | "float";
-export declare function serializePoints(points: Vector2[]): DataView;
+export declare function getPointDataType(points: Vector2[]): DisplayPointDataType;
+export declare function serializePoints(points: Vector2[], pointDataType?: DisplayPointDataType, isPath?: boolean): DataView;

@@ -469,7 +469,7 @@ export function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe {
   return { points: trimmedPoints, edges: trimmedEdges };
 }
 
-export function getPointDataType(points: Vector2[]) {
+export function getPointDataType(points: Vector2[]): DisplayPointDataType {
   const range = new RangeHelper();
   points.forEach(({ x, y }) => {
     range.update(x);
@@ -482,17 +482,27 @@ export function getPointDataType(points: Vector2[]) {
   _console.log("pointDataType", pointDataType, points);
   return pointDataType!;
 }
-export function serializePoints(points: Vector2[]) {
-  const pointDataType = getPointDataType(points);
+export function serializePoints(
+  points: Vector2[],
+  pointDataType?: DisplayPointDataType,
+  isPath = false
+) {
+  pointDataType = pointDataType || getPointDataType(points);
   _console.assertEnumWithError(pointDataType, DisplayPointDataTypes);
   const pointDataSize = displayPointDataTypeToSize[pointDataType];
-  const dataView = new DataView(
-    new ArrayBuffer(1 + 1 + points.length * pointDataSize)
+  let dataViewLength = points.length * pointDataSize;
+  if (!isPath) {
+    dataViewLength += 2; // pointDataType + points.length
+  }
+  const dataView = new DataView(new ArrayBuffer(dataViewLength));
+  _console.log(
+    `serializing ${points.length} ${pointDataType} points (${dataView.byteLength} bytes)...`
   );
-  _console.log("serializing points...", points, dataView.byteLength);
   let offset = 0;
-  dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
-  dataView.setUint8(offset++, points.length);
+  if (!isPath) {
+    dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
+    dataView.setUint8(offset++, points.length);
+  }
   points.forEach(({ x, y }) => {
     switch (pointDataType) {
       case "int8":

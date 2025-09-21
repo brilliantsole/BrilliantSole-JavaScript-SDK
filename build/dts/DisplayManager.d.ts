@@ -58,6 +58,8 @@ export type DisplayBezierCurve = {
     type: DisplayBezierCurveType;
     controlPoints: Vector2[];
 };
+export declare const displayCurveTypeBitWidth = 2;
+export declare const displayCurveTypesPerByte: number;
 export declare const DisplayPointDataTypes: readonly ["int8", "int16", "float"];
 export type DisplayPointDataType = (typeof DisplayPointDataTypes)[number];
 export declare const displayPointDataTypeToSize: Record<DisplayPointDataType, number>;
@@ -135,7 +137,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "spriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "getSpriteSheetName" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "displayCommand" | "setDisplayBrightness" | "displayContextCommands" | "setSpriteSheetName" | "spriteSheetIndex">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
@@ -144,7 +146,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -158,7 +160,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushContextCommands(): Promise<void>;

@@ -4,6 +4,9 @@ import {
   DisplayBezierCurveTypes,
   DisplayBitmap,
   DisplayBitmapColorPair,
+  displayCurveTypeBitWidth,
+  DisplayPointDataTypes,
+  displayCurveTypesPerByte,
   DisplaySpriteColorPair,
   DisplayWireframe,
   DisplayWireframeEdge,
@@ -42,6 +45,7 @@ import {
   minDisplayScale,
   roundScale,
   serializePoints,
+  getPointDataType,
 } from "./DisplayUtils.ts";
 import {
   clamp,
@@ -1283,32 +1287,52 @@ export function serializeContextCommand(
     case "drawClosedPath":
       {
         const { curves } = command;
+        // _console.log("curves", curves);
         assertValidPath(curves);
-        const typesDataView = new DataView(new ArrayBuffer(curves.length));
+        const typesDataView = new DataView(
+          new ArrayBuffer(Math.ceil(curves.length / displayCurveTypesPerByte))
+        );
+        // _console.log({ "curves.length": curves.length, typesDataView });
         const controlPointsDataViews: DataView[] = [];
 
         // [pointDataType, numberOfCurves, numberOfPoints, ...curveTypes, ...points]
 
-        let numberOfControlPoints = 0;
+        const allControlPoints: Vector2[] = [];
+        curves.forEach((curve) => {
+          allControlPoints.push(...curve.controlPoints);
+        });
+        const pointDataType = getPointDataType(allControlPoints);
+        const numberOfControlPoints = allControlPoints.length;
+        _console.log({ numberOfControlPoints });
+
         curves.forEach((curve, index) => {
           const { type, controlPoints } = curve;
-          // FILL - pack bits
-          typesDataView.setUint8(index, DisplayBezierCurveTypes.indexOf(type));
+          const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
+          const typeBitShift =
+            (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
+          // _console.log({ type, typeByteIndex, typeBitShift });
+          let typeValue = typesDataView.getUint8(typeByteIndex) || 0;
+          typeValue |= DisplayBezierCurveTypes.indexOf(type) << typeBitShift;
+          typesDataView.setUint8(typeByteIndex, typeValue);
 
-          const controlPointsDataView = serializePoints(controlPoints);
+          const controlPointsDataView = serializePoints(
+            controlPoints,
+            pointDataType,
+            true
+          );
           controlPointsDataViews.push(controlPointsDataView);
-
-          numberOfControlPoints += controlPoints.length;
         });
-
-        _console.log({ numberOfControlPoints });
 
         const controlPointsBuffer = concatenateArrayBuffers(
           ...controlPointsDataViews
         );
-        const headerDataView = new DataView(new ArrayBuffer(2));
-        headerDataView.setUint8(0, curves.length);
-        headerDataView.setUint8(1, numberOfControlPoints);
+        const headerDataView = new DataView(new ArrayBuffer(3));
+        headerDataView.setUint8(
+          0,
+          DisplayPointDataTypes.indexOf(pointDataType)
+        );
+        headerDataView.setUint8(1, curves.length);
+        headerDataView.setUint8(2, numberOfControlPoints);
         dataView = new DataView(
           concatenateArrayBuffers(
             headerDataView,

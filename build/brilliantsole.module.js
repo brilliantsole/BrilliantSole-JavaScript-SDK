@@ -4181,15 +4181,21 @@ function getPointDataType(points) {
     _console$o.log("pointDataType", pointDataType, points);
     return pointDataType;
 }
-function serializePoints(points) {
-    const pointDataType = getPointDataType(points);
+function serializePoints(points, pointDataType, isPath = false) {
+    pointDataType = pointDataType || getPointDataType(points);
     _console$o.assertEnumWithError(pointDataType, DisplayPointDataTypes);
     const pointDataSize = displayPointDataTypeToSize[pointDataType];
-    const dataView = new DataView(new ArrayBuffer(1 + 1 + points.length * pointDataSize));
-    _console$o.log("serializing points...", points, dataView.byteLength);
+    let dataViewLength = points.length * pointDataSize;
+    if (!isPath) {
+        dataViewLength += 2;
+    }
+    const dataView = new DataView(new ArrayBuffer(dataViewLength));
+    _console$o.log(`serializing ${points.length} ${pointDataType} points (${dataView.byteLength} bytes)...`);
     let offset = 0;
-    dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
-    dataView.setUint8(offset++, points.length);
+    if (!isPath) {
+        dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
+        dataView.setUint8(offset++, points.length);
+    }
     points.forEach(({ x, y }) => {
         switch (pointDataType) {
             case "int8":
@@ -5606,21 +5612,30 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { curves } = command;
                 assertValidPath(curves);
-                const typesDataView = new DataView(new ArrayBuffer(curves.length));
+                const typesDataView = new DataView(new ArrayBuffer(Math.ceil(curves.length / displayCurveTypesPerByte)));
                 const controlPointsDataViews = [];
-                let numberOfControlPoints = 0;
+                const allControlPoints = [];
+                curves.forEach((curve) => {
+                    allControlPoints.push(...curve.controlPoints);
+                });
+                const pointDataType = getPointDataType(allControlPoints);
+                const numberOfControlPoints = allControlPoints.length;
+                _console$n.log({ numberOfControlPoints });
                 curves.forEach((curve, index) => {
                     const { type, controlPoints } = curve;
-                    typesDataView.setUint8(index, DisplayBezierCurveTypes.indexOf(type));
-                    const controlPointsDataView = serializePoints(controlPoints);
+                    const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
+                    const typeBitShift = (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
+                    let typeValue = typesDataView.getUint8(typeByteIndex) || 0;
+                    typeValue |= DisplayBezierCurveTypes.indexOf(type) << typeBitShift;
+                    typesDataView.setUint8(typeByteIndex, typeValue);
+                    const controlPointsDataView = serializePoints(controlPoints, pointDataType, true);
                     controlPointsDataViews.push(controlPointsDataView);
-                    numberOfControlPoints += controlPoints.length;
                 });
-                _console$n.log({ numberOfControlPoints });
                 const controlPointsBuffer = concatenateArrayBuffers(...controlPointsDataViews);
-                const headerDataView = new DataView(new ArrayBuffer(2));
-                headerDataView.setUint8(0, curves.length);
-                headerDataView.setUint8(1, numberOfControlPoints);
+                const headerDataView = new DataView(new ArrayBuffer(3));
+                headerDataView.setUint8(0, DisplayPointDataTypes.indexOf(pointDataType));
+                headerDataView.setUint8(1, curves.length);
+                headerDataView.setUint8(2, numberOfControlPoints);
                 dataView = new DataView(concatenateArrayBuffers(headerDataView, typesDataView, controlPointsBuffer));
             }
             break;
@@ -16571,11 +16586,6 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
                 5);
         const imageRowPixelDataLength = Math.ceil(width / pixelsPerByte);
         const maxSpriteHeight = Math.floor(maxPixelDataLength / imageRowPixelDataLength);
-        _console$l.log({
-            maxPixelDataLength,
-            imageRowPixelDataLength,
-            maxSpriteHeight,
-        });
         if (maxSpriteHeight >= height) {
             _console$l.log("image is small enough for a single sprite");
             await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
@@ -17167,6 +17177,8 @@ const DisplayBezierCurveTypes = [
     "quadratic",
     "cubic",
 ];
+const displayCurveTypeBitWidth = 2;
+const displayCurveTypesPerByte = 8 / displayCurveTypeBitWidth;
 const DisplayPointDataTypes = ["int8", "int16", "float"];
 const displayPointDataTypeToSize = {
     int8: 1 * 2,
@@ -23812,6 +23824,12 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         backgroundColorIndex = spriteColorIndices[backgroundColorIndex];
     }
     this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, fillBackground ? backgroundColorIndex : 0);
+    _console$6.log({
+        useSpriteColorIndices: __classPrivateFieldGet(this, _DisplayCanvasHelper_useSpriteColorIndices, "f"),
+        backgroundColorIndex,
+        fillBackground,
+        fillStyle: this.context.fillStyle,
+    });
     this.context.fillRect(x, y, width, height);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_save = function _DisplayCanvasHelper_save() {
@@ -24194,15 +24212,21 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
 }, _DisplayCanvasHelper_generateQuadraticCurvePoints = function _DisplayCanvasHelper_generateQuadraticCurvePoints(controlPoints) {
     assertValidNumberOfControlPoints("quadratic", controlPoints);
     const [p0, p1, p2] = controlPoints;
-    const c1 = {
-        x: p0.x + (2 / 3) * (p1.x - p0.x),
-        y: p0.y + (2 / 3) * (p1.y - p0.y),
-    };
-    const c2 = {
-        x: p2.x + (2 / 3) * (p1.x - p2.x),
-        y: p2.y + (2 / 3) * (p1.y - p2.y),
-    };
-    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateCubicCurvePoints).call(this, [p0, c1, c2, p2]);
+    {
+        const curvePoints = [];
+        const p01 = getVector2Midpoint(p0, p1);
+        const p12 = getVector2Midpoint(p1, p2);
+        const mid = getVector2Midpoint(p01, p12);
+        const d2 = getVector2DistanceSquared(p1, mid);
+        if (d2 <= displayCurveToleranceSquared) {
+            curvePoints.push(p2);
+        }
+        else {
+            curvePoints.push(...__classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateQuadraticCurvePoints).call(this, [p0, p01, mid]));
+            curvePoints.push(...__classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateQuadraticCurvePoints).call(this, [mid, p12, p2]));
+        }
+        return curvePoints;
+    }
 }, _DisplayCanvasHelper_appendQuadraticCurvePoints = function _DisplayCanvasHelper_appendQuadraticCurvePoints(curvePoints, controlPoints) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_appendCurvePoints).call(this, curvePoints, __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_generateQuadraticCurvePoints).call(this, controlPoints));
 }, _DisplayCanvasHelper_generateCubicCurvePoints = function _DisplayCanvasHelper_generateCubicCurvePoints(controlPoints) {
@@ -24546,8 +24570,8 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     }
 }, _DisplayCanvasHelper_drawSpriteToCanvas = function _DisplayCanvasHelper_drawSpriteToCanvas(offsetX, offsetY, sprite, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, true);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, true);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, offsetX, offsetY, sprite, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, true);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, false);
     sprite.commands.forEach((command) => {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runSpriteCommand).call(this, command, contextState);
@@ -24557,8 +24581,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, false);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, true);
 }, _DisplayCanvasHelper_drawSpritesToCanvas = function _DisplayCanvasHelper_drawSpritesToCanvas(offsetX, offsetY, spriteLines, contextState) {
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, true);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, true);
     const spritesSize = { width: 0, height: 0 };
     const isSpritesDirectionPositive = isDirectionPositive(contextState.spritesDirection);
     const isSpritesLineDirectionPositive = isDirectionPositive(contextState.spritesLineDirection);
@@ -24611,7 +24633,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     spritesSize[depthSizeKey] -= contextState.spritesLineSpacing;
     spritesSize.width * Math.abs(contextState.spriteScaleX);
     spritesSize.height * Math.abs(contextState.spriteScaleY);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, true);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setCanvasContextTransform).call(this, offsetX, offsetY, spritesSize.width, spritesSize.height, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, true);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, false);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContext).call(this);
     this.clearCrop();
