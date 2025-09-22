@@ -655,6 +655,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     } else {
       await wait(this.#interval);
       this.#isReady = true;
+      this.#drawFrontDrawStack();
       this.#dispatchEvent("ready", {});
     }
   }
@@ -1646,12 +1647,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.context.fillStyle = this.#colorIndexToRgbString(
       fillBackground ? backgroundColorIndex : 0
     );
-    _console.log({
-      useSpriteColorIndices: this.#useSpriteColorIndices,
-      backgroundColorIndex,
-      fillBackground,
-      fillStyle: this.context.fillStyle,
-    });
+    // _console.log({
+    //   useSpriteColorIndices: this.#useSpriteColorIndices,
+    //   backgroundColorIndex,
+    //   fillBackground,
+    //   fillStyle: this.context.fillStyle,
+    // });
     //this.context.fillStyle = "red"; // remove when done debugigng
     this.context.fillRect(x, y, width, height);
     this.#restore();

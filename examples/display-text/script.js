@@ -682,7 +682,7 @@ const loadFont = async (arrayBuffer) => {
 const fonts = {};
 /** @type {Object.<string, BS.Font[]>} */
 const englishFonts = {};
-/** @type {Object.<string, BS.DisplaySpriteSheet[]>} */
+/** @type {Object.<string, BS.DisplaySpriteSheet>} */
 const englishFontSpriteSheets = {};
 window.englishFontSpriteSheets = englishFontSpriteSheets;
 
@@ -744,7 +744,13 @@ let selectedFont;
 let selectedFonts;
 /** @type {"Korean" | "Chinese (Simplified)" | "Japanese" | undefined} */
 let targetLanguage;
+/** @type {MediaRecorder} */
+let mediaRecorder;
 const selectFont = async (newFontName) => {
+  let wasTranscribing = Boolean(mediaRecorder);
+  if (wasTranscribing) {
+    await stopTranscribing();
+  }
   const newFont = englishFonts[newFontName][0];
   selectedFont = newFont;
   selectedFonts = Object.values(fonts).find((fonts) =>
@@ -766,10 +772,17 @@ const selectFont = async (newFontName) => {
     console.log({ targetLanguage });
   }
   selectFontSelect.value = newFontName;
-  await displayCanvasHelper.uploadSpriteSheet(
-    englishFontSpriteSheets[newFontName]
-  );
+  const spriteSheet = englishFontSpriteSheets[newFontName];
+  let spriteSheetLineHeight = 0;
+  spriteSheet.sprites.forEach((sprite) => {
+    spriteSheetLineHeight = Math.max(spriteSheetLineHeight, sprite.height);
+  });
+  drawSpriteParams.spritesLineHeight = spriteSheetLineHeight;
+  await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await draw();
+  if (wasTranscribing) {
+    await startTranscribing();
+  }
 };
 
 // DRAGOVER
@@ -916,9 +929,6 @@ import {
 const WHISPER_SAMPLING_RATE = 16_000;
 const MAX_NEW_TOKENS = 64;
 
-/** @type {MediaRecorder} */
-let mediaRecorder;
-
 let model_id = null;
 let tokenizer = null;
 let processor = null;
@@ -1061,7 +1071,9 @@ const startTranscribing = async () => {
               if (latestStringRepetition == latestStringRepetitionThreshold) {
                 await stopTranscribing();
                 textarea.value = `[TRANSLATING...]\n\n${formattedTranscription}`;
-                await draw(true);
+                draw(true);
+                await displayCanvasHelper.waitForEvent("ready");
+                await BS.wait(0);
                 const translation = await translate(transcription);
                 let formattedTranslation = translation;
                 textarea.value = `${formattedTranslation}\n\n${formattedTranscription}`;

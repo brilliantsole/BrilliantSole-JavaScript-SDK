@@ -22776,6 +22776,7 @@ class DisplayCanvasHelper {
         else {
             await wait(__classPrivateFieldGet(this, _DisplayCanvasHelper_interval, "f"));
             __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, true, "f");
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "ready", {});
         }
     }
@@ -23829,12 +23830,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         backgroundColorIndex = spriteColorIndices[backgroundColorIndex];
     }
     this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, fillBackground ? backgroundColorIndex : 0);
-    _console$6.log({
-        useSpriteColorIndices: __classPrivateFieldGet(this, _DisplayCanvasHelper_useSpriteColorIndices, "f"),
-        backgroundColorIndex,
-        fillBackground,
-        fillStyle: this.context.fillStyle,
-    });
     this.context.fillRect(x, y, width, height);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_save = function _DisplayCanvasHelper_save() {
