@@ -3,7 +3,12 @@ import { createConsole } from "./Console.ts";
 
 const _console = createConsole("MathUtils", { log: false });
 
-export function getInterpolation(value: number, min: number, max: number, span: number) {
+export function getInterpolation(
+  value: number,
+  min: number,
+  max: number,
+  span: number
+) {
   if (span == undefined) {
     span = max - min;
   }
@@ -11,6 +16,8 @@ export function getInterpolation(value: number, min: number, max: number, span: 
 }
 
 export const Uint16Max = 2 ** 16;
+export const Int16Max = 2 ** 15;
+export const Int16Min = -(2 ** 15) - 1;
 
 function removeLower2Bytes(number: number) {
   const lower2Bytes = number % Uint16Max;
@@ -36,6 +43,44 @@ export interface Vector2 {
   y: number;
 }
 
+export function getVector2Length(vector: Vector2) {
+  const { x, y } = vector;
+  return Math.sqrt(x ** 2 + y ** 2);
+}
+
+export function getVector2Distance(a: Vector2, b: Vector2) {
+  return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+}
+
+export function getVector2DistanceSquared(a: Vector2, b: Vector2) {
+  return (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+}
+
+export function getVector2Angle(vector: Vector2) {
+  const { x, y } = vector;
+  return Math.atan2(y, x);
+}
+
+export function getVector2Midpoint(a: Vector2, b: Vector2): Vector2 {
+  return {
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2,
+  };
+}
+
+export function multiplyVector2ByScalar(
+  vector: Vector2,
+  scalar: number
+): Vector2 {
+  let { x, y } = vector;
+  x *= scalar;
+  y *= scalar;
+  return { x, y };
+}
+export function normalizedVector2(vector: Vector2): Vector2 {
+  return multiplyVector2ByScalar(vector, 1 / getVector2Length(vector));
+}
+
 export interface Vector3 extends Vector2 {
   z: number;
 }
@@ -53,7 +98,10 @@ export interface Euler {
   roll: number;
 }
 
-export function computeVoronoiWeights(points: PressureSensorPosition[], sampleCount = 100000) {
+export function computeVoronoiWeights(
+  points: PressureSensorPosition[],
+  sampleCount = 100000
+) {
   const n = points.length;
   const counts = new Array(n).fill(0);
 
@@ -80,4 +128,42 @@ export function computeVoronoiWeights(points: PressureSensorPosition[], sampleCo
 
   // Convert counts to weights (sum to 1)
   return counts.map((c) => c / sampleCount);
+}
+
+export function getVector3Length(vector: Vector3) {
+  const { x, y, z } = vector;
+  return Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+}
+
+export function clamp(value: number, min: number = 0, max: number = 1) {
+  return Math.min(Math.max(value, min), max);
+}
+
+export function degToRad(deg: number) {
+  return deg * (Math.PI / 180);
+}
+
+export function radToDeg(rad: number) {
+  return rad * (180 / Math.PI);
+}
+
+export const twoPi = Math.PI * 2;
+export function normalizeRadians(rad: number): number {
+  return ((rad % twoPi) + twoPi) % twoPi;
+}
+
+export function pointInPolygon(pt: Vector2, polygon: Vector2[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x,
+      yi = polygon[i].y;
+    const xj = polygon[j].x,
+      yj = polygon[j].y;
+
+    const intersect =
+      yi > pt.y !== yj > pt.y &&
+      pt.x < ((xj - xi) * (pt.y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
 }

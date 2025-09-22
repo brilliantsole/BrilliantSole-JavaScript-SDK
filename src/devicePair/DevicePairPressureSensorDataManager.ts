@@ -101,7 +101,7 @@ class DevicePairPressureSensorDataManager {
           }
         } else {
           sidePressure.sensors.forEach((sensor) => {
-            const _sensor: PressureSensorValue = { ...sensor };
+            const _sensor: PressureSensorValue = structuredClone(sensor);
             _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
             let { x, y } = sensor.position;
             x /= 2;

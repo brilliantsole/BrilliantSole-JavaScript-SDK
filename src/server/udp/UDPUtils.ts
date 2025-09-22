@@ -4,7 +4,7 @@ import { createMessage, Message } from "../ServerUtils.ts";
 const _console = createConsole("UDPUtils", { log: false });
 
 export const pongUDPClientTimeout = 2_000;
-export const removeUDPClientTimeout = 3_000;
+export const removeUDPClientTimeout = 4_000;
 
 export const UDPServerMessageTypes = [
   "ping",

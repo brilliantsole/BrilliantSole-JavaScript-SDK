@@ -1,7 +1,14 @@
+export interface Range {
+    min: number;
+    max: number;
+    span: number;
+}
 declare class RangeHelper {
     #private;
     get min(): number;
     get max(): number;
+    get span(): number;
+    get range(): Range;
     set min(newMin: number);
     set max(newMax: number);
     reset(): void;

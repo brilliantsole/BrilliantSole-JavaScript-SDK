@@ -1,3 +1,6 @@
+import opentype, { Font } from 'opentype.js';
+export { Font, Glyph } from 'opentype.js';
+
 interface ConsoleLevelFlags {
     log?: boolean;
     warn?: boolean;
@@ -38,10 +41,17 @@ declare namespace environment_d {
   export { environment_d_isAndroid as isAndroid, environment_d_isBluetoothSupported as isBluetoothSupported, environment_d_isIOS as isIOS, environment_d_isInBluefy as isInBluefy, environment_d_isInBrowser as isInBrowser, environment_d_isInDev as isInDev, environment_d_isInLensStudio as isInLensStudio, environment_d_isInNode as isInNode, environment_d_isInProduction as isInProduction, environment_d_isInWebBLE as isInWebBLE, environment_d_isMac as isMac, environment_d_isSafari as isSafari };
 }
 
+interface Range {
+    min: number;
+    max: number;
+    span: number;
+}
 declare class RangeHelper {
     #private;
     get min(): number;
     get max(): number;
+    get span(): number;
+    get range(): Range;
     set min(newMin: number);
     set max(newMax: number);
     reset(): void;
@@ -146,6 +156,1013 @@ declare class EventDispatcher<Target extends any, EventType extends string, Even
     }>;
 }
 
+declare const DisplaySegmentCaps: readonly ["flat", "round"];
+type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
+declare const DisplayAlignments: readonly ["start", "center", "end"];
+type DisplayAlignment = (typeof DisplayAlignments)[number];
+declare const DisplayAlignmentDirections: readonly ["horizontal", "vertical"];
+type DisplayAlignmentDirection = (typeof DisplayAlignmentDirections)[number];
+declare const DisplayDirections: readonly ["right", "left", "up", "down"];
+type DisplayDirection = (typeof DisplayDirections)[number];
+type DisplayContextState = {
+    backgroundColorIndex: number;
+    fillColorIndex: number;
+    lineColorIndex: number;
+    ignoreFill: boolean;
+    ignoreLine: boolean;
+    fillBackground: boolean;
+    lineWidth: number;
+    rotation: number;
+    horizontalAlignment: DisplayAlignment;
+    verticalAlignment: DisplayAlignment;
+    segmentStartCap: DisplaySegmentCap;
+    segmentEndCap: DisplaySegmentCap;
+    segmentStartRadius: number;
+    segmentEndRadius: number;
+    cropTop: number;
+    cropRight: number;
+    cropBottom: number;
+    cropLeft: number;
+    rotationCropTop: number;
+    rotationCropRight: number;
+    rotationCropBottom: number;
+    rotationCropLeft: number;
+    bitmapColorIndices: number[];
+    bitmapScaleX: number;
+    bitmapScaleY: number;
+    spriteColorIndices: number[];
+    spriteScaleX: number;
+    spriteScaleY: number;
+    spriteSheetName?: string;
+    spritesLineHeight: number;
+    spritesDirection: DisplayDirection;
+    spritesLineDirection: DisplayDirection;
+    spritesSpacing: number;
+    spritesLineSpacing: number;
+    spritesAlignment: DisplayAlignment;
+    spritesLineAlignment: DisplayAlignment;
+};
+type DisplayContextStateKey = keyof DisplayContextState;
+type PartialDisplayContextState = Partial<DisplayContextState>;
+
+declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update", "ready", "device", "deviceIsConnected", "deviceConnected", "deviceNotConnected", "deviceSpriteSheetUploadStart", "deviceSpriteSheetUploadProgress", "deviceSpriteSheetUploadComplete"];
+type DisplayCanvasHelperEventType = (typeof DisplayCanvasHelperEventTypes)[number];
+interface DisplayCanvasHelperEventMessages {
+    contextState: {
+        contextState: DisplayContextState;
+        differences: DisplayContextStateKey[];
+    };
+    numberOfColors: {
+        numberOfColors: number;
+    };
+    brightness: {
+        brightness: DisplayBrightness;
+    };
+    color: {
+        colorIndex: number;
+        colorRGB: DisplayColorRGB;
+        colorHex: string;
+    };
+    colorOpacity: {
+        opacity: number;
+        colorIndex: number;
+    };
+    opacity: {
+        opacity: number;
+    };
+    resize: {
+        width: number;
+        height: number;
+    };
+    update: {};
+    ready: {};
+    device: {
+        device?: Device;
+    };
+    deviceIsConnected: {
+        device: Device;
+        isConnected: boolean;
+    };
+    deviceConnected: {
+        device: Device;
+    };
+    deviceNotConnected: {
+        device: Device;
+    };
+    deviceSpriteSheetUploadStart: {
+        device: Device;
+        spriteSheet: DisplaySpriteSheet;
+        spriteSheetName: string;
+    };
+    deviceSpriteSheetUploadProgress: {
+        device: Device;
+        spriteSheet: DisplaySpriteSheet;
+        spriteSheetName: string;
+        progress: number;
+    };
+    deviceSpriteSheetUploadComplete: {
+        device: Device;
+        spriteSheet: DisplaySpriteSheet;
+        spriteSheetName: string;
+    };
+}
+type DisplayCanvasHelperEvent = Event<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
+type DisplayCanvasHelperEventMap = EventMap<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
+type DisplayCanvasHelperEventListenerMap = EventListenerMap<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
+declare class DisplayCanvasHelper implements DisplayManagerInterface {
+    #private;
+    constructor();
+    get addEventListener(): <T extends "color" | "opacity" | "contextState" | "numberOfColors" | "brightness" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T, listener: (event: {
+        type: T;
+        target: DisplayCanvasHelper;
+        message: DisplayCanvasHelperEventMessages[T];
+    }) => void, options?: {
+        once?: boolean;
+    }) => void;
+    get removeEventListener(): <T extends "color" | "opacity" | "contextState" | "numberOfColors" | "brightness" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T, listener: (event: {
+        type: T;
+        target: DisplayCanvasHelper;
+        message: DisplayCanvasHelperEventMessages[T];
+    }) => void) => void;
+    get waitForEvent(): <T extends "color" | "opacity" | "contextState" | "numberOfColors" | "brightness" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T) => Promise<{
+        type: T;
+        target: DisplayCanvasHelper;
+        message: DisplayCanvasHelperEventMessages[T];
+    }>;
+    get removeEventListeners(): <T extends "color" | "opacity" | "contextState" | "numberOfColors" | "brightness" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T) => void;
+    get removeAllEventListeners(): () => void;
+    get canvas(): HTMLCanvasElement | undefined;
+    set canvas(newCanvas: HTMLCanvasElement | undefined);
+    get context(): CanvasRenderingContext2D;
+    get width(): number;
+    get height(): number;
+    get aspectRatio(): number;
+    get applyTransparency(): boolean;
+    set applyTransparency(newValue: boolean);
+    get device(): Device | undefined;
+    get deviceDisplayManager(): DisplayManagerInterface | undefined;
+    set device(newDevice: Device | undefined);
+    flushContextCommands(): Promise<void>;
+    get numberOfColors(): number;
+    set numberOfColors(newNumberOfColors: number);
+    assertValidColorIndex(colorIndex: number): void;
+    get colors(): string[];
+    get opacities(): number[];
+    get contextState(): DisplayContextState;
+    show(sendImmediately?: boolean): Promise<void>;
+    get interval(): number;
+    set interval(newInterval: number);
+    get isReady(): boolean;
+    clear(sendImmediately?: boolean): Promise<void>;
+    setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
+    saveContext(sendImmediately?: boolean): Promise<void>;
+    restoreContext(sendImmediately?: boolean): Promise<void>;
+    selectBackgroundColor(backgroundColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    setIgnoreFill(ignoreFill: boolean, sendImmediately?: boolean): Promise<void>;
+    setIgnoreLine(ignoreLine: boolean, sendImmediately?: boolean): Promise<void>;
+    setFillBackground(fillBackground: boolean, sendImmediately?: boolean): Promise<void>;
+    assertValidLineWidth(lineWidth: number): void;
+    setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
+    setAlignment(alignmentDirection: DisplayAlignmentDirection, alignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    setHorizontalAlignment(horizontalAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    setVerticalAlignment(verticalAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    resetAlignment(sendImmediately?: boolean): Promise<void>;
+    setRotation(rotation: number, isRadians: boolean, sendImmediately?: boolean): Promise<void>;
+    clearRotation(sendImmediately?: boolean): Promise<void>;
+    setSegmentStartCap(segmentStartCap: DisplaySegmentCap, sendImmediately?: boolean): Promise<void>;
+    setSegmentEndCap(segmentEndCap: DisplaySegmentCap, sendImmediately?: boolean): Promise<void>;
+    setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately?: boolean): Promise<void>;
+    setSegmentStartRadius(segmentStartRadius: number, sendImmediately?: boolean): Promise<void>;
+    setSegmentEndRadius(segmentEndRadius: number, sendImmediately?: boolean): Promise<void>;
+    setSegmentRadius(segmentRadius: number, sendImmediately?: boolean): Promise<void>;
+    setCrop(cropDirection: DisplayCropDirection, crop: number, sendImmediately?: boolean): Promise<void>;
+    setCropTop(cropTop: number, sendImmediately?: boolean): Promise<void>;
+    setCropRight(cropRight: number, sendImmediately?: boolean): Promise<void>;
+    setCropBottom(cropBottom: number, sendImmediately?: boolean): Promise<void>;
+    setCropLeft(cropLeft: number, sendImmediately?: boolean): Promise<void>;
+    clearCrop(sendImmediately?: boolean): Promise<void>;
+    setRotationCrop(cropDirection: DisplayCropDirection, crop: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropRight(rotationCropRight: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean): Promise<void>;
+    clearRotationCrop(sendImmediately?: boolean): Promise<void>;
+    get bitmapColorIndices(): number[];
+    get bitmapColors(): string[];
+    selectBitmapColor(bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
+    selectBitmapColors(bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
+    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleDirection(direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
+    resetBitmapScale(sendImmediately?: boolean): Promise<void>;
+    get spriteColorIndices(): number[];
+    get spriteColors(): string[];
+    get spriteBitmapColorIndices(): number[];
+    get spriteBitmapColors(): string[];
+    selectSpriteColor(spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
+    selectSpriteColors(spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean): Promise<void>;
+    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    resetSpriteColors(sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    resetSpriteScale(sendImmediately?: boolean): Promise<void>;
+    setSpritesLineHeight(spritesLineHeight: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesDirectionGeneric(direction: DisplayDirection, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesDirection(spritesDirection: DisplayDirection, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineDirection(spritesLineDirection: DisplayDirection, sendImmediately?: boolean): Promise<void>;
+    setSpritesSpacingGeneric(spacing: number, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesSpacing(spritesSpacing: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineSpacing(spritesSpacing: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesAlignmentGeneric(alignment: DisplayAlignment, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesAlignment(spritesAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineAlignment(spritesLineAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
+    drawRect(offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
+    drawRoundRect(offsetX: number, offsetY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
+    drawCircle(offsetX: number, offsetY: number, radius: number, sendImmediately?: boolean): Promise<void>;
+    drawEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): Promise<void>;
+    drawRegularPolygon(offsetX: number, offsetY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
+    drawPolygon(points: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean): Promise<void>;
+    drawCurve(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawCurves(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawQuadraticBezierCurve(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawQuadraticBezierCurves(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawCubicBezierCurve(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawCubicBezierCurves(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    _drawPath(isClosed: boolean, curves: DisplayBezierCurve[], sendImmediately?: boolean): Promise<void>;
+    drawPath(curves: DisplayBezierCurve[], sendImmediately?: boolean): Promise<void>;
+    drawClosedPath(curves: DisplayBezierCurve[], sendImmediately?: boolean): Promise<void>;
+    drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): Promise<void>;
+    drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawArc(offsetX: number, offsetY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawArcEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    assertValidNumberOfColors(numberOfColors: number): void;
+    assertValidBitmap(bitmap: DisplayBitmap): void;
+    drawBitmap(offsetX: number, offsetY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
+    get spriteSheets(): Record<string, DisplaySpriteSheet>;
+    get spriteSheetIndices(): Record<string, number>;
+    uploadSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+    uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
+    assertLoadedSpriteSheet(spriteSheetName: string): void;
+    assertSelectedSpriteSheet(spriteSheetName: string): void;
+    assertAnySelectedSpriteSheet(): void;
+    assertSprite(spriteName: string): void;
+    getSprite(spriteName: string): DisplaySprite | undefined;
+    getSpriteSheetPalette(paletteName: string): DisplaySpriteSheetPalette | undefined;
+    getSpriteSheetPaletteSwap(paletteSwapName: string): DisplaySpriteSheetPaletteSwap | undefined;
+    getSpritePaletteSwap(spriteName: string, paletteSwapName: string): DisplaySpritePaletteSwap | undefined;
+    get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
+    get selectedSpriteSheetName(): string | undefined;
+    selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprites(offsetX: number, offsetY: number, spriteLines: DisplaySpriteLines, sendImmediately?: boolean): Promise<void>;
+    drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
+    drawSpritesString(offsetX: number, offsetY: number, string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[], sendImmediately?: boolean): Promise<void>;
+    stringToSpriteLines(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLines;
+    get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
+    setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
+    runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
+    runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
+    previewSprite(offsetX: number, offsetY: number, sprite: DisplaySprite, spriteSheet: DisplaySpriteSheet): void;
+    assertSpriteSheetPalette(paletteName: string): void;
+    assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
+    assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;
+    selectSpriteSheetPalette(paletteName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
+        blob: Blob;
+        bitmap: DisplayBitmap;
+    }>;
+    quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number): Promise<{
+        blob: Blob;
+        colors: string[];
+        colorIndices: number[];
+    }>;
+    resizeAndQuantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number, colors?: string[]): Promise<{
+        blob: Blob;
+        colors: string[];
+        colorIndices: number[];
+    }>;
+    serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
+}
+
+type DisplaySpriteSubLine = {
+    spriteSheetName: string;
+    spriteNames: string[];
+};
+type DisplaySpriteLine = DisplaySpriteSubLine[];
+type DisplaySpriteLines = DisplaySpriteLine[];
+type DisplaySpriteSerializedSubLine = {
+    spriteSheetIndex: number;
+    spriteIndices: number[];
+    use2Bytes: boolean;
+};
+type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
+type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
+type DisplaySpritePaletteSwap = {
+    name: string;
+    numberOfColors: number;
+    spriteColorIndices: number[];
+};
+type DisplaySprite = {
+    name: string;
+    width: number;
+    height: number;
+    paletteSwaps?: DisplaySpritePaletteSwap[];
+    commands: DisplayContextCommand[];
+};
+type DisplaySpriteSheetPaletteSwap = {
+    name: string;
+    numberOfColors: number;
+    spriteColorIndices: number[];
+};
+type DisplaySpriteSheetPalette = {
+    name: string;
+    numberOfColors: number;
+    colors: string[];
+    opacities?: number[];
+};
+type DisplaySpriteSheet = {
+    name: string;
+    palettes?: DisplaySpriteSheetPalette[];
+    paletteSwaps?: DisplaySpriteSheetPaletteSwap[];
+    sprites: DisplaySprite[];
+};
+type FontToSpriteSheetOptions = {
+    stroke?: boolean;
+    strokeWidth?: number;
+    unicodeOnly?: boolean;
+    englishOnly?: boolean;
+    usePath?: boolean;
+    script?: string;
+    string?: string;
+};
+declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
+declare function getFontUnicodeRange(font: Font): Range | undefined;
+declare function fontToSpriteSheet(font: Font | Font[], fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
+declare function stringToSprites(string: string, spriteSheet: DisplaySpriteSheet, requireAll?: boolean): DisplaySprite[];
+
+interface DisplayManagerInterface {
+    get isReady(): boolean;
+    get contextState(): DisplayContextState;
+    flushContextCommands(): Promise<void>;
+    get brightness(): DisplayBrightness;
+    setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
+    show(sendImmediately?: boolean): Promise<void>;
+    clear(sendImmediately?: boolean): Promise<void>;
+    get colors(): string[];
+    get numberOfColors(): number;
+    setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    assertValidColorIndex(colorIndex: number): void;
+    assertValidLineWidth(lineWidth: number): void;
+    assertValidNumberOfColors(numberOfColors: number): void;
+    assertValidBitmap(bitmap: DisplayBitmap, checkSize?: boolean): void;
+    get opacities(): number[];
+    setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
+    saveContext(sendImmediately?: boolean): Promise<void>;
+    restoreContext(sendImmediately?: boolean): Promise<void>;
+    selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    selectBackgroundColor(backgroundColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
+    setIgnoreFill(ignoreFill: boolean, sendImmediately?: boolean): Promise<void>;
+    setIgnoreLine(ignoreLine: boolean, sendImmediately?: boolean): Promise<void>;
+    setFillBackground(fillBackground: boolean, sendImmediately?: boolean): Promise<void>;
+    setAlignment(alignmentDirection: DisplayAlignmentDirection, alignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    setHorizontalAlignment(horizontalAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    setVerticalAlignment(verticalAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    resetAlignment(sendImmediately?: boolean): Promise<void>;
+    setRotation(rotation: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    clearRotation(sendImmediately?: boolean): Promise<void>;
+    setSegmentStartCap(segmentStartCap: DisplaySegmentCap, sendImmediately?: boolean): Promise<void>;
+    setSegmentEndCap(segmentEndCap: DisplaySegmentCap, sendImmediately?: boolean): Promise<void>;
+    setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately?: boolean): Promise<void>;
+    setSegmentStartRadius(segmentStartRadius: number, sendImmediately?: boolean): Promise<void>;
+    setSegmentEndRadius(segmentEndRadius: number, sendImmediately?: boolean): Promise<void>;
+    setSegmentRadius(segmentRadius: number, sendImmediately?: boolean): Promise<void>;
+    setCrop(cropDirection: DisplayCropDirection, crop: number, sendImmediately?: boolean): Promise<void>;
+    setCropTop(cropTop: number, sendImmediately?: boolean): Promise<void>;
+    setCropRight(cropRight: number, sendImmediately?: boolean): Promise<void>;
+    setCropBottom(cropBottom: number, sendImmediately?: boolean): Promise<void>;
+    setCropLeft(cropLeft: number, sendImmediately?: boolean): Promise<void>;
+    clearCrop(sendImmediately?: boolean): Promise<void>;
+    setRotationCrop(cropDirection: DisplayCropDirection, crop: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropRight(rotationCropRight: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean): Promise<void>;
+    clearRotationCrop(sendImmediately?: boolean): Promise<void>;
+    selectBitmapColor(bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
+    get bitmapColorIndices(): number[];
+    get bitmapColors(): string[];
+    selectBitmapColors(bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
+    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleDirection(direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
+    resetBitmapScale(sendImmediately?: boolean): Promise<void>;
+    selectSpriteColor(spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
+    get spriteColorIndices(): number[];
+    get spriteColors(): string[];
+    selectSpriteColors(spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean): Promise<void>;
+    resetSpriteColors(sendImmediately?: boolean): Promise<void>;
+    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    resetSpriteScale(sendImmediately?: boolean): Promise<void>;
+    setSpritesLineHeight(spritesLineHeight: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesDirectionGeneric(direction: DisplayDirection, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesDirection(spritesDirection: DisplayDirection, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineDirection(spritesLineDirection: DisplayDirection, sendImmediately?: boolean): Promise<void>;
+    setSpritesSpacingGeneric(spacing: number, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesSpacing(spritesSpacing: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineSpacing(spritesSpacing: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesAlignmentGeneric(alignment: DisplayAlignment, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesAlignment(spritesAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineAlignment(spritesLineAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
+    drawRect(offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
+    drawRoundRect(offsetX: number, offsetY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
+    drawCircle(offsetX: number, offsetY: number, radius: number, sendImmediately?: boolean): Promise<void>;
+    drawEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): Promise<void>;
+    drawRegularPolygon(offsetX: number, offsetY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
+    drawPolygon(points: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean): Promise<void>;
+    drawCurve(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawCurves(curveType: DisplayBezierCurveType, controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawQuadraticBezierCurve(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawQuadraticBezierCurves(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawCubicBezierCurve(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawCubicBezierCurves(controlPoints: Vector2[], sendImmediately?: boolean): Promise<void>;
+    _drawPath(isClosed: boolean, curves: DisplayBezierCurve[], sendImmediately?: boolean): Promise<void>;
+    drawPath(curves: DisplayBezierCurve[], sendImmediately?: boolean): Promise<void>;
+    drawClosedPath(curves: DisplayBezierCurve[], sendImmediately?: boolean): Promise<void>;
+    drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): Promise<void>;
+    drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawArc(offsetX: number, offsetY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawArcEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawBitmap(offsetX: number, offsetY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
+    runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
+    runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
+    imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
+        blob: Blob;
+        bitmap: DisplayBitmap;
+    }>;
+    quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number, colors?: string[], canvas?: HTMLCanvasElement): Promise<{
+        blob: Blob;
+        colors: string[];
+        colorIndices: number[];
+    }>;
+    resizeAndQuantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number, colors?: string[], canvas?: HTMLCanvasElement): Promise<{
+        blob: Blob;
+        colors: string[];
+        colorIndices: number[];
+    }>;
+    uploadSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+    uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
+    selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    stringToSpriteLines(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLines;
+    drawSprites(offsetX: number, offsetY: number, spriteLines: DisplaySpriteLines, sendImmediately?: boolean): Promise<void>;
+    drawSpritesString(offsetX: number, offsetY: number, string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[], sendImmediately?: boolean): Promise<void>;
+    assertLoadedSpriteSheet(spriteSheetName: string): void;
+    assertSelectedSpriteSheet(spriteSheetName: string): void;
+    assertAnySelectedSpriteSheet(): void;
+    assertSprite(spriteName: string): void;
+    getSprite(spriteName: string): DisplaySprite | undefined;
+    getSpriteSheetPalette(paletteName: string): DisplaySpriteSheetPalette | undefined;
+    getSpriteSheetPaletteSwap(paletteSwapName: string): DisplaySpriteSheetPaletteSwap | undefined;
+    getSpritePaletteSwap(spriteName: string, paletteSwapName: string): DisplaySpritePaletteSwap | undefined;
+    drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
+    get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
+    get selectedSpriteSheetName(): string | undefined;
+    spriteSheets: Record<string, DisplaySpriteSheet>;
+    spriteSheetIndices: Record<string, number>;
+    assertSpriteSheetPalette(paletteName: string): void;
+    assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
+    assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;
+    selectSpriteSheetPalette(paletteName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
+}
+
+declare const DisplayContextCommandTypes: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setIgnoreFill", "setIgnoreLine", "setFillBackground", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesLineHeight", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlignment", "setSpritesLineAlignment", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites"];
+type DisplayContextCommandType = (typeof DisplayContextCommandTypes)[number];
+declare const DisplaySpriteContextCommandTypes: readonly ["selectFillColor", "selectLineColor", "setIgnoreFill", "setIgnoreLine", "setLineWidth", "setRotation", "clearRotation", "setVerticalAlignment", "setHorizontalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "drawSprite"];
+type DisplaySpriteContextCommandType = (typeof DisplaySpriteContextCommandTypes)[number];
+interface BaseDisplayContextCommand {
+    type: DisplayContextCommandType | "runDisplayContextCommands";
+    hide?: boolean;
+}
+interface SimpleDisplayCommand extends BaseDisplayContextCommand {
+    type: "show" | "clear" | "saveContext" | "restoreContext" | "clearRotation" | "clearCrop" | "clearRotationCrop" | "resetBitmapScale" | "resetSpriteColors" | "resetSpriteScale" | "resetAlignment";
+}
+interface SetDisplayColorCommand extends BaseDisplayContextCommand {
+    type: "setColor";
+    colorIndex: number;
+    color: DisplayColorRGB | string;
+}
+interface SetDisplayColorOpacityCommand extends BaseDisplayContextCommand {
+    type: "setColorOpacity";
+    colorIndex: number;
+    opacity: number;
+}
+interface SetDisplayOpacityCommand extends BaseDisplayContextCommand {
+    type: "setOpacity";
+    opacity: number;
+}
+interface SetDisplayHorizontalAlignmentCommand extends BaseDisplayContextCommand {
+    type: "setHorizontalAlignment";
+    horizontalAlignment: DisplayAlignment;
+}
+interface SetDisplayVerticalAlignmentCommand extends BaseDisplayContextCommand {
+    type: "setVerticalAlignment";
+    verticalAlignment: DisplayAlignment;
+}
+interface SelectDisplayBackgroundColorCommand extends BaseDisplayContextCommand {
+    type: "selectBackgroundColor";
+    backgroundColorIndex: number;
+}
+interface SelectDisplayFillColorCommand extends BaseDisplayContextCommand {
+    type: "selectFillColor";
+    fillColorIndex: number;
+}
+interface SelectDisplayLineColorCommand extends BaseDisplayContextCommand {
+    type: "selectLineColor";
+    lineColorIndex: number;
+}
+interface SelectDisplayIgnoreFillCommand extends BaseDisplayContextCommand {
+    type: "setIgnoreFill";
+    ignoreFill: boolean;
+}
+interface SelectDisplayIgnoreLineCommand extends BaseDisplayContextCommand {
+    type: "setIgnoreLine";
+    ignoreLine: boolean;
+}
+interface SelectDisplayFillBackgroundCommand extends BaseDisplayContextCommand {
+    type: "setFillBackground";
+    fillBackground: boolean;
+}
+interface SetDisplayLineWidthCommand extends BaseDisplayContextCommand {
+    type: "setLineWidth";
+    lineWidth: number;
+}
+interface SetDisplayRotationCommand extends BaseDisplayContextCommand {
+    type: "setRotation";
+    rotation: number;
+    isRadians?: boolean;
+}
+interface SetDisplaySegmentStartCapCommand extends BaseDisplayContextCommand {
+    type: "setSegmentStartCap";
+    segmentStartCap: DisplaySegmentCap;
+}
+interface SetDisplaySegmentEndCapCommand extends BaseDisplayContextCommand {
+    type: "setSegmentEndCap";
+    segmentEndCap: DisplaySegmentCap;
+}
+interface SetDisplaySegmentCapCommand extends BaseDisplayContextCommand {
+    type: "setSegmentCap";
+    segmentCap: DisplaySegmentCap;
+}
+interface SetDisplaySegmentStartRadiusCommand extends BaseDisplayContextCommand {
+    type: "setSegmentStartRadius";
+    segmentStartRadius: number;
+}
+interface SetDisplaySegmentEndRadiusCommand extends BaseDisplayContextCommand {
+    type: "setSegmentEndRadius";
+    segmentEndRadius: number;
+}
+interface SetDisplaySegmentRadiusCommand extends BaseDisplayContextCommand {
+    type: "setSegmentRadius";
+    segmentRadius: number;
+}
+interface SetDisplayCropTopCommand extends BaseDisplayContextCommand {
+    type: "setCropTop";
+    cropTop: number;
+}
+interface SetDisplayCropRightCommand extends BaseDisplayContextCommand {
+    type: "setCropRight";
+    cropRight: number;
+}
+interface SetDisplayCropBottomCommand extends BaseDisplayContextCommand {
+    type: "setCropBottom";
+    cropBottom: number;
+}
+interface SetDisplayCropLeftCommand extends BaseDisplayContextCommand {
+    type: "setCropLeft";
+    cropLeft: number;
+}
+interface SetDisplayRotationCropTopCommand extends BaseDisplayContextCommand {
+    type: "setRotationCropTop";
+    rotationCropTop: number;
+}
+interface SetDisplayRotationCropRightCommand extends BaseDisplayContextCommand {
+    type: "setRotationCropRight";
+    rotationCropRight: number;
+}
+interface SetDisplayRotationCropBottomCommand extends BaseDisplayContextCommand {
+    type: "setRotationCropBottom";
+    rotationCropBottom: number;
+}
+interface SetDisplayRotationCropLeftCommand extends BaseDisplayContextCommand {
+    type: "setRotationCropLeft";
+    rotationCropLeft: number;
+}
+interface SelectDisplayBitmapColorIndexCommand extends BaseDisplayContextCommand {
+    type: "selectBitmapColor";
+    bitmapColorIndex: number;
+    colorIndex: number;
+}
+interface SelectDisplayBitmapColorIndicesCommand extends BaseDisplayContextCommand {
+    type: "selectBitmapColors";
+    bitmapColorPairs: DisplayBitmapColorPair[];
+}
+interface SetDisplayBitmapScaleXCommand extends BaseDisplayContextCommand {
+    type: "setBitmapScaleX";
+    bitmapScaleX: number;
+}
+interface SetDisplayBitmapScaleYCommand extends BaseDisplayContextCommand {
+    type: "setBitmapScaleY";
+    bitmapScaleY: number;
+}
+interface SetDisplayBitmapScaleCommand extends BaseDisplayContextCommand {
+    type: "setBitmapScale";
+    bitmapScale: number;
+}
+interface SelectDisplaySpriteColorIndexCommand extends BaseDisplayContextCommand {
+    type: "selectSpriteColor";
+    spriteColorIndex: number;
+    colorIndex: number;
+}
+interface SelectDisplaySpriteColorIndicesCommand extends BaseDisplayContextCommand {
+    type: "selectSpriteColors";
+    spriteColorPairs: DisplaySpriteColorPair[];
+}
+interface SetDisplaySpriteScaleXCommand extends BaseDisplayContextCommand {
+    type: "setSpriteScaleX";
+    spriteScaleX: number;
+}
+interface SetDisplaySpriteScaleYCommand extends BaseDisplayContextCommand {
+    type: "setSpriteScaleY";
+    spriteScaleY: number;
+}
+interface SetDisplaySpriteScaleCommand extends BaseDisplayContextCommand {
+    type: "setSpriteScale";
+    spriteScale: number;
+}
+interface SetDisplaySpritesLineHeightCommand extends BaseDisplayContextCommand {
+    type: "setSpritesLineHeight";
+    spritesLineHeight: number;
+}
+interface SetDisplaySpritesDirectionCommand extends BaseDisplayContextCommand {
+    type: "setSpritesDirection";
+    spritesDirection: DisplayDirection;
+}
+interface SetDisplaySpritesLineDirectionCommand extends BaseDisplayContextCommand {
+    type: "setSpritesLineDirection";
+    spritesLineDirection: DisplayDirection;
+}
+interface SetDisplaySpritesSpacingCommand extends BaseDisplayContextCommand {
+    type: "setSpritesSpacing";
+    spritesSpacing: number;
+}
+interface SetDisplaySpritesLineSpacingCommand extends BaseDisplayContextCommand {
+    type: "setSpritesLineSpacing";
+    spritesLineSpacing: number;
+}
+interface SetDisplaySpritesAlignmentCommand extends BaseDisplayContextCommand {
+    type: "setSpritesAlignment";
+    spritesAlignment: DisplayAlignment;
+}
+interface SetDisplaySpritesLineAlignmentCommand extends BaseDisplayContextCommand {
+    type: "setSpritesLineAlignment";
+    spritesLineAlignment: DisplayAlignment;
+}
+interface BasePositionDisplayContextCommand extends BaseDisplayContextCommand {
+    x: number;
+    y: number;
+}
+interface BaseOffsetPositionDisplayContextCommand extends BaseDisplayContextCommand {
+    offsetX: number;
+    offsetY: number;
+}
+interface BaseSizeDisplayContextCommand extends BaseDisplayContextCommand {
+    width: number;
+    height: number;
+}
+interface BaseDisplayRectCommand extends BasePositionDisplayContextCommand, BaseSizeDisplayContextCommand {
+}
+interface BaseDisplayCenterRectCommand extends BaseOffsetPositionDisplayContextCommand, BaseSizeDisplayContextCommand {
+}
+interface ClearDisplayRectCommand extends BaseDisplayRectCommand {
+    type: "clearRect";
+}
+interface DrawDisplayRectCommand extends BaseDisplayCenterRectCommand {
+    type: "drawRect";
+}
+interface DrawDisplayRoundedRectCommand extends BaseOffsetPositionDisplayContextCommand, BaseSizeDisplayContextCommand {
+    type: "drawRoundRect";
+    borderRadius: number;
+}
+interface DrawDisplayCircleCommand extends BaseOffsetPositionDisplayContextCommand {
+    type: "drawCircle";
+    radius: number;
+}
+interface DrawDisplayEllipseCommand extends BaseOffsetPositionDisplayContextCommand {
+    type: "drawEllipse";
+    radiusX: number;
+    radiusY: number;
+}
+interface DrawDisplayRegularPolygonCommand extends BaseOffsetPositionDisplayContextCommand {
+    type: "drawRegularPolygon";
+    radius: number;
+    numberOfSides: number;
+}
+interface DrawDisplayPolygonCommand extends BaseDisplayContextCommand {
+    type: "drawPolygon";
+    points: Vector2[];
+}
+interface DrawDisplaySegmentCommand extends BaseDisplayContextCommand {
+    type: "drawSegment";
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+}
+interface DrawDisplaySegmentsCommand extends BaseDisplayContextCommand {
+    type: "drawSegments";
+    points: Vector2[];
+}
+interface DrawDisplayBezierCurveCommand extends BaseDisplayContextCommand {
+    type: "drawQuadraticBezierCurve" | "drawQuadraticBezierCurves" | "drawCubicBezierCurve" | "drawCubicBezierCurves";
+    controlPoints: Vector2[];
+}
+interface DrawDisplayPathCommand extends BaseDisplayContextCommand {
+    type: "drawPath" | "drawClosedPath";
+    curves: DisplayBezierCurve[];
+}
+interface DrawDisplayWireframeCommand extends BaseDisplayContextCommand {
+    type: "drawWireframe";
+    wireframe: DisplayWireframe;
+}
+interface DrawDisplayArcCommand extends BaseOffsetPositionDisplayContextCommand {
+    type: "drawArc";
+    radius: number;
+    startAngle: number;
+    angleOffset: number;
+    isRadians?: boolean;
+}
+interface DrawDisplayArcEllipseCommand extends BaseOffsetPositionDisplayContextCommand {
+    type: "drawArcEllipse";
+    radiusX: number;
+    radiusY: number;
+    startAngle: number;
+    angleOffset: number;
+    isRadians?: boolean;
+}
+interface DrawDisplayBitmapCommand extends BaseOffsetPositionDisplayContextCommand {
+    type: "drawBitmap";
+    bitmap: DisplayBitmap;
+}
+interface SelectDisplaySpriteSheetCommand extends BaseDisplayContextCommand {
+    type: "selectSpriteSheet";
+    spriteSheetIndex: number;
+}
+interface DrawDisplaySpriteCommand extends BaseOffsetPositionDisplayContextCommand {
+    type: "drawSprite";
+    spriteIndex: number;
+    use2Bytes: boolean;
+}
+interface DrawDisplaySpritesCommand extends BaseOffsetPositionDisplayContextCommand {
+    type: "drawSprites";
+    spriteSerializedLines: DisplaySpriteSerializedLines;
+}
+type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayBackgroundColorCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleXCommand | SetDisplaySpriteScaleYCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayRegularPolygonCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand | DrawDisplaySpritesCommand | SelectDisplaySpriteSheetCommand | SetDisplayHorizontalAlignmentCommand | SetDisplayVerticalAlignmentCommand | SetDisplaySpritesDirectionCommand | SetDisplaySpritesLineDirectionCommand | SetDisplaySpritesSpacingCommand | SetDisplaySpritesLineSpacingCommand | SetDisplaySpritesAlignmentCommand | SetDisplaySpritesLineAlignmentCommand | SetDisplaySpritesLineHeightCommand | DrawDisplayWireframeCommand | DrawDisplayBezierCurveCommand | DrawDisplayPathCommand | SelectDisplayIgnoreFillCommand | SelectDisplayIgnoreLineCommand | SelectDisplayFillBackgroundCommand;
+
+type FileLike = number[] | ArrayBuffer | DataView | URL | string | File;
+
+declare const FileTypes: readonly ["tflite", "wifiServerCert", "wifiServerKey", "spriteSheet"];
+type FileType = (typeof FileTypes)[number];
+declare const FileTransferStatuses: readonly ["idle", "sending", "receiving"];
+type FileTransferStatus = (typeof FileTransferStatuses)[number];
+declare const FileTransferDirections: readonly ["sending", "receiving"];
+type FileTransferDirection = (typeof FileTransferDirections)[number];
+interface FileConfiguration {
+    file: FileLike;
+    type: FileType;
+}
+interface FileTransferEventMessages {
+    getFileTypes: {
+        fileTypes: FileType[];
+    };
+    maxFileLength: {
+        maxFileLength: number;
+    };
+    getFileType: {
+        fileType: FileType;
+    };
+    getFileLength: {
+        fileLength: number;
+    };
+    getFileChecksum: {
+        fileChecksum: number;
+    };
+    fileTransferStatus: {
+        fileType: FileType;
+        fileTransferStatus: FileTransferStatus;
+    };
+    getFileBlock: {
+        fileTransferBlock: DataView;
+    };
+    fileTransferProgress: {
+        fileType: FileType;
+        progress: number;
+    };
+    fileTransferComplete: {
+        fileType: FileType;
+        direction: FileTransferDirection;
+    };
+    fileReceived: {
+        fileType: FileType;
+        file: File | Blob;
+    };
+}
+
+declare const DefaultNumberOfDisplayColors = 16;
+declare const DisplayStatuses: readonly ["awake", "asleep"];
+type DisplayStatus = (typeof DisplayStatuses)[number];
+declare const DisplayTypes: readonly ["none", "generic", "monocularLeft", "monocularRight", "binocular"];
+type DisplayType = (typeof DisplayTypes)[number];
+declare const DisplayPixelDepths: readonly ["1", "2", "4"];
+type DisplayPixelDepth = (typeof DisplayPixelDepths)[number];
+declare const DisplayBrightnesses: readonly ["veryLow", "low", "medium", "high", "veryHigh"];
+type DisplayBrightness = (typeof DisplayBrightnesses)[number];
+type DisplaySize = {
+    width: number;
+    height: number;
+};
+type DisplayInformation = {
+    type: DisplayType;
+    width: number;
+    height: number;
+    pixelDepth: DisplayPixelDepth;
+};
+type DisplayBitmapColorPair = {
+    bitmapColorIndex: number;
+    colorIndex: number;
+};
+type DisplaySpriteColorPair = {
+    spriteColorIndex: number;
+    colorIndex: number;
+};
+type DisplayWireframeEdge = {
+    startIndex: number;
+    endIndex: number;
+};
+type DisplayWireframe = {
+    points: Vector2[];
+    edges: DisplayWireframeEdge[];
+};
+declare const DisplayBezierCurveTypes: readonly ["segment", "quadratic", "cubic"];
+type DisplayBezierCurveType = (typeof DisplayBezierCurveTypes)[number];
+type DisplayBezierCurve = {
+    type: DisplayBezierCurveType;
+    controlPoints: Vector2[];
+};
+interface DisplayEventMessages {
+    isDisplayAvailable: {
+        isDisplayAvailable: boolean;
+    };
+    displayStatus: {
+        displayStatus: DisplayStatus;
+        previousDisplayStatus: DisplayStatus;
+    };
+    displayInformation: {
+        displayInformation: DisplayInformation;
+    };
+    getDisplayBrightness: {
+        displayBrightness: DisplayBrightness;
+    };
+    displayContextState: {
+        displayContextState: DisplayContextState;
+        differences: DisplayContextStateKey[];
+    };
+    displayColor: {
+        colorIndex: number;
+        colorRGB: DisplayColorRGB;
+        colorHex: string;
+    };
+    displayColorOpacity: {
+        opacity: number;
+        colorIndex: number;
+    };
+    displayOpacity: {
+        opacity: number;
+    };
+    displayReady: {};
+    getSpriteSheetName: {
+        spriteSheetName: string;
+    };
+    displaySpriteSheetUploadStart: {
+        spriteSheetName: string;
+        spriteSheet: DisplaySpriteSheet;
+    };
+    displaySpriteSheetUploadProgress: {
+        spriteSheetName: string;
+        spriteSheet: DisplaySpriteSheet;
+        progress: number;
+    };
+    displaySpriteSheetUploadComplete: {
+        spriteSheetName: string;
+        spriteSheet: DisplaySpriteSheet;
+    };
+}
+declare const MinSpriteSheetNameLength = 1;
+declare const MaxSpriteSheetNameLength = 30;
+type DisplayBitmap = {
+    width: number;
+    height: number;
+    numberOfColors: number;
+    pixels: number[];
+};
+
+declare const maxDisplayScale = 50;
+declare const DisplayCropDirections: readonly ["top", "right", "bottom", "left"];
+type DisplayCropDirection = (typeof DisplayCropDirections)[number];
+declare function pixelDepthToNumberOfColors(pixelDepth: DisplayPixelDepth): number;
+declare const DisplayScaleDirections: readonly ["x", "y", "all"];
+type DisplayScaleDirection = (typeof DisplayScaleDirections)[number];
+type DisplayColorRGB = {
+    r: number;
+    g: number;
+    b: number;
+};
+declare const displayCurveTypeToNumberOfControlPoints: Record<DisplayBezierCurveType, number>;
+declare function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe): DisplayWireframe;
+declare function intersectWireframes(a: DisplayWireframe, b: DisplayWireframe, ignoreDirection?: boolean): DisplayWireframe;
+
+declare const MicrophoneCommands: readonly ["start", "stop", "vad"];
+type MicrophoneCommand = (typeof MicrophoneCommands)[number];
+declare const MicrophoneStatuses: readonly ["idle", "streaming", "vad"];
+type MicrophoneStatus = (typeof MicrophoneStatuses)[number];
+declare const MicrophoneConfigurationTypes: readonly ["sampleRate", "bitDepth"];
+type MicrophoneConfigurationType = (typeof MicrophoneConfigurationTypes)[number];
+declare const MicrophoneSampleRates: readonly ["8000", "16000"];
+type MicrophoneSampleRate = (typeof MicrophoneSampleRates)[number];
+declare const MicrophoneBitDepths: readonly ["8", "16"];
+type MicrophoneBitDepth = (typeof MicrophoneBitDepths)[number];
+type MicrophoneConfiguration = {
+    sampleRate?: MicrophoneSampleRate;
+    bitDepth?: MicrophoneBitDepth;
+};
+declare const MicrophoneConfigurationValues: {
+    sampleRate: readonly ["8000", "16000"];
+    bitDepth: readonly ["8", "16"];
+};
+interface MicrophoneEventMessages {
+    microphoneStatus: {
+        microphoneStatus: MicrophoneStatus;
+        previousMicrophoneStatus: MicrophoneStatus;
+    };
+    getMicrophoneConfiguration: {
+        microphoneConfiguration: MicrophoneConfiguration;
+    };
+    microphoneData: {
+        samples: Float32Array;
+        sampleRate: MicrophoneSampleRate;
+        bitDepth: MicrophoneBitDepth;
+    };
+    isRecordingMicrophone: {
+        isRecordingMicrophone: boolean;
+    };
+    microphoneRecording: {
+        samples: Float32Array;
+        sampleRate: MicrophoneSampleRate;
+        bitDepth: MicrophoneBitDepth;
+        blob: Blob;
+        url: string;
+    };
+}
+
 declare const CameraCommands: readonly ["focus", "takePicture", "stop", "sleep", "wake"];
 type CameraCommand = (typeof CameraCommands)[number];
 declare const CameraStatuses: readonly ["idle", "focusing", "takingPicture", "asleep"];
@@ -180,8 +1197,6 @@ interface CameraEventMessages {
         url: string;
     };
 }
-
-type FileLike = number[] | ArrayBuffer | DataView | URL | string | File;
 
 declare const FirmwareStatuses: readonly ["idle", "uploading", "uploaded", "pending", "testing", "erasing"];
 type FirmwareStatus = (typeof FirmwareStatuses)[number];
@@ -285,7 +1300,7 @@ interface BarometerSensorDataEventMessages {
     };
 }
 
-declare const SensorTypes: readonly ["pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera"];
+declare const SensorTypes: readonly ["pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera", "microphone"];
 type SensorType = (typeof SensorTypes)[number];
 declare const ContinuousSensorTypes: readonly ["pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "barometer"];
 type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];
@@ -299,49 +1314,6 @@ interface AnySensorDataEventMessages {
     sensorData: SensorDataEventMessage;
 }
 type SensorDataEventMessages = _SensorDataEventMessages & AnySensorDataEventMessages;
-
-declare const FileTypes: readonly ["tflite", "wifiServerCert", "wifiServerKey"];
-type FileType = (typeof FileTypes)[number];
-declare const FileTransferStatuses: readonly ["idle", "sending", "receiving"];
-type FileTransferStatus = (typeof FileTransferStatuses)[number];
-declare const FileTransferDirections: readonly ["sending", "receiving"];
-type FileTransferDirection = (typeof FileTransferDirections)[number];
-interface FileConfiguration {
-    file: FileLike;
-    type: FileType;
-}
-interface FileTransferEventMessages {
-    getFileTypes: {
-        fileTypes: FileType[];
-    };
-    maxFileLength: {
-        maxFileLength: number;
-    };
-    getFileType: {
-        fileType: FileType;
-    };
-    getFileLength: {
-        fileLength: number;
-    };
-    getFileChecksum: {
-        fileChecksum: number;
-    };
-    fileTransferStatus: {
-        fileTransferStatus: FileTransferStatus;
-    };
-    getFileBlock: {
-        fileTransferBlock: DataView;
-    };
-    fileTransferProgress: {
-        progress: number;
-    };
-    fileTransferComplete: {
-        direction: FileTransferDirection;
-    };
-    fileReceived: {
-        file: File | Blob;
-    };
-}
 
 declare const TfliteTasks: readonly ["classification", "regression"];
 type TfliteTask = (typeof TfliteTasks)[number];
@@ -483,9 +1455,9 @@ interface TxMessage {
     type: TxRxMessageType;
     data?: ArrayBuffer;
 }
-declare const TxRxMessageTypes: readonly ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "getVibrationLocations", "triggerVibration", "getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getWifiConnectionEnabled", "setWifiConnectionEnabled", "isWifiConnected", "ipAddress", "isWifiSecure", "cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData"];
+declare const TxRxMessageTypes: readonly ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "getVibrationLocations", "triggerVibration", "getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getWifiConnectionEnabled", "setWifiConnectionEnabled", "isWifiConnected", "ipAddress", "isWifiSecure", "cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "microphoneStatus", "microphoneCommand", "getMicrophoneConfiguration", "setMicrophoneConfiguration", "microphoneData", "isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "getSpriteSheetName", "setSpriteSheetName", "spriteSheetIndex"];
 type TxRxMessageType = (typeof TxRxMessageTypes)[number];
-declare const ConnectionMessageTypes: readonly ["batteryLevel", "manufacturerName", "modelNumber", "hardwareRevision", "firmwareRevision", "softwareRevision", "pnpId", "serialNumber", "rx", "tx", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "getVibrationLocations", "triggerVibration", "getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getWifiConnectionEnabled", "setWifiConnectionEnabled", "isWifiConnected", "ipAddress", "isWifiSecure", "cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "smp"];
+declare const ConnectionMessageTypes: readonly ["batteryLevel", "manufacturerName", "modelNumber", "hardwareRevision", "firmwareRevision", "softwareRevision", "pnpId", "serialNumber", "rx", "tx", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "getVibrationLocations", "triggerVibration", "getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getWifiConnectionEnabled", "setWifiConnectionEnabled", "isWifiConnected", "ipAddress", "isWifiSecure", "cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "microphoneStatus", "microphoneCommand", "getMicrophoneConfiguration", "setMicrophoneConfiguration", "microphoneData", "isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "getSpriteSheetName", "setSpriteSheetName", "spriteSheetIndex", "smp"];
 type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 type ConnectionStatusCallback = (status: ConnectionStatus) => void;
 type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView) => void;
@@ -666,9 +1638,9 @@ interface WifiEventMessages {
     };
 }
 
-declare const DeviceEventTypes: readonly ["connectionMessage", "notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected", "rx", "tx", "batteryLevel", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "manufacturerName", "modelNumber", "hardwareRevision", "firmwareRevision", "softwareRevision", "pnpId", "serialNumber", "deviceInformation", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera", "getVibrationLocations", "triggerVibration", "getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "fileTransferProgress", "fileTransferComplete", "fileReceived", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getWifiConnectionEnabled", "setWifiConnectionEnabled", "isWifiConnected", "ipAddress", "isWifiSecure", "cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "cameraImageProgress", "cameraImage", "smp", "firmwareImages", "firmwareUploadProgress", "firmwareStatus", "firmwareUploadComplete"];
+declare const DeviceEventTypes: readonly ["connectionMessage", "notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected", "rx", "tx", "batteryLevel", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "manufacturerName", "modelNumber", "hardwareRevision", "firmwareRevision", "softwareRevision", "pnpId", "serialNumber", "deviceInformation", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera", "microphone", "getVibrationLocations", "triggerVibration", "getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "fileTransferProgress", "fileTransferComplete", "fileReceived", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getWifiConnectionEnabled", "setWifiConnectionEnabled", "isWifiConnected", "ipAddress", "isWifiSecure", "cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "cameraImageProgress", "cameraImage", "microphoneStatus", "microphoneCommand", "getMicrophoneConfiguration", "setMicrophoneConfiguration", "microphoneData", "isRecordingMicrophone", "microphoneRecording", "isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "getSpriteSheetName", "setSpriteSheetName", "spriteSheetIndex", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity", "displaySpriteSheetUploadStart", "displaySpriteSheetUploadProgress", "displaySpriteSheetUploadComplete", "smp", "firmwareImages", "firmwareUploadProgress", "firmwareStatus", "firmwareUploadComplete"];
 type DeviceEventType = (typeof DeviceEventTypes)[number];
-interface DeviceEventMessages extends ConnectionStatusEventMessages, DeviceInformationEventMessages, InformationEventMessages, SensorDataEventMessages, SensorConfigurationEventMessages, TfliteEventMessages, FileTransferEventMessages, WifiEventMessages, CameraEventMessages, FirmwareEventMessages {
+interface DeviceEventMessages extends ConnectionStatusEventMessages, DeviceInformationEventMessages, InformationEventMessages, SensorDataEventMessages, SensorConfigurationEventMessages, TfliteEventMessages, FileTransferEventMessages, WifiEventMessages, CameraEventMessages, MicrophoneEventMessages, DisplayEventMessages, FirmwareEventMessages {
     batteryLevel: {
         batteryLevel: number;
     };
@@ -690,24 +1662,24 @@ declare class Device {
     get bluetoothId(): string | undefined;
     get isAvailable(): boolean | undefined;
     constructor();
-    get addEventListener(): <T extends "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "rx" | "tx" | "batteryLevel" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "getSensorConfiguration" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "getVibrationLocations" | "triggerVibration" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: {
+    get addEventListener(): <T extends "pressure" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "microphone" | "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "getSensorConfiguration" | "setSensorConfiguration" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "getVibrationLocations" | "triggerVibration" | "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "spriteSheetIndex" | "isConnected" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "rx" | "tx" | "batteryLevel" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: {
         type: T;
         target: Device;
         message: DeviceEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "rx" | "tx" | "batteryLevel" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "getSensorConfiguration" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "getVibrationLocations" | "triggerVibration" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "pressure" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "microphone" | "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "getSensorConfiguration" | "setSensorConfiguration" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "getVibrationLocations" | "triggerVibration" | "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "spriteSheetIndex" | "isConnected" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "rx" | "tx" | "batteryLevel" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: {
         type: T;
         target: Device;
         message: DeviceEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "rx" | "tx" | "batteryLevel" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "getSensorConfiguration" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "getVibrationLocations" | "triggerVibration" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T) => Promise<{
+    get waitForEvent(): <T extends "pressure" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "microphone" | "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "getSensorConfiguration" | "setSensorConfiguration" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "getVibrationLocations" | "triggerVibration" | "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "spriteSheetIndex" | "isConnected" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "rx" | "tx" | "batteryLevel" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DeviceEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "rx" | "tx" | "batteryLevel" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "getSensorConfiguration" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "getVibrationLocations" | "triggerVibration" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T) => void;
+    get removeEventListeners(): <T extends "pressure" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "microphone" | "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "getSensorConfiguration" | "setSensorConfiguration" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "getVibrationLocations" | "triggerVibration" | "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "spriteSheetIndex" | "isConnected" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "rx" | "tx" | "batteryLevel" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get connectionManager(): BaseConnectionManager | undefined;
     set connectionManager(newConnectionManager: BaseConnectionManager | undefined);
@@ -746,7 +1718,7 @@ declare class Device {
     get sensorTypes(): SensorType[];
     get continuousSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "barometer")[];
     get sensorConfiguration(): SensorConfiguration;
-    setSensorConfiguration(newSensorConfiguration: SensorConfiguration, clearRest?: boolean): Promise<void>;
+    get setSensorConfiguration(): (newSensorConfiguration: SensorConfiguration, clearRest?: boolean, sendImmediately?: boolean) => Promise<void>;
     clearSensorConfiguration(): Promise<void>;
     static get ClearSensorConfigurationOnLeave(): boolean;
     static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave: boolean);
@@ -756,9 +1728,9 @@ declare class Device {
     resetPressureRange(): void;
     get vibrationLocations(): ("front" | "rear")[];
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;
-    get fileTypes(): ("tflite" | "wifiServerCert" | "wifiServerKey")[];
+    get fileTypes(): ("tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet")[];
     get maxFileLength(): number;
-    get validFileTypes(): ("tflite" | "wifiServerCert" | "wifiServerKey")[];
+    get validFileTypes(): ("tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet")[];
     sendFile(fileType: FileType, file: FileLike): Promise<void>;
     receiveFile(fileType: FileType): Promise<void>;
     get fileTransferStatus(): "idle" | "sending" | "receiving";
@@ -771,7 +1743,7 @@ declare class Device {
     get tfliteSampleRate(): number;
     get setTfliteSampleRate(): (newSampleRate: number, sendImmediately?: boolean) => Promise<void>;
     get tfliteSensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer")[];
-    get allowedTfliteSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera")[];
+    get allowedTfliteSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone")[];
     get setTfliteSensorTypes(): (newSensorTypes: SensorType[], sendImmediately?: boolean) => Promise<void>;
     get tfliteIsReady(): boolean;
     get tfliteInferencingEnabled(): boolean;
@@ -814,8 +1786,8 @@ declare class Device {
     reconnectViaUDP(): Promise<void>;
     get hasCamera(): boolean;
     get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
-    takePicture(): Promise<void>;
-    focusCamera(): Promise<void>;
+    takePicture(sensorRate?: number): Promise<void>;
+    focusCamera(sensorRate?: number): Promise<void>;
     stopCamera(): Promise<void>;
     wakeCamera(): Promise<void>;
     sleepCamera(): Promise<void>;
@@ -823,6 +1795,143 @@ declare class Device {
     get availableCameraConfigurationTypes(): ("resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain")[];
     get cameraConfigurationRanges(): CameraConfigurationRanges;
     get setCameraConfiguration(): (newCameraConfiguration: CameraConfiguration) => Promise<void>;
+    get hasMicrophone(): boolean;
+    get microphoneStatus(): "idle" | "vad" | "streaming";
+    startMicrophone(sensorRate?: number): Promise<void>;
+    stopMicrophone(): Promise<void>;
+    enableMicrophoneVad(): Promise<void>;
+    toggleMicrophone(sensorRate?: number): Promise<void>;
+    get microphoneConfiguration(): MicrophoneConfiguration;
+    get availableMicrophoneConfigurationTypes(): ("sampleRate" | "bitDepth")[];
+    get setMicrophoneConfiguration(): (newMicrophoneConfiguration: MicrophoneConfiguration) => Promise<void>;
+    get audioContext(): AudioContext | undefined;
+    set audioContext(newAudioContext: AudioContext | undefined);
+    get microphoneMediaStreamDestination(): MediaStreamAudioDestinationNode;
+    get microphoneGainNode(): GainNode;
+    get isRecordingMicrophone(): boolean;
+    startRecordingMicrophone(): void;
+    stopRecordingMicrophone(): void;
+    toggleMicrophoneRecording(): void;
+    get isDisplayAvailable(): boolean;
+    get isDisplayReady(): boolean;
+    get displayContextState(): DisplayContextState;
+    get displayColors(): string[];
+    get displayBitmapColors(): string[];
+    get displayBitmapColorIndices(): number[];
+    get displayColorOpacities(): number[];
+    get displayStatus(): "asleep" | "awake";
+    get displayBrightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
+    get setDisplayBrightness(): (newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean) => Promise<void>;
+    get displayInformation(): DisplayInformation;
+    get numberOfDisplayColors(): number;
+    get wakeDisplay(): () => Promise<void>;
+    get sleepDisplay(): () => Promise<void>;
+    get toggleDisplay(): () => Promise<void>;
+    get isDisplayAwake(): boolean;
+    get showDisplay(): (sendImmediately?: boolean) => Promise<void>;
+    get clearDisplay(): (sendImmediately?: boolean) => Promise<void>;
+    get setDisplayColor(): (colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayColorOpacity(): (colorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayOpacity(): (opacity: number, sendImmediately?: boolean) => Promise<void>;
+    get saveDisplayContext(): (sendImmediately?: boolean) => Promise<void>;
+    get restoreDisplayContext(): (sendImmediately?: boolean) => Promise<void>;
+    get clearDisplayRect(): (x: number, y: number, width: number, height: number, sendImmediately?: boolean) => Promise<void>;
+    get selectDisplayBackgroundColor(): (backgroundColorIndex: number, sendImmediately?: boolean) => Promise<void>;
+    get selectDisplayFillColor(): (fillColorIndex: number, sendImmediately?: boolean) => Promise<void>;
+    get selectDisplayLineColor(): (lineColorIndex: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayIgnoreFill(): (ignoreFill: boolean, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayIgnoreLine(): (ignoreLine: boolean, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayFillBackground(): (fillBackground: boolean, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayLineWidth(): (lineWidth: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayRotation(): (rotation: number, isRadians?: boolean, sendImmediately?: boolean) => Promise<void>;
+    get clearDisplayRotation(): (sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySegmentStartCap(): (segmentStartCap: DisplaySegmentCap, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySegmentEndCap(): (segmentEndCap: DisplaySegmentCap, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySegmentCap(): (segmentCap: DisplaySegmentCap, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySegmentStartRadius(): (segmentStartRadius: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySegmentEndRadius(): (segmentEndRadius: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySegmentRadius(): (segmentRadius: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayCropTop(): (cropTop: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayCropRight(): (cropRight: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayCropBottom(): (cropBottom: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayCropLeft(): (cropLeft: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayCrop(): (cropDirection: DisplayCropDirection, crop: number, sendImmediately?: boolean) => Promise<void>;
+    get clearDisplayCrop(): (sendImmediately?: boolean) => Promise<void>;
+    get setDisplayRotationCropTop(): (rotationCropTop: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayRotationCropRight(): (rotationCropRight: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayRotationCropBottom(): (rotationCropBottom: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayRotationCropLeft(): (rotationCropLeft: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayRotationCrop(): (cropDirection: DisplayCropDirection, crop: number, sendImmediately?: boolean) => Promise<void>;
+    get clearDisplayRotationCrop(): (sendImmediately?: boolean) => Promise<void>;
+    get flushDisplayContextCommands(): () => Promise<void>;
+    get drawDisplayRect(): (offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayCircle(): (offsetX: number, offsetY: number, radius: number, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayEllipse(): (offsetX: number, offsetY: number, radiusX: number, radiusY: number, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayRoundRect(): (offsetX: number, offsetY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayRegularPolygon(): (offsetX: number, offsetY: number, radius: number, numberOfSides: number, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayPolygon(): (points: Vector2[], sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayWireframe(): (wireframe: DisplayWireframe, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplaySegment(): (startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplaySegments(): (points: Vector2[], sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayArc(): (offsetX: number, offsetY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayArcEllipse(): (offsetX: number, offsetY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayBitmap(): (offsetX: number, offsetY: number, bitmap: DisplayBitmap, sendImmediately?: boolean) => Promise<void>;
+    get imageToDisplayBitmap(): (image: HTMLImageElement, width: number, height: number, numberOfColors?: number) => Promise<{
+        blob: Blob;
+        bitmap: DisplayBitmap;
+    }>;
+    get quantizeDisplayImage(): (image: HTMLImageElement, width: number, height: number, numberOfColors: number) => Promise<{
+        blob: Blob;
+        colors: string[];
+        colorIndices: number[];
+    }>;
+    get resizeAndQuantizeDisplayImage(): (image: HTMLImageElement, width: number, height: number, numberOfColors: number, colors?: string[]) => Promise<{
+        blob: Blob;
+        colors: string[];
+        colorIndices: number[];
+    }>;
+    get setDisplayContextState(): (newState: PartialDisplayContextState, sendImmediately?: boolean) => Promise<void>;
+    get selectDisplayBitmapColor(): (bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean) => Promise<void>;
+    get selectDisplayBitmapColors(): (bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean) => Promise<void>;
+    get setDisplayBitmapColor(): (bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayBitmapColorOpacity(): (bitmapColorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayBitmapScaleDirection(): (direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayBitmapScaleX(): (bitmapScaleX: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayBitmapScaleY(): (bitmapScaleY: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayBitmapScale(): (bitmapScale: number, sendImmediately?: boolean) => Promise<void>;
+    get resetDisplayBitmapScale(): (sendImmediately?: boolean) => Promise<void>;
+    get selectDisplaySpriteColor(): (spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean) => Promise<void>;
+    get selectDisplaySpriteColors(): (spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteColor(): (spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteColorOpacity(): (spriteColorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
+    get resetDisplaySpriteColors(): (sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteScaleDirection(): (direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteScaleX(): (spriteScaleX: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteScaleY(): (spriteScaleY: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteScale(): (spriteScale: number, sendImmediately?: boolean) => Promise<void>;
+    get resetDisplaySpriteScale(): (sendImmediately?: boolean) => Promise<void>;
+    get displayManager(): DisplayManagerInterface;
+    get uploadDisplaySpriteSheet(): (spriteSheet: DisplaySpriteSheet) => Promise<void>;
+    get uploadDisplaySpriteSheets(): (spriteSheets: DisplaySpriteSheet[]) => Promise<void>;
+    get selectDisplaySpriteSheet(): (spriteSheetName: string, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplaySprite(): (offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean) => Promise<void>;
+    get displaySpriteSheets(): Record<string, DisplaySpriteSheet>;
+    get serializeDisplaySpriteSheet(): (spriteSheet: DisplaySpriteSheet) => ArrayBuffer;
+    get setDisplayAlignment(): (alignmentDirection: DisplayAlignmentDirection, alignment: DisplayAlignment, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayVerticalAlignment(): (verticalAlignment: DisplayAlignment, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayHorizontalAlignment(): (horizontalAlignment: DisplayAlignment, sendImmediately?: boolean) => Promise<void>;
+    get resetDisplayAlignment(): (sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpritesDirection(): (spritesDirection: DisplayDirection, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpritesLineDirection(): (spritesLineDirection: DisplayDirection, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpritesSpacing(): (spritesSpacing: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpritesLineSpacing(): (spritesSpacing: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpritesAlignment(): (spritesAlignment: DisplayAlignment, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayQuadraticBezierCurve(): (controlPoints: Vector2[], sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayQuadraticBezierCurves(): (controlPoints: Vector2[], sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayCubicBezierCurve(): (controlPoints: Vector2[], sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayCubicBezierCurves(): (controlPoints: Vector2[], sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayPath(): (curves: DisplayBezierCurve[], sendImmediately?: boolean) => Promise<void>;
+    get drawDisplayClosedPath(): (curves: DisplayBezierCurve[], sendImmediately?: boolean) => Promise<void>;
 }
 
 declare const DeviceManagerEventTypes: readonly ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];
@@ -865,23 +1974,58 @@ declare class DeviceManager {
      * _only available on web-bluetooth enabled browsers_
      */
     GetDevices(): Promise<Device[] | undefined>;
-    get AddEventListener(): <T extends "connectedDevices" | "deviceConnected" | "deviceIsConnected" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
+    get AddEventListener(): <T extends "deviceIsConnected" | "deviceConnected" | "deviceDisconnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get RemoveEventListener(): <T extends "connectedDevices" | "deviceConnected" | "deviceIsConnected" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
+    get RemoveEventListener(): <T extends "deviceIsConnected" | "deviceConnected" | "deviceDisconnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void) => void;
-    get RemoveEventListeners(): <T extends "connectedDevices" | "deviceConnected" | "deviceIsConnected" | "deviceDisconnected" | "availableDevices">(type: T) => void;
+    get RemoveEventListeners(): <T extends "deviceIsConnected" | "deviceConnected" | "deviceDisconnected" | "availableDevices" | "connectedDevices">(type: T) => void;
     get RemoveAllEventListeners(): () => void;
     _CheckDeviceAvailability(device: Device): void;
 }
 declare const _default: DeviceManager;
+
+declare function wait(delay: number): Promise<unknown>;
+
+declare function quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number, colors?: string[], canvas?: HTMLCanvasElement): Promise<{
+    blob: Blob;
+    colors: string[];
+    colorIndices: number[];
+}>;
+declare function resizeImage(image: CanvasImageSource, width: number, height: number, canvas?: HTMLCanvasElement): HTMLCanvasElement;
+declare function resizeAndQuantizeImage(image: CanvasImageSource, width: number, height: number, numberOfColors: number, colors?: string[], canvas?: HTMLCanvasElement): Promise<{
+    blob: Blob;
+    colors: string[];
+    colorIndices: number[];
+}>;
+declare function canvasToBitmaps(canvas: HTMLCanvasElement, numberOfColors: number, mtu: number): Promise<{
+    bitmapRows: DisplayBitmap[][];
+    colors: string[];
+}>;
+declare function imageToBitmaps(image: HTMLImageElement, width: number, height: number, numberOfColors: number, mtu: number): Promise<{
+    bitmapRows: DisplayBitmap[][];
+    colors: string[];
+}>;
+declare function canvasToSprite(canvas: HTMLCanvasElement, spriteName: string, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset?: number): Promise<{
+    sprite: DisplaySprite;
+    blob: Blob;
+}>;
+declare function imageToSprite(image: HTMLImageElement, spriteName: string, width: number, height: number, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset?: number): Promise<{
+    sprite: DisplaySprite;
+    blob: Blob;
+}>;
+declare function canvasToSpriteSheet(canvas: HTMLCanvasElement, spriteSheetName: string, numberOfColors: number, paletteName: string, maxFileLength?: number): Promise<DisplaySpriteSheet>;
+declare function imageToSpriteSheet(image: HTMLImageElement, spriteSheetName: string, width: number, height: number, numberOfColors: number, paletteName: string, maxFileLength?: number): Promise<DisplaySpriteSheet>;
+
+declare function hexToRGB(hex: string): DisplayColorRGB;
+declare function rgbToHex({ r, g, b }: DisplayColorRGB): string;
 
 interface DevicePairPressureData {
     sensors: {
@@ -935,24 +2079,24 @@ declare class DevicePair {
     constructor(type: DevicePairType);
     get sides(): readonly ["left", "right"];
     get type(): "insoles" | "gloves";
-    get addEventListener(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceConnected" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceIsConnected" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T, listener: (event: {
+    get addEventListener(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "isConnected" | "devicePressure" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceConnectionMessage" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceGetSpriteSheetName" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceDisplaySpriteSheetUploadStart" | "deviceDisplaySpriteSheetUploadProgress" | "deviceDisplaySpriteSheetUploadComplete" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T, listener: (event: {
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceConnected" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceIsConnected" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "isConnected" | "devicePressure" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceConnectionMessage" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceGetSpriteSheetName" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceDisplaySpriteSheetUploadStart" | "deviceDisplaySpriteSheetUploadProgress" | "deviceDisplaySpriteSheetUploadComplete" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T, listener: (event: {
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceConnected" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceIsConnected" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T) => Promise<{
+    get waitForEvent(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "isConnected" | "devicePressure" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceConnectionMessage" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceGetSpriteSheetName" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceDisplaySpriteSheetUploadStart" | "deviceDisplaySpriteSheetUploadProgress" | "deviceDisplaySpriteSheetUploadComplete" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T) => Promise<{
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceConnected" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceIsConnected" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T) => void;
+    get removeEventListeners(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "isConnected" | "devicePressure" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceConnectionMessage" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceGetSpriteSheetName" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceDisplaySpriteSheetUploadStart" | "deviceDisplaySpriteSheetUploadProgress" | "deviceDisplaySpriteSheetUploadComplete" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get left(): Device | undefined;
     get right(): Device | undefined;
@@ -1030,20 +2174,20 @@ declare abstract class BaseClient {
     #private;
     protected get baseConstructor(): typeof BaseClient;
     get devices(): Readonly<DevicesMap>;
-    get addEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
+    get addEventListener(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    protected get dispatchEvent(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, message: ClientEventMessages[T]) => void;
-    get removeEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
+    protected get dispatchEvent(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, message: ClientEventMessages[T]) => void;
+    get removeEventListener(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T) => Promise<{
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
@@ -1114,4 +2258,4 @@ declare const ThrottleUtils: {
     debounce: typeof debounce;
 };
 
-export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CameraCommand, CameraCommands, type CameraConfiguration, type CameraConfigurationType, CameraConfigurationTypes, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DevicePairType, DevicePairTypes, type DeviceType, DeviceTypes, type DiscoveredDevice, environment_d as Environment, type Euler, EventUtils, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, type PressureData, type Quaternion, RangeHelper, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type Side, Sides, type TfliteFileConfiguration, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, ThrottleUtils, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CameraCommand, CameraCommands, type CameraConfiguration, type CameraConfigurationType, CameraConfigurationTypes, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DevicePairType, DevicePairTypes, type DeviceType, DeviceTypes, type DiscoveredDevice, type DisplayAlignment, DisplayAlignments, type DisplayBezierCurveType, DisplayBezierCurveTypes, type DisplayBitmap, type DisplayBitmapColorPair, type DisplayBrightness, DisplayBrightnesses, DisplayCanvasHelper, type DisplayCanvasHelperEvent, type DisplayCanvasHelperEventListenerMap, type DisplayCanvasHelperEventMap, type DisplayColorRGB, type DisplayContextCommand, type DisplayContextCommandType, DisplayContextCommandTypes, type DisplayDirection, DisplayDirections, DisplayPixelDepths, type DisplaySegmentCap, DisplaySegmentCaps, type DisplaySize, type DisplaySprite, type DisplaySpriteColorPair, type DisplaySpriteContextCommandType, DisplaySpriteContextCommandTypes, type DisplaySpriteLine, type DisplaySpriteLines, type DisplaySpritePaletteSwap, type DisplaySpriteSheet, type DisplaySpriteSheetPalette, type DisplaySpriteSubLine, type DisplayWireframe, type DisplayWireframeEdge, environment_d as Environment, type Euler, EventUtils, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, type MicrophoneCommand, MicrophoneCommands, type MicrophoneConfiguration, type MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, type PressureData, type Quaternion, type Range, RangeHelper, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type Side, Sides, type TfliteFileConfiguration, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, ThrottleUtils, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, wait };

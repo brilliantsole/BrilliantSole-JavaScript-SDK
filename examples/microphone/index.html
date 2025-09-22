@@ -1,0 +1,104 @@
+<html>
+  <head>
+    <title>Microphone | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="https://unpkg.com/peaks.js/dist/peaks.js"></script>
+    <script type="module" src="./script.js"></script>
+    <script type="module" src="./whisper.js"></script>
+    <script type="module" src="./whisper-realtime.js"></script>
+  </head>
+  <style>
+    #zoomview-container,
+    #overview-container {
+      width: 1000px;
+      height: 100px;
+    }
+    .highlighted {
+      color: green;
+    }
+    #modelResults {
+      font-size: 72px;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Microphone | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+    <label>
+      model type
+      <select id="modelType">
+        <optgroup label="model type">
+          <option>none</option>
+        </optgroup>
+      </select>
+    </label>
+    <br />
+
+    <label><b>status:</b> <span id="microphoneStatus"></span></label>
+
+    <button disabled hidden id="toggleMicrophone">start microphone</button>
+    <button disabled id="startMicrophone">start microphone</button>
+    <button disabled id="stopMicrophone">stop microphone</button>
+    <button disabled id="enableMicrphoneVad">
+      enable microphone voice activity detection
+    </button>
+    <br />
+    <button disabled id="toggleMicrophoneRecording">start recording</button>
+
+    <br />
+    <label>
+      <b>microphone configuration: </b>
+      <pre id="microphoneConfigurationPre"></pre>
+    </label>
+    <br />
+
+    <div id="microphoneConfiguration">
+      <template id="microphoneConfigurationTypeTemplate">
+        <label class="microphoneConfigurationType">
+          <b class="type"></b> <span hidden></span>
+          <select disabled>
+            <optgroup></optgroup>
+          </select>
+        </label>
+      </template>
+    </div>
+
+    <div>
+      <b>stream</b>
+      <br />
+      <audio id="microphoneStream" controls autoplay></audio>
+    </div>
+
+    <label>
+      visualization type
+      <select id="audioVisualizationType">
+        <optgroup label="type">
+          <option>waveform</option>
+          <option>fft</option>
+        </optgroup>
+      </select>
+    </label>
+    <br />
+    <canvas id="audioVisualizer" width="1000" height="200"></canvas>
+
+    <h1 id="modelResults"></h1>
+
+    <div>
+      <b>recording</b>
+      <label>
+        auto play
+        <input type="checkbox" id="autoPlayMicrphoneRecording" />
+      </label>
+      <br />
+      <audio id="microphoneRecording" controls></audio>
+    </div>
+
+    <div id="zoomview-container"></div>
+    <div id="overview-container"></div>
+  </body>
+</html>

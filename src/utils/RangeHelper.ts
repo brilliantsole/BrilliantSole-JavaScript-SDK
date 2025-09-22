@@ -1,6 +1,6 @@
 import { getInterpolation } from "./MathUtils.ts";
 
-interface Range {
+export interface Range {
   min: number;
   max: number;
   span: number;
@@ -9,12 +9,19 @@ interface Range {
 const initialRange: Range = { min: Infinity, max: -Infinity, span: 0 };
 
 class RangeHelper {
-  #range: Range = Object.assign({}, initialRange);
+  #range: Range = structuredClone(initialRange);
   get min() {
     return this.#range.min;
   }
   get max() {
     return this.#range.max;
+  }
+  get span() {
+    return this.#range.span;
+  }
+
+  get range() {
+    return structuredClone(this.#range);
   }
 
   set min(newMin) {
@@ -43,7 +50,12 @@ class RangeHelper {
   }
 
   getNormalization(value: number, weightByRange: boolean) {
-    let normalization = getInterpolation(value, this.#range.min, this.#range.max, this.#range.span);
+    let normalization = getInterpolation(
+      value,
+      this.#range.min,
+      this.#range.max,
+      this.#range.span
+    );
     if (weightByRange) {
       normalization *= this.#range.span;
     }

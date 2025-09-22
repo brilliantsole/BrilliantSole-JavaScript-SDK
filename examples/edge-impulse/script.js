@@ -293,7 +293,14 @@ const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeContainers = {};
 
-BS.TfliteSensorTypes.forEach((sensorType) => {
+const TfliteSensorTypes = BS.TfliteSensorTypes.slice();
+const includeAcceleration = true;
+if (includeAcceleration) {
+  // for testing with Frame
+  TfliteSensorTypes.push("acceleration");
+}
+
+TfliteSensorTypes.forEach((sensorType) => {
   const sensorTypeContainer = sensorTypeTemplate.content
     .cloneNode(true)
     .querySelector(".sensorType");
@@ -315,7 +322,7 @@ BS.TfliteSensorTypes.forEach((sensorType) => {
 });
 
 function onSensorTypesInput() {
-  const sensorTypes = BS.TfliteSensorTypes.filter((sensorType) => {
+  const sensorTypes = TfliteSensorTypes.filter((sensorType) => {
     /** @type {HTMLInputElement} */
     const input = sensorTypeContainers[sensorType].querySelector(".enabled");
     return input.checked;
@@ -663,8 +670,12 @@ async function connectToRemoteManagement() {
       );
       console.log("sensorTypes", sensorTypes);
 
+      const allowedTfliteSensorTypes = device.allowedTfliteSensorTypes;
+      if (includeAcceleration) {
+        allowedTfliteSensorTypes.push("acceleration");
+      }
       const invalidSensors = sensorTypes.filter(
-        (sensorType) => !device.allowedTfliteSensorTypes.includes(sensorType)
+        (sensorType) => !allowedTfliteSensorTypes.includes(sensorType)
       );
       if (invalidSensors.length > 0) {
         console.error("invalid sensorTypes", invalidSensors);
@@ -746,8 +757,11 @@ function generateSubarrays(array) {
 const getDeviceId = () => `${device.name}.${device.type}.${device.id}`;
 
 function remoteManagementHelloMessage() {
-  const sensors = device.allowedTfliteSensorTypes;
-  const sensorCombinations = generateSubarrays(sensors);
+  const allowedTfliteSensorTypes = device.allowedTfliteSensorTypes.slice();
+  if (includeAcceleration) {
+    allowedTfliteSensorTypes.push("acceleration");
+  }
+  const sensorCombinations = generateSubarrays(allowedTfliteSensorTypes);
   console.log("sensorCombinations", sensorCombinations);
   return {
     hello: {
@@ -836,6 +850,7 @@ function setReconnectRemoteManagementOnDisconnection(
 
 const scalars = {
   pressure: 1 / (2 ** 16 - 1),
+  acceleration: 1 / 4,
   linearAcceleration: 1 / 4,
   gyroscope: 1 / 720,
   magnetometer: 1 / 2500,
@@ -905,6 +920,7 @@ async function uploadData(sensorTypes, deviceData) {
     let names = [];
     let units;
     switch (sensorType) {
+      case "acceleration":
       case "linearAcceleration":
       case "gyroscope":
       case "magnetometer":
@@ -912,6 +928,7 @@ async function uploadData(sensorTypes, deviceData) {
           (component) => `${sensorType}.${component}`
         );
         switch (sensorType) {
+          case "acceleration":
           case "linearAcceleration":
             units = "g/s";
             break;
@@ -950,6 +967,7 @@ async function uploadData(sensorTypes, deviceData) {
       const sensorSamples = deviceData[sensorType];
 
       switch (sensorType) {
+        case "acceleration":
         case "linearAcceleration":
         case "gyroscope":
         case "magnetometer":

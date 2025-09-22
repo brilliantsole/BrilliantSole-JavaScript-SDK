@@ -48,6 +48,7 @@ const modelEntities = Array.from(targetEntity.querySelectorAll("[gltf-model]"));
 
 device.addEventListener("connected", () => {
   modelEntities.forEach((entity) => {
+    console.log(entity.dataset.type == device.type, entity);
     entity.setAttribute("visible", entity.dataset.type == device.type);
   });
 });

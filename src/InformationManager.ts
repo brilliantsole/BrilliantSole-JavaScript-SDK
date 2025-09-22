@@ -1,7 +1,7 @@
 import { ConnectionType } from "./connection/BaseConnectionManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
+import { UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
 import { createConsole } from "./utils/Console.ts";
-import { isInBrowser } from "./utils/environment.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { Uint16Max } from "./utils/MathUtils.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
@@ -165,10 +165,10 @@ class InformationManager {
   }
   updateType(updatedType: DeviceType) {
     this.#assertValidDeviceType(updatedType);
-    if (updatedType == this.type) {
-      _console.log("redundant type assignment");
-      return;
-    }
+    // if (updatedType == this.type) {
+    //   _console.log("redundant type assignment");
+    //   return;
+    // }
     this.#type = updatedType;
     _console.log({ updatedType: this.#type });
 
@@ -176,10 +176,11 @@ class InformationManager {
   }
   async #setTypeEnum(newTypeEnum: number) {
     this.#assertValidDeviceTypeEnum(newTypeEnum);
-    const setTypeData = Uint8Array.from([newTypeEnum]);
+
+    const setTypeData = UInt8ByteBuffer(newTypeEnum);
     _console.log({ setTypeData });
     const promise = this.waitForEvent("getType");
-    this.sendMessage([{ type: "setType", data: setTypeData.buffer }]);
+    this.sendMessage([{ type: "setType", data: setTypeData }]);
     await promise;
   }
   async setType(newType: DeviceType) {

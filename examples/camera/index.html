@@ -1,0 +1,129 @@
+<html>
+  <head>
+    <title>Camera | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
+      crossorigin="anonymous"
+    ></script>
+    <script type="module" src="./hand-landmark.js"></script>
+    <script type="module" src="./gesture-recognition.js"></script>
+    <script type="module" src="./face-detector.js"></script>
+    <script type="module" src="./barcode-detector.js"></script>
+    <script type="module" src="./face-landmark.js"></script>
+    <script type="module" src="./pose-landmark.js"></script>
+    <script type="module" src="./object-detection.js"></script>
+    <script type="module" src="./image-to-text.js"></script>
+    <script type="module" src="./image-upscale.js"></script>
+    <script type="module" src="./depth-estimation.js"></script>
+    <script type="module" src="./yolo.js"></script>
+    <!-- <script type="module" src="./yolo-tiny.js"></script> -->
+    <script type="module" src="./image-segmentation.js"></script>
+  </head>
+  <style>
+    img,
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    #generatedImage {
+      width: 300;
+      height: 300;
+    }
+
+    #imageContainer {
+      position: relative;
+      display: inline-block;
+      width: 300;
+      height: 300;
+      aspect-ratio: 1;
+    }
+    #imageOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Camera | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+    <label>
+      model type
+      <select id="modelType">
+        <optgroup label="model type">
+          <option>none</option>
+        </optgroup>
+      </select>
+    </label>
+    <br />
+
+    <label><b>camera status:</b> <span id="cameraStatus"></span></label>
+    <br />
+
+    <label>auto picture: <input type="checkbox" id="autoPicture" /> </label>
+    <br />
+
+    <button disabled id="takePicture">take picture</button>
+    <progress value="0" id="cameraImageProgress"></progress>
+    <br />
+    <button disabled id="focusCamera">focus camera</button>
+    <br />
+    <button disabled id="sleepCamera">sleep camera</button>
+
+    <div style="display: flex; flex-direction: row; gap: 1rem">
+      <div>
+        <label>
+          <b>camera configuration: </b>
+          <pre id="cameraConfigurationPre"></pre>
+        </label>
+
+        <label>
+          take picture after update?
+          <input type="checkbox" id="takePictureAfterUpdate" />
+        </label>
+
+        <div id="cameraConfiguration">
+          <template id="cameraConfigurationTypeTemplate">
+            <div class="cameraConfigurationType">
+              <label>
+                <input class="value" type="range" value="" disabled />
+                <b class="type"></b> <span></span>
+              </label>
+            </div>
+          </template>
+        </div>
+        <label>
+          <b>white balance</b>
+          <input type="color" id="cameraWhiteBalance" disabled />
+        </label>
+      </div>
+      <div>
+        <div id="imageContainer">
+          <canvas width="300" height="300" id="imageOverlay"></canvas>
+          <img id="cameraImage" />
+        </div>
+        <canvas
+          display="none"
+          width="300"
+          height="300"
+          id="generatedImage"
+        ></canvas>
+        <pre id="modelResults"></pre>
+      </div>
+    </div>
+  </body>
+</html>

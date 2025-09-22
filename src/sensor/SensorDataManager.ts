@@ -30,6 +30,7 @@ import {
   ValueOf,
 } from "../utils/TypeScriptUtils.ts";
 import { CameraSensorTypes } from "../CameraManager.ts";
+import { MicrophoneSensorTypes } from "../MicrophoneManager.ts";
 
 const _console = createConsole("SensorDataManager", { log: false });
 
@@ -38,6 +39,7 @@ export const SensorTypes = [
   ...MotionSensorTypes,
   ...BarometerSensorTypes,
   ...CameraSensorTypes,
+  ...MicrophoneSensorTypes,
 ] as const;
 export type SensorType = (typeof SensorTypes)[number];
 
@@ -218,6 +220,9 @@ class SensorDataManager {
         break;
       case "camera":
         // we parse camera data using CameraManager
+        return;
+      case "microphone":
+        // we parse microphone data using MicrophoneManager
         return;
       default:
         _console.error(`uncaught sensorType "${sensorType}"`);

@@ -93,6 +93,103 @@ export {
 } from "./CameraManager.ts";
 
 export {
+  MicrophoneConfiguration,
+  MicrophoneCommand,
+  MicrophoneCommands,
+  MicrophoneConfigurationType,
+  MicrophoneConfigurationTypes,
+  MicrophoneConfigurationValues,
+} from "./MicrophoneManager.ts";
+
+export {
+  DisplayBrightness,
+  DisplayBrightnesses,
+  DisplaySize,
+  DisplayBitmapColorPair,
+  DisplayPixelDepths,
+  DefaultNumberOfDisplayColors,
+  MinSpriteSheetNameLength,
+  MaxSpriteSheetNameLength,
+  DisplayBitmap,
+  DisplaySpriteColorPair,
+  DisplayWireframeEdge,
+  DisplayWireframe,
+  DisplayBezierCurveType,
+  DisplayBezierCurveTypes,
+} from "./DisplayManager.ts";
+
+export { wait } from "./utils/Timer.ts";
+
+export {
+  DisplaySegmentCap,
+  DisplaySegmentCaps,
+  DisplayAlignment,
+  DisplayAlignments,
+  DisplayDirection,
+  DisplayDirections,
+} from "./utils/DisplayContextState.ts";
+
+export {
+  maxDisplayScale,
+  DisplayColorRGB,
+  pixelDepthToNumberOfColors,
+  displayCurveTypeToNumberOfControlPoints,
+  mergeWireframes,
+  intersectWireframes,
+} from "./utils/DisplayUtils.ts";
+
+export {
+  DisplayContextCommand,
+  DisplayContextCommandType,
+  DisplayContextCommandTypes,
+  DisplaySpriteContextCommandType,
+  DisplaySpriteContextCommandTypes,
+} from "./utils/DisplayContextCommand.ts";
+
+export {
+  DisplaySprite,
+  DisplaySpriteSheet,
+  DisplaySpriteSheetPalette,
+  DisplaySpritePaletteSwap,
+  parseFont,
+  getFontUnicodeRange,
+  stringToSprites,
+  fontToSpriteSheet,
+  DisplaySpriteSubLine,
+  DisplaySpriteLine,
+  DisplaySpriteLines,
+} from "./utils/DisplaySpriteSheetUtils.ts";
+
+/** BROWSER_START */
+export {
+  default as DisplayCanvasHelper,
+  DisplayCanvasHelperEvent,
+  DisplayCanvasHelperEventMap,
+  DisplayCanvasHelperEventListenerMap,
+} from "./utils/DisplayCanvasHelper.ts";
+/** BROWSER_END */
+
+/** BROWSER_START */
+export { Font, Glyph } from "opentype.js";
+/** BROWSER_END */
+
+/** BROWSER_START */
+export {
+  resizeAndQuantizeImage,
+  quantizeImage,
+  imageToSprite,
+  imageToSpriteSheet,
+  canvasToSprite,
+  canvasToSpriteSheet,
+  resizeImage,
+  imageToBitmaps,
+  canvasToBitmaps,
+} from "./utils/DisplayBitmapUtils.ts";
+/** BROWSER_END */
+
+export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
+
+export {
   default as DevicePair,
   DevicePairEvent,
   DevicePairEventMap,
@@ -123,5 +220,8 @@ export { default as UDPServer } from "./server/udp/UDPServer.ts";
 /** BROWSER_START */
 export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
 /** BROWSER_END */
+/** LS_START */
+export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
+/** LS_END */
 
-export { default as RangeHelper } from "./utils/RangeHelper.ts";
+export { default as RangeHelper, Range } from "./utils/RangeHelper.ts";

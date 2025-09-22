@@ -1,4 +1,8 @@
-import { isInBrowser, isInNode } from "../../utils/environment.ts";
+import {
+  isInBrowser,
+  isInLensStudio,
+  isInNode,
+} from "../../utils/environment.ts";
 import { createConsole } from "../../utils/Console.ts";
 
 const _console = createConsole("bluetoothUUIDs", { log: false });
@@ -7,11 +11,42 @@ const _console = createConsole("bluetoothUUIDs", { log: false });
 import * as webbluetooth from "webbluetooth";
 var BluetoothUUID = webbluetooth.BluetoothUUID;
 /** NODE_END */
+
 /** BROWSER_START */
 if (isInBrowser) {
   var BluetoothUUID = window.BluetoothUUID;
 }
 /** BROWSER_END */
+
+/** LS_START */
+
+var BluetoothUUID = {
+  getService: (uuid: number | string): string => toUUID(uuid),
+
+  getCharacteristic: (uuid: number | string): string => toUUID(uuid),
+
+  getDescriptor: (uuid: number | string): string => toUUID(uuid),
+
+  getCharacteristicName: (uuid: number | string): string | null => null,
+
+  getServiceName: (uuid: number | string): string | null => null,
+
+  getDescriptorName: (uuid: number | string): string | null => null,
+};
+
+function toUUID(uuid: number | string): string {
+  if (typeof uuid === "number") {
+    uuid = uuid.toString(16).padStart(4, "0");
+  }
+
+  if (/^[0-9a-fA-F]{4,8}$/.test(uuid)) {
+    return `0000${uuid.padStart(8, "0")}-0000-1000-8000-00805f9b34fb`;
+  }
+
+  return uuid.toLowerCase();
+}
+
+/** LS_END */
 
 function generateBluetoothUUID(value: string): BluetoothServiceUUID {
   _console.assertTypeWithError(value, "string");

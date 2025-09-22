@@ -1419,7 +1419,7 @@ const updateConnectViaWebSocketsButton = () => {
     device.isConnected &&
     device.connectionType == "webBluetooth" &&
     device.isWifiConnected;
-  console.log({ enabled });
+  // console.log({ enabled });
   connectViaWebSocketsButton.disabled = !enabled;
 };
 device.addEventListener("isWifiConnected", () =>
@@ -1460,7 +1460,7 @@ device.addEventListener("getSensorConfiguration", () => {
 const updateTakePictureButton = () => {
   takePictureButton.disabled =
     !device.isConnected ||
-    device.sensorConfiguration.camera == 0 ||
+    //device.sensorConfiguration.camera == 0 ||
     device.cameraStatus != "idle";
 };
 device.addEventListener("cameraStatus", () => {
@@ -1485,7 +1485,7 @@ device.addEventListener("getSensorConfiguration", () => {
 const updateFocusCameraButton = () => {
   focusCameraButton.disabled =
     !device.isConnected ||
-    device.sensorConfiguration.camera == 0 ||
+    //device.sensorConfiguration.camera == 0 ||
     device.cameraStatus != "idle";
 };
 device.addEventListener("cameraStatus", (event) => {
@@ -1654,27 +1654,6 @@ takePictureAfterUpdateCheckbox.addEventListener("input", () => {
   console.log({ takePictureAfterUpdate });
 });
 
-let barcodeDetector;
-BarcodeDetector.getSupportedFormats().then((supportedFormats) => {
-  console.log({ supportedFormats });
-  // create new detector
-  barcodeDetector = new BarcodeDetector({
-    formats: supportedFormats,
-  });
-});
-cameraImage.addEventListener("load", () => {
-  if (barcodeDetector) {
-    barcodeDetector
-      .detect(cameraImage)
-      .then((barcodes) => {
-        barcodes.forEach((barcode) => console.log(barcode.rawValue));
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  }
-});
-
 /** @type {HTMLInputElement} */
 const cameraWhiteBalanceInput = document.getElementById("cameraWhiteBalance");
 const updateWhiteBalance = BS.ThrottleUtils.throttle(
@@ -1731,3 +1710,1551 @@ device.addEventListener("connected", () => {
 device.addEventListener("getCameraConfiguration", () => {
   updateCameraWhiteBalanceInput();
 });
+
+// MICROPHONE
+
+/** @type {HTMLSpanElement} */
+const isMicrophoneAvailableSpan = document.getElementById(
+  "isMicrophoneAvailable"
+);
+device.addEventListener("connected", () => {
+  isMicrophoneAvailableSpan.innerText = device.hasMicrophone;
+});
+
+/** @type {HTMLSpanElement} */
+const microphoneStatusSpan = document.getElementById("microphoneStatus");
+device.addEventListener("microphoneStatus", () => {
+  microphoneStatusSpan.innerText = device.microphoneStatus;
+});
+
+/** @type {HTMLPreElement} */
+const microphoneConfigurationPre = document.getElementById(
+  "microphoneConfigurationPre"
+);
+device.addEventListener("getMicrophoneConfiguration", () => {
+  microphoneConfigurationPre.textContent = JSON.stringify(
+    device.microphoneConfiguration,
+    null,
+    2
+  );
+});
+
+const microphoneConfigurationContainer = document.getElementById(
+  "microphoneConfiguration"
+);
+/** @type {HTMLTemplateElement} */
+const microphoneConfigurationTypeTemplate = document.getElementById(
+  "microphoneConfigurationTypeTemplate"
+);
+BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
+  const microphoneConfigurationTypeContainer =
+    microphoneConfigurationTypeTemplate.content
+      .cloneNode(true)
+      .querySelector(".microphoneConfigurationType");
+
+  microphoneConfigurationContainer.appendChild(
+    microphoneConfigurationTypeContainer
+  );
+
+  microphoneConfigurationTypeContainer.querySelector(".type").innerText =
+    microphoneConfigurationType;
+
+  /** @type {HTMLSelectElement} */
+  const select = microphoneConfigurationTypeContainer.querySelector("select");
+  /** @type {HTMLOptGroupElement} */
+  const optgroup = select.querySelector("optgroup");
+  optgroup.label = microphoneConfigurationType;
+
+  BS.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
+    (value) => {
+      optgroup.appendChild(new Option(value));
+    }
+  );
+
+  /** @type {HTMLSpanElement} */
+  const span = microphoneConfigurationTypeContainer.querySelector("span");
+
+  device.addEventListener("isConnected", () => {
+    updateisInputDisabled();
+  });
+  device.addEventListener("microphoneStatus", () => {
+    updateisInputDisabled();
+  });
+  const updateisInputDisabled = () => {
+    select.disabled =
+      !device.isConnected ||
+      !device.hasMicrophone ||
+      device.microphoneStatus != "idle";
+  };
+
+  const updateSelect = () => {
+    const value = device.microphoneConfiguration[microphoneConfigurationType];
+    span.innerText = value;
+    select.value = value;
+  };
+
+  device.addEventListener("connected", () => {
+    if (!device.hasMicrophone) {
+      return;
+    }
+    updateSelect();
+  });
+
+  device.addEventListener("getMicrophoneConfiguration", () => {
+    updateSelect();
+  });
+
+  select.addEventListener("input", () => {
+    const value = select.value;
+    // console.log(`updating ${microphoneConfigurationType} to ${value}`);
+    device.setMicrophoneConfiguration({
+      [microphoneConfigurationType]: value,
+    });
+  });
+});
+
+/** @type {HTMLButtonElement} */
+const toggleMicrophoneButton = document.getElementById("toggleMicrophone");
+toggleMicrophoneButton.addEventListener("click", () => {
+  device.toggleMicrophone();
+});
+device.addEventListener("connected", () => {
+  updateToggleMicrophoneButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateToggleMicrophoneButton();
+});
+const updateToggleMicrophoneButton = () => {
+  let disabled =
+    !device.isConnected ||
+    device.sensorConfiguration.microphone == 0 ||
+    !device.hasMicrophone;
+
+  switch (device.microphoneStatus) {
+    case "streaming":
+      toggleMicrophoneButton.innerText = "stop microphone";
+      break;
+    case "idle":
+      toggleMicrophoneButton.innerText = "start microphone";
+      break;
+  }
+  toggleMicrophoneButton.disabled = disabled;
+};
+device.addEventListener("microphoneStatus", () => {
+  updateToggleMicrophoneButton();
+});
+
+/** @type {HTMLButtonElement} */
+const startMicrophoneButton = document.getElementById("startMicrophone");
+startMicrophoneButton.addEventListener("click", () => {
+  device.startMicrophone();
+});
+/** @type {HTMLButtonElement} */
+const stopMicrophoneButton = document.getElementById("stopMicrophone");
+stopMicrophoneButton.addEventListener("click", () => {
+  device.stopMicrophone();
+});
+/** @type {HTMLButtonElement} */
+const enableMicrophoneVadButton = document.getElementById("enableMicrphoneVad");
+enableMicrophoneVadButton.addEventListener("click", () => {
+  device.enableMicrophoneVad();
+});
+
+const updateMicrophoneButtons = () => {
+  let disabled =
+    !device.isConnected ||
+    device.sensorConfiguration.microphone == 0 ||
+    !device.hasMicrophone;
+
+  startMicrophoneButton.disabled =
+    disabled || device.microphoneStatus == "streaming";
+  stopMicrophoneButton.disabled = disabled || device.microphoneStatus == "idle";
+  enableMicrophoneVadButton.disabled =
+    disabled || device.microphoneStatus == "vad";
+};
+device.addEventListener("microphoneStatus", () => {
+  updateMicrophoneButtons();
+});
+device.addEventListener("connected", () => {
+  updateMicrophoneButtons();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateMicrophoneButtons();
+});
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const checkAudioContextState = () => {
+  const { state } = audioContext;
+  console.log({ audioContextState: state });
+  if (state != "running") {
+    document.addEventListener("click", () => audioContext.resume(), {
+      once: true,
+    });
+  }
+};
+audioContext.addEventListener("statechange", () => {
+  checkAudioContextState();
+});
+checkAudioContextState();
+
+device.audioContext = audioContext;
+
+/** @type {HTMLAudioElement} */
+const microphoneStreamAudioElement =
+  document.getElementById("microphoneStream");
+microphoneStreamAudioElement.srcObject =
+  device.microphoneMediaStreamDestination.stream;
+
+/** @type {HTMLAudioElement} */
+const microphoneRecordingAudioElement = document.getElementById(
+  "microphoneRecording"
+);
+/** @type {HTMLInputElement} */
+const autoPlayMicrphoneRecordingCheckbox = document.getElementById(
+  "autoPlayMicrphoneRecording"
+);
+let autoPlayMicrphoneRecording = autoPlayMicrphoneRecordingCheckbox.checked;
+console.log("autoPlayMicrphoneRecording", autoPlayMicrphoneRecording);
+autoPlayMicrphoneRecordingCheckbox.addEventListener("input", () => {
+  autoPlayMicrphoneRecording = autoPlayMicrphoneRecordingCheckbox.checked;
+  console.log({ autoPlayMicrphoneRecording });
+});
+device.addEventListener("microphoneRecording", (event) => {
+  microphoneRecordingAudioElement.src = event.message.url;
+  if (autoPlayMicrphoneRecording) {
+    microphoneRecordingAudioElement.play();
+  }
+});
+
+/** @type {HTMLButtonElement} */
+const toggleMicrophoneRecordingButton = document.getElementById(
+  "toggleMicrophoneRecording"
+);
+toggleMicrophoneRecordingButton.addEventListener("click", () => {
+  device.toggleMicrophoneRecording();
+});
+device.addEventListener("connected", () => {
+  updateToggleMicrophoneRecordingButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateToggleMicrophoneRecordingButton();
+});
+const updateToggleMicrophoneRecordingButton = () => {
+  let disabled =
+    !device.isConnected ||
+    device.sensorConfiguration.microphone == 0 ||
+    !device.hasMicrophone ||
+    device.microphoneStatus != "streaming";
+
+  toggleMicrophoneRecordingButton.innerText = device.isRecordingMicrophone
+    ? "stop recording"
+    : "start recording";
+
+  toggleMicrophoneRecordingButton.disabled = disabled;
+};
+device.addEventListener("isRecordingMicrophone", () => {
+  updateToggleMicrophoneRecordingButton();
+});
+device.addEventListener("microphoneStatus", () => {
+  updateToggleMicrophoneRecordingButton();
+});
+
+// DISPLAY
+
+/** @type {HTMLSpanElement} */
+const isDisplayAvailableSpan = document.getElementById("isDisplayAvailable");
+device.addEventListener("connected", () => {
+  isDisplayAvailableSpan.innerText = device.isDisplayAvailable;
+});
+
+/** @type {HTMLSpanElement} */
+const displayStatusSpan = document.getElementById("displayStatus");
+device.addEventListener("displayStatus", () => {
+  if (!device.isDisplayAvailable) {
+    return;
+  }
+  displayStatusSpan.innerText = device.displayStatus;
+});
+
+/** @type {HTMLButtonElement} */
+const toggleDisplayButton = document.getElementById("toggleDisplay");
+toggleDisplayButton.addEventListener("click", () => {
+  device.toggleDisplay();
+});
+device.addEventListener("connected", () => {
+  updateToggleDisplayButton();
+});
+device.addEventListener("displayStatus", () => {
+  updateToggleDisplayButton();
+});
+const updateToggleDisplayButton = () => {
+  if (!device.isDisplayAvailable) {
+    return;
+  }
+  let disabled = !device.isConnected || !device.isDisplayAvailable;
+  switch (device.displayStatus) {
+    case "asleep":
+      toggleDisplayButton.innerText = "enable display";
+      break;
+    case "awake":
+      toggleDisplayButton.innerText = "disable display";
+      break;
+    default:
+      disabled = true;
+      break;
+  }
+  toggleDisplayButton.disabled = disabled;
+};
+
+/** @type {HTMLPreElement} */
+const displayInformationPre = document.getElementById("displayInformationPre");
+device.addEventListener("displayInformation", () => {
+  displayInformationPre.textContent = JSON.stringify(
+    device.displayInformation,
+    null,
+    2
+  );
+});
+
+/** @type {HTMLSelectElement} */
+const setDisplayBrightnessSelect = document.getElementById(
+  "setDisplayBrightnessSelect"
+);
+/** @type {HTMLOptGroupElement} */
+const setDisplayBrightnessSelectOptgroup =
+  setDisplayBrightnessSelect.querySelector("optgroup");
+BS.DisplayBrightnesses.forEach((displayBrightness) => {
+  setDisplayBrightnessSelectOptgroup.appendChild(new Option(displayBrightness));
+});
+
+device.addEventListener("isConnected", () => {
+  setDisplayBrightnessSelect.disabled = !device.isConnected;
+});
+
+device.addEventListener("getDisplayBrightness", () => {
+  setDisplayBrightnessSelect.value = device.displayBrightness;
+});
+
+setDisplayBrightnessSelect.addEventListener("input", () => {
+  device.setDisplayBrightness(setDisplayBrightnessSelect.value);
+});
+
+/** @type {HTMLTemplateElement} */
+const displayColorTemplate = document.getElementById("displayColorTemplate");
+const displayColorsContainer = document.getElementById("displayColors");
+/** @type {string[]} */
+const setDisplayColor = BS.ThrottleUtils.throttle(
+  (colorIndex, colorString) => {
+    // console.log({ colorIndex, colorString });
+    device.setDisplayColor(colorIndex, colorString, true);
+    updateBitmapCanvas();
+  },
+  100,
+  true
+);
+device.addEventListener("notConnected", () => {
+  displayColorsContainer.innerHTML = "";
+});
+device.addEventListener("connected", () => {
+  displayColorsContainer.innerHTML = "";
+  if (device.isDisplayAvailable) {
+    for (
+      let colorIndex = 0;
+      colorIndex < device.numberOfDisplayColors;
+      colorIndex++
+    ) {
+      const displayColorContainer = displayColorTemplate.content
+        .cloneNode(true)
+        .querySelector(".displayColor");
+
+      const displayColorIndex =
+        displayColorContainer.querySelector(".colorIndex");
+      displayColorIndex.innerText = `color #${colorIndex}`;
+      const displayColorInput = displayColorContainer.querySelector("input");
+      displayColorInput.addEventListener("input", () => {
+        setDisplayColor(colorIndex, displayColorInput.value);
+        if (colorIndex == fillColorIndex) {
+          fillColorInput.value = displayColorInput.value;
+        }
+        if (colorIndex == lineColorIndex) {
+          lineColorInput.value = displayColorInput.value;
+        }
+
+        const bitmapColorIndexContainers = Array.from(
+          bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex")
+        );
+
+        bitmapColorIndexContainers.forEach(
+          (bitmapColorIndexContainer, bitmapColorIndex) => {
+            if (
+              bitmapColorIndexContainer.querySelector("select").value !=
+              colorIndex
+            ) {
+              return;
+            }
+
+            const bitmapColorIndexColorInput =
+              bitmapColorIndexContainer.querySelector("input");
+            bitmapColorIndexColorInput.value = displayColorInput.value;
+
+            const bitmapColorIndexSelect =
+              bitmapColorIndexContainer.querySelector("select");
+            bitmapColorIndexSelect.value = colorIndex;
+
+            if (bitmapColorIndex == currentBitmapColorIndex) {
+              currentBitmapColorIndexColorInput.value = displayColorInput.value;
+            }
+          }
+        );
+      });
+      displayColorsContainer.appendChild(displayColorContainer);
+    }
+  }
+});
+device.addEventListener("displayColor", (event) => {
+  const { colorIndex, colorRGB, colorHex } = event.message;
+  displayColorsContainer
+    .querySelectorAll(".displayColor")
+    [colorIndex].querySelector("input").value = colorHex;
+});
+
+/** @type {HTMLTemplateElement} */
+const displayColorOpacityTemplate = document.getElementById(
+  "displayColorOpacityTemplate"
+);
+const displayColorOpacitiesContainer = document.getElementById(
+  "displayColorOpacities"
+);
+const setDisplayColorOpacity = BS.ThrottleUtils.throttle(
+  (colorIndex, opacity) => {
+    console.log({ colorIndex, opacity });
+    device.setDisplayColorOpacity(colorIndex, opacity, true);
+  },
+  100,
+  true
+);
+device.addEventListener("notConnected", () => {
+  displayColorOpacitiesContainer.innerHTML = "";
+});
+device.addEventListener("connected", () => {
+  displayColorOpacitiesContainer.innerHTML = "";
+  if (device.isDisplayAvailable) {
+    for (
+      let colorIndex = 0;
+      colorIndex < device.numberOfDisplayColors;
+      colorIndex++
+    ) {
+      const displayColorOpacityContainer = displayColorOpacityTemplate.content
+        .cloneNode(true)
+        .querySelector(".displayColorOpacity");
+
+      const displayColorOpacityIndex =
+        displayColorOpacityContainer.querySelector(".colorIndex");
+      displayColorOpacityIndex.innerText = `opacity #${colorIndex}`;
+      const displayColorOpacityInput =
+        displayColorOpacityContainer.querySelector("input");
+      const displayColorOpacitySpan =
+        displayColorOpacityContainer.querySelector("span");
+      displayColorOpacityInput.addEventListener("input", () => {
+        const opacity = Number(displayColorOpacityInput.value);
+        displayColorOpacitySpan.innerText = Math.round(opacity * 100);
+        setDisplayColorOpacity(colorIndex, opacity);
+      });
+      displayColorOpacitiesContainer.appendChild(displayColorOpacityContainer);
+    }
+  }
+});
+
+const displayOpacityContainer = document.getElementById("displayOpacity");
+const displayOpacitySpan = displayOpacityContainer.querySelector("span");
+const displayOpacityInput = displayOpacityContainer.querySelector("input");
+
+const setDisplayOpacity = BS.ThrottleUtils.throttle(
+  (opacity) => {
+    console.log({ opacity });
+    device.setDisplayOpacity(opacity, true);
+  },
+  100,
+  true
+);
+displayOpacityInput.addEventListener("input", () => {
+  const opacity = Number(displayOpacityInput.value);
+  displayOpacitySpan.innerText = Math.round(opacity * 100);
+  setDisplayOpacity(opacity);
+  displayColorOpacitiesContainer
+    .querySelectorAll(".displayColorOpacity")
+    .forEach((container) => {
+      const input = container.querySelector("input");
+      const opacitySpan = container.querySelector("span.opacity");
+      input.value = opacity;
+      opacitySpan.innerText = Math.round(opacity * 100);
+    });
+});
+
+device.addEventListener("isConnected", () => {
+  const enabled = device.isConnected && device.isDisplayAvailable;
+  displayOpacityInput.disabled = !enabled;
+});
+
+const fillColorContainer = document.getElementById("fillColor");
+const fillColorSelect = fillColorContainer.querySelector("select");
+const fillColorOptgroup = fillColorSelect.querySelector("optgroup");
+device.addEventListener("connected", () => {
+  if (!device.isDisplayAvailable) {
+    return;
+  }
+  fillColorOptgroup.innerHTML = "";
+  for (
+    let colorIndex = 0;
+    colorIndex < device.numberOfDisplayColors;
+    colorIndex++
+  ) {
+    fillColorOptgroup.appendChild(new Option(colorIndex));
+  }
+  fillColorSelect.value = fillColorIndex;
+});
+const fillColorInput = fillColorContainer.querySelector("input");
+let fillColorIndex = 1;
+fillColorSelect.addEventListener("input", () => {
+  fillColorIndex = Number(fillColorSelect.value);
+  console.log({ fillColorIndex });
+  device.selectDisplayFillColor(fillColorIndex);
+  drawShape();
+  fillColorInput.value = device.displayColors[fillColorIndex];
+});
+
+device.addEventListener("isConnected", () => {
+  const enabled = device.isConnected && device.isDisplayAvailable;
+  fillColorSelect.disabled = !enabled;
+  // console.log({ enabled });
+});
+
+const lineColorContainer = document.getElementById("lineColor");
+const lineColorSelect = lineColorContainer.querySelector("select");
+const lineColorOptgroup = lineColorSelect.querySelector("optgroup");
+let lineColorIndex = 1;
+device.addEventListener("connected", () => {
+  if (!device.isDisplayAvailable) {
+    return;
+  }
+  lineColorOptgroup.innerHTML = "";
+  for (
+    let colorIndex = 0;
+    colorIndex < device.numberOfDisplayColors;
+    colorIndex++
+  ) {
+    lineColorOptgroup.appendChild(new Option(colorIndex));
+  }
+  lineColorSelect.value = lineColorIndex;
+});
+const lineColorInput = lineColorContainer.querySelector("input");
+lineColorSelect.addEventListener("input", () => {
+  lineColorIndex = Number(lineColorSelect.value);
+  console.log({ lineColorIndex });
+  device.selectDisplayLineColor(lineColorIndex);
+  drawShape();
+  lineColorInput.value = device.displayColors[lineColorIndex];
+});
+device.addEventListener("isConnected", () => {
+  const enabled = device.isConnected && device.isDisplayAvailable;
+  lineColorSelect.disabled = !enabled;
+});
+
+const backgroundColorContainer = document.getElementById("backgroundColor");
+const backgroundColorSelect = backgroundColorContainer.querySelector("select");
+const backgroundColorOptgroup = backgroundColorSelect.querySelector("optgroup");
+let backgroundColorIndex = 0;
+device.addEventListener("connected", () => {
+  if (!device.isDisplayAvailable) {
+    return;
+  }
+  backgroundColorOptgroup.innerHTML = "";
+  for (
+    let colorIndex = 0;
+    colorIndex < device.numberOfDisplayColors;
+    colorIndex++
+  ) {
+    backgroundColorOptgroup.appendChild(new Option(colorIndex));
+  }
+  backgroundColorSelect.value = backgroundColorIndex;
+});
+const backgroundColorInput = backgroundColorContainer.querySelector("input");
+backgroundColorSelect.addEventListener("input", () => {
+  backgroundColorIndex = Number(backgroundColorSelect.value);
+  console.log({ backgroundColorIndex });
+  device.setDisplayFillBackground(backgroundColorIndex != 0);
+  device.selectDisplayBackgroundColor(backgroundColorIndex);
+  drawShape();
+  backgroundColorInput.value = device.displayColors[backgroundColorIndex];
+});
+device.addEventListener("isConnected", () => {
+  const enabled = device.isConnected && device.isDisplayAvailable;
+  backgroundColorSelect.disabled = !enabled;
+});
+
+let drawWhenReady = false;
+let lastDrawTime = 0;
+let lastDrawReadyTime = 0;
+let pendingParams;
+device.addEventListener("displayReady", () => {
+  lastDrawReadyTime = Date.now();
+  // console.log("ready", lastDrawReadyTime - lastDrawTime);
+  if (drawWhenReady) {
+    drawWhenReady = false;
+    drawShape(pendingParams);
+  }
+});
+const drawShape = (updatedParams) => {
+  if (device.isConnected && device.isDisplayAvailable) {
+    if (!device.isDisplayReady) {
+      drawWhenReady = true;
+      pendingParams = updatedParams;
+      return;
+    }
+    lastDrawTime = Date.now();
+
+    if (false)
+      console.log("draw", {
+        drawShapeType,
+        drawWidth,
+        drawHeight,
+        drawX,
+        drawY,
+        drawBorderRadius,
+        drawStartAngle,
+        drawAngleOffset,
+        drawBitmapScaleX,
+        drawBitmapScaleY,
+        drawBitmapScale,
+      });
+    if (updatedParams?.includes("lineWidth")) {
+      device.setDisplayLineWidth(lineWidth);
+    }
+    if (updatedParams?.includes("rotation")) {
+      device.setDisplayRotation(rotation);
+    }
+    if (updatedParams?.includes("segmentStartCap")) {
+      device.setDisplaySegmentStartCap(segmentStartCap);
+    }
+    if (updatedParams?.includes("segmentEndCap")) {
+      device.setDisplaySegmentEndCap(segmentEndCap);
+    }
+    if (updatedParams?.includes("verticalAlignment")) {
+      device.setDisplayVerticalAlignment(verticalAlignment);
+    }
+    if (updatedParams?.includes("horizontalAlignment")) {
+      device.setDisplayHorizontalAlignment(horizontalAlignment);
+    }
+    if (updatedParams?.includes("segmentStartRadius")) {
+      device.setDisplaySegmentStartRadius(drawSegmentStartRadius);
+    }
+    if (updatedParams?.includes("segmentEndRadius")) {
+      device.setDisplaySegmentEndRadius(drawSegmentEndRadius);
+    }
+
+    if (updatedParams?.includes("cropTop")) {
+      device.setDisplayCropTop(drawCropTop);
+    }
+    if (updatedParams?.includes("cropRight")) {
+      device.setDisplayCropRight(drawCropRight);
+    }
+    if (updatedParams?.includes("cropBottom")) {
+      device.setDisplayCropBottom(drawCropBottom);
+    }
+    if (updatedParams?.includes("cropLeft")) {
+      device.setDisplayCropLeft(drawCropLeft);
+    }
+
+    if (updatedParams?.includes("rotationCropTop")) {
+      device.setDisplayRotationCropTop(drawRotationCropTop);
+    }
+    if (updatedParams?.includes("rotationCropRight")) {
+      device.setDisplayRotationCropRight(drawRotationCropRight);
+    }
+    if (updatedParams?.includes("rotationCropBottom")) {
+      device.setDisplayRotationCropBottom(drawRotationCropBottom);
+    }
+    if (updatedParams?.includes("rotationCropLeft")) {
+      device.setDisplayRotationCropLeft(drawRotationCropLeft);
+    }
+
+    if (updatedParams?.includes("bitmapScaleX")) {
+      device.setDisplayBitmapScaleX(drawBitmapScaleX);
+    }
+    if (updatedParams?.includes("bitmapScaleY")) {
+      device.setDisplayBitmapScaleY(drawBitmapScaleY);
+    }
+    if (updatedParams?.includes("bitmapScale")) {
+      device.setDisplayBitmapScale(drawBitmapScale);
+    }
+
+    switch (drawShapeType) {
+      case "drawRect":
+        device.drawDisplayRect(drawX, drawY, drawWidth, drawHeight);
+        break;
+      case "drawRoundRect":
+        device.drawDisplayRoundRect(
+          drawX,
+          drawY,
+          drawWidth,
+          drawHeight,
+          drawBorderRadius
+        );
+        break;
+      case "drawCircle":
+        device.drawDisplayCircle(drawX, drawY, drawRadius);
+        break;
+      case "drawEllipse":
+        device.drawDisplayEllipse(drawX, drawY, drawWidth, drawHeight);
+        break;
+      case "drawRegularPolygon":
+        device.drawDisplayRegularPolygon(
+          drawX,
+          drawY,
+          drawRadius,
+          drawNumberOfSides
+        );
+        break;
+      case "drawSegment":
+        device.drawDisplaySegment(drawX, drawY, drawEndX, drawEndY);
+        break;
+      case "drawArc":
+        device.drawDisplayArc(
+          drawX,
+          drawY,
+          drawRadius,
+          drawStartAngle,
+          drawAngleOffset
+        );
+        break;
+      case "drawArcEllipse":
+        device.drawDisplayArcEllipse(
+          drawX,
+          drawY,
+          drawWidth,
+          drawHeight,
+          drawStartAngle,
+          drawAngleOffset
+        );
+        break;
+      case "drawBitmap":
+        device.drawDisplayBitmap(drawX, drawY, {
+          numberOfColors: bitmapNumberOfColors,
+          pixels: bitmapPixels,
+          width: bitmapWidth,
+          height: bitmapHeight,
+        });
+        break;
+      default:
+        console.error(`uncaught drawShapeType ${drawShapeType}`);
+        break;
+    }
+    device.showDisplay();
+  }
+};
+
+const lineWidthContainer = document.getElementById("lineWidth");
+const lineWidthInput = lineWidthContainer.querySelector("input");
+const lineWidthSpan = lineWidthContainer.querySelector("span");
+let lineWidth = Number(lineWidthInput.value);
+
+lineWidthInput.addEventListener("input", () => {
+  lineWidth = Number(lineWidthInput.value);
+  //console.log({ lineWidth });
+  lineWidthSpan.innerText = lineWidth;
+
+  drawShape(["lineWidth"]);
+});
+
+const rotationContainer = document.getElementById("rotation");
+const rotationInput = rotationContainer.querySelector("input");
+const rotationSpan = rotationContainer.querySelector("span");
+let rotation = Number(rotationInput.value);
+
+rotationInput.addEventListener("input", () => {
+  rotation = Number(rotationInput.value);
+  // console.log({ rotation });
+  rotationSpan.innerText = rotation;
+
+  drawShape(["rotation"]);
+});
+
+const horizontalAlignmentContainer = document.getElementById(
+  "horizontalAlignment"
+);
+const horizontalAlignmentSelect =
+  horizontalAlignmentContainer.querySelector("select");
+const horizontalAlignmentOptgroup =
+  horizontalAlignmentSelect.querySelector("optgroup");
+
+BS.DisplayAlignments.forEach((horizontalAlignment) => {
+  horizontalAlignmentOptgroup.appendChild(new Option(horizontalAlignment));
+});
+horizontalAlignmentSelect.value = "center";
+let horizontalAlignment = horizontalAlignmentSelect.value;
+console.log({ horizontalAlignment });
+
+horizontalAlignmentSelect.addEventListener("input", () => {
+  horizontalAlignment = horizontalAlignmentSelect.value;
+  console.log({ horizontalAlignment });
+  drawShape(["horizontalAlignment"]);
+});
+
+const verticalAlignmentContainer = document.getElementById("verticalAlignment");
+const verticalAlignmentSelect =
+  verticalAlignmentContainer.querySelector("select");
+const verticalAlignmentOptgroup =
+  verticalAlignmentSelect.querySelector("optgroup");
+
+BS.DisplayAlignments.forEach((verticalAlignment) => {
+  verticalAlignmentOptgroup.appendChild(new Option(verticalAlignment));
+});
+verticalAlignmentSelect.value = "center";
+let verticalAlignment = verticalAlignmentSelect.value;
+console.log({ verticalAlignment });
+
+verticalAlignmentSelect.addEventListener("input", () => {
+  verticalAlignment = verticalAlignmentSelect.value;
+  console.log({ verticalAlignment });
+  drawShape(["verticalAlignment"]);
+});
+
+const segmentStartCapContainer = document.getElementById("segmentStartCap");
+const segmentStartCapSelect = segmentStartCapContainer.querySelector("select");
+const segmentStartCapOptgroup = segmentStartCapSelect.querySelector("optgroup");
+
+BS.DisplaySegmentCaps.forEach((segmentStartCap) => {
+  segmentStartCapOptgroup.appendChild(new Option(segmentStartCap));
+});
+let segmentStartCap = segmentStartCapSelect.value;
+console.log({ segmentStartCap });
+
+segmentStartCapSelect.addEventListener("input", () => {
+  segmentStartCap = segmentStartCapSelect.value;
+  console.log({ segmentStartCap });
+  drawShape(["segmentStartCap"]);
+});
+
+const segmentEndCapContainer = document.getElementById("segmentEndCap");
+const segmentEndCapSelect = segmentEndCapContainer.querySelector("select");
+const segmentEndCapOptgroup = segmentEndCapSelect.querySelector("optgroup");
+
+BS.DisplaySegmentCaps.forEach((segmentEndCap) => {
+  segmentEndCapOptgroup.appendChild(new Option(segmentEndCap));
+});
+let segmentEndCap = segmentEndCapSelect.value;
+console.log({ segmentEndCap });
+
+segmentEndCapSelect.addEventListener("input", () => {
+  segmentEndCap = segmentEndCapSelect.value;
+  console.log({ segmentEndCap });
+  drawShape(["segmentEndCap"]);
+});
+
+const drawSegmentStartRadiusContainer = document.getElementById(
+  "drawSegmentStartRadius"
+);
+const drawSegmentStartRadiusInput =
+  drawSegmentStartRadiusContainer.querySelector("input");
+const drawSegmentStartRadiusSpan =
+  drawSegmentStartRadiusContainer.querySelector("span");
+let drawSegmentStartRadius = Number(drawSegmentStartRadiusInput.value);
+
+drawSegmentStartRadiusInput.addEventListener("input", () => {
+  drawSegmentStartRadius = Number(drawSegmentStartRadiusInput.value);
+  //console.log({ drawSegmentStartRadius });
+  drawSegmentStartRadiusSpan.innerText = drawSegmentStartRadius;
+  drawShape(["segmentStartRadius"]);
+});
+
+const drawSegmentEndRadiusContainer = document.getElementById(
+  "drawSegmentEndRadius"
+);
+const drawSegmentEndRadiusInput =
+  drawSegmentEndRadiusContainer.querySelector("input");
+const drawSegmentEndRadiusSpan =
+  drawSegmentEndRadiusContainer.querySelector("span");
+let drawSegmentEndRadius = Number(drawSegmentEndRadiusInput.value);
+
+drawSegmentEndRadiusInput.addEventListener("input", () => {
+  drawSegmentEndRadius = Number(drawSegmentEndRadiusInput.value);
+  //console.log({ drawSegmentEndRadius });
+  drawSegmentEndRadiusSpan.innerText = drawSegmentEndRadius;
+  drawShape(["segmentEndRadius"]);
+});
+
+const drawCropTopContainer = document.getElementById("drawCropTop");
+const drawCropTopInput = drawCropTopContainer.querySelector("input");
+const drawCropTopSpan = drawCropTopContainer.querySelector("span");
+let drawCropTop = Number(drawCropTopInput.value);
+
+drawCropTopInput.addEventListener("input", () => {
+  drawCropTop = Number(drawCropTopInput.value);
+  //console.log({ drawCropTop });
+  drawCropTopSpan.innerText = drawCropTop;
+  drawShape(["cropTop"]);
+});
+
+const drawCropRightContainer = document.getElementById("drawCropRight");
+const drawCropRightInput = drawCropRightContainer.querySelector("input");
+const drawCropRightSpan = drawCropRightContainer.querySelector("span");
+let drawCropRight = Number(drawCropRightInput.value);
+
+drawCropRightInput.addEventListener("input", () => {
+  drawCropRight = Number(drawCropRightInput.value);
+  //console.log({ drawCropRight });
+  drawCropRightSpan.innerText = drawCropRight;
+  drawShape(["cropRight"]);
+});
+
+const drawCropBottomContainer = document.getElementById("drawCropBottom");
+const drawCropBottomInput = drawCropBottomContainer.querySelector("input");
+const drawCropBottomSpan = drawCropBottomContainer.querySelector("span");
+let drawCropBottom = Number(drawCropBottomInput.value);
+
+drawCropBottomInput.addEventListener("input", () => {
+  drawCropBottom = Number(drawCropBottomInput.value);
+  //console.log({ drawCropBottom });
+  drawCropBottomSpan.innerText = drawCropBottom;
+  drawShape(["cropBottom"]);
+});
+
+const drawCropLeftContainer = document.getElementById("drawCropLeft");
+const drawCropLeftInput = drawCropLeftContainer.querySelector("input");
+const drawCropLeftSpan = drawCropLeftContainer.querySelector("span");
+let drawCropLeft = Number(drawCropLeftInput.value);
+
+drawCropLeftInput.addEventListener("input", () => {
+  drawCropLeft = Number(drawCropLeftInput.value);
+  //console.log({ drawCropLeft });
+  drawCropLeftSpan.innerText = drawCropLeft;
+  drawShape(["cropLeft"]);
+});
+
+const drawRotationCropTopContainer = document.getElementById(
+  "drawRotationCropTop"
+);
+const drawRotationCropTopInput =
+  drawRotationCropTopContainer.querySelector("input");
+const drawRotationCropTopSpan =
+  drawRotationCropTopContainer.querySelector("span");
+let drawRotationCropTop = Number(drawRotationCropTopInput.value);
+
+drawRotationCropTopInput.addEventListener("input", () => {
+  drawRotationCropTop = Number(drawRotationCropTopInput.value);
+  //console.log({ drawRotationCropTop });
+  drawRotationCropTopSpan.innerText = drawRotationCropTop;
+  drawShape(["rotationCropTop"]);
+});
+
+const drawRotationCropRightContainer = document.getElementById(
+  "drawRotationCropRight"
+);
+const drawRotationCropRightInput =
+  drawRotationCropRightContainer.querySelector("input");
+const drawRotationCropRightSpan =
+  drawRotationCropRightContainer.querySelector("span");
+let drawRotationCropRight = Number(drawRotationCropRightInput.value);
+
+drawRotationCropRightInput.addEventListener("input", () => {
+  drawRotationCropRight = Number(drawRotationCropRightInput.value);
+  //console.log({ drawRotationCropRight });
+  drawRotationCropRightSpan.innerText = drawRotationCropRight;
+  drawShape(["rotationCropRight"]);
+});
+
+const drawRotationCropBottomContainer = document.getElementById(
+  "drawRotationCropBottom"
+);
+const drawRotationCropBottomInput =
+  drawRotationCropBottomContainer.querySelector("input");
+const drawRotationCropBottomSpan =
+  drawRotationCropBottomContainer.querySelector("span");
+let drawRotationCropBottom = Number(drawRotationCropBottomInput.value);
+
+drawRotationCropBottomInput.addEventListener("input", () => {
+  drawRotationCropBottom = Number(drawRotationCropBottomInput.value);
+  //console.log({ drawRotationCropBottom });
+  drawRotationCropBottomSpan.innerText = drawRotationCropBottom;
+  drawShape(["rotationCropBottom"]);
+});
+
+const drawRotationCropLeftContainer = document.getElementById(
+  "drawRotationCropLeft"
+);
+const drawRotationCropLeftInput =
+  drawRotationCropLeftContainer.querySelector("input");
+const drawRotationCropLeftSpan =
+  drawRotationCropLeftContainer.querySelector("span");
+let drawRotationCropLeft = Number(drawRotationCropLeftInput.value);
+
+drawRotationCropLeftInput.addEventListener("input", () => {
+  drawRotationCropLeft = Number(drawRotationCropLeftInput.value);
+  //console.log({ drawRotationCropLeft });
+  drawRotationCropLeftSpan.innerText = drawRotationCropLeft;
+  drawShape(["rotationCropLeft"]);
+});
+
+const drawBitmapScaleXContainer = document.getElementById("drawBitmapScaleX");
+const drawBitmapScaleXInput = drawBitmapScaleXContainer.querySelector("input");
+const drawBitmapScaleXSpan = drawBitmapScaleXContainer.querySelector("span");
+let drawBitmapScaleX = Number(drawBitmapScaleXInput.value);
+
+drawBitmapScaleXInput.addEventListener("input", () => {
+  drawBitmapScaleX = Number(drawBitmapScaleXInput.value);
+  //console.log({ drawBitmapScaleX });
+  drawBitmapScaleXSpan.innerText = drawBitmapScaleX;
+  drawShape(["bitmapScaleX"]);
+});
+
+const drawBitmapScaleYContainer = document.getElementById("drawBitmapScaleY");
+const drawBitmapScaleYInput = drawBitmapScaleYContainer.querySelector("input");
+const drawBitmapScaleYSpan = drawBitmapScaleYContainer.querySelector("span");
+let drawBitmapScaleY = Number(drawBitmapScaleYInput.value);
+
+drawBitmapScaleYInput.addEventListener("input", () => {
+  drawBitmapScaleY = Number(drawBitmapScaleYInput.value);
+  //console.log({ drawBitmapScaleY });
+  drawBitmapScaleYSpan.innerText = drawBitmapScaleY;
+  drawShape(["bitmapScaleY"]);
+});
+
+const drawBitmapScaleContainer = document.getElementById("drawBitmapScale");
+const drawBitmapScaleInput = drawBitmapScaleContainer.querySelector("input");
+const drawBitmapScaleSpan = drawBitmapScaleContainer.querySelector("span");
+let drawBitmapScale = Number(drawBitmapScaleInput.value);
+
+drawBitmapScaleInput.addEventListener("input", () => {
+  drawBitmapScale = Number(drawBitmapScaleInput.value);
+  //console.log({ drawBitmapScale });
+
+  drawBitmapScaleXSpan.innerText = drawBitmapScale;
+  drawBitmapScaleXInput.value = drawBitmapScale;
+
+  drawBitmapScaleYSpan.innerText = drawBitmapScale;
+  drawBitmapScaleYInput.value = drawBitmapScale;
+
+  drawBitmapScaleSpan.innerText = drawBitmapScale;
+  drawShape(["bitmapScale"]);
+});
+
+const drawXContainer = document.getElementById("drawX");
+const drawXInput = drawXContainer.querySelector("input");
+const drawXSpan = drawXContainer.querySelector("span");
+let drawX = Number(drawXInput.value);
+
+drawXInput.addEventListener("input", () => {
+  drawX = Number(drawXInput.value);
+  //console.log({ drawX });
+  drawXSpan.innerText = drawX;
+  drawShape();
+});
+
+const drawYContainer = document.getElementById("drawY");
+const drawYInput = drawYContainer.querySelector("input");
+const drawYSpan = drawYContainer.querySelector("span");
+let drawY = Number(drawYInput.value);
+
+drawYInput.addEventListener("input", () => {
+  drawY = Number(drawYInput.value);
+  //console.log({ drawY });
+  drawYSpan.innerText = drawY;
+  drawShape();
+});
+
+const drawWidthContainer = document.getElementById("drawWidth");
+const drawWidthInput = drawWidthContainer.querySelector("input");
+const drawWidthSpan = drawWidthContainer.querySelector("span");
+let drawWidth = Number(drawWidthInput.value);
+
+drawWidthInput.addEventListener("input", () => {
+  drawWidth = Number(drawWidthInput.value);
+  //console.log({ drawWidth });
+  drawWidthSpan.innerText = drawWidth;
+  drawShape();
+});
+
+const drawHeightContainer = document.getElementById("drawHeight");
+const drawHeightInput = drawHeightContainer.querySelector("input");
+const drawHeightSpan = drawHeightContainer.querySelector("span");
+let drawHeight = Number(drawHeightInput.value);
+
+drawHeightInput.addEventListener("input", () => {
+  drawHeight = Number(drawHeightInput.value);
+  //console.log({ drawHeight });
+  drawHeightSpan.innerText = drawHeight;
+  drawShape();
+});
+
+const drawRadiusContainer = document.getElementById("drawRadius");
+const drawRadiusInput = drawRadiusContainer.querySelector("input");
+const drawRadiusSpan = drawRadiusContainer.querySelector("span");
+let drawRadius = Number(drawRadiusInput.value);
+
+drawRadiusInput.addEventListener("input", () => {
+  drawRadius = Number(drawRadiusInput.value);
+  //console.log({ drawRadius });
+  drawRadiusSpan.innerText = drawRadius;
+  drawShape();
+});
+
+const drawBorderRadiusContainer = document.getElementById("drawBorderRadius");
+const drawBorderRadiusInput = drawBorderRadiusContainer.querySelector("input");
+const drawBorderRadiusSpan = drawBorderRadiusContainer.querySelector("span");
+let drawBorderRadius = Number(drawBorderRadiusInput.value);
+
+drawBorderRadiusInput.addEventListener("input", () => {
+  drawBorderRadius = Number(drawBorderRadiusInput.value);
+  //console.log({ drawBorderRadius });
+  drawBorderRadiusSpan.innerText = drawBorderRadius;
+  drawShape();
+});
+
+const drawNumberOfSidesContainer = document.getElementById("drawNumberOfSides");
+const drawNumberOfSidesInput =
+  drawNumberOfSidesContainer.querySelector("input");
+const drawNumberOfSidesSpan = drawNumberOfSidesContainer.querySelector("span");
+let drawNumberOfSides = Number(drawNumberOfSidesInput.value);
+
+drawNumberOfSidesInput.addEventListener("input", () => {
+  drawNumberOfSides = Number(drawNumberOfSidesInput.value);
+  //console.log({ drawNumberOfSides });
+  drawNumberOfSidesSpan.innerText = drawNumberOfSides;
+  drawShape();
+});
+
+const drawEndXContainer = document.getElementById("drawEndX");
+const drawEndXInput = drawEndXContainer.querySelector("input");
+const drawEndXSpan = drawEndXContainer.querySelector("span");
+let drawEndX = Number(drawEndXInput.value);
+
+drawEndXInput.addEventListener("input", () => {
+  drawEndX = Number(drawEndXInput.value);
+  //console.log({ drawEndX });
+  drawEndXSpan.innerText = drawEndX;
+  drawShape();
+});
+
+const drawEndYContainer = document.getElementById("drawEndY");
+const drawEndYInput = drawEndYContainer.querySelector("input");
+const drawEndYSpan = drawEndYContainer.querySelector("span");
+let drawEndY = Number(drawEndYInput.value);
+
+drawEndYInput.addEventListener("input", () => {
+  drawEndY = Number(drawEndYInput.value);
+  //console.log({ drawEndY });
+  drawEndYSpan.innerText = drawEndY;
+  drawShape();
+});
+
+const drawStartAngleContainer = document.getElementById("drawStartAngle");
+const drawStartAngleInput = drawStartAngleContainer.querySelector("input");
+const drawStartAngleSpan = drawStartAngleContainer.querySelector("span");
+let drawStartAngle = Number(drawStartAngleInput.value);
+
+drawStartAngleInput.addEventListener("input", () => {
+  drawStartAngle = Number(drawStartAngleInput.value);
+  //console.log({ drawStartAngle });
+  drawStartAngleSpan.innerText = drawStartAngle;
+  drawShape();
+});
+
+const drawAngleOffsetContainer = document.getElementById("drawAngleOffset");
+const drawAngleOffsetInput = drawAngleOffsetContainer.querySelector("input");
+const drawAngleOffsetSpan = drawAngleOffsetContainer.querySelector("span");
+let drawAngleOffset = Number(drawAngleOffsetInput.value);
+
+drawAngleOffsetInput.addEventListener("input", () => {
+  drawAngleOffset = Number(drawAngleOffsetInput.value);
+  //console.log({ drawAngleOffset });
+  drawAngleOffsetSpan.innerText = drawAngleOffset;
+  drawShape();
+});
+
+/** @type {HTMLButtonElement} */
+const drawShapeButton = document.getElementById("drawShape");
+drawShapeButton.addEventListener("click", () => {
+  drawShape();
+});
+device.addEventListener("isConnected", () => {
+  const enabled = device.isConnected && device.isDisplayAvailable;
+  drawShapeButton.disabled = !enabled;
+});
+
+/** @type {HTMLSelectElement} */
+const drawShapeTypeSelect = document.getElementById("drawShapeType");
+let drawShapeType = drawShapeTypeSelect.value;
+drawShapeTypeSelect.addEventListener("input", () => {
+  drawShapeType = drawShapeTypeSelect.value;
+  console.log({ drawShapeType });
+  drawShape();
+});
+console.log({ drawShapeType });
+
+device.addEventListener("connected", () => {
+  if (!device.isDisplayAvailable) {
+    return;
+  }
+  drawXInput.max = device.displayInformation.width + 50;
+  drawYInput.max = device.displayInformation.height + 50;
+
+  drawWidthInput.max = device.displayInformation.width;
+  drawHeightInput.max = device.displayInformation.height;
+
+  drawRadiusInput.max = Math.min(
+    device.displayInformation.height / 2,
+    device.displayInformation.width / 2
+  );
+});
+
+// BITMAP
+const bitmapWidthContainer = document.getElementById("bitmapWidth");
+const bitmapWidthInput = bitmapWidthContainer.querySelector("input");
+const bitmapWidthSpan = bitmapWidthContainer.querySelector("span");
+let bitmapWidth = Number(bitmapWidthInput.value);
+
+bitmapWidthInput.addEventListener("input", () => {
+  bitmapWidth = Number(bitmapWidthInput.value);
+  console.log({ bitmapWidth });
+  bitmapWidthSpan.innerText = bitmapWidth;
+  onBitmapCanvasSizeUpdate();
+});
+
+const bitmapHeightContainer = document.getElementById("bitmapHeight");
+const bitmapHeightInput = bitmapHeightContainer.querySelector("input");
+const bitmapHeightSpan = bitmapHeightContainer.querySelector("span");
+let bitmapHeight = Number(bitmapHeightInput.value);
+
+bitmapHeightInput.addEventListener("input", () => {
+  bitmapHeight = Number(bitmapHeightInput.value);
+  console.log({ bitmapHeight });
+  bitmapHeightSpan.innerText = bitmapHeight;
+  onBitmapCanvasSizeUpdate();
+});
+
+let bitmapPixels = [];
+const bitmapContainer = document.getElementById("bitmap");
+const bitmapCanvas = bitmapContainer.querySelector("canvas");
+const bitmapContext = bitmapCanvas.getContext("2d");
+const bitmapCanvasHeight = 200;
+let bitmapPixelLength = bitmapCanvasHeight / bitmapHeight;
+let bitmapAspectRatio = bitmapWidth / bitmapHeight;
+let bitmapCanvasWidth = bitmapCanvasHeight * bitmapAspectRatio;
+const onBitmapCanvasSizeUpdate = () => {
+  bitmapAspectRatio = bitmapWidth / bitmapHeight;
+  bitmapCanvasWidth = bitmapCanvasHeight * bitmapAspectRatio;
+  bitmapCanvas.style.width = `${bitmapCanvasWidth}px`;
+
+  bitmapPixels = new Array(bitmapWidth * bitmapHeight).fill(0);
+
+  bitmapPixelLength = bitmapCanvasHeight / bitmapHeight;
+
+  bitmapCanvas.width = bitmapPixelLength * bitmapWidth;
+  bitmapCanvas.height = bitmapPixelLength * bitmapHeight;
+
+  bitmapImage.width = bitmapCanvas.width;
+  bitmapImage.height = bitmapCanvas.height;
+  bitmapImage.style.width = `${bitmapCanvas.width}px`;
+  quantizedBitmapImage.style.width = `${bitmapCanvas.width}px`;
+
+  updateBitmapCanvas();
+};
+const updateBitmapCanvas = () => {
+  bitmapContext.clearRect(0, 0, bitmapCanvasWidth, bitmapCanvasHeight);
+  bitmapContext.fillStyle = device.displayBitmapColors[0];
+  bitmapContext.fillRect(0, 0, bitmapCanvasWidth, bitmapCanvasHeight);
+
+  bitmapPixels.forEach((pixel, pixelIndex) => {
+    const pixelX = pixelIndex % bitmapWidth;
+    const pixelY = Math.floor(pixelIndex / bitmapWidth);
+    const x = pixelX * bitmapPixelLength;
+    const y = pixelY * bitmapPixelLength;
+    bitmapContext.fillStyle = device.displayBitmapColors[pixel];
+    bitmapContext.fillRect(x, y, bitmapPixelLength, bitmapPixelLength);
+  });
+
+  bitmapContext.lineWidth = 1.5;
+  bitmapContext.strokeStyle = "white";
+  for (let row = 1; row < bitmapHeight; row++) {
+    bitmapContext.beginPath();
+    const y = row * bitmapPixelLength;
+    bitmapContext.moveTo(0, y);
+    bitmapContext.lineTo(bitmapCanvasWidth, y);
+    bitmapContext.stroke();
+  }
+  for (let col = 1; col < bitmapWidth; col++) {
+    bitmapContext.beginPath();
+    const x = col * bitmapPixelLength;
+    bitmapContext.moveTo(x, 0);
+    bitmapContext.lineTo(x, bitmapCanvasHeight);
+    bitmapContext.stroke();
+  }
+
+  drawShape();
+};
+let isMouseDown = false;
+window.addEventListener("mousedown", () => {
+  isMouseDown = true;
+});
+window.addEventListener("mouseup", () => {
+  isMouseDown = false;
+});
+bitmapCanvas.addEventListener("mousedown", (event) => {
+  const { offsetX, offsetY } = event;
+  setBitmapPixel(offsetX, offsetY);
+});
+bitmapCanvas.addEventListener("mousemove", (event) => {
+  if (!isMouseDown) {
+    return;
+  }
+  const { offsetX, offsetY } = event;
+  setBitmapPixel(offsetX, offsetY);
+});
+/**
+ * @param {number} offsetX
+ * @param {number} offsetY
+ */
+const setBitmapPixel = (offsetX, offsetY) => {
+  console.log({ offsetX, offsetY, bitmapCanvasWidth, bitmapCanvasHeight });
+  let x = offsetX / bitmapCanvasWidth;
+  let y = offsetY / bitmapCanvasHeight;
+  if (x >= 1 || y >= 1) {
+    return;
+  }
+  // console.log({ x, y });
+  const pixelX = Math.floor(x * bitmapWidth);
+  const pixelY = Math.floor(y * bitmapHeight);
+  // console.log({ pixelX, pixelY });
+
+  const pixelIndex = bitmapWidth * pixelY + pixelX;
+  // console.log({ pixelIndex });
+
+  bitmapPixels[pixelIndex] = currentBitmapColorIndex;
+  updateBitmapCanvas();
+};
+
+const bitmapNumberOfColorsContainer = document.getElementById(
+  "bitmapNumberOfColors"
+);
+const bitmapNumberOfColorsInput =
+  bitmapNumberOfColorsContainer.querySelector("input");
+const bitmapNumberOfColorsSpan =
+  bitmapNumberOfColorsContainer.querySelector("span");
+let bitmapNumberOfColors = Number(bitmapNumberOfColorsInput.value);
+
+bitmapNumberOfColorsInput.addEventListener("input", () => {
+  bitmapNumberOfColors = Number(bitmapNumberOfColorsInput.value);
+  bitmapPixels.fill(0);
+  console.log({ bitmapNumberOfColors });
+  bitmapNumberOfColorsSpan.innerText = bitmapNumberOfColors;
+  updateBitmapColorIndicesContainer();
+  updateCurrentBitmapColorIndex();
+  updateCurrentBitmapColor();
+  updateBitmapCanvas();
+});
+
+const bitmapColorIndicesContainer =
+  document.getElementById("bitmapColorIndices");
+/** @type {HTMLTemplateElement} */
+const bitmapColorIndexTemplate = document.getElementById(
+  "bitmapColorIndexTemplate"
+);
+const updateBitmapColorIndicesContainer = () => {
+  bitmapColorIndicesContainer.innerHTML = "";
+  if (!device.isConnected) {
+    return;
+  }
+  for (
+    let bitmapColorIndex = 0;
+    bitmapColorIndex < bitmapNumberOfColors;
+    bitmapColorIndex++
+  ) {
+    /** @type {HTMLElement} */
+    const bitmapColorIndexContainer = bitmapColorIndexTemplate.content
+      .cloneNode(true)
+      .querySelector(".bitmapColorIndex");
+
+    const bitmapColorIndexSpan =
+      bitmapColorIndexContainer.querySelector(".colorIndex");
+    bitmapColorIndexSpan.innerText = `#${bitmapColorIndex}`;
+    const bitmapColorIndexSelect =
+      bitmapColorIndexContainer.querySelector("select");
+    const bitmapColorIndexOptgroup =
+      bitmapColorIndexSelect.querySelector("optgroup");
+    const numberOfDisplayColors = device.isConnected
+      ? device.numberOfDisplayColors
+      : 0;
+    for (let colorIndex = 0; colorIndex < numberOfDisplayColors; colorIndex++) {
+      bitmapColorIndexOptgroup.appendChild(new Option(colorIndex));
+    }
+
+    const bitmapColorIndexColorInput =
+      bitmapColorIndexContainer.querySelector("input");
+    bitmapColorIndexColorInput.value =
+      device.displayBitmapColors[bitmapColorIndex];
+
+    bitmapColorIndexSelect.value =
+      device.displayBitmapColorIndices[bitmapColorIndex];
+    bitmapColorIndexSelect.addEventListener("input", () => {
+      const colorIndex = Number(bitmapColorIndexSelect.value);
+      if (device.isConnected) {
+        device.selectDisplayBitmapColor(bitmapColorIndex, colorIndex, true);
+      }
+      bitmapColorIndexColorInput.value = device.displayColors[colorIndex];
+
+      if (currentBitmapColorIndex == bitmapColorIndex) {
+        updateCurrentBitmapColor();
+      }
+      console.log(
+        "bitmapColorIndices",
+        device.displayContextState.bitmapColorIndices
+      );
+      updateBitmapCanvas();
+    });
+
+    bitmapColorIndicesContainer.appendChild(bitmapColorIndexContainer);
+  }
+};
+device.addEventListener("isConnected", () => {
+  updateBitmapColorIndicesContainer();
+});
+
+const currentBitmapColorIndexContainer = document.getElementById(
+  "currentBitmapColorIndex"
+);
+let currentBitmapColorIndex = 0;
+const currentBitmapColorIndexSelect =
+  currentBitmapColorIndexContainer.querySelector("select");
+const currentBitmapColorIndexOptgroup =
+  currentBitmapColorIndexContainer.querySelector("optgroup");
+const currentBitmapColorIndexColorInput =
+  currentBitmapColorIndexContainer.querySelector("input");
+const updateCurrentBitmapColorIndex = () => {
+  currentBitmapColorIndex = 0;
+  currentBitmapColorIndexOptgroup.innerHTML = "";
+  for (
+    let bitmapColorIndex = 0;
+    bitmapColorIndex < bitmapNumberOfColors;
+    bitmapColorIndex++
+  ) {
+    currentBitmapColorIndexOptgroup.appendChild(new Option(bitmapColorIndex));
+  }
+};
+updateCurrentBitmapColorIndex();
+
+currentBitmapColorIndexSelect.addEventListener("input", () => {
+  currentBitmapColorIndex = Number(currentBitmapColorIndexSelect.value);
+  console.log({ currentBitmapColorIndex });
+  updateCurrentBitmapColor();
+});
+const updateCurrentBitmapColor = () => {
+  currentBitmapColorIndexColorInput.value =
+    bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex input")[
+      currentBitmapColorIndex
+    ].value;
+};
+
+const clearBitmapButton = document.getElementById("clearBitmap");
+clearBitmapButton.addEventListener("click", () => {
+  bitmapPixels.fill(0);
+  updateBitmapCanvas();
+});
+
+/** @type {HTMLInputElement} */
+const bitmapImageInput = document.getElementById("bitmapImageInput");
+bitmapImageInput.addEventListener("input", () => {
+  quantizeBitmapImage();
+});
+/** @type {HTMLButtonElement} */
+const quantizeBitmapImageButton = document.getElementById(
+  "quantizeBitmapImage"
+);
+quantizeBitmapImageButton.addEventListener("click", () => {
+  quantizeBitmapImage();
+});
+const quantizeBitmapImage = () => {
+  const file = bitmapImageInput.files[0];
+  if (!file) {
+    return;
+  }
+  console.log("bitmapImage", file);
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    bitmapImage.style.display = "";
+    bitmapImage.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+/** @type {HTMLImageElement} */
+const bitmapImage = bitmapContainer.querySelectorAll("img")[0];
+/** @type {HTMLImageElement} */
+const quantizedBitmapImage = bitmapContainer.querySelectorAll("img")[1];
+bitmapImage.addEventListener("load", async () => {
+  if (quantizeOverrideDisplayColors) {
+    const { blob, colorIndices, colors } = await device.quantizeDisplayImage(
+      bitmapImage,
+      bitmapWidth,
+      bitmapHeight,
+      bitmapNumberOfColors
+    );
+
+    quantizedBitmapImage.width = bitmapWidth;
+    quantizedBitmapImage.height = bitmapHeight;
+
+    quantizedBitmapImage.src = URL.createObjectURL(blob);
+    quantizedBitmapImage.style.display = "";
+
+    colors.forEach((color, colorIndex) => {
+      device.setDisplayColor(colorIndex, color);
+      device.selectDisplayBitmapColor(colorIndex, colorIndex);
+    });
+    device.flushDisplayContextCommands();
+  } else {
+    const { blob, bitmap } = await device.imageToDisplayBitmap(
+      bitmapImage,
+      bitmapWidth,
+      bitmapHeight,
+      bitmapNumberOfColors
+    );
+
+    quantizedBitmapImage.width = bitmapWidth;
+    quantizedBitmapImage.height = bitmapHeight;
+
+    quantizedBitmapImage.src = URL.createObjectURL(blob);
+    quantizedBitmapImage.style.display = "";
+
+    bitmapPixels = bitmap.pixels;
+    updateBitmapCanvas();
+  }
+});
+device.addEventListener("displayContextState", (event) => {
+  const { differences } = event.message;
+  if (differences.includes("bitmapColorIndices")) {
+    const bitmapColorIndexContainers = Array.from(
+      bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex")
+    );
+
+    device.displayBitmapColorIndices.forEach((colorIndex, bitmapColorIndex) => {
+      if (bitmapColorIndex >= bitmapNumberOfColors) {
+        return;
+      }
+      const bitmapColorIndexContainer =
+        bitmapColorIndexContainers[bitmapColorIndex];
+      bitmapColorIndexContainer.querySelector("input").value =
+        device.displayColors[colorIndex];
+      bitmapColorIndexContainer.querySelector("select").value = colorIndex;
+    });
+  }
+});
+
+const toggleQuantizeOverrideDisplayColorsCheckbox = document.getElementById(
+  "toggleQuantizeOverrideDisplayColors"
+);
+let quantizeOverrideDisplayColors =
+  toggleQuantizeOverrideDisplayColorsCheckbox.checked;
+toggleQuantizeOverrideDisplayColorsCheckbox.addEventListener("input", () => {
+  quantizeOverrideDisplayColors =
+    toggleQuantizeOverrideDisplayColorsCheckbox.checked;
+});
+onBitmapCanvasSizeUpdate();

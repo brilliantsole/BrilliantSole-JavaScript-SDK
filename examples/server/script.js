@@ -5,7 +5,6 @@ console.log({ BS });
 
 const client = new BS.WebSocketClient();
 console.log({ client });
-
 window.client = client;
 
 // SEARCH PARAMS

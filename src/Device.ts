@@ -57,6 +57,7 @@ import FileTransferManager, {
   FileType,
   FileTypes,
   RequiredFileTransferMessageTypes,
+  SendFileCallback,
 } from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
@@ -104,6 +105,24 @@ import CameraManager, {
   RequiredCameraMessageTypes,
   SendCameraMessageCallback,
 } from "./CameraManager.ts";
+import MicrophoneManager, {
+  MicrophoneEventDispatcher,
+  MicrophoneEventMessages,
+  MicrophoneEventTypes,
+  MicrophoneMessageType,
+  MicrophoneMessageTypes,
+  RequiredMicrophoneMessageTypes,
+  SendMicrophoneMessageCallback,
+} from "./MicrophoneManager.ts";
+import DisplayManager, {
+  DisplayEventDispatcher,
+  DisplayEventMessages,
+  DisplayEventTypes,
+  DisplayMessageType,
+  DisplayMessageTypes,
+  RequiredDisplayMessageTypes,
+  SendDisplayMessageCallback,
+} from "./DisplayManager.ts";
 import WifiManager, {
   RequiredWifiMessageTypes,
   SendWifiMessageCallback,
@@ -118,6 +137,7 @@ import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
 
 /** NODE_START */
 import UDPConnectionManager from "./connection/udp/UDPConnectionManager.ts";
+import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 /** NODE_END */
 
 const _console = createConsole("Device", { log: false });
@@ -136,6 +156,8 @@ export const DeviceEventTypes = [
   ...TfliteEventTypes,
   ...WifiEventTypes,
   ...CameraEventTypes,
+  ...MicrophoneEventTypes,
+  ...DisplayEventTypes,
   ...FirmwareEventTypes,
 ] as const;
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
@@ -150,6 +172,8 @@ export interface DeviceEventMessages
     FileTransferEventMessages,
     WifiEventMessages,
     CameraEventMessages,
+    MicrophoneEventMessages,
+    DisplayEventMessages,
     FirmwareEventMessages {
   batteryLevel: { batteryLevel: number };
   connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };
@@ -254,6 +278,18 @@ class Device {
     this.#cameraManager.eventDispatcher = this
       .#eventDispatcher as CameraEventDispatcher;
 
+    this.#microphoneManager.sendMessage = this
+      .sendTxMessages as SendMicrophoneMessageCallback;
+    this.#microphoneManager.eventDispatcher = this
+      .#eventDispatcher as MicrophoneEventDispatcher;
+
+    this.#displayManager.sendMessage = this
+      .sendTxMessages as SendDisplayMessageCallback;
+    this.#displayManager.eventDispatcher = this
+      .#eventDispatcher as DisplayEventDispatcher;
+    this.#displayManager.sendFile = this.#fileTransferManager
+      .send as SendFileCallback;
+
     this.#firmwareManager.sendMessage = this
       .sendSmpMessage as SendSmpMessageCallback;
     this.#firmwareManager.eventDispatcher = this
@@ -263,6 +299,7 @@ class Device {
       this.#firmwareManager.mtu = this.mtu;
       this.#fileTransferManager.mtu = this.mtu;
       this.connectionManager!.mtu = this.mtu;
+      this.#displayManager.mtu = this.mtu;
     });
     this.addEventListener("getSensorConfiguration", () => {
       if (this.connectionStatus != "connecting") {
@@ -287,6 +324,16 @@ class Device {
       } else {
         _console.log("don't need to request camera infomration");
       }
+
+      if (this.sensorTypes.includes("microphone")) {
+        _console.log("requesting required microphone information");
+        const messages = RequiredMicrophoneMessageTypes.map((messageType) => ({
+          type: messageType,
+        }));
+        this.sendTxMessages(messages, false);
+      } else {
+        _console.log("don't need to request microphone infomration");
+      }
     });
     this.addEventListener("getFileTypes", () => {
       if (this.connectionStatus != "connecting") {
@@ -310,6 +357,43 @@ class Device {
         if (this.connectionType != "client") {
           this.#wifiManager.requestRequiredInformation();
         }
+      }
+    });
+    this.addEventListener("getType", () => {
+      if (this.connectionStatus != "connecting") {
+        return;
+      }
+      if (this.type == "glasses") {
+        this.#displayManager.requestRequiredInformation();
+      }
+    });
+    this.addEventListener("fileTransferProgress", (event) => {
+      const { fileType, progress } = event.message;
+      switch (fileType) {
+        case "spriteSheet":
+          this.#dispatchEvent("displaySpriteSheetUploadProgress", {
+            spriteSheet: this.#displayManager.pendingSpriteSheet!,
+            spriteSheetName: this.#displayManager.pendingSpriteSheetName!,
+            progress,
+          });
+          break;
+        default:
+          break;
+      }
+    });
+    this.addEventListener("fileTransferStatus", (event) => {
+      const { fileType, fileTransferStatus } = event.message;
+      switch (fileType) {
+        case "spriteSheet":
+          if (fileTransferStatus == "sending") {
+            this.#dispatchEvent("displaySpriteSheetUploadStart", {
+              spriteSheet: this.#displayManager.pendingSpriteSheet!,
+              spriteSheetName: this.#displayManager.pendingSpriteSheetName!,
+            });
+          }
+          break;
+        default:
+          break;
       }
     });
     DeviceManager.onDevice(this);
@@ -514,6 +598,16 @@ class Device {
         RequiredCameraMessageTypes
       );
     }
+    if (hasRequiredInformation && this.hasMicrophone) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredMicrophoneMessageTypes
+      );
+    }
+    if (hasRequiredInformation && this.isDisplayAvailable) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredDisplayMessageTypes
+      );
+    }
     return hasRequiredInformation;
   }
   #requestRequiredInformation() {
@@ -683,8 +777,12 @@ class Device {
     this._informationManager.clear();
     this.#deviceInformationManager.clear();
     this.#tfliteManager.clear();
+    this.#fileTransferManager.clear();
     this.#wifiManager.clear();
     this.#cameraManager.clear();
+    this.#microphoneManager.clear();
+    this.#sensorConfigurationManager.clear();
+    this.#displayManager.reset();
   }
   #clearConnection() {
     this.connectionManager?.clear();
@@ -778,6 +876,20 @@ class Device {
             messageType as CameraMessageType,
             dataView
           );
+        } else if (
+          MicrophoneMessageTypes.includes(messageType as MicrophoneMessageType)
+        ) {
+          this.#microphoneManager.parseMessage(
+            messageType as MicrophoneMessageType,
+            dataView
+          );
+        } else if (
+          DisplayMessageTypes.includes(messageType as DisplayMessageType)
+        ) {
+          this.#displayManager.parseMessage(
+            messageType as DisplayMessageType,
+            dataView
+          );
         } else {
           throw Error(`uncaught messageType ${messageType}`);
         }
@@ -797,7 +909,10 @@ class Device {
     if (!this.isConnected && this.#hasRequiredInformation) {
       this.#checkConnection();
     }
-    if (this.connectionStatus == "notConnected") {
+    if (
+      this.connectionStatus == "notConnected" ||
+      this.connectionStatus == "disconnecting"
+    ) {
       return;
     }
     this.#sendTxMessages();
@@ -891,14 +1006,8 @@ class Device {
     return this.#sensorConfigurationManager.configuration;
   }
 
-  async setSensorConfiguration(
-    newSensorConfiguration: SensorConfiguration,
-    clearRest?: boolean
-  ) {
-    await this.#sensorConfigurationManager.setConfiguration(
-      newSensorConfiguration,
-      clearRest
-    );
+  get setSensorConfiguration() {
+    return this.#sensorConfigurationManager.setConfiguration;
   }
 
   async clearSensorConfiguration() {
@@ -1145,6 +1254,7 @@ class Device {
     this.#isServerSide = newIsServerSide;
 
     this.#fileTransferManager.isServerSide = this.isServerSide;
+    this.#displayManager.isServerSide = this.isServerSide;
   }
 
   // UKATON
@@ -1237,12 +1347,18 @@ class Device {
   #assertHasCamera() {
     _console.assertWithError(this.hasCamera, "camera not available");
   }
-  async takePicture() {
+  async takePicture(sensorRate: number = 10) {
     this.#assertHasCamera();
+    if (this.sensorConfiguration.camera == 0) {
+      this.setSensorConfiguration({ camera: sensorRate }, false, false);
+    }
     await this.#cameraManager.takePicture();
   }
-  async focusCamera() {
+  async focusCamera(sensorRate: number = 10) {
     this.#assertHasCamera();
+    if (this.sensorConfiguration.camera == 0) {
+      this.setSensorConfiguration({ camera: sensorRate }, false, false);
+    }
     await this.#cameraManager.focus();
   }
   async stopCamera() {
@@ -1270,6 +1386,531 @@ class Device {
 
   get setCameraConfiguration() {
     return this.#cameraManager.setCameraConfiguration;
+  }
+
+  // MICROPHONE
+  #microphoneManager = new MicrophoneManager();
+  get hasMicrophone() {
+    return this.sensorTypes.includes("microphone");
+  }
+  get microphoneStatus() {
+    return this.#microphoneManager.microphoneStatus;
+  }
+  #assertHasMicrophone() {
+    _console.assertWithError(this.hasMicrophone, "microphone not available");
+  }
+
+  async startMicrophone(sensorRate: number = 10) {
+    this.#assertHasMicrophone();
+    if (this.sensorConfiguration.microphone == 0) {
+      this.setSensorConfiguration({ microphone: sensorRate }, false, false);
+    }
+    await this.#microphoneManager.start();
+  }
+  async stopMicrophone() {
+    this.#assertHasMicrophone();
+    await this.#microphoneManager.stop();
+  }
+  async enableMicrophoneVad() {
+    this.#assertHasMicrophone();
+    await this.#microphoneManager.vad();
+  }
+  async toggleMicrophone(sensorRate: number = 10) {
+    this.#assertHasMicrophone();
+    if (this.sensorConfiguration.microphone == 0) {
+      this.setSensorConfiguration({ microphone: sensorRate }, false, false);
+    }
+    await this.#microphoneManager.toggle();
+  }
+
+  get microphoneConfiguration() {
+    return this.#microphoneManager.microphoneConfiguration;
+  }
+  get availableMicrophoneConfigurationTypes() {
+    return this.#microphoneManager.availableMicrophoneConfigurationTypes;
+  }
+  get setMicrophoneConfiguration() {
+    return this.#microphoneManager.setMicrophoneConfiguration;
+  }
+
+  #assertWebAudioSupport() {
+    _console.assertWithError(AudioContext, "WebAudio is not supported");
+  }
+
+  get audioContext() {
+    this.#assertWebAudioSupport();
+    return this.#microphoneManager.audioContext;
+  }
+  set audioContext(newAudioContext) {
+    this.#assertWebAudioSupport();
+    this.#microphoneManager.audioContext = newAudioContext;
+  }
+  get microphoneMediaStreamDestination() {
+    this.#assertWebAudioSupport();
+    return this.#microphoneManager.mediaStreamDestination;
+  }
+  get microphoneGainNode() {
+    this.#assertWebAudioSupport();
+    return this.#microphoneManager.gainNode;
+  }
+
+  get isRecordingMicrophone() {
+    return this.#microphoneManager.isRecording;
+  }
+  startRecordingMicrophone() {
+    this.#assertWebAudioSupport();
+    this.#microphoneManager.startRecording();
+  }
+  stopRecordingMicrophone() {
+    this.#assertWebAudioSupport();
+    this.#microphoneManager.stopRecording();
+  }
+  toggleMicrophoneRecording() {
+    this.#assertWebAudioSupport();
+    this.#microphoneManager.toggleRecording();
+  }
+
+  // DISPLAY
+  #displayManager = new DisplayManager();
+
+  get isDisplayAvailable() {
+    return this.#displayManager.isAvailable;
+  }
+  get isDisplayReady() {
+    return this.#displayManager.isReady;
+  }
+  get displayContextState() {
+    return this.#displayManager.contextState;
+  }
+  get displayColors() {
+    return this.#displayManager.colors;
+  }
+  get displayBitmapColors() {
+    return this.#displayManager.bitmapColors;
+  }
+  get displayBitmapColorIndices() {
+    return this.#displayManager.bitmapColorIndices;
+  }
+  get displayColorOpacities() {
+    return this.#displayManager.opacities;
+  }
+  #assertDisplayIsAvailable() {
+    _console.assertWithError(this.isDisplayAvailable, "display not available");
+  }
+  get displayStatus() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.displayStatus;
+  }
+  get displayBrightness() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.brightness;
+  }
+  get setDisplayBrightness() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBrightness;
+  }
+
+  get displayInformation() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.displayInformation;
+  }
+  get numberOfDisplayColors() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.numberOfColors;
+  }
+
+  get wakeDisplay() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.wake;
+  }
+  get sleepDisplay() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.sleep;
+  }
+  get toggleDisplay() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.toggle;
+  }
+  get isDisplayAwake() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.isDisplayAwake;
+  }
+
+  get showDisplay() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.show;
+  }
+  get clearDisplay() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.clear;
+  }
+
+  get setDisplayColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setColor;
+  }
+  get setDisplayColorOpacity() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setColorOpacity;
+  }
+  get setDisplayOpacity() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setOpacity;
+  }
+
+  get saveDisplayContext() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.saveContext;
+  }
+  get restoreDisplayContext() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.restoreContext;
+  }
+
+  get clearDisplayRect() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.clearRect;
+  }
+
+  get selectDisplayBackgroundColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectBackgroundColor;
+  }
+  get selectDisplayFillColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectFillColor;
+  }
+  get selectDisplayLineColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectLineColor;
+  }
+  get setDisplayIgnoreFill() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setIgnoreFill;
+  }
+  get setDisplayIgnoreLine() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setIgnoreLine;
+  }
+  get setDisplayFillBackground() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setFillBackground;
+  }
+  get setDisplayLineWidth() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setLineWidth;
+  }
+  get setDisplayRotation() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotation;
+  }
+  get clearDisplayRotation() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.clearRotation;
+  }
+
+  get setDisplaySegmentStartCap() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentStartCap;
+  }
+  get setDisplaySegmentEndCap() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentEndCap;
+  }
+  get setDisplaySegmentCap() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentCap;
+  }
+
+  get setDisplaySegmentStartRadius() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentStartRadius;
+  }
+  get setDisplaySegmentEndRadius() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentEndRadius;
+  }
+  get setDisplaySegmentRadius() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentRadius;
+  }
+
+  get setDisplayCropTop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setCropTop;
+  }
+  get setDisplayCropRight() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setCropRight;
+  }
+  get setDisplayCropBottom() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setCropBottom;
+  }
+  get setDisplayCropLeft() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setCropLeft;
+  }
+  get setDisplayCrop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setCrop;
+  }
+  get clearDisplayCrop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.clearCrop;
+  }
+
+  get setDisplayRotationCropTop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotationCropTop;
+  }
+  get setDisplayRotationCropRight() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotationCropRight;
+  }
+  get setDisplayRotationCropBottom() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotationCropBottom;
+  }
+  get setDisplayRotationCropLeft() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotationCropLeft;
+  }
+  get setDisplayRotationCrop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotationCrop;
+  }
+  get clearDisplayRotationCrop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.clearRotationCrop;
+  }
+  get flushDisplayContextCommands() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.flushContextCommands;
+  }
+
+  get drawDisplayRect() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawRect;
+  }
+  get drawDisplayCircle() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawCircle;
+  }
+  get drawDisplayEllipse() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawEllipse;
+  }
+  get drawDisplayRoundRect() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawRoundRect;
+  }
+  get drawDisplayRegularPolygon() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawRegularPolygon;
+  }
+  get drawDisplayPolygon() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawPolygon;
+  }
+  get drawDisplayWireframe() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawWireframe;
+  }
+  get drawDisplaySegment() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawSegment;
+  }
+  get drawDisplaySegments() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawSegments;
+  }
+  get drawDisplayArc() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawArc;
+  }
+  get drawDisplayArcEllipse() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawArcEllipse;
+  }
+  get drawDisplayBitmap() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawBitmap;
+  }
+  get imageToDisplayBitmap() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.imageToBitmap;
+  }
+  get quantizeDisplayImage() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.quantizeImage;
+  }
+  get resizeAndQuantizeDisplayImage() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.resizeAndQuantizeImage;
+  }
+
+  get setDisplayContextState() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setContextState;
+  }
+
+  get selectDisplayBitmapColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectBitmapColor;
+  }
+  get selectDisplayBitmapColors() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectBitmapColors;
+  }
+  get setDisplayBitmapColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapColor;
+  }
+  get setDisplayBitmapColorOpacity() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapColorOpacity;
+  }
+
+  get setDisplayBitmapScaleDirection() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapScaleDirection;
+  }
+  get setDisplayBitmapScaleX() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapScaleX;
+  }
+  get setDisplayBitmapScaleY() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapScaleY;
+  }
+  get setDisplayBitmapScale() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapScale;
+  }
+  get resetDisplayBitmapScale() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.resetBitmapScale;
+  }
+
+  get selectDisplaySpriteColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectSpriteColor;
+  }
+  get selectDisplaySpriteColors() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectSpriteColors;
+  }
+  get setDisplaySpriteColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteColor;
+  }
+  get setDisplaySpriteColorOpacity() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteColorOpacity;
+  }
+  get resetDisplaySpriteColors() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.resetSpriteColors;
+  }
+
+  get setDisplaySpriteScaleDirection() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScaleDirection;
+  }
+  get setDisplaySpriteScaleX() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScaleX;
+  }
+  get setDisplaySpriteScaleY() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScaleY;
+  }
+  get setDisplaySpriteScale() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScale;
+  }
+  get resetDisplaySpriteScale() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.resetSpriteScale;
+  }
+
+  get displayManager() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager as DisplayManagerInterface;
+  }
+
+  get uploadDisplaySpriteSheet() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.uploadSpriteSheet;
+  }
+  get uploadDisplaySpriteSheets() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.uploadSpriteSheets;
+  }
+  get selectDisplaySpriteSheet() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectSpriteSheet;
+  }
+  get drawDisplaySprite() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawSprite;
+  }
+
+  get displaySpriteSheets() {
+    return this.#displayManager.spriteSheets;
+  }
+
+  get serializeDisplaySpriteSheet() {
+    return this.#displayManager.serializeSpriteSheet;
+  }
+
+  get setDisplayAlignment() {
+    return this.#displayManager.setAlignment;
+  }
+  get setDisplayVerticalAlignment() {
+    return this.#displayManager.setVerticalAlignment;
+  }
+  get setDisplayHorizontalAlignment() {
+    return this.#displayManager.setHorizontalAlignment;
+  }
+  get resetDisplayAlignment() {
+    return this.#displayManager.resetAlignment;
+  }
+
+  get setDisplaySpritesDirection() {
+    return this.#displayManager.setSpritesDirection;
+  }
+  get setDisplaySpritesLineDirection() {
+    return this.#displayManager.setSpritesLineDirection;
+  }
+  get setDisplaySpritesSpacing() {
+    return this.#displayManager.setSpritesSpacing;
+  }
+  get setDisplaySpritesLineSpacing() {
+    return this.#displayManager.setSpritesLineSpacing;
+  }
+  get setDisplaySpritesAlignment() {
+    return this.#displayManager.setSpritesAlignment;
+  }
+
+  get drawDisplayQuadraticBezierCurve() {
+    return this.#displayManager.drawQuadraticBezierCurve;
+  }
+  get drawDisplayQuadraticBezierCurves() {
+    return this.#displayManager.drawQuadraticBezierCurves;
+  }
+  get drawDisplayCubicBezierCurve() {
+    return this.#displayManager.drawCubicBezierCurve;
+  }
+  get drawDisplayCubicBezierCurves() {
+    return this.#displayManager.drawCubicBezierCurves;
+  }
+  get drawDisplayPath() {
+    return this.#displayManager.drawPath;
+  }
+  get drawDisplayClosedPath() {
+    return this.#displayManager.drawClosedPath;
   }
 }
 

@@ -56,10 +56,10 @@ class UDPServer extends BaseServer {
       client = {
         ...remoteInfo,
         isAlive: true,
-        removeSelfTimer: new Timer(
-          () => this.#removeClient(client!),
-          removeUDPClientTimeout
-        ),
+        removeSelfTimer: new Timer(() => {
+          _console.log("removing client due to timeout...");
+          this.#removeClient(client!);
+        }, removeUDPClientTimeout),
         lastTimeSentData: 0,
       };
       _console.log("created new client", client);

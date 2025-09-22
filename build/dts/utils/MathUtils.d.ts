@@ -1,11 +1,20 @@
 import { PressureSensorPosition } from "../sensor/PressureSensorDataManager.ts";
 export declare function getInterpolation(value: number, min: number, max: number, span: number): number;
 export declare const Uint16Max: number;
+export declare const Int16Max: number;
+export declare const Int16Min: number;
 export declare function parseTimestamp(dataView: DataView, byteOffset: number): number;
 export interface Vector2 {
     x: number;
     y: number;
 }
+export declare function getVector2Length(vector: Vector2): number;
+export declare function getVector2Distance(a: Vector2, b: Vector2): number;
+export declare function getVector2DistanceSquared(a: Vector2, b: Vector2): number;
+export declare function getVector2Angle(vector: Vector2): number;
+export declare function getVector2Midpoint(a: Vector2, b: Vector2): Vector2;
+export declare function multiplyVector2ByScalar(vector: Vector2, scalar: number): Vector2;
+export declare function normalizedVector2(vector: Vector2): Vector2;
 export interface Vector3 extends Vector2 {
     z: number;
 }
@@ -21,3 +30,10 @@ export interface Euler {
     roll: number;
 }
 export declare function computeVoronoiWeights(points: PressureSensorPosition[], sampleCount?: number): number[];
+export declare function getVector3Length(vector: Vector3): number;
+export declare function clamp(value: number, min?: number, max?: number): number;
+export declare function degToRad(deg: number): number;
+export declare function radToDeg(rad: number): number;
+export declare const twoPi: number;
+export declare function normalizeRadians(rad: number): number;
+export declare function pointInPolygon(pt: Vector2, polygon: Vector2[]): boolean;

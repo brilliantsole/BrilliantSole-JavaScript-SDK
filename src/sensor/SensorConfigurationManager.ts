@@ -84,6 +84,10 @@ class SensorConfigurationManager {
     });
   }
 
+  clear() {
+    this.#updateConfiguration({});
+  }
+
   #isRedundant(sensorConfiguration: SensorConfiguration) {
     let sensorTypes = Object.keys(sensorConfiguration) as SensorType[];
     return sensorTypes.every((sensorType) => {
@@ -93,11 +97,12 @@ class SensorConfigurationManager {
 
   async setConfiguration(
     newSensorConfiguration: SensorConfiguration,
-    clearRest?: boolean
+    clearRest?: boolean,
+    sendImmediately?: boolean
   ) {
     if (clearRest) {
       newSensorConfiguration = Object.assign(
-        { ...this.zeroSensorConfiguration },
+        structuredClone(this.zeroSensorConfiguration),
         newSensorConfiguration
       );
     }
@@ -110,12 +115,15 @@ class SensorConfigurationManager {
     _console.log({ setSensorConfigurationData });
 
     const promise = this.waitForEvent("getSensorConfiguration");
-    this.sendMessage([
-      {
-        type: "setSensorConfiguration",
-        data: setSensorConfigurationData.buffer,
-      },
-    ]);
+    this.sendMessage(
+      [
+        {
+          type: "setSensorConfiguration",
+          data: setSensorConfigurationData.buffer,
+        },
+      ],
+      sendImmediately
+    );
     await promise;
   }
 

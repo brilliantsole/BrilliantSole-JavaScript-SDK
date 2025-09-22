@@ -122,7 +122,7 @@ class NobleScanner extends BaseScanner {
         ipAddress = new Uint8Array(
           manufacturerData.buffer.slice(3, 3 + 4)
         ).join(".");
-        //_console.log({ ipAddress });
+        _console.log({ ipAddress });
       }
       if (manufacturerData.byteLength >= 3 + 4 + 1) {
         isWifiSecure = manufacturerData.readUint8(3 + 4) != 0;

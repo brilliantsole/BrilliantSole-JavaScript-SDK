@@ -20,6 +20,25 @@
     .hidden {
       display: none;
     }
+    .flexColorsContainer {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .flexColorsContainer > * {
+      /* flex: 0 0 120px; */
+      margin-right: 10px;
+    }
+    #bitmap canvas {
+      width: 200px;
+      height: 200px;
+      background-color: black;
+    }
+    #bitmap img {
+      width: 200px;
+      height: 200px;
+      background-color: black;
+      image-rendering: pixelated;
+    }
   </style>
   <body>
     <nav>
@@ -108,6 +127,322 @@
     </div>
 
     <div>
+      <h2>display</h2>
+
+      <label>
+        <b>is display available?</b>
+        <span id="isDisplayAvailable"></span>
+      </label>
+
+      <label><b>status:</b> <span id="displayStatus"></span></label>
+
+      <button disabled id="toggleDisplay">disable display</button>
+
+      <div>
+        <label>
+          <b>display information: </b>
+          <pre id="displayInformationPre"></pre>
+        </label>
+      </div>
+
+      <div>
+        <label>
+          <b>brightness: </b>
+          <select id="setDisplayBrightnessSelect" disabled>
+            <optgroup label="select brightness"></optgroup>
+          </select>
+        </label>
+      </div>
+
+      <div id="displayColors" class="flexColorsContainer">
+        <template id="displayColorTemplate">
+          <label class="displayColor">
+            <b class="colorIndex"></b>
+            <input type="color" value="#000000" />
+          </label>
+        </template>
+      </div>
+
+      <div id="displayColorOpacities">
+        <template id="displayColorOpacityTemplate">
+          <label class="displayColorOpacity">
+            <b class="colorIndex"></b>
+            <input type="range" min="0" max="1" step="0.01" value="1" />
+            <span>100</span>%
+          </label>
+        </template>
+      </div>
+
+      <div>
+        <label id="displayOpacity">
+          <b>opacity</b>
+          <input disabled type="range" min="0" max="1" step="0.01" value="1" />
+          <span>100</span>%
+        </label>
+      </div>
+
+      <div>
+        <label id="fillColor">
+          <b>fill color</b>
+          <select>
+            <optgroup label="select fill color"></optgroup>
+          </select>
+          <input disabled type="color" />
+        </label>
+
+        <label id="lineColor">
+          <b>line color</b>
+          <select>
+            <optgroup label="select line color"></optgroup>
+          </select>
+          <input disabled type="color" />
+        </label>
+
+        <label id="backgroundColor">
+          <b>background color</b>
+          <select>
+            <optgroup label="select background color"></optgroup>
+          </select>
+          <input disabled type="color" />
+        </label>
+
+        <label id="lineWidth">
+          <b>line width</b>
+          <input type="range" min="0" max="50" step="1" value="0" />
+          <span>0</span>px
+        </label>
+
+        <label id="rotation">
+          <b>rotation</b>
+          <input type="range" min="0" max="360" step="1" value="0" />
+          <span>0</span>deg
+        </label>
+
+        <label id="verticalAlignment">
+          <b>vertical alignment</b>
+          <select>
+            <optgroup label="set vertical alignment"></optgroup>
+          </select>
+        </label>
+
+        <label id="horizontalAlignment">
+          <b>horizontal alignment</b>
+          <select>
+            <optgroup label="set horizontal alignment"></optgroup>
+          </select>
+        </label>
+
+        <label id="segmentStartCap">
+          <b>segment start cap</b>
+          <select>
+            <optgroup label="start segment cap"></optgroup>
+          </select>
+        </label>
+        <label id="segmentEndCap">
+          <b>segment end cap</b>
+          <select>
+            <optgroup label="end segment cap"></optgroup>
+          </select>
+        </label>
+        <label id="drawSegmentStartRadius">
+          <b>segment start radius</b>
+          <input type="range" min="0" max="200" step="1" value="1" />
+          <span>1</span>px
+        </label>
+        <label id="drawSegmentEndRadius">
+          <b>segment end radius</b>
+          <input type="range" min="0" max="200" step="1" value="1" />
+          <span>1</span>px
+        </label>
+
+        <label id="drawCropTop">
+          <b>crop top</b>
+          <input type="range" min="0" max="200" step="1" value="0" />
+          <span>0</span>px
+        </label>
+        <label id="drawCropRight">
+          <b>crop right</b>
+          <input type="range" min="0" max="200" step="1" value="0" />
+          <span>0</span>px
+        </label>
+        <label id="drawCropBottom">
+          <b>crop bottom</b>
+          <input type="range" min="0" max="200" step="1" value="0" />
+          <span>0</span>px
+        </label>
+        <label id="drawCropLeft">
+          <b>crop left</b>
+          <input type="range" min="0" max="200" step="1" value="0" />
+          <span>0</span>px
+        </label>
+
+        <label id="drawRotationCropTop">
+          <b>rotation crop top</b>
+          <input type="range" min="0" max="200" step="1" value="0" />
+          <span>0</span>px
+        </label>
+        <label id="drawRotationCropRight">
+          <b>rotation crop right</b>
+          <input type="range" min="0" max="200" step="1" value="0" />
+          <span>0</span>px
+        </label>
+        <label id="drawRotationCropBottom">
+          <b>rotation crop bottom</b>
+          <input type="range" min="0" max="200" step="1" value="0" />
+          <span>0</span>px
+        </label>
+        <label id="drawRotationCropLeft">
+          <b>rotation crop left</b>
+          <input type="range" min="0" max="200" step="1" value="0" />
+          <span>0</span>px
+        </label>
+        <label id="drawBitmapScaleX">
+          <b>bitmap scale x</b>
+          <input type="range" min="-5" max="10" step="0.1" value="1.0" />
+          <span>1</span>x
+        </label>
+        <label id="drawBitmapScaleY">
+          <b>bitmap scale y</b>
+          <input type="range" min="-5" max="10" step="0.1" value="1.0" />
+          <span>1</span>x
+        </label>
+        <label id="drawBitmapScale">
+          <b>bitmap scale</b>
+          <input type="range" min="-5" max="10" step="0.1" value="1.0" />
+          <span>1</span>x
+        </label>
+      </div>
+
+      <div>
+        <label id="drawX">
+          x
+          <input type="range" min="-50" max="640" step="1" value="100" />
+          <span>100</span>px
+        </label>
+        <label id="drawY">
+          y
+          <input type="range" min="-50" max="400" step="1" value="100" />
+          <span>100</span>px
+        </label>
+        <label id="drawWidth">
+          width
+          <input type="range" min="1" max="640" step="1" value="100" />
+          <span>100</span>px
+        </label>
+        <label id="drawHeight">
+          height
+          <input type="range" min="1" max="400" step="1" value="100" />
+          <span>100</span>px
+        </label>
+        <label id="drawRadius">
+          radius
+          <input type="range" min="1" max="200" step="1" value="50" />
+          <span>50</span>px
+        </label>
+        <label id="drawBorderRadius">
+          border radius
+          <input type="range" min="0" max="100" step="1" value="20" />
+          <span>0</span>px
+        </label>
+        <label id="drawNumberOfSides">
+          number of sides
+          <input type="range" min="3" max="10" step="1" value="3" />
+          <span>3</span>
+        </label>
+        <label id="drawEndX">
+          end x
+          <input type="range" min="0" max="640" step="1" value="200" />
+          <span>200</span>px
+        </label>
+        <label id="drawEndY">
+          end y
+          <input type="range" min="0" max="400" step="1" value="100" />
+          <span>100</span>px
+        </label>
+        <label id="drawStartAngle">
+          start angle
+          <input type="range" min="0" max="360" step="1" value="0" />
+          <span>0</span>deg
+        </label>
+        <label id="drawAngleOffset">
+          angle offset
+          <input type="range" min="-360" max="360" step="1" value="90" />
+          <span>90</span>deg
+        </label>
+        <label>
+          shape type
+          <select id="drawShapeType">
+            <optgroup label="draw shape">
+              <option>drawRect</option>
+              <option selected>drawCircle</option>
+              <option>drawRoundRect</option>
+              <option>drawEllipse</option>
+              <option>drawRegularPolygon</option>
+              <option>drawSegment</option>
+              <option>drawArc</option>
+              <option>drawArcEllipse</option>
+              <option>drawBitmap</option>
+            </optgroup>
+          </select>
+        </label>
+
+        <button id="drawShape" disabled>draw shape</button>
+      </div>
+
+      <div id="bitmap">
+        <p><b>bitmap</b></p>
+        <label id="bitmapNumberOfColors">
+          <b>number of colors</b>
+          <input type="range" min="2" max="16" step="1" value="2" />
+          <span>2</span>
+        </label>
+        <label id="bitmapWidth">
+          <b>width</b>
+          <input type="range" min="1" max="40" step="1" value="16" />
+          <span>16</span>
+        </label>
+        <label id="bitmapHeight">
+          <b>height</b>
+          <input type="range" min="1" max="40" step="1" value="16" />
+          <span>16</span>
+        </label>
+        <span id="bitmapColorIndices" class="flexColorsContainer">
+          <template id="bitmapColorIndexTemplate">
+            <label class="bitmapColorIndex">
+              <b class="colorIndex"></b>
+              <select>
+                <optgroup label="color index"></optgroup>
+              </select>
+              <input type="color" class="color" disabled />
+            </label>
+          </template>
+        </span>
+        <label id="currentBitmapColorIndex">
+          <b>current bitmap color</b>
+          <select>
+            <optgroup label="color index"></optgroup>
+          </select>
+          <input type="color" class="color" disabled />
+        </label>
+        <label style="display: inline-block">
+          <b>image</b>
+          <input id="bitmapImageInput" type="file" accept="image/*" />
+        </label>
+        <button id="quantizeBitmapImage">quantize image</button>
+        <label
+          >override display colors?
+          <input id="toggleQuantizeOverrideDisplayColors" type="checkbox" />
+        </label>
+        <br />
+        <button id="clearBitmap">clear</button>
+        <br />
+        <canvas width="400" height="400"></canvas>
+        <img style="display: none" />
+        <img style="display: none" />
+      </div>
+    </div>
+
+    <div>
       <label>
         <b>sensor configuration: </b>
         <pre id="sensorConfigurationPre"></pre>
@@ -117,7 +452,7 @@
         <label class="sensorTypeConfiguration">
           <b class="sensorType"></b>
           <!-- <input class="sensorRate" type="number" min="0" value="" disabled />ms -->
-          <select class="sensorRate input">
+          <select disabled class="sensorRate input">
             <optgroup label="sensor rate (ms)">
               <option value="0">0ms</option>
               <option value="5">5ms</option>
@@ -506,6 +841,61 @@
         </div>
         <div>
           <img id="cameraImage" />
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h2>microphone</h2>
+
+      <label>
+        <b>is microphone available?</b>
+        <span id="isMicrophoneAvailable"></span>
+      </label>
+
+      <label><b>status:</b> <span id="microphoneStatus"></span></label>
+
+      <button disabled hidden id="toggleMicrophone">start microphone</button>
+      <button disabled id="startMicrophone">start microphone</button>
+      <button disabled id="stopMicrophone">stop microphone</button>
+      <button disabled id="enableMicrphoneVad">
+        enable microphone voice activity detection
+      </button>
+      <br />
+      <button disabled id="toggleMicrophoneRecording">start recording</button>
+
+      <div>
+        <label>
+          <b>microphone configuration: </b>
+          <pre id="microphoneConfigurationPre"></pre>
+        </label>
+        <br />
+
+        <div id="microphoneConfiguration">
+          <template id="microphoneConfigurationTypeTemplate">
+            <label class="microphoneConfigurationType">
+              <b class="type"></b> <span hidden></span>
+              <select disabled>
+                <optgroup></optgroup>
+              </select>
+            </label>
+          </template>
+        </div>
+
+        <div>
+          <b>stream</b>
+          <br />
+          <audio id="microphoneStream" controls autoplay></audio>
+        </div>
+
+        <div>
+          <b>recording</b>
+          <label>
+            auto play
+            <input type="checkbox" id="autoPlayMicrphoneRecording" />
+          </label>
+          <br />
+          <audio id="microphoneRecording" controls></audio>
         </div>
       </div>
     </div>

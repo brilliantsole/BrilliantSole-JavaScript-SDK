@@ -1,4 +1,5 @@
 import Device, { SendMessageCallback } from "./Device.ts";
+import { UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
 import { createConsole } from "./utils/Console.ts";
 import { isInNode } from "./utils/environment.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
@@ -197,11 +198,13 @@ class WifiManager {
     }
 
     const promise = this.waitForEvent("getWifiConnectionEnabled");
+
     this.sendMessage(
       [
         {
           type: "setWifiConnectionEnabled",
-          data: Uint8Array.from([Number(newWifiConnectionEnabled)]).buffer,
+
+          data: UInt8ByteBuffer(Number(newWifiConnectionEnabled)),
         },
       ],
       sendImmediately

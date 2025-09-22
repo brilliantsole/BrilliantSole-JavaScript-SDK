@@ -1,0 +1,245 @@
+<html>
+  <head>
+    <title>Display Canvas | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+    <script src="./aframe.js"></script>
+    <!-- <script src="https://quadjr.github.io/aframe-gaussian-splatting/index.js"></script> -->
+  </head>
+  <style>
+    #displayContainer {
+      width: 640px;
+      height: 400px;
+      position: relative;
+    }
+    #displayContainer > * {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #display {
+      z-index: 1;
+      pointer-events: none;
+    }
+    #scene {
+      z-index: 2;
+    }
+    #displayContainer:not(.shrink) {
+      background-color: black;
+    }
+    #displayContainer.shrink {
+      width: calc(640px * 1.5);
+      height: calc(400px * 1.5);
+    }
+    #displayContainer.shrink #display {
+      width: calc(100% / 1.5);
+      height: calc(100% / 1.5);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      filter: blur(0.5px);
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Display Canvas | BrilliantSole JavaScript SDK</h1>
+
+    <div>
+      <label
+        >webSocket url
+        <input id="webSocketUrl" type="url" placeholder="localhost"
+      /></label>
+      <button id="toggleClientConnection">connect</button>
+
+      <label>
+        is scanning available?
+        <input id="isScanningAvailable" type="checkbox" readonly disabled />
+      </label>
+      <button id="toggleScan" disabled>scan</button>
+    </div>
+
+    <button id="toggleConnection">connect</button>
+
+    <label>
+      preview mode
+      <select id="previewMode">
+        <optgroup label="preview mode">
+          <option selected>none</option>
+          <option>image</option>
+          <option>video</option>
+          <option>camera</option>
+          <option>vr</option>
+          <option>ar</option>
+        </optgroup>
+      </select>
+    </label>
+
+    <label data-preview-mode="image">
+      image
+      <input type="file" id="imageInput" accept="image/*" />
+    </label>
+
+    <label data-preview-mode="video">
+      video
+      <input type="file" id="videoInput" accept="video/*" />
+    </label>
+
+    <label data-preview-mode="camera">
+      camera
+      <select id="cameraInput">
+        <optgroup label="select camera"></optgroup>
+      </select>
+    </label>
+
+    <button data-preview-mode="camera" id="toggleFaceTracking">
+      enable face tracking
+    </button>
+
+    <button data-preview-mode="camera" id="toggleShowFaceTracking">
+      show face tracking
+    </button>
+
+    <button data-preview-mode="camera" id="toggleMirrorCamera">
+      mirror camera
+    </button>
+
+    <button data-preview-mode="camera" id="toggleCanvas">hide canvas</button>
+
+    <label data-preview-mode="vr">
+      model
+      <input type="file" id="modelInput" accept=".glb,model/gltf-binary" />
+    </label>
+
+    <br />
+
+    <label>
+      brightness
+      <select id="setDisplayBrightnessSelect">
+        <optgroup label="select brightness"></optgroup>
+      </select>
+    </label>
+
+    <div id="displayColors">
+      <template id="displayColorTemplate">
+        <label class="displayColor">
+          <span class="colorIndex"></span>
+          <input type="color" value="#000000" />
+        </label>
+      </template>
+    </div>
+
+    <div id="displayColorOpacities" hidden>
+      <template id="displayColorOpacityTemplate">
+        <label class="displayColorOpacity">
+          <span class="colorIndex"></span>
+          <input type="range" min="0" max="1" step="0.01" value="1" />
+          <span class="opacity">100</span>%
+        </label>
+      </template>
+    </div>
+
+    <div>
+      <label id="displayOpacity">
+        opacity
+        <input type="range" min="0" max="1" step="0.01" value="1" />
+        <span>100</span>%
+      </label>
+    </div>
+
+    <div id="displayContainer">
+      <canvas id="display" width="640" height="400"></canvas>
+      <img id="image" />
+      <video id="video" loop autoplay muted controls></video>
+      <canvas
+        id="cameraVideoFaceTracking"
+        style="object-fit: contain; z-index: 1"
+      ></canvas>
+      <video id="cameraVideo" autoplay muted></video>
+      <a-scene id="scene" embedded xr-mode-ui="enabled: true; XRMode: ar;">
+        <a-camera>
+          <a-plane
+            id="displayPlane"
+            material="src: #display; transparent: true; shader: flat;"
+            position="0 0 -0.4"
+            width="0.48"
+            height="0.3"
+          ></a-plane>
+        </a-camera>
+        <a-entity id="model" position="0 1.6 0"></a-entity>
+        <a-entity id="sampleModel">
+          <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
+          <a-sphere
+            position="0 1.25 -5"
+            radius="1.25"
+            color="#EF2D5E"
+          ></a-sphere>
+          <a-cylinder
+            position="1 0.75 -3"
+            radius="0.5"
+            height="1.5"
+            color="#FFC65D"
+          ></a-cylinder>
+          <a-plane
+            position="0 0 -4"
+            rotation="-90 0 0"
+            width="4"
+            height="4"
+            color="#7BC8A4"
+          ></a-plane>
+          <a-sky color="#ECECEC"></a-sky>
+        </a-entity>
+      </a-scene>
+    </div>
+
+    <div>
+      <label> auto <input type="checkbox" checked id="autoAnimate" /> </label>
+      <label>
+        yaw
+        <input
+          id="faceYaw"
+          type="range"
+          min="-1"
+          max="1"
+          value="0"
+          step="0.01"
+        />
+      </label>
+      <label>
+        roll
+        <input
+          id="faceRoll"
+          type="range"
+          min="-1"
+          max="1"
+          value="0"
+          step="0.01"
+        />
+      </label>
+      <label>
+        x
+        <input id="faceX" type="range" min="-1" max="1" value="0" step="0.01" />
+      </label>
+      <label>
+        y
+        <input id="faceY" type="range" min="-1" max="1" value="0" step="0.01" />
+      </label>
+      <label>
+        z
+        <input
+          id="faceZ"
+          type="range"
+          min="0"
+          max="1"
+          value="0.3"
+          step="0.01"
+        />
+      </label>
+    </div>
+  </body>
+</html>

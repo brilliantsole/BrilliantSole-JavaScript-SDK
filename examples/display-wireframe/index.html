@@ -1,0 +1,204 @@
+<html>
+  <head>
+    <title>Display Wireframe | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"
+      crossorigin="anonymous"
+    ></script>
+    <script type="module" src="./script.js"></script>
+    <script src="../utils/aframe/aframe-master.min.js"></script>
+  </head>
+  <style>
+    #display {
+      background-color: black;
+    }
+    .verticalLabel {
+      display: inline-flex;
+      flex-direction: column;
+      max-width: fit-content;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    a-scene,
+    iframe {
+      width: 640px;
+      height: 400px;
+      display: inline-block;
+    }
+
+    iframe {
+      border: none;
+    }
+
+    #displayColors {
+      display: inline-block;
+    }
+    .displayColor {
+      display: inline-block;
+    }
+
+    #cameraContainer {
+      position: relative;
+      display: inline-block;
+      width: 640;
+      height: 400;
+      background-color: black;
+    }
+
+    #cameraContainer * {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Display Wireframe | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+
+    <div id="displayColors">
+      <template id="displayColorTemplate">
+        <div class="displayColor">
+          <input class="color" type="color" value="#000000" />
+        </div>
+      </template>
+    </div>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>brightness</span>
+      <select id="setDisplayBrightnessSelect">
+        <optgroup label="select brightness"></optgroup>
+      </select>
+    </label>
+
+    <label class="verticalLabel">
+      <span>select mode</span>
+      <select id="modeSelect">
+        <optgroup label="select mode"></optgroup>
+      </select>
+    </label>
+
+    <button id="draw">draw</button>
+
+    <label>
+      auto draw
+      <input type="checkbox" id="autoDraw" />
+    </label>
+
+    <label>
+      enable orientation
+      <input type="checkbox" id="toggleOrientation" />
+    </label>
+    <label>
+      <button id="calibrateOrientation">calibrate orientation</button>
+    </label>
+
+    <button id="toggleRotatorConnection">connect to rotator</button>
+    <label>
+      enable rotator
+      <input type="checkbox" id="toggleRotator" />
+    </label>
+    <label>
+      <button id="calibrateRotator">calibrate rotator</button>
+    </label>
+
+    <label>
+      camera
+      <select id="cameraInput">
+        <optgroup label="select camera"></optgroup>
+      </select>
+    </label>
+    <button id="toggleMirrorCamera">mirror camera</button>
+    <button id="toggleCanvas">hide canvas</button>
+
+    <br />
+
+    <label>
+      file transfer progress: <span></span>
+      <progress value="0" id="fileTransferProgress"></progress>
+    </label>
+
+    <br />
+
+    <canvas id="display" width="640" height="400"></canvas>
+
+    <a-scene
+      id="scene"
+      embedded
+      xr-mode-ui="enabled: false;"
+      device-orientation-permission-ui="enabled: false"
+      renderer="colorManagement: true;"
+    >
+      <a-entity look-controls wasd-controls>
+        <a-camera
+          look-controls="enabled: false"
+          wasd-controls="enabled: false;"
+          position="0 1.6 0"
+        ></a-camera>
+      </a-entity>
+
+      <a-box
+        class="rotator"
+        position="-1 0.5 -3"
+        rotation="0 45 0"
+        color="#4CC3D9"
+      ></a-box>
+      <a-sphere
+        position="0 1.25 -5"
+        segments-height="4"
+        segments-width="4"
+        radius="1.25"
+        color="#EF2D5E"
+        visible="true"
+      ></a-sphere>
+      <a-box
+        position="1 0.75 -3"
+        height="1.5"
+        width="0.75"
+        depth="0.75"
+        rotation="0 0 0"
+        color="#FFC65D"
+      ></a-box>
+      <a-cylinder
+        position="1 0.75 -3"
+        radius="0.5"
+        height="1.5"
+        segments-height="4"
+        segments-radial="5"
+        color="#FFC65D"
+        visible="false"
+      ></a-cylinder>
+      <a-plane
+        position="0 0 -4"
+        rotation="-90 0 0"
+        width="4"
+        height="4"
+        color="#7BC8A4"
+      ></a-plane>
+
+      <a-sky color="#ECECEC"></a-sky>
+    </a-scene>
+
+    <iframe src="../punch/" id="punch"></iframe>
+
+    <div id="cameraContainer">
+      <video hidden id="cameraVideo" autoplay playsinline></video>
+      <canvas id="cameraCanvas"></canvas>
+    </div>
+  </body>
+</html>

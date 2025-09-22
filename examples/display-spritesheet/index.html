@@ -1,0 +1,960 @@
+<html>
+  <head>
+    <title>Display Spritesheet | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+  </head>
+  <style>
+    #display {
+      image-rendering: pixelated;
+      background-color: black;
+    }
+    .verticalLabel {
+      display: inline-flex;
+      flex-direction: column;
+      max-width: fit-content;
+    }
+    #spritePreview {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    #spriteCommandEditor {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    #spriteCommands {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: scroll;
+      max-height: 500px;
+    }
+    .spriteCommand {
+      display: flex;
+      flex-direction: column;
+    }
+    .bitmapCanvas {
+      image-rendering: pixelated;
+      background-color: black;
+      border: solid 1px black;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Display Spritesheet | BrilliantSole JavaScript SDK</h1>
+
+    <div>
+      <button id="toggleConnection">connect</button>
+    </div>
+
+    <div>
+      <label>
+        spritesheet name:
+        <input
+          id="spriteSheetName"
+          type="text"
+          value=""
+          placeholder='e.g. "mySpriteSheet"'
+          minlength="1"
+          maxlength="30"
+        />
+      </label>
+      <button id="addSprite">add sprite</button>
+      <button id="addPalette">add palette</button>
+      <button id="addSpritePaletteSwap" disabled>
+        add sprite palette swap
+      </button>
+      <button id="saveSpriteSheet">save</button>
+      <label>
+        load
+        <input
+          id="loadSpriteSheet"
+          type="file"
+          accept=".json"
+          multiple="false"
+        />
+      </label>
+      <button id="clearLocalStorage">clear localStorage</button>
+      <label>
+        auto save?
+        <input type="checkbox" id="autoSaveToLocalStorage" />
+      </label>
+      <br />
+      <label>
+        create from font
+        <input
+          id="loadFont"
+          type="file"
+          accept=".ttf,.otf,.woff,.woff2"
+          multiple="false"
+        />
+      </label>
+      <label>
+        font size
+        <input
+          id="fontSize"
+          type="range"
+          value="48"
+          min="8"
+          max="72"
+          step="1"
+        />
+        <span id="fontSizeSpan">48</span>px
+      </label>
+      <label>
+        use path
+        <input id="fontUsePath" type="checkbox" checked />
+      </label>
+    </div>
+
+    <hr />
+
+    <label>
+      palette index
+      <select id="selectPalette">
+        <optgroup label="select palette"></optgroup>
+      </select>
+    </label>
+
+    <label>
+      palette name
+      <input
+        disabled
+        id="paletteName"
+        type="text"
+        minlength="1"
+        placeholder='e.g. "myPalette"'
+      />
+    </label>
+
+    <label>
+      number of palette colors
+      <select disabled id="numberOfPaletteColors">
+        <optgroup label="number of palette colors"></optgroup>
+      </select>
+    </label>
+
+    <button disabled id="deletePalette">delete</button>
+
+    <label>
+      set palette from image
+      <input id="paletteImageInput" type="file" accept="image/*" />
+    </label>
+
+    <div id="displayColors">
+      <template id="displayColorTemplate">
+        <label class="displayColor">
+          <span class="colorIndex"></span>
+          <input type="color" value="#000000" />
+        </label>
+      </template>
+    </div>
+
+    <div id="displayColorOpacities" hidden>
+      <template id="displayColorOpacityTemplate">
+        <label class="displayColorOpacity">
+          <span class="colorIndex"></span>
+          <input type="range" min="0" max="1" step="0.01" value="1" />
+          <span class="opacity">100</span>%
+        </label>
+      </template>
+    </div>
+
+    <hr />
+
+    <div hidden>
+      <label id="displayOpacity">
+        opacity
+        <input type="range" min="0" max="1" step="0.01" value="1" />
+        <span>100</span>%
+      </label>
+    </div>
+
+    <hr hidden />
+
+    <div>
+      <label>
+        sprite index
+        <select id="selectSprite">
+          <optgroup label="select sprite"></optgroup>
+        </select>
+      </label>
+
+      <label>
+        sprite name
+        <input
+          disabled
+          id="spriteName"
+          type="text"
+          minlength="1"
+          placeholder='e.g. "mySprite"'
+        />
+      </label>
+
+      <button disabled id="deleteSprite">delete</button>
+      <br />
+      <label id="spriteWidth">
+        sprite width
+        <input disabled type="range" min="1" max="200" step="1" value="20" />
+        <span>20</span>px
+      </label>
+      <label id="spriteHeight">
+        sprite height
+        <input disabled type="range" min="1" max="200" step="1" value="20" />
+        <span>20</span>px
+      </label>
+      <br />
+
+      <label>
+        create sprite from image
+        <input disabled id="spriteImageInput" type="file" accept="image/*" />
+      </label>
+      <label>
+        override palette
+        <input id="spriteImageOverridePalette" type="checkbox" />
+      </label>
+    </div>
+
+    <hr />
+
+    <label>
+      sprite pallete swap index
+      <select id="selectSpritePaletteSwap" disabled>
+        <optgroup label="select sprite palette swap"></optgroup>
+      </select>
+    </label>
+
+    <label>
+      sprite palette swap name
+      <input
+        disabled
+        id="spritePaletteSwapName"
+        type="text"
+        minlength="1"
+        placeholder='e.g. "myPaletteSwap"'
+      />
+    </label>
+
+    <label>
+      number of sprite palette swap colors
+      <select disabled id="numberOfSpritePaletteSwapColors">
+        <optgroup label="number of sprite pallete swap colors"></optgroup>
+      </select>
+    </label>
+
+    <button disabled id="deleteSpritePaletteSwap">delete</button>
+    <br />
+
+    <div id="spriteColorIndices">
+      <template id="spriteColorIndexTemplate">
+        <label class="spriteColorIndex">
+          <span class="colorIndex"></span>
+          <select>
+            <optgroup label="select color index"></optgroup>
+          </select>
+          <input disabled type="color" />
+        </label>
+      </template>
+    </div>
+
+    <hr />
+
+    <div>
+      <button id="drawSprite" disabled>draw</button>
+      <label>
+        draw all <input type="checkbox" id="toggleDrawAllSprites" />
+      </label>
+
+      <label id="drawSpriteX" class="verticalLabel">
+        <span>x (<span class="value">200</span>px)</span>
+        <input type="range" min="-50" max="640" step="1" value="200" />
+      </label>
+      <label id="drawSpriteY" class="verticalLabel">
+        <span>y (<span class="value">100</span>px)</span>
+        <input type="range" min="-50" max="400" step="1" value="100" />
+      </label>
+
+      <label id="drawSpriteRotation" class="verticalLabel">
+        <span>rotation (<span class="value">0</span>deg)</span>
+        <input type="range" min="0" max="360" step="1" value="0" />
+      </label>
+
+      <label id="drawSpriteVerticalAlignment" class="verticalLabel">
+        <span>vertical alignment</span>
+        <select>
+          <optgroup label="set vertical alignment"></optgroup>
+        </select>
+      </label>
+
+      <label id="drawSpriteHorizontalAlignment" class="verticalLabel">
+        <span>horizontal alignment</span>
+        <select>
+          <optgroup label="set horizontal alignment"></optgroup>
+        </select>
+      </label>
+
+      <label id="drawSpriteScale" class="verticalLabel">
+        <span>scale (<span class="value">1</span>x)</span>
+        <input type="range" min="-2" max="3" step="0.01" value="1.0" />
+      </label>
+
+      <label id="drawSpriteScaleX" class="verticalLabel">
+        <span>scaleX (<span class="value">1</span>x)</span>
+        <input type="range" min="-2" max="3" step="0.01" value="1.0" />
+      </label>
+      <label id="drawSpriteScaleY" class="verticalLabel">
+        <span>scaleY (<span class="value">1</span>x)</span>
+        <input type="range" min="-2" max="3" step="0.01" value="1.0" />
+      </label>
+
+      <label id="drawSpriteCropTop" class="verticalLabel">
+        <span>crop top (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteCropRight" class="verticalLabel">
+        <span>crop right (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteCropBottom" class="verticalLabel">
+        <span>crop bottom (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteCropLeft" class="verticalLabel">
+        <span>crop left (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+
+      <label id="drawSpriteRotationCropTop" class="verticalLabel">
+        <span>rot crop top (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteRotationCropRight" class="verticalLabel">
+        <span>rot crop right (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteRotationCropBottom" class="verticalLabel">
+        <span>rot crop bottom (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteRotationCropLeft" class="verticalLabel">
+        <span>rot crop left (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+
+      <label id="drawSpriteBackgroundColor" class="verticalLabel">
+        <span>background color (<span class="value">0</span>)</span>
+        <input type="range" min="0" max="16" step="1" value="0" />
+      </label>
+
+      <label id="drawSpritesLineHeight" class="verticalLabel">
+        <span>sprites line height (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+
+      <label id="drawSpritesDirection" class="verticalLabel">
+        <span>sprites direction</span>
+        <select>
+          <optgroup label="set sprites direction"></optgroup>
+        </select>
+      </label>
+      <label id="drawSpritesLineDirection" class="verticalLabel">
+        <span>sprites line direction</span>
+        <select>
+          <optgroup label="set sprites line direction"></optgroup>
+        </select>
+      </label>
+
+      <label id="drawSpritesSpacing" class="verticalLabel">
+        <span>sprites spacing (<span class="value">0</span>px)</span>
+        <input type="range" min="-20" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpritesLineSpacing" class="verticalLabel">
+        <span>sprites line spacing (<span class="value">0</span>px)</span>
+        <input type="range" min="-20" max="200" step="1" value="0" />
+      </label>
+
+      <label id="drawSpritesAlignment" class="verticalLabel">
+        <span>sprites alignment</span>
+        <select>
+          <optgroup label="set sprites alignment"></optgroup>
+        </select>
+      </label>
+      <label id="drawSpritesLineAlignment" class="verticalLabel">
+        <span>sprites line alignment</span>
+        <select>
+          <optgroup label="set sprites line alignment"></optgroup>
+        </select>
+      </label>
+
+      <label id="drawSpritesNumberOfSpritesPerLine" class="verticalLabel">
+        <span>sprites per line (<span class="value">10</span>)</span>
+        <input type="range" min="1" max="50" step="1" value="10" />
+      </label>
+      <label id="drawSpritesMaxNumberOfSprites" class="verticalLabel">
+        <span>max sprites (<span class="value">50</span>)</span>
+        <input type="range" min="1" max="200" step="1" value="50" />
+      </label>
+    </div>
+
+    <hr />
+
+    <div>
+      <button id="uploadSpriteSheet">upload spritesheet</button>
+      <progress id="uploadSpriteSheetProgress" value="0"></progress>
+
+      <label>
+        use uploaded spritesheet
+        <input disabled id="toggleUseUploadedSpriteSheet" type="checkbox" />
+      </label>
+
+      <button id="checkSpriteSheetSize">check spritesheet size</button>
+    </div>
+
+    <hr />
+
+    <div id="spritePreview">
+      <canvas id="display" width="640" height="400"></canvas>
+      <div id="spriteCommandEditor">
+        <div>
+          <button id="addSpriteCommand" disabled>add command</button>
+          <label>
+            type
+            <select id="spriteCommandType">
+              <optgroup label="command type"></optgroup>
+            </select>
+          </label>
+        </div>
+        <div id="spriteCommands"></div>
+        <template id="spriteCommandTemplate">
+          <div class="spriteCommand">
+            <span>
+              <b>
+                #<span class="index"></span>:
+                <span class="type"></span>
+              </b>
+            </span>
+
+            <div>
+              <button disabled class="moveUp">move up</button>
+              <button disabled class="moveDown">move down</button>
+              <button class="remove">remove</button>
+              <button class="toggle">hide</button>
+            </div>
+
+            <label class="offsetX" hidden>
+              <span>offsetX</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+              <span class="value">50</span>px
+            </label>
+            <label class="offsetY" hidden>
+              <span>offsetY</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+              <span class="value">50</span>px
+            </label>
+            <label class="x" hidden>
+              <span>x</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+              <span class="value">50</span>px
+            </label>
+            <label class="y" hidden>
+              <span>y</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+              <span class="value">50</span>px
+            </label>
+            <label class="width" hidden>
+              width
+              <input type="range" min="1" max="100" step="1" value="25" />
+              <span class="value">100</span>px
+            </label>
+            <label class="height" hidden>
+              height
+              <input type="range" min="1" max="100" step="1" value="25" />
+              <span class="value">100</span>px
+            </label>
+            <label class="radius" hidden>
+              radius
+              <input type="range" min="1" max="200" step="1" value="32" />
+              <span class="value">32</span>px
+            </label>
+            <label class="radiusX" hidden>
+              radiusX
+              <input type="range" min="1" max="200" step="1" value="32" />
+              <span class="value">32</span>px
+            </label>
+            <label class="radiusY" hidden>
+              radiusY
+              <input type="range" min="1" max="200" step="1" value="32" />
+              <span class="value">32</span>px
+            </label>
+            <label class="borderRadius" hidden>
+              borderRadius
+              <input type="range" min="0" max="100" step="1" value="0" />
+              <span class="value">32</span>px
+            </label>
+            <label class="startAngle" hidden>
+              startAngle
+              <input type="range" min="0" max="360" step="1" value="0" />
+              <span class="value">0</span>deg
+            </label>
+            <label class="angleOffset" hidden>
+              angleOffset
+              <input type="range" min="-360" max="360" step="1" value="90" />
+              <span class="value">90</span>deg
+            </label>
+            <label class="numberOfSides" hidden>
+              numberOfSides
+              <input type="range" min="3" max="10" step="1" value="3" />
+              <span class="value">3</span>
+            </label>
+            <label class="startX" hidden>
+              <span>startX</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="startY" hidden>
+              <span>startY</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="endX" hidden>
+              <span>endX</span>
+              <input type="range" min="-50" max="50" step="1" value="10" />
+              <span class="value">10</span>px
+            </label>
+            <label class="endY" hidden>
+              <span>endY</span>
+              <input type="range" min="-50" max="50" step="1" value="10" />
+              <span class="value">10</span>px
+            </label>
+            <label class="numberOfPoints" hidden>
+              <span>numberOfPoints</span>
+              <input type="range" min="2" max="10" step="1" value="2" />
+              <span class="value">2</span>
+            </label>
+            <label class="numberOfEdges" hidden>
+              <span>numberOfEdges</span>
+              <input type="range" min="1" max="20" step="1" value="1" />
+              <span class="value">1</span>
+            </label>
+            <label class="numberOfCurves" hidden>
+              <span>numberOfCurves</span>
+              <input type="range" min="0" max="10" step="1" value="0" />
+              <span class="value">0</span>
+            </label>
+            <label class="bitmapWidth" hidden>
+              <span>bitmapWidth</span>
+              <input type="range" min="1" max="200" step="1" value="10" />
+              <span class="value">10</span>
+            </label>
+            <label class="bitmapHeight" hidden>
+              <span>bitmapHeight</span>
+              <input type="range" min="1" max="200" step="1" value="10" />
+              <span class="value">10</span>
+            </label>
+            <label class="bitmapNumberOfColors" hidden>
+              <span>bitmapNumberOfColors</span>
+              <input type="range" min="2" max="16" step="1" value="2" />
+              <span class="value">2</span>
+            </label>
+            <label class="bitmapSelectedColorIndex" hidden>
+              <span>bitmapSelectedColorIndex</span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+              <span class="value">2</span>
+              <input
+                type="color"
+                class="color bitmapSelectedColorIndexColor"
+                disabled
+              />
+            </label>
+            <div>
+              <button class="clearBitmap" hidden>clear bitmap</button>
+              <input
+                hidden
+                type="file"
+                class="bitmapImageInput"
+                accept="image/*"
+              />
+              <button hidden class="quantizeBitmapImage">quantize</button>
+            </div>
+            <canvas
+              hidden
+              class="bitmapCanvas"
+              width="109"
+              height="109"
+            ></canvas>
+            <label class="bitmapScale" hidden>
+              <span>bitmapScale</span>
+              <input type="range" min="-4" max="5" step="0.01" value="1.0" />
+              <span class="value">1</span>x
+            </label>
+            <label class="bitmapScaleX" hidden>
+              <span>bitmapScaleX</span>
+              <input type="range" min="-4" max="5" step="0.01" value="1.0" />
+              <span class="value">1</span>x
+            </label>
+            <label class="bitmapScaleY" hidden>
+              <span>bitmapScaleY</span>
+              <input type="range" min="-4" max="5" step="0.01" value="1.0" />
+              <span class="value">1</span>x
+            </label>
+            <label class="lineWidth" hidden>
+              <span>lineWidth</span>
+              <input type="range" min="0" max="50" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="rotation" hidden>
+              <span>rotation</span>
+              <input type="range" min="0" max="360" step="1" value="0" />
+              <span class="value">0</span>deg
+            </label>
+
+            <label class="fillColorIndex" hidden>
+              <span>fillColor</span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+              <span class="value">1</span>
+              <input type="color" class="color fillColor" disabled />
+            </label>
+
+            <label class="lineColorIndex" hidden>
+              <span>lineColor</span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+              <span class="value">1</span>
+              <input type="color" class="color lineColor" disabled />
+            </label>
+
+            <label class="backgroundColorIndex" hidden>
+              <span>backgroundColor</span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+              <span class="value">1</span>
+              <input type="color" class="color backgroundColor" disabled />
+            </label>
+
+            <label class="setFillBackground" hidden>
+              <span>fillBackground</span>
+              <input type="checkbox" class="input" />
+            </label>
+
+            <label class="setIgnoreFill" hidden>
+              <span>ignoreFill</span>
+              <input type="checkbox" class="input" />
+            </label>
+
+            <label class="setIgnoreLine" hidden>
+              <span>ignoreLine</span>
+              <input type="checkbox" class="input" />
+            </label>
+
+            <label class="selectBitmapColor" hidden>
+              <label class="bitmapColorIndex verticalLabel">
+                <span>bitmapColorIndex <span class="value">1</span></span>
+                <input
+                  type="range"
+                  class="input"
+                  min="0"
+                  max="16"
+                  step="1"
+                  value="1"
+                />
+              </label>
+              <label class="colorIndex verticalLabel">
+                <span>colorIndex <span class="value">1</span></span>
+                <input
+                  type="range"
+                  class="input"
+                  min="0"
+                  max="16"
+                  step="1"
+                  value="1"
+                />
+              </label>
+
+              <input type="color" class="color bitmapColor" disabled />
+            </label>
+
+            <label class="numberOfBitmapColorPairs" hidden>
+              <span>numberOfBitmapColorPairs</span>
+              <input type="range" min="1" max="16" step="1" value="1" />
+              <span class="value">1</span>
+            </label>
+
+            <label class="cropTop" hidden>
+              <span>cropTop</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="cropRight" hidden>
+              <span>cropRight</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="cropBottom" hidden>
+              <span>cropBottom</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="cropLeft" hidden>
+              <span>cropLeft</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+
+            <label class="rotationCropTop" hidden>
+              <span>rotationCropTop</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="rotationCropRight" hidden>
+              <span>rotationCropRight</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="rotationCropBottom" hidden>
+              <span>rotationCropBottom</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="rotationCropLeft" hidden>
+              <span>rotationCropLeft</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+
+            <label class="segmentStartRadius" hidden>
+              <span>segmentStartRadius</span>
+              <input type="range" min="0" max="200" step="1" value="1" />
+              <span class="value">1</span>px
+            </label>
+            <label class="segmentEndRadius" hidden>
+              <span>segmentEndRadius</span>
+              <input type="range" min="0" max="200" step="1" value="1" />
+              <span class="value">1</span>px
+            </label>
+            <label class="segmentRadius" hidden>
+              <span>segmentRadius</span>
+              <input type="range" min="0" max="200" step="1" value="1" />
+              <span class="value">1</span>px
+            </label>
+
+            <label class="segmentStartCap" hidden>
+              <span>segmentStartCap</span>
+              <select>
+                <optgroup label="start segment cap"></optgroup>
+              </select>
+            </label>
+            <label class="segmentEndCap" hidden>
+              <span>segmentEndCap</span>
+              <select>
+                <optgroup label="end segment cap"></optgroup>
+              </select>
+            </label>
+            <label class="segmentCap" hidden>
+              <span>segmentCap</span>
+              <select>
+                <optgroup label="segment cap"></optgroup>
+              </select>
+            </label>
+            <label class="horizontalAlignment" hidden>
+              <span>horizontalAlignment</span>
+              <select>
+                <optgroup label="horizontal alignment"></optgroup>
+              </select>
+            </label>
+            <label class="verticalAlignment" hidden>
+              <span>verticalAlignment</span>
+              <select>
+                <optgroup label="vertical alignment"></optgroup>
+              </select>
+            </label>
+            <label class="spriteIndex" hidden>
+              <span>spriteIndex</span>
+              <select>
+                <optgroup label="select sprite"></optgroup>
+              </select>
+            </label>
+            <label class="spriteScale" hidden>
+              <span>spriteScale</span>
+              <input type="range" min="-2" max="3" step="0.01" value="1.0" />
+              <span class="value">1</span>x
+            </label>
+            <label class="spriteScaleX" hidden>
+              <span>spriteScaleX</span>
+              <input type="range" min="-2" max="3" step="0.01" value="1.0" />
+              <span class="value">1</span>x
+            </label>
+            <label class="spriteScaleY" hidden>
+              <span>spriteScaleY</span>
+              <input type="range" min="-2" max="20" step="0.01" value="1.0" />
+              <span class="value">1</span>x
+            </label>
+
+            <label class="selectSpriteColor" hidden>
+              <label class="spriteColorIndex verticalLabel">
+                <span>spriteColorIndex <span class="value">1</span></span>
+                <input
+                  type="range"
+                  class="input"
+                  min="0"
+                  max="16"
+                  step="1"
+                  value="1"
+                />
+              </label>
+              <label class="colorIndex verticalLabel">
+                <span>colorIndex <span class="value">1</span></span>
+                <input
+                  type="range"
+                  class="input"
+                  min="0"
+                  max="16"
+                  step="1"
+                  value="1"
+                />
+              </label>
+
+              <input type="color" class="color spriteColor" disabled />
+            </label>
+            <label class="numberOfSpriteColorPairs" hidden>
+              <span>numberOfSpriteColorPairs</span>
+              <input type="range" min="1" max="16" step="1" value="1" />
+              <span class="value">1</span>
+            </label>
+          </div>
+        </template>
+        <template id="pointTemplate">
+          <div class="point" hidden>
+            <label class="x verticalLabel">
+              <span>x (<span class="value">50</span>px)</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+            </label>
+            <label class="y verticalLabel">
+              <span>y (<span class="value">50</span>px)</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+            </label>
+          </div>
+        </template>
+        <template id="edgeTemplate">
+          <div class="edge" hidden>
+            <label class="startIndex verticalLabel">
+              <span>startIndex (<span class="value">0</span>)</span>
+              <input type="range" min="0" max="50" step="1" value="0" />
+            </label>
+            <label class="endIndex verticalLabel">
+              <span>endIndex (<span class="value">1</span>)</span>
+              <input type="range" min="0" max="50" step="1" value="1" />
+            </label>
+          </div>
+        </template>
+        <template id="curveTemplate">
+          <div class="curve" hidden>
+            <label class="type verticalLabel">
+              <span>type (<span class="value"></span>)</span>
+              <select>
+                <optgroup label="curve type"></optgroup>
+              </select>
+            </label>
+          </div>
+        </template>
+        <template id="bitmapColorPairTemplate">
+          <div class="bitmapColorPair">
+            <label class="bitmapColorIndex verticalLabel">
+              <span>bitmapColorIndex <span class="value">1</span></span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+            </label>
+            <label class="colorIndex verticalLabel">
+              <span>colorIndex <span class="value">1</span></span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+            </label>
+
+            <input type="color" class="color bitmapColor" disabled />
+          </div>
+        </template>
+        <template id="spriteColorPairTemplate">
+          <div class="spriteColorPair">
+            <label class="spriteColorIndex verticalLabel">
+              <span>spriteColorIndex <span class="value">1</span></span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+            </label>
+            <label class="colorIndex verticalLabel">
+              <span>colorIndex <span class="value">1</span></span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+            </label>
+
+            <input type="color" class="color spriteColor" disabled />
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <hr />
+    <div>
+      <textarea
+        placeholder="draw sprites"
+        id="drawSpritesText"
+        cols="50"
+        rows="3"
+      ></textarea>
+    </div>
+  </body>
+</html>

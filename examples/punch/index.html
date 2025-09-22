@@ -62,13 +62,15 @@
         id="camera"
         look-controls="enabled: false;"
         wasd-controls="enabled: false"
-        position="0 0.2 0.65"
+        position="0 0.20 0.6"
         rotation="-20 0 0"
       ></a-camera>
       <a-sky></a-sky>
 
       <a-entity position="0 -0.55 0">
         <a-sphere
+          segments-height="5"
+          segments-width="6"
           id="punchingBag2"
           class="punchingBag 2"
           data-section="2"
@@ -128,6 +130,7 @@
           color="#777"
           position="0 0 0"
           static-body
+          visible="false"
         ></a-sphere>
       </a-entity>
     </a-scene>

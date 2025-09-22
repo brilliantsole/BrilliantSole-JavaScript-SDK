@@ -4,7 +4,10 @@ import { isInNode } from "./utils/environment.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 import { parseMessage } from "./utils/ParseUtils.ts";
-import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.ts";
+import {
+  concatenateArrayBuffers,
+  UInt8ByteBuffer,
+} from "./utils/ArrayBufferUtils.ts";
 
 const _console = createConsole("CameraManager", { log: false });
 
@@ -161,11 +164,12 @@ class CameraManager {
     const promise = this.waitForEvent("cameraStatus");
     _console.log(`setting command "${command}"`);
     const commandEnum = CameraCommands.indexOf(command);
+
     this.sendMessage(
       [
         {
           type: "cameraCommand",
-          data: Uint8Array.from([commandEnum]).buffer,
+          data: UInt8ByteBuffer(commandEnum),
         },
       ],
       sendImmediately
@@ -251,16 +255,16 @@ class CameraManager {
         _console.log({ imageData: this.#imageData });
         this.#imageProgress = this.#imageData?.byteLength / this.#imageSize;
         _console.log({ imageProgress: this.#imageProgress });
+        this.#dispatchEvent("cameraImageProgress", {
+          progress: this.#imageProgress,
+          type: "image",
+        });
         if (this.#imageProgress == 1) {
           _console.log("finished getting image data");
           if (this.#headerProgress == 1) {
             this.#buildImage();
           }
         }
-        this.#dispatchEvent("cameraImageProgress", {
-          progress: this.#imageProgress,
-          type: "image",
-        });
         break;
       case "footerSize":
         this.#footerSize = dataView.getUint16(0, true);
@@ -314,8 +318,6 @@ class CameraManager {
 
     const url = URL.createObjectURL(blob);
     _console.log("created url", url);
-
-    // FILL - header stuff
 
     this.#dispatchEvent("cameraImage", { url, blob });
 
