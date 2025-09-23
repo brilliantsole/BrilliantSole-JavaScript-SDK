@@ -263,10 +263,14 @@ export async function fontToSpriteSheet(
       glyphs.push(glyph);
     }
 
-    const maxSpriteHeight = maxSpriteY - minSpriteY;
+    const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
+
+    const maxSpriteHeight = maxSpriteY - minSpriteY + strokeWidth;
 
     // _console.log({
     //   fontName: font.getEnglishName("fullName"),
+    //   minSpriteY,
+    //   maxSpriteY,
     //   maxSpriteHeight,
     // });
 
@@ -284,13 +288,14 @@ export async function fontToSpriteSheet(
 
       const bbox = glyph.getBoundingBox();
 
-      const spriteWidth = Math.floor(
-        Math.max(
-          Math.max(bbox.x2, bbox.x2 - bbox.x1),
-          glyph.advanceWidth || 0
-        ) * fontScale
-      );
-      const spriteHeight = Math.floor(maxSpriteHeight);
+      const spriteWidth =
+        Math.round(
+          Math.max(
+            Math.max(bbox.x2, bbox.x2 - bbox.x1),
+            glyph.advanceWidth || 0
+          ) * fontScale
+        ) + strokeWidth;
+      const spriteHeight = Math.round(maxSpriteHeight);
 
       const commands: DisplayContextCommand[] = [];
 
@@ -301,16 +306,17 @@ export async function fontToSpriteSheet(
       );
       if (options.stroke) {
         path.stroke = "white";
-        const strokeWidth = options.strokeWidth || 1;
         path.strokeWidth = strokeWidth;
         commands.push({ type: "setLineWidth", lineWidth: strokeWidth });
-        // FIX - lineColor and fillColor
+        commands.push({ type: "setIgnoreFill", ignoreFill: true });
       } else {
         path.fill = "white";
       }
 
-      const bitmapWidth = Math.floor((bbox.x2 - bbox.x1) * fontScale);
-      const bitmapHeight = Math.floor((bbox.y2 - bbox.y1) * fontScale);
+      const bitmapWidth =
+        Math.floor((bbox.x2 - bbox.x1) * fontScale) + strokeWidth;
+      const bitmapHeight =
+        Math.floor((bbox.y2 - bbox.y1) * fontScale) + strokeWidth;
 
       const bitmapX = Math.floor((spriteWidth - bitmapWidth) / 2);
       const bitmapY = Math.floor(
@@ -769,7 +775,7 @@ export function getSpriteLinesOffset(
   contextState: DisplayContextState
 ): Vector2 {
   const offset: Vector2 = { x: 0, y: 0 };
-  // FILL -
+  // FILL
   return offset;
 }
 export function splitStringInto(

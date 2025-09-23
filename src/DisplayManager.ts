@@ -879,24 +879,24 @@ class DisplayManager implements DisplayManagerInterface {
     this.#dispatchEvent("displayOpacity", { opacity });
   }
 
-  async saveContext(sendImmediately?: boolean) {
-    const commandType: DisplayContextCommandType = "saveContext";
-    const dataView = serializeContextCommand(this, { type: commandType });
-    await this.#sendDisplayContextCommand(
-      commandType,
-      dataView?.buffer,
-      sendImmediately
-    );
-  }
-  async restoreContext(sendImmediately?: boolean) {
-    const commandType: DisplayContextCommandType = "restoreContext";
-    const dataView = serializeContextCommand(this, { type: commandType });
-    await this.#sendDisplayContextCommand(
-      commandType,
-      dataView?.buffer,
-      sendImmediately
-    );
-  }
+  // async saveContext(sendImmediately?: boolean) {
+  //   const commandType: DisplayContextCommandType = "saveContext";
+  //   const dataView = serializeContextCommand(this, { type: commandType });
+  //   await this.#sendDisplayContextCommand(
+  //     commandType,
+  //     dataView?.buffer,
+  //     sendImmediately
+  //   );
+  // }
+  // async restoreContext(sendImmediately?: boolean) {
+  //   const commandType: DisplayContextCommandType = "restoreContext";
+  //   const dataView = serializeContextCommand(this, { type: commandType });
+  //   await this.#sendDisplayContextCommand(
+  //     commandType,
+  //     dataView?.buffer,
+  //     sendImmediately
+  //   );
+  // }
 
   async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
     this.assertValidColorIndex(fillColorIndex);
@@ -2248,7 +2248,6 @@ class DisplayManager implements DisplayManagerInterface {
           this.#maxCommandDataLength
         })`
       );
-      // FILL - split into multiple curves
       return;
     }
     await this.#sendDisplayContextCommand(
@@ -2307,7 +2306,6 @@ class DisplayManager implements DisplayManagerInterface {
           this.#maxCommandDataLength
         })`
       );
-      // FILL - split into multiple paths
       return;
     }
     await this.#sendDisplayContextCommand(

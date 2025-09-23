@@ -777,18 +777,18 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#contextStateHelper.update(contextState);
   }
-  async saveContext(sendImmediately?: boolean) {
-    this.#saveContext();
-    if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.saveContext(sendImmediately);
-    }
-  }
-  async restoreContext(sendImmediately?: boolean) {
-    this.#restoreContext();
-    if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.restoreContext(sendImmediately);
-    }
-  }
+  // async saveContext(sendImmediately?: boolean) {
+  //   this.#saveContext();
+  //   if (this.device?.isConnected && !this.#ignoreDevice) {
+  //     await this.deviceDisplayManager!.saveContext(sendImmediately);
+  //   }
+  // }
+  // async restoreContext(sendImmediately?: boolean) {
+  //   this.#restoreContext();
+  //   if (this.device?.isConnected && !this.#ignoreDevice) {
+  //     await this.deviceDisplayManager!.restoreContext(sendImmediately);
+  //   }
+  // }
   async selectBackgroundColor(
     backgroundColorIndex: number,
     sendImmediately?: boolean

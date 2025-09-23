@@ -4195,6 +4195,8 @@ loadFontInput.addEventListener("input", async () => {
     {
       usePath: fontUsePath,
       englishOnly: true,
+      stroke: fontUseStroke,
+      strokeWidth: fontStrokeWidth,
     }
   );
   setSpriteSheetName(fontSpriteSheet.name);
@@ -4229,6 +4231,32 @@ fontUsePathInput.addEventListener("input", () => {
   setFontUsePath(fontUsePathInput.checked);
 });
 let fontUsePath = fontUsePathInput.checked;
+
+const setFontUseStroke = (newFontUseStroke) => {
+  fontUseStroke = newFontUseStroke;
+  console.log({ fontUseStroke });
+};
+const fontUseStrokeInput = document.getElementById("fontUseStroke");
+fontUseStrokeInput.addEventListener("input", () => {
+  setFontUseStroke(fontUseStrokeInput.checked);
+});
+let fontUseStroke = fontUseStrokeInput.checked;
+
+const setFontStrokeWidth = (newFontStrokeWidth) => {
+  fontStrokeWidth = newFontStrokeWidth;
+  fontStrokeWidthSpan.innerText = fontStrokeWidth;
+  console.log({ fontStrokeWidth });
+};
+const fontStrokeWidthInputContainer =
+  document.getElementById("fontStrokeWidth");
+const fontStrokeWidthSpan =
+  fontStrokeWidthInputContainer.querySelector(".value");
+const fontStrokeWidthInput =
+  fontStrokeWidthInputContainer.querySelector("input");
+fontStrokeWidthInput.addEventListener("input", () => {
+  setFontStrokeWidth(Number(fontStrokeWidthInput.value));
+});
+let fontStrokeWidth = Number(fontStrokeWidthInput.value);
 
 // DRAW SPRITES
 

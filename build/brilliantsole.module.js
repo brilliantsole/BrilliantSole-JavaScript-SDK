@@ -15866,7 +15866,14 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
             maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
             glyphs.push(glyph);
         }
-        const maxSpriteHeight = maxSpriteY - minSpriteY;
+        const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
+        const maxSpriteHeight = maxSpriteY - minSpriteY + strokeWidth;
+        _console$m.log({
+            fontName: font.getEnglishName("fullName"),
+            minSpriteY,
+            maxSpriteY,
+            maxSpriteHeight,
+        });
         for (let i = 0; i < glyphs.length; i++) {
             const glyph = glyphs[i];
             let name = glyph.name;
@@ -15877,21 +15884,21 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                 continue;
             }
             const bbox = glyph.getBoundingBox();
-            const spriteWidth = Math.floor(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) * fontScale);
-            const spriteHeight = Math.floor(maxSpriteHeight);
+            const spriteWidth = Math.round(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) * fontScale) + strokeWidth;
+            const spriteHeight = Math.round(maxSpriteHeight);
             const commands = [];
             const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
             if (options.stroke) {
                 path.stroke = "white";
-                const strokeWidth = options.strokeWidth || 1;
                 path.strokeWidth = strokeWidth;
                 commands.push({ type: "setLineWidth", lineWidth: strokeWidth });
+                commands.push({ type: "setIgnoreFill", ignoreFill: true });
             }
             else {
                 path.fill = "white";
             }
-            const bitmapWidth = Math.floor((bbox.x2 - bbox.x1) * fontScale);
-            const bitmapHeight = Math.floor((bbox.y2 - bbox.y1) * fontScale);
+            const bitmapWidth = Math.floor((bbox.x2 - bbox.x1) * fontScale) + strokeWidth;
+            const bitmapHeight = Math.floor((bbox.y2 - bbox.y1) * fontScale) + strokeWidth;
             const bitmapX = Math.floor((spriteWidth - bitmapWidth) / 2);
             const bitmapY = Math.floor((spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY));
             if (options.usePath) {
@@ -16626,10 +16633,8 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             await displayManager.clear(sendImmediately);
             break;
         case "saveContext":
-            await displayManager.saveContext(sendImmediately);
             break;
         case "restoreContext":
-            await displayManager.restoreContext(sendImmediately);
             break;
         case "clearRotation":
             await displayManager.clearRotation(sendImmediately);
@@ -17516,16 +17521,6 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_opacities, "f").fill(opacity);
         __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayOpacity", { opacity });
-    }
-    async saveContext(sendImmediately) {
-        const commandType = "saveContext";
-        const dataView = serializeContextCommand(this, { type: commandType });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView?.buffer, sendImmediately);
-    }
-    async restoreContext(sendImmediately) {
-        const commandType = "restoreContext";
-        const dataView = serializeContextCommand(this, { type: commandType });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView?.buffer, sendImmediately);
     }
     async selectFillColor(fillColorIndex, sendImmediately) {
         this.assertValidColorIndex(fillColorIndex);
@@ -22849,18 +22844,6 @@ class DisplayCanvasHelper {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_opacities, "f").fill(opacity);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "opacity", { opacity });
-    }
-    async saveContext(sendImmediately) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContext).call(this);
-        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.deviceDisplayManager.saveContext(sendImmediately);
-        }
-    }
-    async restoreContext(sendImmediately) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restoreContext).call(this);
-        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.deviceDisplayManager.restoreContext(sendImmediately);
-        }
     }
     async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
         this.assertValidColorIndex(backgroundColorIndex);
