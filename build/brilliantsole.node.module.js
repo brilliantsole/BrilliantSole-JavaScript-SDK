@@ -7666,12 +7666,15 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawWireframe(wireframe, sendImmediately) {
+        wireframe = trimWireframe(wireframe);
+        if (wireframe.points.length == 0) {
+            return;
+        }
         assertValidWireframe(wireframe);
-        const trimmedWireframe = trimWireframe(wireframe);
         const commandType = "drawWireframe";
         const dataView = serializeContextCommand(this, {
             type: commandType,
-            wireframe: trimmedWireframe,
+            wireframe,
         });
         if (!dataView) {
             return;

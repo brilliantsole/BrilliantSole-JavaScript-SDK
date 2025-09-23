@@ -2177,12 +2177,15 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   async drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean) {
+    wireframe = trimWireframe(wireframe);
+    if (wireframe.points.length == 0) {
+      return;
+    }
     assertValidWireframe(wireframe);
-    const trimmedWireframe = trimWireframe(wireframe);
     const commandType: DisplayContextCommandType = "drawWireframe";
     const dataView = serializeContextCommand(this, {
       type: commandType,
-      wireframe: trimmedWireframe,
+      wireframe,
     });
     if (!dataView) {
       return;

@@ -2433,6 +2433,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   async drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean) {
     wireframe = trimWireframe(wireframe);
+    if (wireframe.points.length == 0) {
+      return;
+    }
     assertValidWireframe(wireframe);
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>

@@ -15868,12 +15868,6 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
         }
         const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
         const maxSpriteHeight = maxSpriteY - minSpriteY + strokeWidth;
-        _console$m.log({
-            fontName: font.getEnglishName("fullName"),
-            minSpriteY,
-            maxSpriteY,
-            maxSpriteHeight,
-        });
         for (let i = 0; i < glyphs.length; i++) {
             const glyph = glyphs[i];
             let name = glyph.name;
@@ -18401,12 +18395,15 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawWireframe(wireframe, sendImmediately) {
+        wireframe = trimWireframe(wireframe);
+        if (wireframe.points.length == 0) {
+            return;
+        }
         assertValidWireframe(wireframe);
-        const trimmedWireframe = trimWireframe(wireframe);
         const commandType = "drawWireframe";
         const dataView = serializeContextCommand(this, {
             type: commandType,
-            wireframe: trimmedWireframe,
+            wireframe,
         });
         if (!dataView) {
             return;
@@ -23391,6 +23388,9 @@ class DisplayCanvasHelper {
     }
     async drawWireframe(wireframe, sendImmediately) {
         wireframe = trimWireframe(wireframe);
+        if (wireframe.points.length == 0) {
+            return;
+        }
         assertValidWireframe(wireframe);
         const contextState = structuredClone(this.contextState);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawWireframeToCanvas).call(this, wireframe, contextState));
