@@ -78,6 +78,8 @@
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-progress": "^1.1.2",
     "rollup-plugin-uglify": "^6.0.4",
+    "svg-pathdata": "^8.0.0",
+    "svgson": "^5.3.1",
     "tslib": "^2.6.3",
     "typescript": "^5.5.3",
     "woff2-encoder": "^2.0.0",

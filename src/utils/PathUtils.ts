@@ -1,8 +1,9 @@
 import { createConsole } from "./Console.ts";
 import opentype from "opentype.js";
 import { Vector2 } from "./MathUtils.ts";
+import { DisplayBezierCurve } from "../DisplayManager.ts";
 
-const _console = createConsole("PathUtils", { log: false });
+const _console = createConsole("PathUtils", { log: true });
 
 type PathCommand = opentype.PathCommand;
 
@@ -107,86 +108,92 @@ function areCollinear(
   return Math.abs(cross) < epsilon;
 }
 
-export function simplifyPath(
-  commands: PathCommand[],
-  epsilon = 1
-): PathCommand[] {
-  const simplified: PathCommand[] = [];
-  let cursor: Vector2 = { x: 0, y: 0 };
+export function simplifyCurves(curves: DisplayBezierCurve[], epsilon = 1) {
+  const simplified: DisplayBezierCurve[] = [];
+  _console.log("simplifying", curves, { epsilon });
+  let cursor: Vector2;
+  curves.forEach((curve, index) => {
+    const { controlPoints } = curve;
+    const isFirst = index == 0;
+    if (isFirst) {
+      cursor = controlPoints[0];
+    }
 
-  for (let i = 0; i < commands.length; i++) {
-    const cmd = commands[i];
-
-    switch (cmd.type) {
-      case "M":
-        simplified.push({ ...cmd });
-        cursor = { x: cmd.x, y: cmd.y };
-        break;
-
-      case "L": {
-        // Merge collinear lines
-        const nextPoint = { x: cmd.x, y: cmd.y };
-        const lastCmd = simplified[simplified.length - 1];
-        if (
-          lastCmd &&
-          lastCmd.type === "L" &&
-          simplified.length >= 2 &&
-          areCollinear(
-            simplified[simplified.length - 2] as Vector2,
-            lastCmd as Vector2,
-            nextPoint
-          )
-        ) {
-          // Remove middle collinear point
-          simplified.pop();
+    switch (curve.type) {
+      case "segment":
+        {
+          // Merge collinear lines
+          const lastPoint = controlPoints.at(-1)!;
+          const lastCommand = simplified.at(-1);
+          if (lastCommand?.type == "segment" && simplified.length >= 2) {
+            const [c1, c2] = [simplified.at(-1)!, simplified.at(-2)!];
+            if (
+              areCollinear(
+                c2.controlPoints.at(-1)!,
+                c1.controlPoints.at(-1)!,
+                lastPoint
+              )
+            ) {
+              // Remove middle collinear point
+              simplified.pop();
+            }
+          }
+          simplified.push({ ...curve });
+          cursor = lastPoint;
         }
-        simplified.push({ ...cmd });
-        cursor = nextPoint;
         break;
-      }
+      case "quadratic":
+        {
+          const p0 = cursor;
+          const p1 = controlPoints.at(-2)!;
+          const p2 = controlPoints.at(-1)!;
 
-      case "Q": {
-        const p0 = cursor;
-        const p1 = { x: cmd.x1, y: cmd.y1 };
-        const p2 = { x: cmd.x, y: cmd.y };
+          // Sample points along the curve
+          const sampled = sampleQuadratic(p0, p1, p2, 5);
+          const simplifiedPoints = rdp(sampled, epsilon);
 
-        // Sample points along the curve
-        const sampled = sampleQuadratic(p0, p1, p2, 5);
-        const simplifiedPoints = rdp(sampled, epsilon);
-
-        // If curve is almost straight, convert to a line
-        if (simplifiedPoints.length === 2) {
-          simplified.push({ type: "L", x: p2.x, y: p2.y });
-        } else {
-          simplified.push({ ...cmd }); // Keep the curve
+          // If curve is almost straight, convert to a line
+          if (simplifiedPoints.length === 2) {
+            simplified.push({
+              type: "segment",
+              controlPoints: [{ x: p2.x, y: p2.y }],
+            });
+            if (isFirst) {
+              simplified.at(-1)!.controlPoints.unshift({ ...p0 });
+            }
+          } else {
+            simplified.push({ ...curve }); // Keep the curve
+          }
+          cursor = p2;
         }
-        cursor = p2;
         break;
-      }
+      case "cubic":
+        {
+          const p0 = cursor;
+          const p1 = controlPoints.at(-3)!;
+          const p2 = controlPoints.at(-2)!;
+          const p3 = controlPoints.at(-1)!;
 
-      case "C": {
-        const p0 = cursor;
-        const p1 = { x: cmd.x1, y: cmd.y1 };
-        const p2 = { x: cmd.x2, y: cmd.y2 };
-        const p3 = { x: cmd.x, y: cmd.y };
+          const sampled = sampleCubic(p0, p1, p2, p3, 5);
+          const simplifiedPoints = rdp(sampled, epsilon);
 
-        const sampled = sampleCubic(p0, p1, p2, p3, 5);
-        const simplifiedPoints = rdp(sampled, epsilon);
-
-        if (simplifiedPoints.length === 2) {
-          simplified.push({ type: "L", x: p3.x, y: p3.y });
-        } else {
-          simplified.push({ ...cmd }); // Keep the curve
+          if (simplifiedPoints.length === 2) {
+            simplified.push({
+              type: "segment",
+              controlPoints: [{ x: p3.x, y: p3.y }],
+            });
+            if (isFirst) {
+              simplified.at(-1)!.controlPoints.unshift({ ...p0 });
+            }
+          } else {
+            simplified.push({ ...curve }); // Keep the curve
+          }
+          cursor = p3;
         }
-        cursor = p3;
-        break;
-      }
-
-      case "Z":
-        simplified.push({ ...cmd });
         break;
     }
-  }
-
+    cursor = curve.controlPoints[curve.controlPoints.length - 1];
+  });
+  _console.log("simplified", simplified);
   return simplified;
 }

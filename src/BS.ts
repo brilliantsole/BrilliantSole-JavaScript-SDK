@@ -138,6 +138,8 @@ export {
   intersectWireframes,
 } from "./utils/DisplayUtils.ts";
 
+export { svgToDisplayContextCommands } from "./utils/SvgUtils.ts";
+
 export {
   DisplayContextCommand,
   DisplayContextCommandType,

@@ -36,7 +36,7 @@ export class MCUManager {
     _fileUploadNextCallback: any;
     _uploadIsInProgress: boolean;
     _downloadIsInProgress: boolean;
-    _buffer: Uint8Array;
+    _buffer: Uint8Array<ArrayBuffer>;
     _seq: number;
     onMessage(callback: any): this;
     onImageUploadNext(callback: any): this;

@@ -2697,10 +2697,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       if (isStart) {
         _controlPoints = controlPoints;
       } else {
-        _controlPoints = [
-          _controlPoints[_controlPoints.length - 1],
-          ...controlPoints,
-        ];
+        _controlPoints = [_controlPoints.at(-1)!, ...controlPoints];
       }
       this.#appendGenericCurvePoints(
         curvePoints,
