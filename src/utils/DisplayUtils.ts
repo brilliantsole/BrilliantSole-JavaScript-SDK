@@ -284,7 +284,7 @@ export const displayCurveTypeToNumberOfControlPoints: Record<
   quadratic: 3,
   cubic: 4,
 };
-export const displayCurveTolerance = 3.0;
+export const displayCurveTolerance = 2.0;
 export const displayCurveToleranceSquared = displayCurveTolerance ** 2;
 
 export const maxNumberOfDisplayCurvePoints = 150;

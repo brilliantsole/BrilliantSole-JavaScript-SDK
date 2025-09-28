@@ -728,7 +728,7 @@ class DisplayManager implements DisplayManagerInterface {
   #displayContextCommandBuffers: ArrayBuffer[] = [];
   async #sendDisplayContextCommand(
     displayContextCommand: DisplayContextCommandType,
-    arrayBuffer?: ArrayBuffer,
+    arrayBuffer?: ArrayBufferLike,
     sendImmediately?: boolean
   ) {
     this.#assertValidDisplayContextCommand(displayContextCommand);
@@ -2877,7 +2877,9 @@ class DisplayManager implements DisplayManagerInterface {
         break;
       case "getSpriteSheetName":
       case "setSpriteSheetName":
-        const spriteSheetName = textDecoder.decode(dataView.buffer);
+        const spriteSheetName = textDecoder.decode(
+          dataView.buffer as ArrayBuffer
+        );
         _console.log({ spriteSheetName });
         this.#updateSpriteSheetName(spriteSheetName);
         break;

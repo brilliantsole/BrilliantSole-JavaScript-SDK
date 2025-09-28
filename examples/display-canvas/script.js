@@ -2311,21 +2311,29 @@ displayCanvasHelper.drawPolygon([
 // ]);
 displayCanvasHelper.show();
 
+// SVG
 displayCanvasHelper.setLineWidth(0, true);
 displayCanvasHelper.setSegmentRadius(1, true);
-// SVG
 fetch("./owl.svg").then(async (response) => {
   const svgString = await response.text();
 
-  const commands = BS.svgToDisplayContextCommands(svgString, {
-    fit: true,
-    height: 300,
-    aspectRatio: 0.6,
-    //width: 300,
-    // offsetX: 100,
-    // offsetY: 100,
-  });
-  console.log("commands", commands);
-  displayCanvasHelper.runContextCommands(commands);
+  const { commands, colors } = BS.svgToDisplayContextCommands(
+    `<svg height="210" width="500" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="100,10 40,198 190,78 10,78 160,198" style="fill:lime;stroke:purple;stroke-width:5;fill-rule:evenodd;"/>
+  
+  Sorry, your browser does not support inline SVG.
+</svg>`,
+    {
+      //fit: false,
+      //height: 200,
+      //aspectRatio: 0.6,
+      //width: 300,
+      //offsetX: 100,
+      // offsetY: 100,
+    }
+  );
+  //console.log("commands", commands);
+  //console.log("colors", colors);
+  displayCanvasHelper.previewSpriteCommands(commands);
   displayCanvasHelper.show();
 });

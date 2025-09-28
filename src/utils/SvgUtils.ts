@@ -1,19 +1,26 @@
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { INode, parseSync } from "svgson";
-import { SVGCommand, SVGPathData } from "svg-pathdata";
-import { DisplayBezierCurve } from "../DisplayManager.ts";
+import { SVGPathData } from "svg-pathdata";
+import { DisplayBezierCurve, DisplaySize } from "../DisplayManager.ts";
 import { pointInPolygon, Vector2 } from "./MathUtils.ts";
 import { contourArea } from "./DisplaySpriteSheetUtils.ts";
 import { simplifyCurves } from "./PathUtils.ts";
 import { DisplayBoundingBox } from "./DisplayCanvasHelper.ts";
 import RangeHelper from "./RangeHelper.ts";
+import { kMeansColors, mapToClosestPaletteIndex } from "./ColorUtils.ts";
 
 const _console = createConsole("SvgUtils", { log: true });
 
+type FillRule = "nonzero" | "evenodd";
 type CanvasCommand =
+  | { type: "lineWidth"; lineWidth: number }
+  | { type: "fillStyle"; fillStyle: string }
+  | { type: "strokeStyle"; strokeStyle: string }
+  | { type: "fillRule"; fillRule: FillRule }
+  | { type: "pathStart" | "pathEnd" }
   | { type: "moveTo" | "lineTo"; x: number; y: number }
-  | { type: "closePath" }
+  | { type: "line"; x1: number; y1: number; x2: number; y2: number }
   | { type: "quadraticCurveTo"; cpx: number; cpy: number; x: number; y: number }
   | {
       type: "bezierCurveTo";
@@ -24,7 +31,7 @@ type CanvasCommand =
       x: number;
       y: number;
     }
-  | { type: "fillStyle" | "strokeStyle" | "lineWidth"; value: string | number };
+  | { type: "closePath" };
 
 interface Transform {
   a: number;
@@ -118,7 +125,18 @@ function applyTransform(x: number, y: number, t: Transform) {
   //_console.log("transformed value", value);
   return value;
 }
+function parseStyle(styleStr: string | undefined): Record<string, string> {
+  const style: Record<string, string> = {};
+  if (!styleStr) return style;
 
+  styleStr.split(";").forEach((item) => {
+    const [key, value] = item.split(":").map((s) => s.trim());
+    if (key && value) style[key] = value;
+  });
+  return style;
+}
+
+const circleBezierConstant = 0.5522847498307936;
 function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
   const commands: CanvasCommand[] = [];
 
@@ -130,27 +148,52 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
     //_console.log("nodeTransform", nodeTransform);
 
     // Handle styles
+    const style = parseStyle(node.attributes.style);
+    // Fill
+    if (style.fill) commands.push({ type: "fillStyle", fillStyle: style.fill });
     if (node.attributes.fill)
-      commands.push({ type: "fillStyle", value: node.attributes.fill });
+      commands.push({ type: "fillStyle", fillStyle: node.attributes.fill });
+
+    // Stroke
+    if (style.stroke)
+      commands.push({ type: "strokeStyle", strokeStyle: style.stroke });
     if (node.attributes.stroke)
-      commands.push({ type: "strokeStyle", value: node.attributes.stroke });
+      commands.push({
+        type: "strokeStyle",
+        strokeStyle: node.attributes.stroke,
+      });
+
+    // Stroke width
+    let strokeWidth = 0;
+    if (style["stroke-width"])
+      strokeWidth = parseLength(style["stroke-width"]) ?? 0;
     if (node.attributes["stroke-width"])
+      strokeWidth = parseLength(node.attributes["stroke-width"]) ?? strokeWidth;
+    if (strokeWidth)
       commands.push({
         type: "lineWidth",
-        value: parseFloat(node.attributes["stroke-width"]),
+        lineWidth: strokeWidth * nodeTransform.a, // scale to pixels
       });
+
+    // Fill rule
+    let fillRule = style["fill-rule"];
+    if (node.attributes["fill-rule"]) fillRule = node.attributes["fill-rule"];
+    if (fillRule)
+      commands.push({ type: "fillRule", fillRule: fillRule as FillRule });
 
     switch (node.name) {
       case "path":
         const d = node.attributes.d;
         if (!d) break;
         const pathData = new SVGPathData(d).toAbs();
+        commands.push({ type: "pathStart" });
         for (const cmd of pathData.commands) {
           switch (cmd.type) {
             case SVGPathData.MOVE_TO:
               const m = applyTransform(cmd.x!, cmd.y!, nodeTransform);
               commands.push({ type: "moveTo", x: m.x, y: m.y });
               break;
+
             case SVGPathData.LINE_TO:
               const l = applyTransform(cmd.x!, cmd.y!, nodeTransform);
               commands.push({ type: "lineTo", x: l.x, y: l.y });
@@ -185,25 +228,333 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
               break;
           }
         }
+        commands.push({ type: "pathEnd" });
+
         break;
 
-      case "rect":
+      case "rect": {
         const x = parseFloat(node.attributes.x || "0");
         const y = parseFloat(node.attributes.y || "0");
         const width = parseFloat(node.attributes.width || "0");
         const height = parseFloat(node.attributes.height || "0");
-        const tl = applyTransform(x, y, nodeTransform);
-        const tr = applyTransform(x + width, y, nodeTransform);
-        const br = applyTransform(x + width, y + height, nodeTransform);
-        const bl = applyTransform(x, y + height, nodeTransform);
-        commands.push({ type: "moveTo", x: tl.x, y: tl.y });
-        commands.push({ type: "lineTo", x: tr.x, y: tr.y });
-        commands.push({ type: "lineTo", x: br.x, y: br.y });
-        commands.push({ type: "lineTo", x: bl.x, y: bl.y });
+
+        let rx = parseFloat(node.attributes.rx || "0");
+        let ry = parseFloat(node.attributes.ry || "0");
+        if (!node.attributes.ry && rx) ry = rx;
+
+        rx = Math.min(rx, width / 2);
+        ry = Math.min(ry, height / 2);
+
+        if (rx === 0 && ry === 0) {
+          // sharp rect
+          const tl = applyTransform(x, y, nodeTransform);
+          const tr = applyTransform(x + width, y, nodeTransform);
+          const br = applyTransform(x + width, y + height, nodeTransform);
+          const bl = applyTransform(x, y + height, nodeTransform);
+
+          commands.push({ type: "moveTo", x: tl.x, y: tl.y });
+          commands.push({ type: "lineTo", x: tr.x, y: tr.y });
+          commands.push({ type: "lineTo", x: br.x, y: br.y });
+          commands.push({ type: "lineTo", x: bl.x, y: bl.y });
+          commands.push({ type: "closePath" });
+        } else {
+          // rounded rect
+
+          const ox = rx * circleBezierConstant; // x offset for control points
+          const oy = ry * circleBezierConstant; // y offset for control points
+
+          // Corners before transform
+          const p1 = { x: x + rx, y: y };
+          const p2 = { x: x + width - rx, y: y };
+          const p3 = { x: x + width, y: y + ry };
+          const p4 = { x: x + width, y: y + height - ry };
+          const p5 = { x: x + width - rx, y: y + height };
+          const p6 = { x: x + rx, y: y + height };
+          const p7 = { x: x, y: y + height - ry };
+          const p8 = { x: x, y: y + ry };
+
+          // Move to start
+          const start = applyTransform(p1.x, p1.y, nodeTransform);
+          commands.push({ type: "moveTo", x: start.x, y: start.y });
+
+          // Top edge + top-right corner
+          let cp1 = applyTransform(p2.x + ox, p2.y, nodeTransform);
+          let cp2 = applyTransform(p3.x, p3.y - oy, nodeTransform);
+          let end = applyTransform(p3.x, p3.y, nodeTransform);
+          commands.push({
+            type: "lineTo",
+            x: applyTransform(p2.x, p2.y, nodeTransform).x,
+            y: applyTransform(p2.x, p2.y, nodeTransform).y,
+          });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cp1.x,
+            cp1y: cp1.y,
+            cp2x: cp2.x,
+            cp2y: cp2.y,
+            x: end.x,
+            y: end.y,
+          });
+
+          // Right edge + bottom-right corner
+          cp1 = applyTransform(p4.x, p4.y + oy, nodeTransform);
+          cp2 = applyTransform(p5.x + ox, p5.y, nodeTransform);
+          end = applyTransform(p5.x, p5.y, nodeTransform);
+          commands.push({
+            type: "lineTo",
+            x: applyTransform(p4.x, p4.y, nodeTransform).x,
+            y: applyTransform(p4.x, p4.y, nodeTransform).y,
+          });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cp1.x,
+            cp1y: cp1.y,
+            cp2x: cp2.x,
+            cp2y: cp2.y,
+            x: end.x,
+            y: end.y,
+          });
+
+          // Bottom edge + bottom-left corner
+          cp1 = applyTransform(p6.x - ox, p6.y, nodeTransform);
+          cp2 = applyTransform(p7.x, p7.y + oy, nodeTransform);
+          end = applyTransform(p7.x, p7.y, nodeTransform);
+          commands.push({
+            type: "lineTo",
+            x: applyTransform(p6.x, p6.y, nodeTransform).x,
+            y: applyTransform(p6.x, p6.y, nodeTransform).y,
+          });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cp1.x,
+            cp1y: cp1.y,
+            cp2x: cp2.x,
+            cp2y: cp2.y,
+            x: end.x,
+            y: end.y,
+          });
+
+          // Left edge + top-left corner
+          cp1 = applyTransform(p8.x, p8.y - oy, nodeTransform);
+          cp2 = applyTransform(p1.x - ox, p1.y, nodeTransform);
+          end = applyTransform(p1.x, p1.y, nodeTransform);
+          commands.push({
+            type: "lineTo",
+            x: applyTransform(p8.x, p8.y, nodeTransform).x,
+            y: applyTransform(p8.x, p8.y, nodeTransform).y,
+          });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cp1.x,
+            cp1y: cp1.y,
+            cp2x: cp2.x,
+            cp2y: cp2.y,
+            x: end.x,
+            y: end.y,
+          });
+
+          commands.push({ type: "closePath" });
+        }
+        break;
+      }
+
+      case "circle": {
+        const cx = parseFloat(node.attributes.cx || "0");
+        const cy = parseFloat(node.attributes.cy || "0");
+        const r = parseFloat(node.attributes.r || "0");
+
+        if (r === 0) break;
+
+        const ox = r * circleBezierConstant; // control point offset
+
+        // Points around the circle
+        const pTop = applyTransform(cx, cy - r, nodeTransform);
+        const pRight = applyTransform(cx + r, cy, nodeTransform);
+        const pBottom = applyTransform(cx, cy + r, nodeTransform);
+        const pLeft = applyTransform(cx - r, cy, nodeTransform);
+
+        const cpTopRight = applyTransform(cx + ox, cy - r, nodeTransform);
+        const cpRightTop = applyTransform(cx + r, cy - ox, nodeTransform);
+
+        const cpRightBottom = applyTransform(cx + r, cy + ox, nodeTransform);
+        const cpBottomRight = applyTransform(cx + ox, cy + r, nodeTransform);
+
+        const cpBottomLeft = applyTransform(cx - ox, cy + r, nodeTransform);
+        const cpLeftBottom = applyTransform(cx - r, cy + ox, nodeTransform);
+
+        const cpLeftTop = applyTransform(cx - r, cy - ox, nodeTransform);
+        const cpTopLeft = applyTransform(cx - ox, cy - r, nodeTransform);
+
+        commands.push({ type: "moveTo", x: pTop.x, y: pTop.y });
+
+        commands.push({
+          type: "bezierCurveTo",
+          cp1x: cpTopRight.x,
+          cp1y: cpTopRight.y,
+          cp2x: cpRightTop.x,
+          cp2y: cpRightTop.y,
+          x: pRight.x,
+          y: pRight.y,
+        });
+
+        commands.push({
+          type: "bezierCurveTo",
+          cp1x: cpRightBottom.x,
+          cp1y: cpRightBottom.y,
+          cp2x: cpBottomRight.x,
+          cp2y: cpBottomRight.y,
+          x: pBottom.x,
+          y: pBottom.y,
+        });
+
+        commands.push({
+          type: "bezierCurveTo",
+          cp1x: cpBottomLeft.x,
+          cp1y: cpBottomLeft.y,
+          cp2x: cpLeftBottom.x,
+          cp2y: cpLeftBottom.y,
+          x: pLeft.x,
+          y: pLeft.y,
+        });
+
+        commands.push({
+          type: "bezierCurveTo",
+          cp1x: cpLeftTop.x,
+          cp1y: cpLeftTop.y,
+          cp2x: cpTopLeft.x,
+          cp2y: cpTopLeft.y,
+          x: pTop.x,
+          y: pTop.y,
+        });
+
         commands.push({ type: "closePath" });
         break;
+      }
 
-      // TODO: add circle, ellipse, polygon, line, etc.
+      case "ellipse": {
+        const cx = parseFloat(node.attributes.cx || "0");
+        const cy = parseFloat(node.attributes.cy || "0");
+        const rx = parseFloat(node.attributes.rx || "0");
+        const ry = parseFloat(node.attributes.ry || "0");
+
+        if (rx === 0 || ry === 0) break;
+
+        const ox = rx * circleBezierConstant;
+        const oy = ry * circleBezierConstant;
+
+        // Key points
+        const pTop = applyTransform(cx, cy - ry, nodeTransform);
+        const pRight = applyTransform(cx + rx, cy, nodeTransform);
+        const pBottom = applyTransform(cx, cy + ry, nodeTransform);
+        const pLeft = applyTransform(cx - rx, cy, nodeTransform);
+
+        // Control points
+        const cpTopRight = applyTransform(cx + ox, cy - ry, nodeTransform);
+        const cpRightTop = applyTransform(cx + rx, cy - oy, nodeTransform);
+
+        const cpRightBottom = applyTransform(cx + rx, cy + oy, nodeTransform);
+        const cpBottomRight = applyTransform(cx + ox, cy + ry, nodeTransform);
+
+        const cpBottomLeft = applyTransform(cx - ox, cy + ry, nodeTransform);
+        const cpLeftBottom = applyTransform(cx - rx, cy + oy, nodeTransform);
+
+        const cpLeftTop = applyTransform(cx - rx, cy - oy, nodeTransform);
+        const cpTopLeft = applyTransform(cx - ox, cy - ry, nodeTransform);
+
+        // Draw ellipse using cubic Beziers
+        commands.push({ type: "moveTo", x: pTop.x, y: pTop.y });
+
+        commands.push({
+          type: "bezierCurveTo",
+          cp1x: cpTopRight.x,
+          cp1y: cpTopRight.y,
+          cp2x: cpRightTop.x,
+          cp2y: cpRightTop.y,
+          x: pRight.x,
+          y: pRight.y,
+        });
+
+        commands.push({
+          type: "bezierCurveTo",
+          cp1x: cpRightBottom.x,
+          cp1y: cpRightBottom.y,
+          cp2x: cpBottomRight.x,
+          cp2y: cpBottomRight.y,
+          x: pBottom.x,
+          y: pBottom.y,
+        });
+
+        commands.push({
+          type: "bezierCurveTo",
+          cp1x: cpBottomLeft.x,
+          cp1y: cpBottomLeft.y,
+          cp2x: cpLeftBottom.x,
+          cp2y: cpLeftBottom.y,
+          x: pLeft.x,
+          y: pLeft.y,
+        });
+
+        commands.push({
+          type: "bezierCurveTo",
+          cp1x: cpLeftTop.x,
+          cp1y: cpLeftTop.y,
+          cp2x: cpTopLeft.x,
+          cp2y: cpTopLeft.y,
+          x: pTop.x,
+          y: pTop.y,
+        });
+
+        commands.push({ type: "closePath" });
+        break;
+      }
+
+      case "polyline":
+      case "polygon": {
+        const pointsStr: string = node.attributes.points || "";
+        const points: { x: number; y: number }[] = pointsStr
+          .trim()
+          .split(/[\s,]+/)
+          .map(Number)
+          .reduce<{ x?: number; y?: number }[]>((acc, val, idx) => {
+            if (idx % 2 === 0) acc.push({ x: val, y: 0 });
+            else acc[acc.length - 1].y = val;
+            return acc;
+          }, [])
+          .map((p) => ({ x: p.x!, y: p.y! }));
+
+        if (points.length === 0) break;
+
+        // Move to first point
+        const start = applyTransform(points[0].x, points[0].y, nodeTransform);
+        commands.push({ type: "moveTo", x: start.x, y: start.y });
+
+        // Draw lines to remaining points
+        for (let i = 1; i < points.length; i++) {
+          const p = applyTransform(points[i].x, points[i].y, nodeTransform);
+          commands.push({ type: "lineTo", x: p.x, y: p.y });
+        }
+
+        // close path, even if polyline
+        commands.push({ type: "closePath" });
+        break;
+      }
+
+      case "line": {
+        const x1 = parseFloat(node.attributes.x1 || "0");
+        const y1 = parseFloat(node.attributes.y1 || "0");
+        const x2 = parseFloat(node.attributes.x2 || "0");
+        const y2 = parseFloat(node.attributes.y2 || "0");
+
+        const p1 = applyTransform(x1, y1, nodeTransform);
+        const p2 = applyTransform(x2, y2, nodeTransform);
+
+        commands.push({ type: "line", x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+
+        break;
+      }
+      default:
+        _console.log("uncaught node", node);
+        break;
     }
 
     if (node.children) {
@@ -249,44 +600,63 @@ function parseLength(
 
 function getSvgJsonSize(svgJson: INode) {
   const attrs = svgJson.attributes || {};
+  let width = parseLength(attrs.width);
+  let height = parseLength(attrs.height);
 
-  const width = parseLength(attrs.width) ?? 300;
-  const height = parseLength(attrs.height) ?? 150;
-
-  return { width, height };
-}
-function getSvgJsonViewBox(svgJson: INode): DisplayBoundingBox {
-  const attrs = svgJson.attributes || {};
-
-  let x = 0,
-    y = 0,
-    width = 0,
-    height = 0;
-  if (attrs.viewBox) {
-    const parts = attrs.viewBox.split(/[\s,]+/).map(parseFloat);
-    if (parts.length === 4) {
-      [x, y, width, height] = parts;
-    }
+  // Fallback to viewBox dimensions
+  if ((width == null || height == null) && attrs.viewBox) {
+    const [, , vbWidth, vbHeight] = attrs.viewBox
+      .split(/[\s,]+/)
+      .map(parseFloat);
+    width ??= vbWidth;
+    height ??= vbHeight;
   }
 
-  return {
+  const size: DisplaySize = {
+    width: width ?? 300,
+    height: height ?? 150,
+  };
+  //_console.log("size", size);
+  return size;
+}
+
+function getSvgJsonViewBox(svgJson: INode): DisplayBoundingBox {
+  const attrs = svgJson.attributes || {};
+  let x = 0,
+    y = 0,
+    width: number | undefined,
+    height: number | undefined;
+
+  if (attrs.viewBox) {
+    [x, y, width, height] = attrs.viewBox.split(/[\s,]+/).map(parseFloat);
+  }
+
+  // Fallback to size if no viewBox
+  if (width == null || height == null) {
+    const size = getSvgJsonSize(svgJson);
+    width ??= size.width;
+    height ??= size.height;
+  }
+
+  const viewBox: DisplayBoundingBox = {
     x,
     y,
-    width,
-    height,
+    width: width!,
+    height: height!,
   };
+  _console.log("viewBox", viewBox);
+  return viewBox;
 }
+
 function getSvgJsonBoundingBox(svgJson: INode): DisplayBoundingBox {
   const { width, height } = getSvgJsonSize(svgJson);
   const viewBox = getSvgJsonViewBox(svgJson);
 
-  // 3. Decide output
   if (width !== undefined && height !== undefined) {
     return { x: 0, y: 0, width, height };
   } else if (viewBox.width !== undefined && viewBox.height !== undefined) {
     return viewBox;
   } else {
-    // fallback per SVG spec: 300x150 default
     return { x: 0, y: 0, width: 300, height: 150 };
   }
 }
@@ -295,6 +665,8 @@ function getSvgTransformToPixels(svgJson: INode): Transform {
   const attrs = svgJson.attributes || {};
   const { width, height } = getSvgJsonSize(svgJson); // in px
   const viewBox = getSvgJsonViewBox(svgJson); // { x, y, width, height }
+
+  _console.log({ width, height, viewBox });
 
   // Base scales
   let scaleX = width / viewBox.width;
@@ -328,15 +700,18 @@ export type ParseSvgOptions = {
   aspectRatio?: number; // width / height, used if only one of width/height is provided
   offsetX?: number;
   offsetY?: number;
+  numberOfColors?: number;
+  colors?: string[];
 };
 const defaultParseSvgOptions: ParseSvgOptions = {
-  fit: true,
+  fit: false,
 };
 
 function transformCanvasCommands(
   canvasCommands: CanvasCommand[],
   xCallback: (x: number) => number,
-  yCallback: (y: number) => number
+  yCallback: (y: number) => number,
+  type: "offset" | "scale"
 ) {
   return canvasCommands.map((command) => {
     switch (command.type) {
@@ -364,6 +739,13 @@ function transformCanvasCommands(
         cp2x = xCallback(cp2x);
         cp2y = yCallback(cp2y);
         return { type: command.type, x, y, cp1x, cp1y, cp2x, cp2y };
+      }
+      case "lineWidth": {
+        if (type == "scale") {
+          let { lineWidth } = command;
+          lineWidth = xCallback(lineWidth);
+          return { type: command.type, lineWidth };
+        }
       }
       default:
         return command;
@@ -409,7 +791,8 @@ function offsetCanvasCommands(
   return transformCanvasCommands(
     canvasCommands,
     (x) => x + offsetX,
-    (y) => y + offsetY
+    (y) => y + offsetY,
+    "offset"
   );
 }
 function scaleCanvasCommands(
@@ -420,16 +803,56 @@ function scaleCanvasCommands(
   return transformCanvasCommands(
     canvasCommands,
     (x) => x * scaleX,
-    (y) => y * scaleY
+    (y) => y * scaleY,
+    "scale"
   );
 }
+
+function classifySubpath(
+  subpath: Vector2[],
+  previous: { path: Vector2[]; isHole: boolean }[],
+  fillRule: "evenodd" | "nonzero"
+): boolean {
+  // centroid as test point
+  const centroid = subpath.reduce(
+    (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
+    { x: 0, y: 0 }
+  );
+  centroid.x /= subpath.length;
+  centroid.y /= subpath.length;
+
+  if (fillRule === "evenodd") {
+    let crossings = 0;
+    for (const other of previous) {
+      if (pointInPolygon(centroid, other.path)) crossings++;
+    }
+    const filled = crossings % 2 === 0;
+    return !filled; // true = hole
+  } else {
+    // nonzero
+    let winding = 0;
+    for (const other of previous) {
+      if (pointInPolygon(centroid, other.path)) {
+        winding += contourArea(other.path) > 0 ? 1 : -1;
+      }
+    }
+    const filled = winding === 0;
+    return !filled; // true = hole
+  }
+}
+
 export function svgToDisplayContextCommands(
   svgString: string,
   options?: ParseSvgOptions
-): DisplayContextCommand[] {
+) {
   options = { ...defaultParseSvgOptions, ...options };
-
-  const displayCommands: DisplayContextCommand[] = [];
+  if (options.numberOfColors == undefined) {
+    options.numberOfColors = options.colors?.length ?? 1;
+  }
+  _console.assertWithError(
+    options.numberOfColors > 0,
+    `invalid numberOfColors ${options.numberOfColors}`
+  );
 
   const svgJson = parseSync(svgString);
 
@@ -437,7 +860,7 @@ export function svgToDisplayContextCommands(
   _console.log("canvasCommands", canvasCommands);
 
   const boundingBox = getSvgJsonBoundingBox(svgJson);
-  _console.log("boundingBox", boundingBox);
+  //_console.log("boundingBox", boundingBox);
 
   let width = boundingBox.width;
   let height = boundingBox.height;
@@ -452,8 +875,8 @@ export function svgToDisplayContextCommands(
       rangeHelper.y.update(y);
     });
 
-    console.log("xRange", rangeHelper.x.min, rangeHelper.x.max);
-    console.log("yRange", rangeHelper.y.min, rangeHelper.y.max);
+    // _console.log("xRange", rangeHelper.x.min, rangeHelper.x.max);
+    // _console.log("yRange", rangeHelper.y.min, rangeHelper.y.max);
 
     width = rangeHelper.x.span;
     height = rangeHelper.y.span;
@@ -464,7 +887,7 @@ export function svgToDisplayContextCommands(
     canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
   }
 
-  _console.log({ width, height });
+  // _console.log({ width, height });
 
   let scaleX = 1,
     scaleY = 1;
@@ -479,7 +902,7 @@ export function svgToDisplayContextCommands(
     if (options.aspectRatio) scaleX = scaleY * options.aspectRatio;
   }
 
-  _console.log({ scaleX, scaleY });
+  //_console.log({ scaleX, scaleY });
 
   if (scaleX !== 1 || scaleY !== 1) {
     canvasCommands = scaleCanvasCommands(canvasCommands, scaleX, scaleY);
@@ -491,14 +914,68 @@ export function svgToDisplayContextCommands(
     canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
   }
 
+  let colors: string[] = [];
+  canvasCommands.forEach((canvasCommand) => {
+    let color: string | undefined;
+    switch (canvasCommand.type) {
+      case "fillStyle":
+        color = canvasCommand.fillStyle;
+        break;
+      case "strokeStyle":
+        color = canvasCommand.strokeStyle;
+        break;
+    }
+    if (color && color != "none" && !colors.includes(color)) {
+      colors.push(color);
+    }
+  });
+  _console.log("colors", colors);
+
+  const colorToIndex: Record<string, number> = {};
+  if (options.colors) {
+    const mapping = mapToClosestPaletteIndex(
+      colors,
+      options.colors.slice(0, options.numberOfColors)
+    );
+    _console.log("mapping", mapping);
+    colors.forEach((color) => {
+      colorToIndex[color] = mapping[color] + 1;
+    });
+  } else {
+    const { palette, mapping } = kMeansColors(colors, options.numberOfColors);
+    _console.log("mapping", mapping);
+    _console.log("palette", palette);
+
+    colors.forEach((color) => {
+      colorToIndex[color] = mapping[color] + 1;
+    });
+    colors = palette;
+  }
+  _console.log("colorToIndex", colorToIndex);
+
   let curves: DisplayBezierCurve[] = [];
   let startPoint: Vector2 = { x: 0, y: 0 };
+  let fillRule: FillRule = "nonzero";
+  let fillStyle: string | undefined;
+  let strokeStyle = "none";
+  let lineWidth = 1;
+  let segmentRadius = 1;
+  let wasHole = false;
+  let ignoreFill = false;
+  let ignoreLine = true;
+  let fillColorIndex = 1;
+  let lineColorIndex = 1;
+  const parsedPaths: { path: Vector2[]; isHole: boolean }[] = [];
 
-  const displayCommandObjects: {
-    command: DisplayContextCommand;
-    area: number;
-    points: Vector2[];
-  }[] = [];
+  const displayCommands: DisplayContextCommand[] = [];
+  // TODO - don't include if not needed
+  displayCommands.push({ type: "setIgnoreLine", ignoreLine: true });
+  displayCommands.push({ type: "setLineWidth", lineWidth });
+  displayCommands.push({
+    type: "setSegmentRadius",
+    segmentRadius,
+  });
+
   canvasCommands.forEach((canvasCommand) => {
     switch (canvasCommand.type) {
       case "moveTo":
@@ -553,66 +1030,199 @@ export function svgToDisplayContextCommands(
         // Flatten all control points
         const controlPoints = curves.flatMap((c) => c.controlPoints);
 
-        const area = contourArea(controlPoints);
+        const isHole = classifySubpath(controlPoints, parsedPaths, fillRule);
+        parsedPaths.push({ path: controlPoints, isHole });
+
+        _console.log({
+          pathIndex: parsedPaths.length - 1,
+          isHole,
+          fillStyle,
+          strokeStyle,
+          fillRule,
+          lineWidth,
+        });
+
+        if (isHole != wasHole) {
+          wasHole = isHole;
+          if (isHole) {
+            displayCommands.push({
+              type: "selectFillColor",
+              fillColorIndex: 0,
+            });
+          } else {
+            displayCommands.push({ type: "selectFillColor", fillColorIndex });
+          }
+        }
+        if (ignoreFill) {
+          displayCommands.push({
+            type: "setLineWidth",
+            lineWidth: 0,
+          });
+          displayCommands.push({
+            type: "selectFillColor",
+            fillColorIndex: lineColorIndex,
+          });
+          displayCommands.push({
+            type: "setIgnoreFill",
+            ignoreFill: false,
+          });
+        }
 
         const isSegments = curves.every((c) => c.type === "segment");
         if (isSegments) {
-          displayCommandObjects.push({
-            command: {
+          if (ignoreFill) {
+            displayCommands.push({
+              type: "drawSegments",
+              points: controlPoints,
+            });
+          } else {
+            displayCommands.push({
               type: "drawPolygon",
               points: controlPoints,
-            },
-            points: controlPoints,
-            area,
-          });
+            });
+          }
         } else {
-          // FIX
-          displayCommandObjects.push({
-            command: {
-              type: "drawPath",
-              curves,
-            },
-            area,
-            points: controlPoints,
+          if (ignoreFill) {
+            displayCommands.push({ type: "drawPath", curves });
+          } else {
+            displayCommands.push({ type: "drawClosedPath", curves });
+          }
+        }
+
+        if (ignoreFill) {
+          displayCommands.push({
+            type: "setLineWidth",
+            lineWidth,
+          });
+          displayCommands.push({
+            type: "selectFillColor",
+            fillColorIndex,
+          });
+          displayCommands.push({
+            type: "setIgnoreFill",
+            ignoreFill,
           });
         }
 
         // Reset curves
         curves = [];
         break;
+      case "pathStart":
+        parsedPaths.length = 0;
+        if (wasHole) {
+          displayCommands.push({ type: "selectFillColor", fillColorIndex });
+        }
+        wasHole = false;
+        break;
+
+      case "pathEnd":
+        break;
+      case "line":
+        if (strokeStyle != "none") {
+          displayCommands.push({
+            type: "setLineWidth",
+            lineWidth: 0,
+          });
+          displayCommands.push({
+            type: "selectFillColor",
+            fillColorIndex: lineColorIndex,
+          });
+          displayCommands.push({
+            type: "setIgnoreFill",
+            ignoreFill: false,
+          });
+
+          const { x1, y1, x2, y2 } = canvasCommand;
+          displayCommands.push({
+            type: "drawSegment",
+            startX: x1,
+            startY: y1,
+            endX: x2,
+            endY: y2,
+          });
+
+          displayCommands.push({
+            type: "setLineWidth",
+            lineWidth,
+          });
+          displayCommands.push({
+            type: "selectFillColor",
+            fillColorIndex,
+          });
+          displayCommands.push({
+            type: "setIgnoreFill",
+            ignoreFill,
+          });
+        }
+
+        break;
       case "fillStyle":
-        // FILL
+        _console.log("fillStyle", canvasCommand.fillStyle);
+        if (fillStyle != canvasCommand.fillStyle) {
+          const newIgnoreFill = canvasCommand.fillStyle == "none";
+          if (ignoreFill != newIgnoreFill) {
+            ignoreFill = newIgnoreFill;
+            _console.log({ ignoreFill });
+            displayCommands.push({ type: "setIgnoreFill", ignoreFill });
+          }
+          if (!ignoreFill) {
+            if (fillStyle != canvasCommand.fillStyle) {
+              fillStyle = canvasCommand.fillStyle;
+              if (fillColorIndex != colorToIndex[fillStyle]) {
+                _console.log({ fillColorIndex });
+                fillColorIndex = colorToIndex[fillStyle];
+                displayCommands.push({
+                  type: "selectFillColor",
+                  fillColorIndex,
+                });
+              }
+            }
+          }
+        }
         break;
       case "strokeStyle":
-        // FILL
+        _console.log("strokeStyle", canvasCommand.strokeStyle);
+        if (strokeStyle != canvasCommand.strokeStyle) {
+          const newIgnoreLine = canvasCommand.strokeStyle == "none";
+          if (ignoreLine != newIgnoreLine) {
+            ignoreLine = newIgnoreLine;
+            _console.log({ ignoreLine });
+            displayCommands.push({ type: "setIgnoreLine", ignoreLine });
+          }
+          if (!ignoreLine) {
+            if (strokeStyle != canvasCommand.strokeStyle) {
+              strokeStyle = canvasCommand.strokeStyle;
+              if (lineColorIndex != colorToIndex[strokeStyle]) {
+                _console.log({ lineColorIndex });
+                lineColorIndex = colorToIndex[strokeStyle];
+                displayCommands.push({
+                  type: "selectLineColor",
+                  lineColorIndex,
+                });
+              }
+            }
+          }
+        }
         break;
       case "lineWidth":
-        // FILL
+        if (lineWidth != canvasCommand.lineWidth) {
+          lineWidth = canvasCommand.lineWidth;
+          // TODO - don't include if not needed
+          displayCommands.push({ type: "setLineWidth", lineWidth });
+          segmentRadius = lineWidth / 2;
+          displayCommands.push({
+            type: "setSegmentRadius",
+            segmentRadius,
+          });
+        }
+        break;
+      case "fillRule":
+        fillRule = canvasCommand.fillRule;
         break;
     }
   });
 
-  if (displayCommandObjects.length > 0) {
-    // displayCommandObjects.sort((a, b) => {
-    //   return a.points.every((aPoint) => pointInPolygon(aPoint, b.points))
-    //     ? 1
-    //     : -1;
-    // });
-
-    let isDrawingHole = false;
-    let isHoleAreaPositive = displayCommandObjects[0].area < 0;
-    displayCommandObjects.forEach(({ area, command }) => {
-      const isHole = isHoleAreaPositive ? area > 0 : area < 0;
-      if (isDrawingHole != isHole) {
-        isDrawingHole = isHole;
-        // displayCommands.push({
-        //   type: "selectFillColor",
-        //   fillColorIndex: isHole ? 0 : 1,
-        // });
-      }
-      displayCommands.push(command);
-    });
-  }
-
-  return displayCommands;
+  _console.log("displayCommands", displayCommands);
+  _console.log("colors", colors);
+  return { commands: displayCommands, colors };
 }

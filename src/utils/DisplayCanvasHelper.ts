@@ -4119,6 +4119,17 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#setUseSpriteColorIndices(false);
     this.#setClearCanvasBoundingBoxOnDraw(true);
   }
+  previewSpriteCommands(commands: DisplayContextCommand[]) {
+    this.#setIgnoreDevice(true);
+    this.#setClearCanvasBoundingBoxOnDraw(false);
+
+    commands.forEach((command) => {
+      this.runContextCommand(command);
+    });
+
+    this.#setIgnoreDevice(false);
+    this.#setClearCanvasBoundingBoxOnDraw(true);
+  }
 
   // SPRITE SHEET PALETTES
 

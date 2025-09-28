@@ -6,5 +6,10 @@ export type ParseSvgOptions = {
     aspectRatio?: number;
     offsetX?: number;
     offsetY?: number;
+    numberOfColors?: number;
+    colors?: string[];
 };
-export declare function svgToDisplayContextCommands(svgString: string, options?: ParseSvgOptions): DisplayContextCommand[];
+export declare function svgToDisplayContextCommands(svgString: string, options?: ParseSvgOptions): {
+    commands: DisplayContextCommand[];
+    colors: string[];
+};

@@ -56,7 +56,7 @@ export declare function assertValidAlignment(alignment: DisplayAlignment): void;
 export declare function assertValidDirection(direction: DisplayDirection): void;
 export declare function assertValidAlignmentDirection(direction: DisplayAlignmentDirection): void;
 export declare const displayCurveTypeToNumberOfControlPoints: Record<DisplayBezierCurveType, number>;
-export declare const displayCurveTolerance = 3;
+export declare const displayCurveTolerance = 2;
 export declare const displayCurveToleranceSquared: number;
 export declare const maxNumberOfDisplayCurvePoints = 150;
 export declare function assertValidNumberOfControlPoints(curveType: DisplayBezierCurveType, controlPoints: Vector2[], isPath?: boolean): void;

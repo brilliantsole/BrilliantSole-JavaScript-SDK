@@ -110,7 +110,7 @@ function areCollinear(
 
 export function simplifyCurves(curves: DisplayBezierCurve[], epsilon = 1) {
   const simplified: DisplayBezierCurve[] = [];
-  _console.log("simplifying", curves, { epsilon });
+  //_console.log("simplifying", curves, { epsilon });
   let cursor: Vector2;
   curves.forEach((curve, index) => {
     const { controlPoints } = curve;
@@ -194,6 +194,6 @@ export function simplifyCurves(curves: DisplayBezierCurve[], epsilon = 1) {
     }
     cursor = curve.controlPoints[curve.controlPoints.length - 1];
   });
-  _console.log("simplified", simplified);
+  //_console.log("simplified", simplified);
   return simplified;
 }
