@@ -87,6 +87,8 @@ const nodeExternal = [
   "rgbquant",
   "opentype.js",
   "woff2-encoder",
+  "svgson",
+  "svg-pathdata",
 ];
 
 const lensStudioPlugins = [

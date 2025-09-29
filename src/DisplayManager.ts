@@ -728,7 +728,7 @@ class DisplayManager implements DisplayManagerInterface {
   #displayContextCommandBuffers: ArrayBuffer[] = [];
   async #sendDisplayContextCommand(
     displayContextCommand: DisplayContextCommandType,
-    arrayBuffer?: ArrayBuffer,
+    arrayBuffer?: ArrayBufferLike,
     sendImmediately?: boolean
   ) {
     this.#assertValidDisplayContextCommand(displayContextCommand);
@@ -879,24 +879,24 @@ class DisplayManager implements DisplayManagerInterface {
     this.#dispatchEvent("displayOpacity", { opacity });
   }
 
-  async saveContext(sendImmediately?: boolean) {
-    const commandType: DisplayContextCommandType = "saveContext";
-    const dataView = serializeContextCommand(this, { type: commandType });
-    await this.#sendDisplayContextCommand(
-      commandType,
-      dataView?.buffer,
-      sendImmediately
-    );
-  }
-  async restoreContext(sendImmediately?: boolean) {
-    const commandType: DisplayContextCommandType = "restoreContext";
-    const dataView = serializeContextCommand(this, { type: commandType });
-    await this.#sendDisplayContextCommand(
-      commandType,
-      dataView?.buffer,
-      sendImmediately
-    );
-  }
+  // async saveContext(sendImmediately?: boolean) {
+  //   const commandType: DisplayContextCommandType = "saveContext";
+  //   const dataView = serializeContextCommand(this, { type: commandType });
+  //   await this.#sendDisplayContextCommand(
+  //     commandType,
+  //     dataView?.buffer,
+  //     sendImmediately
+  //   );
+  // }
+  // async restoreContext(sendImmediately?: boolean) {
+  //   const commandType: DisplayContextCommandType = "restoreContext";
+  //   const dataView = serializeContextCommand(this, { type: commandType });
+  //   await this.#sendDisplayContextCommand(
+  //     commandType,
+  //     dataView?.buffer,
+  //     sendImmediately
+  //   );
+  // }
 
   async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
     this.assertValidColorIndex(fillColorIndex);
@@ -2177,12 +2177,15 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   async drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean) {
+    wireframe = trimWireframe(wireframe);
+    if (wireframe.points.length == 0) {
+      return;
+    }
     assertValidWireframe(wireframe);
-    const trimmedWireframe = trimWireframe(wireframe);
     const commandType: DisplayContextCommandType = "drawWireframe";
     const dataView = serializeContextCommand(this, {
       type: commandType,
-      wireframe: trimmedWireframe,
+      wireframe,
     });
     if (!dataView) {
       return;
@@ -2248,7 +2251,6 @@ class DisplayManager implements DisplayManagerInterface {
           this.#maxCommandDataLength
         })`
       );
-      // FILL - split into multiple curves
       return;
     }
     await this.#sendDisplayContextCommand(
@@ -2307,7 +2309,6 @@ class DisplayManager implements DisplayManagerInterface {
           this.#maxCommandDataLength
         })`
       );
-      // FILL - split into multiple paths
       return;
     }
     await this.#sendDisplayContextCommand(
@@ -2876,7 +2877,9 @@ class DisplayManager implements DisplayManagerInterface {
         break;
       case "getSpriteSheetName":
       case "setSpriteSheetName":
-        const spriteSheetName = textDecoder.decode(dataView.buffer);
+        const spriteSheetName = textDecoder.decode(
+          dataView.buffer as ArrayBuffer
+        );
         _console.log({ spriteSheetName });
         this.#updateSpriteSheetName(spriteSheetName);
         break;

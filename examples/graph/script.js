@@ -417,6 +417,9 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
   );
 });
 
+const quaternion = new THREE.Quaternion();
+const euler = new THREE.Euler();
+
 /** @param {BS.Device} device */
 function addSensorDataEventListeners(device) {
   BS.ContinuousSensorTypes.forEach((sensorType) => {

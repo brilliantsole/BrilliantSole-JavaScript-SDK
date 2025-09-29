@@ -212,8 +212,8 @@ declare class Device {
     get setDisplayColor(): (colorIndex: number, color: import("./BS.ts").DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
     get setDisplayColorOpacity(): (colorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayOpacity(): (opacity: number, sendImmediately?: boolean) => Promise<void>;
-    get saveDisplayContext(): (sendImmediately?: boolean) => Promise<void>;
-    get restoreDisplayContext(): (sendImmediately?: boolean) => Promise<void>;
+    get saveDisplayContext(): any;
+    get restoreDisplayContext(): any;
     get clearDisplayRect(): (x: number, y: number, width: number, height: number, sendImmediately?: boolean) => Promise<void>;
     get selectDisplayBackgroundColor(): (backgroundColorIndex: number, sendImmediately?: boolean) => Promise<void>;
     get selectDisplayFillColor(): (fillColorIndex: number, sendImmediately?: boolean) => Promise<void>;

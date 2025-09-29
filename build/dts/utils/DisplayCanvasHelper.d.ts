@@ -127,8 +127,6 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
-    saveContext(sendImmediately?: boolean): Promise<void>;
-    restoreContext(sendImmediately?: boolean): Promise<void>;
     selectBackgroundColor(backgroundColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;
@@ -245,6 +243,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
     previewSprite(offsetX: number, offsetY: number, sprite: DisplaySprite, spriteSheet: DisplaySpriteSheet): void;
+    previewSpriteCommands(commands: DisplayContextCommand[]): void;
     assertSpriteSheetPalette(paletteName: string): void;
     assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
     assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;

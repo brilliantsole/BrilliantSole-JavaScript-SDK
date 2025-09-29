@@ -158,6 +158,12 @@ device.addEventListener("getMtu", () => {
   deviceMtuSpan.innerText = device.mtu;
 });
 
+// ID
+const deviceIdSpan = document.getElementById("deviceId");
+device.addEventListener("getId", () => {
+  deviceIdSpan.innerText = device.id;
+});
+
 // BATTERY LEVEL
 
 /** @type {HTMLSpanElement} */

@@ -56,7 +56,7 @@ export declare function assertValidAlignment(alignment: DisplayAlignment): void;
 export declare function assertValidDirection(direction: DisplayDirection): void;
 export declare function assertValidAlignmentDirection(direction: DisplayAlignmentDirection): void;
 export declare const displayCurveTypeToNumberOfControlPoints: Record<DisplayBezierCurveType, number>;
-export declare const displayCurveTolerance = 1;
+export declare const displayCurveTolerance = 2;
 export declare const displayCurveToleranceSquared: number;
 export declare const maxNumberOfDisplayCurvePoints = 150;
 export declare function assertValidNumberOfControlPoints(curveType: DisplayBezierCurveType, controlPoints: Vector2[], isPath?: boolean): void;
@@ -67,4 +67,4 @@ export declare function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe
 export declare function intersectWireframes(a: DisplayWireframe, b: DisplayWireframe, ignoreDirection?: boolean): DisplayWireframe;
 export declare function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe;
 export declare function getPointDataType(points: Vector2[]): DisplayPointDataType;
-export declare function serializePoints(points: Vector2[], pointDataType?: DisplayPointDataType, isPath?: boolean): DataView;
+export declare function serializePoints(points: Vector2[], pointDataType?: DisplayPointDataType, isPath?: boolean): DataView<ArrayBuffer>;

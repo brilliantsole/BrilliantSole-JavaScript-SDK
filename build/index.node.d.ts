@@ -39,7 +39,20 @@ declare const environment_d_isInWebBLE: typeof isInWebBLE;
 declare const environment_d_isMac: typeof isMac;
 declare const environment_d_isSafari: typeof isSafari;
 declare namespace environment_d {
-  export { environment_d_isAndroid as isAndroid, environment_d_isBluetoothSupported as isBluetoothSupported, environment_d_isIOS as isIOS, environment_d_isInBluefy as isInBluefy, environment_d_isInBrowser as isInBrowser, environment_d_isInDev as isInDev, environment_d_isInLensStudio as isInLensStudio, environment_d_isInNode as isInNode, environment_d_isInProduction as isInProduction, environment_d_isInWebBLE as isInWebBLE, environment_d_isMac as isMac, environment_d_isSafari as isSafari };
+  export {
+    environment_d_isAndroid as isAndroid,
+    environment_d_isBluetoothSupported as isBluetoothSupported,
+    environment_d_isIOS as isIOS,
+    environment_d_isInBluefy as isInBluefy,
+    environment_d_isInBrowser as isInBrowser,
+    environment_d_isInDev as isInDev,
+    environment_d_isInLensStudio as isInLensStudio,
+    environment_d_isInNode as isInNode,
+    environment_d_isInProduction as isInProduction,
+    environment_d_isInWebBLE as isInWebBLE,
+    environment_d_isMac as isMac,
+    environment_d_isSafari as isSafari,
+  };
 }
 
 interface Range {
@@ -280,8 +293,6 @@ interface DisplayManagerInterface {
     get opacities(): number[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
-    saveContext(sendImmediately?: boolean): Promise<void>;
-    restoreContext(sendImmediately?: boolean): Promise<void>;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectBackgroundColor(backgroundColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;
@@ -1579,8 +1590,8 @@ declare class Device {
     get setDisplayColor(): (colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
     get setDisplayColorOpacity(): (colorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayOpacity(): (opacity: number, sendImmediately?: boolean) => Promise<void>;
-    get saveDisplayContext(): (sendImmediately?: boolean) => Promise<void>;
-    get restoreDisplayContext(): (sendImmediately?: boolean) => Promise<void>;
+    get saveDisplayContext(): any;
+    get restoreDisplayContext(): any;
     get clearDisplayRect(): (x: number, y: number, width: number, height: number, sendImmediately?: boolean) => Promise<void>;
     get selectDisplayBackgroundColor(): (backgroundColorIndex: number, sendImmediately?: boolean) => Promise<void>;
     get selectDisplayFillColor(): (fillColorIndex: number, sendImmediately?: boolean) => Promise<void>;
@@ -1739,6 +1750,21 @@ declare class DeviceManager {
 declare const _default: DeviceManager;
 
 declare function wait(delay: number): Promise<unknown>;
+
+type ParseSvgOptions = {
+    fit?: boolean;
+    width?: number;
+    height?: number;
+    aspectRatio?: number;
+    offsetX?: number;
+    offsetY?: number;
+    numberOfColors?: number;
+    colors?: string[];
+};
+declare function svgToDisplayContextCommands(svgString: string, options?: ParseSvgOptions): {
+    commands: DisplayContextCommand[];
+    colors: string[];
+};
 
 declare function hexToRGB(hex: string): DisplayColorRGB;
 declare function rgbToHex({ r, g, b }: DisplayColorRGB): string;
@@ -1969,4 +1995,5 @@ declare const ThrottleUtils: {
     debounce: typeof debounce;
 };
 
-export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CameraCommand, CameraCommands, type CameraConfiguration, type CameraConfigurationType, CameraConfigurationTypes, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DevicePairType, DevicePairTypes, type DeviceType, DeviceTypes, type DiscoveredDevice, type DisplayAlignment, DisplayAlignments, type DisplayBezierCurveType, DisplayBezierCurveTypes, type DisplayBitmap, type DisplayBitmapColorPair, type DisplayBrightness, DisplayBrightnesses, type DisplayColorRGB, type DisplayContextCommand, type DisplayContextCommandType, DisplayContextCommandTypes, type DisplayDirection, DisplayDirections, DisplayPixelDepths, type DisplaySegmentCap, DisplaySegmentCaps, type DisplaySize, type DisplaySprite, type DisplaySpriteColorPair, type DisplaySpriteContextCommandType, DisplaySpriteContextCommandTypes, type DisplaySpriteLine, type DisplaySpriteLines, type DisplaySpritePaletteSwap, type DisplaySpriteSheet, type DisplaySpriteSheetPalette, type DisplaySpriteSubLine, type DisplayWireframe, type DisplayWireframeEdge, environment_d as Environment, type Euler, EventUtils, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, type MicrophoneCommand, MicrophoneCommands, type MicrophoneConfiguration, type MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, type PressureData, type Quaternion, type Range, RangeHelper, scanner as Scanner, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type Side, Sides, type TfliteFileConfiguration, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, ThrottleUtils, UDPServer, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, hexToRGB, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, _default as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment_d as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, hexToRGB, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, svgToDisplayContextCommands, wait };
+export type { BoundDeviceEventListeners, BoundDeviceManagerEventListeners, BoundDevicePairEventListeners, CameraCommand, CameraConfiguration, CameraConfigurationType, CenterOfPressure, ContinuousSensorType, DeviceEvent, DeviceEventListenerMap, DeviceEventMap, DeviceInformation, DeviceManagerEvent, DeviceManagerEventListenerMap, DeviceManagerEventMap, DevicePairEvent, DevicePairEventListenerMap, DevicePairEventMap, DevicePairType, DeviceType, DiscoveredDevice, DisplayAlignment, DisplayBezierCurveType, DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayColorRGB, DisplayContextCommand, DisplayContextCommandType, DisplayDirection, DisplaySegmentCap, DisplaySize, DisplaySprite, DisplaySpriteColorPair, DisplaySpriteContextCommandType, DisplaySpriteLine, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSubLine, DisplayWireframe, DisplayWireframeEdge, Euler, FileTransferDirection, FileType, MicrophoneCommand, MicrophoneConfiguration, MicrophoneConfigurationType, PressureData, Quaternion, Range, SensorConfiguration, SensorType, Side, TfliteFileConfiguration, TfliteSensorType, TfliteTask, Vector2, Vector3, VibrationConfiguration, VibrationLocation, VibrationType, VibrationWaveformEffect };

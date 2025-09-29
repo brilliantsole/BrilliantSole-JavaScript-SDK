@@ -172,8 +172,6 @@ declare class DisplayManager implements DisplayManagerInterface {
     get opacities(): number[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
-    saveContext(sendImmediately?: boolean): Promise<void>;
-    restoreContext(sendImmediately?: boolean): Promise<void>;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectBackgroundColor(backgroundColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;

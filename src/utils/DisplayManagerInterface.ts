@@ -72,8 +72,8 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
   setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
 
-  saveContext(sendImmediately?: boolean): Promise<void>;
-  restoreContext(sendImmediately?: boolean): Promise<void>;
+  // saveContext(sendImmediately?: boolean): Promise<void>;
+  // restoreContext(sendImmediately?: boolean): Promise<void>;
 
   selectFillColor(
     fillColorIndex: number,
@@ -581,10 +581,10 @@ export async function runDisplayContextCommand(
       await displayManager.clear(sendImmediately);
       break;
     case "saveContext":
-      await displayManager.saveContext(sendImmediately);
+      //await displayManager.saveContext(sendImmediately);
       break;
     case "restoreContext":
-      await displayManager.restoreContext(sendImmediately);
+      //await displayManager.restoreContext(sendImmediately);
       break;
     case "clearRotation":
       await displayManager.clearRotation(sendImmediately);

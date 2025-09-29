@@ -11,12 +11,11 @@ import opentype, { Glyph, Font } from "opentype.js";
 import { decompress } from "woff2-encoder";
 import RangeHelper from "./RangeHelper.ts";
 import { pointInPolygon, Vector2 } from "./MathUtils.ts";
-import { simplifyPath } from "./PathUtils.ts";
+import { simplifyCurves } from "./PathUtils.ts";
 import { DisplayBoundingBox } from "./DisplayCanvasHelper.ts";
 import {
   DisplayContextState,
   isDirectionHorizontal,
-  isDirectionPositive,
 } from "./DisplayContextState.ts";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
@@ -181,7 +180,7 @@ export function getFontUnicodeRange(font: Font) {
 
 const englishRegex = /^[A-Za-z0-9 !"#$%&'()*+,\-./:;?@[\]^_`{|}~\\]+$/;
 
-function contourArea(points: Vector2[]) {
+export function contourArea(points: Vector2[]) {
   let area = 0;
   for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
     area += (points[j].x - points[i].x) * (points[j].y + points[i].y);
@@ -263,10 +262,14 @@ export async function fontToSpriteSheet(
       glyphs.push(glyph);
     }
 
-    const maxSpriteHeight = maxSpriteY - minSpriteY;
+    const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
+
+    const maxSpriteHeight = maxSpriteY - minSpriteY + strokeWidth;
 
     // _console.log({
     //   fontName: font.getEnglishName("fullName"),
+    //   minSpriteY,
+    //   maxSpriteY,
     //   maxSpriteHeight,
     // });
 
@@ -284,13 +287,14 @@ export async function fontToSpriteSheet(
 
       const bbox = glyph.getBoundingBox();
 
-      const spriteWidth = Math.floor(
-        Math.max(
-          Math.max(bbox.x2, bbox.x2 - bbox.x1),
-          glyph.advanceWidth || 0
-        ) * fontScale
-      );
-      const spriteHeight = Math.floor(maxSpriteHeight);
+      const spriteWidth =
+        Math.round(
+          Math.max(
+            Math.max(bbox.x2, bbox.x2 - bbox.x1),
+            glyph.advanceWidth || 0
+          ) * fontScale
+        ) + strokeWidth;
+      const spriteHeight = Math.round(maxSpriteHeight);
 
       const commands: DisplayContextCommand[] = [];
 
@@ -301,16 +305,17 @@ export async function fontToSpriteSheet(
       );
       if (options.stroke) {
         path.stroke = "white";
-        const strokeWidth = options.strokeWidth || 1;
         path.strokeWidth = strokeWidth;
         commands.push({ type: "setLineWidth", lineWidth: strokeWidth });
-        // FIX - lineColor and fillColor
+        commands.push({ type: "setIgnoreFill", ignoreFill: true });
       } else {
         path.fill = "white";
       }
 
-      const bitmapWidth = Math.floor((bbox.x2 - bbox.x1) * fontScale);
-      const bitmapHeight = Math.floor((bbox.y2 - bbox.y1) * fontScale);
+      const bitmapWidth =
+        Math.floor((bbox.x2 - bbox.x1) * fontScale) + strokeWidth;
+      const bitmapHeight =
+        Math.floor((bbox.y2 - bbox.y1) * fontScale) + strokeWidth;
 
       const bitmapX = Math.floor((spriteWidth - bitmapWidth) / 2);
       const bitmapY = Math.floor(
@@ -333,20 +338,35 @@ export async function fontToSpriteSheet(
         }[] = [];
 
         let pathCommands = path.commands;
-        pathCommands = simplifyPath(pathCommands);
         pathCommands.forEach((cmd) => {
           switch (cmd.type) {
             case "M": // moveTo
-              startPoint.x = cmd.x;
-              startPoint.y = cmd.y;
+              {
+                startPoint.x = cmd.x;
+                startPoint.y = cmd.y;
+              }
               break;
 
             case "L": // lineTo
               {
                 const controlPoints: Vector2[] = [{ x: cmd.x, y: cmd.y }];
-                if (curves.length === 0)
+                if (curves.length === 0) {
                   controlPoints.unshift({ ...startPoint });
+                }
                 curves.push({ type: "segment", controlPoints });
+              }
+              break;
+
+            case "Q": // quadratic Bezier
+              {
+                const controlPoints: Vector2[] = [
+                  { x: cmd.x1, y: cmd.y1 },
+                  { x: cmd.x, y: cmd.y },
+                ];
+                if (curves.length === 0) {
+                  controlPoints.unshift({ ...startPoint });
+                }
+                curves.push({ type: "quadratic", controlPoints });
               }
               break;
 
@@ -357,61 +377,56 @@ export async function fontToSpriteSheet(
                   { x: cmd.x2, y: cmd.y2 },
                   { x: cmd.x, y: cmd.y },
                 ];
-                if (curves.length === 0)
+                if (curves.length === 0) {
                   controlPoints.unshift({ ...startPoint });
+                }
                 curves.push({ type: "cubic", controlPoints });
               }
               break;
 
-            case "Q": // quadratic Bezier
-              {
-                const controlPoints: Vector2[] = [
-                  { x: cmd.x1, y: cmd.y1 },
-                  { x: cmd.x, y: cmd.y },
-                ];
-                if (curves.length === 0)
-                  controlPoints.unshift({ ...startPoint });
-                curves.push({ type: "quadratic", controlPoints });
-              }
-              break;
-
             case "Z": // closePath
-              if (curves.length === 0) break;
+              {
+                if (curves.length === 0) {
+                  break;
+                }
 
-              // Flatten all control points
-              const controlPoints = curves.flatMap((c) => c.controlPoints);
+                curves = simplifyCurves(curves);
 
-              // Apply path offset
-              controlPoints.forEach((pt) => {
-                pt.x = Math.floor(pt.x + pathOffset.x);
-                pt.y = Math.floor(pt.y + pathOffset.y);
-              });
+                // Flatten all control points
+                const controlPoints = curves.flatMap((c) => c.controlPoints);
 
-              const area = contourArea(controlPoints);
+                // Apply path offset
+                controlPoints.forEach((pt) => {
+                  pt.x = Math.floor(pt.x + pathOffset.x);
+                  pt.y = Math.floor(pt.y + pathOffset.y);
+                });
 
-              const isSegments = curves.every((c) => c.type === "segment");
-              if (isSegments) {
-                pathCommandObjects.push({
-                  command: {
-                    type: "drawPolygon",
+                const area = contourArea(controlPoints);
+
+                const isSegments = curves.every((c) => c.type === "segment");
+                if (isSegments) {
+                  pathCommandObjects.push({
+                    command: {
+                      type: "drawPolygon",
+                      points: controlPoints,
+                    },
                     points: controlPoints,
-                  },
-                  points: controlPoints,
-                  area,
-                });
-              } else {
-                pathCommandObjects.push({
-                  command: {
-                    type: "drawClosedPath",
-                    curves,
-                  },
-                  area,
-                  points: controlPoints,
-                });
-              }
+                    area,
+                  });
+                } else {
+                  pathCommandObjects.push({
+                    command: {
+                      type: "drawClosedPath",
+                      curves,
+                    },
+                    area,
+                    points: controlPoints,
+                  });
+                }
 
-              // Reset curves
-              curves = [];
+                // Reset curves
+                curves = [];
+              }
               break;
           }
         });
@@ -769,7 +784,7 @@ export function getSpriteLinesOffset(
   contextState: DisplayContextState
 ): Vector2 {
   const offset: Vector2 = { x: 0, y: 0 };
-  // FILL -
+  // FILL
   return offset;
 }
 export function splitStringInto(

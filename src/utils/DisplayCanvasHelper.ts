@@ -777,18 +777,18 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#contextStateHelper.update(contextState);
   }
-  async saveContext(sendImmediately?: boolean) {
-    this.#saveContext();
-    if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.saveContext(sendImmediately);
-    }
-  }
-  async restoreContext(sendImmediately?: boolean) {
-    this.#restoreContext();
-    if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.restoreContext(sendImmediately);
-    }
-  }
+  // async saveContext(sendImmediately?: boolean) {
+  //   this.#saveContext();
+  //   if (this.device?.isConnected && !this.#ignoreDevice) {
+  //     await this.deviceDisplayManager!.saveContext(sendImmediately);
+  //   }
+  // }
+  // async restoreContext(sendImmediately?: boolean) {
+  //   this.#restoreContext();
+  //   if (this.device?.isConnected && !this.#ignoreDevice) {
+  //     await this.deviceDisplayManager!.restoreContext(sendImmediately);
+  //   }
+  // }
   async selectBackgroundColor(
     backgroundColorIndex: number,
     sendImmediately?: boolean
@@ -2433,6 +2433,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   async drawWireframe(wireframe: DisplayWireframe, sendImmediately?: boolean) {
     wireframe = trimWireframe(wireframe);
+    if (wireframe.points.length == 0) {
+      return;
+    }
     assertValidWireframe(wireframe);
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
@@ -2694,10 +2697,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       if (isStart) {
         _controlPoints = controlPoints;
       } else {
-        _controlPoints = [
-          _controlPoints[_controlPoints.length - 1],
-          ...controlPoints,
-        ];
+        _controlPoints = [_controlPoints.at(-1)!, ...controlPoints];
       }
       this.#appendGenericCurvePoints(
         curvePoints,
@@ -4117,6 +4117,17 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#setIgnoreDevice(false);
     this.#restoreContextForSprite();
     this.#setUseSpriteColorIndices(false);
+    this.#setClearCanvasBoundingBoxOnDraw(true);
+  }
+  previewSpriteCommands(commands: DisplayContextCommand[]) {
+    this.#setIgnoreDevice(true);
+    this.#setClearCanvasBoundingBoxOnDraw(false);
+
+    commands.forEach((command) => {
+      this.runContextCommand(command);
+    });
+
+    this.#setIgnoreDevice(false);
     this.#setClearCanvasBoundingBoxOnDraw(true);
   }
 

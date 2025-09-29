@@ -1279,7 +1279,7 @@ const draw = async () => {
     return;
   }
 
-  if (true) {
+  if (false) {
     await displayCanvasHelper.drawSegments(
       generateSineSegments(
         90,
@@ -2243,7 +2243,7 @@ displayCanvasHelper.selectBitmapColor(1, 1);
 displayCanvasHelper.selectBitmapColor(2, 2);
 displayCanvasHelper.setBitmapScale(10);
 displayCanvasHelper.setRotation(0);
-displayCanvasHelper.setLineWidth(0);
+displayCanvasHelper.setLineWidth(10);
 displayCanvasHelper.setIgnoreFill(false);
 displayCanvasHelper.setIgnoreLine(false);
 // displayCanvasHelper.setFillBackground(false);
@@ -2310,3 +2310,28 @@ displayCanvasHelper.drawPolygon([
 //   { x: 100, y: 100 },
 // ]);
 displayCanvasHelper.show();
+
+// SVG
+// displayCanvasHelper.setLineWidth(0, true);
+// displayCanvasHelper.setSegmentRadius(1, true);
+// fetch("./owl.svg").then(async (response) => {
+//   const svgString = await response.text();
+
+//   const { commands, colors } = BS.svgToDisplayContextCommands(
+//     `<svg xmlns="http://www.w3.org/2000/svg" width="800px" height="800px" viewBox="0 0 25 25" fill="none">
+// <circle cx="12.5" cy="12.5" r="8" stroke="#121923" stroke-width="1.2"/>
+// </svg>`,
+//     {
+//       //fit: false,
+//       height: 200,
+//       //aspectRatio: 0.6,
+//       //width: 300,
+//       //offsetX: 100,
+//       // offsetY: 100,
+//     }
+//   );
+//   //console.log("commands", commands);
+//   //console.log("colors", colors);
+//   displayCanvasHelper.previewSpriteCommands(commands);
+//   displayCanvasHelper.show();
+// });
