@@ -2,9 +2,8 @@
  * @copyright Zack Qattan 2024
  * @license MIT
  */
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -137,9 +136,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -5113,7 +5109,7 @@ var rgbquant = {exports: {}};
 var rgbquantExports = rgbquant.exports;
 var RGBQuant = getDefaultExportFromCjs(rgbquantExports);
 
-const _console$o = createConsole("DisplayContextCommand", { log: false });
+const _console$o = createConsole("DisplayContextCommand", { log: true });
 const DisplayContextCommandTypes = [
     "show",
     "clear",
@@ -5982,6 +5978,169 @@ function serializeContextCommands(displayManager, commands) {
     const serializedContextCommands = concatenateArrayBuffers(serializedContextCommandArray);
     _console$o.log("serializedContextCommands", commands, serializedContextCommandArray, serializedContextCommands);
     return serializedContextCommands;
+}
+const DrawDisplayContextCommandTypes = [
+    "drawRect",
+    "drawRoundRect",
+    "drawCircle",
+    "drawArc",
+    "drawEllipse",
+    "drawArcEllipse",
+    "drawSegment",
+    "drawSegments",
+    "drawRegularPolygon",
+    "drawPolygon",
+    "drawWireframe",
+    "drawQuadraticBezierCurve",
+    "drawQuadraticBezierCurves",
+    "drawCubicBezierCurve",
+    "drawCubicBezierCurves",
+    "drawPath",
+    "drawClosedPath",
+    "drawBitmap",
+    "drawSprite",
+    "drawSprites",
+];
+const StateDisplayContextCommandTypes = [
+    "setColor",
+    "setColorOpacity",
+    "setOpacity",
+    "saveContext",
+    "restoreContext",
+    "selectBackgroundColor",
+    "selectFillColor",
+    "selectLineColor",
+    "setIgnoreFill",
+    "setIgnoreLine",
+    "setFillBackground",
+    "setLineWidth",
+    "setRotation",
+    "clearRotation",
+    "setHorizontalAlignment",
+    "setVerticalAlignment",
+    "resetAlignment",
+    "setSegmentStartCap",
+    "setSegmentEndCap",
+    "setSegmentCap",
+    "setSegmentStartRadius",
+    "setSegmentEndRadius",
+    "setSegmentRadius",
+    "setCropTop",
+    "setCropRight",
+    "setCropBottom",
+    "setCropLeft",
+    "clearCrop",
+    "setRotationCropTop",
+    "setRotationCropRight",
+    "setRotationCropBottom",
+    "setRotationCropLeft",
+    "clearRotationCrop",
+    "selectBitmapColor",
+    "selectBitmapColors",
+    "setBitmapScaleX",
+    "setBitmapScaleY",
+    "setBitmapScale",
+    "resetBitmapScale",
+    "selectSpriteColor",
+    "selectSpriteColors",
+    "resetSpriteColors",
+    "setSpriteScaleX",
+    "setSpriteScaleY",
+    "setSpriteScale",
+    "resetSpriteScale",
+    "setSpritesLineHeight",
+    "setSpritesDirection",
+    "setSpritesLineDirection",
+    "setSpritesSpacing",
+    "setSpritesLineSpacing",
+    "setSpritesAlignment",
+    "setSpritesLineAlignment",
+    "selectSpriteSheet",
+];
+const SpritesDisplayContextCommandTypes = [
+    "selectSpriteColor",
+    "selectSpriteColors",
+    "resetSpriteColors",
+    "setSpriteScaleX",
+    "setSpriteScaleY",
+    "setSpriteScale",
+    "resetSpriteScale",
+    "setSpritesLineHeight",
+    "setSpritesDirection",
+    "setSpritesLineDirection",
+    "setSpritesSpacing",
+    "setSpritesLineSpacing",
+    "setSpritesAlignment",
+    "setSpritesLineAlignment",
+    "selectSpriteSheet",
+];
+const PathDrawDisplayContextCommandTypes = [
+    "drawSegment",
+    "drawSegments",
+    "drawQuadraticBezierCurve",
+    "drawQuadraticBezierCurves",
+    "drawCubicBezierCurve",
+    "drawCubicBezierCurves",
+    "drawPath",
+    "drawWireframe",
+];
+const PathStateDisplayContextCommandTypes = [
+    "setSegmentRadius",
+    "setSegmentEndRadius",
+    "setSegmentStartRadius",
+    "setSegmentCap",
+    "setSegmentStartCap",
+    "setSegmentEndCap",
+];
+const BitmapDisplayContextCommandTypes = [
+    "selectBitmapColor",
+    "selectBitmapColors",
+    "setBitmapScaleX",
+    "setBitmapScaleY",
+    "setBitmapScale",
+    "resetBitmapScale",
+];
+const contextCommandDependencies = new Map();
+function appendContextCommandDependencyPair(key, value) {
+    contextCommandDependencies.set(new Set(key), new Set(value));
+}
+appendContextCommandDependencyPair([...PathStateDisplayContextCommandTypes], [...PathDrawDisplayContextCommandTypes]);
+appendContextCommandDependencyPair([...StateDisplayContextCommandTypes], [...DrawDisplayContextCommandTypes]);
+appendContextCommandDependencyPair([...SpritesDisplayContextCommandTypes], ["drawSprite", "drawSprites"]);
+appendContextCommandDependencyPair([...BitmapDisplayContextCommandTypes], ["drawBitmap"]);
+function trimContextCommands(commands) {
+    _console$o.log("trimming commands", commands);
+    const trimmedCommands = [];
+    commands
+        .slice()
+        .reverse()
+        .forEach((command) => {
+        let include = true;
+        let dependencies;
+        for (const [keys, values] of contextCommandDependencies) {
+            if (keys.has(command.type)) {
+                dependencies = values;
+                break;
+            }
+        }
+        if (dependencies) {
+            const similarCommandIndex = trimmedCommands.findIndex((trimmedCommand) => {
+                return trimmedCommand.type == command.type;
+            });
+            const dependentCommandIndex = trimmedCommands.findIndex((trimmedCommand) => dependencies.has(trimmedCommand.type));
+            if (dependentCommandIndex == -1) {
+                include = false;
+            }
+            else if (similarCommandIndex != -1) {
+                include = similarCommandIndex > dependentCommandIndex;
+            }
+        }
+        if (include) {
+            trimmedCommands.unshift(command);
+        }
+    });
+    _console$o.log("trimmedCommands", trimmedCommands);
+    return trimmedCommands;
 }
 
 if (!String.prototype.codePointAt) {
@@ -25046,6 +25205,30 @@ const COMMAND_ARG_COUNTS = {
 };
 
 const _console$7 = createConsole("SvgUtils", { log: true });
+function decomposeTransform(t, tolerance = 1e-6) {
+    const tx = t.e;
+    const ty = t.f;
+    const scaleX = Math.sqrt(t.a * t.a + t.b * t.b);
+    const scaleY = Math.sqrt(t.c * t.c + t.d * t.d);
+    let rotation = 0;
+    if (scaleX !== 0) {
+        rotation = Math.atan2(t.b / scaleX, t.a / scaleX);
+    }
+    let skewX = 0;
+    let skewY = 0;
+    if (scaleX !== 0 && scaleY !== 0) {
+        skewX = Math.atan2(t.a * t.c + t.b * t.d, scaleX * scaleX);
+        skewY = 0;
+    }
+    const uniform = Math.abs(scaleX - scaleY) < tolerance;
+    return {
+        translation: { x: tx, y: ty },
+        rotation,
+        scale: { x: scaleX, y: scaleY },
+        skew: { x: skewX, y: skewY },
+        uniform,
+    };
+}
 const identity = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
 function multiply(t1, t2) {
     return {
@@ -25135,6 +25318,8 @@ function svgJsonToCanvasCommands(svgJson) {
         _console$7.log("traversing node", node, parentTransform);
         const transform = parseTransform(node.attributes.transform);
         const nodeTransform = multiply(parentTransform, transform);
+        const { scale, translation, rotation, uniform } = decomposeTransform(nodeTransform);
+        _console$7.log({ scale, translation, rotation, uniform });
         const style = parseStyle(node.attributes.style);
         if (style.fill)
             commands.push({ type: "fillStyle", fillStyle: style.fill });
@@ -25167,11 +25352,18 @@ function svgJsonToCanvasCommands(svgJson) {
                 const d = node.attributes.d;
                 if (!d)
                     break;
-                const pathData = new SVGPathData(d).toAbs();
+                const pathData = new SVGPathData(d)
+                    .toAbs()
+                    .aToC()
+                    .normalizeHVZ(false)
+                    .normalizeST()
+                    .removeCollinear()
+                    .sanitize();
                 commands.push({ type: "pathStart" });
                 for (const cmd of pathData.commands) {
                     switch (cmd.type) {
                         case SVGPathData.MOVE_TO:
+                            commands.push({ type: "closePath" });
                             const m = applyTransform(cmd.x, cmd.y, nodeTransform);
                             commands.push({ type: "moveTo", x: m.x, y: m.y });
                             break;
@@ -25207,7 +25399,13 @@ function svgJsonToCanvasCommands(svgJson) {
                         case SVGPathData.CLOSE_PATH:
                             commands.push({ type: "closePath" });
                             break;
+                        default:
+                            _console$7.warn("uncaught command", cmd);
+                            break;
                     }
+                }
+                if (commands.at(-1)?.type != "closePath") {
+                    commands.push({ type: "closePath" });
                 }
                 commands.push({ type: "pathEnd" });
                 break;
@@ -25223,98 +25421,114 @@ function svgJsonToCanvasCommands(svgJson) {
                 rx = Math.min(rx, width / 2);
                 ry = Math.min(ry, height / 2);
                 if (rx === 0 && ry === 0) {
-                    const tl = applyTransform(x, y, nodeTransform);
-                    const tr = applyTransform(x + width, y, nodeTransform);
-                    const br = applyTransform(x + width, y + height, nodeTransform);
-                    const bl = applyTransform(x, y + height, nodeTransform);
-                    commands.push({ type: "moveTo", x: tl.x, y: tl.y });
-                    commands.push({ type: "lineTo", x: tr.x, y: tr.y });
-                    commands.push({ type: "lineTo", x: br.x, y: br.y });
-                    commands.push({ type: "lineTo", x: bl.x, y: bl.y });
-                    commands.push({ type: "closePath" });
+                    if (uniform) {
+                        const center = applyTransform(x + width / 2, y + height / 2, nodeTransform);
+                        commands.push({
+                            type: "rect",
+                            x: center.x,
+                            y: center.y,
+                            width,
+                            height,
+                            rotation,
+                        });
+                    }
+                    else {
+                        const tl = applyTransform(x, y, nodeTransform);
+                        const tr = applyTransform(x + width, y, nodeTransform);
+                        const br = applyTransform(x + width, y + height, nodeTransform);
+                        const bl = applyTransform(x, y + height, nodeTransform);
+                        commands.push({ type: "moveTo", x: tl.x, y: tl.y });
+                        commands.push({ type: "lineTo", x: tr.x, y: tr.y });
+                        commands.push({ type: "lineTo", x: br.x, y: br.y });
+                        commands.push({ type: "lineTo", x: bl.x, y: bl.y });
+                        commands.push({ type: "closePath" });
+                    }
                 }
                 else {
-                    const ox = rx * circleBezierConstant;
-                    const oy = ry * circleBezierConstant;
-                    const p1 = { x: x + rx, y: y };
-                    const p2 = { x: x + width - rx, y: y };
-                    const p3 = { x: x + width, y: y + ry };
-                    const p4 = { x: x + width, y: y + height - ry };
-                    const p5 = { x: x + width - rx, y: y + height };
-                    const p6 = { x: x + rx, y: y + height };
-                    const p7 = { x: x, y: y + height - ry };
-                    const p8 = { x: x, y: y + ry };
-                    const start = applyTransform(p1.x, p1.y, nodeTransform);
-                    commands.push({ type: "moveTo", x: start.x, y: start.y });
-                    let cp1 = applyTransform(p2.x + ox, p2.y, nodeTransform);
-                    let cp2 = applyTransform(p3.x, p3.y - oy, nodeTransform);
-                    let end = applyTransform(p3.x, p3.y, nodeTransform);
-                    commands.push({
-                        type: "lineTo",
-                        x: applyTransform(p2.x, p2.y, nodeTransform).x,
-                        y: applyTransform(p2.x, p2.y, nodeTransform).y,
-                    });
-                    commands.push({
-                        type: "bezierCurveTo",
-                        cp1x: cp1.x,
-                        cp1y: cp1.y,
-                        cp2x: cp2.x,
-                        cp2y: cp2.y,
-                        x: end.x,
-                        y: end.y,
-                    });
-                    cp1 = applyTransform(p4.x, p4.y + oy, nodeTransform);
-                    cp2 = applyTransform(p5.x + ox, p5.y, nodeTransform);
-                    end = applyTransform(p5.x, p5.y, nodeTransform);
-                    commands.push({
-                        type: "lineTo",
-                        x: applyTransform(p4.x, p4.y, nodeTransform).x,
-                        y: applyTransform(p4.x, p4.y, nodeTransform).y,
-                    });
-                    commands.push({
-                        type: "bezierCurveTo",
-                        cp1x: cp1.x,
-                        cp1y: cp1.y,
-                        cp2x: cp2.x,
-                        cp2y: cp2.y,
-                        x: end.x,
-                        y: end.y,
-                    });
-                    cp1 = applyTransform(p6.x - ox, p6.y, nodeTransform);
-                    cp2 = applyTransform(p7.x, p7.y + oy, nodeTransform);
-                    end = applyTransform(p7.x, p7.y, nodeTransform);
-                    commands.push({
-                        type: "lineTo",
-                        x: applyTransform(p6.x, p6.y, nodeTransform).x,
-                        y: applyTransform(p6.x, p6.y, nodeTransform).y,
-                    });
-                    commands.push({
-                        type: "bezierCurveTo",
-                        cp1x: cp1.x,
-                        cp1y: cp1.y,
-                        cp2x: cp2.x,
-                        cp2y: cp2.y,
-                        x: end.x,
-                        y: end.y,
-                    });
-                    cp1 = applyTransform(p8.x, p8.y - oy, nodeTransform);
-                    cp2 = applyTransform(p1.x - ox, p1.y, nodeTransform);
-                    end = applyTransform(p1.x, p1.y, nodeTransform);
-                    commands.push({
-                        type: "lineTo",
-                        x: applyTransform(p8.x, p8.y, nodeTransform).x,
-                        y: applyTransform(p8.x, p8.y, nodeTransform).y,
-                    });
-                    commands.push({
-                        type: "bezierCurveTo",
-                        cp1x: cp1.x,
-                        cp1y: cp1.y,
-                        cp2x: cp2.x,
-                        cp2y: cp2.y,
-                        x: end.x,
-                        y: end.y,
-                    });
-                    commands.push({ type: "closePath" });
+                    if (rx == ry) ;
+                    else {
+                        const ox = rx * circleBezierConstant;
+                        const oy = ry * circleBezierConstant;
+                        const p1 = { x: x + rx, y: y };
+                        const p2 = { x: x + width - rx, y: y };
+                        const p3 = { x: x + width, y: y + ry };
+                        const p4 = { x: x + width, y: y + height - ry };
+                        const p5 = { x: x + width - rx, y: y + height };
+                        const p6 = { x: x + rx, y: y + height };
+                        const p7 = { x: x, y: y + height - ry };
+                        const p8 = { x: x, y: y + ry };
+                        const start = applyTransform(p1.x, p1.y, nodeTransform);
+                        commands.push({ type: "moveTo", x: start.x, y: start.y });
+                        let cp1 = applyTransform(p2.x + ox, p2.y, nodeTransform);
+                        let cp2 = applyTransform(p3.x, p3.y - oy, nodeTransform);
+                        let end = applyTransform(p3.x, p3.y, nodeTransform);
+                        commands.push({
+                            type: "lineTo",
+                            x: applyTransform(p2.x, p2.y, nodeTransform).x,
+                            y: applyTransform(p2.x, p2.y, nodeTransform).y,
+                        });
+                        commands.push({
+                            type: "bezierCurveTo",
+                            cp1x: cp1.x,
+                            cp1y: cp1.y,
+                            cp2x: cp2.x,
+                            cp2y: cp2.y,
+                            x: end.x,
+                            y: end.y,
+                        });
+                        cp1 = applyTransform(p4.x, p4.y + oy, nodeTransform);
+                        cp2 = applyTransform(p5.x + ox, p5.y, nodeTransform);
+                        end = applyTransform(p5.x, p5.y, nodeTransform);
+                        commands.push({
+                            type: "lineTo",
+                            x: applyTransform(p4.x, p4.y, nodeTransform).x,
+                            y: applyTransform(p4.x, p4.y, nodeTransform).y,
+                        });
+                        commands.push({
+                            type: "bezierCurveTo",
+                            cp1x: cp1.x,
+                            cp1y: cp1.y,
+                            cp2x: cp2.x,
+                            cp2y: cp2.y,
+                            x: end.x,
+                            y: end.y,
+                        });
+                        cp1 = applyTransform(p6.x - ox, p6.y, nodeTransform);
+                        cp2 = applyTransform(p7.x, p7.y + oy, nodeTransform);
+                        end = applyTransform(p7.x, p7.y, nodeTransform);
+                        commands.push({
+                            type: "lineTo",
+                            x: applyTransform(p6.x, p6.y, nodeTransform).x,
+                            y: applyTransform(p6.x, p6.y, nodeTransform).y,
+                        });
+                        commands.push({
+                            type: "bezierCurveTo",
+                            cp1x: cp1.x,
+                            cp1y: cp1.y,
+                            cp2x: cp2.x,
+                            cp2y: cp2.y,
+                            x: end.x,
+                            y: end.y,
+                        });
+                        cp1 = applyTransform(p8.x, p8.y - oy, nodeTransform);
+                        cp2 = applyTransform(p1.x - ox, p1.y, nodeTransform);
+                        end = applyTransform(p1.x, p1.y, nodeTransform);
+                        commands.push({
+                            type: "lineTo",
+                            x: applyTransform(p8.x, p8.y, nodeTransform).x,
+                            y: applyTransform(p8.x, p8.y, nodeTransform).y,
+                        });
+                        commands.push({
+                            type: "bezierCurveTo",
+                            cp1x: cp1.x,
+                            cp1y: cp1.y,
+                            cp2x: cp2.x,
+                            cp2y: cp2.y,
+                            x: end.x,
+                            y: end.y,
+                        });
+                        commands.push({ type: "closePath" });
+                    }
                 }
                 break;
             }
@@ -25324,57 +25538,60 @@ function svgJsonToCanvasCommands(svgJson) {
                 const r = parseFloat(node.attributes.r || "0");
                 if (r === 0)
                     break;
-                const ox = r * circleBezierConstant;
-                const pTop = applyTransform(cx, cy - r, nodeTransform);
-                const pRight = applyTransform(cx + r, cy, nodeTransform);
-                const pBottom = applyTransform(cx, cy + r, nodeTransform);
-                const pLeft = applyTransform(cx - r, cy, nodeTransform);
-                const cpTopRight = applyTransform(cx + ox, cy - r, nodeTransform);
-                const cpRightTop = applyTransform(cx + r, cy - ox, nodeTransform);
-                const cpRightBottom = applyTransform(cx + r, cy + ox, nodeTransform);
-                const cpBottomRight = applyTransform(cx + ox, cy + r, nodeTransform);
-                const cpBottomLeft = applyTransform(cx - ox, cy + r, nodeTransform);
-                const cpLeftBottom = applyTransform(cx - r, cy + ox, nodeTransform);
-                const cpLeftTop = applyTransform(cx - r, cy - ox, nodeTransform);
-                const cpTopLeft = applyTransform(cx - ox, cy - r, nodeTransform);
-                commands.push({ type: "moveTo", x: pTop.x, y: pTop.y });
-                commands.push({
-                    type: "bezierCurveTo",
-                    cp1x: cpTopRight.x,
-                    cp1y: cpTopRight.y,
-                    cp2x: cpRightTop.x,
-                    cp2y: cpRightTop.y,
-                    x: pRight.x,
-                    y: pRight.y,
-                });
-                commands.push({
-                    type: "bezierCurveTo",
-                    cp1x: cpRightBottom.x,
-                    cp1y: cpRightBottom.y,
-                    cp2x: cpBottomRight.x,
-                    cp2y: cpBottomRight.y,
-                    x: pBottom.x,
-                    y: pBottom.y,
-                });
-                commands.push({
-                    type: "bezierCurveTo",
-                    cp1x: cpBottomLeft.x,
-                    cp1y: cpBottomLeft.y,
-                    cp2x: cpLeftBottom.x,
-                    cp2y: cpLeftBottom.y,
-                    x: pLeft.x,
-                    y: pLeft.y,
-                });
-                commands.push({
-                    type: "bezierCurveTo",
-                    cp1x: cpLeftTop.x,
-                    cp1y: cpLeftTop.y,
-                    cp2x: cpTopLeft.x,
-                    cp2y: cpTopLeft.y,
-                    x: pTop.x,
-                    y: pTop.y,
-                });
-                commands.push({ type: "closePath" });
+                if (uniform) ;
+                else {
+                    const ox = r * circleBezierConstant;
+                    const pTop = applyTransform(cx, cy - r, nodeTransform);
+                    const pRight = applyTransform(cx + r, cy, nodeTransform);
+                    const pBottom = applyTransform(cx, cy + r, nodeTransform);
+                    const pLeft = applyTransform(cx - r, cy, nodeTransform);
+                    const cpTopRight = applyTransform(cx + ox, cy - r, nodeTransform);
+                    const cpRightTop = applyTransform(cx + r, cy - ox, nodeTransform);
+                    const cpRightBottom = applyTransform(cx + r, cy + ox, nodeTransform);
+                    const cpBottomRight = applyTransform(cx + ox, cy + r, nodeTransform);
+                    const cpBottomLeft = applyTransform(cx - ox, cy + r, nodeTransform);
+                    const cpLeftBottom = applyTransform(cx - r, cy + ox, nodeTransform);
+                    const cpLeftTop = applyTransform(cx - r, cy - ox, nodeTransform);
+                    const cpTopLeft = applyTransform(cx - ox, cy - r, nodeTransform);
+                    commands.push({ type: "moveTo", x: pTop.x, y: pTop.y });
+                    commands.push({
+                        type: "bezierCurveTo",
+                        cp1x: cpTopRight.x,
+                        cp1y: cpTopRight.y,
+                        cp2x: cpRightTop.x,
+                        cp2y: cpRightTop.y,
+                        x: pRight.x,
+                        y: pRight.y,
+                    });
+                    commands.push({
+                        type: "bezierCurveTo",
+                        cp1x: cpRightBottom.x,
+                        cp1y: cpRightBottom.y,
+                        cp2x: cpBottomRight.x,
+                        cp2y: cpBottomRight.y,
+                        x: pBottom.x,
+                        y: pBottom.y,
+                    });
+                    commands.push({
+                        type: "bezierCurveTo",
+                        cp1x: cpBottomLeft.x,
+                        cp1y: cpBottomLeft.y,
+                        cp2x: cpLeftBottom.x,
+                        cp2y: cpLeftBottom.y,
+                        x: pLeft.x,
+                        y: pLeft.y,
+                    });
+                    commands.push({
+                        type: "bezierCurveTo",
+                        cp1x: cpLeftTop.x,
+                        cp1y: cpLeftTop.y,
+                        cp2x: cpTopLeft.x,
+                        cp2y: cpTopLeft.y,
+                        x: pTop.x,
+                        y: pTop.y,
+                    });
+                    commands.push({ type: "closePath" });
+                }
                 break;
             }
             case "ellipse": {
@@ -25384,58 +25601,61 @@ function svgJsonToCanvasCommands(svgJson) {
                 const ry = parseFloat(node.attributes.ry || "0");
                 if (rx === 0 || ry === 0)
                     break;
-                const ox = rx * circleBezierConstant;
-                const oy = ry * circleBezierConstant;
-                const pTop = applyTransform(cx, cy - ry, nodeTransform);
-                const pRight = applyTransform(cx + rx, cy, nodeTransform);
-                const pBottom = applyTransform(cx, cy + ry, nodeTransform);
-                const pLeft = applyTransform(cx - rx, cy, nodeTransform);
-                const cpTopRight = applyTransform(cx + ox, cy - ry, nodeTransform);
-                const cpRightTop = applyTransform(cx + rx, cy - oy, nodeTransform);
-                const cpRightBottom = applyTransform(cx + rx, cy + oy, nodeTransform);
-                const cpBottomRight = applyTransform(cx + ox, cy + ry, nodeTransform);
-                const cpBottomLeft = applyTransform(cx - ox, cy + ry, nodeTransform);
-                const cpLeftBottom = applyTransform(cx - rx, cy + oy, nodeTransform);
-                const cpLeftTop = applyTransform(cx - rx, cy - oy, nodeTransform);
-                const cpTopLeft = applyTransform(cx - ox, cy - ry, nodeTransform);
-                commands.push({ type: "moveTo", x: pTop.x, y: pTop.y });
-                commands.push({
-                    type: "bezierCurveTo",
-                    cp1x: cpTopRight.x,
-                    cp1y: cpTopRight.y,
-                    cp2x: cpRightTop.x,
-                    cp2y: cpRightTop.y,
-                    x: pRight.x,
-                    y: pRight.y,
-                });
-                commands.push({
-                    type: "bezierCurveTo",
-                    cp1x: cpRightBottom.x,
-                    cp1y: cpRightBottom.y,
-                    cp2x: cpBottomRight.x,
-                    cp2y: cpBottomRight.y,
-                    x: pBottom.x,
-                    y: pBottom.y,
-                });
-                commands.push({
-                    type: "bezierCurveTo",
-                    cp1x: cpBottomLeft.x,
-                    cp1y: cpBottomLeft.y,
-                    cp2x: cpLeftBottom.x,
-                    cp2y: cpLeftBottom.y,
-                    x: pLeft.x,
-                    y: pLeft.y,
-                });
-                commands.push({
-                    type: "bezierCurveTo",
-                    cp1x: cpLeftTop.x,
-                    cp1y: cpLeftTop.y,
-                    cp2x: cpTopLeft.x,
-                    cp2y: cpTopLeft.y,
-                    x: pTop.x,
-                    y: pTop.y,
-                });
-                commands.push({ type: "closePath" });
+                if (uniform) ;
+                else {
+                    const ox = rx * circleBezierConstant;
+                    const oy = ry * circleBezierConstant;
+                    const pTop = applyTransform(cx, cy - ry, nodeTransform);
+                    const pRight = applyTransform(cx + rx, cy, nodeTransform);
+                    const pBottom = applyTransform(cx, cy + ry, nodeTransform);
+                    const pLeft = applyTransform(cx - rx, cy, nodeTransform);
+                    const cpTopRight = applyTransform(cx + ox, cy - ry, nodeTransform);
+                    const cpRightTop = applyTransform(cx + rx, cy - oy, nodeTransform);
+                    const cpRightBottom = applyTransform(cx + rx, cy + oy, nodeTransform);
+                    const cpBottomRight = applyTransform(cx + ox, cy + ry, nodeTransform);
+                    const cpBottomLeft = applyTransform(cx - ox, cy + ry, nodeTransform);
+                    const cpLeftBottom = applyTransform(cx - rx, cy + oy, nodeTransform);
+                    const cpLeftTop = applyTransform(cx - rx, cy - oy, nodeTransform);
+                    const cpTopLeft = applyTransform(cx - ox, cy - ry, nodeTransform);
+                    commands.push({ type: "moveTo", x: pTop.x, y: pTop.y });
+                    commands.push({
+                        type: "bezierCurveTo",
+                        cp1x: cpTopRight.x,
+                        cp1y: cpTopRight.y,
+                        cp2x: cpRightTop.x,
+                        cp2y: cpRightTop.y,
+                        x: pRight.x,
+                        y: pRight.y,
+                    });
+                    commands.push({
+                        type: "bezierCurveTo",
+                        cp1x: cpRightBottom.x,
+                        cp1y: cpRightBottom.y,
+                        cp2x: cpBottomRight.x,
+                        cp2y: cpBottomRight.y,
+                        x: pBottom.x,
+                        y: pBottom.y,
+                    });
+                    commands.push({
+                        type: "bezierCurveTo",
+                        cp1x: cpBottomLeft.x,
+                        cp1y: cpBottomLeft.y,
+                        cp2x: cpLeftBottom.x,
+                        cp2y: cpLeftBottom.y,
+                        x: pLeft.x,
+                        y: pLeft.y,
+                    });
+                    commands.push({
+                        type: "bezierCurveTo",
+                        cp1x: cpLeftTop.x,
+                        cp1y: cpLeftTop.y,
+                        cp2x: cpTopLeft.x,
+                        cp2y: cpTopLeft.y,
+                        x: pTop.x,
+                        y: pTop.y,
+                    });
+                    commands.push({ type: "closePath" });
+                }
                 break;
             }
             case "polyline":
@@ -25474,6 +25694,8 @@ function svgJsonToCanvasCommands(svgJson) {
                 commands.push({ type: "line", x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
                 break;
             }
+            case "svg":
+                break;
             default:
                 _console$7.log("uncaught node", node);
                 break;
@@ -25782,8 +26004,9 @@ function svgToDisplayContextCommands(svgString, options) {
     let ignoreLine = true;
     let fillColorIndex = 1;
     let lineColorIndex = 1;
+    let isDrawingPath = false;
     const parsedPaths = [];
-    const displayCommands = [];
+    let displayCommands = [];
     displayCommands.push({ type: "setIgnoreLine", ignoreLine: true });
     displayCommands.push({ type: "setLineWidth", lineWidth });
     displayCommands.push({
@@ -25841,26 +26064,20 @@ function svgToDisplayContextCommands(svgString, options) {
                     break;
                 curves = simplifyCurves(curves);
                 const controlPoints = curves.flatMap((c) => c.controlPoints);
-                const isHole = classifySubpath(controlPoints, parsedPaths, fillRule);
-                parsedPaths.push({ path: controlPoints, isHole });
-                _console$7.log({
-                    pathIndex: parsedPaths.length - 1,
-                    isHole,
-                    fillStyle,
-                    strokeStyle,
-                    fillRule,
-                    lineWidth,
-                });
-                if (isHole != wasHole) {
-                    wasHole = isHole;
-                    if (isHole) {
-                        displayCommands.push({
-                            type: "selectFillColor",
-                            fillColorIndex: 0,
-                        });
-                    }
-                    else {
-                        displayCommands.push({ type: "selectFillColor", fillColorIndex });
+                if (isDrawingPath) {
+                    const isHole = classifySubpath(controlPoints, parsedPaths, fillRule);
+                    parsedPaths.push({ path: controlPoints, isHole });
+                    if (isHole != wasHole) {
+                        wasHole = isHole;
+                        if (isHole) {
+                            displayCommands.push({
+                                type: "selectFillColor",
+                                fillColorIndex: 0,
+                            });
+                        }
+                        else {
+                            displayCommands.push({ type: "selectFillColor", fillColorIndex });
+                        }
                     }
                 }
                 if (ignoreFill) {
@@ -25922,8 +26139,10 @@ function svgToDisplayContextCommands(svgString, options) {
                     displayCommands.push({ type: "selectFillColor", fillColorIndex });
                 }
                 wasHole = false;
+                isDrawingPath = true;
                 break;
             case "pathEnd":
+                isDrawingPath = false;
                 break;
             case "line":
                 if (strokeStyle != "none") {
@@ -26025,6 +26244,7 @@ function svgToDisplayContextCommands(svgString, options) {
                 break;
         }
     });
+    displayCommands = trimContextCommands(displayCommands);
     _console$7.log("displayCommands", displayCommands);
     _console$7.log("colors", colors);
     return { commands: displayCommands, colors };

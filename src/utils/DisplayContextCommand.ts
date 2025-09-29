@@ -9,7 +9,6 @@ import {
   displayCurveTypesPerByte,
   DisplaySpriteColorPair,
   DisplayWireframe,
-  DisplayWireframeEdge,
 } from "../DisplayManager.ts";
 import {
   concatenateArrayBuffers,
@@ -57,7 +56,7 @@ import {
   Vector2,
 } from "./MathUtils.ts";
 
-const _console = createConsole("DisplayContextCommand", { log: false });
+const _console = createConsole("DisplayContextCommand", { log: true });
 
 export const DisplayContextCommandTypes = [
   "show",
@@ -1563,4 +1562,245 @@ export function serializeContextCommands(
     serializedContextCommands
   );
   return serializedContextCommands;
+}
+
+const DrawDisplayContextCommandTypes = [
+  "drawRect",
+  "drawRoundRect",
+
+  "drawCircle",
+  "drawArc",
+
+  "drawEllipse",
+  "drawArcEllipse",
+
+  "drawSegment",
+  "drawSegments",
+
+  "drawRegularPolygon",
+  "drawPolygon",
+
+  "drawWireframe",
+
+  "drawQuadraticBezierCurve",
+  "drawQuadraticBezierCurves",
+  "drawCubicBezierCurve",
+  "drawCubicBezierCurves",
+
+  "drawPath",
+  "drawClosedPath",
+
+  "drawBitmap",
+
+  "drawSprite",
+  "drawSprites",
+] as const satisfies readonly DisplayContextCommandType[];
+type DrawDisplayContextCommandType =
+  (typeof DrawDisplayContextCommandTypes)[number];
+
+const StateDisplayContextCommandTypes = [
+  "setColor",
+  "setColorOpacity",
+  "setOpacity",
+
+  "saveContext",
+  "restoreContext",
+
+  "selectBackgroundColor",
+  "selectFillColor",
+  "selectLineColor",
+
+  "setIgnoreFill",
+  "setIgnoreLine",
+  "setFillBackground",
+
+  "setLineWidth",
+  "setRotation",
+  "clearRotation",
+
+  "setHorizontalAlignment",
+  "setVerticalAlignment",
+  "resetAlignment",
+
+  "setSegmentStartCap",
+  "setSegmentEndCap",
+  "setSegmentCap",
+
+  "setSegmentStartRadius",
+  "setSegmentEndRadius",
+  "setSegmentRadius",
+
+  "setCropTop",
+  "setCropRight",
+  "setCropBottom",
+  "setCropLeft",
+  "clearCrop",
+
+  "setRotationCropTop",
+  "setRotationCropRight",
+  "setRotationCropBottom",
+  "setRotationCropLeft",
+  "clearRotationCrop",
+
+  "selectBitmapColor",
+  "selectBitmapColors",
+  "setBitmapScaleX",
+  "setBitmapScaleY",
+  "setBitmapScale",
+  "resetBitmapScale",
+
+  "selectSpriteColor",
+  "selectSpriteColors",
+  "resetSpriteColors",
+  "setSpriteScaleX",
+  "setSpriteScaleY",
+  "setSpriteScale",
+  "resetSpriteScale",
+
+  "setSpritesLineHeight",
+  "setSpritesDirection",
+  "setSpritesLineDirection",
+  "setSpritesSpacing",
+  "setSpritesLineSpacing",
+  "setSpritesAlignment",
+  "setSpritesLineAlignment",
+
+  "selectSpriteSheet",
+] as const satisfies readonly DisplayContextCommandType[];
+type StateDisplayContextCommandType =
+  (typeof StateDisplayContextCommandTypes)[number];
+
+const SpritesDisplayContextCommandTypes = [
+  "selectSpriteColor",
+  "selectSpriteColors",
+  "resetSpriteColors",
+  "setSpriteScaleX",
+  "setSpriteScaleY",
+  "setSpriteScale",
+  "resetSpriteScale",
+
+  "setSpritesLineHeight",
+  "setSpritesDirection",
+  "setSpritesLineDirection",
+  "setSpritesSpacing",
+  "setSpritesLineSpacing",
+  "setSpritesAlignment",
+  "setSpritesLineAlignment",
+
+  "selectSpriteSheet",
+] as const satisfies readonly DisplayContextCommandType[];
+export type SpritesDisplayContextCommandType =
+  (typeof SpritesDisplayContextCommandTypes)[number];
+
+const PathDrawDisplayContextCommandTypes = [
+  "drawSegment",
+  "drawSegments",
+  "drawQuadraticBezierCurve",
+  "drawQuadraticBezierCurves",
+  "drawCubicBezierCurve",
+  "drawCubicBezierCurves",
+  "drawPath",
+  "drawWireframe",
+] as const satisfies readonly DisplayContextCommandType[];
+export type PathDrawDisplayContextCommandType =
+  (typeof PathDrawDisplayContextCommandTypes)[number];
+
+const PathStateDisplayContextCommandTypes = [
+  "setSegmentRadius",
+  "setSegmentEndRadius",
+  "setSegmentStartRadius",
+  "setSegmentCap",
+  "setSegmentStartCap",
+  "setSegmentEndCap",
+] as const satisfies readonly DisplayContextCommandType[];
+export type PathStateDisplayContextCommandType =
+  (typeof PathStateDisplayContextCommandTypes)[number];
+
+const BitmapDisplayContextCommandTypes = [
+  "selectBitmapColor",
+  "selectBitmapColors",
+  "setBitmapScaleX",
+  "setBitmapScaleY",
+  "setBitmapScale",
+  "resetBitmapScale",
+] as const satisfies readonly DisplayContextCommandType[];
+export type BitmapDisplayContextCommandType =
+  (typeof BitmapDisplayContextCommandTypes)[number];
+
+const contextCommandDependencies: Map<
+  Set<DisplayContextCommandType>,
+  Set<DisplayContextCommandType>
+> = new Map();
+function appendContextCommandDependencyPair(
+  key: DisplayContextCommandType[],
+  value: DisplayContextCommandType[]
+) {
+  contextCommandDependencies.set(new Set(key), new Set(value));
+}
+appendContextCommandDependencyPair(
+  [...PathStateDisplayContextCommandTypes],
+  [...PathDrawDisplayContextCommandTypes]
+);
+appendContextCommandDependencyPair(
+  [...StateDisplayContextCommandTypes],
+  [...DrawDisplayContextCommandTypes]
+);
+appendContextCommandDependencyPair(
+  [...SpritesDisplayContextCommandTypes],
+  ["drawSprite", "drawSprites"]
+);
+appendContextCommandDependencyPair(
+  [...BitmapDisplayContextCommandTypes],
+  ["drawBitmap"]
+);
+
+// TODO - can refine more (e.g. if ignoreLine, then skip setLineWidth, etc)
+
+export function trimContextCommands(commands: DisplayContextCommand[]) {
+  _console.log("trimming commands", commands);
+  const trimmedCommands: DisplayContextCommand[] = [];
+
+  commands
+    .slice()
+    .reverse()
+    .forEach((command) => {
+      let include = true;
+
+      let dependencies: Set<DisplayContextCommandType> | undefined;
+      for (const [keys, values] of contextCommandDependencies) {
+        if (keys.has(command.type)) {
+          dependencies = values;
+          break;
+        }
+      }
+
+      //_console.log("command", command, "dependencies", dependencies);
+
+      if (dependencies) {
+        const similarCommandIndex = trimmedCommands.findIndex(
+          (trimmedCommand) => {
+            return trimmedCommand.type == command.type;
+          }
+        );
+        const dependentCommandIndex = trimmedCommands.findIndex(
+          (trimmedCommand) => dependencies.has(trimmedCommand.type)
+        );
+
+        //_console.log({ similarCommandIndex, dependentCommandIndex });
+
+        if (dependentCommandIndex == -1) {
+          include = false;
+        } else if (similarCommandIndex != -1) {
+          include = similarCommandIndex > dependentCommandIndex;
+        }
+      }
+      if (include) {
+        trimmedCommands.unshift(command);
+      } else {
+        //_console.log("skipping command", command);
+      }
+    });
+
+  _console.log("trimmedCommands", trimmedCommands);
+  return trimmedCommands;
 }

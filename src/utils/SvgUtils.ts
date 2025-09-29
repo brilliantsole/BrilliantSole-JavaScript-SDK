@@ -1,5 +1,8 @@
 import { createConsole } from "./Console.ts";
-import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+import {
+  DisplayContextCommand,
+  trimContextCommands,
+} from "./DisplayContextCommand.ts";
 import { INode, parseSync } from "svgson";
 import { SVGPathData } from "svg-pathdata";
 import { DisplayBezierCurve, DisplaySize } from "../DisplayManager.ts";
@@ -31,7 +34,33 @@ type CanvasCommand =
       x: number;
       y: number;
     }
-  | { type: "closePath" };
+  | { type: "closePath"; checkIfHole?: boolean }
+  | {
+      type: "rect";
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      rotation: number;
+    }
+  | {
+      type: "roundRect";
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      r: number;
+      rotation: number;
+    }
+  | { type: "circle"; x: number; y: number; r: number }
+  | {
+      type: "ellipse";
+      x: number;
+      y: number;
+      rx: number;
+      ry: number;
+      rotation: number;
+    };
 
 interface Transform {
   a: number;
@@ -40,6 +69,53 @@ interface Transform {
   d: number;
   e: number;
   f: number;
+}
+
+interface DecomposedTransform {
+  translation: { x: number; y: number };
+  rotation: number; // in radians
+  scale: { x: number; y: number };
+  skew: { x: number; y: number }; // skewX/Y in radians
+  uniform: boolean; // true if scaleX ≈ scaleY
+}
+
+/** Fully decompose a 2D affine transform */
+function decomposeTransform(
+  t: Transform,
+  tolerance = 1e-6
+): DecomposedTransform {
+  // Translation
+  const tx = t.e;
+  const ty = t.f;
+
+  // Compute scale
+  const scaleX = Math.sqrt(t.a * t.a + t.b * t.b);
+  const scaleY = Math.sqrt(t.c * t.c + t.d * t.d);
+
+  // Compute rotation (from X-axis)
+  let rotation = 0;
+  if (scaleX !== 0) {
+    rotation = Math.atan2(t.b / scaleX, t.a / scaleX);
+  }
+
+  // Compute skew (skewX = angle between x and y axes)
+  let skewX = 0;
+  let skewY = 0;
+  if (scaleX !== 0 && scaleY !== 0) {
+    skewX = Math.atan2(t.a * t.c + t.b * t.d, scaleX * scaleX);
+    skewY = 0; // rarely needed, can be calculated similarly if desired
+  }
+
+  // Uniform scale check
+  const uniform = Math.abs(scaleX - scaleY) < tolerance;
+
+  return {
+    translation: { x: tx, y: ty },
+    rotation,
+    scale: { x: scaleX, y: scaleY },
+    skew: { x: skewX, y: skewY },
+    uniform,
+  };
 }
 
 const identity: Transform = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
@@ -147,6 +223,10 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
     const nodeTransform = multiply(parentTransform, transform);
     //_console.log("nodeTransform", nodeTransform);
 
+    const { scale, translation, rotation, uniform } =
+      decomposeTransform(nodeTransform);
+    _console.log({ scale, translation, rotation, uniform });
+
     // Handle styles
     const style = parseStyle(node.attributes.style);
     // Fill
@@ -185,11 +265,19 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
       case "path":
         const d = node.attributes.d;
         if (!d) break;
-        const pathData = new SVGPathData(d).toAbs();
+        const pathData = new SVGPathData(d)
+          .toAbs()
+          .aToC()
+          .normalizeHVZ(false)
+          .normalizeST()
+          .removeCollinear()
+          .sanitize();
+        //_console.log("pathData", d, pathData);
         commands.push({ type: "pathStart" });
         for (const cmd of pathData.commands) {
           switch (cmd.type) {
             case SVGPathData.MOVE_TO:
+              commands.push({ type: "closePath" });
               const m = applyTransform(cmd.x!, cmd.y!, nodeTransform);
               commands.push({ type: "moveTo", x: m.x, y: m.y });
               break;
@@ -226,7 +314,13 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
             case SVGPathData.CLOSE_PATH:
               commands.push({ type: "closePath" });
               break;
+            default:
+              _console.warn("uncaught command", cmd);
+              break;
           }
+        }
+        if (commands.at(-1)?.type != "closePath") {
+          commands.push({ type: "closePath" });
         }
         commands.push({ type: "pathEnd" });
 
@@ -247,113 +341,134 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
 
         if (rx === 0 && ry === 0) {
           // sharp rect
-          const tl = applyTransform(x, y, nodeTransform);
-          const tr = applyTransform(x + width, y, nodeTransform);
-          const br = applyTransform(x + width, y + height, nodeTransform);
-          const bl = applyTransform(x, y + height, nodeTransform);
+          if (uniform) {
+            // FILL
+            const center = applyTransform(
+              x + width / 2,
+              y + height / 2,
+              nodeTransform
+            );
+            commands.push({
+              type: "rect",
+              x: center.x,
+              y: center.y,
+              width,
+              height,
+              rotation,
+            });
+          } else {
+            const tl = applyTransform(x, y, nodeTransform);
+            const tr = applyTransform(x + width, y, nodeTransform);
+            const br = applyTransform(x + width, y + height, nodeTransform);
+            const bl = applyTransform(x, y + height, nodeTransform);
 
-          commands.push({ type: "moveTo", x: tl.x, y: tl.y });
-          commands.push({ type: "lineTo", x: tr.x, y: tr.y });
-          commands.push({ type: "lineTo", x: br.x, y: br.y });
-          commands.push({ type: "lineTo", x: bl.x, y: bl.y });
-          commands.push({ type: "closePath" });
+            commands.push({ type: "moveTo", x: tl.x, y: tl.y });
+            commands.push({ type: "lineTo", x: tr.x, y: tr.y });
+            commands.push({ type: "lineTo", x: br.x, y: br.y });
+            commands.push({ type: "lineTo", x: bl.x, y: bl.y });
+            commands.push({ type: "closePath" });
+          }
         } else {
           // rounded rect
 
-          const ox = rx * circleBezierConstant; // x offset for control points
-          const oy = ry * circleBezierConstant; // y offset for control points
+          if (rx == ry) {
+            // FILL
+          } else {
+            const ox = rx * circleBezierConstant; // x offset for control points
+            const oy = ry * circleBezierConstant; // y offset for control points
 
-          // Corners before transform
-          const p1 = { x: x + rx, y: y };
-          const p2 = { x: x + width - rx, y: y };
-          const p3 = { x: x + width, y: y + ry };
-          const p4 = { x: x + width, y: y + height - ry };
-          const p5 = { x: x + width - rx, y: y + height };
-          const p6 = { x: x + rx, y: y + height };
-          const p7 = { x: x, y: y + height - ry };
-          const p8 = { x: x, y: y + ry };
+            // Corners before transform
+            const p1 = { x: x + rx, y: y };
+            const p2 = { x: x + width - rx, y: y };
+            const p3 = { x: x + width, y: y + ry };
+            const p4 = { x: x + width, y: y + height - ry };
+            const p5 = { x: x + width - rx, y: y + height };
+            const p6 = { x: x + rx, y: y + height };
+            const p7 = { x: x, y: y + height - ry };
+            const p8 = { x: x, y: y + ry };
 
-          // Move to start
-          const start = applyTransform(p1.x, p1.y, nodeTransform);
-          commands.push({ type: "moveTo", x: start.x, y: start.y });
+            // Move to start
+            const start = applyTransform(p1.x, p1.y, nodeTransform);
+            commands.push({ type: "moveTo", x: start.x, y: start.y });
 
-          // Top edge + top-right corner
-          let cp1 = applyTransform(p2.x + ox, p2.y, nodeTransform);
-          let cp2 = applyTransform(p3.x, p3.y - oy, nodeTransform);
-          let end = applyTransform(p3.x, p3.y, nodeTransform);
-          commands.push({
-            type: "lineTo",
-            x: applyTransform(p2.x, p2.y, nodeTransform).x,
-            y: applyTransform(p2.x, p2.y, nodeTransform).y,
-          });
-          commands.push({
-            type: "bezierCurveTo",
-            cp1x: cp1.x,
-            cp1y: cp1.y,
-            cp2x: cp2.x,
-            cp2y: cp2.y,
-            x: end.x,
-            y: end.y,
-          });
+            // Top edge + top-right corner
+            let cp1 = applyTransform(p2.x + ox, p2.y, nodeTransform);
+            let cp2 = applyTransform(p3.x, p3.y - oy, nodeTransform);
+            let end = applyTransform(p3.x, p3.y, nodeTransform);
+            commands.push({
+              type: "lineTo",
+              x: applyTransform(p2.x, p2.y, nodeTransform).x,
+              y: applyTransform(p2.x, p2.y, nodeTransform).y,
+            });
+            commands.push({
+              type: "bezierCurveTo",
+              cp1x: cp1.x,
+              cp1y: cp1.y,
+              cp2x: cp2.x,
+              cp2y: cp2.y,
+              x: end.x,
+              y: end.y,
+            });
 
-          // Right edge + bottom-right corner
-          cp1 = applyTransform(p4.x, p4.y + oy, nodeTransform);
-          cp2 = applyTransform(p5.x + ox, p5.y, nodeTransform);
-          end = applyTransform(p5.x, p5.y, nodeTransform);
-          commands.push({
-            type: "lineTo",
-            x: applyTransform(p4.x, p4.y, nodeTransform).x,
-            y: applyTransform(p4.x, p4.y, nodeTransform).y,
-          });
-          commands.push({
-            type: "bezierCurveTo",
-            cp1x: cp1.x,
-            cp1y: cp1.y,
-            cp2x: cp2.x,
-            cp2y: cp2.y,
-            x: end.x,
-            y: end.y,
-          });
+            // Right edge + bottom-right corner
+            cp1 = applyTransform(p4.x, p4.y + oy, nodeTransform);
+            cp2 = applyTransform(p5.x + ox, p5.y, nodeTransform);
+            end = applyTransform(p5.x, p5.y, nodeTransform);
+            commands.push({
+              type: "lineTo",
+              x: applyTransform(p4.x, p4.y, nodeTransform).x,
+              y: applyTransform(p4.x, p4.y, nodeTransform).y,
+            });
+            commands.push({
+              type: "bezierCurveTo",
+              cp1x: cp1.x,
+              cp1y: cp1.y,
+              cp2x: cp2.x,
+              cp2y: cp2.y,
+              x: end.x,
+              y: end.y,
+            });
 
-          // Bottom edge + bottom-left corner
-          cp1 = applyTransform(p6.x - ox, p6.y, nodeTransform);
-          cp2 = applyTransform(p7.x, p7.y + oy, nodeTransform);
-          end = applyTransform(p7.x, p7.y, nodeTransform);
-          commands.push({
-            type: "lineTo",
-            x: applyTransform(p6.x, p6.y, nodeTransform).x,
-            y: applyTransform(p6.x, p6.y, nodeTransform).y,
-          });
-          commands.push({
-            type: "bezierCurveTo",
-            cp1x: cp1.x,
-            cp1y: cp1.y,
-            cp2x: cp2.x,
-            cp2y: cp2.y,
-            x: end.x,
-            y: end.y,
-          });
+            // Bottom edge + bottom-left corner
+            cp1 = applyTransform(p6.x - ox, p6.y, nodeTransform);
+            cp2 = applyTransform(p7.x, p7.y + oy, nodeTransform);
+            end = applyTransform(p7.x, p7.y, nodeTransform);
+            commands.push({
+              type: "lineTo",
+              x: applyTransform(p6.x, p6.y, nodeTransform).x,
+              y: applyTransform(p6.x, p6.y, nodeTransform).y,
+            });
+            commands.push({
+              type: "bezierCurveTo",
+              cp1x: cp1.x,
+              cp1y: cp1.y,
+              cp2x: cp2.x,
+              cp2y: cp2.y,
+              x: end.x,
+              y: end.y,
+            });
 
-          // Left edge + top-left corner
-          cp1 = applyTransform(p8.x, p8.y - oy, nodeTransform);
-          cp2 = applyTransform(p1.x - ox, p1.y, nodeTransform);
-          end = applyTransform(p1.x, p1.y, nodeTransform);
-          commands.push({
-            type: "lineTo",
-            x: applyTransform(p8.x, p8.y, nodeTransform).x,
-            y: applyTransform(p8.x, p8.y, nodeTransform).y,
-          });
-          commands.push({
-            type: "bezierCurveTo",
-            cp1x: cp1.x,
-            cp1y: cp1.y,
-            cp2x: cp2.x,
-            cp2y: cp2.y,
-            x: end.x,
-            y: end.y,
-          });
+            // Left edge + top-left corner
+            cp1 = applyTransform(p8.x, p8.y - oy, nodeTransform);
+            cp2 = applyTransform(p1.x - ox, p1.y, nodeTransform);
+            end = applyTransform(p1.x, p1.y, nodeTransform);
+            commands.push({
+              type: "lineTo",
+              x: applyTransform(p8.x, p8.y, nodeTransform).x,
+              y: applyTransform(p8.x, p8.y, nodeTransform).y,
+            });
+            commands.push({
+              type: "bezierCurveTo",
+              cp1x: cp1.x,
+              cp1y: cp1.y,
+              cp2x: cp2.x,
+              cp2y: cp2.y,
+              x: end.x,
+              y: end.y,
+            });
 
-          commands.push({ type: "closePath" });
+            commands.push({ type: "closePath" });
+          }
         }
         break;
       }
@@ -365,69 +480,73 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
 
         if (r === 0) break;
 
-        const ox = r * circleBezierConstant; // control point offset
+        if (uniform) {
+          // FILL
+        } else {
+          const ox = r * circleBezierConstant; // control point offset
 
-        // Points around the circle
-        const pTop = applyTransform(cx, cy - r, nodeTransform);
-        const pRight = applyTransform(cx + r, cy, nodeTransform);
-        const pBottom = applyTransform(cx, cy + r, nodeTransform);
-        const pLeft = applyTransform(cx - r, cy, nodeTransform);
+          // Points around the circle
+          const pTop = applyTransform(cx, cy - r, nodeTransform);
+          const pRight = applyTransform(cx + r, cy, nodeTransform);
+          const pBottom = applyTransform(cx, cy + r, nodeTransform);
+          const pLeft = applyTransform(cx - r, cy, nodeTransform);
 
-        const cpTopRight = applyTransform(cx + ox, cy - r, nodeTransform);
-        const cpRightTop = applyTransform(cx + r, cy - ox, nodeTransform);
+          const cpTopRight = applyTransform(cx + ox, cy - r, nodeTransform);
+          const cpRightTop = applyTransform(cx + r, cy - ox, nodeTransform);
 
-        const cpRightBottom = applyTransform(cx + r, cy + ox, nodeTransform);
-        const cpBottomRight = applyTransform(cx + ox, cy + r, nodeTransform);
+          const cpRightBottom = applyTransform(cx + r, cy + ox, nodeTransform);
+          const cpBottomRight = applyTransform(cx + ox, cy + r, nodeTransform);
 
-        const cpBottomLeft = applyTransform(cx - ox, cy + r, nodeTransform);
-        const cpLeftBottom = applyTransform(cx - r, cy + ox, nodeTransform);
+          const cpBottomLeft = applyTransform(cx - ox, cy + r, nodeTransform);
+          const cpLeftBottom = applyTransform(cx - r, cy + ox, nodeTransform);
 
-        const cpLeftTop = applyTransform(cx - r, cy - ox, nodeTransform);
-        const cpTopLeft = applyTransform(cx - ox, cy - r, nodeTransform);
+          const cpLeftTop = applyTransform(cx - r, cy - ox, nodeTransform);
+          const cpTopLeft = applyTransform(cx - ox, cy - r, nodeTransform);
 
-        commands.push({ type: "moveTo", x: pTop.x, y: pTop.y });
+          commands.push({ type: "moveTo", x: pTop.x, y: pTop.y });
 
-        commands.push({
-          type: "bezierCurveTo",
-          cp1x: cpTopRight.x,
-          cp1y: cpTopRight.y,
-          cp2x: cpRightTop.x,
-          cp2y: cpRightTop.y,
-          x: pRight.x,
-          y: pRight.y,
-        });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cpTopRight.x,
+            cp1y: cpTopRight.y,
+            cp2x: cpRightTop.x,
+            cp2y: cpRightTop.y,
+            x: pRight.x,
+            y: pRight.y,
+          });
 
-        commands.push({
-          type: "bezierCurveTo",
-          cp1x: cpRightBottom.x,
-          cp1y: cpRightBottom.y,
-          cp2x: cpBottomRight.x,
-          cp2y: cpBottomRight.y,
-          x: pBottom.x,
-          y: pBottom.y,
-        });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cpRightBottom.x,
+            cp1y: cpRightBottom.y,
+            cp2x: cpBottomRight.x,
+            cp2y: cpBottomRight.y,
+            x: pBottom.x,
+            y: pBottom.y,
+          });
 
-        commands.push({
-          type: "bezierCurveTo",
-          cp1x: cpBottomLeft.x,
-          cp1y: cpBottomLeft.y,
-          cp2x: cpLeftBottom.x,
-          cp2y: cpLeftBottom.y,
-          x: pLeft.x,
-          y: pLeft.y,
-        });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cpBottomLeft.x,
+            cp1y: cpBottomLeft.y,
+            cp2x: cpLeftBottom.x,
+            cp2y: cpLeftBottom.y,
+            x: pLeft.x,
+            y: pLeft.y,
+          });
 
-        commands.push({
-          type: "bezierCurveTo",
-          cp1x: cpLeftTop.x,
-          cp1y: cpLeftTop.y,
-          cp2x: cpTopLeft.x,
-          cp2y: cpTopLeft.y,
-          x: pTop.x,
-          y: pTop.y,
-        });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cpLeftTop.x,
+            cp1y: cpLeftTop.y,
+            cp2x: cpTopLeft.x,
+            cp2y: cpTopLeft.y,
+            x: pTop.x,
+            y: pTop.y,
+          });
 
-        commands.push({ type: "closePath" });
+          commands.push({ type: "closePath" });
+        }
         break;
       }
 
@@ -439,72 +558,76 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
 
         if (rx === 0 || ry === 0) break;
 
-        const ox = rx * circleBezierConstant;
-        const oy = ry * circleBezierConstant;
+        if (uniform) {
+          // FILL
+        } else {
+          const ox = rx * circleBezierConstant;
+          const oy = ry * circleBezierConstant;
 
-        // Key points
-        const pTop = applyTransform(cx, cy - ry, nodeTransform);
-        const pRight = applyTransform(cx + rx, cy, nodeTransform);
-        const pBottom = applyTransform(cx, cy + ry, nodeTransform);
-        const pLeft = applyTransform(cx - rx, cy, nodeTransform);
+          // Key points
+          const pTop = applyTransform(cx, cy - ry, nodeTransform);
+          const pRight = applyTransform(cx + rx, cy, nodeTransform);
+          const pBottom = applyTransform(cx, cy + ry, nodeTransform);
+          const pLeft = applyTransform(cx - rx, cy, nodeTransform);
 
-        // Control points
-        const cpTopRight = applyTransform(cx + ox, cy - ry, nodeTransform);
-        const cpRightTop = applyTransform(cx + rx, cy - oy, nodeTransform);
+          // Control points
+          const cpTopRight = applyTransform(cx + ox, cy - ry, nodeTransform);
+          const cpRightTop = applyTransform(cx + rx, cy - oy, nodeTransform);
 
-        const cpRightBottom = applyTransform(cx + rx, cy + oy, nodeTransform);
-        const cpBottomRight = applyTransform(cx + ox, cy + ry, nodeTransform);
+          const cpRightBottom = applyTransform(cx + rx, cy + oy, nodeTransform);
+          const cpBottomRight = applyTransform(cx + ox, cy + ry, nodeTransform);
 
-        const cpBottomLeft = applyTransform(cx - ox, cy + ry, nodeTransform);
-        const cpLeftBottom = applyTransform(cx - rx, cy + oy, nodeTransform);
+          const cpBottomLeft = applyTransform(cx - ox, cy + ry, nodeTransform);
+          const cpLeftBottom = applyTransform(cx - rx, cy + oy, nodeTransform);
 
-        const cpLeftTop = applyTransform(cx - rx, cy - oy, nodeTransform);
-        const cpTopLeft = applyTransform(cx - ox, cy - ry, nodeTransform);
+          const cpLeftTop = applyTransform(cx - rx, cy - oy, nodeTransform);
+          const cpTopLeft = applyTransform(cx - ox, cy - ry, nodeTransform);
 
-        // Draw ellipse using cubic Beziers
-        commands.push({ type: "moveTo", x: pTop.x, y: pTop.y });
+          // Draw ellipse using cubic Beziers
+          commands.push({ type: "moveTo", x: pTop.x, y: pTop.y });
 
-        commands.push({
-          type: "bezierCurveTo",
-          cp1x: cpTopRight.x,
-          cp1y: cpTopRight.y,
-          cp2x: cpRightTop.x,
-          cp2y: cpRightTop.y,
-          x: pRight.x,
-          y: pRight.y,
-        });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cpTopRight.x,
+            cp1y: cpTopRight.y,
+            cp2x: cpRightTop.x,
+            cp2y: cpRightTop.y,
+            x: pRight.x,
+            y: pRight.y,
+          });
 
-        commands.push({
-          type: "bezierCurveTo",
-          cp1x: cpRightBottom.x,
-          cp1y: cpRightBottom.y,
-          cp2x: cpBottomRight.x,
-          cp2y: cpBottomRight.y,
-          x: pBottom.x,
-          y: pBottom.y,
-        });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cpRightBottom.x,
+            cp1y: cpRightBottom.y,
+            cp2x: cpBottomRight.x,
+            cp2y: cpBottomRight.y,
+            x: pBottom.x,
+            y: pBottom.y,
+          });
 
-        commands.push({
-          type: "bezierCurveTo",
-          cp1x: cpBottomLeft.x,
-          cp1y: cpBottomLeft.y,
-          cp2x: cpLeftBottom.x,
-          cp2y: cpLeftBottom.y,
-          x: pLeft.x,
-          y: pLeft.y,
-        });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cpBottomLeft.x,
+            cp1y: cpBottomLeft.y,
+            cp2x: cpLeftBottom.x,
+            cp2y: cpLeftBottom.y,
+            x: pLeft.x,
+            y: pLeft.y,
+          });
 
-        commands.push({
-          type: "bezierCurveTo",
-          cp1x: cpLeftTop.x,
-          cp1y: cpLeftTop.y,
-          cp2x: cpTopLeft.x,
-          cp2y: cpTopLeft.y,
-          x: pTop.x,
-          y: pTop.y,
-        });
+          commands.push({
+            type: "bezierCurveTo",
+            cp1x: cpLeftTop.x,
+            cp1y: cpLeftTop.y,
+            cp2x: cpTopLeft.x,
+            cp2y: cpTopLeft.y,
+            x: pTop.x,
+            y: pTop.y,
+          });
 
-        commands.push({ type: "closePath" });
+          commands.push({ type: "closePath" });
+        }
         break;
       }
 
@@ -552,6 +675,8 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
 
         break;
       }
+      case "svg":
+        break;
       default:
         _console.log("uncaught node", node);
         break;
@@ -965,10 +1090,10 @@ export function svgToDisplayContextCommands(
   let ignoreLine = true;
   let fillColorIndex = 1;
   let lineColorIndex = 1;
+  let isDrawingPath = false;
   const parsedPaths: { path: Vector2[]; isHole: boolean }[] = [];
 
-  const displayCommands: DisplayContextCommand[] = [];
-  // TODO - don't include if not needed
+  let displayCommands: DisplayContextCommand[] = [];
   displayCommands.push({ type: "setIgnoreLine", ignoreLine: true });
   displayCommands.push({ type: "setLineWidth", lineWidth });
   displayCommands.push({
@@ -1030,29 +1155,32 @@ export function svgToDisplayContextCommands(
         // Flatten all control points
         const controlPoints = curves.flatMap((c) => c.controlPoints);
 
-        const isHole = classifySubpath(controlPoints, parsedPaths, fillRule);
-        parsedPaths.push({ path: controlPoints, isHole });
+        if (isDrawingPath) {
+          const isHole = classifySubpath(controlPoints, parsedPaths, fillRule);
+          parsedPaths.push({ path: controlPoints, isHole });
 
-        _console.log({
-          pathIndex: parsedPaths.length - 1,
-          isHole,
-          fillStyle,
-          strokeStyle,
-          fillRule,
-          lineWidth,
-        });
+          // _console.log({
+          //   pathIndex: parsedPaths.length - 1,
+          //   isHole,
+          //   fillStyle,
+          //   strokeStyle,
+          //   fillRule,
+          //   lineWidth,
+          // });
 
-        if (isHole != wasHole) {
-          wasHole = isHole;
-          if (isHole) {
-            displayCommands.push({
-              type: "selectFillColor",
-              fillColorIndex: 0,
-            });
-          } else {
-            displayCommands.push({ type: "selectFillColor", fillColorIndex });
+          if (isHole != wasHole) {
+            wasHole = isHole;
+            if (isHole) {
+              displayCommands.push({
+                type: "selectFillColor",
+                fillColorIndex: 0,
+              });
+            } else {
+              displayCommands.push({ type: "selectFillColor", fillColorIndex });
+            }
           }
         }
+
         if (ignoreFill) {
           displayCommands.push({
             type: "setLineWidth",
@@ -1113,9 +1241,11 @@ export function svgToDisplayContextCommands(
           displayCommands.push({ type: "selectFillColor", fillColorIndex });
         }
         wasHole = false;
+        isDrawingPath = true;
         break;
 
       case "pathEnd":
+        isDrawingPath = false;
         break;
       case "line":
         if (strokeStyle != "none") {
@@ -1207,7 +1337,6 @@ export function svgToDisplayContextCommands(
       case "lineWidth":
         if (lineWidth != canvasCommand.lineWidth) {
           lineWidth = canvasCommand.lineWidth;
-          // TODO - don't include if not needed
           displayCommands.push({ type: "setLineWidth", lineWidth });
           segmentRadius = lineWidth / 2;
           displayCommands.push({
@@ -1221,6 +1350,8 @@ export function svgToDisplayContextCommands(
         break;
     }
   });
+
+  displayCommands = trimContextCommands(displayCommands);
 
   _console.log("displayCommands", displayCommands);
   _console.log("colors", colors);

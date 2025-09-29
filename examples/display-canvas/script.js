@@ -2312,28 +2312,26 @@ displayCanvasHelper.drawPolygon([
 displayCanvasHelper.show();
 
 // SVG
-displayCanvasHelper.setLineWidth(0, true);
-displayCanvasHelper.setSegmentRadius(1, true);
-fetch("./owl.svg").then(async (response) => {
-  const svgString = await response.text();
+// displayCanvasHelper.setLineWidth(0, true);
+// displayCanvasHelper.setSegmentRadius(1, true);
+// fetch("./owl.svg").then(async (response) => {
+//   const svgString = await response.text();
 
-  const { commands, colors } = BS.svgToDisplayContextCommands(
-    `<svg height="210" width="500" xmlns="http://www.w3.org/2000/svg">
-  <polygon points="100,10 40,198 190,78 10,78 160,198" style="fill:lime;stroke:purple;stroke-width:5;fill-rule:evenodd;"/>
-  
-  Sorry, your browser does not support inline SVG.
-</svg>`,
-    {
-      //fit: false,
-      //height: 200,
-      //aspectRatio: 0.6,
-      //width: 300,
-      //offsetX: 100,
-      // offsetY: 100,
-    }
-  );
-  //console.log("commands", commands);
-  //console.log("colors", colors);
-  displayCanvasHelper.previewSpriteCommands(commands);
-  displayCanvasHelper.show();
-});
+//   const { commands, colors } = BS.svgToDisplayContextCommands(
+//     `<svg xmlns="http://www.w3.org/2000/svg" width="800px" height="800px" viewBox="0 0 25 25" fill="none">
+// <circle cx="12.5" cy="12.5" r="8" stroke="#121923" stroke-width="1.2"/>
+// </svg>`,
+//     {
+//       //fit: false,
+//       height: 200,
+//       //aspectRatio: 0.6,
+//       //width: 300,
+//       //offsetX: 100,
+//       // offsetY: 100,
+//     }
+//   );
+//   //console.log("commands", commands);
+//   //console.log("colors", colors);
+//   displayCanvasHelper.previewSpriteCommands(commands);
+//   displayCanvasHelper.show();
+// });
