@@ -534,7 +534,7 @@ export async function canvasToSprite(
   if (spriteIndex == -1) {
     spriteSheet.sprites.push(sprite);
   } else {
-    _console.log(`overwriting spriteInde ${spriteIndex}`);
+    _console.log(`overwriting spriteIndex ${spriteIndex}`);
     spriteSheet.sprites[spriteIndex] = sprite;
   }
 

@@ -2311,27 +2311,24 @@ displayCanvasHelper.drawPolygon([
 // ]);
 displayCanvasHelper.show();
 
-// SVG
-// displayCanvasHelper.setLineWidth(0, true);
-// displayCanvasHelper.setSegmentRadius(1, true);
-// fetch("./owl.svg").then(async (response) => {
-//   const svgString = await response.text();
+// SVG test
+displayCanvasHelper.setLineWidth(0, true);
+displayCanvasHelper.setSegmentRadius(1, true);
+fetch("./owl.svg").then(async (response) => {
+  const svgString = await response.text();
 
-//   const { commands, colors } = BS.svgToDisplayContextCommands(
-//     `<svg xmlns="http://www.w3.org/2000/svg" width="800px" height="800px" viewBox="0 0 25 25" fill="none">
-// <circle cx="12.5" cy="12.5" r="8" stroke="#121923" stroke-width="1.2"/>
-// </svg>`,
-//     {
-//       //fit: false,
-//       height: 200,
-//       //aspectRatio: 0.6,
-//       //width: 300,
-//       //offsetX: 100,
-//       // offsetY: 100,
-//     }
-//   );
-//   //console.log("commands", commands);
-//   //console.log("colors", colors);
-//   displayCanvasHelper.previewSpriteCommands(commands);
-//   displayCanvasHelper.show();
-// });
+  const { commands, colors } = BS.svgToDisplayContextCommands(svgString, {
+    // height: 200,
+    // width: 300,
+    //numberOfColors: 2,
+    //fit: true,
+    //aspectRatio: 0.6,
+    //width: 300,
+    //offsetX: 100,
+    // offsetY: 100,
+  });
+  //console.log("commands", commands);
+  //console.log("colors", colors);
+  displayCanvasHelper.previewSpriteCommands(commands);
+  displayCanvasHelper.show();
+});

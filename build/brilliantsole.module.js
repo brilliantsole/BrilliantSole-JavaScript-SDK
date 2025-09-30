@@ -2,8 +2,9 @@
  * @copyright Zack Qattan 2024
  * @license MIT
  */
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -136,6 +137,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -16913,7 +16917,7 @@ async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, o
         spriteSheet.sprites.push(sprite);
     }
     else {
-        _console$m.log(`overwriting spriteInde ${spriteIndex}`);
+        _console$m.log(`overwriting spriteIndex ${spriteIndex}`);
         spriteSheet.sprites[spriteIndex] = sprite;
     }
     return { sprite, blob };
@@ -25220,13 +25224,13 @@ function decomposeTransform(t, tolerance = 1e-6) {
         skewX = Math.atan2(t.a * t.c + t.b * t.d, scaleX * scaleX);
         skewY = 0;
     }
-    const uniform = Math.abs(scaleX - scaleY) < tolerance;
+    const isScaleUniform = Math.abs(scaleX - scaleY) < tolerance;
     return {
         translation: { x: tx, y: ty },
         rotation,
         scale: { x: scaleX, y: scaleY },
         skew: { x: skewX, y: skewY },
-        uniform,
+        isScaleUniform,
     };
 }
 const identity = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
@@ -25253,18 +25257,15 @@ function parseTransform(transformStr) {
         let m = structuredClone(identity);
         switch (fn) {
             case "translate":
-                _console$7.log("translate", { x: args[0], y: args[1] });
                 m.e = args[0];
                 m.f = args[1] || 0;
                 break;
             case "scale":
-                _console$7.log("scale", { x: args[0], y: args[1] });
                 m.a = args[0];
                 m.d = args[1] !== undefined ? args[1] : args[0];
                 break;
             case "rotate":
                 const angle = (args[0] * Math.PI) / 180;
-                _console$7.log("rotate", { angle });
                 const cos = Math.cos(angle), sin = Math.sin(angle);
                 if (args[1] !== undefined && args[2] !== undefined) {
                     const [cx, cy] = [args[1], args[2]];
@@ -25285,7 +25286,6 @@ function parseTransform(transformStr) {
                 }
                 break;
             case "matrix":
-                _console$7.log("matrix", args);
                 [m.a, m.b, m.c, m.d, m.e, m.f] = args;
                 break;
         }
@@ -25315,11 +25315,10 @@ const circleBezierConstant = 0.5522847498307936;
 function svgJsonToCanvasCommands(svgJson) {
     const commands = [];
     function traverse(node, parentTransform) {
-        _console$7.log("traversing node", node, parentTransform);
         const transform = parseTransform(node.attributes.transform);
         const nodeTransform = multiply(parentTransform, transform);
-        const { scale, translation, rotation, uniform } = decomposeTransform(nodeTransform);
-        _console$7.log({ scale, translation, rotation, uniform });
+        const { scale, rotation, isScaleUniform } = decomposeTransform(nodeTransform);
+        const uniformScale = scale.x;
         const style = parseStyle(node.attributes.style);
         if (style.fill)
             commands.push({ type: "fillStyle", fillStyle: style.fill });
@@ -25421,14 +25420,14 @@ function svgJsonToCanvasCommands(svgJson) {
                 rx = Math.min(rx, width / 2);
                 ry = Math.min(ry, height / 2);
                 if (rx === 0 && ry === 0) {
-                    if (uniform) {
+                    if (isScaleUniform) {
                         const center = applyTransform(x + width / 2, y + height / 2, nodeTransform);
                         commands.push({
                             type: "rect",
                             x: center.x,
                             y: center.y,
-                            width,
-                            height,
+                            width: width * uniformScale,
+                            height: height * uniformScale,
                             rotation,
                         });
                     }
@@ -25445,7 +25444,18 @@ function svgJsonToCanvasCommands(svgJson) {
                     }
                 }
                 else {
-                    if (rx == ry) ;
+                    if (rx == ry && isScaleUniform) {
+                        const center = applyTransform(x + width / 2, y + height / 2, nodeTransform);
+                        commands.push({
+                            type: "roundRect",
+                            x: center.x,
+                            y: center.y,
+                            width: width * uniformScale,
+                            height: height * uniformScale,
+                            rotation,
+                            r: rx * uniformScale,
+                        });
+                    }
                     else {
                         const ox = rx * circleBezierConstant;
                         const oy = ry * circleBezierConstant;
@@ -25538,7 +25548,15 @@ function svgJsonToCanvasCommands(svgJson) {
                 const r = parseFloat(node.attributes.r || "0");
                 if (r === 0)
                     break;
-                if (uniform) ;
+                if (isScaleUniform) {
+                    const center = applyTransform(cx, cy, nodeTransform);
+                    commands.push({
+                        type: "circle",
+                        x: center.x,
+                        y: center.y,
+                        r: r * uniformScale,
+                    });
+                }
                 else {
                     const ox = r * circleBezierConstant;
                     const pTop = applyTransform(cx, cy - r, nodeTransform);
@@ -25601,7 +25619,27 @@ function svgJsonToCanvasCommands(svgJson) {
                 const ry = parseFloat(node.attributes.ry || "0");
                 if (rx === 0 || ry === 0)
                     break;
-                if (uniform) ;
+                if (isScaleUniform) {
+                    const center = applyTransform(cx, cy, nodeTransform);
+                    if (rx == ry) {
+                        commands.push({
+                            type: "circle",
+                            x: center.x,
+                            y: center.y,
+                            r: rx * uniformScale,
+                        });
+                    }
+                    else {
+                        commands.push({
+                            type: "ellipse",
+                            x: center.x,
+                            y: center.y,
+                            rx: rx * uniformScale,
+                            ry: ry * uniformScale,
+                            rotation,
+                        });
+                    }
+                }
                 else {
                     const ox = rx * circleBezierConstant;
                     const oy = ry * circleBezierConstant;
@@ -25769,7 +25807,6 @@ function getSvgJsonViewBox(svgJson) {
         width: width,
         height: height,
     };
-    _console$7.log("viewBox", viewBox);
     return viewBox;
 }
 function getSvgJsonBoundingBox(svgJson) {
@@ -25789,7 +25826,6 @@ function getSvgTransformToPixels(svgJson) {
     const attrs = svgJson.attributes || {};
     const { width, height } = getSvgJsonSize(svgJson);
     const viewBox = getSvgJsonViewBox(svgJson);
-    _console$7.log({ width, height, viewBox });
     let scaleX = width / viewBox.width;
     let scaleY = height / viewBox.height;
     let offsetX = 0;
@@ -25811,6 +25847,8 @@ function getSvgTransformToPixels(svgJson) {
 }
 const defaultParseSvgOptions = {
     fit: false,
+    paletteOffset: 0,
+    centered: true,
 };
 function transformCanvasCommands(canvasCommands, xCallback, yCallback, type) {
     return canvasCommands.map((command) => {
@@ -25846,10 +25884,51 @@ function transformCanvasCommands(canvasCommands, xCallback, yCallback, type) {
                     lineWidth = xCallback(lineWidth);
                     return { type: command.type, lineWidth };
                 }
+                break;
             }
+            case "rect":
+            case "roundRect": {
+                let { x, y, width, height, rotation } = command;
+                x = xCallback(x);
+                y = yCallback(y);
+                if (type == "scale") {
+                    width = xCallback(width);
+                    height = yCallback(height);
+                }
+                if (command.type == "roundRect") {
+                    let { r } = command;
+                    if (type == "scale") {
+                        r = xCallback(r);
+                    }
+                    return { type: command.type, x, y, width, height, rotation, r };
+                }
+                return { type: command.type, x, y, width, height, rotation };
+            }
+            case "circle":
+                {
+                    let { x, y, r } = command;
+                    x = xCallback(x);
+                    y = yCallback(y);
+                    if (type == "scale") {
+                        r = xCallback(r);
+                    }
+                    return { type: command.type, x, y, r };
+                }
+            case "ellipse":
+                {
+                    let { x, y, rx, ry, rotation } = command;
+                    x = xCallback(x);
+                    y = yCallback(y);
+                    if (type == "scale") {
+                        rx = xCallback(rx);
+                        ry = xCallback(ry);
+                    }
+                    return { type: command.type, x, y, rx, ry, rotation };
+                }
             default:
                 return command;
         }
+        return command;
     });
 }
 function forEachCanvasCommandVector2(canvasCommands, vectorCallback) {
@@ -25881,7 +25960,7 @@ function forEachCanvasCommandVector2(canvasCommands, vectorCallback) {
 function offsetCanvasCommands(canvasCommands, offsetX = 0, offsetY = 0) {
     return transformCanvasCommands(canvasCommands, (x) => x + offsetX, (y) => y + offsetY, "offset");
 }
-function scaleCanvasCommands(canvasCommands, scaleX = 1, scaleY = 1) {
+function scaleCanvasCommands(canvasCommands, scaleX, scaleY) {
     return transformCanvasCommands(canvasCommands, (x) => x * scaleX, (y) => y * scaleY, "scale");
 }
 function classifySubpath(subpath, previous, fillRule) {
@@ -25914,12 +25993,37 @@ function svgToDisplayContextCommands(svgString, options) {
         options.numberOfColors = options.colors?.length ?? 1;
     }
     _console$7.assertWithError(options.numberOfColors > 0, `invalid numberOfColors ${options.numberOfColors}`);
+    const paletteOffset = options.paletteOffset;
+    options.centered;
     const svgJson = svgson_umdExports.parseSync(svgString);
     let canvasCommands = svgJsonToCanvasCommands(svgJson);
     _console$7.log("canvasCommands", canvasCommands);
     const boundingBox = getSvgJsonBoundingBox(svgJson);
-    let width = boundingBox.width;
-    let height = boundingBox.height;
+    let intrinsicWidth = boundingBox.width;
+    let intrinsicHeight = boundingBox.height;
+    _console$7.log({ intrinsicWidth, intrinsicHeight });
+    let scaleX = 1, scaleY = 1;
+    if (options.width && options.height) {
+        scaleX = options.width / intrinsicWidth;
+        scaleY = options.height / intrinsicHeight;
+    }
+    else if (options.width) {
+        scaleX = scaleY = options.width / intrinsicWidth;
+        if (options.aspectRatio)
+            scaleY = scaleX / options.aspectRatio;
+    }
+    else if (options.height) {
+        scaleX = scaleY = options.height / intrinsicHeight;
+        if (options.aspectRatio)
+            scaleX = scaleY * options.aspectRatio;
+    }
+    _console$7.log({ scaleX, scaleY });
+    let width = intrinsicWidth * scaleX;
+    let height = intrinsicWidth * scaleX;
+    _console$7.log({ width, height });
+    if (scaleX !== 1 || scaleY !== 1) {
+        canvasCommands = scaleCanvasCommands(canvasCommands, scaleX, scaleY);
+    }
     if (options.fit) {
         const rangeHelper = {
             x: new RangeHelper(),
@@ -25935,27 +26039,14 @@ function svgToDisplayContextCommands(svgString, options) {
         const offsetY = -rangeHelper.y.min;
         canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
     }
-    let scaleX = 1, scaleY = 1;
-    if (options.width && options.height) {
-        scaleX = options.width / width;
-        scaleY = options.height / height;
-    }
-    else if (options.width) {
-        scaleX = scaleY = options.width / width;
-        if (options.aspectRatio)
-            scaleY = scaleX / options.aspectRatio;
-    }
-    else if (options.height) {
-        scaleX = scaleY = options.height / height;
-        if (options.aspectRatio)
-            scaleX = scaleY * options.aspectRatio;
-    }
-    if (scaleX !== 1 || scaleY !== 1) {
-        canvasCommands = scaleCanvasCommands(canvasCommands, scaleX, scaleY);
-    }
     if (options.offsetX || options.offsetY) {
         const offsetX = options.offsetX || 0;
         const offsetY = options.offsetY || 0;
+        canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
+    }
+    if (options.centered) {
+        const offsetX = -width / 2;
+        const offsetY = -height / 2;
         canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
     }
     let colors = [];
@@ -25992,6 +26083,7 @@ function svgToDisplayContextCommands(svgString, options) {
         colors = palette;
     }
     _console$7.log("colorToIndex", colorToIndex);
+    _console$7.log("transformed canvasCommands", canvasCommands);
     let curves = [];
     let startPoint = { x: 0, y: 0 };
     let fillRule = "nonzero";
@@ -26004,9 +26096,19 @@ function svgToDisplayContextCommands(svgString, options) {
     let ignoreLine = true;
     let fillColorIndex = 1;
     let lineColorIndex = 1;
+    const getFillColorIndex = () => fillColorIndex + paletteOffset;
+    const getLineColorIndex = () => lineColorIndex + paletteOffset;
     let isDrawingPath = false;
     const parsedPaths = [];
     let displayCommands = [];
+    displayCommands.push({
+        type: "selectFillColor",
+        fillColorIndex: getFillColorIndex(),
+    });
+    displayCommands.push({
+        type: "selectLineColor",
+        lineColorIndex: getLineColorIndex(),
+    });
     displayCommands.push({ type: "setIgnoreLine", ignoreLine: true });
     displayCommands.push({ type: "setLineWidth", lineWidth });
     displayCommands.push({
@@ -26087,7 +26189,7 @@ function svgToDisplayContextCommands(svgString, options) {
                     });
                     displayCommands.push({
                         type: "selectFillColor",
-                        fillColorIndex: lineColorIndex,
+                        fillColorIndex: getLineColorIndex(),
                     });
                     displayCommands.push({
                         type: "setIgnoreFill",
@@ -26124,7 +26226,7 @@ function svgToDisplayContextCommands(svgString, options) {
                     });
                     displayCommands.push({
                         type: "selectFillColor",
-                        fillColorIndex,
+                        fillColorIndex: getFillColorIndex(),
                     });
                     displayCommands.push({
                         type: "setIgnoreFill",
@@ -26152,7 +26254,7 @@ function svgToDisplayContextCommands(svgString, options) {
                     });
                     displayCommands.push({
                         type: "selectFillColor",
-                        fillColorIndex: lineColorIndex,
+                        fillColorIndex: getLineColorIndex(),
                     });
                     displayCommands.push({
                         type: "setIgnoreFill",
@@ -26172,7 +26274,7 @@ function svgToDisplayContextCommands(svgString, options) {
                     });
                     displayCommands.push({
                         type: "selectFillColor",
-                        fillColorIndex,
+                        fillColorIndex: getFillColorIndex(),
                     });
                     displayCommands.push({
                         type: "setIgnoreFill",
@@ -26197,7 +26299,7 @@ function svgToDisplayContextCommands(svgString, options) {
                                 fillColorIndex = colorToIndex[fillStyle];
                                 displayCommands.push({
                                     type: "selectFillColor",
-                                    fillColorIndex,
+                                    fillColorIndex: getFillColorIndex(),
                                 });
                             }
                         }
@@ -26221,7 +26323,7 @@ function svgToDisplayContextCommands(svgString, options) {
                                 lineColorIndex = colorToIndex[strokeStyle];
                                 displayCommands.push({
                                     type: "selectLineColor",
-                                    lineColorIndex,
+                                    lineColorIndex: getLineColorIndex(),
                                 });
                             }
                         }
@@ -26242,12 +26344,129 @@ function svgToDisplayContextCommands(svgString, options) {
             case "fillRule":
                 fillRule = canvasCommand.fillRule;
                 break;
+            case "rect":
+                {
+                    const { x, y, width, height, rotation } = canvasCommand;
+                    displayCommands.push({
+                        type: "setRotation",
+                        rotation,
+                        isRadians: true,
+                    });
+                    displayCommands.push({
+                        type: "drawRect",
+                        offsetX: x,
+                        offsetY: y,
+                        width: width,
+                        height: height,
+                    });
+                }
+                break;
+            case "roundRect":
+                {
+                    const { x, y, width, height, rotation, r } = canvasCommand;
+                    displayCommands.push({
+                        type: "setRotation",
+                        rotation,
+                        isRadians: true,
+                    });
+                    displayCommands.push({
+                        type: "drawRoundRect",
+                        offsetX: x,
+                        offsetY: y,
+                        width: width,
+                        height: height,
+                        borderRadius: r,
+                    });
+                }
+                break;
+            case "circle":
+                {
+                    const { x, y, r } = canvasCommand;
+                    displayCommands.push({
+                        type: "drawCircle",
+                        offsetX: x,
+                        offsetY: y,
+                        radius: r,
+                    });
+                }
+                break;
+            case "ellipse":
+                {
+                    const { x, y, rx, ry, rotation } = canvasCommand;
+                    displayCommands.push({
+                        type: "setRotation",
+                        rotation,
+                        isRadians: true,
+                    });
+                    displayCommands.push({
+                        type: "drawEllipse",
+                        offsetX: x,
+                        offsetY: y,
+                        radiusX: rx,
+                        radiusY: ry,
+                    });
+                }
+                break;
+            default:
+                _console$7.warn("uncaught canvasCommand", canvasCommand);
+                break;
         }
     });
     displayCommands = trimContextCommands(displayCommands);
     _console$7.log("displayCommands", displayCommands);
     _console$7.log("colors", colors);
-    return { commands: displayCommands, colors };
+    return { commands: displayCommands, colors, width, height };
+}
+function svgToSprite(svgString, spriteName, paletteName, overridePalette, spriteSheet, options) {
+    options = { ...defaultParseSvgOptions, ...options };
+    if (options.numberOfColors == undefined) {
+        options.numberOfColors = options.colors?.length ?? 1;
+    }
+    const numberOfColors = options.numberOfColors;
+    const paletteOffset = options.paletteOffset;
+    const { commands, colors, width, height } = svgToDisplayContextCommands(svgString, options);
+    let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
+    if (!palette) {
+        palette = {
+            name: paletteName,
+            numberOfColors,
+            colors: new Array(numberOfColors).fill("#000000"),
+        };
+        spriteSheet.palettes = spriteSheet.palettes || [];
+        spriteSheet.palettes?.push(palette);
+    }
+    _console$7.log("pallete", palette);
+    const sprite = {
+        name: spriteName,
+        width,
+        height,
+        paletteSwaps: [],
+        commands,
+    };
+    if (overridePalette) {
+        colors.forEach((color, index) => {
+            palette.colors[index + paletteOffset] = color;
+        });
+    }
+    const spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
+    if (spriteIndex == -1) {
+        spriteSheet.sprites.push(sprite);
+    }
+    else {
+        _console$7.log(`overwriting spriteInde ${spriteIndex}`);
+        spriteSheet.sprites[spriteIndex] = sprite;
+    }
+    return sprite;
+}
+function svgToSpriteSheet(svgString, spriteSheetName, paletteName, overridePalette, options) {
+    const spriteSheet = {
+        name: spriteSheetName,
+        palettes: [],
+        paletteSwaps: [],
+        sprites: [],
+    };
+    svgToSprite(svgString, "svg", paletteName, overridePalette, spriteSheet, options);
+    return spriteSheet;
 }
 
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
@@ -29687,5 +29906,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, svgToDisplayContextCommands, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

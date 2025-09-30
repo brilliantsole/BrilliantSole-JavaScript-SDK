@@ -1754,7 +1754,7 @@ appendContextCommandDependencyPair(
   ["drawBitmap"]
 );
 
-// TODO - can refine more (e.g. if ignoreLine, then skip setLineWidth, etc)
+// TODO - can refine more (e.g. if ignoreLine, then skip setLineWidth, or skip if a set value is already default, etc)
 
 export function trimContextCommands(commands: DisplayContextCommand[]) {
   _console.log("trimming commands", commands);
