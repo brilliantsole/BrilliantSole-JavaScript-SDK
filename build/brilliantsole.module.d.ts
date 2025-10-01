@@ -2012,7 +2012,6 @@ type ParseSvgOptions = {
     offsetX?: number;
     offsetY?: number;
     centered?: boolean;
-    ignoreBlack?: boolean;
 };
 declare function svgToDisplayContextCommands(svgString: string, numberOfColors: number, paletteOffset: number, colors?: string[], options?: ParseSvgOptions): {
     commands: DisplayContextCommand[];
