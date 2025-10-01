@@ -170,31 +170,11 @@ function isValidUrl(string) {
     return false;
   }
 }
-function isValidSVG(svgString) {
-  if (typeof svgString !== "string") return false;
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, "image/svg+xml");
-
-  // Different browsers may put parser errors in different places; check several ways:
-  if (
-    doc.querySelector("parsererror") ||
-    doc.getElementsByTagName("parsererror").length > 0
-  ) {
-    return false;
-  }
-
-  const root = doc.documentElement;
-  return (
-    !!root &&
-    root.nodeName.toLowerCase() === "svg" &&
-    root.namespaceURI === "http://www.w3.org/2000/svg"
-  );
-}
 window.addEventListener("paste", (event) => {
   const string = event.clipboardData.getData("text");
   if (isValidUrl(string)) {
     image.src = string;
-  } else if (isValidSVG(string)) {
+  } else if (BS.isValidSVG(string)) {
     image.src = "data:image/svg+xml;utf8," + encodeURIComponent(string);
   }
 });
@@ -334,31 +314,26 @@ numberOfColorsSelect.value = numberOfColors;
 
 // SVG
 
-function getSvgStringFromDataUrl(img) {
-  if (!img.src.startsWith("data:image/svg+xml"))
-    throw new Error("Not a data URL");
-
-  // Data URL might be base64 or URI encoded
-  const data = img.src.split(",")[1];
-  if (img.src.includes("base64")) {
-    return atob(data);
-  } else {
-    return decodeURIComponent(data);
-  }
-}
-
 const createSvgSpriteSheet = async () => {
   if (!image.src) {
     return;
   }
   console.log("createSvgSpriteSheet", image.src);
-  const svgString = getSvgStringFromDataUrl(image);
-  console.log({ svgString });
-  const sprite = BS.svgToSprite(svgString, "svg", "svg", true, spriteSheet, {
-    height: inputHeight,
+  const svgString = BS.getSvgStringFromDataUrl(image.src);
+  console.log({ svgString, overrideColors });
+  const sprite = BS.svgToSprite(
+    svgString,
+    "svg",
     numberOfColors,
-    colors: overrideColors ? undefined : displayCanvasHelper.colors,
-  });
+    "svg",
+    overrideColors,
+    spriteSheet,
+    0,
+    {
+      height: inputHeight,
+      //colors: overrideColors ? undefined : displayCanvasHelper.colors,
+    }
+  );
   checkSpriteSheetSize();
   console.log("sprite", sprite);
   await displayCanvasHelper.resetSpriteColors();
@@ -388,8 +363,18 @@ let isDrawing = false;
 const spriteSheet = {
   name: "mySpriteSheet",
   sprites: [],
-  palettes: [],
+  palettes: [
+    {
+      name: "svg",
+      numberOfColors,
+      colors: displayCanvasHelper.colors.slice(),
+    },
+  ],
 };
+displayCanvasHelper.addEventListener("color", (event) => {
+  const { colorIndex, colorHex } = event.message;
+  spriteSheet.palettes[0].colors[colorIndex] = colorHex;
+});
 window.spriteSheet = spriteSheet;
 let drawWhenReady = false;
 

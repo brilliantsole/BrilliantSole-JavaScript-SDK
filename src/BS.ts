@@ -138,11 +138,15 @@ export {
   intersectWireframes,
 } from "./utils/DisplayUtils.ts";
 
+/** BROWSER_START */
 export {
   svgToDisplayContextCommands,
   svgToSprite,
   svgToSpriteSheet,
+  isValidSVG,
+  getSvgStringFromDataUrl,
 } from "./utils/SvgUtils.ts";
+/** BROWSER_END */
 
 export {
   DisplayContextCommand,

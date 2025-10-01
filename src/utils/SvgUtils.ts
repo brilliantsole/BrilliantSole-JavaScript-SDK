@@ -866,14 +866,10 @@ export type ParseSvgOptions = {
   aspectRatio?: number; // width / height, used if only one of width/height is provided
   offsetX?: number;
   offsetY?: number;
-  numberOfColors?: number;
-  colors?: string[];
-  paletteOffset?: number;
   centered?: boolean;
 };
 const defaultParseSvgOptions: ParseSvgOptions = {
   fit: false,
-  paletteOffset: 0,
   centered: true,
 };
 
@@ -1060,18 +1056,17 @@ function classifySubpath(
 
 export function svgToDisplayContextCommands(
   svgString: string,
+  numberOfColors: number,
+  paletteOffset: number,
+  colors?: string[],
   options?: ParseSvgOptions
 ) {
-  options = { ...defaultParseSvgOptions, ...options };
-  if (options.numberOfColors == undefined) {
-    options.numberOfColors = options.colors?.length ?? 1;
-  }
   _console.assertWithError(
-    options.numberOfColors > 0,
-    `invalid numberOfColors ${options.numberOfColors}`
+    numberOfColors > 1,
+    "numberOfColors must be greater than 1"
   );
+  options = { ...defaultParseSvgOptions, ...options };
   _console.log("options", options);
-  const paletteOffset = options.paletteOffset!;
 
   const svgJson = parseSync(svgString);
 
@@ -1144,7 +1139,7 @@ export function svgToDisplayContextCommands(
     canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
   }
 
-  let colors: string[] = ["black"];
+  let svgColors: string[] = [];
   canvasCommands.forEach((canvasCommand) => {
     let color: string | undefined;
     switch (canvasCommand.type) {
@@ -1157,30 +1152,32 @@ export function svgToDisplayContextCommands(
       default:
         return;
     }
-    if (color && color != "none" && !colors.includes(color)) {
-      colors.push(color);
+    if (color && color != "none" && !svgColors.includes(color)) {
+      svgColors.push(color);
     }
   });
-  if (colors.length == 1) {
-    colors.push("white");
+  if (svgColors.length == 0) {
+    svgColors.push("black");
   }
-  _console.log("colors", colors);
+  if (svgColors.length == 1) {
+    svgColors.push("white");
+  }
+  _console.log("colors", svgColors);
 
   const colorToIndex: Record<string, number> = {};
-  if (options.colors) {
-    const _colors = options.colors.slice(0, options.numberOfColors);
-    const mapping = mapToClosestPaletteIndex(colors, _colors);
-    _console.log("mapping", mapping, _colors);
-    colors.forEach((color) => {
-      colorToIndex[color] = mapping[color];
+  if (colors) {
+    colors = colors.slice(0, numberOfColors);
+    const mapping = mapToClosestPaletteIndex(svgColors, colors.slice(1));
+    _console.log("mapping", mapping, colors);
+    svgColors.forEach((color) => {
+      colorToIndex[color] = mapping[color] + 1;
     });
-    colors = _colors;
   } else {
-    const { palette, mapping } = kMeansColors(colors, options.numberOfColors);
+    const { palette, mapping } = kMeansColors(svgColors, numberOfColors);
     _console.log("mapping", mapping);
     _console.log("palette", palette);
 
-    colors.forEach((color) => {
+    svgColors.forEach((color) => {
       colorToIndex[color] = mapping[color];
     });
     colors = palette;
@@ -1550,23 +1547,15 @@ export function svgToDisplayContextCommands(
 export function svgToSprite(
   svgString: string,
   spriteName: string,
+  numberOfColors: number,
   paletteName: string,
   overridePalette: boolean,
   spriteSheet: DisplaySpriteSheet,
+  paletteOffset = 0,
   options?: ParseSvgOptions
 ) {
   options = { ...defaultParseSvgOptions, ...options };
-  if (options.numberOfColors == undefined) {
-    options.numberOfColors = options.colors?.length ?? 1;
-  }
   _console.log("options", options, { overridePalette });
-  const numberOfColors = options.numberOfColors!;
-  const paletteOffset = options.paletteOffset!;
-
-  const { commands, colors, width, height } = svgToDisplayContextCommands(
-    svgString,
-    options
-  );
 
   let palette = spriteSheet.palettes?.find(
     (palette) => palette.name == paletteName
@@ -1581,6 +1570,14 @@ export function svgToSprite(
     spriteSheet.palettes?.push(palette);
   }
   _console.log("pallete", palette);
+
+  const { commands, colors, width, height } = svgToDisplayContextCommands(
+    svgString,
+    numberOfColors,
+    paletteOffset,
+    !overridePalette ? palette.colors : undefined,
+    options
+  );
 
   const sprite: DisplaySprite = {
     name: spriteName,
@@ -1612,8 +1609,8 @@ export function svgToSprite(
 export function svgToSpriteSheet(
   svgString: string,
   spriteSheetName: string,
+  numberOfColors: number,
   paletteName: string,
-  overridePalette: boolean,
   options?: ParseSvgOptions
 ) {
   const spriteSheet: DisplaySpriteSheet = {
@@ -1626,11 +1623,47 @@ export function svgToSpriteSheet(
   svgToSprite(
     svgString,
     "svg",
+    numberOfColors,
     paletteName,
-    overridePalette,
+    true,
     spriteSheet,
+    0,
     options
   );
 
   return spriteSheet;
+}
+
+export function getSvgStringFromDataUrl(string: string) {
+  if (!string.startsWith("data:image/svg+xml"))
+    throw new Error("Not a data URL");
+
+  // Data URL might be base64 or URI encoded
+  const data = string.split(",")[1];
+  if (string.includes("base64")) {
+    return atob(data);
+  } else {
+    return decodeURIComponent(data);
+  }
+}
+
+export function isValidSVG(svgString: string) {
+  if (typeof svgString !== "string") return false;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, "image/svg+xml");
+
+  // Different browsers may put parser errors in different places; check several ways:
+  if (
+    doc.querySelector("parsererror") ||
+    doc.getElementsByTagName("parsererror").length > 0
+  ) {
+    return false;
+  }
+
+  const root = doc.documentElement;
+  return (
+    !!root &&
+    root.nodeName.toLowerCase() === "svg" &&
+    root.namespaceURI === "http://www.w3.org/2000/svg"
+  );
 }

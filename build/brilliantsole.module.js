@@ -4113,7 +4113,7 @@ class DisplayContextStateHelper {
     }
 }
 
-const _console$p = createConsole("DisplayUtils", { log: true });
+const _console$p = createConsole("DisplayUtils", { log: false });
 function formatRotation(rotation, isRadians, isSigned) {
     if (isRadians) {
         const rotationRad = rotation;
@@ -5113,7 +5113,7 @@ var rgbquant = {exports: {}};
 var rgbquantExports = rgbquant.exports;
 var RGBQuant = getDefaultExportFromCjs(rgbquantExports);
 
-const _console$o = createConsole("DisplayContextCommand", { log: true });
+const _console$o = createConsole("DisplayContextCommand", { log: false });
 const DisplayContextCommandTypes = [
     "show",
     "clear",
@@ -17506,7 +17506,7 @@ async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offse
     }
 }
 
-const _console$k = createConsole("DisplayManager", { log: true });
+const _console$k = createConsole("DisplayManager", { log: false });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -25847,8 +25847,8 @@ function getSvgTransformToPixels(svgJson) {
 }
 const defaultParseSvgOptions = {
     fit: false,
-    paletteOffset: 0,
     centered: true,
+    ignoreBlack: true,
 };
 function transformCanvasCommands(canvasCommands, xCallback, yCallback, type) {
     return canvasCommands.map((command) => {
@@ -25987,14 +25987,10 @@ function classifySubpath(subpath, previous, fillRule) {
         return !filled;
     }
 }
-function svgToDisplayContextCommands(svgString, options) {
+function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, colors, options) {
+    _console$7.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
     options = { ...defaultParseSvgOptions, ...options };
-    if (options.numberOfColors == undefined) {
-        options.numberOfColors = options.colors?.length ?? 1;
-    }
-    _console$7.assertWithError(options.numberOfColors > 0, `invalid numberOfColors ${options.numberOfColors}`);
     _console$7.log("options", options);
-    const paletteOffset = options.paletteOffset;
     const svgJson = svgson_umdExports.parseSync(svgString);
     let canvasCommands = svgJsonToCanvasCommands(svgJson);
     _console$7.log("canvasCommands", canvasCommands);
@@ -26049,7 +26045,7 @@ function svgToDisplayContextCommands(svgString, options) {
         const offsetY = -height / 2;
         canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
     }
-    let colors = ["black"];
+    let svgColors = [];
     canvasCommands.forEach((canvasCommand) => {
         let color;
         switch (canvasCommand.type) {
@@ -26062,29 +26058,31 @@ function svgToDisplayContextCommands(svgString, options) {
             default:
                 return;
         }
-        if (color && color != "none" && !colors.includes(color)) {
-            colors.push(color);
+        if (color && color != "none" && !svgColors.includes(color)) {
+            svgColors.push(color);
         }
     });
-    if (colors.length == 1) {
-        colors.push("white");
+    if (svgColors.length == 0) {
+        svgColors.push("black");
     }
-    _console$7.log("colors", colors);
+    if (svgColors.length == 1) {
+        svgColors.push("white");
+    }
+    _console$7.log("colors", svgColors);
     const colorToIndex = {};
-    if (options.colors) {
-        const _colors = options.colors.slice(0, options.numberOfColors);
-        const mapping = mapToClosestPaletteIndex(colors, _colors);
-        _console$7.log("mapping", mapping, _colors);
-        colors.forEach((color) => {
-            colorToIndex[color] = mapping[color];
+    if (colors) {
+        colors = colors.slice(0, numberOfColors);
+        const mapping = mapToClosestPaletteIndex(svgColors, colors.slice(1));
+        _console$7.log("mapping", mapping, colors);
+        svgColors.forEach((color) => {
+            colorToIndex[color] = mapping[color] + 1;
         });
-        colors = _colors;
     }
     else {
-        const { palette, mapping } = kMeansColors(colors, options.numberOfColors);
+        const { palette, mapping } = kMeansColors(svgColors, numberOfColors);
         _console$7.log("mapping", mapping);
         _console$7.log("palette", palette);
-        colors.forEach((color) => {
+        svgColors.forEach((color) => {
             colorToIndex[color] = mapping[color];
         });
         colors = palette;
@@ -26427,15 +26425,9 @@ function svgToDisplayContextCommands(svgString, options) {
     _console$7.log("colors", colors);
     return { commands: displayCommands, colors, width, height };
 }
-function svgToSprite(svgString, spriteName, paletteName, overridePalette, spriteSheet, options) {
+function svgToSprite(svgString, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0, options) {
     options = { ...defaultParseSvgOptions, ...options };
-    if (options.numberOfColors == undefined) {
-        options.numberOfColors = options.colors?.length ?? 1;
-    }
     _console$7.log("options", options, { overridePalette });
-    const numberOfColors = options.numberOfColors;
-    const paletteOffset = options.paletteOffset;
-    const { commands, colors, width, height } = svgToDisplayContextCommands(svgString, options);
     let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
     if (!palette) {
         palette = {
@@ -26447,6 +26439,7 @@ function svgToSprite(svgString, spriteName, paletteName, overridePalette, sprite
         spriteSheet.palettes?.push(palette);
     }
     _console$7.log("pallete", palette);
+    const { commands, colors, width, height } = svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, !overridePalette ? palette.colors : undefined, options);
     const sprite = {
         name: spriteName,
         width,
@@ -26470,15 +26463,40 @@ function svgToSprite(svgString, spriteName, paletteName, overridePalette, sprite
     }
     return sprite;
 }
-function svgToSpriteSheet(svgString, spriteSheetName, paletteName, overridePalette, options) {
+function svgToSpriteSheet(svgString, spriteSheetName, numberOfColors, paletteName, options) {
     const spriteSheet = {
         name: spriteSheetName,
         palettes: [],
         paletteSwaps: [],
         sprites: [],
     };
-    svgToSprite(svgString, "svg", paletteName, overridePalette, spriteSheet, options);
+    svgToSprite(svgString, "svg", numberOfColors, paletteName, true, spriteSheet, 0, options);
     return spriteSheet;
+}
+function getSvgStringFromDataUrl(string) {
+    if (!string.startsWith("data:image/svg+xml"))
+        throw new Error("Not a data URL");
+    const data = string.split(",")[1];
+    if (string.includes("base64")) {
+        return atob(data);
+    }
+    else {
+        return decodeURIComponent(data);
+    }
+}
+function isValidSVG(svgString) {
+    if (typeof svgString !== "string")
+        return false;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgString, "image/svg+xml");
+    if (doc.querySelector("parsererror") ||
+        doc.getElementsByTagName("parsererror").length > 0) {
+        return false;
+    }
+    const root = doc.documentElement;
+    return (!!root &&
+        root.nodeName.toLowerCase() === "svg" &&
+        root.namespaceURI === "http://www.w3.org/2000/svg");
 }
 
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
@@ -29918,5 +29936,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, getSvgStringFromDataUrl, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isValidSVG, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
 //# sourceMappingURL=brilliantsole.module.js.map
