@@ -1,4 +1,5 @@
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+import { DisplaySprite, DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
 export type ParseSvgOptions = {
     fit?: boolean;
     width?: number;
@@ -6,10 +7,15 @@ export type ParseSvgOptions = {
     aspectRatio?: number;
     offsetX?: number;
     offsetY?: number;
-    numberOfColors?: number;
-    colors?: string[];
+    centered?: boolean;
 };
-export declare function svgToDisplayContextCommands(svgString: string, options?: ParseSvgOptions): {
+export declare function svgToDisplayContextCommands(svgString: string, numberOfColors: number, paletteOffset: number, colors?: string[], options?: ParseSvgOptions): {
     commands: DisplayContextCommand[];
     colors: string[];
+    width: number;
+    height: number;
 };
+export declare function svgToSprite(svgString: string, spriteName: string, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset?: number, options?: ParseSvgOptions): DisplaySprite;
+export declare function svgToSpriteSheet(svgString: string, spriteSheetName: string, numberOfColors: number, paletteName: string, options?: ParseSvgOptions): DisplaySpriteSheet;
+export declare function getSvgStringFromDataUrl(string: string): string;
+export declare function isValidSVG(svgString: string): boolean;

@@ -33,7 +33,7 @@ import {
 } from "./MathUtils.ts";
 import RangeHelper from "./RangeHelper.ts";
 
-const _console = createConsole("DisplayUtils", { log: true });
+const _console = createConsole("DisplayUtils", { log: false });
 
 export function formatRotation(
   rotation: number,

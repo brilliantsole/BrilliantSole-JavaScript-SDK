@@ -33,7 +33,7 @@
   function _classPrivateSetter(s, r, a, t) {
     return r(_assertClassBrand(s, a), t), t;
   }
-  function _defineProperty$1(e, r, t) {
+  function _defineProperty(e, r, t) {
     return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
       value: t,
       enumerable: true,
@@ -55,7 +55,7 @@
     for (var r = 1; r < arguments.length; r++) {
       var t = null != arguments[r] ? arguments[r] : {};
       r % 2 ? ownKeys(Object(t), true).forEach(function (r) {
-        _defineProperty$1(e, r, t[r]);
+        _defineProperty(e, r, t[r]);
       }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) {
         Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r));
       });
@@ -250,14 +250,14 @@
     Console.setAllLevelFlags(levelFlags);
   }
 
-  const _console$I = createConsole("EventDispatcher", {
+  const _console$H = createConsole("EventDispatcher", {
     log: false
   });
   class EventDispatcher {
     constructor(target, validEventTypes) {
-      _defineProperty$1(this, "target", void 0);
-      _defineProperty$1(this, "validEventTypes", void 0);
-      _defineProperty$1(this, "listeners", {});
+      _defineProperty(this, "target", void 0);
+      _defineProperty(this, "validEventTypes", void 0);
+      _defineProperty(this, "listeners", {});
       this.target = target;
       this.validEventTypes = validEventTypes;
       this.addEventListener = this.addEventListener.bind(this);
@@ -274,7 +274,7 @@
       if (!this.listeners[type]) return;
       this.listeners[type] = this.listeners[type].filter(listenerObj => {
         if (listenerObj.shouldRemove) {
-          _console$I.log("removing \"".concat(type, "\" eventListener"), listenerObj);
+          _console$H.log("removing \"".concat(type, "\" eventListener"), listenerObj);
         }
         return !listenerObj.shouldRemove;
       });
@@ -288,32 +288,32 @@
       }
       if (!this.listeners[type]) {
         this.listeners[type] = [];
-        _console$I.log("creating \"".concat(type, "\" listeners array"), this.listeners[type]);
+        _console$H.log("creating \"".concat(type, "\" listeners array"), this.listeners[type]);
       }
       const alreadyAdded = this.listeners[type].find(listenerObject => {
         return listenerObject.listener == listener && listenerObject.once == options.once;
       });
       if (alreadyAdded) {
-        _console$I.log("already added listener");
+        _console$H.log("already added listener");
         return;
       }
-      _console$I.log("adding \"".concat(type, "\" listener"), listener, options);
+      _console$H.log("adding \"".concat(type, "\" listener"), listener, options);
       this.listeners[type].push({
         listener,
         once: options.once
       });
-      _console$I.log("currently have ".concat(this.listeners[type].length, " \"").concat(type, "\" listeners"));
+      _console$H.log("currently have ".concat(this.listeners[type].length, " \"").concat(type, "\" listeners"));
     }
     removeEventListener(type, listener) {
       if (!this.isValidEventType(type)) {
         throw new Error("Invalid event type: ".concat(type));
       }
       if (!this.listeners[type]) return;
-      _console$I.log("removing \"".concat(type, "\" listener..."), listener);
+      _console$H.log("removing \"".concat(type, "\" listener..."), listener);
       this.listeners[type].forEach(listenerObj => {
         const isListenerToRemove = listenerObj.listener === listener;
         if (isListenerToRemove) {
-          _console$I.log("flagging \"".concat(type, "\" listener"), listener);
+          _console$H.log("flagging \"".concat(type, "\" listener"), listener);
           listenerObj.shouldRemove = true;
         }
       });
@@ -324,11 +324,11 @@
         throw new Error("Invalid event type: ".concat(type));
       }
       if (!this.listeners[type]) return;
-      _console$I.log("removing \"".concat(type, "\" listeners..."));
+      _console$H.log("removing \"".concat(type, "\" listeners..."));
       this.listeners[type] = [];
     }
     removeAllEventListeners() {
-      _console$I.log("removing listeners...");
+      _console$H.log("removing listeners...");
       this.listeners = {};
     }
     dispatchEvent(type, message) {
@@ -341,7 +341,7 @@
         if (listenerObj.shouldRemove) {
           return;
         }
-        _console$I.log("dispatching \"".concat(type, "\" listener"), listenerObj);
+        _console$H.log("dispatching \"".concat(type, "\" listener"), listenerObj);
         try {
           listenerObj.listener({
             type,
@@ -352,7 +352,7 @@
           console.error(error);
         }
         if (listenerObj.once) {
-          _console$I.log("flagging \"".concat(type, "\" listener"), listenerObj);
+          _console$H.log("flagging \"".concat(type, "\" listener"), listenerObj);
           listenerObj.shouldRemove = true;
         }
       });
@@ -370,11 +370,11 @@
     }
   }
 
-  const _console$H = createConsole("Timer", {
+  const _console$G = createConsole("Timer", {
     log: false
   });
   async function wait(delay) {
-    _console$H.log("waiting for ".concat(delay, "ms"));
+    _console$G.log("waiting for ".concat(delay, "ms"));
     return new Promise(resolve => {
       setTimeout(() => resolve(), delay);
     });
@@ -387,8 +387,8 @@
       return _classPrivateFieldGet2(_callback, this);
     }
     set callback(newCallback) {
-      _console$H.assertTypeWithError(newCallback, "function");
-      _console$H.log({
+      _console$G.assertTypeWithError(newCallback, "function");
+      _console$G.log({
         newCallback
       });
       _classPrivateFieldSet2(_callback, this, newCallback);
@@ -400,9 +400,9 @@
       return _classPrivateFieldGet2(_interval, this);
     }
     set interval(newInterval) {
-      _console$H.assertTypeWithError(newInterval, "number");
-      _console$H.assertWithError(newInterval > 0, "interval must be above 0");
-      _console$H.log({
+      _console$G.assertTypeWithError(newInterval, "number");
+      _console$G.assertWithError(newInterval > 0, "interval must be above 0");
+      _console$G.log({
         newInterval
       });
       _classPrivateFieldSet2(_interval, this, newInterval);
@@ -423,10 +423,10 @@
     start() {
       let immediately = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
       if (this.isRunning) {
-        _console$H.log("interval already running");
+        _console$G.log("interval already running");
         return;
       }
-      _console$H.log("starting interval every ".concat(_classPrivateFieldGet2(_interval, this), "ms"));
+      _console$G.log("starting interval every ".concat(_classPrivateFieldGet2(_interval, this), "ms"));
       _classPrivateFieldSet2(_intervalId, this, setInterval(_classPrivateFieldGet2(_callback, this), _classPrivateFieldGet2(_interval, this)));
       if (immediately) {
         _classPrivateFieldGet2(_callback, this).call(this);
@@ -434,10 +434,10 @@
     }
     stop() {
       if (!this.isRunning) {
-        _console$H.log("interval already not running");
+        _console$G.log("interval already not running");
         return;
       }
-      _console$H.log("stopping interval");
+      _console$G.log("stopping interval");
       clearInterval(_classPrivateFieldGet2(_intervalId, this));
       _classPrivateFieldSet2(_intervalId, this, undefined);
     }
@@ -501,7 +501,7 @@
   const textEncoder = new _TextEncoder();
   const textDecoder = new _TextDecoder();
 
-  const _console$G = createConsole("ArrayBufferUtils", {
+  const _console$F = createConsole("ArrayBufferUtils", {
     log: false
   });
   function concatenateArrayBuffers() {
@@ -559,7 +559,7 @@
     if (length != undefined) {
       end = dataView.byteOffset + begin + length;
     }
-    _console$G.log({
+    _console$F.log({
       dataView,
       begin,
       end,
@@ -625,7 +625,7 @@
   }
 
   var _a$5;
-  const _console$F = createConsole("FileTransferManager", {
+  const _console$E = createConsole("FileTransferManager", {
     log: false
   });
   const FileTransferMessageTypes = ["getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred"];
@@ -650,8 +650,8 @@
   class FileTransferManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _FileTransferManager_brand);
-      _defineProperty$1(this, "sendMessage", void 0);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "sendMessage", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _fileTypes, []);
       _classPrivateFieldInitSpec(this, _maxLength, _a$5.MaxLength);
       _classPrivateFieldInitSpec(this, _type$2, void 0);
@@ -661,7 +661,7 @@
       _classPrivateFieldInitSpec(this, _receivedBlocks, []);
       _classPrivateFieldInitSpec(this, _buffer, void 0);
       _classPrivateFieldInitSpec(this, _bytesTransferred, 0);
-      _defineProperty$1(this, "mtu", void 0);
+      _defineProperty(this, "mtu", void 0);
       _classPrivateFieldInitSpec(this, _isCancelling, false);
       _classPrivateFieldInitSpec(this, _isServerSide$2, false);
       autoBind(this);
@@ -697,7 +697,7 @@
       return _classPrivateFieldGet2(_status$2, this);
     }
     parseMessage(messageType, dataView) {
-      _console$F.log({
+      _console$E.log({
         messageType
       });
       switch (messageType) {
@@ -743,13 +743,13 @@
       _assertClassBrand(_FileTransferManager_brand, this, _assertValidLength).call(this, fileLength);
       if (!override) {
         if (type != this.type) {
-          _console$F.log("different fileTypes - sending");
+          _console$E.log("different fileTypes - sending");
         } else if (fileLength != this.length) {
-          _console$F.log("different fileLengths - sending");
+          _console$E.log("different fileLengths - sending");
         } else if (checksum != this.checksum) {
-          _console$F.log("different fileChecksums - sending");
+          _console$E.log("different fileChecksums - sending");
         } else {
-          _console$F.log("already sent file");
+          _console$E.log("already sent file");
           return false;
         }
       }
@@ -780,7 +780,7 @@
     }
     async cancel() {
       _assertClassBrand(_FileTransferManager_brand, this, _assertIsNotIdle).call(this);
-      _console$F.log("cancelling file transfer...");
+      _console$E.log("cancelling file transfer...");
       _classPrivateFieldSet2(_isCancelling, this, true);
       await _assertClassBrand(_FileTransferManager_brand, this, _setCommand).call(this, "cancel");
     }
@@ -789,16 +789,16 @@
     }
     set isServerSide(newIsServerSide) {
       if (_classPrivateFieldGet2(_isServerSide$2, this) == newIsServerSide) {
-        _console$F.log("redundant isServerSide assignment");
+        _console$E.log("redundant isServerSide assignment");
         return;
       }
-      _console$F.log({
+      _console$E.log({
         newIsServerSide
       });
       _classPrivateFieldSet2(_isServerSide$2, this, newIsServerSide);
     }
     requestRequiredInformation() {
-      _console$F.log("requesting required fileTransfer information");
+      _console$E.log("requesting required fileTransfer information");
       const messages = RequiredFileTransferMessageTypes.map(messageType => ({
         type: messageType
       }));
@@ -813,33 +813,33 @@
     return _this.eventDispatcher.dispatchEvent;
   }
   function _assertValidType(type) {
-    _console$F.assertEnumWithError(type, FileTypes);
+    _console$E.assertEnumWithError(type, FileTypes);
   }
   function _assertValidTypeEnum(typeEnum) {
-    _console$F.assertWithError(typeEnum in FileTypes, "invalid typeEnum ".concat(typeEnum));
+    _console$E.assertWithError(typeEnum in FileTypes, "invalid typeEnum ".concat(typeEnum));
   }
   function _assertValidStatusEnum(statusEnum) {
-    _console$F.assertWithError(statusEnum in FileTransferStatuses, "invalid statusEnum ".concat(statusEnum));
+    _console$E.assertWithError(statusEnum in FileTransferStatuses, "invalid statusEnum ".concat(statusEnum));
   }
   function _assertValidCommand(command) {
-    _console$F.assertEnumWithError(command, FileTransferCommands);
+    _console$E.assertEnumWithError(command, FileTransferCommands);
   }
   function _parseFileTypes(dataView) {
     const fileTypes = Array.from(new Uint8Array(dataView.buffer)).map(index => FileTypes[index]).filter(Boolean);
     _classPrivateFieldSet2(_fileTypes, this, fileTypes);
-    _console$F.log("fileTypes", fileTypes);
+    _console$E.log("fileTypes", fileTypes);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "getFileTypes", {
       fileTypes: _classPrivateFieldGet2(_fileTypes, this)
     });
   }
   function _parseMaxLength(dataView) {
-    _console$F.log("parseFileMaxLength", dataView);
+    _console$E.log("parseFileMaxLength", dataView);
     const maxLength = dataView.getUint32(0, true);
-    _console$F.log("maxLength: ".concat(maxLength / 1024, "kB"));
+    _console$E.log("maxLength: ".concat(maxLength / 1024, "kB"));
     _assertClassBrand(_FileTransferManager_brand, this, _updateMaxLength).call(this, maxLength);
   }
   function _updateMaxLength(maxLength) {
-    _console$F.log({
+    _console$E.log({
       maxLength
     });
     _classPrivateFieldSet2(_maxLength, this, maxLength);
@@ -848,17 +848,17 @@
     });
   }
   function _assertValidLength(length) {
-    _console$F.assertWithError(length <= this.maxLength, "file length ".concat(length, "kB too large - must be ").concat(this.maxLength, "kB or less"));
+    _console$E.assertWithError(length <= this.maxLength, "file length ".concat(length, "kB too large - must be ").concat(this.maxLength, "kB or less"));
   }
   function _parseType(dataView) {
-    _console$F.log("parseFileType", dataView);
+    _console$E.log("parseFileType", dataView);
     const typeEnum = dataView.getUint8(0);
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidTypeEnum).call(this, typeEnum);
     const type = FileTypes[typeEnum];
     _assertClassBrand(_FileTransferManager_brand, this, _updateType).call(this, type);
   }
   function _updateType(type) {
-    _console$F.log({
+    _console$E.log({
       fileTransferType: type
     });
     _classPrivateFieldSet2(_type$2, this, type);
@@ -869,7 +869,7 @@
   async function _setType(newType, sendImmediately) {
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidType).call(this, newType);
     if (this.type == newType) {
-      _console$F.log("redundant type assignment ".concat(newType));
+      _console$E.log("redundant type assignment ".concat(newType));
       return;
     }
     const promise = this.waitForEvent("getFileType");
@@ -881,22 +881,22 @@
     await promise;
   }
   function _parseLength(dataView) {
-    _console$F.log("parseFileLength", dataView);
+    _console$E.log("parseFileLength", dataView);
     const length = dataView.getUint32(0, true);
     _assertClassBrand(_FileTransferManager_brand, this, _updateLength).call(this, length);
   }
   function _updateLength(length) {
-    _console$F.log("length: ".concat(length / 1024, "kB"));
+    _console$E.log("length: ".concat(length / 1024, "kB"));
     _classPrivateFieldSet2(_length, this, length);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "getFileLength", {
       fileLength: length
     });
   }
   async function _setLength(newLength, sendImmediately) {
-    _console$F.assertTypeWithError(newLength, "number");
+    _console$E.assertTypeWithError(newLength, "number");
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidLength).call(this, newLength);
     if (this.length == newLength) {
-      _console$F.log("redundant length assignment ".concat(newLength));
+      _console$E.log("redundant length assignment ".concat(newLength));
       return;
     }
     const promise = this.waitForEvent("getFileLength");
@@ -909,12 +909,12 @@
     await promise;
   }
   function _parseChecksum(dataView) {
-    _console$F.log("checksum", dataView);
+    _console$E.log("checksum", dataView);
     const checksum = dataView.getUint32(0, true);
     _assertClassBrand(_FileTransferManager_brand, this, _updateChecksum).call(this, checksum);
   }
   function _updateChecksum(checksum) {
-    _console$F.log({
+    _console$E.log({
       checksum
     });
     _classPrivateFieldSet2(_checksum, this, checksum);
@@ -923,9 +923,9 @@
     });
   }
   async function _setChecksum(newChecksum, sendImmediately) {
-    _console$F.assertTypeWithError(newChecksum, "number");
+    _console$E.assertTypeWithError(newChecksum, "number");
     if (this.checksum == newChecksum) {
-      _console$F.log("redundant checksum assignment ".concat(newChecksum));
+      _console$E.log("redundant checksum assignment ".concat(newChecksum));
       return;
     }
     const promise = this.waitForEvent("getFileChecksum");
@@ -940,7 +940,7 @@
   async function _setCommand(command, sendImmediately) {
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidCommand).call(this, command);
     const promise = this.waitForEvent("fileTransferStatus");
-    _console$F.log("setting command ".concat(command));
+    _console$E.log("setting command ".concat(command));
     const commandEnum = FileTransferCommands.indexOf(command);
     this.sendMessage([{
       type: "setFileTransferCommand",
@@ -949,14 +949,14 @@
     await promise;
   }
   function _parseStatus(dataView) {
-    _console$F.log("parseFileStatus", dataView);
+    _console$E.log("parseFileStatus", dataView);
     const statusEnum = dataView.getUint8(0);
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidStatusEnum).call(this, statusEnum);
     const status = FileTransferStatuses[statusEnum];
     _assertClassBrand(_FileTransferManager_brand, this, _updateStatus$1).call(this, status);
   }
   function _updateStatus$1(status) {
-    _console$F.log({
+    _console$E.log({
       status
     });
     _classPrivateFieldSet2(_status$2, this, status);
@@ -970,17 +970,17 @@
     });
   }
   function _assertIsIdle() {
-    _console$F.assertWithError(_classPrivateFieldGet2(_status$2, this) == "idle", "status is not idle");
+    _console$E.assertWithError(_classPrivateFieldGet2(_status$2, this) == "idle", "status is not idle");
   }
   function _assertIsNotIdle() {
-    _console$F.assertWithError(_classPrivateFieldGet2(_status$2, this) != "idle", "status is idle");
+    _console$E.assertWithError(_classPrivateFieldGet2(_status$2, this) != "idle", "status is idle");
   }
   async function _parseBlock(dataView) {
-    _console$F.log("parseFileBlock", dataView);
+    _console$E.log("parseFileBlock", dataView);
     _classPrivateFieldGet2(_receivedBlocks, this).push(dataView.buffer);
     const bytesReceived = _classPrivateFieldGet2(_receivedBlocks, this).reduce((sum, arrayBuffer) => sum += arrayBuffer.byteLength, 0);
     const progress = bytesReceived / _classPrivateFieldGet2(_length, this);
-    _console$F.log("received ".concat(bytesReceived, " of ").concat(_classPrivateFieldGet2(_length, this), " bytes (").concat(progress * 100, "%)"));
+    _console$E.log("received ".concat(bytesReceived, " of ").concat(_classPrivateFieldGet2(_length, this), " bytes (").concat(progress * 100, "%)"));
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "fileTransferProgress", {
       progress,
       fileType: this.type
@@ -997,7 +997,7 @@
       }]);
       return;
     }
-    _console$F.log("file transfer complete");
+    _console$E.log("file transfer complete");
     let fileName = new Date().toLocaleString();
     switch (this.type) {
       case "tflite":
@@ -1018,14 +1018,14 @@
     }
     const arrayBuffer = await file.arrayBuffer();
     const checksum = crc32(arrayBuffer);
-    _console$F.log({
+    _console$E.log({
       checksum
     });
     if (checksum != _classPrivateFieldGet2(_checksum, this)) {
-      _console$F.error("wrong checksum - expected ".concat(_classPrivateFieldGet2(_checksum, this), ", got ").concat(checksum));
+      _console$E.error("wrong checksum - expected ".concat(_classPrivateFieldGet2(_checksum, this), ", got ").concat(checksum));
       return;
     }
-    _console$F.log("received file", file);
+    _console$E.log("received file", file);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "getFileBlock", {
       fileTransferBlock: dataView
     });
@@ -1047,28 +1047,28 @@
       return;
     }
     if (_classPrivateFieldGet2(_isCancelling, this)) {
-      _console$F.error("not sending block - busy cancelling");
+      _console$E.error("not sending block - busy cancelling");
       return;
     }
     if (!_classPrivateFieldGet2(_buffer, this)) {
       if (!this.isServerSide) {
-        _console$F.error("no buffer defined");
+        _console$E.error("no buffer defined");
       }
       return;
     }
     const buffer = _classPrivateFieldGet2(_buffer, this);
     let offset = _classPrivateFieldGet2(_bytesTransferred, this);
     const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
-    _console$F.log("slicedBuffer", slicedBuffer);
+    _console$E.log("slicedBuffer", slicedBuffer);
     const bytesLeft = buffer.byteLength - offset;
     const progress = 1 - bytesLeft / buffer.byteLength;
-    _console$F.log("sending bytes ".concat(offset, "-").concat(offset + slicedBuffer.byteLength, " of ").concat(buffer.byteLength, " bytes (").concat(progress * 100, "%)"));
+    _console$E.log("sending bytes ".concat(offset, "-").concat(offset + slicedBuffer.byteLength, " of ").concat(buffer.byteLength, " bytes (").concat(progress * 100, "%)"));
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "fileTransferProgress", {
       progress,
       fileType: this.type
     });
     if (slicedBuffer.byteLength == 0) {
-      _console$F.log("finished sending buffer");
+      _console$E.log("finished sending buffer");
       _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "fileTransferComplete", {
         direction: "sending",
         fileType: this.type
@@ -1082,17 +1082,17 @@
     }
   }
   async function _parseBytesTransferred(dataView) {
-    _console$F.log("parseBytesTransferred", dataView);
+    _console$E.log("parseBytesTransferred", dataView);
     const bytesTransferred = dataView.getUint32(0, true);
-    _console$F.log({
+    _console$E.log({
       bytesTransferred
     });
     if (this.status != "sending") {
-      _console$F.error("not currently sending file");
+      _console$E.error("not currently sending file");
       return;
     }
     if (!this.isServerSide && _classPrivateFieldGet2(_bytesTransferred, this) != bytesTransferred) {
-      _console$F.error("bytesTransferred are not equal - got ".concat(bytesTransferred, ", expected ").concat(_classPrivateFieldGet2(_bytesTransferred, this)));
+      _console$E.error("bytesTransferred are not equal - got ".concat(bytesTransferred, ", expected ").concat(_classPrivateFieldGet2(_bytesTransferred, this)));
       this.cancel();
       return;
     }
@@ -1103,7 +1103,7 @@
   };
   _a$5 = FileTransferManager;
 
-  const _console$E = createConsole("MathUtils", {
+  const _console$D = createConsole("MathUtils", {
     log: false
   });
   function getInterpolation(value, min, max, span) {
@@ -1125,7 +1125,7 @@
     const lower2Bytes = dataView.getUint16(byteOffset, true);
     let timestamp = nowWithoutLower2Bytes + lower2Bytes;
     if (Math.abs(now - timestamp) > timestampThreshold) {
-      _console$E.log("correcting timestamp delta");
+      _console$D.log("correcting timestamp delta");
       timestamp += Uint16Max * Math.sign(now - timestamp);
     }
     return timestamp;
@@ -1267,7 +1267,7 @@
     return array.filter((value, index) => array.indexOf(value) == index);
   }
 
-  const _console$D = createConsole("PressureDataManager", {
+  const _console$C = createConsole("PressureDataManager", {
     log: false
   });
   const PressureSensorTypes = ["pressure"];
@@ -1298,7 +1298,7 @@
           y: dataView.getUint8(byteOffset + 1) / 2 ** 8
         });
       }
-      _console$D.log({
+      _console$C.log({
         positions
       });
       _classPrivateFieldSet2(_positions, this, positions);
@@ -1345,14 +1345,14 @@
         });
         pressure.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper$1, this).updateAndGetNormalization(pressure.center, false);
       }
-      _console$D.log({
+      _console$C.log({
         pressure
       });
       return pressure;
     }
   }
 
-  const _console$C = createConsole("MotionSensorDataManager", {
+  const _console$B = createConsole("MotionSensorDataManager", {
     log: false
   });
   const MotionSensorTypes = ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector"];
@@ -1367,7 +1367,7 @@
         y,
         z
       };
-      _console$C.log({
+      _console$B.log({
         vector
       });
       return vector;
@@ -1380,7 +1380,7 @@
         z,
         w
       };
-      _console$C.log({
+      _console$B.log({
         quaternion
       });
       return quaternion;
@@ -1397,36 +1397,36 @@
         pitch,
         roll
       };
-      _console$C.log({
+      _console$B.log({
         euler
       });
       return euler;
     }
     parseStepCounter(dataView) {
-      _console$C.log("parseStepCounter", dataView);
+      _console$B.log("parseStepCounter", dataView);
       const stepCount = dataView.getUint32(0, true);
-      _console$C.log({
+      _console$B.log({
         stepCount
       });
       return stepCount;
     }
     parseActivity(dataView) {
-      _console$C.log("parseActivity", dataView);
+      _console$B.log("parseActivity", dataView);
       const activity = {};
       const activityBitfield = dataView.getUint8(0);
-      _console$C.log("activityBitfield", activityBitfield.toString(2));
+      _console$B.log("activityBitfield", activityBitfield.toString(2));
       ActivityTypes.forEach((activityType, index) => {
         activity[activityType] = Boolean(activityBitfield & 1 << index);
       });
-      _console$C.log("activity", activity);
+      _console$B.log("activity", activity);
       return activity;
     }
     parseDeviceOrientation(dataView) {
-      _console$C.log("parseDeviceOrientation", dataView);
+      _console$B.log("parseDeviceOrientation", dataView);
       const index = dataView.getUint8(0);
       const deviceOrientation = DeviceOrientations[index];
-      _console$C.assertWithError(deviceOrientation, "undefined deviceOrientation");
-      _console$C.log({
+      _console$B.assertWithError(deviceOrientation, "undefined deviceOrientation");
+      _console$B.log({
         deviceOrientation
       });
       return deviceOrientation;
@@ -1435,7 +1435,7 @@
 
   const BarometerSensorTypes = ["barometer"];
   const ContinuousBarometerSensorTypes = BarometerSensorTypes;
-  const _console$B = createConsole("BarometerSensorDataManager", {
+  const _console$A = createConsole("BarometerSensorDataManager", {
     log: false
   });
   var _BarometerSensorDataManager_brand = new WeakSet();
@@ -1446,7 +1446,7 @@
     parseData(dataView, scalar) {
       const pressure = dataView.getUint32(0, true) * scalar;
       const altitude = _assertClassBrand(_BarometerSensorDataManager_brand, this, _calculcateAltitude).call(this, pressure);
-      _console$B.log({
+      _console$A.log({
         pressure,
         altitude
       });
@@ -1467,7 +1467,7 @@
     return h;
   }
 
-  const _console$A = createConsole("ParseUtils", {
+  const _console$z = createConsole("ParseUtils", {
     log: false
   });
   function parseStringFromDataView(dataView) {
@@ -1485,7 +1485,7 @@
     let byteOffset = 0;
     while (byteOffset < dataView.byteLength) {
       const messageTypeEnum = dataView.getUint8(byteOffset++);
-      _console$A.assertWithError(messageTypeEnum in messageTypes, "invalid messageTypeEnum ".concat(messageTypeEnum));
+      _console$z.assertWithError(messageTypeEnum in messageTypes, "invalid messageTypeEnum ".concat(messageTypeEnum));
       const messageType = messageTypes[messageTypeEnum];
       let messageLength;
       if (parseMessageLengthAsUint16) {
@@ -1494,7 +1494,7 @@
       } else {
         messageLength = dataView.getUint8(byteOffset++);
       }
-      _console$A.log({
+      _console$z.log({
         messageTypeEnum,
         messageType,
         messageLength,
@@ -1502,7 +1502,7 @@
         byteOffset
       });
       const _dataView = sliceDataView(dataView, byteOffset, messageLength);
-      _console$A.log({
+      _console$z.log({
         _dataView
       });
       callback(messageType, _dataView, context);
@@ -1511,7 +1511,7 @@
   }
 
   var _a$4;
-  const _console$z = createConsole("CameraManager", {
+  const _console$y = createConsole("CameraManager", {
     log: false
   });
   const CameraSensorTypes = ["camera"];
@@ -1540,8 +1540,8 @@
   class CameraManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _CameraManager_brand);
-      _defineProperty$1(this, "sendMessage", void 0);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "sendMessage", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _cameraStatus, void 0);
       _classPrivateFieldInitSpec(this, _headerSize, 0);
       _classPrivateFieldInitSpec(this, _headerData, void 0);
@@ -1591,7 +1591,7 @@
       return this.eventDispatcher.waitForEvent;
     }
     requestRequiredInformation() {
-      _console$z.log("requesting required camera information");
+      _console$y.log("requesting required camera information");
       const messages = RequiredCameraMessageTypes.map(messageType => ({
         type: messageType
       }));
@@ -1630,15 +1630,15 @@
       return _classPrivateFieldGet2(_cameraConfigurationRanges, this);
     }
     async setCameraConfiguration(newCameraConfiguration) {
-      _console$z.log({
+      _console$y.log({
         newCameraConfiguration
       });
       if (_assertClassBrand(_CameraManager_brand, this, _isCameraConfigurationRedundant).call(this, newCameraConfiguration)) {
-        _console$z.log("redundant camera configuration");
+        _console$y.log("redundant camera configuration");
         return;
       }
       const setCameraConfigurationData = _assertClassBrand(_CameraManager_brand, this, _createData$3).call(this, newCameraConfiguration);
-      _console$z.log({
+      _console$y.log({
         setCameraConfigurationData
       });
       const promise = this.waitForEvent("getCameraConfiguration");
@@ -1649,14 +1649,14 @@
       await promise;
     }
     static AssertValidCameraConfigurationType(cameraConfigurationType) {
-      _console$z.assertEnumWithError(cameraConfigurationType, CameraConfigurationTypes);
+      _console$y.assertEnumWithError(cameraConfigurationType, CameraConfigurationTypes);
     }
     static AssertValidCameraConfigurationTypeEnum(cameraConfigurationTypeEnum) {
-      _console$z.assertTypeWithError(cameraConfigurationTypeEnum, "number");
-      _console$z.assertWithError(cameraConfigurationTypeEnum in CameraConfigurationTypes, "invalid cameraConfigurationTypeEnum ".concat(cameraConfigurationTypeEnum));
+      _console$y.assertTypeWithError(cameraConfigurationTypeEnum, "number");
+      _console$y.assertWithError(cameraConfigurationTypeEnum in CameraConfigurationTypes, "invalid cameraConfigurationTypeEnum ".concat(cameraConfigurationTypeEnum));
     }
     parseMessage(messageType, dataView) {
-      _console$z.log({
+      _console$y.log({
         messageType,
         dataView
       });
@@ -1691,14 +1691,14 @@
     _assertClassBrand(_CameraManager_brand, this, _updateCameraStatus).call(this, newCameraStatus);
   }
   function _updateCameraStatus(newCameraStatus) {
-    _console$z.assertEnumWithError(newCameraStatus, CameraStatuses);
+    _console$y.assertEnumWithError(newCameraStatus, CameraStatuses);
     if (newCameraStatus == _classPrivateFieldGet2(_cameraStatus, this)) {
-      _console$z.log("redundant cameraStatus ".concat(newCameraStatus));
+      _console$y.log("redundant cameraStatus ".concat(newCameraStatus));
       return;
     }
     const previousCameraStatus = _classPrivateFieldGet2(_cameraStatus, this);
     _classPrivateFieldSet2(_cameraStatus, this, newCameraStatus);
-    _console$z.log("updated cameraStatus to \"".concat(this.cameraStatus, "\""));
+    _console$y.log("updated cameraStatus to \"".concat(this.cameraStatus, "\""));
     _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraStatus", {
       cameraStatus: this.cameraStatus,
       previousCameraStatus
@@ -1708,10 +1708,10 @@
     }
   }
   async function _sendCameraCommand(command, sendImmediately) {
-    _console$z.assertEnumWithError(command, CameraCommands);
-    _console$z.log("sending camera command \"".concat(command, "\""));
+    _console$y.assertEnumWithError(command, CameraCommands);
+    _console$y.log("sending camera command \"".concat(command, "\""));
     const promise = this.waitForEvent("cameraStatus");
-    _console$z.log("setting command \"".concat(command, "\""));
+    _console$y.log("setting command \"".concat(command, "\""));
     const commandEnum = CameraCommands.indexOf(command);
     this.sendMessage([{
       type: "cameraCommand",
@@ -1720,25 +1720,25 @@
     await promise;
   }
   function _assertIsAsleep() {
-    _console$z.assertWithError(_classPrivateFieldGet2(_cameraStatus, this) == "asleep", "camera is not asleep - currently ".concat(_classPrivateFieldGet2(_cameraStatus, this)));
+    _console$y.assertWithError(_classPrivateFieldGet2(_cameraStatus, this) == "asleep", "camera is not asleep - currently ".concat(_classPrivateFieldGet2(_cameraStatus, this)));
   }
   function _assertIsAwake$1() {
-    _console$z.assertWithError(_classPrivateFieldGet2(_cameraStatus, this) != "asleep", "camera is not awake - currently ".concat(_classPrivateFieldGet2(_cameraStatus, this)));
+    _console$y.assertWithError(_classPrivateFieldGet2(_cameraStatus, this) != "asleep", "camera is not awake - currently ".concat(_classPrivateFieldGet2(_cameraStatus, this)));
   }
   function _parseCameraData(dataView) {
-    _console$z.log("parsing camera data", dataView);
+    _console$y.log("parsing camera data", dataView);
     parseMessage(dataView, CameraDataTypes, _assertClassBrand(_CameraManager_brand, this, _onCameraData).bind(this), null, true);
   }
   function _onCameraData(cameraDataType, dataView) {
     var _classPrivateFieldGet2$1, _classPrivateFieldGet3, _classPrivateFieldGet4;
-    _console$z.log({
+    _console$y.log({
       cameraDataType,
       dataView
     });
     switch (cameraDataType) {
       case "headerSize":
         _classPrivateFieldSet2(_headerSize, this, dataView.getUint16(0, true));
-        _console$z.log({
+        _console$y.log({
           headerSize: _classPrivateFieldGet2(_headerSize, this)
         });
         _classPrivateFieldSet2(_headerData, this, undefined);
@@ -1746,11 +1746,11 @@
         break;
       case "header":
         _classPrivateFieldSet2(_headerData, this, concatenateArrayBuffers(_classPrivateFieldGet2(_headerData, this), dataView));
-        _console$z.log({
+        _console$y.log({
           headerData: _classPrivateFieldGet2(_headerData, this)
         });
         _classPrivateFieldSet2(_headerProgress, this, ((_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_headerData, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.byteLength) / _classPrivateFieldGet2(_headerSize, this));
-        _console$z.log({
+        _console$y.log({
           headerProgress: _classPrivateFieldGet2(_headerProgress, this)
         });
         _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraImageProgress", {
@@ -1758,12 +1758,12 @@
           type: "header"
         });
         if (_classPrivateFieldGet2(_headerProgress, this) == 1) {
-          _console$z.log("finished getting header data");
+          _console$y.log("finished getting header data");
         }
         break;
       case "imageSize":
         _classPrivateFieldSet2(_imageSize, this, dataView.getUint16(0, true));
-        _console$z.log({
+        _console$y.log({
           imageSize: _classPrivateFieldGet2(_imageSize, this)
         });
         _classPrivateFieldSet2(_imageData, this, undefined);
@@ -1772,11 +1772,11 @@
         break;
       case "image":
         _classPrivateFieldSet2(_imageData, this, concatenateArrayBuffers(_classPrivateFieldGet2(_imageData, this), dataView));
-        _console$z.log({
+        _console$y.log({
           imageData: _classPrivateFieldGet2(_imageData, this)
         });
         _classPrivateFieldSet2(_imageProgress, this, ((_classPrivateFieldGet3 = _classPrivateFieldGet2(_imageData, this)) === null || _classPrivateFieldGet3 === void 0 ? void 0 : _classPrivateFieldGet3.byteLength) / _classPrivateFieldGet2(_imageSize, this));
-        _console$z.log({
+        _console$y.log({
           imageProgress: _classPrivateFieldGet2(_imageProgress, this)
         });
         _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraImageProgress", {
@@ -1784,7 +1784,7 @@
           type: "image"
         });
         if (_classPrivateFieldGet2(_imageProgress, this) == 1) {
-          _console$z.log("finished getting image data");
+          _console$y.log("finished getting image data");
           if (_classPrivateFieldGet2(_headerProgress, this) == 1) {
             _assertClassBrand(_CameraManager_brand, this, _buildImage).call(this);
           }
@@ -1792,7 +1792,7 @@
         break;
       case "footerSize":
         _classPrivateFieldSet2(_footerSize, this, dataView.getUint16(0, true));
-        _console$z.log({
+        _console$y.log({
           footerSize: _classPrivateFieldGet2(_footerSize, this)
         });
         _classPrivateFieldSet2(_footerData, this, undefined);
@@ -1800,11 +1800,11 @@
         break;
       case "footer":
         _classPrivateFieldSet2(_footerData, this, concatenateArrayBuffers(_classPrivateFieldGet2(_footerData, this), dataView));
-        _console$z.log({
+        _console$y.log({
           footerData: _classPrivateFieldGet2(_footerData, this)
         });
         _classPrivateFieldSet2(_footerProgress, this, ((_classPrivateFieldGet4 = _classPrivateFieldGet2(_footerData, this)) === null || _classPrivateFieldGet4 === void 0 ? void 0 : _classPrivateFieldGet4.byteLength) / _classPrivateFieldGet2(_footerSize, this));
-        _console$z.log({
+        _console$y.log({
           footerProgress: _classPrivateFieldGet2(_footerProgress, this)
         });
         _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraImageProgress", {
@@ -1812,7 +1812,7 @@
           type: "footer"
         });
         if (_classPrivateFieldGet2(_footerProgress, this) == 1) {
-          _console$z.log("finished getting footer data");
+          _console$y.log("finished getting footer data");
           if (_classPrivateFieldGet2(_imageProgress, this) == 1) {
             _assertClassBrand(_CameraManager_brand, this, _buildImage).call(this);
           }
@@ -1821,17 +1821,17 @@
     }
   }
   function _buildImage() {
-    _console$z.log("building image...");
+    _console$y.log("building image...");
     const imageData = concatenateArrayBuffers(_classPrivateFieldGet2(_headerData, this), _classPrivateFieldGet2(_imageData, this), _classPrivateFieldGet2(_footerData, this));
-    _console$z.log({
+    _console$y.log({
       imageData
     });
     let blob = new Blob([imageData], {
       type: "image/jpeg"
     });
-    _console$z.log("created blob", blob);
+    _console$y.log("created blob", blob);
     const url = URL.createObjectURL(blob);
-    _console$z.log("created url", url);
+    _console$y.log("created url", url);
     _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraImage", {
       url,
       blob
@@ -1844,11 +1844,11 @@
     while (byteOffset < dataView.byteLength) {
       const cameraConfigurationTypeIndex = dataView.getUint8(byteOffset++);
       const cameraConfigurationType = CameraConfigurationTypes[cameraConfigurationTypeIndex];
-      _console$z.assertWithError(cameraConfigurationType, "invalid cameraConfigurationTypeIndex ".concat(cameraConfigurationTypeIndex));
+      _console$y.assertWithError(cameraConfigurationType, "invalid cameraConfigurationTypeIndex ".concat(cameraConfigurationTypeIndex));
       parsedCameraConfiguration[cameraConfigurationType] = dataView.getUint16(byteOffset, true);
       byteOffset += 2;
     }
-    _console$z.log({
+    _console$y.log({
       parsedCameraConfiguration
     });
     _classPrivateFieldSet2(_availableCameraConfigurationTypes, this, Object.keys(parsedCameraConfiguration));
@@ -1865,9 +1865,9 @@
   }
   function _assertAvailableCameraConfigurationType(cameraConfigurationType) {
     var _classPrivateFieldGet5;
-    _console$z.assertWithError(_classPrivateFieldGet2(_availableCameraConfigurationTypes, this), "must get initial cameraConfiguration");
+    _console$y.assertWithError(_classPrivateFieldGet2(_availableCameraConfigurationTypes, this), "must get initial cameraConfiguration");
     const isCameraConfigurationTypeAvailable = (_classPrivateFieldGet5 = _classPrivateFieldGet2(_availableCameraConfigurationTypes, this)) === null || _classPrivateFieldGet5 === void 0 ? void 0 : _classPrivateFieldGet5.includes(cameraConfigurationType);
-    _console$z.assertWithError(isCameraConfigurationTypeAvailable, "unavailable camera configuration type \"".concat(cameraConfigurationType, "\""));
+    _console$y.assertWithError(isCameraConfigurationTypeAvailable, "unavailable camera configuration type \"".concat(cameraConfigurationType, "\""));
     return isCameraConfigurationTypeAvailable;
   }
   function _createData$3(cameraConfiguration) {
@@ -1881,7 +1881,7 @@
       const value = cameraConfiguration[cameraConfigurationType];
       dataView.setUint16(index * 3 + 1, value, true);
     });
-    _console$z.log({
+    _console$y.log({
       sensorConfigurationData: dataView
     });
     return dataView;
@@ -1925,7 +1925,7 @@
   }
 
   var _a$3;
-  const _console$y = createConsole("MicrophoneManager", {
+  const _console$x = createConsole("MicrophoneManager", {
     log: false
   });
   const MicrophoneSensorTypes = ["microphone"];
@@ -1955,8 +1955,8 @@
   class MicrophoneManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _MicrophoneManager_brand);
-      _defineProperty$1(this, "sendMessage", void 0);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "sendMessage", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _microphoneStatus, void 0);
       _classPrivateFieldInitSpec(this, _fadeDuration, 0.001);
       _classPrivateFieldInitSpec(this, _playbackTime, 0);
@@ -1973,7 +1973,7 @@
       return this.eventDispatcher.waitForEvent;
     }
     requestRequiredInformation() {
-      _console$y.log("requesting required microphone information");
+      _console$x.log("requesting required microphone information");
       const messages = RequiredMicrophoneMessageTypes.map(messageType => ({
         type: messageType
       }));
@@ -1987,7 +1987,7 @@
     }
     async stop() {
       if (this.microphoneStatus == "idle") {
-        _console$y.log("microphone is already idle");
+        _console$x.log("microphone is already idle");
         return;
       }
       await _assertClassBrand(_MicrophoneManager_brand, this, _sendMicrophoneCommand).call(this, "stop");
@@ -2018,15 +2018,15 @@
       return _classPrivateFieldGet2(_microphoneConfiguration, this).sampleRate;
     }
     async setMicrophoneConfiguration(newMicrophoneConfiguration) {
-      _console$y.log({
+      _console$x.log({
         newMicrophoneConfiguration
       });
       if (_assertClassBrand(_MicrophoneManager_brand, this, _isMicrophoneConfigurationRedundant).call(this, newMicrophoneConfiguration)) {
-        _console$y.log("redundant microphone configuration");
+        _console$x.log("redundant microphone configuration");
         return;
       }
       const setMicrophoneConfigurationData = _assertClassBrand(_MicrophoneManager_brand, this, _createData$2).call(this, newMicrophoneConfiguration);
-      _console$y.log({
+      _console$x.log({
         setMicrophoneConfigurationData
       });
       const promise = this.waitForEvent("getMicrophoneConfiguration");
@@ -2037,14 +2037,14 @@
       await promise;
     }
     static AssertValidMicrophoneConfigurationType(microphoneConfigurationType) {
-      _console$y.assertEnumWithError(microphoneConfigurationType, MicrophoneConfigurationTypes);
+      _console$x.assertEnumWithError(microphoneConfigurationType, MicrophoneConfigurationTypes);
     }
     static AssertValidMicrophoneConfigurationTypeEnum(microphoneConfigurationTypeEnum) {
-      _console$y.assertTypeWithError(microphoneConfigurationTypeEnum, "number");
-      _console$y.assertWithError(microphoneConfigurationTypeEnum in MicrophoneConfigurationTypes, "invalid microphoneConfigurationTypeEnum ".concat(microphoneConfigurationTypeEnum));
+      _console$x.assertTypeWithError(microphoneConfigurationTypeEnum, "number");
+      _console$x.assertWithError(microphoneConfigurationTypeEnum in MicrophoneConfigurationTypes, "invalid microphoneConfigurationTypeEnum ".concat(microphoneConfigurationTypeEnum));
     }
     parseMessage(messageType, dataView) {
-      _console$y.log({
+      _console$x.log({
         messageType,
         dataView
       });
@@ -2068,11 +2068,11 @@
     }
     set audioContext(newAudioContext) {
       if (_classPrivateFieldGet2(_audioContext, this) == newAudioContext) {
-        _console$y.log("redundant audioContext assignment", _classPrivateFieldGet2(_audioContext, this));
+        _console$x.log("redundant audioContext assignment", _classPrivateFieldGet2(_audioContext, this));
         return;
       }
       _classPrivateFieldSet2(_audioContext, this, newAudioContext);
-      _console$y.log("assigned new audioContext", _classPrivateFieldGet2(_audioContext, this));
+      _console$x.log("assigned new audioContext", _classPrivateFieldGet2(_audioContext, this));
       if (_classPrivateFieldGet2(_audioContext, this)) {
         _classPrivateFieldSet2(_playbackTime, this, _classPrivateFieldGet2(_audioContext, this).currentTime);
       } else {
@@ -2087,22 +2087,22 @@
       }
     }
     get gainNode() {
-      _console$y.assertWithError(_classPrivateFieldGet2(_audioContext, this), "audioContext assignment required for gainNode");
+      _console$x.assertWithError(_classPrivateFieldGet2(_audioContext, this), "audioContext assignment required for gainNode");
       if (!_classPrivateFieldGet2(_gainNode, this)) {
-        _console$y.log("creating gainNode...");
+        _console$x.log("creating gainNode...");
         _classPrivateFieldSet2(_gainNode, this, _classPrivateFieldGet2(_audioContext, this).createGain());
-        _console$y.log("created gainNode", _classPrivateFieldGet2(_gainNode, this));
+        _console$x.log("created gainNode", _classPrivateFieldGet2(_gainNode, this));
       }
       return _classPrivateFieldGet2(_gainNode, this);
     }
     get mediaStreamDestination() {
-      _console$y.assertWithError(_classPrivateFieldGet2(_audioContext, this), "audioContext assignment required for mediaStreamDestination");
+      _console$x.assertWithError(_classPrivateFieldGet2(_audioContext, this), "audioContext assignment required for mediaStreamDestination");
       if (!_classPrivateFieldGet2(_mediaStreamDestination, this)) {
         var _this$gainNode;
-        _console$y.log("creating mediaStreamDestination...");
+        _console$x.log("creating mediaStreamDestination...");
         _classPrivateFieldSet2(_mediaStreamDestination, this, _classPrivateFieldGet2(_audioContext, this).createMediaStreamDestination());
         (_this$gainNode = this.gainNode) === null || _this$gainNode === void 0 ? void 0 : _this$gainNode.connect(_classPrivateFieldGet2(_mediaStreamDestination, this));
-        _console$y.log("created mediaStreamDestination", _classPrivateFieldGet2(_mediaStreamDestination, this));
+        _console$x.log("created mediaStreamDestination", _classPrivateFieldGet2(_mediaStreamDestination, this));
       }
       return _classPrivateFieldGet2(_mediaStreamDestination, this);
     }
@@ -2111,7 +2111,7 @@
     }
     startRecording() {
       if (this.isRecording) {
-        _console$y.log("already recording");
+        _console$x.log("already recording");
         return;
       }
       _classPrivateFieldSet2(_microphoneRecordingData, this, []);
@@ -2122,12 +2122,12 @@
     }
     stopRecording() {
       if (!this.isRecording) {
-        _console$y.log("already not recording");
+        _console$x.log("already not recording");
         return;
       }
       _classPrivateFieldSet2(_isRecording, this, false);
       if (_classPrivateFieldGet2(_microphoneRecordingData, this) && _classPrivateFieldGet2(_microphoneRecordingData, this).length > 0) {
-        _console$y.log("parsing microphone data...", _classPrivateFieldGet2(_microphoneRecordingData, this).length);
+        _console$x.log("parsing microphone data...", _classPrivateFieldGet2(_microphoneRecordingData, this).length);
         const arrayBuffer = concatenateArrayBuffers(..._classPrivateFieldGet2(_microphoneRecordingData, this));
         const samples = new Float32Array(arrayBuffer);
         const blob = float32ArrayToWav(samples, Number(this.sampleRate), 1);
@@ -2169,24 +2169,24 @@
     _assertClassBrand(_MicrophoneManager_brand, this, _updateMicrophoneStatus).call(this, newMicrophoneStatus);
   }
   function _updateMicrophoneStatus(newMicrophoneStatus) {
-    _console$y.assertEnumWithError(newMicrophoneStatus, MicrophoneStatuses);
+    _console$x.assertEnumWithError(newMicrophoneStatus, MicrophoneStatuses);
     if (newMicrophoneStatus == _classPrivateFieldGet2(_microphoneStatus, this)) {
-      _console$y.log("redundant microphoneStatus ".concat(newMicrophoneStatus));
+      _console$x.log("redundant microphoneStatus ".concat(newMicrophoneStatus));
       return;
     }
     const previousMicrophoneStatus = _classPrivateFieldGet2(_microphoneStatus, this);
     _classPrivateFieldSet2(_microphoneStatus, this, newMicrophoneStatus);
-    _console$y.log("updated microphoneStatus to \"".concat(this.microphoneStatus, "\""));
+    _console$x.log("updated microphoneStatus to \"".concat(this.microphoneStatus, "\""));
     _classPrivateGetter(_MicrophoneManager_brand, this, _get_dispatchEvent$a).call(this, "microphoneStatus", {
       microphoneStatus: this.microphoneStatus,
       previousMicrophoneStatus
     });
   }
   async function _sendMicrophoneCommand(command, sendImmediately) {
-    _console$y.assertEnumWithError(command, MicrophoneCommands);
-    _console$y.log("sending microphone command \"".concat(command, "\""));
+    _console$x.assertEnumWithError(command, MicrophoneCommands);
+    _console$x.log("sending microphone command \"".concat(command, "\""));
     const promise = this.waitForEvent("microphoneStatus");
-    _console$y.log("setting command \"".concat(command, "\""));
+    _console$x.log("setting command \"".concat(command, "\""));
     const commandEnum = MicrophoneCommands.indexOf(command);
     this.sendMessage([{
       type: "microphoneCommand",
@@ -2195,11 +2195,11 @@
     await promise;
   }
   function _assertValidBitDepth() {
-    _console$y.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
+    _console$x.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
   }
   function _parseMicrophoneData(dataView) {
     _assertClassBrand(_MicrophoneManager_brand, this, _assertValidBitDepth).call(this);
-    _console$y.log("parsing microphone data", dataView);
+    _console$x.log("parsing microphone data", dataView);
     const numberOfSamples = dataView.byteLength / _classPrivateGetter(_MicrophoneManager_brand, this, _get_bytesPerSample);
     const samples = new Float32Array(numberOfSamples);
     for (let i = 0; i < numberOfSamples; i++) {
@@ -2215,7 +2215,7 @@
           break;
       }
     }
-    _console$y.log("samples", samples);
+    _console$x.log("samples", samples);
     if (_classPrivateFieldGet2(_isRecording, this) && _classPrivateFieldGet2(_microphoneRecordingData, this)) {
       _classPrivateFieldGet2(_microphoneRecordingData, this).push(samples);
     }
@@ -2261,18 +2261,18 @@
     while (byteOffset < dataView.byteLength) {
       const microphoneConfigurationTypeIndex = dataView.getUint8(byteOffset++);
       const microphoneConfigurationType = MicrophoneConfigurationTypes[microphoneConfigurationTypeIndex];
-      _console$y.assertWithError(microphoneConfigurationType, "invalid microphoneConfigurationTypeIndex ".concat(microphoneConfigurationTypeIndex));
+      _console$x.assertWithError(microphoneConfigurationType, "invalid microphoneConfigurationTypeIndex ".concat(microphoneConfigurationTypeIndex));
       let rawValue = dataView.getUint8(byteOffset++);
       const values = MicrophoneConfigurationValues[microphoneConfigurationType];
       const value = values[rawValue];
-      _console$y.assertEnumWithError(value, values);
-      _console$y.log({
+      _console$x.assertEnumWithError(value, values);
+      _console$x.log({
         microphoneConfigurationType,
         value
       });
       parsedMicrophoneConfiguration[microphoneConfigurationType] = value;
     }
-    _console$y.log({
+    _console$x.log({
       parsedMicrophoneConfiguration
     });
     _classPrivateFieldSet2(_availableMicrophoneConfigurationTypes, this, Object.keys(parsedMicrophoneConfiguration));
@@ -2289,9 +2289,9 @@
   }
   function _assertAvailableMicrophoneConfigurationType(microphoneConfigurationType) {
     var _classPrivateFieldGet2$1;
-    _console$y.assertWithError(_classPrivateFieldGet2(_availableMicrophoneConfigurationTypes, this), "must get initial microphoneConfiguration");
+    _console$x.assertWithError(_classPrivateFieldGet2(_availableMicrophoneConfigurationTypes, this), "must get initial microphoneConfiguration");
     const isMicrophoneConfigurationTypeAvailable = (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_availableMicrophoneConfigurationTypes, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.includes(microphoneConfigurationType);
-    _console$y.assertWithError(isMicrophoneConfigurationTypeAvailable, "unavailable microphone configuration type \"".concat(microphoneConfigurationType, "\""));
+    _console$x.assertWithError(isMicrophoneConfigurationTypeAvailable, "unavailable microphone configuration type \"".concat(microphoneConfigurationType, "\""));
     return isMicrophoneConfigurationTypeAvailable;
   }
   function _createData$2(microphoneConfiguration) {
@@ -2307,18 +2307,18 @@
         value = value.toString();
       }
       const values = MicrophoneConfigurationValues[microphoneConfigurationType];
-      _console$y.assertEnumWithError(value, values);
+      _console$x.assertEnumWithError(value, values);
       const rawValue = values.indexOf(value);
       dataView.setUint8(index * 2 + 1, rawValue);
     });
-    _console$y.log({
+    _console$x.log({
       sensorConfigurationData: dataView
     });
     return dataView;
   }
   _a$3 = MicrophoneManager;
 
-  const _console$x = createConsole("SensorDataManager", {
+  const _console$w = createConsole("SensorDataManager", {
     log: false
   });
   const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes, ...CameraSensorTypes, ...MicrophoneSensorTypes];
@@ -2329,24 +2329,24 @@
   var _scalars = new WeakMap();
   class SensorDataManager {
     constructor() {
-      _defineProperty$1(this, "pressureSensorDataManager", new PressureSensorDataManager());
-      _defineProperty$1(this, "motionSensorDataManager", new MotionSensorDataManager());
-      _defineProperty$1(this, "barometerSensorDataManager", new BarometerSensorDataManager());
+      _defineProperty(this, "pressureSensorDataManager", new PressureSensorDataManager());
+      _defineProperty(this, "motionSensorDataManager", new MotionSensorDataManager());
+      _defineProperty(this, "barometerSensorDataManager", new BarometerSensorDataManager());
       _classPrivateFieldInitSpec(this, _scalars, new Map());
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
     }
     static AssertValidSensorType(sensorType) {
-      _console$x.assertEnumWithError(sensorType, SensorTypes);
+      _console$w.assertEnumWithError(sensorType, SensorTypes);
     }
     static AssertValidSensorTypeEnum(sensorTypeEnum) {
-      _console$x.assertTypeWithError(sensorTypeEnum, "number");
-      _console$x.assertWithError(sensorTypeEnum in SensorTypes, "invalid sensorTypeEnum ".concat(sensorTypeEnum));
+      _console$w.assertTypeWithError(sensorTypeEnum, "number");
+      _console$w.assertWithError(sensorTypeEnum in SensorTypes, "invalid sensorTypeEnum ".concat(sensorTypeEnum));
     }
     get dispatchEvent() {
       return this.eventDispatcher.dispatchEvent;
     }
     parseMessage(messageType, dataView) {
-      _console$x.log({
+      _console$w.log({
         messageType
       });
       switch (messageType) {
@@ -2368,11 +2368,11 @@
         const sensorTypeIndex = dataView.getUint8(byteOffset);
         const sensorType = SensorTypes[sensorTypeIndex];
         if (!sensorType) {
-          _console$x.warn("unknown sensorType index ".concat(sensorTypeIndex));
+          _console$w.warn("unknown sensorType index ".concat(sensorTypeIndex));
           continue;
         }
         const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
-        _console$x.log({
+        _console$w.log({
           sensorType,
           sensorScalar
         });
@@ -2380,7 +2380,7 @@
       }
     }
     parseData(dataView) {
-      _console$x.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+      _console$w.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
       let byteOffset = 0;
       const timestamp = parseTimestamp(dataView, byteOffset);
       byteOffset += 2;
@@ -2436,10 +2436,10 @@
         case "microphone":
           return;
         default:
-          _console$x.error("uncaught sensorType \"".concat(sensorType, "\""));
+          _console$w.error("uncaught sensorType \"".concat(sensorType, "\""));
       }
-      _console$x.assertWithError(sensorData != null, "no sensorData defined for sensorType \"".concat(sensorType, "\""));
-      _console$x.log({
+      _console$w.assertWithError(sensorData != null, "no sensorData defined for sensorType \"".concat(sensorType, "\""));
+      _console$w.log({
         sensorType,
         sensorData
       });
@@ -2458,7 +2458,7 @@
 
   var _SensorConfigurationManager;
   var _a$2;
-  const _console$w = createConsole("SensorConfigurationManager", {
+  const _console$v = createConsole("SensorConfigurationManager", {
     log: false
   });
   const MaxSensorRate = 2 ** 16 - 1;
@@ -2471,8 +2471,8 @@
   class SensorConfigurationManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _SensorConfigurationManager_brand);
-      _defineProperty$1(this, "sendMessage", void 0);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "sendMessage", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _availableSensorTypes, void 0);
       _classPrivateFieldInitSpec(this, _configuration$1, {});
       autoBind(this);
@@ -2493,15 +2493,15 @@
       if (clearRest) {
         newSensorConfiguration = Object.assign(structuredClone(this.zeroSensorConfiguration), newSensorConfiguration);
       }
-      _console$w.log({
+      _console$v.log({
         newSensorConfiguration
       });
       if (_assertClassBrand(_SensorConfigurationManager_brand, this, _isRedundant).call(this, newSensorConfiguration)) {
-        _console$w.log("redundant sensor configuration");
+        _console$v.log("redundant sensor configuration");
         return;
       }
       const setSensorConfigurationData = _assertClassBrand(_SensorConfigurationManager_brand, this, _createData$1).call(this, newSensorConfiguration);
-      _console$w.log({
+      _console$v.log({
         setSensorConfigurationData
       });
       const promise = this.waitForEvent("getSensorConfiguration");
@@ -2525,7 +2525,7 @@
       return this.setConfiguration(this.zeroSensorConfiguration);
     }
     parseMessage(messageType, dataView) {
-      _console$w.log({
+      _console$v.log({
         messageType
       });
       switch (messageType) {
@@ -2545,14 +2545,14 @@
   }
   function _assertAvailableSensorType(sensorType) {
     var _classPrivateFieldGet2$1;
-    _console$w.assertWithError(_classPrivateFieldGet2(_availableSensorTypes, this), "must get initial sensorConfiguration");
+    _console$v.assertWithError(_classPrivateFieldGet2(_availableSensorTypes, this), "must get initial sensorConfiguration");
     const isSensorTypeAvailable = (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_availableSensorTypes, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.includes(sensorType);
-    _console$w.log(isSensorTypeAvailable, "unavailable sensor type \"".concat(sensorType, "\""));
+    _console$v.log(isSensorTypeAvailable, "unavailable sensor type \"".concat(sensorType, "\""));
     return isSensorTypeAvailable;
   }
   function _updateConfiguration(updatedConfiguration) {
     _classPrivateFieldSet2(_configuration$1, this, updatedConfiguration);
-    _console$w.log({
+    _console$v.log({
       updatedConfiguration: _classPrivateFieldGet2(_configuration$1, this)
     });
     _classPrivateGetter(_SensorConfigurationManager_brand, this, _get_dispatchEvent$9).call(this, "getSensorConfiguration", {
@@ -2571,27 +2571,27 @@
       const sensorTypeIndex = dataView.getUint8(byteOffset);
       const sensorType = SensorTypes[sensorTypeIndex];
       const sensorRate = dataView.getUint16(byteOffset + 1, true);
-      _console$w.log({
+      _console$v.log({
         sensorType,
         sensorRate
       });
       if (!sensorType) {
-        _console$w.warn("unknown sensorType index ".concat(sensorTypeIndex));
+        _console$v.warn("unknown sensorType index ".concat(sensorTypeIndex));
         continue;
       }
       parsedSensorConfiguration[sensorType] = sensorRate;
     }
-    _console$w.log({
+    _console$v.log({
       parsedSensorConfiguration
     });
     _classPrivateFieldSet2(_availableSensorTypes, this, Object.keys(parsedSensorConfiguration));
     return parsedSensorConfiguration;
   }
   function _AssertValidSensorRate(sensorRate) {
-    _console$w.assertTypeWithError(sensorRate, "number");
-    _console$w.assertWithError(sensorRate >= 0, "sensorRate must be 0 or greater (got ".concat(sensorRate, ")"));
-    _console$w.assertWithError(sensorRate < MaxSensorRate, "sensorRate must be 0 or greater (got ".concat(sensorRate, ")"));
-    _console$w.assertWithError(sensorRate % SensorRateStep == 0, "sensorRate must be multiple of ".concat(SensorRateStep));
+    _console$v.assertTypeWithError(sensorRate, "number");
+    _console$v.assertWithError(sensorRate >= 0, "sensorRate must be 0 or greater (got ".concat(sensorRate, ")"));
+    _console$v.assertWithError(sensorRate < MaxSensorRate, "sensorRate must be 0 or greater (got ".concat(sensorRate, ")"));
+    _console$v.assertWithError(sensorRate % SensorRateStep == 0, "sensorRate must be multiple of ".concat(SensorRateStep));
   }
   function _assertValidSensorRate(sensorRate) {
     var _a2;
@@ -2609,7 +2609,7 @@
       _assertClassBrand(_SensorConfigurationManager_brand, this, _assertValidSensorRate).call(this, sensorRate);
       dataView.setUint16(index * 3 + 1, sensorRate, true);
     });
-    _console$w.log({
+    _console$v.log({
       sensorConfigurationData: dataView
     });
     return dataView;
@@ -2622,7 +2622,7 @@
   });
   _a$2 = SensorConfigurationManager;
 
-  const _console$v = createConsole("TfliteManager", {
+  const _console$u = createConsole("TfliteManager", {
     log: false
   });
   const TfliteMessageTypes = ["getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference"];
@@ -2643,8 +2643,8 @@
   class TfliteManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _TfliteManager_brand);
-      _defineProperty$1(this, "sendMessage", void 0);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "sendMessage", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _name$2, void 0);
       _classPrivateFieldInitSpec(this, _task, void 0);
       _classPrivateFieldInitSpec(this, _sampleRate, void 0);
@@ -2669,9 +2669,9 @@
       return _classPrivateFieldGet2(_name$2, this);
     }
     async setName(newName, sendImmediately) {
-      _console$v.assertTypeWithError(newName, "string");
+      _console$u.assertTypeWithError(newName, "string");
       if (this.name == newName) {
-        _console$v.log("redundant name assignment ".concat(newName));
+        _console$u.log("redundant name assignment ".concat(newName));
         return;
       }
       const promise = this.waitForEvent("getTfliteName");
@@ -2688,7 +2688,7 @@
     async setTask(newTask, sendImmediately) {
       _assertClassBrand(_TfliteManager_brand, this, _assertValidTask).call(this, newTask);
       if (this.task == newTask) {
-        _console$v.log("redundant task assignment ".concat(newTask));
+        _console$u.log("redundant task assignment ".concat(newTask));
         return;
       }
       const promise = this.waitForEvent("getTfliteTask");
@@ -2703,11 +2703,11 @@
       return _classPrivateFieldGet2(_sampleRate, this);
     }
     async setSampleRate(newSampleRate, sendImmediately) {
-      _console$v.assertTypeWithError(newSampleRate, "number");
+      _console$u.assertTypeWithError(newSampleRate, "number");
       newSampleRate -= newSampleRate % SensorRateStep;
-      _console$v.assertWithError(newSampleRate >= SensorRateStep, "sampleRate must be multiple of ".concat(SensorRateStep, " greater than 0 (got ").concat(newSampleRate, ")"));
+      _console$u.assertWithError(newSampleRate >= SensorRateStep, "sampleRate must be multiple of ".concat(SensorRateStep, " greater than 0 (got ").concat(newSampleRate, ")"));
       if (_classPrivateFieldGet2(_sampleRate, this) == newSampleRate) {
-        _console$v.log("redundant sampleRate assignment ".concat(newSampleRate));
+        _console$u.log("redundant sampleRate assignment ".concat(newSampleRate));
         return;
       }
       const promise = this.waitForEvent("getTfliteSampleRate");
@@ -2722,7 +2722,7 @@
     static AssertValidSensorType(sensorType) {
       SensorDataManager.AssertValidSensorType(sensorType);
       const tfliteSensorType = sensorType;
-      _console$v.assertWithError(TfliteSensorTypes.includes(tfliteSensorType), "invalid tflite sensorType \"".concat(sensorType, "\""));
+      _console$u.assertWithError(TfliteSensorTypes.includes(tfliteSensorType), "invalid tflite sensorType \"".concat(sensorType, "\""));
     }
     get sensorTypes() {
       return _classPrivateFieldGet2(_sensorTypes, this).slice();
@@ -2734,7 +2734,7 @@
       const promise = this.waitForEvent("getTfliteSensorTypes");
       newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
       const newSensorTypeEnums = newSensorTypes.map(sensorType => SensorTypes.indexOf(sensorType)).sort();
-      _console$v.log(newSensorTypes, newSensorTypeEnums);
+      _console$u.log(newSensorTypes, newSensorTypeEnums);
       this.sendMessage([{
         type: "setTfliteSensorTypes",
         data: Uint8Array.from(newSensorTypeEnums).buffer
@@ -2748,9 +2748,9 @@
       return _classPrivateFieldGet2(_captureDelay, this);
     }
     async setCaptureDelay(newCaptureDelay, sendImmediately) {
-      _console$v.assertTypeWithError(newCaptureDelay, "number");
+      _console$u.assertTypeWithError(newCaptureDelay, "number");
       if (_classPrivateFieldGet2(_captureDelay, this) == newCaptureDelay) {
-        _console$v.log("redundant captureDelay assignment ".concat(newCaptureDelay));
+        _console$u.log("redundant captureDelay assignment ".concat(newCaptureDelay));
         return;
       }
       const promise = this.waitForEvent("getTfliteCaptureDelay");
@@ -2766,10 +2766,10 @@
       return _classPrivateFieldGet2(_threshold, this);
     }
     async setThreshold(newThreshold, sendImmediately) {
-      _console$v.assertTypeWithError(newThreshold, "number");
-      _console$v.assertWithError(newThreshold >= 0, "threshold must be positive (got ".concat(newThreshold, ")"));
+      _console$u.assertTypeWithError(newThreshold, "number");
+      _console$u.assertWithError(newThreshold >= 0, "threshold must be positive (got ".concat(newThreshold, ")"));
       if (_classPrivateFieldGet2(_threshold, this) == newThreshold) {
-        _console$v.log("redundant threshold assignment ".concat(newThreshold));
+        _console$u.log("redundant threshold assignment ".concat(newThreshold));
         return;
       }
       const promise = this.waitForEvent("getTfliteThreshold");
@@ -2786,13 +2786,13 @@
     }
     async setInferencingEnabled(newInferencingEnabled) {
       let sendImmediately = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-      _console$v.assertTypeWithError(newInferencingEnabled, "boolean");
+      _console$u.assertTypeWithError(newInferencingEnabled, "boolean");
       if (!newInferencingEnabled && !this.isReady) {
         return;
       }
       _assertClassBrand(_TfliteManager_brand, this, _assertIsReady).call(this);
       if (_classPrivateFieldGet2(_inferencingEnabled, this) == newInferencingEnabled) {
-        _console$v.log("redundant inferencingEnabled assignment ".concat(newInferencingEnabled));
+        _console$u.log("redundant inferencingEnabled assignment ".concat(newInferencingEnabled));
         return;
       }
       const promise = this.waitForEvent("getTfliteInferencingEnabled");
@@ -2818,7 +2818,7 @@
       this.setInferencingEnabled(false);
     }
     parseMessage(messageType, dataView) {
-      _console$v.log({
+      _console$u.log({
         messageType
       });
       switch (messageType) {
@@ -2865,11 +2865,11 @@
     }
     sendConfiguration(configuration, sendImmediately) {
       if (configuration == _classPrivateFieldGet2(_configuration, this)) {
-        _console$v.log("redundant tflite configuration assignment");
+        _console$u.log("redundant tflite configuration assignment");
         return;
       }
       _classPrivateFieldSet2(_configuration, this, configuration);
-      _console$v.log("assigned new tflite configuration", this.configuration);
+      _console$u.log("assigned new tflite configuration", this.configuration);
       if (!this.configuration) {
         return;
       }
@@ -2900,7 +2900,7 @@
       _classPrivateFieldSet2(_isReady$1, this, false);
     }
     requestRequiredInformation() {
-      _console$v.log("requesting required tflite information");
+      _console$u.log("requesting required tflite information");
       const messages = RequiredTfliteMessageTypes.map(messageType => ({
         type: messageType
       }));
@@ -2908,21 +2908,21 @@
     }
   }
   function _assertValidTask(task) {
-    _console$v.assertEnumWithError(task, TfliteTasks);
+    _console$u.assertEnumWithError(task, TfliteTasks);
   }
   function _assertValidTaskEnum(taskEnum) {
-    _console$v.assertWithError(taskEnum in TfliteTasks, "invalid taskEnum ".concat(taskEnum));
+    _console$u.assertWithError(taskEnum in TfliteTasks, "invalid taskEnum ".concat(taskEnum));
   }
   function _get_dispatchEvent$8(_this) {
     return _this.eventDispatcher.dispatchEvent;
   }
   function _parseName(dataView) {
-    _console$v.log("parseName", dataView);
+    _console$u.log("parseName", dataView);
     const name = textDecoder.decode(dataView.buffer);
     _assertClassBrand(_TfliteManager_brand, this, _updateName).call(this, name);
   }
   function _updateName(name) {
-    _console$v.log({
+    _console$u.log({
       name
     });
     _classPrivateFieldSet2(_name$2, this, name);
@@ -2931,14 +2931,14 @@
     });
   }
   function _parseTask(dataView) {
-    _console$v.log("parseTask", dataView);
+    _console$u.log("parseTask", dataView);
     const taskEnum = dataView.getUint8(0);
     _assertClassBrand(_TfliteManager_brand, this, _assertValidTaskEnum).call(this, taskEnum);
     const task = TfliteTasks[taskEnum];
     _assertClassBrand(_TfliteManager_brand, this, _updateTask).call(this, task);
   }
   function _updateTask(task) {
-    _console$v.log({
+    _console$u.log({
       task
     });
     _classPrivateFieldSet2(_task, this, task);
@@ -2947,12 +2947,12 @@
     });
   }
   function _parseSampleRate(dataView) {
-    _console$v.log("parseSampleRate", dataView);
+    _console$u.log("parseSampleRate", dataView);
     const sampleRate = dataView.getUint16(0, true);
     _assertClassBrand(_TfliteManager_brand, this, _updateSampleRate).call(this, sampleRate);
   }
   function _updateSampleRate(sampleRate) {
-    _console$v.log({
+    _console$u.log({
       sampleRate
     });
     _classPrivateFieldSet2(_sampleRate, this, sampleRate);
@@ -2961,7 +2961,7 @@
     });
   }
   function _parseSensorTypes(dataView) {
-    _console$v.log("parseSensorTypes", dataView);
+    _console$u.log("parseSensorTypes", dataView);
     const sensorTypes = [];
     for (let index = 0; index < dataView.byteLength; index++) {
       const sensorTypeEnum = dataView.getUint8(index);
@@ -2970,16 +2970,16 @@
         if (TfliteSensorTypes.includes(sensorType)) {
           sensorTypes.push(sensorType);
         } else {
-          _console$v.error("invalid tfliteSensorType ".concat(sensorType));
+          _console$u.error("invalid tfliteSensorType ".concat(sensorType));
         }
       } else {
-        _console$v.error("invalid sensorTypeEnum ".concat(sensorTypeEnum));
+        _console$u.error("invalid sensorTypeEnum ".concat(sensorTypeEnum));
       }
     }
     _assertClassBrand(_TfliteManager_brand, this, _updateSensorTypes).call(this, sensorTypes);
   }
   function _updateSensorTypes(sensorTypes) {
-    _console$v.log({
+    _console$u.log({
       sensorTypes
     });
     _classPrivateFieldSet2(_sensorTypes, this, sensorTypes);
@@ -2988,12 +2988,12 @@
     });
   }
   function _parseIsReady(dataView) {
-    _console$v.log("parseIsReady", dataView);
+    _console$u.log("parseIsReady", dataView);
     const isReady = Boolean(dataView.getUint8(0));
     _assertClassBrand(_TfliteManager_brand, this, _updateIsReady).call(this, isReady);
   }
   function _updateIsReady(isReady) {
-    _console$v.log({
+    _console$u.log({
       isReady
     });
     _classPrivateFieldSet2(_isReady$1, this, isReady);
@@ -3002,15 +3002,15 @@
     });
   }
   function _assertIsReady() {
-    _console$v.assertWithError(this.isReady, "tflite is not ready");
+    _console$u.assertWithError(this.isReady, "tflite is not ready");
   }
   function _parseCaptureDelay(dataView) {
-    _console$v.log("parseCaptureDelay", dataView);
+    _console$u.log("parseCaptureDelay", dataView);
     const captureDelay = dataView.getUint16(0, true);
     _assertClassBrand(_TfliteManager_brand, this, _updateCaptueDelay).call(this, captureDelay);
   }
   function _updateCaptueDelay(captureDelay) {
-    _console$v.log({
+    _console$u.log({
       captureDelay
     });
     _classPrivateFieldSet2(_captureDelay, this, captureDelay);
@@ -3019,12 +3019,12 @@
     });
   }
   function _parseThreshold(dataView) {
-    _console$v.log("parseThreshold", dataView);
+    _console$u.log("parseThreshold", dataView);
     const threshold = dataView.getFloat32(0, true);
     _assertClassBrand(_TfliteManager_brand, this, _updateThreshold).call(this, threshold);
   }
   function _updateThreshold(threshold) {
-    _console$v.log({
+    _console$u.log({
       threshold
     });
     _classPrivateFieldSet2(_threshold, this, threshold);
@@ -3033,12 +3033,12 @@
     });
   }
   function _parseInferencingEnabled(dataView) {
-    _console$v.log("parseInferencingEnabled", dataView);
+    _console$u.log("parseInferencingEnabled", dataView);
     const inferencingEnabled = Boolean(dataView.getUint8(0));
     _assertClassBrand(_TfliteManager_brand, this, _updateInferencingEnabled).call(this, inferencingEnabled);
   }
   function _updateInferencingEnabled(inferencingEnabled) {
-    _console$v.log({
+    _console$u.log({
       inferencingEnabled
     });
     _classPrivateFieldSet2(_inferencingEnabled, this, inferencingEnabled);
@@ -3047,9 +3047,9 @@
     });
   }
   function _parseInference(dataView) {
-    _console$v.log("parseInference", dataView);
+    _console$u.log("parseInference", dataView);
     const timestamp = parseTimestamp(dataView, 0);
-    _console$v.log({
+    _console$u.log({
       timestamp
     });
     const values = [];
@@ -3057,7 +3057,7 @@
       const value = dataView.getFloat32(byteOffset, true);
       values.push(value);
     }
-    _console$v.log("values", values);
+    _console$u.log("values", values);
     const inference = {
       timestamp,
       values
@@ -3072,7 +3072,7 @@
           maxIndex = index;
         }
       });
-      _console$v.log({
+      _console$u.log({
         maxIndex,
         maxValue
       });
@@ -3095,7 +3095,7 @@
     });
   }
 
-  const _console$u = createConsole("DeviceInformationManager", {
+  const _console$t = createConsole("DeviceInformationManager", {
     log: false
   });
   const DeviceInformationTypes = ["manufacturerName", "modelNumber", "hardwareRevision", "firmwareRevision", "softwareRevision", "pnpId", "serialNumber"];
@@ -3105,7 +3105,7 @@
   class DeviceInformationManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _DeviceInformationManager_brand);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _information, {});
     }
     get information() {
@@ -3115,13 +3115,13 @@
       _classPrivateFieldSet2(_information, this, {});
     }
     parseMessage(messageType, dataView) {
-      _console$u.log({
+      _console$t.log({
         messageType
       });
       switch (messageType) {
         case "manufacturerName":
           const manufacturerName = textDecoder.decode(dataView.buffer);
-          _console$u.log({
+          _console$t.log({
             manufacturerName
           });
           _assertClassBrand(_DeviceInformationManager_brand, this, _update).call(this, {
@@ -3130,7 +3130,7 @@
           break;
         case "modelNumber":
           const modelNumber = textDecoder.decode(dataView.buffer);
-          _console$u.log({
+          _console$t.log({
             modelNumber
           });
           _assertClassBrand(_DeviceInformationManager_brand, this, _update).call(this, {
@@ -3139,7 +3139,7 @@
           break;
         case "softwareRevision":
           const softwareRevision = textDecoder.decode(dataView.buffer);
-          _console$u.log({
+          _console$t.log({
             softwareRevision
           });
           _assertClassBrand(_DeviceInformationManager_brand, this, _update).call(this, {
@@ -3148,7 +3148,7 @@
           break;
         case "hardwareRevision":
           const hardwareRevision = textDecoder.decode(dataView.buffer);
-          _console$u.log({
+          _console$t.log({
             hardwareRevision
           });
           _assertClassBrand(_DeviceInformationManager_brand, this, _update).call(this, {
@@ -3157,7 +3157,7 @@
           break;
         case "firmwareRevision":
           const firmwareRevision = textDecoder.decode(dataView.buffer);
-          _console$u.log({
+          _console$t.log({
             firmwareRevision
           });
           _assertClassBrand(_DeviceInformationManager_brand, this, _update).call(this, {
@@ -3174,7 +3174,7 @@
           if (pnpId.source == "Bluetooth") {
             pnpId.vendorId = dataView.getUint16(1, true);
           }
-          _console$u.log({
+          _console$t.log({
             pnpId
           });
           _assertClassBrand(_DeviceInformationManager_brand, this, _update).call(this, {
@@ -3183,7 +3183,7 @@
           break;
         case "serialNumber":
           const serialNumber = textDecoder.decode(dataView.buffer);
-          _console$u.log({
+          _console$t.log({
             serialNumber
           });
           break;
@@ -3199,7 +3199,7 @@
     return DeviceInformationTypes.filter(key => key != "serialNumber").every(key => key in _classPrivateFieldGet2(_information, _this2));
   }
   function _update(partialDeviceInformation) {
-    _console$u.log({
+    _console$t.log({
       partialDeviceInformation
     });
     const deviceInformationNames = Object.keys(partialDeviceInformation);
@@ -3209,18 +3209,18 @@
       });
     });
     Object.assign(_classPrivateFieldGet2(_information, this), partialDeviceInformation);
-    _console$u.log({
+    _console$t.log({
       deviceInformation: _classPrivateFieldGet2(_information, this)
     });
     if (_classPrivateGetter(_DeviceInformationManager_brand, this, _get_isComplete)) {
-      _console$u.log("completed deviceInformation");
+      _console$t.log("completed deviceInformation");
       _classPrivateGetter(_DeviceInformationManager_brand, this, _get_dispatchEvent$7).call(this, "deviceInformation", {
         deviceInformation: this.information
       });
     }
   }
 
-  const _console$t = createConsole("InformationManager", {
+  const _console$s = createConsole("InformationManager", {
     log: false
   });
   const DeviceTypes = ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses", "generic"];
@@ -3240,8 +3240,8 @@
   class InformationManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _InformationManager_brand);
-      _defineProperty$1(this, "sendMessage", void 0);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "sendMessage", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _isCharging, false);
       _classPrivateFieldInitSpec(this, _batteryCurrent, void 0);
       _classPrivateFieldInitSpec(this, _id, void 0);
@@ -3249,7 +3249,7 @@
       _classPrivateFieldInitSpec(this, _type$1, void 0);
       _classPrivateFieldInitSpec(this, _mtu$2, 0);
       _classPrivateFieldInitSpec(this, _isCurrentTimeSet, false);
-      _defineProperty$1(this, "connectionType", void 0);
+      _defineProperty(this, "connectionType", void 0);
       autoBind(this);
     }
     get waitForEvent() {
@@ -3262,7 +3262,7 @@
       return _classPrivateFieldGet2(_batteryCurrent, this);
     }
     async getBatteryCurrent() {
-      _console$t.log("getting battery current...");
+      _console$s.log("getting battery current...");
       const promise = this.waitForEvent("getBatteryCurrent");
       this.sendMessage([{
         type: "getBatteryCurrent"
@@ -3276,9 +3276,9 @@
       return _classPrivateFieldGet2(_name$1, this);
     }
     updateName(updatedName) {
-      _console$t.assertTypeWithError(updatedName, "string");
+      _console$s.assertTypeWithError(updatedName, "string");
       _classPrivateFieldSet2(_name$1, this, updatedName);
-      _console$t.log({
+      _console$s.log({
         updatedName: _classPrivateFieldGet2(_name$1, this)
       });
       _classPrivateGetter(_InformationManager_brand, this, _get_dispatchEvent$6).call(this, "getName", {
@@ -3286,10 +3286,10 @@
       });
     }
     async setName(newName) {
-      _console$t.assertTypeWithError(newName, "string");
-      _console$t.assertRangeWithError("newName", newName.length, MinNameLength, MaxNameLength);
+      _console$s.assertTypeWithError(newName, "string");
+      _console$s.assertRangeWithError("newName", newName.length, MinNameLength, MaxNameLength);
       const setNameData = textEncoder.encode(newName);
-      _console$t.log({
+      _console$s.log({
         setNameData
       });
       const promise = this.waitForEvent("getName");
@@ -3308,7 +3308,7 @@
     updateType(updatedType) {
       _assertClassBrand(_InformationManager_brand, this, _assertValidDeviceType).call(this, updatedType);
       _classPrivateFieldSet2(_type$1, this, updatedType);
-      _console$t.log({
+      _console$s.log({
         updatedType: _classPrivateFieldGet2(_type$1, this)
       });
       _classPrivateGetter(_InformationManager_brand, this, _get_dispatchEvent$6).call(this, "getType", {
@@ -3357,27 +3357,27 @@
       return _classPrivateFieldGet2(_isCurrentTimeSet, this);
     }
     parseMessage(messageType, dataView) {
-      _console$t.log({
+      _console$s.log({
         messageType
       });
       switch (messageType) {
         case "isCharging":
           const isCharging = Boolean(dataView.getUint8(0));
-          _console$t.log({
+          _console$s.log({
             isCharging
           });
           _assertClassBrand(_InformationManager_brand, this, _updateIsCharging).call(this, isCharging);
           break;
         case "getBatteryCurrent":
           const batteryCurrent = dataView.getFloat32(0, true);
-          _console$t.log({
+          _console$s.log({
             batteryCurrent
           });
           _assertClassBrand(_InformationManager_brand, this, _updateBatteryCurrent).call(this, batteryCurrent);
           break;
         case "getId":
           const id = textDecoder.decode(dataView.buffer);
-          _console$t.log({
+          _console$s.log({
             id
           });
           _assertClassBrand(_InformationManager_brand, this, _updateId).call(this, id);
@@ -3385,7 +3385,7 @@
         case "getName":
         case "setName":
           const name = textDecoder.decode(dataView.buffer);
-          _console$t.log({
+          _console$s.log({
             name
           });
           this.updateName(name);
@@ -3394,7 +3394,7 @@
         case "setType":
           const typeEnum = dataView.getUint8(0);
           const type = DeviceTypes[typeEnum];
-          _console$t.log({
+          _console$s.log({
             typeEnum,
             type
           });
@@ -3405,7 +3405,7 @@
           if (this.connectionType != "webSocket" && this.connectionType != "udp") {
             mtu = Math.min(mtu, 512);
           }
-          _console$t.log({
+          _console$s.log({
             mtu
           });
           _assertClassBrand(_InformationManager_brand, this, _updateMtu).call(this, mtu);
@@ -3427,9 +3427,9 @@
     return _this.eventDispatcher.dispatchEvent;
   }
   function _updateIsCharging(updatedIsCharging) {
-    _console$t.assertTypeWithError(updatedIsCharging, "boolean");
+    _console$s.assertTypeWithError(updatedIsCharging, "boolean");
     _classPrivateFieldSet2(_isCharging, this, updatedIsCharging);
-    _console$t.log({
+    _console$s.log({
       isCharging: _classPrivateFieldGet2(_isCharging, this)
     });
     _classPrivateGetter(_InformationManager_brand, this, _get_dispatchEvent$6).call(this, "isCharging", {
@@ -3437,9 +3437,9 @@
     });
   }
   function _updateBatteryCurrent(updatedBatteryCurrent) {
-    _console$t.assertTypeWithError(updatedBatteryCurrent, "number");
+    _console$s.assertTypeWithError(updatedBatteryCurrent, "number");
     _classPrivateFieldSet2(_batteryCurrent, this, updatedBatteryCurrent);
-    _console$t.log({
+    _console$s.log({
       batteryCurrent: _classPrivateFieldGet2(_batteryCurrent, this)
     });
     _classPrivateGetter(_InformationManager_brand, this, _get_dispatchEvent$6).call(this, "getBatteryCurrent", {
@@ -3447,9 +3447,9 @@
     });
   }
   function _updateId(updatedId) {
-    _console$t.assertTypeWithError(updatedId, "string");
+    _console$s.assertTypeWithError(updatedId, "string");
     _classPrivateFieldSet2(_id, this, updatedId);
-    _console$t.log({
+    _console$s.log({
       id: _classPrivateFieldGet2(_id, this)
     });
     _classPrivateGetter(_InformationManager_brand, this, _get_dispatchEvent$6).call(this, "getId", {
@@ -3457,16 +3457,16 @@
     });
   }
   function _assertValidDeviceType(type) {
-    _console$t.assertEnumWithError(type, DeviceTypes);
+    _console$s.assertEnumWithError(type, DeviceTypes);
   }
   function _assertValidDeviceTypeEnum(typeEnum) {
-    _console$t.assertTypeWithError(typeEnum, "number");
-    _console$t.assertWithError(typeEnum in DeviceTypes, "invalid typeEnum ".concat(typeEnum));
+    _console$s.assertTypeWithError(typeEnum, "number");
+    _console$s.assertWithError(typeEnum in DeviceTypes, "invalid typeEnum ".concat(typeEnum));
   }
   async function _setTypeEnum(newTypeEnum) {
     _assertClassBrand(_InformationManager_brand, this, _assertValidDeviceTypeEnum).call(this, newTypeEnum);
     const setTypeData = UInt8ByteBuffer(newTypeEnum);
-    _console$t.log({
+    _console$s.log({
       setTypeData
     });
     const promise = this.waitForEvent("getType");
@@ -3477,9 +3477,9 @@
     await promise;
   }
   function _updateMtu(newMtu) {
-    _console$t.assertTypeWithError(newMtu, "number");
+    _console$s.assertTypeWithError(newMtu, "number");
     if (_classPrivateFieldGet2(_mtu$2, this) == newMtu) {
-      _console$t.log("redundant mtu assignment", newMtu);
+      _console$s.log("redundant mtu assignment", newMtu);
       return;
     }
     _classPrivateFieldSet2(_mtu$2, this, newMtu);
@@ -3488,7 +3488,7 @@
     });
   }
   function _onCurrentTime(currentTime) {
-    _console$t.log({
+    _console$s.log({
       currentTime
     });
     _classPrivateFieldSet2(_isCurrentTimeSet, this, currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max);
@@ -3497,7 +3497,7 @@
     }
   }
   async function _setCurrentTime(sendImmediately) {
-    _console$t.log("setting current time...");
+    _console$s.log("setting current time...");
     const dataView = new DataView(new ArrayBuffer(8));
     dataView.setBigUint64(0, BigInt(Date.now()), true);
     const promise = this.waitForEvent("getCurrentTime");
@@ -3510,7 +3510,7 @@
 
   const VibrationWaveformEffects = ["none", "strongClick100", "strongClick60", "strongClick30", "sharpClick100", "sharpClick60", "sharpClick30", "softBump100", "softBump60", "softBump30", "doubleClick100", "doubleClick60", "tripleClick100", "softFuzz60", "strongBuzz100", "alert750ms", "alert1000ms", "strongClick1_100", "strongClick2_80", "strongClick3_60", "strongClick4_30", "mediumClick100", "mediumClick80", "mediumClick60", "sharpTick100", "sharpTick80", "sharpTick60", "shortDoubleClickStrong100", "shortDoubleClickStrong80", "shortDoubleClickStrong60", "shortDoubleClickStrong30", "shortDoubleClickMedium100", "shortDoubleClickMedium80", "shortDoubleClickMedium60", "shortDoubleSharpTick100", "shortDoubleSharpTick80", "shortDoubleSharpTick60", "longDoubleSharpClickStrong100", "longDoubleSharpClickStrong80", "longDoubleSharpClickStrong60", "longDoubleSharpClickStrong30", "longDoubleSharpClickMedium100", "longDoubleSharpClickMedium80", "longDoubleSharpClickMedium60", "longDoubleSharpTick100", "longDoubleSharpTick80", "longDoubleSharpTick60", "buzz100", "buzz80", "buzz60", "buzz40", "buzz20", "pulsingStrong100", "pulsingStrong60", "pulsingMedium100", "pulsingMedium60", "pulsingSharp100", "pulsingSharp60", "transitionClick100", "transitionClick80", "transitionClick60", "transitionClick40", "transitionClick20", "transitionClick10", "transitionHum100", "transitionHum80", "transitionHum60", "transitionHum40", "transitionHum20", "transitionHum10", "transitionRampDownLongSmooth2_100", "transitionRampDownLongSmooth1_100", "transitionRampDownMediumSmooth1_100", "transitionRampDownMediumSmooth2_100", "transitionRampDownShortSmooth1_100", "transitionRampDownShortSmooth2_100", "transitionRampDownLongSharp1_100", "transitionRampDownLongSharp2_100", "transitionRampDownMediumSharp1_100", "transitionRampDownMediumSharp2_100", "transitionRampDownShortSharp1_100", "transitionRampDownShortSharp2_100", "transitionRampUpLongSmooth1_100", "transitionRampUpLongSmooth2_100", "transitionRampUpMediumSmooth1_100", "transitionRampUpMediumSmooth2_100", "transitionRampUpShortSmooth1_100", "transitionRampUpShortSmooth2_100", "transitionRampUpLongSharp1_100", "transitionRampUpLongSharp2_100", "transitionRampUpMediumSharp1_100", "transitionRampUpMediumSharp2_100", "transitionRampUpShortSharp1_100", "transitionRampUpShortSharp2_100", "transitionRampDownLongSmooth1_50", "transitionRampDownLongSmooth2_50", "transitionRampDownMediumSmooth1_50", "transitionRampDownMediumSmooth2_50", "transitionRampDownShortSmooth1_50", "transitionRampDownShortSmooth2_50", "transitionRampDownLongSharp1_50", "transitionRampDownLongSharp2_50", "transitionRampDownMediumSharp1_50", "transitionRampDownMediumSharp2_50", "transitionRampDownShortSharp1_50", "transitionRampDownShortSharp2_50", "transitionRampUpLongSmooth1_50", "transitionRampUpLongSmooth2_50", "transitionRampUpMediumSmooth1_50", "transitionRampUpMediumSmooth2_50", "transitionRampUpShortSmooth1_50", "transitionRampUpShortSmooth2_50", "transitionRampUpLongSharp1_50", "transitionRampUpLongSharp2_50", "transitionRampUpMediumSharp1_50", "transitionRampUpMediumSharp2_50", "transitionRampUpShortSharp1_50", "transitionRampUpShortSharp2_50", "longBuzz100", "smoothHum50", "smoothHum40", "smoothHum30", "smoothHum20", "smoothHum10"];
 
-  const _console$s = createConsole("VibrationManager", {
+  const _console$r = createConsole("VibrationManager", {
     log: false
   });
   const VibrationLocations = ["front", "rear"];
@@ -3528,8 +3528,8 @@
   class VibrationManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _VibrationManager_brand);
-      _defineProperty$1(this, "sendMessage", void 0);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "sendMessage", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _vibrationLocations, []);
       autoBind(this);
     }
@@ -3570,7 +3570,7 @@
           default:
             throw Error("invalid vibration type \"".concat(type, "\""));
         }
-        _console$s.log({
+        _console$r.log({
           type,
           arrayBuffer
         });
@@ -3585,7 +3585,7 @@
       return _classPrivateFieldGet2(_vibrationLocations, this);
     }
     parseMessage(messageType, dataView) {
-      _console$s.log({
+      _console$r.log({
         messageType
       });
       switch (messageType) {
@@ -3602,8 +3602,8 @@
     return _this.eventDispatcher.dispatchEvent;
   }
   function _verifyLocation(location) {
-    _console$s.assertTypeWithError(location, "string");
-    _console$s.assertWithError(VibrationLocations.includes(location), "invalid location \"".concat(location, "\""));
+    _console$r.assertTypeWithError(location, "string");
+    _console$r.assertWithError(VibrationLocations.includes(location), "invalid location \"".concat(location, "\""));
   }
   function _verifyLocations(locations) {
     _assertClassBrand(_VibrationManager_brand, this, _assertNonEmptyArray).call(this, locations);
@@ -3618,18 +3618,18 @@
       const locationIndex = VibrationLocations.indexOf(location);
       locationsBitmask |= 1 << locationIndex;
     });
-    _console$s.log({
+    _console$r.log({
       locationsBitmask
     });
-    _console$s.assertWithError(locationsBitmask > 0, "locationsBitmask must not be zero");
+    _console$r.assertWithError(locationsBitmask > 0, "locationsBitmask must not be zero");
     return locationsBitmask;
   }
   function _assertNonEmptyArray(array) {
-    _console$s.assertWithError(Array.isArray(array), "passed non-array");
-    _console$s.assertWithError(array.length > 0, "passed empty array");
+    _console$r.assertWithError(Array.isArray(array), "passed non-array");
+    _console$r.assertWithError(array.length > 0, "passed empty array");
   }
   function _verifyWaveformEffect(waveformEffect) {
-    _console$s.assertWithError(VibrationWaveformEffects.includes(waveformEffect), "invalid waveformEffect \"".concat(waveformEffect, "\""));
+    _console$r.assertWithError(VibrationWaveformEffects.includes(waveformEffect), "invalid waveformEffect \"".concat(waveformEffect, "\""));
   }
   function _verifyWaveformEffectSegment(waveformEffectSegment) {
     if (waveformEffectSegment.effect != undefined) {
@@ -3639,8 +3639,8 @@
       const {
         delay
       } = waveformEffectSegment;
-      _console$s.assertWithError(delay >= 0, "delay must be 0ms or greater (got ".concat(delay, ")"));
-      _console$s.assertWithError(delay <= MaxVibrationWaveformEffectSegmentDelay, "delay must be ".concat(MaxVibrationWaveformEffectSegmentDelay, "ms or less (got ").concat(delay, ")"));
+      _console$r.assertWithError(delay >= 0, "delay must be 0ms or greater (got ".concat(delay, ")"));
+      _console$r.assertWithError(delay <= MaxVibrationWaveformEffectSegmentDelay, "delay must be ".concat(MaxVibrationWaveformEffectSegmentDelay, "ms or less (got ").concat(delay, ")"));
     } else {
       throw Error("no effect or delay found in waveformEffectSegment");
     }
@@ -3652,33 +3652,33 @@
     }
   }
   function _verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
-    _console$s.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
-    _console$s.assertWithError(waveformEffectSegmentLoopCount >= 0, "waveformEffectSegmentLoopCount must be 0 or greater (got ".concat(waveformEffectSegmentLoopCount, ")"));
-    _console$s.assertWithError(waveformEffectSegmentLoopCount <= MaxVibrationWaveformEffectSegmentLoopCount, "waveformEffectSegmentLoopCount must be ".concat(MaxVibrationWaveformEffectSegmentLoopCount, " or fewer (got ").concat(waveformEffectSegmentLoopCount, ")"));
+    _console$r.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
+    _console$r.assertWithError(waveformEffectSegmentLoopCount >= 0, "waveformEffectSegmentLoopCount must be 0 or greater (got ".concat(waveformEffectSegmentLoopCount, ")"));
+    _console$r.assertWithError(waveformEffectSegmentLoopCount <= MaxVibrationWaveformEffectSegmentLoopCount, "waveformEffectSegmentLoopCount must be ".concat(MaxVibrationWaveformEffectSegmentLoopCount, " or fewer (got ").concat(waveformEffectSegmentLoopCount, ")"));
   }
   function _verifyWaveformEffectSegments(waveformEffectSegments) {
     _assertClassBrand(_VibrationManager_brand, this, _assertNonEmptyArray).call(this, waveformEffectSegments);
-    _console$s.assertWithError(waveformEffectSegments.length <= MaxNumberOfVibrationWaveformEffectSegments, "must have ".concat(MaxNumberOfVibrationWaveformEffectSegments, " waveformEffectSegments or fewer (got ").concat(waveformEffectSegments.length, ")"));
+    _console$r.assertWithError(waveformEffectSegments.length <= MaxNumberOfVibrationWaveformEffectSegments, "must have ".concat(MaxNumberOfVibrationWaveformEffectSegments, " waveformEffectSegments or fewer (got ").concat(waveformEffectSegments.length, ")"));
     waveformEffectSegments.forEach(waveformEffectSegment => {
       _assertClassBrand(_VibrationManager_brand, this, _verifyWaveformEffectSegment).call(this, waveformEffectSegment);
     });
   }
   function _verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
-    _console$s.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
-    _console$s.assertWithError(waveformEffectSequenceLoopCount >= 0, "waveformEffectSequenceLoopCount must be 0 or greater (got ".concat(waveformEffectSequenceLoopCount, ")"));
-    _console$s.assertWithError(waveformEffectSequenceLoopCount <= MaxVibrationWaveformEffectSequenceLoopCount, "waveformEffectSequenceLoopCount must be ".concat(MaxVibrationWaveformEffectSequenceLoopCount, " or fewer (got ").concat(waveformEffectSequenceLoopCount, ")"));
+    _console$r.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
+    _console$r.assertWithError(waveformEffectSequenceLoopCount >= 0, "waveformEffectSequenceLoopCount must be 0 or greater (got ".concat(waveformEffectSequenceLoopCount, ")"));
+    _console$r.assertWithError(waveformEffectSequenceLoopCount <= MaxVibrationWaveformEffectSequenceLoopCount, "waveformEffectSequenceLoopCount must be ".concat(MaxVibrationWaveformEffectSequenceLoopCount, " or fewer (got ").concat(waveformEffectSequenceLoopCount, ")"));
   }
   function _verifyWaveformSegment(waveformSegment) {
-    _console$s.assertTypeWithError(waveformSegment.amplitude, "number");
-    _console$s.assertWithError(waveformSegment.amplitude >= 0, "amplitude must be 0 or greater (got ".concat(waveformSegment.amplitude, ")"));
-    _console$s.assertWithError(waveformSegment.amplitude <= 1, "amplitude must be 1 or less (got ".concat(waveformSegment.amplitude, ")"));
-    _console$s.assertTypeWithError(waveformSegment.duration, "number");
-    _console$s.assertWithError(waveformSegment.duration > 0, "duration must be greater than 0ms (got ".concat(waveformSegment.duration, "ms)"));
-    _console$s.assertWithError(waveformSegment.duration <= MaxVibrationWaveformSegmentDuration, "duration must be ".concat(MaxVibrationWaveformSegmentDuration, "ms or less (got ").concat(waveformSegment.duration, "ms)"));
+    _console$r.assertTypeWithError(waveformSegment.amplitude, "number");
+    _console$r.assertWithError(waveformSegment.amplitude >= 0, "amplitude must be 0 or greater (got ".concat(waveformSegment.amplitude, ")"));
+    _console$r.assertWithError(waveformSegment.amplitude <= 1, "amplitude must be 1 or less (got ".concat(waveformSegment.amplitude, ")"));
+    _console$r.assertTypeWithError(waveformSegment.duration, "number");
+    _console$r.assertWithError(waveformSegment.duration > 0, "duration must be greater than 0ms (got ".concat(waveformSegment.duration, "ms)"));
+    _console$r.assertWithError(waveformSegment.duration <= MaxVibrationWaveformSegmentDuration, "duration must be ".concat(MaxVibrationWaveformSegmentDuration, "ms or less (got ").concat(waveformSegment.duration, "ms)"));
   }
   function _verifyWaveformSegments(waveformSegments) {
     _assertClassBrand(_VibrationManager_brand, this, _assertNonEmptyArray).call(this, waveformSegments);
-    _console$s.assertWithError(waveformSegments.length <= MaxNumberOfVibrationWaveformSegments, "must have ".concat(MaxNumberOfVibrationWaveformSegments, " waveformSegments or fewer (got ").concat(waveformSegments.length, ")"));
+    _console$r.assertWithError(waveformSegments.length <= MaxNumberOfVibrationWaveformSegments, "must have ".concat(MaxNumberOfVibrationWaveformSegments, " waveformSegments or fewer (got ").concat(waveformSegments.length, ")"));
     waveformSegments.forEach(waveformSegment => {
       _assertClassBrand(_VibrationManager_brand, this, _verifyWaveformSegment).call(this, waveformSegment);
     });
@@ -3729,7 +3729,7 @@
       dataArray[byteOffset++] = waveformEffectSequenceLoopCount;
     }
     const dataView = new DataView(Uint8Array.from(dataArray).buffer);
-    _console$s.log({
+    _console$r.log({
       dataArray,
       dataView
     });
@@ -3742,40 +3742,40 @@
       dataView.setUint8(index * 2, Math.floor(waveformSegment.amplitude * 127));
       dataView.setUint8(index * 2 + 1, Math.floor(waveformSegment.duration / 10));
     });
-    _console$s.log({
+    _console$r.log({
       dataView
     });
     return _assertClassBrand(_VibrationManager_brand, this, _createData).call(this, locations, "waveform", dataView);
   }
   function _verifyVibrationType(vibrationType) {
-    _console$s.assertTypeWithError(vibrationType, "string");
-    _console$s.assertWithError(VibrationTypes.includes(vibrationType), "invalid vibrationType \"".concat(vibrationType, "\""));
+    _console$r.assertTypeWithError(vibrationType, "string");
+    _console$r.assertWithError(VibrationTypes.includes(vibrationType), "invalid vibrationType \"".concat(vibrationType, "\""));
   }
   function _createData(locations, vibrationType, dataView) {
-    _console$s.assertWithError((dataView === null || dataView === void 0 ? void 0 : dataView.byteLength) > 0, "no data received");
+    _console$r.assertWithError((dataView === null || dataView === void 0 ? void 0 : dataView.byteLength) > 0, "no data received");
     const locationsBitmask = _assertClassBrand(_VibrationManager_brand, this, _createLocationsBitmask).call(this, locations);
     _assertClassBrand(_VibrationManager_brand, this, _verifyVibrationType).call(this, vibrationType);
     const vibrationTypeIndex = VibrationTypes.indexOf(vibrationType);
-    _console$s.log({
+    _console$r.log({
       locationsBitmask,
       vibrationTypeIndex,
       dataView
     });
     const data = concatenateArrayBuffers(locationsBitmask, vibrationTypeIndex, dataView.byteLength, dataView);
-    _console$s.log({
+    _console$r.log({
       data
     });
     return data;
   }
   function _onVibrationLocations(vibrationLocations) {
     _classPrivateFieldSet2(_vibrationLocations, this, vibrationLocations);
-    _console$s.log("vibrationLocations", vibrationLocations);
+    _console$r.log("vibrationLocations", vibrationLocations);
     _classPrivateGetter(_VibrationManager_brand, this, _get_dispatchEvent$5).call(this, "getVibrationLocations", {
       vibrationLocations: _classPrivateFieldGet2(_vibrationLocations, this)
     });
   }
 
-  const _console$r = createConsole("WifiManager", {
+  const _console$q = createConsole("WifiManager", {
     log: false
   });
   const MinWifiSSIDLength = 1;
@@ -3796,8 +3796,8 @@
   class WifiManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _WifiManager_brand);
-      _defineProperty$1(this, "sendMessage", void 0);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "sendMessage", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _isWifiAvailable, false);
       _classPrivateFieldInitSpec(this, _wifiSSID, "");
       _classPrivateFieldInitSpec(this, _wifiPassword, "");
@@ -3811,7 +3811,7 @@
       return this.eventDispatcher.waitForEvent;
     }
     requestRequiredInformation() {
-      _console$r.log("requesting required wifi information");
+      _console$q.log("requesting required wifi information");
       const messages = RequiredWifiMessageTypes.map(messageType => ({
         type: messageType
       }));
@@ -3826,13 +3826,13 @@
     async setWifiSSID(newWifiSSID) {
       _assertClassBrand(_WifiManager_brand, this, _assertWifiIsAvailable).call(this);
       if (_classPrivateFieldGet2(_wifiConnectionEnabled, this)) {
-        _console$r.error("cannot change ssid while wifi connection is enabled");
+        _console$q.error("cannot change ssid while wifi connection is enabled");
         return;
       }
-      _console$r.assertTypeWithError(newWifiSSID, "string");
-      _console$r.assertRangeWithError("wifiSSID", newWifiSSID.length, MinWifiSSIDLength, MaxWifiSSIDLength);
+      _console$q.assertTypeWithError(newWifiSSID, "string");
+      _console$q.assertRangeWithError("wifiSSID", newWifiSSID.length, MinWifiSSIDLength, MaxWifiSSIDLength);
       const setWifiSSIDData = textEncoder.encode(newWifiSSID);
-      _console$r.log({
+      _console$q.log({
         setWifiSSIDData
       });
       const promise = this.waitForEvent("getWifiSSID");
@@ -3848,15 +3848,15 @@
     async setWifiPassword(newWifiPassword) {
       _assertClassBrand(_WifiManager_brand, this, _assertWifiIsAvailable).call(this);
       if (_classPrivateFieldGet2(_wifiConnectionEnabled, this)) {
-        _console$r.error("cannot change password while wifi connection is enabled");
+        _console$q.error("cannot change password while wifi connection is enabled");
         return;
       }
-      _console$r.assertTypeWithError(newWifiPassword, "string");
+      _console$q.assertTypeWithError(newWifiPassword, "string");
       if (newWifiPassword.length > 0) {
-        _console$r.assertRangeWithError("wifiPassword", newWifiPassword.length, MinWifiPasswordLength, MaxWifiPasswordLength);
+        _console$q.assertRangeWithError("wifiPassword", newWifiPassword.length, MinWifiPasswordLength, MaxWifiPasswordLength);
       }
       const setWifiPasswordData = textEncoder.encode(newWifiPassword);
-      _console$r.log({
+      _console$q.log({
         setWifiPasswordData
       });
       const promise = this.waitForEvent("getWifiPassword");
@@ -3872,9 +3872,9 @@
     async setWifiConnectionEnabled(newWifiConnectionEnabled) {
       let sendImmediately = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
       _assertClassBrand(_WifiManager_brand, this, _assertWifiIsAvailable).call(this);
-      _console$r.assertTypeWithError(newWifiConnectionEnabled, "boolean");
+      _console$q.assertTypeWithError(newWifiConnectionEnabled, "boolean");
       if (_classPrivateFieldGet2(_wifiConnectionEnabled, this) == newWifiConnectionEnabled) {
-        _console$r.log("redundant wifiConnectionEnabled assignment ".concat(newWifiConnectionEnabled));
+        _console$q.log("redundant wifiConnectionEnabled assignment ".concat(newWifiConnectionEnabled));
         return;
       }
       const promise = this.waitForEvent("getWifiConnectionEnabled");
@@ -3903,13 +3903,13 @@
       return _classPrivateFieldGet2(_isWifiSecure, this);
     }
     parseMessage(messageType, dataView) {
-      _console$r.log({
+      _console$q.log({
         messageType
       });
       switch (messageType) {
         case "isWifiAvailable":
           const isWifiAvailable = Boolean(dataView.getUint8(0));
-          _console$r.log({
+          _console$q.log({
             isWifiAvailable
           });
           _assertClassBrand(_WifiManager_brand, this, _updateIsWifiAvailable).call(this, isWifiAvailable);
@@ -3917,7 +3917,7 @@
         case "getWifiSSID":
         case "setWifiSSID":
           const ssid = textDecoder.decode(dataView.buffer);
-          _console$r.log({
+          _console$q.log({
             ssid
           });
           _assertClassBrand(_WifiManager_brand, this, _updateWifiSSID).call(this, ssid);
@@ -3925,7 +3925,7 @@
         case "getWifiPassword":
         case "setWifiPassword":
           const password = textDecoder.decode(dataView.buffer);
-          _console$r.log({
+          _console$q.log({
             password
           });
           _assertClassBrand(_WifiManager_brand, this, _updateWifiPassword).call(this, password);
@@ -3933,14 +3933,14 @@
         case "getWifiConnectionEnabled":
         case "setWifiConnectionEnabled":
           const enableWifiConnection = Boolean(dataView.getUint8(0));
-          _console$r.log({
+          _console$q.log({
             enableWifiConnection
           });
           _assertClassBrand(_WifiManager_brand, this, _updateWifiConnectionEnabled).call(this, enableWifiConnection);
           break;
         case "isWifiConnected":
           const isWifiConnected = Boolean(dataView.getUint8(0));
-          _console$r.log({
+          _console$q.log({
             isWifiConnected
           });
           _assertClassBrand(_WifiManager_brand, this, _updateIsWifiConnected).call(this, isWifiConnected);
@@ -3950,14 +3950,14 @@
           if (dataView.byteLength == 4) {
             ipAddress = new Uint8Array(dataView.buffer.slice(0, 4)).join(".");
           }
-          _console$r.log({
+          _console$q.log({
             ipAddress
           });
           _assertClassBrand(_WifiManager_brand, this, _updateIpAddress).call(this, ipAddress);
           break;
         case "isWifiSecure":
           const isWifiSecure = Boolean(dataView.getUint8(0));
-          _console$r.log({
+          _console$q.log({
             isWifiSecure
           });
           _assertClassBrand(_WifiManager_brand, this, _updateIsWifiSecure).call(this, isWifiSecure);
@@ -3978,9 +3978,9 @@
     return _this.eventDispatcher.dispatchEvent;
   }
   function _updateIsWifiAvailable(updatedIsWifiAvailable) {
-    _console$r.assertTypeWithError(updatedIsWifiAvailable, "boolean");
+    _console$q.assertTypeWithError(updatedIsWifiAvailable, "boolean");
     _classPrivateFieldSet2(_isWifiAvailable, this, updatedIsWifiAvailable);
-    _console$r.log({
+    _console$q.log({
       isWifiAvailable: _classPrivateFieldGet2(_isWifiAvailable, this)
     });
     _classPrivateGetter(_WifiManager_brand, this, _get_dispatchEvent$4).call(this, "isWifiAvailable", {
@@ -3988,12 +3988,12 @@
     });
   }
   function _assertWifiIsAvailable() {
-    _console$r.assertWithError(_classPrivateFieldGet2(_isWifiAvailable, this), "wifi is not available");
+    _console$q.assertWithError(_classPrivateFieldGet2(_isWifiAvailable, this), "wifi is not available");
   }
   function _updateWifiSSID(updatedWifiSSID) {
-    _console$r.assertTypeWithError(updatedWifiSSID, "string");
+    _console$q.assertTypeWithError(updatedWifiSSID, "string");
     _classPrivateFieldSet2(_wifiSSID, this, updatedWifiSSID);
-    _console$r.log({
+    _console$q.log({
       wifiSSID: _classPrivateFieldGet2(_wifiSSID, this)
     });
     _classPrivateGetter(_WifiManager_brand, this, _get_dispatchEvent$4).call(this, "getWifiSSID", {
@@ -4001,9 +4001,9 @@
     });
   }
   function _updateWifiPassword(updatedWifiPassword) {
-    _console$r.assertTypeWithError(updatedWifiPassword, "string");
+    _console$q.assertTypeWithError(updatedWifiPassword, "string");
     _classPrivateFieldSet2(_wifiPassword, this, updatedWifiPassword);
-    _console$r.log({
+    _console$q.log({
       wifiPassword: _classPrivateFieldGet2(_wifiPassword, this)
     });
     _classPrivateGetter(_WifiManager_brand, this, _get_dispatchEvent$4).call(this, "getWifiPassword", {
@@ -4011,7 +4011,7 @@
     });
   }
   function _updateWifiConnectionEnabled(wifiConnectionEnabled) {
-    _console$r.log({
+    _console$q.log({
       wifiConnectionEnabled
     });
     _classPrivateFieldSet2(_wifiConnectionEnabled, this, wifiConnectionEnabled);
@@ -4020,9 +4020,9 @@
     });
   }
   function _updateIsWifiConnected(updatedIsWifiConnected) {
-    _console$r.assertTypeWithError(updatedIsWifiConnected, "boolean");
+    _console$q.assertTypeWithError(updatedIsWifiConnected, "boolean");
     _classPrivateFieldSet2(_isWifiConnected, this, updatedIsWifiConnected);
-    _console$r.log({
+    _console$q.log({
       isWifiConnected: _classPrivateFieldGet2(_isWifiConnected, this)
     });
     _classPrivateGetter(_WifiManager_brand, this, _get_dispatchEvent$4).call(this, "isWifiConnected", {
@@ -4031,7 +4031,7 @@
   }
   function _updateIpAddress(updatedIpAddress) {
     _classPrivateFieldSet2(_ipAddress$1, this, updatedIpAddress);
-    _console$r.log({
+    _console$q.log({
       ipAddress: _classPrivateFieldGet2(_ipAddress$1, this)
     });
     _classPrivateGetter(_WifiManager_brand, this, _get_dispatchEvent$4).call(this, "ipAddress", {
@@ -4039,9 +4039,9 @@
     });
   }
   function _updateIsWifiSecure(updatedIsWifiSecure) {
-    _console$r.assertTypeWithError(updatedIsWifiSecure, "boolean");
+    _console$q.assertTypeWithError(updatedIsWifiSecure, "boolean");
     _classPrivateFieldSet2(_isWifiSecure, this, updatedIsWifiSecure);
-    _console$r.log({
+    _console$q.log({
       isWifiSecure: _classPrivateFieldGet2(_isWifiSecure, this)
     });
     _classPrivateGetter(_WifiManager_brand, this, _get_dispatchEvent$4).call(this, "isWifiSecure", {
@@ -4049,7 +4049,7 @@
     });
   }
 
-  const _console$q = createConsole("ColorUtils", {
+  const _console$p = createConsole("ColorUtils", {
     log: false
   });
   function hexToRGB(hex) {
@@ -4057,7 +4057,7 @@
     if (hex.length == 3) {
       hex = hex.split("").map(char => char + char).join("");
     }
-    _console$q.assertWithError(hex.length == 6, "hex length must be 6 (got ".concat(hex.length, ")"));
+    _console$p.assertWithError(hex.length == 6, "hex length must be 6 (got ".concat(hex.length, ")"));
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
@@ -4100,121 +4100,8 @@
       b
     } = _ref;
     const toHex = value => value.toString(16).padStart(2, "0").toLowerCase();
-    _console$q.assertWithError([r, g, b].every(v => v >= 0 && v <= 255), "RGB values must be between 0 and 255 (got r=".concat(r, ", g=").concat(g, ", b=").concat(b, ")"));
+    _console$p.assertWithError([r, g, b].every(v => v >= 0 && v <= 255), "RGB values must be between 0 and 255 (got r=".concat(r, ", g=").concat(g, ", b=").concat(b, ")"));
     return "#".concat(toHex(r)).concat(toHex(g)).concat(toHex(b));
-  }
-  function colorDistanceSq(a, b) {
-    return (a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2;
-  }
-  const defaultKMeansOptions = {
-    useInputColors: true,
-    maxIterations: 20
-  };
-  function kMeansColors(colors, k, options) {
-    _console$q.assertTypeWithError(k, "number");
-    _console$q.assertWithError(k > 0, "invalid k ".concat(k));
-    options = _objectSpread2(_objectSpread2({}, defaultKMeansOptions), options);
-    const maxIter = options.maxIterations;
-    const useInputColors = options.useInputColors;
-    const colorMap = new Map();
-    for (const c of colors) {
-      if (!colorMap.has(c)) {
-        colorMap.set(c, stringToRGB(c));
-      }
-    }
-    const uniqueColors = Array.from(colorMap.values());
-    const uniqueKeys = Array.from(colorMap.keys());
-    if (uniqueColors.length <= k) {
-      const mapping = {};
-      uniqueKeys.forEach((key, idx) => mapping[key] = idx);
-      return {
-        palette: uniqueKeys,
-        mapping
-      };
-    }
-    let centroids = uniqueColors.slice(0, k);
-    for (let iter = 0; iter < maxIter; iter++) {
-      const clusters = Array.from({
-        length: k
-      }, () => []);
-      uniqueColors.forEach((p, idx) => {
-        let best = 0;
-        let bestDist = Infinity;
-        centroids.forEach((c, ci) => {
-          const d = colorDistanceSq(p, c);
-          if (d < bestDist) {
-            bestDist = d;
-            best = ci;
-          }
-        });
-        clusters[best].push(idx);
-      });
-      centroids = clusters.map(cluster => {
-        if (cluster.length === 0) return _objectSpread2({}, blackColor);
-        if (useInputColors) {
-          let bestIdx = cluster[0];
-          let bestDist = Infinity;
-          cluster.forEach(idx => {
-            const d = colorDistanceSq(uniqueColors[idx], centroids[0]);
-            if (d < bestDist) {
-              bestDist = d;
-              bestIdx = idx;
-            }
-          });
-          return uniqueColors[bestIdx];
-        } else {
-          const sum = cluster.reduce((acc, idx) => {
-            const p = uniqueColors[idx];
-            return {
-              r: acc.r + p.r,
-              g: acc.g + p.g,
-              b: acc.b + p.b
-            };
-          }, _objectSpread2({}, blackColor));
-          return {
-            r: sum.r / cluster.length,
-            g: sum.g / cluster.length,
-            b: sum.b / cluster.length
-          };
-        }
-      });
-    }
-    const palette = centroids.map(c => rgbToHex(c));
-    const mapping = {};
-    for (const [orig, DisplayColorRGB] of colorMap.entries()) {
-      let bestIdx = 0;
-      let bestDist = Infinity;
-      centroids.forEach((c, ci) => {
-        const d = colorDistanceSq(c, DisplayColorRGB);
-        if (d < bestDist) {
-          bestDist = d;
-          bestIdx = ci;
-        }
-      });
-      mapping[orig] = bestIdx;
-    }
-    return {
-      palette,
-      mapping
-    };
-  }
-  function mapToClosestPaletteIndex(colors, palette) {
-    const paletteRGB = palette.map(stringToRGB);
-    const mapping = {};
-    for (const color of colors) {
-      const rgb = stringToRGB(color);
-      let bestIdx = 0;
-      let bestDist = Infinity;
-      paletteRGB.forEach((p, idx) => {
-        const d = colorDistanceSq(rgb, p);
-        if (d < bestDist) {
-          bestDist = d;
-          bestIdx = idx;
-        }
-      });
-      mapping[color] = bestIdx;
-    }
-    return mapping;
   }
 
   const DisplaySegmentCaps = ["flat", "round"];
@@ -4288,7 +4175,7 @@
     return true;
   }
 
-  const _console$p = createConsole("DisplayContextStateHelper", {
+  const _console$o = createConsole("DisplayContextStateHelper", {
     log: false
   });
   var _state = new WeakMap();
@@ -4308,13 +4195,13 @@
           differences.push(key);
         }
       });
-      _console$p.log("diff", other, differences);
+      _console$o.log("diff", other, differences);
       return differences;
     }
     update(newState) {
       let differences = this.diff(newState);
       if (differences.length == 0) {
-        _console$p.log("redundant contextState", newState);
+        _console$o.log("redundant contextState", newState);
       }
       differences.forEach(key => {
         const value = newState[key];
@@ -4327,20 +4214,20 @@
     }
   }
 
-  const _console$o = createConsole("DisplayUtils", {
-    log: true
+  const _console$n = createConsole("DisplayUtils", {
+    log: false
   });
   function formatRotation(rotation, isRadians, isSigned) {
     if (isRadians) {
       const rotationRad = rotation;
-      _console$o.log({
+      _console$n.log({
         rotationRad
       });
       rotation %= 2 * Math.PI;
       rotation /= 2 * Math.PI;
     } else {
       const rotationDeg = rotation;
-      _console$o.log({
+      _console$n.log({
         rotationDeg
       });
       rotation %= 360;
@@ -4350,7 +4237,7 @@
       rotation *= Uint16Max;
     }
     rotation = Math.floor(rotation);
-    _console$o.log({
+    _console$n.log({
       formattedRotation: rotation
     });
     return rotation;
@@ -4370,13 +4257,13 @@
     return roundToStep(bitmapScale, displayScaleStep);
   }
   function assertValidSegmentCap(segmentCap) {
-    _console$o.assertEnumWithError(segmentCap, DisplaySegmentCaps);
+    _console$n.assertEnumWithError(segmentCap, DisplaySegmentCaps);
   }
   function assertValidDisplayBrightness(displayBrightness) {
-    _console$o.assertEnumWithError(displayBrightness, DisplayBrightnesses);
+    _console$n.assertEnumWithError(displayBrightness, DisplayBrightnesses);
   }
   function assertValidColorValue(name, value) {
-    _console$o.assertRangeWithError(name, value, 0, 255);
+    _console$n.assertRangeWithError(name, value, 0, 255);
   }
   function assertValidColor(color) {
     assertValidColorValue("red", color.r);
@@ -4384,7 +4271,7 @@
     assertValidColorValue("blue", color.b);
   }
   function assertValidOpacity(value) {
-    _console$o.assertRangeWithError("opacity", value, 0, 1);
+    _console$n.assertRangeWithError("opacity", value, 0, 1);
   }
   const DisplayCropDirections = ["top", "right", "bottom", "left"];
   const DisplayCropDirectionToStateKey = {
@@ -4442,13 +4329,13 @@
     all: "setSpriteScale"
   };
   function assertValidAlignment(alignment) {
-    _console$o.assertEnumWithError(alignment, DisplayAlignments);
+    _console$n.assertEnumWithError(alignment, DisplayAlignments);
   }
   function assertValidDirection(direction) {
-    _console$o.assertEnumWithError(direction, DisplayDirections);
+    _console$n.assertEnumWithError(direction, DisplayDirections);
   }
   function assertValidAlignmentDirection(direction) {
-    _console$o.assertEnumWithError(direction, DisplayAlignmentDirections);
+    _console$n.assertEnumWithError(direction, DisplayAlignmentDirections);
   }
   const displayCurveTypeToNumberOfControlPoints = {
     segment: 2,
@@ -4461,11 +4348,11 @@
     if (isPath) {
       numberOfControlPoints -= 1;
     }
-    _console$o.assertWithError(controlPoints.length == numberOfControlPoints, "invalid number of control points ".concat(controlPoints.length, ", expected ").concat(numberOfControlPoints));
+    _console$n.assertWithError(controlPoints.length == numberOfControlPoints, "invalid number of control points ".concat(controlPoints.length, ", expected ").concat(numberOfControlPoints));
   }
   function assertValidPathNumberOfControlPoints(curveType, controlPoints) {
     const numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
-    _console$o.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, "invalid number of path control points ".concat(controlPoints.length, " for path \"").concat(curveType, "\""));
+    _console$n.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, "invalid number of path control points ".concat(controlPoints.length, " for path \"").concat(curveType, "\""));
   }
   function assertValidPath(curves) {
     curves.forEach((curve, index) => {
@@ -4481,11 +4368,11 @@
       points,
       edges
     } = _ref;
-    _console$o.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-    _console$o.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
+    _console$n.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+    _console$n.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
     edges.forEach((edge, index) => {
-      _console$o.assertRangeWithError("edgeStartIndex.".concat(index), edge.startIndex, 0, points.length);
-      _console$o.assertRangeWithError("edgeEndIndex.".concat(index), edge.endIndex, 0, points.length);
+      _console$n.assertRangeWithError("edgeStartIndex.".concat(index), edge.startIndex, 0, points.length);
+      _console$n.assertRangeWithError("edgeEndIndex.".concat(index), edge.endIndex, 0, points.length);
     });
   }
   function mergeWireframes(a, b) {
@@ -4556,7 +4443,7 @@
     return wireframe;
   }
   function trimWireframe(wireframe) {
-    _console$o.log("trimming wireframe", wireframe);
+    _console$n.log("trimming wireframe", wireframe);
     const {
       points,
       edges
@@ -4608,7 +4495,7 @@
         trimmedEdgeIndex = trimmedEdges.length - 1;
       }
     });
-    _console$o.log("trimmedWireframe", trimmedPoints, trimmedEdges);
+    _console$n.log("trimmedWireframe", trimmedPoints, trimmedEdges);
     return {
       points: trimmedPoints,
       edges: trimmedEdges
@@ -4631,20 +4518,20 @@
       } = displayPointDataTypeToRange[pointDataType];
       return range.min >= min && range.max <= max;
     });
-    _console$o.log("pointDataType", pointDataType, points);
+    _console$n.log("pointDataType", pointDataType, points);
     return pointDataType;
   }
   function serializePoints(points, pointDataType) {
     let isPath = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
     pointDataType = pointDataType || getPointDataType(points);
-    _console$o.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+    _console$n.assertEnumWithError(pointDataType, DisplayPointDataTypes);
     const pointDataSize = displayPointDataTypeToSize[pointDataType];
     let dataViewLength = points.length * pointDataSize;
     if (!isPath) {
       dataViewLength += 2;
     }
     const dataView = new DataView(new ArrayBuffer(dataViewLength));
-    _console$o.log("serializing ".concat(points.length, " ").concat(pointDataType, " points (").concat(dataView.byteLength, " bytes)..."));
+    _console$n.log("serializing ".concat(points.length, " ").concat(pointDataType, " points (").concat(dataView.byteLength, " bytes)..."));
     let offset = 0;
     if (!isPath) {
       dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
@@ -5377,8 +5264,8 @@
   var rgbquantExports = rgbquant.exports;
   var RGBQuant = getDefaultExportFromCjs(rgbquantExports);
 
-  const _console$n = createConsole("DisplayContextCommand", {
-    log: true
+  const _console$m = createConsole("DisplayContextCommand", {
+    log: false
   });
   const DisplayContextCommandTypes = ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setIgnoreFill", "setIgnoreLine", "setFillBackground", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesLineHeight", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlignment", "setSpritesLineAlignment", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites"];
   const DisplaySpriteContextCommandTypes = ["selectFillColor", "selectLineColor",
@@ -5413,7 +5300,7 @@
           }
           const colorHex = rgbToHex(colorRGB);
           if (displayManager.colors[colorIndex] == colorHex) {
-            _console$n.log("redundant color #".concat(colorIndex, " ").concat(colorHex));
+            _console$m.log("redundant color #".concat(colorIndex, " ").concat(colorHex));
             return;
           }
           displayManager.assertValidColorIndex(colorIndex);
@@ -5434,7 +5321,7 @@
           displayManager.assertValidColorIndex(colorIndex);
           assertValidOpacity(opacity);
           if (Math.floor(255 * displayManager.opacities[colorIndex]) == Math.floor(255 * opacity)) {
-            _console$n.log("redundant opacity #".concat(colorIndex, " ").concat(opacity));
+            _console$m.log("redundant opacity #".concat(colorIndex, " ").concat(opacity));
             return;
           }
           dataView = new DataView(new ArrayBuffer(2));
@@ -5525,7 +5412,7 @@
             horizontalAlignment
           } = command;
           assertValidAlignment(horizontalAlignment);
-          _console$n.log({
+          _console$m.log({
             horizontalAlignment
           });
           dataView = new DataView(new ArrayBuffer(1));
@@ -5539,7 +5426,7 @@
             verticalAlignment
           } = command;
           assertValidAlignment(verticalAlignment);
-          _console$n.log({
+          _console$m.log({
             verticalAlignment
           });
           dataView = new DataView(new ArrayBuffer(1));
@@ -5566,7 +5453,7 @@
             segmentStartCap
           } = command;
           assertValidSegmentCap(segmentStartCap);
-          _console$n.log({
+          _console$m.log({
             segmentStartCap
           });
           dataView = new DataView(new ArrayBuffer(1));
@@ -5580,7 +5467,7 @@
             segmentEndCap
           } = command;
           assertValidSegmentCap(segmentEndCap);
-          _console$n.log({
+          _console$m.log({
             segmentEndCap
           });
           dataView = new DataView(new ArrayBuffer(1));
@@ -5594,7 +5481,7 @@
             segmentCap
           } = command;
           assertValidSegmentCap(segmentCap);
-          _console$n.log({
+          _console$m.log({
             segmentCap
           });
           dataView = new DataView(new ArrayBuffer(1));
@@ -5607,7 +5494,7 @@
           const {
             segmentStartRadius
           } = command;
-          _console$n.log({
+          _console$m.log({
             segmentStartRadius
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5619,7 +5506,7 @@
           const {
             segmentEndRadius
           } = command;
-          _console$n.log({
+          _console$m.log({
             segmentEndRadius
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5631,7 +5518,7 @@
           const {
             segmentRadius
           } = command;
-          _console$n.log({
+          _console$m.log({
             segmentRadius
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5643,7 +5530,7 @@
           const {
             cropTop
           } = command;
-          _console$n.log({
+          _console$m.log({
             cropTop
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5655,7 +5542,7 @@
           const {
             cropRight
           } = command;
-          _console$n.log({
+          _console$m.log({
             cropRight
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5667,7 +5554,7 @@
           const {
             cropBottom
           } = command;
-          _console$n.log({
+          _console$m.log({
             cropBottom
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5679,7 +5566,7 @@
           const {
             cropLeft
           } = command;
-          _console$n.log({
+          _console$m.log({
             cropLeft
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5691,7 +5578,7 @@
           const {
             rotationCropTop
           } = command;
-          _console$n.log({
+          _console$m.log({
             rotationCropTop
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5703,7 +5590,7 @@
           const {
             rotationCropRight
           } = command;
-          _console$n.log({
+          _console$m.log({
             rotationCropRight
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5715,7 +5602,7 @@
           const {
             rotationCropBottom
           } = command;
-          _console$n.log({
+          _console$m.log({
             rotationCropBottom
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5727,7 +5614,7 @@
           const {
             rotationCropLeft
           } = command;
-          _console$n.log({
+          _console$m.log({
             rotationCropLeft
           });
           dataView = new DataView(new ArrayBuffer(2));
@@ -5752,7 +5639,7 @@
           const {
             bitmapColorPairs
           } = command;
-          _console$n.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, displayManager.numberOfColors);
+          _console$m.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, displayManager.numberOfColors);
           const bitmapColorIndices = displayManager.contextState.bitmapColorIndices.slice();
           bitmapColorPairs.forEach(_ref => {
             let {
@@ -5828,7 +5715,7 @@
           const {
             spriteColorPairs
           } = command;
-          _console$n.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, displayManager.numberOfColors);
+          _console$m.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, displayManager.numberOfColors);
           const spriteColorIndices = displayManager.contextState.spriteColorIndices.slice();
           spriteColorPairs.forEach(_ref3 => {
             let {
@@ -5902,7 +5789,7 @@
             spritesDirection
           } = command;
           assertValidDirection(spritesDirection);
-          _console$n.log({
+          _console$m.log({
             spritesDirection
           });
           dataView = new DataView(new ArrayBuffer(1));
@@ -5916,7 +5803,7 @@
             spritesLineDirection
           } = command;
           assertValidDirection(spritesLineDirection);
-          _console$n.log({
+          _console$m.log({
             spritesLineDirection
           });
           dataView = new DataView(new ArrayBuffer(1));
@@ -5948,7 +5835,7 @@
             spritesAlignment
           } = command;
           assertValidAlignment(spritesAlignment);
-          _console$n.log({
+          _console$m.log({
             spritesAlignment
           });
           dataView = new DataView(new ArrayBuffer(1));
@@ -5962,7 +5849,7 @@
             spritesLineAlignment
           } = command;
           assertValidAlignment(spritesLineAlignment);
-          _console$n.log({
+          _console$m.log({
             spritesLineAlignment
           });
           dataView = new DataView(new ArrayBuffer(1));
@@ -6065,7 +5952,7 @@
           const {
             points
           } = command;
-          _console$n.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+          _console$m.assertRangeWithError("numberOfPoints", points.length, 2, 255);
           dataView = serializePoints(points);
         }
         break;
@@ -6134,7 +6021,7 @@
           });
           const pointDataType = getPointDataType(allControlPoints);
           const numberOfControlPoints = allControlPoints.length;
-          _console$n.log({
+          _console$m.log({
             numberOfControlPoints
           });
           curves.forEach((curve, index) => {
@@ -6178,7 +6065,7 @@
           const {
             points
           } = command;
-          _console$n.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+          _console$m.assertRangeWithError("numberOfPoints", points.length, 2, 255);
           dataView = serializePoints(points);
         }
         break;
@@ -6342,7 +6229,7 @@
       return concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), serializedContextCommand);
     });
     const serializedContextCommands = concatenateArrayBuffers(serializedContextCommandArray);
-    _console$n.log("serializedContextCommands", commands, serializedContextCommandArray, serializedContextCommands);
+    _console$m.log("serializedContextCommands", commands, serializedContextCommandArray, serializedContextCommands);
     return serializedContextCommands;
   }
   const DrawDisplayContextCommandTypes = ["drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "drawSprite", "drawSprites"];
@@ -6359,36 +6246,6 @@
   appendContextCommandDependencyPair([...StateDisplayContextCommandTypes], [...DrawDisplayContextCommandTypes]);
   appendContextCommandDependencyPair([...SpritesDisplayContextCommandTypes], ["drawSprite", "drawSprites"]);
   appendContextCommandDependencyPair([...BitmapDisplayContextCommandTypes], ["drawBitmap"]);
-  function trimContextCommands(commands) {
-    _console$n.log("trimming commands", commands);
-    const trimmedCommands = [];
-    commands.slice().reverse().forEach(command => {
-      let include = true;
-      let dependencies;
-      for (const [keys, values] of contextCommandDependencies) {
-        if (keys.has(command.type)) {
-          dependencies = values;
-          break;
-        }
-      }
-      if (dependencies) {
-        const similarCommandIndex = trimmedCommands.findIndex(trimmedCommand => {
-          return trimmedCommand.type == command.type;
-        });
-        const dependentCommandIndex = trimmedCommands.findIndex(trimmedCommand => dependencies.has(trimmedCommand.type));
-        if (dependentCommandIndex == -1) {
-          include = false;
-        } else if (similarCommandIndex != -1) {
-          include = similarCommandIndex > dependentCommandIndex;
-        }
-      }
-      if (include) {
-        trimmedCommands.unshift(command);
-      }
-    });
-    _console$n.log("trimmedCommands", trimmedCommands);
-    return trimmedCommands;
-  }
 
   if (!String.prototype.codePointAt) {
   	(function() {
@@ -12753,7 +12610,7 @@
       minDis: 1,
       autoFlip: true
   };
-  function State$1(env, prog) {
+  function State(env, prog) {
       this.env = env;
       this.stack = [];
       this.prog = prog;
@@ -12776,10 +12633,10 @@
       if (!prepState || prepState.ppem !== ppem) {
           var fpgmState = this._fpgmState;
           if (!fpgmState) {
-              State$1.prototype = defaultState;
+              State.prototype = defaultState;
               fpgmState =
               this._fpgmState =
-                  new State$1('fpgm', font.tables.fpgm);
+                  new State('fpgm', font.tables.fpgm);
               fpgmState.funcs = [ ];
               fpgmState.font = font;
               if (exports.DEBUG) {
@@ -12794,10 +12651,10 @@
                   return;
               }
           }
-          State$1.prototype = fpgmState;
+          State.prototype = fpgmState;
           prepState =
           this._prepState =
-              new State$1('prep', font.tables.prep);
+              new State('prep', font.tables.prep);
           prepState.ppem = ppem;
           var oCvt = font.tables.cvt;
           if (oCvt) {
@@ -12841,9 +12698,9 @@
       var contours;
       var gZone;
       var state;
-      State$1.prototype = prepState;
+      State.prototype = prepState;
       if (!components) {
-          state = new State$1('glyf', glyph.instructions);
+          state = new State('glyf', glyph.instructions);
           if (exports.DEBUG) {
               console.log('---EXEC GLYPH---');
               state.step = -1;
@@ -12857,7 +12714,7 @@
           for (var i = 0; i < components.length; i++) {
               var c = components[i];
               var cg = font.glyphs.get(c.glyphIndex);
-              state = new State$1('glyf', cg.instructions);
+              state = new State('glyf', cg.instructions);
               if (exports.DEBUG) {
                   console.log('---EXEC COMP ' + i + '---');
                   state.step = -1;
@@ -12880,7 +12737,7 @@
               }
           }
           if (glyph.instructions && !state.inhibitGridFit) {
-              state = new State$1('glyf', glyph.instructions);
+              state = new State('glyf', glyph.instructions);
               state.gZone = state.z0 = state.z1 = state.z2 = gZone;
               state.contours = contours;
               gZone.push(
@@ -13760,7 +13617,7 @@
       if (exports.DEBUG) { console.log(state.step, 'CEILING[]', n); }
       stack.push(Math.ceil(n / 0x40) * 0x40);
   }
-  function ROUND$1(dt, state) {
+  function ROUND(dt, state) {
       var stack = state.stack;
       var n = stack.pop();
       if (exports.DEBUG) { console.log(state.step, 'ROUND[]'); }
@@ -14120,10 +13977,10 @@
        NEG,
        FLOOR,
        CEILING,
-       ROUND$1.bind(undefined, 0),
-       ROUND$1.bind(undefined, 1),
-       ROUND$1.bind(undefined, 2),
-       ROUND$1.bind(undefined, 3),
+       ROUND.bind(undefined, 0),
+       ROUND.bind(undefined, 1),
+       ROUND.bind(undefined, 2),
+       ROUND.bind(undefined, 3),
        undefined,
        undefined,
        undefined,
@@ -14604,7 +14461,7 @@
   function isLatinChar(c) {
       return /[A-z]/.test(c);
   }
-  function isWhiteSpace$1(c) {
+  function isWhiteSpace(c) {
       return /\s/.test(c);
   }
   function FeatureQuery(font) {
@@ -14966,7 +14823,7 @@
           case nextChar === null:
               return true;
           case (!isArabicChar(nextChar) && !isTashkeelArabicChar(nextChar)):
-              var nextIsWhitespace = isWhiteSpace$1(nextChar);
+              var nextIsWhitespace = isWhiteSpace(nextChar);
               if (!nextIsWhitespace) { return true; }
               if (nextIsWhitespace) {
                   var arabicCharAhead = false;
@@ -16356,7 +16213,7 @@
     return simplified;
   }
 
-  const _console$m = createConsole("DisplaySpriteSheetUtils", {
+  const _console$l = createConsole("DisplaySpriteSheetUtils", {
     log: true
   });
   const spriteHeaderLength = 3 * 2;
@@ -16365,7 +16222,7 @@
       name,
       sprites
     } = spriteSheet;
-    _console$m.log("serializing ".concat(name, " spriteSheet"), spriteSheet);
+    _console$l.log("serializing ".concat(name, " spriteSheet"), spriteSheet);
     const numberOfSprites = sprites.length;
     const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
     numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
@@ -16376,7 +16233,7 @@
       dataView.setUint16(2, sprite.height, true);
       dataView.setUint16(4, commandsData.byteLength, true);
       const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
-      _console$m.log("serializedSprite", sprite, serializedSprite);
+      _console$l.log("serializedSprite", sprite, serializedSprite);
       return serializedSprite;
     });
     const spriteOffsetsDataView = new DataView(new ArrayBuffer(sprites.length * 2));
@@ -16386,7 +16243,7 @@
       offset += spritePayload.byteLength;
     });
     const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
-    _console$m.log("serializedSpriteSheet", serializedSpriteSheet);
+    _console$l.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
   }
   const defaultFontToSpriteSheetOptions = {
@@ -16434,7 +16291,7 @@
     return area;
   }
   async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
-    _console$m.assertTypeWithError(fontSize, "number");
+    _console$l.assertTypeWithError(fontSize, "number");
     options = options ? _objectSpread2(_objectSpread2({}, defaultFontToSpriteSheetOptions), options) : defaultFontToSpriteSheetOptions;
     const fonts = Array.isArray(font) ? font : [font];
     font = fonts[0];
@@ -16705,7 +16562,7 @@
         }
       });
       if (requireAll) {
-        _console$m.assertWithError(longestSprite, "couldn't find sprite with name prefixing \"".concat(substring, "\""));
+        _console$l.assertWithError(longestSprite, "couldn't find sprite with name prefixing \"".concat(substring, "\""));
       }
       if (longestSprite) {
         sprites.push(longestSprite);
@@ -16724,7 +16581,7 @@
         sprites.push(...getReferencedSprites(_sprite, spriteSheet));
       }
     });
-    _console$m.log("referencedSprites", sprite, sprites);
+    _console$l.log("referencedSprites", sprite, sprites);
     return sprites;
   }
   function reduceSpriteSheet(spriteSheet, spriteNames) {
@@ -16733,7 +16590,7 @@
     if (!(spriteNames instanceof Array)) {
       spriteNames = stringToSprites(spriteNames, spriteSheet, requireAll).map(sprite => sprite.name);
     }
-    _console$m.log("reducingSpriteSheet", spriteSheet, spriteNames);
+    _console$l.log("reducingSpriteSheet", spriteSheet, spriteNames);
     reducedSpriteSheet.sprites = [];
     spriteSheet.sprites.forEach(sprite => {
       if (spriteNames.includes(sprite.name)) {
@@ -16741,14 +16598,14 @@
         reducedSpriteSheet.sprites.push(...getReferencedSprites(sprite, spriteSheet));
       }
     });
-    _console$m.log("reducedSpriteSheet", reducedSpriteSheet);
+    _console$l.log("reducedSpriteSheet", reducedSpriteSheet);
     return reducedSpriteSheet;
   }
   function stringToSpriteLines(string, spriteSheets, contextState) {
     let requireAll = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
     let maxLineBreadth = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : Infinity;
     let separators = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : [" "];
-    _console$m.log("stringToSpriteLines", string);
+    _console$l.log("stringToSpriteLines", string);
     const isSpritesDirectionHorizontal = isDirectionHorizontal(contextState.spritesDirection);
     const isSpritesLineDirectionHorizontal = isDirectionHorizontal(contextState.spritesLineDirection);
     const areSpritesDirectionsOrthogonal = isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
@@ -16790,7 +16647,7 @@
           });
         }
         if (requireAll) {
-          _console$m.assertWithError(longestSprite, "couldn't find sprite with name prefixing \"".concat(lineSubstring, "\""));
+          _console$l.assertWithError(longestSprite, "couldn't find sprite with name prefixing \"".concat(lineSubstring, "\""));
         }
         if (longestSprite && longestSpriteSheet) {
           const isSeparator = separators.length > 0 ? separators.includes(longestSprite.name) : true;
@@ -16864,11 +16721,11 @@
         spriteSubLine.spriteNames.push(sprite.name);
       });
     });
-    _console$m.log("spriteLines for \"".concat(string, "\""), spriteLines);
+    _console$l.log("spriteLines for \"".concat(string, "\""), spriteLines);
     return spriteLines;
   }
 
-  const _console$l = createConsole("DisplayBitmapUtils", {
+  const _console$k = createConsole("DisplayBitmapUtils", {
     log: true
   });
   const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
@@ -16887,11 +16744,11 @@
       value |= bitmapColorIndex << shift;
       dataView.setUint8(byteIndex, value);
     });
-    _console$l.log("getBitmapData", bitmap, dataView);
+    _console$k.log("getBitmapData", bitmap, dataView);
     return dataView;
   }
   async function quantizeCanvas(canvas, numberOfColors, colors) {
-    _console$l.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
+    _console$k.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
     const ctx = canvas.getContext("2d", {
       willReadFrequently: true
     });
@@ -16916,7 +16773,7 @@
           } = rgb;
           return [r, g, b];
         } else {
-          _console$l.error("invalid rgb hex \"".concat(color, "\""));
+          _console$k.error("invalid rgb hex \"".concat(color, "\""));
         }
       });
     }
@@ -17000,7 +16857,7 @@
       naturalWidth: imageWidth,
       naturalHeight: imageHeight
     } = image;
-    _console$l.log({
+    _console$k.log({
       imageWidth,
       imageHeight
     });
@@ -17070,7 +16927,7 @@
     const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
     const numberOfPixels = bitmap.pixels.length;
     const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
-    _console$l.log({
+    _console$k.log({
       pixelDepth,
       pixelsPerByte,
       numberOfPixels,
@@ -17079,13 +16936,13 @@
     return pixelDataLength;
   }
   function assertValidBitmapPixels(bitmap) {
-    _console$l.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, bitmap.width * (bitmap.height - 1) + 1, bitmap.width * bitmap.height);
+    _console$k.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, bitmap.width * (bitmap.height - 1) + 1, bitmap.width * bitmap.height);
     bitmap.pixels.forEach((pixel, index) => {
-      _console$l.assertRangeWithError("bitmap.pixels[".concat(index, "]"), pixel, 0, bitmap.numberOfColors - 1);
+      _console$k.assertRangeWithError("bitmap.pixels[".concat(index, "]"), pixel, 0, bitmap.numberOfColors - 1);
     });
   }
 
-  const _console$k = createConsole("DisplayManagerInterface", {
+  const _console$j = createConsole("DisplayManagerInterface", {
     log: true
   });
   async function runDisplayContextCommand(displayManager, command, sendImmediately) {
@@ -17652,7 +17509,7 @@
     }
   }
   async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
-    _console$k.log("runDisplayContextCommands", commands);
+    _console$j.log("runDisplayContextCommands", commands);
     commands.filter(command => !command.hide).forEach(command => {
       runDisplayContextCommand(displayManager, command, false);
     });
@@ -17661,14 +17518,14 @@
     }
   }
   function assertLoadedSpriteSheet(displayManager, spriteSheetName) {
-    _console$k.assertWithError(displayManager.spriteSheets[spriteSheetName], "spriteSheet \"".concat(spriteSheetName, "\" not loaded"));
+    _console$j.assertWithError(displayManager.spriteSheets[spriteSheetName], "spriteSheet \"".concat(spriteSheetName, "\" not loaded"));
   }
   function assertSelectedSpriteSheet(displayManager, spriteSheetName) {
     displayManager.assertLoadedSpriteSheet(spriteSheetName);
-    _console$k.assertWithError(displayManager.selectedSpriteSheetName == spriteSheetName, "spriteSheet \"".concat(spriteSheetName, "\" not selected"));
+    _console$j.assertWithError(displayManager.selectedSpriteSheetName == spriteSheetName, "spriteSheet \"".concat(spriteSheetName, "\" not selected"));
   }
   function assertAnySelectedSpriteSheet(displayManager) {
-    _console$k.assertWithError(displayManager.selectedSpriteSheet, "no spriteSheet selected");
+    _console$j.assertWithError(displayManager.selectedSpriteSheet, "no spriteSheet selected");
   }
   function getSprite(displayManager, spriteName) {
     displayManager.assertAnySelectedSpriteSheet();
@@ -17677,7 +17534,7 @@
   function assertSprite(displayManager, spriteName) {
     displayManager.assertAnySelectedSpriteSheet();
     const sprite = displayManager.getSprite(spriteName);
-    _console$k.assertWithError(sprite, "no sprite found with name \"".concat(spriteName, "\""));
+    _console$j.assertWithError(sprite, "no sprite found with name \"".concat(spriteName, "\""));
   }
   function getSpriteSheetPalette(displayManager, paletteName) {
     var _displayManager$selec2, _displayManager$selec3;
@@ -17693,22 +17550,22 @@
   }
   function assertSpriteSheetPalette(displayManagerInterface, paletteName) {
     const spriteSheetPalette = displayManagerInterface.getSpriteSheetPalette(paletteName);
-    _console$k.assertWithError(spriteSheetPalette, "no spriteSheetPalette found with name \"".concat(paletteName, "\""));
+    _console$j.assertWithError(spriteSheetPalette, "no spriteSheetPalette found with name \"".concat(paletteName, "\""));
   }
   function assertSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName) {
     const spriteSheetPaletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
-    _console$k.assertWithError(spriteSheetPaletteSwap, "no paletteSwapName found with name \"".concat(paletteSwapName, "\""));
+    _console$j.assertWithError(spriteSheetPaletteSwap, "no paletteSwapName found with name \"".concat(paletteSwapName, "\""));
   }
   function assertSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName) {
     const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
-    _console$k.assertWithError(spritePaletteSwap, "no spritePaletteSwap found for sprite \"".concat(spriteName, "\" name \"").concat(paletteSwapName, "\""));
+    _console$j.assertWithError(spritePaletteSwap, "no spritePaletteSwap found for sprite \"".concat(spriteName, "\" name \"").concat(paletteSwapName, "\""));
   }
   async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, sendImmediately) {
     offset = offset || 0;
     displayManagerInterface.assertAnySelectedSpriteSheet();
     displayManagerInterface.assertSpriteSheetPalette(paletteName);
     const palette = displayManagerInterface.getSpriteSheetPalette(paletteName);
-    _console$k.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, "invalid offset ".concat(offset, " and palette.numberOfColors ").concat(palette.numberOfColors, " (max ").concat(displayManagerInterface.numberOfColors, ")"));
+    _console$j.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, "invalid offset ".concat(offset, " and palette.numberOfColors ").concat(palette.numberOfColors, " (max ").concat(displayManagerInterface.numberOfColors, ")"));
     for (let index = 0; index < palette.numberOfColors; index++) {
       var _palette$opacities;
       const color = palette.colors[index];
@@ -17769,8 +17626,8 @@
     }
   }
 
-  const _console$j = createConsole("DisplayManager", {
-    log: true
+  const _console$i = createConsole("DisplayManager", {
+    log: false
   });
   const DefaultNumberOfDisplayColors = 16;
   const DisplayCommands = ["sleep", "wake"];
@@ -17834,8 +17691,8 @@
   class DisplayManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _DisplayManager_brand);
-      _defineProperty$1(this, "sendMessage", void 0);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "sendMessage", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _isAvailable, false);
       _classPrivateFieldInitSpec(this, _contextStateHelper, new DisplayContextStateHelper());
       _classPrivateFieldInitSpec(this, _displayStatus, void 0);
@@ -17853,7 +17710,7 @@
       _classPrivateFieldInitSpec(this, _spriteSheetIndices, {});
       _classPrivateFieldInitSpec(this, _pendingSpriteSheet, void 0);
       _classPrivateFieldInitSpec(this, _pendingSpriteSheetName, void 0);
-      _defineProperty$1(this, "sendFile", void 0);
+      _defineProperty(this, "sendFile", void 0);
       _classPrivateFieldInitSpec(this, _mtu$1, void 0);
       _classPrivateFieldInitSpec(this, _isServerSide$1, false);
       autoBind(this);
@@ -17862,7 +17719,7 @@
       return this.eventDispatcher.waitForEvent;
     }
     requestRequiredInformation() {
-      _console$j.log("requesting required display information");
+      _console$i.log("requesting required display information");
       const messages = RequiredDisplayMessageTypes.map(messageType => ({
         type: messageType
       }));
@@ -18065,7 +17922,7 @@
       _assertClassBrand(_DisplayManager_brand, this, _assertDisplayIsAvailable$1).call(this);
       assertValidDisplayBrightness(newDisplayBrightness);
       if (this.brightness == newDisplayBrightness) {
-        _console$j.log("redundant displayBrightness ".concat(newDisplayBrightness));
+        _console$i.log("redundant displayBrightness ".concat(newDisplayBrightness));
         return;
       }
       const newDisplayBrightnessEnum = DisplayBrightnesses.indexOf(newDisplayBrightness);
@@ -18082,20 +17939,20 @@
     }
     async show() {
       let sendImmediately = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-      _console$j.log("showDisplay");
+      _console$i.log("showDisplay");
       _classPrivateFieldSet2(_isReady, this, false);
       _classPrivateFieldSet2(_lastShowRequestTime, this, Date.now());
       await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, "show", undefined, sendImmediately);
     }
     async clear() {
       let sendImmediately = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-      _console$j.log("clearDisplay");
+      _console$i.log("clearDisplay");
       _classPrivateFieldSet2(_isReady, this, false);
       _classPrivateFieldSet2(_lastShowRequestTime, this, Date.now());
       await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, "clear", undefined, sendImmediately);
     }
     assertValidColorIndex(colorIndex) {
-      _console$j.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
+      _console$i.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
     }
     get colors() {
       return _classPrivateFieldGet2(_colors, this);
@@ -18109,7 +17966,7 @@
       }
       const colorHex = rgbToHex(colorRGB);
       if (this.colors[colorIndex] == colorHex) {
-        _console$j.log("redundant color #".concat(colorIndex, " ").concat(colorHex));
+        _console$i.log("redundant color #".concat(colorIndex, " ").concat(colorHex));
         return;
       }
       this.assertValidColorIndex(colorIndex);
@@ -18274,7 +18131,7 @@
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     assertValidLineWidth(lineWidth) {
-      _console$j.assertRangeWithError("lineWidth", lineWidth, 0, Math.max(this.width, this.height));
+      _console$i.assertRangeWithError("lineWidth", lineWidth, 0, Math.max(this.width, this.height));
     }
     async setLineWidth(lineWidth, sendImmediately) {
       this.assertValidLineWidth(lineWidth);
@@ -18302,7 +18159,7 @@
       const differences = _classPrivateFieldGet2(_contextStateHelper, this).update({
         [alignmentKey]: alignment
       });
-      _console$j.log({
+      _console$i.log({
         alignmentKey,
         alignment,
         differences
@@ -18497,7 +18354,7 @@
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setCrop(cropDirection, crop, sendImmediately) {
-      _console$j.assertEnumWithError(cropDirection, DisplayCropDirections);
+      _console$i.assertEnumWithError(cropDirection, DisplayCropDirections);
       crop = Math.max(0, crop);
       const cropCommand = DisplayCropDirectionToCommandType[cropDirection];
       const cropKey = DisplayCropDirectionToStateKey[cropDirection];
@@ -18547,7 +18404,7 @@
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setRotationCrop(cropDirection, crop, sendImmediately) {
-      _console$j.assertEnumWithError(cropDirection, DisplayCropDirections);
+      _console$i.assertEnumWithError(cropDirection, DisplayCropDirections);
       const cropCommand = DisplayRotationCropDirectionToCommandType[cropDirection];
       const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
       const differences = _classPrivateFieldGet2(_contextStateHelper, this).update({
@@ -18625,7 +18482,7 @@
       return this.bitmapColorIndices.map(colorIndex => this.colors[colorIndex]);
     }
     async selectBitmapColors(bitmapColorPairs, sendImmediately) {
-      _console$j.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, this.numberOfColors);
+      _console$i.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, this.numberOfColors);
       const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
       bitmapColorPairs.forEach(_ref => {
         let {
@@ -18663,7 +18520,7 @@
       bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
       bitmapScale = roundScale(bitmapScale);
       const commandType = DisplayBitmapScaleDirectionToCommandType[direction];
-      _console$j.log({
+      _console$i.log({
         [commandType]: bitmapScale
       });
       const newState = {};
@@ -18757,7 +18614,7 @@
       return this.spriteColorIndices.map(colorIndex => this.colors[colorIndex]);
     }
     async selectSpriteColors(spriteColorPairs, sendImmediately) {
-      _console$j.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, this.numberOfColors);
+      _console$i.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, this.numberOfColors);
       const spriteColorIndices = this.contextState.spriteColorIndices.slice();
       spriteColorPairs.forEach(_ref2 => {
         let {
@@ -18810,7 +18667,7 @@
       spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
       spriteScale = roundScale(spriteScale);
       const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
-      _console$j.log({
+      _console$i.log({
         [commandType]: spriteScale
       });
       const newState = {};
@@ -19055,7 +18912,7 @@
       await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawPolygon(points, sendImmediately) {
-      _console$j.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+      _console$i.assertRangeWithError("numberOfPoints", points.length, 2, 255);
       const commandType = "drawPolygon";
       const dataView = serializeContextCommand(this, {
         type: commandType,
@@ -19081,7 +18938,7 @@
         return;
       }
       if (dataView.byteLength > _classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)) {
-        _console$j.error("wireframe data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
+        _console$i.error("wireframe data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
         return;
       }
       await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
@@ -19109,7 +18966,7 @@
         return;
       }
       if (dataView.byteLength > _classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)) {
-        _console$j.error("curve data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
+        _console$i.error("curve data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
         return;
       }
       await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
@@ -19137,7 +18994,7 @@
         return;
       }
       if (dataView.byteLength > _classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)) {
-        _console$j.error("path data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
+        _console$i.error("path data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
         return;
       }
       await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
@@ -19163,7 +19020,7 @@
       await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawSegments(points, sendImmediately) {
-      _console$j.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+      _console$i.assertRangeWithError("numberOfPoints", points.length, 2, 255);
       const commandType = "drawSegments";
       const dataView = serializeContextCommand(this, {
         type: commandType,
@@ -19176,13 +19033,13 @@
         const mid = Math.floor(points.length / 2);
         const firstHalf = points.slice(0, mid + 1);
         const secondHalf = points.slice(mid);
-        _console$j.log({
+        _console$i.log({
           firstHalf,
           secondHalf
         });
-        _console$j.log("sending first half", firstHalf);
+        _console$i.log("sending first half", firstHalf);
         await this.drawSegments(firstHalf, false);
-        _console$j.log("sending second half", secondHalf);
+        _console$i.log("sending second half", secondHalf);
         await this.drawSegments(secondHalf, sendImmediately);
         return;
       }
@@ -19222,7 +19079,7 @@
       await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     assertValidNumberOfColors(numberOfColors) {
-      _console$j.assertRangeWithError("numberOfColors", numberOfColors, 2, this.numberOfColors);
+      _console$i.assertRangeWithError("numberOfColors", numberOfColors, 2, this.numberOfColors);
     }
     assertValidBitmap(bitmap, checkSize) {
       this.assertValidNumberOfColors(bitmap.numberOfColors);
@@ -19346,9 +19203,9 @@
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
-      _console$j.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
+      _console$i.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
       let spriteIndex = this.selectedSpriteSheet.sprites.findIndex(sprite => sprite.name == spriteName);
-      _console$j.assertWithError(spriteIndex != -1, "sprite \"".concat(spriteName, "\" not found"));
+      _console$i.assertWithError(spriteIndex != -1, "sprite \"".concat(spriteName, "\" not found"));
       spriteIndex = spriteIndex;
       const commandType = "drawSprite";
       const dataView = serializeContextCommand(this, {
@@ -19378,7 +19235,7 @@
           };
           spriteSubLine.spriteNames.forEach(spriteName => {
             let spriteIndex = spriteSheet.sprites.findIndex(sprite => sprite.name == spriteName);
-            _console$j.assertWithError(spriteIndex != -1, "sprite \"".concat(spriteName, "\" not found"));
+            _console$i.assertWithError(spriteIndex != -1, "sprite \"".concat(spriteName, "\" not found"));
             spriteIndex = spriteIndex;
             serializedSubLine.spriteIndices.push(spriteIndex);
           });
@@ -19386,7 +19243,7 @@
         });
         spriteSerializedLines.push(serializedLine);
       });
-      _console$j.log("spriteSerializedLines", spriteSerializedLines);
+      _console$i.log("spriteSerializedLines", spriteSerializedLines);
       const commandType = "drawSprites";
       const dataView = serializeContextCommand(this, {
         type: commandType,
@@ -19410,7 +19267,7 @@
       return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
     }
     parseMessage(messageType, dataView) {
-      _console$j.log({
+      _console$i.log({
         messageType,
         dataView
       });
@@ -19434,7 +19291,7 @@
         case "getSpriteSheetName":
         case "setSpriteSheetName":
           const spriteSheetName = textDecoder.decode(dataView.buffer);
-          _console$j.log({
+          _console$i.log({
             spriteSheetName
           });
           _assertClassBrand(_DisplayManager_brand, this, _updateSpriteSheetName).call(this, spriteSheetName);
@@ -19465,7 +19322,7 @@
       await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
     }
     reset() {
-      _console$j.log("clearing displayManager");
+      _console$i.log("clearing displayManager");
       _classPrivateFieldSet2(_displayStatus, this, undefined);
       _classPrivateFieldSet2(_isAvailable, this, false);
       _classPrivateFieldSet2(_displayInformation, this, undefined);
@@ -19493,10 +19350,10 @@
     }
     set isServerSide(newIsServerSide) {
       if (_classPrivateFieldGet2(_isServerSide$1, this) == newIsServerSide) {
-        _console$j.log("redundant isServerSide assignment");
+        _console$i.log("redundant isServerSide assignment");
         return;
       }
-      _console$j.log({
+      _console$i.log({
         newIsServerSide
       });
       _classPrivateFieldSet2(_isServerSide$1, this, newIsServerSide);
@@ -19506,12 +19363,12 @@
     return _this.eventDispatcher.dispatchEvent;
   }
   function _assertDisplayIsAvailable$1() {
-    _console$j.assertWithError(_classPrivateFieldGet2(_isAvailable, this), "display is not available");
+    _console$i.assertWithError(_classPrivateFieldGet2(_isAvailable, this), "display is not available");
   }
   function _parseIsDisplayAvailable(dataView) {
     const newIsDisplayAvailable = dataView.getUint8(0) == 1;
     _classPrivateFieldSet2(_isAvailable, this, newIsDisplayAvailable);
-    _console$j.log({
+    _console$i.log({
       isDisplayAvailable: _classPrivateFieldGet2(_isAvailable, this)
     });
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "isDisplayAvailable", {
@@ -19530,24 +19387,24 @@
     _assertClassBrand(_DisplayManager_brand, this, _updateDisplayStatus).call(this, newDisplayStatus);
   }
   function _updateDisplayStatus(newDisplayStatus) {
-    _console$j.assertEnumWithError(newDisplayStatus, DisplayStatuses);
+    _console$i.assertEnumWithError(newDisplayStatus, DisplayStatuses);
     if (newDisplayStatus == _classPrivateFieldGet2(_displayStatus, this)) {
-      _console$j.log("redundant displayStatus ".concat(newDisplayStatus));
+      _console$i.log("redundant displayStatus ".concat(newDisplayStatus));
       return;
     }
     const previousDisplayStatus = _classPrivateFieldGet2(_displayStatus, this);
     _classPrivateFieldSet2(_displayStatus, this, newDisplayStatus);
-    _console$j.log("updated displayStatus to \"".concat(this.displayStatus, "\""));
+    _console$i.log("updated displayStatus to \"".concat(this.displayStatus, "\""));
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayStatus", {
       displayStatus: this.displayStatus,
       previousDisplayStatus
     });
   }
   async function _sendDisplayCommand(command, sendImmediately) {
-    _console$j.assertEnumWithError(command, DisplayCommands);
-    _console$j.log("sending display command \"".concat(command, "\""));
+    _console$i.assertEnumWithError(command, DisplayCommands);
+    _console$i.log("sending display command \"".concat(command, "\""));
     const promise = this.waitForEvent("displayStatus");
-    _console$j.log("setting command \"".concat(command, "\""));
+    _console$i.log("setting command \"".concat(command, "\""));
     const commandEnum = DisplayCommands.indexOf(command);
     this.sendMessage([{
       type: "displayCommand",
@@ -19556,10 +19413,10 @@
     await promise;
   }
   function _assertIsAwake() {
-    _console$j.assertWithError(_classPrivateFieldGet2(_displayStatus, this) == "awake", "display is not awake - currently ".concat(_classPrivateFieldGet2(_displayStatus, this)));
+    _console$i.assertWithError(_classPrivateFieldGet2(_displayStatus, this) == "awake", "display is not awake - currently ".concat(_classPrivateFieldGet2(_displayStatus, this)));
   }
   function _assertIsNotAwake() {
-    _console$j.assertWithError(_classPrivateFieldGet2(_displayStatus, this) != "awake", "display is awake");
+    _console$i.assertWithError(_classPrivateFieldGet2(_displayStatus, this) != "awake", "display is awake");
   }
   function _parseDisplayInformation(dataView) {
     const parsedDisplayInformation = {};
@@ -19567,8 +19424,8 @@
     while (byteOffset < dataView.byteLength) {
       const displayInformationTypeIndex = dataView.getUint8(byteOffset++);
       const displayInformationType = DisplayInformationTypes[displayInformationTypeIndex];
-      _console$j.assertWithError(displayInformationType, "invalid displayInformationTypeIndex ".concat(displayInformationType));
-      _console$j.log({
+      _console$i.assertWithError(displayInformationType, "invalid displayInformationTypeIndex ".concat(displayInformationType));
+      _console$i.log({
         displayInformationType
       });
       switch (displayInformationType) {
@@ -19586,17 +19443,17 @@
             const values = DisplayInformationValues[displayInformationType];
             let rawValue = dataView.getUint8(byteOffset++);
             const value = values[rawValue];
-            _console$j.assertEnumWithError(value, values);
+            _console$i.assertEnumWithError(value, values);
             parsedDisplayInformation[displayInformationType] = value;
           }
           break;
       }
     }
-    _console$j.log({
+    _console$i.log({
       parsedDisplayInformation
     });
     const missingDisplayInformationType = DisplayInformationTypes.find(type => !(type in parsedDisplayInformation));
-    _console$j.assertWithError(!missingDisplayInformationType, "missingDisplayInformationType ".concat(missingDisplayInformationType));
+    _console$i.assertWithError(!missingDisplayInformationType, "missingDisplayInformationType ".concat(missingDisplayInformationType));
     _classPrivateFieldSet2(_displayInformation, this, parsedDisplayInformation);
     _classPrivateFieldSet2(_colors, this, new Array(this.numberOfColors).fill("#000000"));
     _classPrivateFieldSet2(_opacities, this, new Array(this.numberOfColors).fill(1));
@@ -19611,7 +19468,7 @@
     const newDisplayBrightness = DisplayBrightnesses[newDisplayBrightnessEnum];
     assertValidDisplayBrightness(newDisplayBrightness);
     _classPrivateFieldSet2(_brightness, this, newDisplayBrightness);
-    _console$j.log({
+    _console$i.log({
       displayBrightness: _classPrivateFieldGet2(_brightness, this)
     });
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "getDisplayBrightness", {
@@ -19619,14 +19476,14 @@
     });
   }
   function _assertValidDisplayContextCommand(displayContextCommand) {
-    _console$j.assertEnumWithError(displayContextCommand, DisplayContextCommandTypes);
+    _console$i.assertEnumWithError(displayContextCommand, DisplayContextCommandTypes);
   }
   function _get_maxCommandDataLength(_this2) {
     return _this2.mtu - 7;
   }
   async function _sendDisplayContextCommand(displayContextCommand, arrayBuffer, sendImmediately) {
     _assertClassBrand(_DisplayManager_brand, this, _assertValidDisplayContextCommand).call(this, displayContextCommand);
-    _console$j.log("sendDisplayContextCommand", {
+    _console$i.log("sendDisplayContextCommand", {
       displayContextCommand,
       sendImmediately
     }, arrayBuffer);
@@ -19634,7 +19491,7 @@
     const _arrayBuffer = concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), arrayBuffer);
     const newLength = _classPrivateFieldGet2(_displayContextCommandBuffers, this).reduce((sum, buffer) => sum + buffer.byteLength, _arrayBuffer.byteLength);
     if (newLength > _classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)) {
-      _console$j.log("displayContextCommandBuffers too full - sending now");
+      _console$i.log("displayContextCommandBuffers too full - sending now");
       await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommands).call(this);
     }
     _classPrivateFieldGet2(_displayContextCommandBuffers, this).push(_arrayBuffer);
@@ -19647,7 +19504,7 @@
       return;
     }
     const data = concatenateArrayBuffers(_classPrivateFieldGet2(_displayContextCommandBuffers, this));
-    _console$j.log("sending displayContextCommands", _classPrivateFieldGet2(_displayContextCommandBuffers, this).slice(), data);
+    _console$i.log("sending displayContextCommands", _classPrivateFieldGet2(_displayContextCommandBuffers, this).slice(), data);
     _classPrivateFieldGet2(_displayContextCommandBuffers, this).length = 0;
     await this.sendMessage([{
       type: "displayContextCommands",
@@ -19656,16 +19513,16 @@
   }
   function _assertValidBitmapSize(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
-    _console$j.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, _classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength) - drawBitmapHeaderLength);
+    _console$i.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, _classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength) - drawBitmapHeaderLength);
   }
   async function _parseDisplayReady(dataView) {
     const now = Date.now();
     const timeSinceLastDraw = now - _classPrivateFieldGet2(_lastShowRequestTime, this);
     const timeSinceLastReady = now - _classPrivateFieldGet2(_lastReadyTime, this);
-    _console$j.log("".concat(timeSinceLastDraw, "ms draw time"));
+    _console$i.log("".concat(timeSinceLastDraw, "ms draw time"));
     if (_classPrivateFieldGet2(_waitBeforeReady, this) && timeSinceLastReady < _classPrivateFieldGet2(_minReadyInterval, this)) {
       const timeToWait = _classPrivateFieldGet2(_minReadyInterval, this) - timeSinceLastReady;
-      _console$j.log("waiting ".concat(timeToWait, "ms"));
+      _console$i.log("waiting ".concat(timeToWait, "ms"));
       await wait(timeToWait);
     }
     _classPrivateFieldSet2(_isReady, this, true);
@@ -19673,10 +19530,10 @@
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayReady", {});
   }
   async function _setSpriteSheetName(spriteSheetName, sendImmediately) {
-    _console$j.assertTypeWithError(spriteSheetName, "string");
-    _console$j.assertRangeWithError("newName", spriteSheetName.length, MinSpriteSheetNameLength, MaxSpriteSheetNameLength);
+    _console$i.assertTypeWithError(spriteSheetName, "string");
+    _console$i.assertRangeWithError("newName", spriteSheetName.length, MinSpriteSheetNameLength, MaxSpriteSheetNameLength);
     const setSpriteSheetNameData = textEncoder.encode(spriteSheetName);
-    _console$j.log({
+    _console$i.log({
       setSpriteSheetNameData
     });
     const promise = this.waitForEvent("getSpriteSheetName");
@@ -19687,9 +19544,9 @@
     await promise;
   }
   function _updateSpriteSheetName(updatedSpriteSheetName) {
-    _console$j.assertTypeWithError(updatedSpriteSheetName, "string");
+    _console$i.assertTypeWithError(updatedSpriteSheetName, "string");
     _classPrivateFieldSet2(_pendingSpriteSheetName, this, updatedSpriteSheetName);
-    _console$j.log({
+    _console$i.log({
       updatedSpriteSheetName: _classPrivateFieldGet2(_pendingSpriteSheetName, this)
     });
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "getSpriteSheetName", {
@@ -19698,7 +19555,7 @@
   }
   function _parseSpriteSheetIndex(dataView) {
     const spriteSheetIndex = dataView.getUint8(0);
-    _console$j.log({
+    _console$i.log({
       pendingSpriteSheet: _classPrivateFieldGet2(_pendingSpriteSheet, this),
       spriteSheetName: _classPrivateFieldGet2(_pendingSpriteSheetName, this),
       spriteSheetIndex
@@ -19706,8 +19563,8 @@
     if (this.isServerSide) {
       return;
     }
-    _console$j.assertWithError(_classPrivateFieldGet2(_pendingSpriteSheetName, this) != undefined, "expected spriteSheetName when receiving spriteSheetIndex");
-    _console$j.assertWithError(_classPrivateFieldGet2(_pendingSpriteSheet, this) != undefined, "expected pendingSpriteSheet when receiving spriteSheetIndex");
+    _console$i.assertWithError(_classPrivateFieldGet2(_pendingSpriteSheetName, this) != undefined, "expected spriteSheetName when receiving spriteSheetIndex");
+    _console$i.assertWithError(_classPrivateFieldGet2(_pendingSpriteSheet, this) != undefined, "expected pendingSpriteSheet when receiving spriteSheetIndex");
     _classPrivateFieldGet2(_spriteSheets, this)[_classPrivateFieldGet2(_pendingSpriteSheetName, this)] = _classPrivateFieldGet2(_pendingSpriteSheet, this);
     _classPrivateFieldGet2(_spriteSheetIndices, this)[_classPrivateFieldGet2(_pendingSpriteSheetName, this)] = spriteSheetIndex;
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displaySpriteSheetUploadComplete", {
@@ -19717,7 +19574,7 @@
     _classPrivateFieldSet2(_pendingSpriteSheet, this, undefined);
   }
 
-  const _console$i = createConsole("BaseConnectionManager", {
+  const _console$h = createConsole("BaseConnectionManager", {
     log: false
   });
   const ConnectionTypes = ["webBluetooth", "noble", "client", "webSocket", "udp"];
@@ -19751,14 +19608,14 @@
     }
     constructor() {
       _classPrivateMethodInitSpec(this, _BaseConnectionManager_brand);
-      _defineProperty$1(this, "onStatusUpdated", void 0);
-      _defineProperty$1(this, "onMessageReceived", void 0);
-      _defineProperty$1(this, "onMessagesReceived", void 0);
+      _defineProperty(this, "onStatusUpdated", void 0);
+      _defineProperty(this, "onMessageReceived", void 0);
+      _defineProperty(this, "onMessagesReceived", void 0);
       _classPrivateFieldInitSpec(this, _status$1, "notConnected");
       _classPrivateFieldInitSpec(this, _pendingMessages, []);
       _classPrivateFieldInitSpec(this, _isSendingMessages, false);
-      _defineProperty$1(this, "defaultMtu", 23);
-      _defineProperty$1(this, "mtu", this.defaultMtu);
+      _defineProperty(this, "defaultMtu", 23);
+      _defineProperty(this, "mtu", this.defaultMtu);
       _classPrivateFieldInitSpec(this, _timer, new Timer(_assertClassBrand(_BaseConnectionManager_brand, this, _checkConnection$1).bind(this), 5000));
       _assertClassBrand(_BaseConnectionManager_brand, this, _assertIsSupported).call(this);
     }
@@ -19766,12 +19623,12 @@
       return _classPrivateFieldGet2(_status$1, this);
     }
     set status(newConnectionStatus) {
-      _console$i.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
+      _console$h.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
       if (_classPrivateFieldGet2(_status$1, this) == newConnectionStatus) {
-        _console$i.log("tried to assign same connection status \"".concat(newConnectionStatus, "\""));
+        _console$h.log("tried to assign same connection status \"".concat(newConnectionStatus, "\""));
         return;
       }
-      _console$i.log("new connection status \"".concat(newConnectionStatus, "\""));
+      _console$h.log("new connection status \"".concat(newConnectionStatus, "\""));
       _classPrivateFieldSet2(_status$1, this, newConnectionStatus);
       this.onStatusUpdated(this.status);
       if (this.isConnected) {
@@ -19790,10 +19647,10 @@
       return false;
     }
     assertIsNotConnected() {
-      _console$i.assertWithError(!this.isConnected, "device is already connected");
+      _console$h.assertWithError(!this.isConnected, "device is already connected");
     }
     assertIsConnected() {
-      _console$i.assertWithError(this.isConnected, "device is not connected");
+      _console$h.assertWithError(this.isConnected, "device is not connected");
     }
     assertIsConnectedAndNotDisconnecting() {
       this.assertIsConnected();
@@ -19810,41 +19667,41 @@
     async reconnect() {
       this.assertIsNotConnected();
       _assertClassBrand(_BaseConnectionManager_brand, this, _assertIsNotConnecting).call(this);
-      _console$i.assertWithError(this.canReconnect, "unable to reconnect");
+      _console$h.assertWithError(this.canReconnect, "unable to reconnect");
       this.status = "connecting";
-      _console$i.log("attempting to reconnect...");
+      _console$h.log("attempting to reconnect...");
     }
     async disconnect() {
       this.assertIsConnected();
       _assertClassBrand(_BaseConnectionManager_brand, this, _assertIsNotDisconnecting).call(this);
       this.status = "disconnecting";
-      _console$i.log("disconnecting from device...");
+      _console$h.log("disconnecting from device...");
     }
     async sendSmpMessage(data) {
       this.assertIsConnectedAndNotDisconnecting();
-      _console$i.log("sending smp message", data);
+      _console$h.log("sending smp message", data);
     }
     async sendTxMessages(messages) {
       let sendImmediately = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
       this.assertIsConnectedAndNotDisconnecting();
       if (messages) {
         _classPrivateFieldGet2(_pendingMessages, this).push(...messages);
-        _console$i.log("appended ".concat(messages.length, " messages"));
+        _console$h.log("appended ".concat(messages.length, " messages"));
       }
       if (!sendImmediately) {
-        _console$i.log("not sending immediately - waiting until later");
+        _console$h.log("not sending immediately - waiting until later");
         return;
       }
       if (_classPrivateFieldGet2(_isSendingMessages, this)) {
-        _console$i.log("already sending messages - waiting until later");
+        _console$h.log("already sending messages - waiting until later");
         return;
       }
       if (_classPrivateFieldGet2(_pendingMessages, this).length == 0) {
-        _console$i.log("no pendingMessages");
+        _console$h.log("no pendingMessages");
         return;
       }
       _classPrivateFieldSet2(_isSendingMessages, this, true);
-      _console$i.log("sendTxMessages", _classPrivateFieldGet2(_pendingMessages, this).slice());
+      _console$h.log("sendTxMessages", _classPrivateFieldGet2(_pendingMessages, this).slice());
       const arrayBuffers = _classPrivateFieldGet2(_pendingMessages, this).map(message => {
         var _message$data;
         _AssertValidTxRxMessageType.call(BaseConnectionManager, message.type);
@@ -19857,40 +19714,40 @@
       if (this.mtu) {
         while (arrayBuffers.length > 0) {
           if (arrayBuffers.every(arrayBuffer => arrayBuffer.byteLength > this.mtu - 3)) {
-            _console$i.log("every arrayBuffer is too big to send");
+            _console$h.log("every arrayBuffer is too big to send");
             break;
           }
-          _console$i.log("remaining arrayBuffers.length", arrayBuffers.length);
+          _console$h.log("remaining arrayBuffers.length", arrayBuffers.length);
           let arrayBufferByteLength = 0;
           let arrayBufferCount = 0;
           arrayBuffers.some(arrayBuffer => {
             if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu - 3) {
-              _console$i.log("stopping appending arrayBuffers ( length ".concat(arrayBuffer.byteLength, " too much)"));
+              _console$h.log("stopping appending arrayBuffers ( length ".concat(arrayBuffer.byteLength, " too much)"));
               return true;
             }
-            _console$i.log("allowing arrayBuffer with length ".concat(arrayBuffer.byteLength));
+            _console$h.log("allowing arrayBuffer with length ".concat(arrayBuffer.byteLength));
             arrayBufferCount++;
             arrayBufferByteLength += arrayBuffer.byteLength;
           });
           const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
-          _console$i.log({
+          _console$h.log({
             arrayBufferCount,
             arrayBuffersToSend
           });
           const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
-          _console$i.log("sending arrayBuffer (partitioned)", arrayBuffer);
+          _console$h.log("sending arrayBuffer (partitioned)", arrayBuffer);
           await this.sendTxData(arrayBuffer);
         }
       } else {
         const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
-        _console$i.log("sending arrayBuffer (all)", arrayBuffer);
+        _console$h.log("sending arrayBuffer (all)", arrayBuffer);
         await this.sendTxData(arrayBuffer);
       }
       _classPrivateFieldSet2(_isSendingMessages, this, false);
       this.sendTxMessages(undefined, true);
     }
     async sendTxData(data) {
-      _console$i.log("sendTxData", data);
+      _console$h.log("sendTxData", data);
     }
     parseRxMessage(dataView) {
       parseMessage(dataView, TxRxMessageTypes, _assertClassBrand(_BaseConnectionManager_brand, this, _onRxMessage).bind(this), null, true);
@@ -19908,19 +19765,19 @@
     }
   }
   function _AssertValidTxRxMessageType(messageType) {
-    _console$i.assertEnumWithError(messageType, TxRxMessageTypes);
+    _console$h.assertEnumWithError(messageType, TxRxMessageTypes);
   }
   function _assertIsSupported() {
-    _console$i.assertWithError(this.isSupported, "".concat(this.constructor.name, " is not supported"));
+    _console$h.assertWithError(this.isSupported, "".concat(this.constructor.name, " is not supported"));
   }
   function _assertIsNotConnecting() {
-    _console$i.assertWithError(this.status != "connecting", "device is already connecting");
+    _console$h.assertWithError(this.status != "connecting", "device is already connecting");
   }
   function _assertIsNotDisconnecting() {
-    _console$i.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+    _console$h.assertWithError(this.status != "disconnecting", "device is already disconnecting");
   }
   function _onRxMessage(messageType, dataView) {
-    _console$i.log({
+    _console$h.log({
       messageType,
       dataView
     });
@@ -19928,22 +19785,22 @@
   }
   function _checkConnection$1() {
     if (!this.isConnected) {
-      _console$i.log("timer detected disconnection");
+      _console$h.log("timer detected disconnection");
       this.status = "notConnected";
     }
   }
-  _defineProperty$1(BaseConnectionManager, "type", void 0);
+  _defineProperty(BaseConnectionManager, "type", void 0);
 
   function capitalizeFirstCharacter(string) {
     return string[0].toUpperCase() + string.slice(1);
   }
 
-  const _console$h = createConsole("EventUtils", {
+  const _console$g = createConsole("EventUtils", {
     log: false
   });
   function addEventListeners(target, boundEventListeners) {
     let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
-    _console$h.assertWithError(addEventListener, "no add listener function found for target");
+    _console$g.assertWithError(addEventListener, "no add listener function found for target");
     addEventListener = addEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(_ref => {
       let [eventType, eventListener] = _ref;
@@ -19952,7 +19809,7 @@
   }
   function removeEventListeners(target, boundEventListeners) {
     let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
-    _console$h.assertWithError(removeEventListener, "no remove listener function found for target");
+    _console$g.assertWithError(removeEventListener, "no remove listener function found for target");
     removeEventListener = removeEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(_ref2 => {
       let [eventType, eventListener] = _ref2;
@@ -19960,7 +19817,7 @@
     });
   }
 
-  const _console$g = createConsole("bluetoothUUIDs", {
+  const _console$f = createConsole("bluetoothUUIDs", {
     log: false
   });
   var BluetoothUUID = {
@@ -19981,8 +19838,8 @@
     return uuid.toLowerCase();
   }
   function generateBluetoothUUID(value) {
-    _console$g.assertTypeWithError(value, "string");
-    _console$g.assertWithError(value.length == 4, "value must be 4 characters long");
+    _console$f.assertTypeWithError(value, "string");
+    _console$f.assertWithError(value.length == 4, "value must be 4 characters long");
     return "ea6d".concat(value, "-a725-4f9b-893d-c3913e33b39f");
   }
   function stringToCharacteristicUUID(identifier) {
@@ -20143,13 +20000,13 @@
     return properties;
   }
 
-  const _console$f = createConsole("BluetoothConnectionManager", {
+  const _console$e = createConsole("BluetoothConnectionManager", {
     log: false
   });
   class BluetoothConnectionManager extends BaseConnectionManager {
     constructor() {
       super(...arguments);
-      _defineProperty$1(this, "isInRange", true);
+      _defineProperty(this, "isInRange", true);
     }
     get isAvailable() {
       return true;
@@ -20163,7 +20020,7 @@
       }
     }
     async writeCharacteristic(characteristicName, data) {
-      _console$f.log("writeCharacteristic", ...arguments);
+      _console$e.log("writeCharacteristic", ...arguments);
     }
     async sendSmpMessage(data) {
       super.sendSmpMessage(data);
@@ -20178,7 +20035,7 @@
     }
   }
 
-  const _console$e = createConsole("WebBluetoothConnectionManager", {
+  const _console$d = createConsole("WebBluetoothConnectionManager", {
     log: false
   });
   var bluetooth;
@@ -20219,7 +20076,7 @@
     }
     set device(newDevice) {
       if (_classPrivateFieldGet2(_device, this) == newDevice) {
-        _console$e.log("tried to assign the same BluetoothDevice");
+        _console$d.log("tried to assign the same BluetoothDevice");
         return;
       }
       if (_classPrivateFieldGet2(_device, this)) {
@@ -20247,17 +20104,17 @@
           }],
           optionalServices: isInBrowser ? optionalServiceUUIDs : []
         });
-        _console$e.log("got BluetoothDevice");
+        _console$d.log("got BluetoothDevice");
         this.device = device;
-        _console$e.log("connecting to device...");
+        _console$d.log("connecting to device...");
         const server = await this.server.connect();
-        _console$e.log("connected to device? ".concat(server.connected));
+        _console$d.log("connected to device? ".concat(server.connected));
         await _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _getServicesAndCharacteristics).call(this);
-        _console$e.log("fully connected");
+        _console$d.log("fully connected");
         this.status = "connected";
       } catch (error) {
         var _this$server2;
-        _console$e.error(error);
+        _console$d.error(error);
         this.status = "notConnected";
         (_this$server2 = this.server) === null || _this$server2 === void 0 ? void 0 : _this$server2.disconnect();
         _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _removeEventListeners).call(this);
@@ -20273,19 +20130,19 @@
     async writeCharacteristic(characteristicName, data) {
       super.writeCharacteristic(characteristicName, data);
       const characteristic = _classPrivateFieldGet2(_characteristics, this).get(characteristicName);
-      _console$e.assertWithError(characteristic, "".concat(characteristicName, " characteristic not found"));
-      _console$e.log("writing characteristic", characteristic, data);
+      _console$d.assertWithError(characteristic, "".concat(characteristicName, " characteristic not found"));
+      _console$d.log("writing characteristic", characteristic, data);
       const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
       if (characteristicProperties.writeWithoutResponse) {
-        _console$e.log("writing without response");
+        _console$d.log("writing without response");
         await characteristic.writeValueWithoutResponse(data);
       } else {
-        _console$e.log("writing with response");
+        _console$d.log("writing with response");
         await characteristic.writeValueWithResponse(data);
       }
-      _console$e.log("wrote characteristic");
+      _console$d.log("wrote characteristic");
       if (characteristicProperties.read && !characteristicProperties.notify) {
-        _console$e.log("reading value after write...");
+        _console$d.log("reading value after write...");
         await characteristic.readValue();
         if (isInBluefy || isInWebBLE) {
           _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _onCharacteristicValueChanged).call(this, characteristic);
@@ -20300,15 +20157,15 @@
       try {
         await this.server.connect();
       } catch (error) {
-        _console$e.error(error);
+        _console$d.error(error);
         this.isInRange = false;
       }
       if (this.isConnected) {
-        _console$e.log("successfully reconnected!");
+        _console$d.log("successfully reconnected!");
         await _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _getServicesAndCharacteristics).call(this);
         this.status = "connected";
       } else {
-        _console$e.log("unable to reconnect");
+        _console$d.log("unable to reconnect");
         this.status = "notConnected";
       }
     }
@@ -20319,41 +20176,41 @@
   }
   async function _getServicesAndCharacteristics() {
     _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _removeEventListeners).call(this);
-    _console$e.log("getting services...");
+    _console$d.log("getting services...");
     const services = await this.server.getPrimaryServices();
-    _console$e.log("got services", services.length);
-    _console$e.log("getting characteristics...");
+    _console$d.log("got services", services.length);
+    _console$d.log("getting characteristics...");
     for (const serviceIndex in services) {
       const service = services[serviceIndex];
-      _console$e.log({
+      _console$d.log({
         service
       });
       const serviceName = getServiceNameFromUUID(service.uuid);
-      _console$e.assertWithError(serviceName, "no name found for service uuid \"".concat(service.uuid, "\""));
-      _console$e.log("got \"".concat(serviceName, "\" service"));
+      _console$d.assertWithError(serviceName, "no name found for service uuid \"".concat(service.uuid, "\""));
+      _console$d.log("got \"".concat(serviceName, "\" service"));
       service.name = serviceName;
       _classPrivateFieldGet2(_services, this).set(serviceName, service);
-      _console$e.log("getting characteristics for \"".concat(serviceName, "\" service"));
+      _console$d.log("getting characteristics for \"".concat(serviceName, "\" service"));
       const characteristics = await service.getCharacteristics();
-      _console$e.log("got characteristics for \"".concat(serviceName, "\" service"));
+      _console$d.log("got characteristics for \"".concat(serviceName, "\" service"));
       for (const characteristicIndex in characteristics) {
         const characteristic = characteristics[characteristicIndex];
-        _console$e.log({
+        _console$d.log({
           characteristic
         });
         const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-        _console$e.assertWithError(Boolean(characteristicName), "no name found for characteristic uuid \"".concat(characteristic.uuid, "\" in \"").concat(serviceName, "\" service"));
-        _console$e.log("got \"".concat(characteristicName, "\" characteristic in \"").concat(serviceName, "\" service"));
+        _console$d.assertWithError(Boolean(characteristicName), "no name found for characteristic uuid \"".concat(characteristic.uuid, "\" in \"").concat(serviceName, "\" service"));
+        _console$d.log("got \"".concat(characteristicName, "\" characteristic in \"").concat(serviceName, "\" service"));
         characteristic.name = characteristicName;
         _classPrivateFieldGet2(_characteristics, this).set(characteristicName, characteristic);
         addEventListeners(characteristic, _classPrivateFieldGet2(_boundBluetoothCharacteristicEventListeners, this));
         const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
         if (characteristicProperties.notify) {
-          _console$e.log("starting notifications for \"".concat(characteristicName, "\" characteristic"));
+          _console$d.log("starting notifications for \"".concat(characteristicName, "\" characteristic"));
           await characteristic.startNotifications();
         }
         if (characteristicProperties.read) {
-          _console$e.log("reading \"".concat(characteristicName, "\" characteristic..."));
+          _console$d.log("reading \"".concat(characteristicName, "\" characteristic..."));
           await characteristic.readValue();
           if (isInBluefy || isInWebBLE) {
             _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _onCharacteristicValueChanged).call(this, characteristic);
@@ -20371,33 +20228,33 @@
       removeEventListeners(characteristic, _classPrivateFieldGet2(_boundBluetoothCharacteristicEventListeners, this));
       const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
       if (characteristicProperties.notify) {
-        _console$e.log("stopping notifications for \"".concat(characteristicName, "\" characteristic"));
+        _console$d.log("stopping notifications for \"".concat(characteristicName, "\" characteristic"));
         return characteristic.stopNotifications();
       }
     });
     return Promise.allSettled(promises);
   }
   function _onCharacteristicvaluechanged(event) {
-    _console$e.log("oncharacteristicvaluechanged");
+    _console$d.log("oncharacteristicvaluechanged");
     const characteristic = event.target;
     _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _onCharacteristicValueChanged).call(this, characteristic);
   }
   function _onCharacteristicValueChanged(characteristic) {
-    _console$e.log("onCharacteristicValue");
+    _console$d.log("onCharacteristicValue");
     const characteristicName = characteristic.name;
-    _console$e.assertWithError(Boolean(characteristicName), "no name found for characteristic with uuid \"".concat(characteristic.uuid, "\""));
-    _console$e.log("oncharacteristicvaluechanged for \"".concat(characteristicName, "\" characteristic"));
+    _console$d.assertWithError(Boolean(characteristicName), "no name found for characteristic with uuid \"".concat(characteristic.uuid, "\""));
+    _console$d.log("oncharacteristicvaluechanged for \"".concat(characteristicName, "\" characteristic"));
     const dataView = characteristic.value;
-    _console$e.assertWithError(dataView, "no data found for \"".concat(characteristicName, "\" characteristic"));
-    _console$e.log("data for \"".concat(characteristicName, "\" characteristic"), Array.from(new Uint8Array(dataView.buffer)));
+    _console$d.assertWithError(dataView, "no data found for \"".concat(characteristicName, "\" characteristic"));
+    _console$d.log("data for \"".concat(characteristicName, "\" characteristic"), Array.from(new Uint8Array(dataView.buffer)));
     try {
       this.onCharacteristicValueChanged(characteristicName, dataView);
     } catch (error) {
-      _console$e.error(error);
+      _console$d.error(error);
     }
   }
   function _onGattserverdisconnected() {
-    _console$e.log("gattserverdisconnected");
+    _console$d.log("gattserverdisconnected");
     this.status = "notConnected";
   }
 
@@ -20778,7 +20635,7 @@
     decode
   };
 
-  const _console$d = createConsole("mcumgr", {
+  const _console$c = createConsole("mcumgr", {
     log: false
   });
   const constants = {
@@ -20866,7 +20723,7 @@
       return message;
     }
     _notification(buffer) {
-      _console$d.log("mcumgr - message received");
+      _console$c.log("mcumgr - message received");
       const message = new Uint8Array(buffer);
       this._buffer = new Uint8Array([...this._buffer, ...message]);
       const messageLength = this._buffer[2] * 256 + this._buffer[3];
@@ -20879,7 +20736,7 @@
       const data = CBOR.decode(message.slice(8).buffer);
       const length = lengthHi * 256 + lengthLo;
       const group = groupHi * 256 + groupLo;
-      _console$d.log("mcumgr - Process Message - Group: " + group + ", Id: " + id + ", Off: " + data.off);
+      _console$c.log("mcumgr - Process Message - Group: " + group + ", Id: " + id + ", Off: " + data.off);
       if (group === constants.MGMT_GROUP_ID_IMAGE && id === constants.IMG_MGMT_ID_UPLOAD && data.off) {
         this._uploadOffset = data.off;
         this._uploadNext();
@@ -20895,7 +20752,7 @@
         if (data.len != undefined) {
           this._downloadFileLength = data.len;
         }
-        _console$d.log("downloaded " + this._downloadFileOffset + " bytes of " + this._downloadFileLength);
+        _console$c.log("downloaded " + this._downloadFileOffset + " bytes of " + this._downloadFileLength);
         if (this._downloadFileLength > 0) {
           this._fileDownloadProgressCallback({
             percentage: Math.floor(this._downloadFileOffset / this._downloadFileLength * 100)
@@ -20973,7 +20830,7 @@
       message.data = new Uint8Array(this._uploadImage.slice(this._uploadOffset, this._uploadOffset + length));
       this._uploadOffset += length;
       const packet = this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_UPLOAD, message);
-      _console$d.log("mcumgr - _uploadNext: Message Length: " + packet.length);
+      _console$c.log("mcumgr - _uploadNext: Message Length: " + packet.length);
       this._imageUploadNextCallback({
         packet
       });
@@ -20992,7 +20849,7 @@
     async cmdUpload(image) {
       let slot = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       if (this._uploadIsInProgress) {
-        _console$d.error("Upload is already in progress.");
+        _console$c.error("Upload is already in progress.");
         return;
       }
       this._uploadIsInProgress = true;
@@ -21003,7 +20860,7 @@
     }
     async cmdUploadFile(filebuf, destFilename) {
       if (this._uploadIsInProgress) {
-        _console$d.error("Upload is already in progress.");
+        _console$c.error("Upload is already in progress.");
         return;
       }
       this._uploadIsInProgress = true;
@@ -21013,7 +20870,7 @@
       this._uploadFileNext();
     }
     async _uploadFileNext() {
-      _console$d.log("uploadFileNext - offset: " + this._uploadFileOffset + ", length: " + this._uploadFile.byteLength);
+      _console$c.log("uploadFileNext - offset: " + this._uploadFileOffset + ", length: " + this._uploadFile.byteLength);
       if (this._uploadFileOffset >= this._uploadFile.byteLength) {
         this._uploadIsInProgress = false;
         this._fileUploadFinishedCallback();
@@ -21035,14 +20892,14 @@
       message.data = new Uint8Array(this._uploadFile.slice(this._uploadFileOffset, this._uploadFileOffset + length));
       this._uploadFileOffset += length;
       const packet = this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_FS, constants.FS_MGMT_ID_FILE, message);
-      _console$d.log("mcumgr - _uploadNext: Message Length: " + packet.length);
+      _console$c.log("mcumgr - _uploadNext: Message Length: " + packet.length);
       this._fileUploadNextCallback({
         packet
       });
     }
     async cmdDownloadFile(filename, destFilename) {
       if (this._downloadIsInProgress) {
-        _console$d.error("Download is already in progress.");
+        _console$c.error("Download is already in progress.");
         return;
       }
       this._downloadIsInProgress = true;
@@ -21067,7 +20924,7 @@
         message.name = this._downloadRemoteFilename;
       }
       const packet = this._getMessage(constants.MGMT_OP_READ, constants.MGMT_GROUP_ID_FS, constants.FS_MGMT_ID_FILE, message);
-      _console$d.log("mcumgr - _downloadNext: Message Length: " + packet.length);
+      _console$c.log("mcumgr - _downloadNext: Message Length: " + packet.length);
       this._fileDownloadNextCallback({
         packet
       });
@@ -21103,7 +20960,7 @@
     }
   }
 
-  const _console$c = createConsole("FirmwareManager", {
+  const _console$b = createConsole("FirmwareManager", {
     log: false
   });
   const FirmwareMessageTypes = ["smp"];
@@ -21117,8 +20974,8 @@
   class FirmwareManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _FirmwareManager_brand);
-      _defineProperty$1(this, "sendMessage", void 0);
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "sendMessage", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _status, "idle");
       _classPrivateFieldInitSpec(this, _images, void 0);
       _classPrivateFieldInitSpec(this, _mtu, void 0);
@@ -21136,7 +20993,7 @@
       return this.eventDispatcher.waitForEvent;
     }
     parseMessage(messageType, dataView) {
-      _console$c.log({
+      _console$b.log({
         messageType
       });
       switch (messageType) {
@@ -21151,12 +21008,12 @@
       }
     }
     async uploadFirmware(file) {
-      _console$c.log("uploadFirmware", file);
+      _console$b.log("uploadFirmware", file);
       const promise = this.waitForEvent("firmwareUploadComplete");
       await this.getImages();
       const arrayBuffer = await getFileBuffer(file);
       const imageInfo = await _classPrivateFieldGet2(_mcuManager, this).imageInfo(arrayBuffer);
-      _console$c.log({
+      _console$b.log({
         imageInfo
       });
       _classPrivateFieldGet2(_mcuManager, this).cmdUpload(arrayBuffer, 1);
@@ -21171,7 +21028,7 @@
     }
     async getImages() {
       const promise = this.waitForEvent("firmwareImages");
-      _console$c.log("getting firmware image state...");
+      _console$b.log("getting firmware image state...");
       this.sendMessage(Uint8Array.from(_classPrivateFieldGet2(_mcuManager, this).cmdImageState()).buffer);
       await promise;
     }
@@ -21180,26 +21037,26 @@
       _assertClassBrand(_FirmwareManager_brand, this, _assertValidImageIndex).call(this, imageIndex);
       _assertClassBrand(_FirmwareManager_brand, this, _assertImages).call(this);
       if (!_classPrivateFieldGet2(_images, this)[imageIndex]) {
-        _console$c.log("image ".concat(imageIndex, " not found"));
+        _console$b.log("image ".concat(imageIndex, " not found"));
         return;
       }
       if (_classPrivateFieldGet2(_images, this)[imageIndex].pending == true) {
-        _console$c.log("image ".concat(imageIndex, " is already pending"));
+        _console$b.log("image ".concat(imageIndex, " is already pending"));
         return;
       }
       if (_classPrivateFieldGet2(_images, this)[imageIndex].empty) {
-        _console$c.log("image ".concat(imageIndex, " is empty"));
+        _console$b.log("image ".concat(imageIndex, " is empty"));
         return;
       }
       const promise = this.waitForEvent("smp");
-      _console$c.log("testing firmware image...");
+      _console$b.log("testing firmware image...");
       this.sendMessage(Uint8Array.from(_classPrivateFieldGet2(_mcuManager, this).cmdImageTest(_classPrivateFieldGet2(_images, this)[imageIndex].hash)).buffer);
       await promise;
     }
     async eraseImage() {
       _assertClassBrand(_FirmwareManager_brand, this, _assertImages).call(this);
       const promise = this.waitForEvent("smp");
-      _console$c.log("erasing image...");
+      _console$b.log("erasing image...");
       this.sendMessage(Uint8Array.from(_classPrivateFieldGet2(_mcuManager, this).cmdImageErase()).buffer);
       _assertClassBrand(_FirmwareManager_brand, this, _updateStatus).call(this, "erasing");
       await promise;
@@ -21210,24 +21067,24 @@
       _assertClassBrand(_FirmwareManager_brand, this, _assertValidImageIndex).call(this, imageIndex);
       _assertClassBrand(_FirmwareManager_brand, this, _assertImages).call(this);
       if (_classPrivateFieldGet2(_images, this)[imageIndex].confirmed === true) {
-        _console$c.log("image ".concat(imageIndex, " is already confirmed"));
+        _console$b.log("image ".concat(imageIndex, " is already confirmed"));
         return;
       }
       const promise = this.waitForEvent("smp");
-      _console$c.log("confirming image...");
+      _console$b.log("confirming image...");
       this.sendMessage(Uint8Array.from(_classPrivateFieldGet2(_mcuManager, this).cmdImageConfirm(_classPrivateFieldGet2(_images, this)[imageIndex].hash)).buffer);
       await promise;
     }
     async echo(string) {
-      _console$c.assertTypeWithError(string, "string");
+      _console$b.assertTypeWithError(string, "string");
       const promise = this.waitForEvent("smp");
-      _console$c.log("sending echo...");
+      _console$b.log("sending echo...");
       this.sendMessage(Uint8Array.from(_classPrivateFieldGet2(_mcuManager, this).smpEcho(string)).buffer);
       await promise;
     }
     async reset() {
       const promise = this.waitForEvent("smp");
-      _console$c.log("resetting...");
+      _console$b.log("resetting...");
       this.sendMessage(Uint8Array.from(_classPrivateFieldGet2(_mcuManager, this).cmdReset()).buffer);
       await promise;
     }
@@ -21243,13 +21100,13 @@
     return _this.eventDispatcher.dispatchEvent;
   }
   function _updateStatus(newStatus) {
-    _console$c.assertEnumWithError(newStatus, FirmwareStatuses);
+    _console$b.assertEnumWithError(newStatus, FirmwareStatuses);
     if (_classPrivateFieldGet2(_status, this) == newStatus) {
-      _console$c.log("redundant firmwareStatus assignment \"".concat(newStatus, "\""));
+      _console$b.log("redundant firmwareStatus assignment \"".concat(newStatus, "\""));
       return;
     }
     _classPrivateFieldSet2(_status, this, newStatus);
-    _console$c.log({
+    _console$b.log({
       firmwareStatus: _classPrivateFieldGet2(_status, this)
     });
     _classPrivateGetter(_FirmwareManager_brand, this, _get_dispatchEvent$2).call(this, "firmwareStatus", {
@@ -21257,11 +21114,11 @@
     });
   }
   function _assertImages() {
-    _console$c.assertWithError(_classPrivateFieldGet2(_images, this), "didn't get imageState");
+    _console$b.assertWithError(_classPrivateFieldGet2(_images, this), "didn't get imageState");
   }
   function _assertValidImageIndex(imageIndex) {
-    _console$c.assertTypeWithError(imageIndex, "number");
-    _console$c.assertWithError(imageIndex == 0 || imageIndex == 1, "imageIndex must be 0 or 1");
+    _console$b.assertTypeWithError(imageIndex, "number");
+    _console$b.assertWithError(imageIndex == 0 || imageIndex == 1, "imageIndex must be 0 or 1");
   }
   function _assignMcuManagerCallbacks() {
     _classPrivateFieldGet2(_mcuManager, this).onMessage(_assertClassBrand(_FirmwareManager_brand, this, _onMcuMessage).bind(this));
@@ -21283,18 +21140,18 @@
       data,
       length
     } = _ref;
-    _console$c.log("onMcuMessage", ...arguments);
+    _console$b.log("onMcuMessage", ...arguments);
     switch (group) {
       case constants.MGMT_GROUP_ID_OS:
         switch (id) {
           case constants.OS_MGMT_ID_ECHO:
-            _console$c.log("echo \"".concat(data.r, "\""));
+            _console$b.log("echo \"".concat(data.r, "\""));
             break;
           case constants.OS_MGMT_ID_TASKSTAT:
-            _console$c.table(data.tasks);
+            _console$b.table(data.tasks);
             break;
           case constants.OS_MGMT_ID_MPSTAT:
-            _console$c.log(data);
+            _console$b.log(data);
             break;
         }
         break;
@@ -21309,28 +21166,28 @@
     }
   }
   function _onMcuFileDownloadNext() {
-    _console$c.log("onMcuFileDownloadNext", ...arguments);
+    _console$b.log("onMcuFileDownloadNext", ...arguments);
   }
   function _onMcuFileDownloadProgress() {
-    _console$c.log("onMcuFileDownloadProgress", ...arguments);
+    _console$b.log("onMcuFileDownloadProgress", ...arguments);
   }
   function _onMcuFileDownloadFinished() {
-    _console$c.log("onMcuFileDownloadFinished", ...arguments);
+    _console$b.log("onMcuFileDownloadFinished", ...arguments);
   }
   function _onMcuFileUploadNext() {
-    _console$c.log("onMcuFileUploadNext");
+    _console$b.log("onMcuFileUploadNext");
   }
   function _onMcuFileUploadProgress() {
-    _console$c.log("onMcuFileUploadProgress");
+    _console$b.log("onMcuFileUploadProgress");
   }
   function _onMcuFileUploadFinished() {
-    _console$c.log("onMcuFileUploadFinished");
+    _console$b.log("onMcuFileUploadFinished");
   }
   function _onMcuImageUploadNext(_ref2) {
     let {
       packet
     } = _ref2;
-    _console$c.log("onMcuImageUploadNext");
+    _console$b.log("onMcuImageUploadNext");
     this.sendMessage(Uint8Array.from(packet).buffer);
   }
   function _onMcuImageUploadProgress(_ref3) {
@@ -21338,13 +21195,13 @@
       percentage
     } = _ref3;
     const progress = percentage / 100;
-    _console$c.log("onMcuImageUploadProgress", ...arguments);
+    _console$b.log("onMcuImageUploadProgress", ...arguments);
     _classPrivateGetter(_FirmwareManager_brand, this, _get_dispatchEvent$2).call(this, "firmwareUploadProgress", {
       progress
     });
   }
   async function _onMcuImageUploadFinished() {
-    _console$c.log("onMcuImageUploadFinished", ...arguments);
+    _console$b.log("onMcuImageUploadFinished", ...arguments);
     await this.getImages();
     _classPrivateGetter(_FirmwareManager_brand, this, _get_dispatchEvent$2).call(this, "firmwareUploadProgress", {
       progress: 100
@@ -21357,24 +21214,24 @@
     } = _ref4;
     if (images) {
       _classPrivateFieldSet2(_images, this, images);
-      _console$c.log("images", _classPrivateFieldGet2(_images, this));
+      _console$b.log("images", _classPrivateFieldGet2(_images, this));
     } else {
-      _console$c.log("no images found");
+      _console$b.log("no images found");
       return;
     }
     let newStatus = "idle";
     if (_classPrivateFieldGet2(_images, this).length == 2) {
       if (!_classPrivateFieldGet2(_images, this)[1].bootable) {
-        _console$c.warn('Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image');
+        _console$b.warn('Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image');
       } else if (!_classPrivateFieldGet2(_images, this)[0].confirmed) {
-        _console$c.log('Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.');
+        _console$b.log('Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.');
         newStatus = "testing";
       } else {
         if (_classPrivateFieldGet2(_images, this)[1].pending) {
-          _console$c.log("reset to upload to the new firmware image");
+          _console$b.log("reset to upload to the new firmware image");
           newStatus = "pending";
         } else {
-          _console$c.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
+          _console$b.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
           newStatus = "uploaded";
         }
       }
@@ -21390,7 +21247,7 @@
         active: false,
         permanent: false
       });
-      _console$c.log("Select a firmware upload image to upload to slot 1.");
+      _console$b.log("Select a firmware upload image to upload to slot 1.");
     }
     _assertClassBrand(_FirmwareManager_brand, this, _updateStatus).call(this, newStatus);
     _classPrivateGetter(_FirmwareManager_brand, this, _get_dispatchEvent$2).call(this, "firmwareImages", {
@@ -21399,7 +21256,7 @@
   }
 
   var _DeviceManager;
-  const _console$b = createConsole("DeviceManager", {
+  const _console$a = createConsole("DeviceManager", {
     log: false
   });
   const DeviceManagerEventTypes = ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];
@@ -21453,7 +21310,7 @@
     }
     set UseLocalStorage(newUseLocalStorage) {
       _assertClassBrand(_DeviceManager_brand, this, _AssertLocalStorage).call(this);
-      _console$b.assertTypeWithError(newUseLocalStorage, "boolean");
+      _console$a.assertTypeWithError(newUseLocalStorage, "boolean");
       _classPrivateFieldSet2(_UseLocalStorage, this, newUseLocalStorage);
       if (_classPrivateFieldGet2(_UseLocalStorage, this) && !_classPrivateFieldGet2(_LocalStorageConfiguration, this)) {
         _assertClassBrand(_DeviceManager_brand, this, _LoadFromLocalStorage).call(this);
@@ -21471,23 +21328,23 @@
     }
     async GetDevices() {
       if (!isInBrowser) {
-        _console$b.warn("GetDevices is only available in the browser");
+        _console$a.warn("GetDevices is only available in the browser");
         return;
       }
       if (!navigator.bluetooth) {
-        _console$b.warn("bluetooth is not available in this browser");
+        _console$a.warn("bluetooth is not available in this browser");
         return;
       }
       if (isInBluefy) {
-        _console$b.warn("bluefy lists too many devices...");
+        _console$a.warn("bluefy lists too many devices...");
         return;
       }
       if (!navigator.bluetooth.getDevices) {
-        _console$b.warn("bluetooth.getDevices() is not available in this browser");
+        _console$a.warn("bluetooth.getDevices() is not available in this browser");
         return;
       }
       if (!this.CanGetDevices) {
-        _console$b.log("CanGetDevices is false");
+        _console$a.log("CanGetDevices is false");
         return;
       }
       if (!_classPrivateFieldGet2(_LocalStorageConfiguration, this)) {
@@ -21495,11 +21352,11 @@
       }
       const configuration = _classPrivateFieldGet2(_LocalStorageConfiguration, this);
       if (!configuration.devices || configuration.devices.length == 0) {
-        _console$b.log("no devices found in configuration");
+        _console$a.log("no devices found in configuration");
         return;
       }
       const bluetoothDevices = await navigator.bluetooth.getDevices();
-      _console$b.log({
+      _console$a.log({
         bluetoothDevices
       });
       bluetoothDevices.forEach(bluetoothDevice => {
@@ -21549,7 +21406,7 @@
     }
     _CheckDeviceAvailability(device) {
       if (!device.isConnected && !device.isAvailable && _classPrivateFieldGet2(_AvailableDevices, this).includes(device)) {
-        _console$b.log("removing device from availableDevices...");
+        _console$a.log("removing device from availableDevices...");
         _classPrivateFieldGet2(_AvailableDevices, this).splice(_classPrivateFieldGet2(_AvailableDevices, this).indexOf(device), 1);
         _assertClassBrand(_DeviceManager_brand, this, _DispatchAvailableDevices).call(this);
       }
@@ -21562,8 +21419,8 @@
     }
   }
   function _AssertLocalStorage() {
-    _console$b.assertWithError(isInBrowser, "localStorage is only available in the browser");
-    _console$b.assertWithError(window.localStorage, "localStorage not found");
+    _console$a.assertWithError(isInBrowser, "localStorage is only available in the browser");
+    _console$a.assertWithError(window.localStorage, "localStorage not found");
   }
   function _SaveToLocalStorage() {
     _assertClassBrand(_DeviceManager_brand, this, _AssertLocalStorage).call(this);
@@ -21573,14 +21430,14 @@
     _assertClassBrand(_DeviceManager_brand, this, _AssertLocalStorage).call(this);
     let localStorageString = localStorage.getItem(_classPrivateFieldGet2(_LocalStorageKey, this));
     if (typeof localStorageString != "string") {
-      _console$b.log("no info found in localStorage");
+      _console$a.log("no info found in localStorage");
       _classPrivateFieldSet2(_LocalStorageConfiguration, this, Object.assign({}, _classPrivateFieldGet2(_DefaultLocalStorageConfiguration, this)));
       _assertClassBrand(_DeviceManager_brand, this, _SaveToLocalStorage).call(this);
       return;
     }
     try {
       const configuration = JSON.parse(localStorageString);
-      _console$b.log({
+      _console$a.log({
         configuration
       });
       _classPrivateFieldSet2(_LocalStorageConfiguration, this, configuration);
@@ -21588,12 +21445,12 @@
         await this.GetDevices();
       }
     } catch (error) {
-      _console$b.error(error);
+      _console$a.error(error);
     }
   }
   function _UpdateLocalStorageConfigurationForDevice(device) {
     if (device.connectionType != "webBluetooth") {
-      _console$b.log("localStorage is only for webBluetooth devices");
+      _console$a.log("localStorage is only for webBluetooth devices");
       return;
     }
     _assertClassBrand(_DeviceManager_brand, this, _AssertLocalStorage).call(this);
@@ -21615,7 +21472,7 @@
     } = event;
     if (device.isConnected) {
       if (!_classPrivateFieldGet2(_ConnectedDevices, this).includes(device)) {
-        _console$b.log("adding device", device);
+        _console$a.log("adding device", device);
         _classPrivateFieldGet2(_ConnectedDevices, this).push(device);
         if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
           const deviceInformation = {
@@ -21640,11 +21497,11 @@
         });
         _assertClassBrand(_DeviceManager_brand, this, _DispatchConnectedDevices).call(this);
       } else {
-        _console$b.log("device already included");
+        _console$a.log("device already included");
       }
     } else {
       if (_classPrivateFieldGet2(_ConnectedDevices, this).includes(device)) {
-        _console$b.log("removing device", device);
+        _console$a.log("removing device", device);
         _classPrivateFieldGet2(_ConnectedDevices, this).splice(_classPrivateFieldGet2(_ConnectedDevices, this).indexOf(device), 1);
         _classPrivateGetter(_DeviceManager_brand, this, _get_DispatchEvent).call(this, "deviceDisconnected", {
           device
@@ -21654,7 +21511,7 @@
         });
         _assertClassBrand(_DeviceManager_brand, this, _DispatchConnectedDevices).call(this);
       } else {
-        _console$b.log("device already not included");
+        _console$a.log("device already not included");
       }
     }
     if (this.CanGetDevices) {
@@ -21662,7 +21519,7 @@
     }
     if (device.isConnected && !this.AvailableDevices.includes(device)) {
       const existingAvailableDevice = this.AvailableDevices.find(_device => _device.bluetoothId == device.bluetoothId);
-      _console$b.log({
+      _console$a.log({
         existingAvailableDevice
       });
       if (existingAvailableDevice) {
@@ -21675,7 +21532,7 @@
     this._CheckDeviceAvailability(device);
   }
   function _DispatchAvailableDevices() {
-    _console$b.log({
+    _console$a.log({
       AvailableDevices: this.AvailableDevices
     });
     _classPrivateGetter(_DeviceManager_brand, this, _get_DispatchEvent).call(this, "availableDevices", {
@@ -21683,17 +21540,17 @@
     });
   }
   function _DispatchConnectedDevices() {
-    _console$b.log({
+    _console$a.log({
       ConnectedDevices: this.ConnectedDevices
     });
     _classPrivateGetter(_DeviceManager_brand, this, _get_DispatchEvent).call(this, "connectedDevices", {
       connectedDevices: this.ConnectedDevices
     });
   }
-  _defineProperty$1(DeviceManager, "shared", new _DeviceManager());
+  _defineProperty(DeviceManager, "shared", new _DeviceManager());
   var DeviceManager$1 = DeviceManager.shared;
 
-  const _console$a = createConsole("ServerUtils", {
+  const _console$9 = createConsole("ServerUtils", {
     log: false
   });
   const ServerMessageTypes = ["isScanningAvailable", "isScanning", "startScan", "stopScan", "discoveredDevice", "discoveredDevices", "expiredDiscoveredDevice", "connectToDevice", "disconnectFromDevice", "connectedDevices", "deviceMessage", "requiredDeviceInformation"];
@@ -21701,7 +21558,7 @@
     for (var _len = arguments.length, messages = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
       messages[_key - 1] = arguments[_key];
     }
-    _console$a.log("createMessage", ...messages);
+    _console$9.log("createMessage", ...messages);
     const messageBuffers = messages.map(message => {
       if (typeof message == "string") {
         message = {
@@ -21717,27 +21574,27 @@
       }
       const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
       const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
-      _console$a.assertEnumWithError(message.type, enumeration);
+      _console$9.assertEnumWithError(message.type, enumeration);
       const messageTypeEnum = enumeration.indexOf(message.type);
       const messageDataLengthDataView = new DataView(new ArrayBuffer(2));
       messageDataLengthDataView.setUint16(0, messageDataArrayBufferByteLength, true);
       return concatenateArrayBuffers(messageTypeEnum, messageDataLengthDataView, messageDataArrayBuffer);
     });
-    _console$a.log("messageBuffers", ...messageBuffers);
+    _console$9.log("messageBuffers", ...messageBuffers);
     return concatenateArrayBuffers(...messageBuffers);
   }
   function createServerMessage() {
     for (var _len2 = arguments.length, messages = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
       messages[_key2] = arguments[_key2];
     }
-    _console$a.log("createServerMessage", ...messages);
+    _console$9.log("createServerMessage", ...messages);
     return createMessage(ServerMessageTypes, ...messages);
   }
   function createClientDeviceMessage() {
     for (var _len4 = arguments.length, messages = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
       messages[_key4] = arguments[_key4];
     }
-    _console$a.log("createClientDeviceMessage", ...messages);
+    _console$9.log("createClientDeviceMessage", ...messages);
     return createMessage(ConnectionMessageTypes, ...messages);
   }
   createServerMessage("isScanningAvailable");
@@ -21746,7 +21603,7 @@
   createServerMessage("stopScan");
   createServerMessage("discoveredDevices");
 
-  const _console$9 = createConsole("WebSocketUtils", {
+  const _console$8 = createConsole("WebSocketUtils", {
     log: false
   });
   const webSocketPingTimeout = 30000;
@@ -21756,13 +21613,13 @@
     for (var _len = arguments.length, messages = new Array(_len), _key = 0; _key < _len; _key++) {
       messages[_key] = arguments[_key];
     }
-    _console$9.log("createWebSocketMessage", ...messages);
+    _console$8.log("createWebSocketMessage", ...messages);
     return createMessage(WebSocketMessageTypes$1, ...messages);
   }
   createWebSocketMessage$1("ping");
   createWebSocketMessage$1("pong");
 
-  const _console$8 = createConsole("WebSocketConnectionManager", {
+  const _console$7 = createConsole("WebSocketConnectionManager", {
     log: false
   });
   const WebSocketMessageTypes = ["ping", "pong", "batteryLevel", "deviceInformation", "message"];
@@ -21770,7 +21627,7 @@
     for (var _len = arguments.length, messages = new Array(_len), _key = 0; _key < _len; _key++) {
       messages[_key] = arguments[_key];
     }
-    _console$8.log("createWebSocketMessage", ...messages);
+    _console$7.log("createWebSocketMessage", ...messages);
     return createMessage(WebSocketMessageTypes, ...messages);
   }
   const WebSocketDeviceInformationMessageTypes = ["deviceInformation", "batteryLevel"];
@@ -21792,7 +21649,7 @@
       super();
       _classPrivateMethodInitSpec(this, _WebSocketConnectionManager_brand);
       _classPrivateFieldInitSpec(this, _bluetoothId$1, void 0);
-      _defineProperty$1(this, "defaultMtu", 2 ** 10);
+      _defineProperty(this, "defaultMtu", 2 ** 10);
       _classPrivateFieldInitSpec(this, _webSocket$1, void 0);
       _classPrivateFieldInitSpec(this, _ipAddress, void 0);
       _classPrivateFieldInitSpec(this, _isSecure, false);
@@ -21822,10 +21679,10 @@
     }
     set webSocket(newWebSocket) {
       if (_classPrivateFieldGet2(_webSocket$1, this) == newWebSocket) {
-        _console$8.log("redundant webSocket assignment");
+        _console$7.log("redundant webSocket assignment");
         return;
       }
-      _console$8.log("assigning webSocket", newWebSocket);
+      _console$7.log("assigning webSocket", newWebSocket);
       if (_classPrivateFieldGet2(_webSocket$1, this)) {
         removeEventListeners(_classPrivateFieldGet2(_webSocket$1, this), _classPrivateFieldGet2(_boundWebSocketEventListeners$1, this));
         if (_classPrivateFieldGet2(_webSocket$1, this).readyState == _classPrivateFieldGet2(_webSocket$1, this).OPEN) {
@@ -21836,7 +21693,7 @@
         addEventListeners(newWebSocket, _classPrivateFieldGet2(_boundWebSocketEventListeners$1, this));
       }
       _classPrivateFieldSet2(_webSocket$1, this, newWebSocket);
-      _console$8.log("assigned webSocket");
+      _console$7.log("assigned webSocket");
     }
     get ipAddress() {
       return _classPrivateFieldGet2(_ipAddress, this);
@@ -21844,11 +21701,11 @@
     set ipAddress(newIpAddress) {
       this.assertIsNotConnected();
       if (_classPrivateFieldGet2(_ipAddress, this) == newIpAddress) {
-        _console$8.log("redundnant ipAddress assignment \"".concat(newIpAddress, "\""));
+        _console$7.log("redundnant ipAddress assignment \"".concat(newIpAddress, "\""));
         return;
       }
       _classPrivateFieldSet2(_ipAddress, this, newIpAddress);
-      _console$8.log("updated ipAddress to \"".concat(this.ipAddress, "\""));
+      _console$7.log("updated ipAddress to \"".concat(this.ipAddress, "\""));
     }
     get isSecure() {
       return _classPrivateFieldGet2(_isSecure, this);
@@ -21856,11 +21713,11 @@
     set isSecure(newIsSecure) {
       this.assertIsNotConnected();
       if (_classPrivateFieldGet2(_isSecure, this) == newIsSecure) {
-        _console$8.log("redundant isSecure assignment ".concat(newIsSecure));
+        _console$7.log("redundant isSecure assignment ".concat(newIsSecure));
         return;
       }
       _classPrivateFieldSet2(_isSecure, this, newIsSecure);
-      _console$8.log("updated isSecure to \"".concat(this.isSecure, "\""));
+      _console$7.log("updated isSecure to \"".concat(this.isSecure, "\""));
     }
     get url() {
       return "".concat(this.isSecure ? "wss" : "ws", "://").concat(this.ipAddress, "/ws");
@@ -21870,14 +21727,14 @@
       try {
         this.webSocket = new WebSocket(this.url);
       } catch (error) {
-        _console$8.error("error connecting to webSocket", error);
+        _console$7.error("error connecting to webSocket", error);
         this.status = "notConnected";
       }
     }
     async disconnect() {
       var _classPrivateFieldGet3;
       await super.disconnect();
-      _console$8.log("closing websocket");
+      _console$7.log("closing websocket");
       _classPrivateFieldGet2(_pingTimer$1, this).stop();
       (_classPrivateFieldGet3 = _classPrivateFieldGet2(_webSocket$1, this)) === null || _classPrivateFieldGet3 === void 0 ? void 0 : _classPrivateFieldGet3.close();
     }
@@ -21890,7 +21747,7 @@
     }
     async sendSmpMessage(data) {
       super.sendSmpMessage(data);
-      _console$8.error("smp not supported on webSockets");
+      _console$7.error("smp not supported on webSockets");
     }
     async sendTxData(data) {
       await super.sendTxData(data);
@@ -21909,7 +21766,7 @@
   }
   function _sendMessage(message) {
     this.assertIsConnected();
-    _console$8.log("sending webSocket message", message);
+    _console$7.log("sending webSocket message", message);
     _classPrivateFieldGet2(_webSocket$1, this).send(message);
     _classPrivateFieldGet2(_pingTimer$1, this).restart();
   }
@@ -21917,7 +21774,7 @@
     _assertClassBrand(_WebSocketConnectionManager_brand, this, _sendMessage).call(this, createWebSocketMessage(...arguments));
   }
   function _onWebSocketOpen$1(event) {
-    _console$8.log("webSocket.open", event);
+    _console$7.log("webSocket.open", event);
     _classPrivateFieldGet2(_pingTimer$1, this).start();
     this.status = "connected";
     _assertClassBrand(_WebSocketConnectionManager_brand, this, _requestDeviceInformation$1).call(this);
@@ -21925,23 +21782,23 @@
   async function _onWebSocketMessage$1(event) {
     const arrayBuffer = await event.data.arrayBuffer();
     const dataView = new DataView(arrayBuffer);
-    _console$8.log("webSocket.message (".concat(dataView.byteLength, " bytes)"));
+    _console$7.log("webSocket.message (".concat(dataView.byteLength, " bytes)"));
     _assertClassBrand(_WebSocketConnectionManager_brand, this, _parseWebSocketMessage$1).call(this, dataView);
   }
   function _onWebSocketClose$1(event) {
-    _console$8.log("webSocket.close", event);
+    _console$7.log("webSocket.close", event);
     this.status = "notConnected";
     _classPrivateFieldGet2(_pingTimer$1, this).stop();
   }
   function _onWebSocketError$1(event) {
-    _console$8.error("webSocket.error", event);
+    _console$7.error("webSocket.error", event);
   }
   function _parseWebSocketMessage$1(dataView) {
     parseMessage(dataView, WebSocketMessageTypes, _assertClassBrand(_WebSocketConnectionManager_brand, this, _onMessage).bind(this), null, true);
   }
   function _onMessage(messageType, dataView) {
     var _this$onMessageReceiv;
-    _console$8.log("received \"".concat(messageType, "\" message (").concat(dataView.byteLength, " bytes)"));
+    _console$7.log("received \"".concat(messageType, "\" message (").concat(dataView.byteLength, " bytes)"));
     switch (messageType) {
       case "ping":
         _assertClassBrand(_WebSocketConnectionManager_brand, this, _pong$1).call(this);
@@ -21960,16 +21817,16 @@
         this.parseRxMessage(dataView);
         break;
       default:
-        _console$8.error("uncaught messageType \"".concat(messageType, "\""));
+        _console$7.error("uncaught messageType \"".concat(messageType, "\""));
         break;
     }
   }
   function _ping$1() {
-    _console$8.log("pinging");
+    _console$7.log("pinging");
     _assertClassBrand(_WebSocketConnectionManager_brand, this, _sendWebSocketMessage$1).call(this, "ping");
   }
   function _pong$1() {
-    _console$8.log("ponging");
+    _console$7.log("ponging");
     _assertClassBrand(_WebSocketConnectionManager_brand, this, _sendWebSocketMessage$1).call(this, "pong");
   }
   function _requestDeviceInformation$1() {
@@ -21977,7 +21834,7 @@
   }
 
   var _a$1;
-  const _console$7 = createConsole("Device", {
+  const _console$6 = createConsole("Device", {
     log: false
   });
   const DeviceEventTypes = ["connectionMessage", ...ConnectionEventTypes, ...MetaConnectionMessageTypes, ...BatteryLevelMessageTypes, ...InformationEventTypes, ...DeviceInformationEventTypes, ...SensorConfigurationEventTypes, ...SensorDataEventTypes, ...VibrationEventTypes, ...FileTransferEventTypes, ...TfliteEventTypes, ...WifiEventTypes, ...CameraEventTypes, ...MicrophoneEventTypes, ...DisplayEventTypes, ...FirmwareEventTypes];
@@ -22015,14 +21872,14 @@
       _classPrivateMethodInitSpec(this, _Device_brand);
       _classPrivateFieldInitSpec(this, _eventDispatcher$2, new EventDispatcher(this, DeviceEventTypes));
       _classPrivateFieldInitSpec(this, _connectionManager, void 0);
-      _defineProperty$1(this, "sendTxMessages", _assertClassBrand(_Device_brand, this, _sendTxMessages).bind(this));
+      _defineProperty(this, "sendTxMessages", _assertClassBrand(_Device_brand, this, _sendTxMessages).bind(this));
       _classPrivateFieldInitSpec(this, _isConnected$1, false);
       _classPrivateFieldInitSpec(this, _reconnectOnDisconnection, _a$1.ReconnectOnDisconnection);
       _classPrivateFieldInitSpec(this, _reconnectIntervalId, void 0);
-      _defineProperty$1(this, "latestConnectionMessages", new Map());
+      _defineProperty(this, "latestConnectionMessages", new Map());
       _classPrivateFieldInitSpec(this, _deviceInformationManager, new DeviceInformationManager());
       _classPrivateFieldInitSpec(this, _batteryLevel, 0);
-      _defineProperty$1(this, "_informationManager", new InformationManager());
+      _defineProperty(this, "_informationManager", new InformationManager());
       _classPrivateFieldInitSpec(this, _sensorConfigurationManager, new SensorConfigurationManager());
       _classPrivateFieldInitSpec(this, _clearSensorConfigurationOnLeave, _a$1.ClearSensorConfigurationOnLeave);
       _classPrivateFieldInitSpec(this, _sensorDataManager$1, new SensorDataManager());
@@ -22030,7 +21887,7 @@
       _classPrivateFieldInitSpec(this, _fileTransferManager, new FileTransferManager());
       _classPrivateFieldInitSpec(this, _tfliteManager, new TfliteManager());
       _classPrivateFieldInitSpec(this, _firmwareManager, new FirmwareManager());
-      _defineProperty$1(this, "sendSmpMessage", _assertClassBrand(_Device_brand, this, _sendSmpMessage).bind(this));
+      _defineProperty(this, "sendSmpMessage", _assertClassBrand(_Device_brand, this, _sendSmpMessage).bind(this));
       _classPrivateFieldInitSpec(this, _isServerSide, false);
       _classPrivateFieldInitSpec(this, _wifiManager, new WifiManager());
       _classPrivateFieldInitSpec(this, _cameraManager, new CameraManager());
@@ -22070,31 +21927,31 @@
           return;
         }
         if (this.sensorTypes.includes("pressure")) {
-          _console$7.log("requesting required pressure information");
+          _console$6.log("requesting required pressure information");
           const messages = RequiredPressureMessageTypes.map(messageType => ({
             type: messageType
           }));
           this.sendTxMessages(messages, false);
         } else {
-          _console$7.log("don't need to request pressure infomration");
+          _console$6.log("don't need to request pressure infomration");
         }
         if (this.sensorTypes.includes("camera")) {
-          _console$7.log("requesting required camera information");
+          _console$6.log("requesting required camera information");
           const messages = RequiredCameraMessageTypes.map(messageType => ({
             type: messageType
           }));
           this.sendTxMessages(messages, false);
         } else {
-          _console$7.log("don't need to request camera infomration");
+          _console$6.log("don't need to request camera infomration");
         }
         if (this.sensorTypes.includes("microphone")) {
-          _console$7.log("requesting required microphone information");
+          _console$6.log("requesting required microphone information");
           const messages = RequiredMicrophoneMessageTypes.map(messageType => ({
             type: messageType
           }));
           this.sendTxMessages(messages, false);
         } else {
-          _console$7.log("don't need to request microphone infomration");
+          _console$6.log("don't need to request microphone infomration");
         }
       });
       this.addEventListener("getFileTypes", () => {
@@ -22196,7 +22053,7 @@
     }
     set connectionManager(newConnectionManager) {
       if (this.connectionManager == newConnectionManager) {
-        _console$7.log("same connectionManager is already assigned");
+        _console$6.log("same connectionManager is already assigned");
         return;
       }
       if (this.connectionManager) {
@@ -22208,11 +22065,11 @@
         newConnectionManager.onMessagesReceived = _assertClassBrand(_Device_brand, this, _onConnectionMessagesReceived).bind(this);
       }
       _classPrivateFieldSet2(_connectionManager, this, newConnectionManager);
-      _console$7.log("assigned new connectionManager", _classPrivateFieldGet2(_connectionManager, this));
+      _console$6.log("assigned new connectionManager", _classPrivateFieldGet2(_connectionManager, this));
       this._informationManager.connectionType = this.connectionType;
     }
     async connect(options) {
-      _console$7.log("connect options", options);
+      _console$6.log("connect options", options);
       if (options) {
         switch (options.type) {
           case "webBluetooth":
@@ -22261,12 +22118,12 @@
       }
       _assertClassBrand(_Device_brand, this, _clear).call(this);
       if ((options === null || options === void 0 ? void 0 : options.type) == "client") {
-        _console$7.assertWithError(this.connectionType == "client", "expected clientConnectionManager");
+        _console$6.assertWithError(this.connectionType == "client", "expected clientConnectionManager");
         const clientConnectionManager = this.connectionManager;
         clientConnectionManager.subType = options.subType;
         return clientConnectionManager.connect();
       }
-      _console$7.log("connectionManager type", this.connectionManager.type);
+      _console$6.log("connectionManager type", this.connectionManager.type);
       return this.connectionManager.connect();
     }
     get isConnected() {
@@ -22291,14 +22148,14 @@
       return _assertClassBrand(Device, this, _ReconnectOnDisconnection)._;
     }
     static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-      _console$7.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+      _console$6.assertTypeWithError(newReconnectOnDisconnection, "boolean");
       _ReconnectOnDisconnection._ = _assertClassBrand(Device, this, newReconnectOnDisconnection);
     }
     get reconnectOnDisconnection() {
       return _classPrivateFieldGet2(_reconnectOnDisconnection, this);
     }
     set reconnectOnDisconnection(newReconnectOnDisconnection) {
-      _console$7.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+      _console$6.assertTypeWithError(newReconnectOnDisconnection, "boolean");
       _classPrivateFieldSet2(_reconnectOnDisconnection, this, newReconnectOnDisconnection);
     }
     get connectionType() {
@@ -22324,7 +22181,7 @@
         try {
           this.reconnect();
         } catch (error) {
-          _console$7.error("error trying to reconnect", error);
+          _console$6.error("error trying to reconnect", error);
           this.connect();
         }
       } else {
@@ -22408,14 +22265,14 @@
       return _assertClassBrand(Device, this, _ClearSensorConfigurationOnLeave)._;
     }
     static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
-      _console$7.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+      _console$6.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
       _ClearSensorConfigurationOnLeave._ = _assertClassBrand(Device, this, newClearSensorConfigurationOnLeave);
     }
     get clearSensorConfigurationOnLeave() {
       return _classPrivateFieldGet2(_clearSensorConfigurationOnLeave, this);
     }
     set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
-      _console$7.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+      _console$6.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
       _classPrivateFieldSet2(_clearSensorConfigurationOnLeave, this, newClearSensorConfigurationOnLeave);
     }
     get numberOfPressureSensors() {
@@ -22445,7 +22302,7 @@
       });
     }
     async sendFile(fileType, file) {
-      _console$7.assertWithError(this.validFileTypes.includes(fileType), "invalid fileType ".concat(fileType));
+      _console$6.assertWithError(this.validFileTypes.includes(fileType), "invalid fileType ".concat(fileType));
       const promise = this.waitForEvent("fileTransferComplete");
       _classPrivateFieldGet2(_fileTransferManager, this).send(fileType, file);
       await promise;
@@ -22538,7 +22395,7 @@
       return this.canUpdateFirmware;
     }
     async reset() {
-      _console$7.assertWithError(this.canReset, "reset is not enabled for this device");
+      _console$6.assertWithError(this.canReset, "reset is not enabled for this device");
       await _classPrivateFieldGet2(_firmwareManager, this).reset();
       return _classPrivateFieldGet2(_connectionManager, this).disconnect();
     }
@@ -22569,10 +22426,10 @@
     }
     set isServerSide(newIsServerSide) {
       if (_classPrivateFieldGet2(_isServerSide, this) == newIsServerSide) {
-        _console$7.log("redundant isServerSide assignment");
+        _console$6.log("redundant isServerSide assignment");
         return;
       }
-      _console$7.log({
+      _console$6.log({
         newIsServerSide
       });
       _classPrivateFieldSet2(_isServerSide, this, newIsServerSide);
@@ -22622,10 +22479,10 @@
       return _classPrivateFieldGet2(_wifiManager, this).isWifiSecure;
     }
     async reconnectViaWebSockets() {
-      _console$7.assertWithError(this.isWifiConnected, "wifi is not connected");
-      _console$7.assertWithError(this.connectionType != "webSocket", "already connected via webSockets");
-      _console$7.assertTypeWithError(this.ipAddress, "string");
-      _console$7.log("reconnecting via websockets...");
+      _console$6.assertWithError(this.isWifiConnected, "wifi is not connected");
+      _console$6.assertWithError(this.connectionType != "webSocket", "already connected via webSockets");
+      _console$6.assertTypeWithError(this.ipAddress, "string");
+      _console$6.log("reconnecting via websockets...");
       await this.disconnect();
       await this.connect({
         type: "webSocket",
@@ -22634,11 +22491,11 @@
       });
     }
     async reconnectViaUDP() {
-      _console$7.assertWithError(isInNode, "udp is only available in node");
-      _console$7.assertWithError(this.isWifiConnected, "wifi is not connected");
-      _console$7.assertWithError(this.connectionType != "udp", "already connected via udp");
-      _console$7.assertTypeWithError(this.ipAddress, "string");
-      _console$7.log("reconnecting via udp...");
+      _console$6.assertWithError(isInNode, "udp is only available in node");
+      _console$6.assertWithError(this.isWifiConnected, "wifi is not connected");
+      _console$6.assertWithError(this.connectionType != "udp", "already connected via udp");
+      _console$6.assertTypeWithError(this.ipAddress, "string");
+      _console$6.log("reconnecting via udp...");
       await this.disconnect();
       await this.connect({
         type: "udp",
@@ -23193,13 +23050,13 @@
     await ((_classPrivateFieldGet6 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet6 === void 0 ? void 0 : _classPrivateFieldGet6.sendTxMessages(messages, sendImmediately));
   }
   function _assertIsConnected() {
-    _console$7.assertWithError(this.isConnected, "notConnected");
+    _console$6.assertWithError(this.isConnected, "notConnected");
   }
   function _didReceiveMessageTypes(messageTypes) {
     return messageTypes.every(messageType => {
       const hasConnectionMessage = this.latestConnectionMessages.has(messageType);
       if (!hasConnectionMessage) {
-        _console$7.log("didn't receive \"".concat(messageType, "\" message"));
+        _console$6.log("didn't receive \"".concat(messageType, "\" message"));
       }
       return hasConnectionMessage;
     });
@@ -23230,31 +23087,31 @@
     return hasRequiredInformation;
   }
   function _requestRequiredInformation() {
-    _console$7.log("requesting required information");
+    _console$6.log("requesting required information");
     const messages = RequiredInformationConnectionMessages.map(messageType => ({
       type: messageType
     }));
     _assertClassBrand(_Device_brand, this, _sendTxMessages).call(this, messages);
   }
   function _assertCanReconnect() {
-    _console$7.assertWithError(this.canReconnect, "cannot reconnect to device");
+    _console$6.assertWithError(this.canReconnect, "cannot reconnect to device");
   }
   function _onConnectionStatusUpdated(connectionStatus) {
-    _console$7.log({
+    _console$6.log({
       connectionStatus
     });
     if (connectionStatus == "notConnected") {
       _assertClassBrand(_Device_brand, this, _clearConnection).call(this);
       if (this.canReconnect && this.reconnectOnDisconnection) {
-        _console$7.log("starting reconnect interval...");
+        _console$6.log("starting reconnect interval...");
         _classPrivateFieldSet2(_reconnectIntervalId, this, setInterval(() => {
-          _console$7.log("attempting reconnect...");
+          _console$6.log("attempting reconnect...");
           this.reconnect();
         }, 1000));
       }
     } else {
       if (_classPrivateFieldGet2(_reconnectIntervalId, this) != undefined) {
-        _console$7.log("clearing reconnect interval");
+        _console$6.log("clearing reconnect interval");
         clearInterval(_classPrivateFieldGet2(_reconnectIntervalId, this));
         _classPrivateFieldSet2(_reconnectIntervalId, this, undefined);
       }
@@ -23314,14 +23171,14 @@
     this.latestConnectionMessages.clear();
   }
   function _onConnectionMessageReceived(messageType, dataView) {
-    _console$7.log({
+    _console$6.log({
       messageType,
       dataView
     });
     switch (messageType) {
       case "batteryLevel":
         const batteryLevel = dataView.getUint8(0);
-        _console$7.log("received battery level", {
+        _console$6.log("received battery level", {
           batteryLevel
         });
         _assertClassBrand(_Device_brand, this, _updateBatteryLevel).call(this, batteryLevel);
@@ -23375,13 +23232,13 @@
     _assertClassBrand(_Device_brand, this, _sendTxMessages).call(this);
   }
   function _updateBatteryLevel(updatedBatteryLevel) {
-    _console$7.assertTypeWithError(updatedBatteryLevel, "number");
+    _console$6.assertTypeWithError(updatedBatteryLevel, "number");
     if (_classPrivateFieldGet2(_batteryLevel, this) == updatedBatteryLevel) {
-      _console$7.log("duplicate batteryLevel assignment ".concat(updatedBatteryLevel));
+      _console$6.log("duplicate batteryLevel assignment ".concat(updatedBatteryLevel));
       return;
     }
     _classPrivateFieldSet2(_batteryLevel, this, updatedBatteryLevel);
-    _console$7.log({
+    _console$6.log({
       updatedBatteryLevel: _classPrivateFieldGet2(_batteryLevel, this)
     });
     _classPrivateGetter(_Device_brand, this, _get_dispatchEvent$1).call(this, "batteryLevel", {
@@ -23389,23 +23246,23 @@
     });
   }
   function _assertCanUpdateFirmware() {
-    _console$7.assertWithError(this.canUpdateFirmware, "can't update firmware");
+    _console$6.assertWithError(this.canUpdateFirmware, "can't update firmware");
   }
   function _sendSmpMessage(data) {
     _assertClassBrand(_Device_brand, this, _assertCanUpdateFirmware).call(this);
     return _classPrivateFieldGet2(_connectionManager, this).sendSmpMessage(data);
   }
   function _assertHasCamera() {
-    _console$7.assertWithError(this.hasCamera, "camera not available");
+    _console$6.assertWithError(this.hasCamera, "camera not available");
   }
   function _assertHasMicrophone() {
-    _console$7.assertWithError(this.hasMicrophone, "microphone not available");
+    _console$6.assertWithError(this.hasMicrophone, "microphone not available");
   }
   function _assertWebAudioSupport() {
-    _console$7.assertWithError(AudioContext, "WebAudio is not supported");
+    _console$6.assertWithError(AudioContext, "WebAudio is not supported");
   }
   function _assertDisplayIsAvailable() {
-    _console$7.assertWithError(this.isDisplayAvailable, "display not available");
+    _console$6.assertWithError(this.isDisplayAvailable, "display not available");
   }
   var _ReconnectOnDisconnection = {
     _: false
@@ -23414,3478 +23271,6 @@
     _: true
   };
   _a$1 = Device;
-
-  var isBuffer_1 = function (obj) {
-    return obj != null && (isBuffer$1(obj) || isSlowBuffer(obj) || !!obj._isBuffer)
-  };
-  function isBuffer$1 (obj) {
-    return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
-  }
-  function isSlowBuffer (obj) {
-    return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer$1(obj.slice(0, 0))
-  }
-  getDefaultExportFromCjs(isBuffer_1);
-
-  var isBuffer = isBuffer_1;
-  var toString = Object.prototype.toString;
-  var kindOf = function kindOf(val) {
-    if (typeof val === 'undefined') {
-      return 'undefined';
-    }
-    if (val === null) {
-      return 'null';
-    }
-    if (val === true || val === false || val instanceof Boolean) {
-      return 'boolean';
-    }
-    if (typeof val === 'string' || val instanceof String) {
-      return 'string';
-    }
-    if (typeof val === 'number' || val instanceof Number) {
-      return 'number';
-    }
-    if (typeof val === 'function' || val instanceof Function) {
-      return 'function';
-    }
-    if (typeof Array.isArray !== 'undefined' && Array.isArray(val)) {
-      return 'array';
-    }
-    if (val instanceof RegExp) {
-      return 'regexp';
-    }
-    if (val instanceof Date) {
-      return 'date';
-    }
-    var type = toString.call(val);
-    if (type === '[object RegExp]') {
-      return 'regexp';
-    }
-    if (type === '[object Date]') {
-      return 'date';
-    }
-    if (type === '[object Arguments]') {
-      return 'arguments';
-    }
-    if (type === '[object Error]') {
-      return 'error';
-    }
-    if (isBuffer(val)) {
-      return 'buffer';
-    }
-    if (type === '[object Set]') {
-      return 'set';
-    }
-    if (type === '[object WeakSet]') {
-      return 'weakset';
-    }
-    if (type === '[object Map]') {
-      return 'map';
-    }
-    if (type === '[object WeakMap]') {
-      return 'weakmap';
-    }
-    if (type === '[object Symbol]') {
-      return 'symbol';
-    }
-    if (type === '[object Int8Array]') {
-      return 'int8array';
-    }
-    if (type === '[object Uint8Array]') {
-      return 'uint8array';
-    }
-    if (type === '[object Uint8ClampedArray]') {
-      return 'uint8clampedarray';
-    }
-    if (type === '[object Int16Array]') {
-      return 'int16array';
-    }
-    if (type === '[object Uint16Array]') {
-      return 'uint16array';
-    }
-    if (type === '[object Int32Array]') {
-      return 'int32array';
-    }
-    if (type === '[object Uint32Array]') {
-      return 'uint32array';
-    }
-    if (type === '[object Float32Array]') {
-      return 'float32array';
-    }
-    if (type === '[object Float64Array]') {
-      return 'float64array';
-    }
-    return 'object';
-  };
-  getDefaultExportFromCjs(kindOf);
-
-  var renameKeys = {exports: {}};
-
-  (function (module) {
-  	(function() {
-  	  function rename(obj, fn) {
-  	    if (typeof fn !== 'function') {
-  	      return obj;
-  	    }
-  	    var res = {};
-  	    for (var key in obj) {
-  	      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-  	        res[fn(key, obj[key]) || key] = obj[key];
-  	      }
-  	    }
-  	    return res;
-  	  }
-  	  if (module.exports) {
-  	    module.exports = rename;
-  	  } else {
-  	    {
-  	      window.rename = rename;
-  	    }
-  	  }
-  	})();
-  } (renameKeys));
-  var renameKeysExports = renameKeys.exports;
-  getDefaultExportFromCjs(renameKeysExports);
-
-  var typeOf = kindOf;
-  var rename = renameKeysExports;
-  var deepRenameKeys = function renameDeep(obj, cb) {
-    var type = typeOf(obj);
-    if (type !== 'object' && type !== 'array') {
-      throw new Error('expected an object');
-    }
-    var res = [];
-    if (type === 'object') {
-      obj = rename(obj, cb);
-      res = {};
-    }
-    for (var key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        var val = obj[key];
-        if (typeOf(val) === 'object' || typeOf(val) === 'array') {
-          res[key] = renameDeep(val, cb);
-        } else {
-          res[key] = val;
-        }
-      }
-    }
-    return res;
-  };
-  var rename$1 = getDefaultExportFromCjs(deepRenameKeys);
-
-  var eventemitter3 = {exports: {}};
-
-  (function (module) {
-  	var has = Object.prototype.hasOwnProperty
-  	  , prefix = '~';
-  	function Events() {}
-  	if (Object.create) {
-  	  Events.prototype = Object.create(null);
-  	  if (!new Events().__proto__) prefix = false;
-  	}
-  	function EE(fn, context, once) {
-  	  this.fn = fn;
-  	  this.context = context;
-  	  this.once = once || false;
-  	}
-  	function EventEmitter() {
-  	  this._events = new Events();
-  	  this._eventsCount = 0;
-  	}
-  	EventEmitter.prototype.eventNames = function eventNames() {
-  	  var names = []
-  	    , events
-  	    , name;
-  	  if (this._eventsCount === 0) return names;
-  	  for (name in (events = this._events)) {
-  	    if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
-  	  }
-  	  if (Object.getOwnPropertySymbols) {
-  	    return names.concat(Object.getOwnPropertySymbols(events));
-  	  }
-  	  return names;
-  	};
-  	EventEmitter.prototype.listeners = function listeners(event, exists) {
-  	  var evt = prefix ? prefix + event : event
-  	    , available = this._events[evt];
-  	  if (exists) return !!available;
-  	  if (!available) return [];
-  	  if (available.fn) return [available.fn];
-  	  for (var i = 0, l = available.length, ee = new Array(l); i < l; i++) {
-  	    ee[i] = available[i].fn;
-  	  }
-  	  return ee;
-  	};
-  	EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
-  	  var evt = prefix ? prefix + event : event;
-  	  if (!this._events[evt]) return false;
-  	  var listeners = this._events[evt]
-  	    , len = arguments.length
-  	    , args
-  	    , i;
-  	  if (listeners.fn) {
-  	    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
-  	    switch (len) {
-  	      case 1: return listeners.fn.call(listeners.context), true;
-  	      case 2: return listeners.fn.call(listeners.context, a1), true;
-  	      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
-  	      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
-  	      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
-  	      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
-  	    }
-  	    for (i = 1, args = new Array(len -1); i < len; i++) {
-  	      args[i - 1] = arguments[i];
-  	    }
-  	    listeners.fn.apply(listeners.context, args);
-  	  } else {
-  	    var length = listeners.length
-  	      , j;
-  	    for (i = 0; i < length; i++) {
-  	      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
-  	      switch (len) {
-  	        case 1: listeners[i].fn.call(listeners[i].context); break;
-  	        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
-  	        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
-  	        case 4: listeners[i].fn.call(listeners[i].context, a1, a2, a3); break;
-  	        default:
-  	          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
-  	            args[j - 1] = arguments[j];
-  	          }
-  	          listeners[i].fn.apply(listeners[i].context, args);
-  	      }
-  	    }
-  	  }
-  	  return true;
-  	};
-  	EventEmitter.prototype.on = function on(event, fn, context) {
-  	  var listener = new EE(fn, context || this)
-  	    , evt = prefix ? prefix + event : event;
-  	  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
-  	  else if (!this._events[evt].fn) this._events[evt].push(listener);
-  	  else this._events[evt] = [this._events[evt], listener];
-  	  return this;
-  	};
-  	EventEmitter.prototype.once = function once(event, fn, context) {
-  	  var listener = new EE(fn, context || this, true)
-  	    , evt = prefix ? prefix + event : event;
-  	  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
-  	  else if (!this._events[evt].fn) this._events[evt].push(listener);
-  	  else this._events[evt] = [this._events[evt], listener];
-  	  return this;
-  	};
-  	EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
-  	  var evt = prefix ? prefix + event : event;
-  	  if (!this._events[evt]) return this;
-  	  if (!fn) {
-  	    if (--this._eventsCount === 0) this._events = new Events();
-  	    else delete this._events[evt];
-  	    return this;
-  	  }
-  	  var listeners = this._events[evt];
-  	  if (listeners.fn) {
-  	    if (
-  	         listeners.fn === fn
-  	      && (!once || listeners.once)
-  	      && (!context || listeners.context === context)
-  	    ) {
-  	      if (--this._eventsCount === 0) this._events = new Events();
-  	      else delete this._events[evt];
-  	    }
-  	  } else {
-  	    for (var i = 0, events = [], length = listeners.length; i < length; i++) {
-  	      if (
-  	           listeners[i].fn !== fn
-  	        || (once && !listeners[i].once)
-  	        || (context && listeners[i].context !== context)
-  	      ) {
-  	        events.push(listeners[i]);
-  	      }
-  	    }
-  	    if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
-  	    else if (--this._eventsCount === 0) this._events = new Events();
-  	    else delete this._events[evt];
-  	  }
-  	  return this;
-  	};
-  	EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
-  	  var evt;
-  	  if (event) {
-  	    evt = prefix ? prefix + event : event;
-  	    if (this._events[evt]) {
-  	      if (--this._eventsCount === 0) this._events = new Events();
-  	      else delete this._events[evt];
-  	    }
-  	  } else {
-  	    this._events = new Events();
-  	    this._eventsCount = 0;
-  	  }
-  	  return this;
-  	};
-  	EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
-  	EventEmitter.prototype.addListener = EventEmitter.prototype.on;
-  	EventEmitter.prototype.setMaxListeners = function setMaxListeners() {
-  	  return this;
-  	};
-  	EventEmitter.prefixed = prefix;
-  	EventEmitter.EventEmitter = EventEmitter;
-  	{
-  	  module.exports = EventEmitter;
-  	}
-  } (eventemitter3));
-  var eventemitter3Exports = eventemitter3.exports;
-  getDefaultExportFromCjs(eventemitter3Exports);
-
-  function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-  var EventEmitter$1 = eventemitter3Exports;
-  var noop = function noop() {};
-  var State = {
-      data: 'state-data',
-      cdata: 'state-cdata',
-      tagBegin: 'state-tag-begin',
-      tagName: 'state-tag-name',
-      tagEnd: 'state-tag-end',
-      attributeNameStart: 'state-attribute-name-start',
-      attributeName: 'state-attribute-name',
-      attributeNameEnd: 'state-attribute-name-end',
-      attributeValueBegin: 'state-attribute-value-begin',
-      attributeValue: 'state-attribute-value'
-  };
-  var Action = {
-      lt: 'action-lt',
-      gt: 'action-gt',
-      space: 'action-space',
-      equal: 'action-equal',
-      quote: 'action-quote',
-      slash: 'action-slash',
-      char: 'action-char',
-      error: 'action-error'
-  };
-  var Type$1 = {
-      text: 'text',
-      openTag: 'open-tag',
-      closeTag: 'close-tag',
-      attributeName: 'attribute-name',
-      attributeValue: 'attribute-value'
-  };
-  var charToAction = {
-      ' ': Action.space,
-      '\t': Action.space,
-      '\n': Action.space,
-      '\r': Action.space,
-      '<': Action.lt,
-      '>': Action.gt,
-      '"': Action.quote,
-      "'": Action.quote,
-      '=': Action.equal,
-      '/': Action.slash
-  };
-  var getAction = function getAction(char) {
-      return charToAction[char] || Action.char;
-  };
-  var create$1 = function create(options) {
-      var _State$data, _State$tagBegin, _State$tagName, _State$tagEnd, _State$attributeNameS, _State$attributeName, _State$attributeNameE, _State$attributeValue, _State$attributeValue2, _lexer$stateMachine;
-      options = Object.assign({ debug: false }, options);
-      var lexer = new EventEmitter$1();
-      var state = State.data;
-      var data = '';
-      var tagName = '';
-      var attrName = '';
-      var attrValue = '';
-      var isClosing = '';
-      var openingQuote = '';
-      var emit = function emit(type, value) {
-          if (tagName[0] === '?' || tagName[0] === '!') {
-              return;
-          }
-          var event = { type: type, value: value };
-          if (options.debug) {
-              console.log('emit:', event);
-          }
-          lexer.emit('data', event);
-      };
-      lexer.stateMachine = (_lexer$stateMachine = {}, _defineProperty(_lexer$stateMachine, State.data, (_State$data = {}, _defineProperty(_State$data, Action.lt, function () {
-          if (data.trim()) {
-              emit(Type$1.text, data);
-          }
-          tagName = '';
-          isClosing = false;
-          state = State.tagBegin;
-      }), _defineProperty(_State$data, Action.char, function (char) {
-          data += char;
-      }), _State$data)), _defineProperty(_lexer$stateMachine, State.cdata, _defineProperty({}, Action.char, function (char) {
-          data += char;
-          if (data.substr(-3) === ']]>') {
-              emit(Type$1.text, data.slice(0, -3));
-              data = '';
-              state = State.data;
-          }
-      })), _defineProperty(_lexer$stateMachine, State.tagBegin, (_State$tagBegin = {}, _defineProperty(_State$tagBegin, Action.space, noop), _defineProperty(_State$tagBegin, Action.char, function (char) {
-          tagName = char;
-          state = State.tagName;
-      }), _defineProperty(_State$tagBegin, Action.slash, function () {
-          tagName = '';
-          isClosing = true;
-      }), _State$tagBegin)), _defineProperty(_lexer$stateMachine, State.tagName, (_State$tagName = {}, _defineProperty(_State$tagName, Action.space, function () {
-          if (isClosing) {
-              state = State.tagEnd;
-          } else {
-              state = State.attributeNameStart;
-              emit(Type$1.openTag, tagName);
-          }
-      }), _defineProperty(_State$tagName, Action.gt, function () {
-          if (isClosing) {
-              emit(Type$1.closeTag, tagName);
-          } else {
-              emit(Type$1.openTag, tagName);
-          }
-          data = '';
-          state = State.data;
-      }), _defineProperty(_State$tagName, Action.slash, function () {
-          state = State.tagEnd;
-          emit(Type$1.openTag, tagName);
-      }), _defineProperty(_State$tagName, Action.char, function (char) {
-          tagName += char;
-          if (tagName === '![CDATA[') {
-              state = State.cdata;
-              data = '';
-              tagName = '';
-          }
-      }), _State$tagName)), _defineProperty(_lexer$stateMachine, State.tagEnd, (_State$tagEnd = {}, _defineProperty(_State$tagEnd, Action.gt, function () {
-          emit(Type$1.closeTag, tagName);
-          data = '';
-          state = State.data;
-      }), _defineProperty(_State$tagEnd, Action.char, noop), _State$tagEnd)), _defineProperty(_lexer$stateMachine, State.attributeNameStart, (_State$attributeNameS = {}, _defineProperty(_State$attributeNameS, Action.char, function (char) {
-          attrName = char;
-          state = State.attributeName;
-      }), _defineProperty(_State$attributeNameS, Action.gt, function () {
-          data = '';
-          state = State.data;
-      }), _defineProperty(_State$attributeNameS, Action.space, noop), _defineProperty(_State$attributeNameS, Action.slash, function () {
-          isClosing = true;
-          state = State.tagEnd;
-      }), _State$attributeNameS)), _defineProperty(_lexer$stateMachine, State.attributeName, (_State$attributeName = {}, _defineProperty(_State$attributeName, Action.space, function () {
-          state = State.attributeNameEnd;
-      }), _defineProperty(_State$attributeName, Action.equal, function () {
-          emit(Type$1.attributeName, attrName);
-          state = State.attributeValueBegin;
-      }), _defineProperty(_State$attributeName, Action.gt, function () {
-          attrValue = '';
-          emit(Type$1.attributeName, attrName);
-          emit(Type$1.attributeValue, attrValue);
-          data = '';
-          state = State.data;
-      }), _defineProperty(_State$attributeName, Action.slash, function () {
-          isClosing = true;
-          attrValue = '';
-          emit(Type$1.attributeName, attrName);
-          emit(Type$1.attributeValue, attrValue);
-          state = State.tagEnd;
-      }), _defineProperty(_State$attributeName, Action.char, function (char) {
-          attrName += char;
-      }), _State$attributeName)), _defineProperty(_lexer$stateMachine, State.attributeNameEnd, (_State$attributeNameE = {}, _defineProperty(_State$attributeNameE, Action.space, noop), _defineProperty(_State$attributeNameE, Action.equal, function () {
-          emit(Type$1.attributeName, attrName);
-          state = State.attributeValueBegin;
-      }), _defineProperty(_State$attributeNameE, Action.gt, function () {
-          attrValue = '';
-          emit(Type$1.attributeName, attrName);
-          emit(Type$1.attributeValue, attrValue);
-          data = '';
-          state = State.data;
-      }), _defineProperty(_State$attributeNameE, Action.char, function (char) {
-          attrValue = '';
-          emit(Type$1.attributeName, attrName);
-          emit(Type$1.attributeValue, attrValue);
-          attrName = char;
-          state = State.attributeName;
-      }), _State$attributeNameE)), _defineProperty(_lexer$stateMachine, State.attributeValueBegin, (_State$attributeValue = {}, _defineProperty(_State$attributeValue, Action.space, noop), _defineProperty(_State$attributeValue, Action.quote, function (char) {
-          openingQuote = char;
-          attrValue = '';
-          state = State.attributeValue;
-      }), _defineProperty(_State$attributeValue, Action.gt, function () {
-          attrValue = '';
-          emit(Type$1.attributeValue, attrValue);
-          data = '';
-          state = State.data;
-      }), _defineProperty(_State$attributeValue, Action.char, function (char) {
-          openingQuote = '';
-          attrValue = char;
-          state = State.attributeValue;
-      }), _State$attributeValue)), _defineProperty(_lexer$stateMachine, State.attributeValue, (_State$attributeValue2 = {}, _defineProperty(_State$attributeValue2, Action.space, function (char) {
-          if (openingQuote) {
-              attrValue += char;
-          } else {
-              emit(Type$1.attributeValue, attrValue);
-              state = State.attributeNameStart;
-          }
-      }), _defineProperty(_State$attributeValue2, Action.quote, function (char) {
-          if (openingQuote === char) {
-              emit(Type$1.attributeValue, attrValue);
-              state = State.attributeNameStart;
-          } else {
-              attrValue += char;
-          }
-      }), _defineProperty(_State$attributeValue2, Action.gt, function (char) {
-          if (openingQuote) {
-              attrValue += char;
-          } else {
-              emit(Type$1.attributeValue, attrValue);
-              data = '';
-              state = State.data;
-          }
-      }), _defineProperty(_State$attributeValue2, Action.slash, function (char) {
-          if (openingQuote) {
-              attrValue += char;
-          } else {
-              emit(Type$1.attributeValue, attrValue);
-              isClosing = true;
-              state = State.tagEnd;
-          }
-      }), _defineProperty(_State$attributeValue2, Action.char, function (char) {
-          attrValue += char;
-      }), _State$attributeValue2)), _lexer$stateMachine);
-      var step = function step(char) {
-          if (options.debug) {
-              console.log(state, char);
-          }
-          var actions = lexer.stateMachine[state];
-          var action = actions[getAction(char)] || actions[Action.error] || actions[Action.char];
-          action(char);
-      };
-      lexer.write = function (str) {
-          var len = str.length;
-          for (var i = 0; i < len; i++) {
-              step(str[i]);
-          }
-      };
-      return lexer;
-  };
-  var lexer = {
-      State: State,
-      Action: Action,
-      Type: Type$1,
-      create: create$1
-  };
-  getDefaultExportFromCjs(lexer);
-
-  var EventEmitter = eventemitter3Exports;
-  var Lexer = lexer;
-  var Type = Lexer.Type;
-  var NodeType = {
-      element: 'element',
-      text: 'text'
-  };
-  var createNode = function createNode(params) {
-      return Object.assign({
-          name: '',
-          type: NodeType.element,
-          value: '',
-          parent: null,
-          attributes: {},
-          children: []
-      }, params);
-  };
-  var create = function create(options) {
-      options = Object.assign({
-          stream: false,
-          parentNodes: true,
-          doneEvent: 'done',
-          tagPrefix: 'tag:',
-          emitTopLevelOnly: false,
-          debug: false
-      }, options);
-      var lexer = void 0,
-          rootNode = void 0,
-          current = void 0,
-          attrName = void 0;
-      var reader = new EventEmitter();
-      var handleLexerData = function handleLexerData(data) {
-          switch (data.type) {
-              case Type.openTag:
-                  if (current === null) {
-                      current = rootNode;
-                      current.name = data.value;
-                  } else {
-                      var node = createNode({
-                          name: data.value,
-                          parent: current
-                      });
-                      current.children.push(node);
-                      current = node;
-                  }
-                  break;
-              case Type.closeTag:
-                  var parent = current.parent;
-                  if (!options.parentNodes) {
-                      current.parent = null;
-                  }
-                  if (current.name !== data.value) {
-                      break;
-                  }
-                  if (options.stream && parent === rootNode) {
-                      rootNode.children = [];
-                      current.parent = null;
-                  }
-                  if (!options.emitTopLevelOnly || parent === rootNode) {
-                      reader.emit(options.tagPrefix + current.name, current);
-                      reader.emit('tag', current.name, current);
-                  }
-                  if (current === rootNode) {
-                      lexer.removeAllListeners('data');
-                      reader.emit(options.doneEvent, current);
-                      rootNode = null;
-                  }
-                  current = parent;
-                  break;
-              case Type.text:
-                  if (current) {
-                      current.children.push(createNode({
-                          type: NodeType.text,
-                          value: data.value,
-                          parent: options.parentNodes ? current : null
-                      }));
-                  }
-                  break;
-              case Type.attributeName:
-                  attrName = data.value;
-                  current.attributes[attrName] = '';
-                  break;
-              case Type.attributeValue:
-                  current.attributes[attrName] = data.value;
-                  break;
-          }
-      };
-      reader.reset = function () {
-          lexer = Lexer.create({ debug: options.debug });
-          lexer.on('data', handleLexerData);
-          rootNode = createNode();
-          current = null;
-          attrName = '';
-          reader.parse = lexer.write;
-      };
-      reader.reset();
-      return reader;
-  };
-  var parseSync = function parseSync(xml, options) {
-      options = Object.assign({}, options, { stream: false, tagPrefix: ':' });
-      var reader = create(options);
-      var res = void 0;
-      reader.on('done', function (ast) {
-          res = ast;
-      });
-      reader.parse(xml);
-      return res;
-  };
-  var reader = {
-      parseSync: parseSync,
-      create: create,
-      NodeType: NodeType
-  };
-  getDefaultExportFromCjs(reader);
-
-  var parseInput = function parseInput(input) {
-    var parsed = reader.parseSync("<root>".concat(input, "</root>"), {
-      parentNodes: false
-    });
-    var isValid = parsed.children && parsed.children.length > 0 && parsed.children.every(function (node) {
-      return node.name === 'svg';
-    });
-    if (isValid) {
-      return parsed.children.length === 1 ? parsed.children[0] : parsed.children;
-    } else {
-      throw Error('nothing to parse');
-    }
-  };
-  var camelize = function camelize(node) {
-    return rename$1(node, function (key) {
-      if (!notCamelcase(key)) {
-        return toCamelCase(key);
-      }
-      return key;
-    });
-  };
-  var toCamelCase = function toCamelCase(prop) {
-    return prop.replace(/[-|:]([a-z])/gi, function (all, letter) {
-      return letter.toUpperCase();
-    });
-  };
-  var notCamelcase = function notCamelcase(prop) {
-    return /^(data|aria)(-\w+)/.test(prop);
-  };
-  var svgsonSync = function svgsonSync(input) {
-    var _ref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
-      _ref$transformNode = _ref.transformNode,
-      transformNode = _ref$transformNode === void 0 ? function (node) {
-        return node;
-      } : _ref$transformNode,
-      _ref$camelcase = _ref.camelcase,
-      camelcase = _ref$camelcase === void 0 ? false : _ref$camelcase;
-    var applyFilters = function applyFilters(input) {
-      var n;
-      n = transformNode(input);
-      if (camelcase) {
-        n = camelize(n);
-      }
-      return n;
-    };
-    return applyFilters(parseInput(input));
-  };
-
-  const WSP = ' ';
-  function encodeSVGPath(commands) {
-      let str = '';
-      if (!Array.isArray(commands)) {
-          commands = [commands];
-      }
-      for (let i = 0; i < commands.length; i++) {
-          const command = commands[i];
-          if (command.type === SVGPathData.CLOSE_PATH) {
-              str += 'z';
-          }
-          else if (command.type === SVGPathData.HORIZ_LINE_TO) {
-              str += (command.relative ? 'h' : 'H') + command.x;
-          }
-          else if (command.type === SVGPathData.VERT_LINE_TO) {
-              str += (command.relative ? 'v' : 'V') + command.y;
-          }
-          else if (command.type === SVGPathData.MOVE_TO) {
-              str += (command.relative ? 'm' : 'M') + command.x + WSP + command.y;
-          }
-          else if (command.type === SVGPathData.LINE_TO) {
-              str += (command.relative ? 'l' : 'L') + command.x + WSP + command.y;
-          }
-          else if (command.type === SVGPathData.CURVE_TO) {
-              str +=
-                  (command.relative ? 'c' : 'C') +
-                      command.x1 +
-                      WSP +
-                      command.y1 +
-                      WSP +
-                      command.x2 +
-                      WSP +
-                      command.y2 +
-                      WSP +
-                      command.x +
-                      WSP +
-                      command.y;
-          }
-          else if (command.type === SVGPathData.SMOOTH_CURVE_TO) {
-              str +=
-                  (command.relative ? 's' : 'S') +
-                      command.x2 +
-                      WSP +
-                      command.y2 +
-                      WSP +
-                      command.x +
-                      WSP +
-                      command.y;
-          }
-          else if (command.type === SVGPathData.QUAD_TO) {
-              str +=
-                  (command.relative ? 'q' : 'Q') +
-                      command.x1 +
-                      WSP +
-                      command.y1 +
-                      WSP +
-                      command.x +
-                      WSP +
-                      command.y;
-          }
-          else if (command.type === SVGPathData.SMOOTH_QUAD_TO) {
-              str += (command.relative ? 't' : 'T') + command.x + WSP + command.y;
-          }
-          else if (command.type === SVGPathData.ARC) {
-              str +=
-                  (command.relative ? 'a' : 'A') +
-                      command.rX +
-                      WSP +
-                      command.rY +
-                      WSP +
-                      command.xRot +
-                      WSP +
-                      +command.lArcFlag +
-                      WSP +
-                      +command.sweepFlag +
-                      WSP +
-                      command.x +
-                      WSP +
-                      command.y;
-          }
-          else {
-              throw new Error(`Unexpected command type "${command?.type}" at index ${i}.`);
-          }
-      }
-      return str;
-  }
-
-  function rotate([x, y], rad) {
-      return [
-          x * Math.cos(rad) - y * Math.sin(rad),
-          x * Math.sin(rad) + y * Math.cos(rad),
-      ];
-  }
-  function assertNumbers(...numbers) {
-      {
-          for (let i = 0; i < numbers.length; i++) {
-              if ('number' !== typeof numbers[i]) {
-                  throw new Error(`assertNumbers arguments[${i}] is not a number. ${typeof numbers[i]} == typeof ${numbers[i]}`);
-              }
-          }
-      }
-      return true;
-  }
-  const PI = Math.PI;
-  function annotateArcCommand(c, x1, y1) {
-      c.lArcFlag = 0 === c.lArcFlag ? 0 : 1;
-      c.sweepFlag = 0 === c.sweepFlag ? 0 : 1;
-      let { rX, rY } = c;
-      const { x, y } = c;
-      if (Math.abs(rX) < 1e-10 || Math.abs(rY) < 1e-10) {
-          c.rX = 0;
-          c.rY = 0;
-          c.cX = (x1 + x) / 2;
-          c.cY = (y1 + y) / 2;
-          c.phi1 = 0;
-          c.phi2 = 0;
-          return;
-      }
-      rX = Math.abs(c.rX);
-      rY = Math.abs(c.rY);
-      const xRotRad = (c.xRot / 180) * PI;
-      const [x1_, y1_] = rotate([(x1 - x) / 2, (y1 - y) / 2], -xRotRad);
-      const testValue = Math.pow(x1_, 2) / Math.pow(rX, 2) + Math.pow(y1_, 2) / Math.pow(rY, 2);
-      if (1 < testValue) {
-          rX *= Math.sqrt(testValue);
-          rY *= Math.sqrt(testValue);
-      }
-      c.rX = rX;
-      c.rY = rY;
-      const c_ScaleTemp = Math.pow(rX, 2) * Math.pow(y1_, 2) + Math.pow(rY, 2) * Math.pow(x1_, 2);
-      const c_Scale = (c.lArcFlag !== c.sweepFlag ? 1 : -1) *
-          Math.sqrt(Math.max(0, (Math.pow(rX, 2) * Math.pow(rY, 2) - c_ScaleTemp) / c_ScaleTemp));
-      const cx_ = ((rX * y1_) / rY) * c_Scale;
-      const cy_ = ((-rY * x1_) / rX) * c_Scale;
-      const cRot = rotate([cx_, cy_], xRotRad);
-      c.cX = cRot[0] + (x1 + x) / 2;
-      c.cY = cRot[1] + (y1 + y) / 2;
-      c.phi1 = Math.atan2((y1_ - cy_) / rY, (x1_ - cx_) / rX);
-      c.phi2 = Math.atan2((-y1_ - cy_) / rY, (-x1_ - cx_) / rX);
-      if (0 === c.sweepFlag && c.phi2 > c.phi1) {
-          c.phi2 -= 2 * PI;
-      }
-      if (1 === c.sweepFlag && c.phi2 < c.phi1) {
-          c.phi2 += 2 * PI;
-      }
-      c.phi1 *= 180 / PI;
-      c.phi2 *= 180 / PI;
-  }
-  function intersectionUnitCircleLine(a, b, c) {
-      assertNumbers(a, b, c);
-      const termSqr = a * a + b * b - c * c;
-      if (0 > termSqr) {
-          return [];
-      }
-      else if (0 === termSqr) {
-          return [[(a * c) / (a * a + b * b), (b * c) / (a * a + b * b)]];
-      }
-      const term = Math.sqrt(termSqr);
-      return [
-          [
-              (a * c + b * term) / (a * a + b * b),
-              (b * c - a * term) / (a * a + b * b),
-          ],
-          [
-              (a * c - b * term) / (a * a + b * b),
-              (b * c + a * term) / (a * a + b * b),
-          ],
-      ];
-  }
-  const DEG = Math.PI / 180;
-  function lerp(a, b, t) {
-      return (1 - t) * a + t * b;
-  }
-  function arcAt(c, x1, x2, phiDeg) {
-      return (c + Math.cos((phiDeg / 180) * PI) * x1 + Math.sin((phiDeg / 180) * PI) * x2);
-  }
-  function bezierRoot(x0, x1, x2, x3) {
-      const EPS = 1e-6;
-      const x01 = x1 - x0;
-      const x12 = x2 - x1;
-      const x23 = x3 - x2;
-      const a = 3 * x01 + 3 * x23 - 6 * x12;
-      const b = (x12 - x01) * 6;
-      const c = 3 * x01;
-      if (Math.abs(a) < EPS) {
-          return Math.abs(b) < EPS ? [] : [-c / b];
-      }
-      return pqFormula(b / a, c / a, EPS);
-  }
-  function bezierAt(x0, x1, x2, x3, t) {
-      const s = 1 - t;
-      const c0 = s * s * s;
-      const c1 = 3 * s * s * t;
-      const c2 = 3 * s * t * t;
-      const c3 = t * t * t;
-      return x0 * c0 + x1 * c1 + x2 * c2 + x3 * c3;
-  }
-  function pqFormula(p, q, PRECISION = 1e-6) {
-      const discriminantX4 = (p * p) / 4 - q;
-      if (discriminantX4 < -PRECISION) {
-          return [];
-      }
-      else if (discriminantX4 <= PRECISION) {
-          return [-p / 2];
-      }
-      const root = Math.sqrt(discriminantX4);
-      return [-(p / 2) - root, -(p / 2) + root];
-  }
-  function a2c(arc, x0, y0) {
-      if (!arc.cX) {
-          annotateArcCommand(arc, x0, y0);
-      }
-      const xRotRad = (arc.xRot / 180) * PI;
-      if (Math.abs(arc.rX) < 1e-10 || Math.abs(arc.rY) < 1e-10) {
-          return [
-              {
-                  relative: arc.relative,
-                  type: SVGPathData.CURVE_TO,
-                  x1: x0 + (arc.x - x0) / 3,
-                  y1: y0 + (arc.y - y0) / 3,
-                  x2: x0 + (2 * (arc.x - x0)) / 3,
-                  y2: y0 + (2 * (arc.y - y0)) / 3,
-                  x: arc.x,
-                  y: arc.y,
-              },
-          ];
-      }
-      const phiMin = Math.min(arc.phi1, arc.phi2), phiMax = Math.max(arc.phi1, arc.phi2), deltaPhi = phiMax - phiMin;
-      const partCount = Math.ceil(deltaPhi / 90);
-      const result = new Array(partCount);
-      let prevX = x0;
-      let prevY = y0;
-      const transform = (x, y) => {
-          const [xTemp, yTemp] = rotate([x * arc.rX, y * arc.rY], xRotRad);
-          return [arc.cX + xTemp, arc.cY + yTemp];
-      };
-      for (let i = 0; i < partCount; i++) {
-          const phiStart = lerp(arc.phi1, arc.phi2, i / partCount);
-          const phiEnd = lerp(arc.phi1, arc.phi2, (i + 1) / partCount);
-          const deltaPhi = phiEnd - phiStart;
-          const f = (4 / 3) * Math.tan((deltaPhi * DEG) / 4);
-          const x1 = Math.cos(phiStart * DEG) - f * Math.sin(phiStart * DEG);
-          const y1 = Math.sin(phiStart * DEG) + f * Math.cos(phiStart * DEG);
-          const x = Math.cos(phiEnd * DEG);
-          const y = Math.sin(phiEnd * DEG);
-          const x2 = x + f * y;
-          const y2 = y - f * x;
-          const cp1 = transform(x1, y1);
-          const cp2 = transform(x2, y2);
-          const end = transform(x, y);
-          const command = {
-              relative: arc.relative,
-              type: SVGPathData.CURVE_TO,
-              x: end[0],
-              y: end[1],
-              x1: cp1[0],
-              y1: cp1[1],
-              x2: cp2[0],
-              y2: cp2[1],
-          };
-          if (arc.relative) {
-              command.x1 -= prevX;
-              command.y1 -= prevY;
-              command.x2 -= prevX;
-              command.y2 -= prevY;
-              command.x -= prevX;
-              command.y -= prevY;
-          }
-          prevX = end[0];
-          prevY = end[1];
-          result[i] = command;
-      }
-      return result;
-  }
-  function arePointsCollinear(p1, p2, p3) {
-      const v1x = p2[0] - p1[0];
-      const v1y = p2[1] - p1[1];
-      const v2x = p3[0] - p1[0];
-      const v2y = p3[1] - p1[1];
-      const cross = v1x * v2y - v1y * v2x;
-      const isCollinear = Math.abs(cross) < 1e-10;
-      if (!isCollinear)
-          return false;
-      const dot = v1x * v2x + v1y * v2y;
-      const lenSqV1 = v1x * v1x + v1y * v1y;
-      const lenSqV2 = v2x * v2x + v2y * v2y;
-      return 0 <= dot && dot <= lenSqV2 && lenSqV1 <= lenSqV2;
-  }
-
-  function REMOVE_COLLINEAR(commands) {
-      if (commands.length <= 2)
-          return commands;
-      const results = [];
-      const points = commands.map(SVGPathDataTransformer.INFO((cmd, pXAbs, pYAbs) => {
-          const isRelatve = 'relative' in cmd && cmd.relative;
-          return [
-              'x' in cmd ? cmd.x + (isRelatve ? pXAbs : 0) : pXAbs,
-              'y' in cmd ? cmd.y + (isRelatve ? pYAbs : 0) : pYAbs,
-          ];
-      }));
-      let prevPoint = points[0];
-      results.push(commands[0]);
-      for (let i = 1; i < commands.length; i++) {
-          const cmd = commands[i];
-          const nextCmd = commands[i + 1];
-          if (i < commands.length - 1 &&
-              nextCmd &&
-              cmd.type & SVGPathData.LINE_COMMANDS &&
-              nextCmd.type & SVGPathData.LINE_COMMANDS) {
-              const nextPoint = points[i + 1];
-              if (arePointsCollinear(prevPoint, points[i], nextPoint)) {
-                  if ('relative' in nextCmd && nextCmd.relative) {
-                      if ('x' in nextCmd)
-                          nextCmd.x = nextPoint[0] - prevPoint[0];
-                      if ('y' in nextCmd)
-                          nextCmd.y = nextPoint[1] - prevPoint[1];
-                  }
-                  continue;
-              }
-          }
-          results.push(cmd);
-          prevPoint = points[i];
-      }
-      return results;
-  }
-
-  function REVERSE_PATH(commands, preserveSubpathOrder = true) {
-      if (commands.length < 2)
-          return commands;
-      const normalized = SVGPathDataTransformer.INFO((command, px, py) => ({
-          ...command,
-          x: command.x ?? px,
-          y: command.y ?? py,
-          relative: command.relative ?? false,
-      }));
-      const result = [];
-      let processing = [];
-      for (const original of commands) {
-          const cmd = normalized(original);
-          if (cmd.type === SVGPathData.MOVE_TO && processing.length > 0) {
-              if (preserveSubpathOrder) {
-                  result.push(...reverseSubpath(processing));
-              }
-              else {
-                  result.unshift(...reverseSubpath(processing));
-              }
-              processing = [];
-          }
-          processing.push(cmd);
-      }
-      if (processing.length > 0) {
-          if (preserveSubpathOrder) {
-              result.push(...reverseSubpath(processing));
-          }
-          else {
-              result.unshift(...reverseSubpath(processing));
-          }
-      }
-      return result;
-  }
-  function reverseSubpath(commands) {
-      const isExplicitlyClosed = commands[commands.length - 1]?.type === SVGPathData.CLOSE_PATH;
-      const startPointIndex = isExplicitlyClosed
-          ? commands.length - 2
-          : commands.length - 1;
-      const reversed = [
-          {
-              type: SVGPathData.MOVE_TO,
-              relative: false,
-              x: commands[startPointIndex].x,
-              y: commands[startPointIndex].y,
-          },
-      ];
-      for (let i = startPointIndex; i > 0; i--) {
-          const curCmd = commands[i];
-          const prevPoint = commands[i - 1];
-          if (curCmd.relative) {
-              throw new Error('Relative command are not supported convert first with `toAbs()`');
-          }
-          switch (curCmd.type) {
-              case SVGPathData.HORIZ_LINE_TO:
-                  reversed.push({
-                      type: SVGPathData.HORIZ_LINE_TO,
-                      relative: false,
-                      x: prevPoint.x,
-                  });
-                  break;
-              case SVGPathData.VERT_LINE_TO:
-                  reversed.push({
-                      type: SVGPathData.VERT_LINE_TO,
-                      relative: false,
-                      y: prevPoint.y,
-                  });
-                  break;
-              case SVGPathData.LINE_TO:
-              case SVGPathData.MOVE_TO:
-                  reversed.push({
-                      type: SVGPathData.LINE_TO,
-                      relative: false,
-                      x: prevPoint.x,
-                      y: prevPoint.y,
-                  });
-                  break;
-              case SVGPathData.CURVE_TO:
-                  reversed.push({
-                      type: SVGPathData.CURVE_TO,
-                      relative: false,
-                      x: prevPoint.x,
-                      y: prevPoint.y,
-                      x1: curCmd.x2,
-                      y1: curCmd.y2,
-                      x2: curCmd.x1,
-                      y2: curCmd.y1,
-                  });
-                  break;
-              case SVGPathData.SMOOTH_CURVE_TO:
-                  throw new Error(`Unsupported command: S (smooth cubic bezier)`);
-              case SVGPathData.SMOOTH_QUAD_TO:
-                  throw new Error(`Unsupported command: T (smooth quadratic bezier)`);
-              case SVGPathData.ARC:
-                  throw new Error(`Unsupported command: A (arc)`);
-              case SVGPathData.QUAD_TO:
-                  throw new Error(`Unsupported command: Q (quadratic bezier)`);
-          }
-      }
-      if (isExplicitlyClosed) {
-          reversed.push({ type: SVGPathData.CLOSE_PATH });
-      }
-      return reversed;
-  }
-
-  function ROUND(roundVal = 1e13) {
-      assertNumbers(roundVal);
-      function rf(val) {
-          return Math.round(val * roundVal) / roundVal;
-      }
-      return function round(command) {
-          if ('x1' in command && 'undefined' !== typeof command.x1) {
-              command.x1 = rf(command.x1);
-          }
-          if ('y1' in command && 'undefined' !== typeof command.y1) {
-              command.y1 = rf(command.y1);
-          }
-          if ('x2' in command && 'undefined' !== typeof command.x2) {
-              command.x2 = rf(command.x2);
-          }
-          if ('y2' in command && 'undefined' !== typeof command.y2) {
-              command.y2 = rf(command.y2);
-          }
-          if ('x' in command && 'undefined' !== typeof command.x) {
-              command.x = rf(command.x);
-          }
-          if ('y' in command && 'undefined' !== typeof command.y) {
-              command.y = rf(command.y);
-          }
-          if ('rX' in command && 'undefined' !== typeof command.rX) {
-              command.rX = rf(command.rX);
-          }
-          if ('rY' in command && 'undefined' !== typeof command.rY) {
-              command.rY = rf(command.rY);
-          }
-          return command;
-      };
-  }
-  function TO_ABS() {
-      return INFO((command, prevX, prevY) => {
-          if (command.relative) {
-              if ('undefined' !== typeof command.x1) {
-                  command.x1 += prevX;
-              }
-              if ('undefined' !== typeof command.y1) {
-                  command.y1 += prevY;
-              }
-              if ('undefined' !== typeof command.x2) {
-                  command.x2 += prevX;
-              }
-              if ('undefined' !== typeof command.y2) {
-                  command.y2 += prevY;
-              }
-              if ('undefined' !== typeof command.x) {
-                  command.x += prevX;
-              }
-              if ('undefined' !== typeof command.y) {
-                  command.y += prevY;
-              }
-              command.relative = false;
-          }
-          return command;
-      });
-  }
-  function TO_REL() {
-      return INFO((command, prevX, prevY) => {
-          if (!command.relative) {
-              if ('undefined' !== typeof command.x1) {
-                  command.x1 -= prevX;
-              }
-              if ('undefined' !== typeof command.y1) {
-                  command.y1 -= prevY;
-              }
-              if ('undefined' !== typeof command.x2) {
-                  command.x2 -= prevX;
-              }
-              if ('undefined' !== typeof command.y2) {
-                  command.y2 -= prevY;
-              }
-              if ('undefined' !== typeof command.x) {
-                  command.x -= prevX;
-              }
-              if ('undefined' !== typeof command.y) {
-                  command.y -= prevY;
-              }
-              command.relative = true;
-          }
-          return command;
-      });
-  }
-  function NORMALIZE_HVZ(normalizeZ = true, normalizeH = true, normalizeV = true, normalizeC = true) {
-      return INFO((command, prevX, prevY, pathStartX, pathStartY) => {
-          if (isNaN(pathStartX) && !(command.type & SVGPathData.MOVE_TO)) {
-              throw new Error('path must start with moveto');
-          }
-          if (normalizeH && command.type & SVGPathData.HORIZ_LINE_TO) {
-              command.type = SVGPathData.LINE_TO;
-              command.y = command.relative ? 0 : prevY;
-          }
-          if (normalizeV && command.type & SVGPathData.VERT_LINE_TO) {
-              command.type = SVGPathData.LINE_TO;
-              command.x = command.relative ? 0 : prevX;
-          }
-          if (normalizeZ && command.type & SVGPathData.CLOSE_PATH) {
-              command.type = SVGPathData.LINE_TO;
-              command.x = command.relative ? pathStartX - prevX : pathStartX;
-              command.y = command.relative ? pathStartY - prevY : pathStartY;
-          }
-          if (command.type & SVGPathData.ARC &&
-              (0 === command.rX || 0 === command.rY)) {
-              command.type = SVGPathData.LINE_TO;
-              delete command.rX;
-              delete command.rY;
-              delete command.xRot;
-              delete command.lArcFlag;
-              delete command.sweepFlag;
-          }
-          if (normalizeC && command.type & SVGPathData.QUAD_TO) {
-              const startPoint = [prevX, prevY];
-              const controlPoint = command.relative
-                  ? [prevX + command.x1, prevY + command.y1]
-                  : [command.x1, command.y1];
-              const endPoint = command.relative
-                  ? [prevX + command.x, prevY + command.y]
-                  : [command.x, command.y];
-              if (arePointsCollinear(startPoint, controlPoint, endPoint)) {
-                  command.type = SVGPathData.LINE_TO;
-                  delete command.x1;
-                  delete command.y1;
-              }
-          }
-          if (normalizeC && command.type & SVGPathData.CURVE_TO) {
-              const startPoint = [prevX, prevY];
-              const control1 = command.relative
-                  ? [prevX + command.x1, prevY + command.y1]
-                  : [command.x1, command.y1];
-              const control2 = command.relative
-                  ? [prevX + command.x2, prevY + command.y2]
-                  : [command.x2, command.y2];
-              const endPoint = command.relative
-                  ? [prevX + command.x, prevY + command.y]
-                  : [command.x, command.y];
-              if (arePointsCollinear(startPoint, control1, endPoint) &&
-                  arePointsCollinear(startPoint, control2, endPoint)) {
-                  command.type = SVGPathData.LINE_TO;
-                  delete command.x1;
-                  delete command.y1;
-                  delete command.x2;
-                  delete command.y2;
-              }
-          }
-          return command;
-      });
-  }
-  function NORMALIZE_ST() {
-      let prevCurveC2X = NaN;
-      let prevCurveC2Y = NaN;
-      let prevQuadCX = NaN;
-      let prevQuadCY = NaN;
-      return INFO((command, prevX, prevY) => {
-          if (command.type & SVGPathData.SMOOTH_CURVE_TO) {
-              command.type = SVGPathData.CURVE_TO;
-              prevCurveC2X = isNaN(prevCurveC2X) ? prevX : prevCurveC2X;
-              prevCurveC2Y = isNaN(prevCurveC2Y) ? prevY : prevCurveC2Y;
-              command.x1 = command.relative
-                  ? prevX - prevCurveC2X
-                  : 2 * prevX - prevCurveC2X;
-              command.y1 = command.relative
-                  ? prevY - prevCurveC2Y
-                  : 2 * prevY - prevCurveC2Y;
-          }
-          if (command.type & SVGPathData.CURVE_TO) {
-              prevCurveC2X = command.relative ? prevX + command.x2 : command.x2;
-              prevCurveC2Y = command.relative ? prevY + command.y2 : command.y2;
-          }
-          else {
-              prevCurveC2X = NaN;
-              prevCurveC2Y = NaN;
-          }
-          if (command.type & SVGPathData.SMOOTH_QUAD_TO) {
-              command.type = SVGPathData.QUAD_TO;
-              prevQuadCX = isNaN(prevQuadCX) ? prevX : prevQuadCX;
-              prevQuadCY = isNaN(prevQuadCY) ? prevY : prevQuadCY;
-              command.x1 = command.relative
-                  ? prevX - prevQuadCX
-                  : 2 * prevX - prevQuadCX;
-              command.y1 = command.relative
-                  ? prevY - prevQuadCY
-                  : 2 * prevY - prevQuadCY;
-          }
-          if (command.type & SVGPathData.QUAD_TO) {
-              prevQuadCX = command.relative ? prevX + command.x1 : command.x1;
-              prevQuadCY = command.relative ? prevY + command.y1 : command.y1;
-          }
-          else {
-              prevQuadCX = NaN;
-              prevQuadCY = NaN;
-          }
-          return command;
-      });
-  }
-  function QT_TO_C() {
-      let prevQuadX1 = NaN;
-      let prevQuadY1 = NaN;
-      return INFO((command, prevX, prevY) => {
-          if (command.type & SVGPathData.SMOOTH_QUAD_TO) {
-              command.type = SVGPathData.QUAD_TO;
-              prevQuadX1 = isNaN(prevQuadX1) ? prevX : prevQuadX1;
-              prevQuadY1 = isNaN(prevQuadY1) ? prevY : prevQuadY1;
-              command.x1 = command.relative
-                  ? prevX - prevQuadX1
-                  : 2 * prevX - prevQuadX1;
-              command.y1 = command.relative
-                  ? prevY - prevQuadY1
-                  : 2 * prevY - prevQuadY1;
-          }
-          if (command.type & SVGPathData.QUAD_TO) {
-              prevQuadX1 = command.relative ? prevX + command.x1 : command.x1;
-              prevQuadY1 = command.relative ? prevY + command.y1 : command.y1;
-              const x1 = command.x1;
-              const y1 = command.y1;
-              command.type = SVGPathData.CURVE_TO;
-              command.x1 = ((command.relative ? 0 : prevX) + x1 * 2) / 3;
-              command.y1 = ((command.relative ? 0 : prevY) + y1 * 2) / 3;
-              command.x2 = (command.x + x1 * 2) / 3;
-              command.y2 = (command.y + y1 * 2) / 3;
-          }
-          else {
-              prevQuadX1 = NaN;
-              prevQuadY1 = NaN;
-          }
-          return command;
-      });
-  }
-  function INFO(f) {
-      let prevXAbs = 0;
-      let prevYAbs = 0;
-      let pathStartXAbs = NaN;
-      let pathStartYAbs = NaN;
-      return function transform(command) {
-          if (isNaN(pathStartXAbs) && !(command.type & SVGPathData.MOVE_TO)) {
-              throw new Error('path must start with moveto');
-          }
-          const result = f(command, prevXAbs, prevYAbs, pathStartXAbs, pathStartYAbs);
-          if (command.type & SVGPathData.CLOSE_PATH) {
-              prevXAbs = pathStartXAbs;
-              prevYAbs = pathStartYAbs;
-          }
-          if ('x' in command && 'undefined' !== typeof command.x) {
-              prevXAbs = command.relative ? prevXAbs + command.x : command.x;
-          }
-          if ('y' in command && 'undefined' !== typeof command.y) {
-              prevYAbs = command.relative ? prevYAbs + command.y : command.y;
-          }
-          if (command.type & SVGPathData.MOVE_TO) {
-              pathStartXAbs = prevXAbs;
-              pathStartYAbs = prevYAbs;
-          }
-          return result;
-      };
-  }
-  function SANITIZE(EPS = 0) {
-      assertNumbers(EPS);
-      let prevCurveC2X = NaN;
-      let prevCurveC2Y = NaN;
-      let prevQuadCX = NaN;
-      let prevQuadCY = NaN;
-      return INFO((command, prevX, prevY, pathStartX, pathStartY) => {
-          const abs = Math.abs;
-          let skip = false;
-          let x1Rel = 0;
-          let y1Rel = 0;
-          if (command.type & SVGPathData.SMOOTH_CURVE_TO) {
-              x1Rel = isNaN(prevCurveC2X) ? 0 : prevX - prevCurveC2X;
-              y1Rel = isNaN(prevCurveC2Y) ? 0 : prevY - prevCurveC2Y;
-          }
-          if (command.type & (SVGPathData.CURVE_TO | SVGPathData.SMOOTH_CURVE_TO)) {
-              prevCurveC2X = command.relative ? prevX + command.x2 : command.x2;
-              prevCurveC2Y = command.relative ? prevY + command.y2 : command.y2;
-          }
-          else {
-              prevCurveC2X = NaN;
-              prevCurveC2Y = NaN;
-          }
-          if (command.type & SVGPathData.SMOOTH_QUAD_TO) {
-              prevQuadCX = isNaN(prevQuadCX) ? prevX : 2 * prevX - prevQuadCX;
-              prevQuadCY = isNaN(prevQuadCY) ? prevY : 2 * prevY - prevQuadCY;
-          }
-          else if (command.type & SVGPathData.QUAD_TO) {
-              prevQuadCX = command.relative ? prevX + command.x1 : command.x1;
-              prevQuadCY = command.relative ? prevY + command.y1 : command.y2;
-          }
-          else {
-              prevQuadCX = NaN;
-              prevQuadCY = NaN;
-          }
-          if (command.type & SVGPathData.LINE_COMMANDS ||
-              (command.type & SVGPathData.ARC &&
-                  (0 === command.rX || 0 === command.rY || !command.lArcFlag)) ||
-              command.type & SVGPathData.CURVE_TO ||
-              command.type & SVGPathData.SMOOTH_CURVE_TO ||
-              command.type & SVGPathData.QUAD_TO ||
-              command.type & SVGPathData.SMOOTH_QUAD_TO) {
-              const xRel = 'undefined' === typeof command.x
-                  ? 0
-                  : command.relative
-                      ? command.x
-                      : command.x - prevX;
-              const yRel = 'undefined' === typeof command.y
-                  ? 0
-                  : command.relative
-                      ? command.y
-                      : command.y - prevY;
-              x1Rel = !isNaN(prevQuadCX)
-                  ? prevQuadCX - prevX
-                  : 'undefined' === typeof command.x1
-                      ? x1Rel
-                      : command.relative
-                          ? command.x
-                          : command.x1 - prevX;
-              y1Rel = !isNaN(prevQuadCY)
-                  ? prevQuadCY - prevY
-                  : 'undefined' === typeof command.y1
-                      ? y1Rel
-                      : command.relative
-                          ? command.y
-                          : command.y1 - prevY;
-              const x2Rel = 'undefined' === typeof command.x2
-                  ? 0
-                  : command.relative
-                      ? command.x
-                      : command.x2 - prevX;
-              const y2Rel = 'undefined' === typeof command.y2
-                  ? 0
-                  : command.relative
-                      ? command.y
-                      : command.y2 - prevY;
-              if (abs(xRel) <= EPS &&
-                  abs(yRel) <= EPS &&
-                  abs(x1Rel) <= EPS &&
-                  abs(y1Rel) <= EPS &&
-                  abs(x2Rel) <= EPS &&
-                  abs(y2Rel) <= EPS) {
-                  skip = true;
-              }
-          }
-          if (command.type & SVGPathData.CLOSE_PATH) {
-              if (abs(prevX - pathStartX) <= EPS && abs(prevY - pathStartY) <= EPS) {
-                  skip = true;
-              }
-          }
-          return skip ? [] : command;
-      });
-  }
-  function MATRIX(a, b, c, d, e, f) {
-      assertNumbers(a, b, c, d, e, f);
-      return INFO((command, prevX, prevY, pathStartX) => {
-          const origX1 = command.x1;
-          const origX2 = command.x2;
-          const comRel = command.relative && !isNaN(pathStartX);
-          const x = 'undefined' !== typeof command.x ? command.x : comRel ? 0 : prevX;
-          const y = 'undefined' !== typeof command.y ? command.y : comRel ? 0 : prevY;
-          if (command.type & SVGPathData.HORIZ_LINE_TO && 0 !== b) {
-              command.type = SVGPathData.LINE_TO;
-              command.y = command.relative ? 0 : prevY;
-          }
-          if (command.type & SVGPathData.VERT_LINE_TO && 0 !== c) {
-              command.type = SVGPathData.LINE_TO;
-              command.x = command.relative ? 0 : prevX;
-          }
-          if ('undefined' !== typeof command.x) {
-              command.x = command.x * a + y * c + (comRel ? 0 : e);
-          }
-          if ('undefined' !== typeof command.y) {
-              command.y = x * b + command.y * d + (comRel ? 0 : f);
-          }
-          if ('undefined' !== typeof command.x1) {
-              command.x1 = command.x1 * a + command.y1 * c + (comRel ? 0 : e);
-          }
-          if ('undefined' !== typeof command.y1) {
-              command.y1 = origX1 * b + command.y1 * d + (comRel ? 0 : f);
-          }
-          if ('undefined' !== typeof command.x2) {
-              command.x2 = command.x2 * a + command.y2 * c + (comRel ? 0 : e);
-          }
-          if ('undefined' !== typeof command.y2) {
-              command.y2 = origX2 * b + command.y2 * d + (comRel ? 0 : f);
-          }
-          function sqr(x) {
-              return x * x;
-          }
-          const det = a * d - b * c;
-          if ('undefined' !== typeof command.xRot) {
-              if (1 !== a || 0 !== b || 0 !== c || 1 !== d) {
-                  if (0 === det) {
-                      delete command.rX;
-                      delete command.rY;
-                      delete command.xRot;
-                      delete command.lArcFlag;
-                      delete command.sweepFlag;
-                      command.type = SVGPathData.LINE_TO;
-                  }
-                  else {
-                      const xRot = (command.xRot * Math.PI) / 180;
-                      const sinRot = Math.sin(xRot);
-                      const cosRot = Math.cos(xRot);
-                      const xCurve = 1 / sqr(command.rX);
-                      const yCurve = 1 / sqr(command.rY);
-                      const A = sqr(cosRot) * xCurve + sqr(sinRot) * yCurve;
-                      const B = 2 * sinRot * cosRot * (xCurve - yCurve);
-                      const C = sqr(sinRot) * xCurve + sqr(cosRot) * yCurve;
-                      const A1 = A * d * d - B * b * d + C * b * b;
-                      const B1 = B * (a * d + b * c) - 2 * (A * c * d + C * a * b);
-                      const C1 = A * c * c - B * a * c + C * a * a;
-                      const newXRot = ((Math.atan2(B1, A1 - C1) + Math.PI) % Math.PI) / 2;
-                      const newSinRot = Math.sin(newXRot);
-                      const newCosRot = Math.cos(newXRot);
-                      command.rX =
-                          Math.abs(det) /
-                              Math.sqrt(A1 * sqr(newCosRot) +
-                                  B1 * newSinRot * newCosRot +
-                                  C1 * sqr(newSinRot));
-                      command.rY =
-                          Math.abs(det) /
-                              Math.sqrt(A1 * sqr(newSinRot) -
-                                  B1 * newSinRot * newCosRot +
-                                  C1 * sqr(newCosRot));
-                      command.xRot = (newXRot * 180) / Math.PI;
-                  }
-              }
-          }
-          if ('undefined' !== typeof command.sweepFlag && 0 > det) {
-              command.sweepFlag = +!command.sweepFlag;
-          }
-          return command;
-      });
-  }
-  function ROTATE(a, x = 0, y = 0) {
-      assertNumbers(a, x, y);
-      const sin = Math.sin(a);
-      const cos = Math.cos(a);
-      return MATRIX(cos, sin, -sin, cos, x - x * cos + y * sin, y - x * sin - y * cos);
-  }
-  function TRANSLATE(dX, dY = 0) {
-      assertNumbers(dX, dY);
-      return MATRIX(1, 0, 0, 1, dX, dY);
-  }
-  function SCALE(dX, dY = dX) {
-      assertNumbers(dX, dY);
-      return MATRIX(dX, 0, 0, dY, 0, 0);
-  }
-  function SKEW_X(a) {
-      assertNumbers(a);
-      return MATRIX(1, 0, Math.tan(a), 1, 0, 0);
-  }
-  function SKEW_Y(a) {
-      assertNumbers(a);
-      return MATRIX(1, Math.tan(a), 0, 1, 0, 0);
-  }
-  function X_AXIS_SYMMETRY(xOffset = 0) {
-      assertNumbers(xOffset);
-      return MATRIX(-1, 0, 0, 1, xOffset, 0);
-  }
-  function Y_AXIS_SYMMETRY(yOffset = 0) {
-      assertNumbers(yOffset);
-      return MATRIX(1, 0, 0, -1, 0, yOffset);
-  }
-  function A_TO_C() {
-      return INFO((command, prevX, prevY) => {
-          if (SVGPathData.ARC === command.type) {
-              return a2c(command, command.relative ? 0 : prevX, command.relative ? 0 : prevY);
-          }
-          return command;
-      });
-  }
-  function ANNOTATE_ARCS() {
-      return INFO((c, x1, y1) => {
-          if (c.relative) {
-              x1 = 0;
-              y1 = 0;
-          }
-          if (SVGPathData.ARC === c.type) {
-              annotateArcCommand(c, x1, y1);
-          }
-          return c;
-      });
-  }
-  function CLONE() {
-      return (c) => {
-          return { ...c };
-      };
-  }
-  function CALCULATE_BOUNDS() {
-      const clone = CLONE();
-      const toAbs = TO_ABS();
-      const qtToC = QT_TO_C();
-      const normST = NORMALIZE_ST();
-      const f = INFO((command, prevXAbs, prevYAbs) => {
-          const c = normST(qtToC(toAbs(clone(command))));
-          function fixX(absX) {
-              if (absX > f.maxX) {
-                  f.maxX = absX;
-              }
-              if (absX < f.minX) {
-                  f.minX = absX;
-              }
-          }
-          function fixY(absY) {
-              if (absY > f.maxY) {
-                  f.maxY = absY;
-              }
-              if (absY < f.minY) {
-                  f.minY = absY;
-              }
-          }
-          if (c.type & SVGPathData.DRAWING_COMMANDS) {
-              fixX(prevXAbs);
-              fixY(prevYAbs);
-          }
-          if (c.type & SVGPathData.HORIZ_LINE_TO) {
-              fixX(c.x);
-          }
-          if (c.type & SVGPathData.VERT_LINE_TO) {
-              fixY(c.y);
-          }
-          if (c.type & SVGPathData.LINE_TO) {
-              fixX(c.x);
-              fixY(c.y);
-          }
-          if (c.type & SVGPathData.CURVE_TO) {
-              fixX(c.x);
-              fixY(c.y);
-              const xDerivRoots = bezierRoot(prevXAbs, c.x1, c.x2, c.x);
-              for (const derivRoot of xDerivRoots) {
-                  if (0 < derivRoot && 1 > derivRoot) {
-                      fixX(bezierAt(prevXAbs, c.x1, c.x2, c.x, derivRoot));
-                  }
-              }
-              const yDerivRoots = bezierRoot(prevYAbs, c.y1, c.y2, c.y);
-              for (const derivRoot of yDerivRoots) {
-                  if (0 < derivRoot && 1 > derivRoot) {
-                      fixY(bezierAt(prevYAbs, c.y1, c.y2, c.y, derivRoot));
-                  }
-              }
-          }
-          if (c.type & SVGPathData.ARC) {
-              fixX(c.x);
-              fixY(c.y);
-              annotateArcCommand(c, prevXAbs, prevYAbs);
-              const xRotRad = (c.xRot / 180) * Math.PI;
-              const x0 = Math.cos(xRotRad) * c.rX;
-              const y0 = Math.sin(xRotRad) * c.rX;
-              const x90 = -Math.sin(xRotRad) * c.rY;
-              const y90 = Math.cos(xRotRad) * c.rY;
-              const [phiMin, phiMax] = c.phi1 < c.phi2
-                  ? [c.phi1, c.phi2]
-                  : -180 > c.phi2
-                      ? [c.phi2 + 360, c.phi1 + 360]
-                      : [c.phi2, c.phi1];
-              const normalizeXiEta = ([xi, eta]) => {
-                  const phiRad = Math.atan2(eta, xi);
-                  const phi = (phiRad * 180) / Math.PI;
-                  return phi < phiMin ? phi + 360 : phi;
-              };
-              const xDerivRoots = intersectionUnitCircleLine(x90, -x0, 0).map(normalizeXiEta);
-              for (const derivRoot of xDerivRoots) {
-                  if (derivRoot > phiMin && derivRoot < phiMax) {
-                      fixX(arcAt(c.cX, x0, x90, derivRoot));
-                  }
-              }
-              const yDerivRoots = intersectionUnitCircleLine(y90, -y0, 0).map(normalizeXiEta);
-              for (const derivRoot of yDerivRoots) {
-                  if (derivRoot > phiMin && derivRoot < phiMax) {
-                      fixY(arcAt(c.cY, y0, y90, derivRoot));
-                  }
-              }
-          }
-          return command;
-      });
-      f.minX = Infinity;
-      f.maxX = -Infinity;
-      f.minY = Infinity;
-      f.maxY = -Infinity;
-      return f;
-  }
-  const SVGPathDataTransformer = {
-      ROUND,
-      TO_ABS,
-      TO_REL,
-      NORMALIZE_HVZ,
-      NORMALIZE_ST,
-      QT_TO_C,
-      INFO,
-      SANITIZE,
-      MATRIX,
-      ROTATE,
-      TRANSLATE,
-      SCALE,
-      SKEW_X,
-      SKEW_Y,
-      X_AXIS_SYMMETRY,
-      Y_AXIS_SYMMETRY,
-      A_TO_C,
-      ANNOTATE_ARCS,
-      CLONE,
-      CALCULATE_BOUNDS,
-      REVERSE_PATH,
-      REMOVE_COLLINEAR,
-  };
-
-  class TransformableSVG {
-      round(x) {
-          return this.transform(SVGPathDataTransformer.ROUND(x));
-      }
-      toAbs() {
-          return this.transform(SVGPathDataTransformer.TO_ABS());
-      }
-      toRel() {
-          return this.transform(SVGPathDataTransformer.TO_REL());
-      }
-      normalizeHVZ(a, b, c) {
-          return this.transform(SVGPathDataTransformer.NORMALIZE_HVZ(a, b, c));
-      }
-      normalizeST() {
-          return this.transform(SVGPathDataTransformer.NORMALIZE_ST());
-      }
-      qtToC() {
-          return this.transform(SVGPathDataTransformer.QT_TO_C());
-      }
-      aToC() {
-          return this.transform(SVGPathDataTransformer.A_TO_C());
-      }
-      sanitize(eps) {
-          return this.transform(SVGPathDataTransformer.SANITIZE(eps));
-      }
-      translate(x, y) {
-          return this.transform(SVGPathDataTransformer.TRANSLATE(x, y));
-      }
-      scale(x, y) {
-          return this.transform(SVGPathDataTransformer.SCALE(x, y));
-      }
-      rotate(a, x, y) {
-          return this.transform(SVGPathDataTransformer.ROTATE(a, x, y));
-      }
-      matrix(a, b, c, d, e, f) {
-          return this.transform(SVGPathDataTransformer.MATRIX(a, b, c, d, e, f));
-      }
-      skewX(a) {
-          return this.transform(SVGPathDataTransformer.SKEW_X(a));
-      }
-      skewY(a) {
-          return this.transform(SVGPathDataTransformer.SKEW_Y(a));
-      }
-      xSymmetry(xOffset) {
-          return this.transform(SVGPathDataTransformer.X_AXIS_SYMMETRY(xOffset));
-      }
-      ySymmetry(yOffset) {
-          return this.transform(SVGPathDataTransformer.Y_AXIS_SYMMETRY(yOffset));
-      }
-      annotateArcs() {
-          return this.transform(SVGPathDataTransformer.ANNOTATE_ARCS());
-      }
-  }
-
-  const isWhiteSpace = (c) => ' ' === c || '\t' === c || '\r' === c || '\n' === c;
-  const isDigit = (c) => '0'.charCodeAt(0) <= c.charCodeAt(0) && c.charCodeAt(0) <= '9'.charCodeAt(0);
-  class SVGPathDataParser extends TransformableSVG {
-      curNumber = '';
-      curCommandType = -1;
-      curCommandRelative = false;
-      canParseCommandOrComma = true;
-      curNumberHasExp = false;
-      curNumberHasExpDigits = false;
-      curNumberHasDecimal = false;
-      curArgs = [];
-      constructor() {
-          super();
-      }
-      finish(commands = []) {
-          this.parse(' ', commands);
-          if (0 !== this.curArgs.length || !this.canParseCommandOrComma) {
-              throw new SyntaxError('Unterminated command at the path end.');
-          }
-          return commands;
-      }
-      parse(str, commands = []) {
-          const finishCommand = (command) => {
-              commands.push(command);
-              this.curArgs.length = 0;
-              this.canParseCommandOrComma = true;
-          };
-          for (let i = 0; i < str.length; i++) {
-              const c = str[i];
-              const isAArcFlag = this.curCommandType === SVGPathData.ARC &&
-                  (this.curArgs.length === 3 || this.curArgs.length === 4) &&
-                  this.curNumber.length === 1 &&
-                  (this.curNumber === '0' || this.curNumber === '1');
-              const isEndingDigit = isDigit(c) && ((this.curNumber === '0' && c === '0') || isAArcFlag);
-              if (isDigit(c) && !isEndingDigit) {
-                  this.curNumber += c;
-                  this.curNumberHasExpDigits = this.curNumberHasExp;
-                  continue;
-              }
-              if ('e' === c || 'E' === c) {
-                  this.curNumber += c;
-                  this.curNumberHasExp = true;
-                  continue;
-              }
-              if (('-' === c || '+' === c) &&
-                  this.curNumberHasExp &&
-                  !this.curNumberHasExpDigits) {
-                  this.curNumber += c;
-                  continue;
-              }
-              if ('.' === c &&
-                  !this.curNumberHasExp &&
-                  !this.curNumberHasDecimal &&
-                  !isAArcFlag) {
-                  this.curNumber += c;
-                  this.curNumberHasDecimal = true;
-                  continue;
-              }
-              if (this.curNumber && -1 !== this.curCommandType) {
-                  const val = Number(this.curNumber);
-                  if (isNaN(val)) {
-                      throw new SyntaxError(`Invalid number ending at ${i}`);
-                  }
-                  if (this.curCommandType === SVGPathData.ARC) {
-                      if (0 === this.curArgs.length || 1 === this.curArgs.length) {
-                          if (0 > val) {
-                              throw new SyntaxError(`Expected positive number, got "${val}" at index "${i}"`);
-                          }
-                      }
-                      else if (3 === this.curArgs.length || 4 === this.curArgs.length) {
-                          if ('0' !== this.curNumber && '1' !== this.curNumber) {
-                              throw new SyntaxError(`Expected a flag, got "${this.curNumber}" at index "${i}"`);
-                          }
-                      }
-                  }
-                  this.curArgs.push(val);
-                  if (this.curArgs.length === COMMAND_ARG_COUNTS[this.curCommandType]) {
-                      if (SVGPathData.HORIZ_LINE_TO === this.curCommandType) {
-                          finishCommand({
-                              type: SVGPathData.HORIZ_LINE_TO,
-                              relative: this.curCommandRelative,
-                              x: val,
-                          });
-                      }
-                      else if (SVGPathData.VERT_LINE_TO === this.curCommandType) {
-                          finishCommand({
-                              type: SVGPathData.VERT_LINE_TO,
-                              relative: this.curCommandRelative,
-                              y: val,
-                          });
-                      }
-                      else if (this.curCommandType === SVGPathData.MOVE_TO ||
-                          this.curCommandType === SVGPathData.LINE_TO ||
-                          this.curCommandType === SVGPathData.SMOOTH_QUAD_TO) {
-                          finishCommand({
-                              type: this.curCommandType,
-                              relative: this.curCommandRelative,
-                              x: this.curArgs[0],
-                              y: this.curArgs[1],
-                          });
-                          if (SVGPathData.MOVE_TO === this.curCommandType) {
-                              this.curCommandType = SVGPathData.LINE_TO;
-                          }
-                      }
-                      else if (this.curCommandType === SVGPathData.CURVE_TO) {
-                          finishCommand({
-                              type: SVGPathData.CURVE_TO,
-                              relative: this.curCommandRelative,
-                              x1: this.curArgs[0],
-                              y1: this.curArgs[1],
-                              x2: this.curArgs[2],
-                              y2: this.curArgs[3],
-                              x: this.curArgs[4],
-                              y: this.curArgs[5],
-                          });
-                      }
-                      else if (this.curCommandType === SVGPathData.SMOOTH_CURVE_TO) {
-                          finishCommand({
-                              type: SVGPathData.SMOOTH_CURVE_TO,
-                              relative: this.curCommandRelative,
-                              x2: this.curArgs[0],
-                              y2: this.curArgs[1],
-                              x: this.curArgs[2],
-                              y: this.curArgs[3],
-                          });
-                      }
-                      else if (this.curCommandType === SVGPathData.QUAD_TO) {
-                          finishCommand({
-                              type: SVGPathData.QUAD_TO,
-                              relative: this.curCommandRelative,
-                              x1: this.curArgs[0],
-                              y1: this.curArgs[1],
-                              x: this.curArgs[2],
-                              y: this.curArgs[3],
-                          });
-                      }
-                      else if (this.curCommandType === SVGPathData.ARC) {
-                          finishCommand({
-                              type: SVGPathData.ARC,
-                              relative: this.curCommandRelative,
-                              rX: this.curArgs[0],
-                              rY: this.curArgs[1],
-                              xRot: this.curArgs[2],
-                              lArcFlag: this.curArgs[3],
-                              sweepFlag: this.curArgs[4],
-                              x: this.curArgs[5],
-                              y: this.curArgs[6],
-                          });
-                      }
-                  }
-                  this.curNumber = '';
-                  this.curNumberHasExpDigits = false;
-                  this.curNumberHasExp = false;
-                  this.curNumberHasDecimal = false;
-                  this.canParseCommandOrComma = true;
-              }
-              if (isWhiteSpace(c)) {
-                  continue;
-              }
-              if (',' === c && this.canParseCommandOrComma) {
-                  this.canParseCommandOrComma = false;
-                  continue;
-              }
-              if ('+' === c || '-' === c || '.' === c) {
-                  this.curNumber = c;
-                  this.curNumberHasDecimal = '.' === c;
-                  continue;
-              }
-              if (isEndingDigit) {
-                  this.curNumber = c;
-                  this.curNumberHasDecimal = false;
-                  continue;
-              }
-              if (0 !== this.curArgs.length) {
-                  throw new SyntaxError(`Unterminated command at index ${i}.`);
-              }
-              if (!this.canParseCommandOrComma) {
-                  throw new SyntaxError(`Unexpected character "${c}" at index ${i}. Command cannot follow comma`);
-              }
-              this.canParseCommandOrComma = false;
-              if ('z' === c || 'Z' === c) {
-                  commands.push({
-                      type: SVGPathData.CLOSE_PATH,
-                  });
-                  this.canParseCommandOrComma = true;
-                  this.curCommandType = -1;
-                  continue;
-              }
-              else if ('h' === c || 'H' === c) {
-                  this.curCommandType = SVGPathData.HORIZ_LINE_TO;
-                  this.curCommandRelative = 'h' === c;
-              }
-              else if ('v' === c || 'V' === c) {
-                  this.curCommandType = SVGPathData.VERT_LINE_TO;
-                  this.curCommandRelative = 'v' === c;
-              }
-              else if ('m' === c || 'M' === c) {
-                  this.curCommandType = SVGPathData.MOVE_TO;
-                  this.curCommandRelative = 'm' === c;
-              }
-              else if ('l' === c || 'L' === c) {
-                  this.curCommandType = SVGPathData.LINE_TO;
-                  this.curCommandRelative = 'l' === c;
-              }
-              else if ('c' === c || 'C' === c) {
-                  this.curCommandType = SVGPathData.CURVE_TO;
-                  this.curCommandRelative = 'c' === c;
-              }
-              else if ('s' === c || 'S' === c) {
-                  this.curCommandType = SVGPathData.SMOOTH_CURVE_TO;
-                  this.curCommandRelative = 's' === c;
-              }
-              else if ('q' === c || 'Q' === c) {
-                  this.curCommandType = SVGPathData.QUAD_TO;
-                  this.curCommandRelative = 'q' === c;
-              }
-              else if ('t' === c || 'T' === c) {
-                  this.curCommandType = SVGPathData.SMOOTH_QUAD_TO;
-                  this.curCommandRelative = 't' === c;
-              }
-              else if ('a' === c || 'A' === c) {
-                  this.curCommandType = SVGPathData.ARC;
-                  this.curCommandRelative = 'a' === c;
-              }
-              else {
-                  throw new SyntaxError(`Unexpected character "${c}" at index ${i}.`);
-              }
-          }
-          return commands;
-      }
-      transform(transform) {
-          const result = Object.create(this, {
-              parse: {
-                  value(chunk, commands = []) {
-                      const parsedCommands = Object.getPrototypeOf(this).parse.call(this, chunk);
-                      for (const c of parsedCommands) {
-                          const cT = transform(c);
-                          if (Array.isArray(cT)) {
-                              commands.push(...cT);
-                          }
-                          else {
-                              commands.push(cT);
-                          }
-                      }
-                      return commands;
-                  },
-              },
-          });
-          return result;
-      }
-  }
-
-  class SVGPathData extends TransformableSVG {
-      commands;
-      constructor(content) {
-          super();
-          if ('string' === typeof content) {
-              this.commands = SVGPathData.parse(content);
-          }
-          else {
-              this.commands = content;
-          }
-      }
-      encode() {
-          return SVGPathData.encode(this.commands);
-      }
-      getBounds() {
-          const boundsTransform = SVGPathDataTransformer.CALCULATE_BOUNDS();
-          this.transform(boundsTransform);
-          return boundsTransform;
-      }
-      transform(transformFunction) {
-          const newCommands = [];
-          for (const command of this.commands) {
-              const transformedCommand = transformFunction(command);
-              if (Array.isArray(transformedCommand)) {
-                  newCommands.push(...transformedCommand);
-              }
-              else {
-                  newCommands.push(transformedCommand);
-              }
-          }
-          this.commands = newCommands;
-          return this;
-      }
-      reverse(preserveSubpathOrder = true) {
-          this.commands = SVGPathDataTransformer.REVERSE_PATH(this.commands, preserveSubpathOrder);
-          return this;
-      }
-      removeCollinear() {
-          this.commands = SVGPathDataTransformer.REMOVE_COLLINEAR(this.commands);
-          return this;
-      }
-      static encode(commands) {
-          return encodeSVGPath(commands);
-      }
-      static parse(path) {
-          const parser = new SVGPathDataParser();
-          const commands = [];
-          parser.parse(path, commands);
-          parser.finish(commands);
-          return commands;
-      }
-      static CLOSE_PATH = 1;
-      static MOVE_TO = 2;
-      static HORIZ_LINE_TO = 4;
-      static VERT_LINE_TO = 8;
-      static LINE_TO = 16;
-      static CURVE_TO = 32;
-      static SMOOTH_CURVE_TO = 64;
-      static QUAD_TO = 128;
-      static SMOOTH_QUAD_TO = 256;
-      static ARC = 512;
-      static LINE_COMMANDS = SVGPathData.LINE_TO | SVGPathData.HORIZ_LINE_TO | SVGPathData.VERT_LINE_TO;
-      static DRAWING_COMMANDS = SVGPathData.HORIZ_LINE_TO |
-          SVGPathData.VERT_LINE_TO |
-          SVGPathData.LINE_TO |
-          SVGPathData.CURVE_TO |
-          SVGPathData.SMOOTH_CURVE_TO |
-          SVGPathData.QUAD_TO |
-          SVGPathData.SMOOTH_QUAD_TO |
-          SVGPathData.ARC;
-  }
-  const COMMAND_ARG_COUNTS = {
-      [SVGPathData.MOVE_TO]: 2,
-      [SVGPathData.LINE_TO]: 2,
-      [SVGPathData.HORIZ_LINE_TO]: 1,
-      [SVGPathData.VERT_LINE_TO]: 1,
-      [SVGPathData.CLOSE_PATH]: 0,
-      [SVGPathData.QUAD_TO]: 4,
-      [SVGPathData.SMOOTH_QUAD_TO]: 2,
-      [SVGPathData.CURVE_TO]: 6,
-      [SVGPathData.SMOOTH_CURVE_TO]: 4,
-      [SVGPathData.ARC]: 7,
-  };
-
-  const _console$6 = createConsole("SvgUtils", {
-    log: true
-  });
-  function decomposeTransform(t) {
-    let tolerance = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1e-6;
-    const tx = t.e;
-    const ty = t.f;
-    const scaleX = Math.sqrt(t.a * t.a + t.b * t.b);
-    const scaleY = Math.sqrt(t.c * t.c + t.d * t.d);
-    let rotation = 0;
-    if (scaleX !== 0) {
-      rotation = Math.atan2(t.b / scaleX, t.a / scaleX);
-    }
-    let skewX = 0;
-    let skewY = 0;
-    if (scaleX !== 0 && scaleY !== 0) {
-      skewX = Math.atan2(t.a * t.c + t.b * t.d, scaleX * scaleX);
-      skewY = 0;
-    }
-    const uniform = Math.abs(scaleX - scaleY) < tolerance;
-    return {
-      translation: {
-        x: tx,
-        y: ty
-      },
-      rotation,
-      scale: {
-        x: scaleX,
-        y: scaleY
-      },
-      skew: {
-        x: skewX,
-        y: skewY
-      },
-      uniform
-    };
-  }
-  const identity = {
-    a: 1,
-    b: 0,
-    c: 0,
-    d: 1,
-    e: 0,
-    f: 0
-  };
-  function multiply(t1, t2) {
-    return {
-      a: t1.a * t2.a + t1.c * t2.b,
-      b: t1.b * t2.a + t1.d * t2.b,
-      c: t1.a * t2.c + t1.c * t2.d,
-      d: t1.b * t2.c + t1.d * t2.d,
-      e: t1.a * t2.e + t1.c * t2.f + t1.e,
-      f: t1.b * t2.e + t1.d * t2.f + t1.f
-    };
-  }
-  function parseTransform(transformStr) {
-    if (!transformStr) return identity;
-    const t = transformStr.match(/(\w+)\(([^)]+)\)/g);
-    if (!t) return identity;
-    let matrix = structuredClone(identity);
-    for (const part of t) {
-      const [, fn, argsStr] = /(\w+)\(([^)]+)\)/.exec(part);
-      const args = argsStr.split(/[\s,]+/).map(Number);
-      let m = structuredClone(identity);
-      switch (fn) {
-        case "translate":
-          _console$6.log("translate", {
-            x: args[0],
-            y: args[1]
-          });
-          m.e = args[0];
-          m.f = args[1] || 0;
-          break;
-        case "scale":
-          _console$6.log("scale", {
-            x: args[0],
-            y: args[1]
-          });
-          m.a = args[0];
-          m.d = args[1] !== undefined ? args[1] : args[0];
-          break;
-        case "rotate":
-          const angle = args[0] * Math.PI / 180;
-          _console$6.log("rotate", {
-            angle
-          });
-          const cos = Math.cos(angle),
-            sin = Math.sin(angle);
-          if (args[1] !== undefined && args[2] !== undefined) {
-            const [cx, cy] = [args[1], args[2]];
-            m = {
-              a: cos,
-              b: sin,
-              c: -sin,
-              d: cos,
-              e: cx - cos * cx + sin * cy,
-              f: cy - sin * cx - cos * cy
-            };
-          } else {
-            m.a = cos;
-            m.b = sin;
-            m.c = -sin;
-            m.d = cos;
-          }
-          break;
-        case "matrix":
-          _console$6.log("matrix", args);
-          [m.a, m.b, m.c, m.d, m.e, m.f] = args;
-          break;
-      }
-      matrix = multiply(matrix, m);
-    }
-    return matrix;
-  }
-  function applyTransform(x, y, t) {
-    const value = {
-      x: t.a * x + t.c * y + t.e,
-      y: t.b * x + t.d * y + t.f
-    };
-    return value;
-  }
-  function parseStyle(styleStr) {
-    const style = {};
-    if (!styleStr) return style;
-    styleStr.split(";").forEach(item => {
-      const [key, value] = item.split(":").map(s => s.trim());
-      if (key && value) style[key] = value;
-    });
-    return style;
-  }
-  const circleBezierConstant = 0.5522847498307936;
-  function svgJsonToCanvasCommands(svgJson) {
-    const commands = [];
-    function traverse(node, parentTransform) {
-      var _parseLength, _parseLength2, _commands$at;
-      _console$6.log("traversing node", node, parentTransform);
-      const transform = parseTransform(node.attributes.transform);
-      const nodeTransform = multiply(parentTransform, transform);
-      const {
-        scale,
-        translation,
-        rotation,
-        uniform
-      } = decomposeTransform(nodeTransform);
-      _console$6.log({
-        scale,
-        translation,
-        rotation,
-        uniform
-      });
-      const style = parseStyle(node.attributes.style);
-      if (style.fill) commands.push({
-        type: "fillStyle",
-        fillStyle: style.fill
-      });
-      if (node.attributes.fill) commands.push({
-        type: "fillStyle",
-        fillStyle: node.attributes.fill
-      });
-      if (style.stroke) commands.push({
-        type: "strokeStyle",
-        strokeStyle: style.stroke
-      });
-      if (node.attributes.stroke) commands.push({
-        type: "strokeStyle",
-        strokeStyle: node.attributes.stroke
-      });
-      let strokeWidth = 0;
-      if (style["stroke-width"]) strokeWidth = (_parseLength = parseLength(style["stroke-width"])) !== null && _parseLength !== void 0 ? _parseLength : 0;
-      if (node.attributes["stroke-width"]) strokeWidth = (_parseLength2 = parseLength(node.attributes["stroke-width"])) !== null && _parseLength2 !== void 0 ? _parseLength2 : strokeWidth;
-      if (strokeWidth) commands.push({
-        type: "lineWidth",
-        lineWidth: strokeWidth * nodeTransform.a
-      });
-      let fillRule = style["fill-rule"];
-      if (node.attributes["fill-rule"]) fillRule = node.attributes["fill-rule"];
-      if (fillRule) commands.push({
-        type: "fillRule",
-        fillRule: fillRule
-      });
-      switch (node.name) {
-        case "path":
-          const d = node.attributes.d;
-          if (!d) break;
-          const pathData = new SVGPathData(d).toAbs().aToC().normalizeHVZ(false).normalizeST().removeCollinear().sanitize();
-          commands.push({
-            type: "pathStart"
-          });
-          for (const cmd of pathData.commands) {
-            switch (cmd.type) {
-              case SVGPathData.MOVE_TO:
-                commands.push({
-                  type: "closePath"
-                });
-                const m = applyTransform(cmd.x, cmd.y, nodeTransform);
-                commands.push({
-                  type: "moveTo",
-                  x: m.x,
-                  y: m.y
-                });
-                break;
-              case SVGPathData.LINE_TO:
-                const l = applyTransform(cmd.x, cmd.y, nodeTransform);
-                commands.push({
-                  type: "lineTo",
-                  x: l.x,
-                  y: l.y
-                });
-                break;
-              case SVGPathData.CURVE_TO:
-                const c1 = applyTransform(cmd.x1, cmd.y1, nodeTransform);
-                const c2 = applyTransform(cmd.x2, cmd.y2, nodeTransform);
-                const ce = applyTransform(cmd.x, cmd.y, nodeTransform);
-                commands.push({
-                  type: "bezierCurveTo",
-                  cp1x: c1.x,
-                  cp1y: c1.y,
-                  cp2x: c2.x,
-                  cp2y: c2.y,
-                  x: ce.x,
-                  y: ce.y
-                });
-                break;
-              case SVGPathData.QUAD_TO:
-                const qcp = applyTransform(cmd.x1, cmd.y1, nodeTransform);
-                const qe = applyTransform(cmd.x, cmd.y, nodeTransform);
-                commands.push({
-                  type: "quadraticCurveTo",
-                  cpx: qcp.x,
-                  cpy: qcp.y,
-                  x: qe.x,
-                  y: qe.y
-                });
-                break;
-              case SVGPathData.CLOSE_PATH:
-                commands.push({
-                  type: "closePath"
-                });
-                break;
-              default:
-                _console$6.warn("uncaught command", cmd);
-                break;
-            }
-          }
-          if (((_commands$at = commands.at(-1)) === null || _commands$at === void 0 ? void 0 : _commands$at.type) != "closePath") {
-            commands.push({
-              type: "closePath"
-            });
-          }
-          commands.push({
-            type: "pathEnd"
-          });
-          break;
-        case "rect":
-          {
-            const x = parseFloat(node.attributes.x || "0");
-            const y = parseFloat(node.attributes.y || "0");
-            const width = parseFloat(node.attributes.width || "0");
-            const height = parseFloat(node.attributes.height || "0");
-            let rx = parseFloat(node.attributes.rx || "0");
-            let ry = parseFloat(node.attributes.ry || "0");
-            if (!node.attributes.ry && rx) ry = rx;
-            rx = Math.min(rx, width / 2);
-            ry = Math.min(ry, height / 2);
-            if (rx === 0 && ry === 0) {
-              if (uniform) {
-                const center = applyTransform(x + width / 2, y + height / 2, nodeTransform);
-                commands.push({
-                  type: "rect",
-                  x: center.x,
-                  y: center.y,
-                  width,
-                  height,
-                  rotation
-                });
-              } else {
-                const tl = applyTransform(x, y, nodeTransform);
-                const tr = applyTransform(x + width, y, nodeTransform);
-                const br = applyTransform(x + width, y + height, nodeTransform);
-                const bl = applyTransform(x, y + height, nodeTransform);
-                commands.push({
-                  type: "moveTo",
-                  x: tl.x,
-                  y: tl.y
-                });
-                commands.push({
-                  type: "lineTo",
-                  x: tr.x,
-                  y: tr.y
-                });
-                commands.push({
-                  type: "lineTo",
-                  x: br.x,
-                  y: br.y
-                });
-                commands.push({
-                  type: "lineTo",
-                  x: bl.x,
-                  y: bl.y
-                });
-                commands.push({
-                  type: "closePath"
-                });
-              }
-            } else {
-              if (rx == ry) ; else {
-                const ox = rx * circleBezierConstant;
-                const oy = ry * circleBezierConstant;
-                const p1 = {
-                  x: x + rx,
-                  y: y
-                };
-                const p2 = {
-                  x: x + width - rx,
-                  y: y
-                };
-                const p3 = {
-                  x: x + width,
-                  y: y + ry
-                };
-                const p4 = {
-                  x: x + width,
-                  y: y + height - ry
-                };
-                const p5 = {
-                  x: x + width - rx,
-                  y: y + height
-                };
-                const p6 = {
-                  x: x + rx,
-                  y: y + height
-                };
-                const p7 = {
-                  x: x,
-                  y: y + height - ry
-                };
-                const p8 = {
-                  x: x,
-                  y: y + ry
-                };
-                const start = applyTransform(p1.x, p1.y, nodeTransform);
-                commands.push({
-                  type: "moveTo",
-                  x: start.x,
-                  y: start.y
-                });
-                let cp1 = applyTransform(p2.x + ox, p2.y, nodeTransform);
-                let cp2 = applyTransform(p3.x, p3.y - oy, nodeTransform);
-                let end = applyTransform(p3.x, p3.y, nodeTransform);
-                commands.push({
-                  type: "lineTo",
-                  x: applyTransform(p2.x, p2.y, nodeTransform).x,
-                  y: applyTransform(p2.x, p2.y, nodeTransform).y
-                });
-                commands.push({
-                  type: "bezierCurveTo",
-                  cp1x: cp1.x,
-                  cp1y: cp1.y,
-                  cp2x: cp2.x,
-                  cp2y: cp2.y,
-                  x: end.x,
-                  y: end.y
-                });
-                cp1 = applyTransform(p4.x, p4.y + oy, nodeTransform);
-                cp2 = applyTransform(p5.x + ox, p5.y, nodeTransform);
-                end = applyTransform(p5.x, p5.y, nodeTransform);
-                commands.push({
-                  type: "lineTo",
-                  x: applyTransform(p4.x, p4.y, nodeTransform).x,
-                  y: applyTransform(p4.x, p4.y, nodeTransform).y
-                });
-                commands.push({
-                  type: "bezierCurveTo",
-                  cp1x: cp1.x,
-                  cp1y: cp1.y,
-                  cp2x: cp2.x,
-                  cp2y: cp2.y,
-                  x: end.x,
-                  y: end.y
-                });
-                cp1 = applyTransform(p6.x - ox, p6.y, nodeTransform);
-                cp2 = applyTransform(p7.x, p7.y + oy, nodeTransform);
-                end = applyTransform(p7.x, p7.y, nodeTransform);
-                commands.push({
-                  type: "lineTo",
-                  x: applyTransform(p6.x, p6.y, nodeTransform).x,
-                  y: applyTransform(p6.x, p6.y, nodeTransform).y
-                });
-                commands.push({
-                  type: "bezierCurveTo",
-                  cp1x: cp1.x,
-                  cp1y: cp1.y,
-                  cp2x: cp2.x,
-                  cp2y: cp2.y,
-                  x: end.x,
-                  y: end.y
-                });
-                cp1 = applyTransform(p8.x, p8.y - oy, nodeTransform);
-                cp2 = applyTransform(p1.x - ox, p1.y, nodeTransform);
-                end = applyTransform(p1.x, p1.y, nodeTransform);
-                commands.push({
-                  type: "lineTo",
-                  x: applyTransform(p8.x, p8.y, nodeTransform).x,
-                  y: applyTransform(p8.x, p8.y, nodeTransform).y
-                });
-                commands.push({
-                  type: "bezierCurveTo",
-                  cp1x: cp1.x,
-                  cp1y: cp1.y,
-                  cp2x: cp2.x,
-                  cp2y: cp2.y,
-                  x: end.x,
-                  y: end.y
-                });
-                commands.push({
-                  type: "closePath"
-                });
-              }
-            }
-            break;
-          }
-        case "circle":
-          {
-            const cx = parseFloat(node.attributes.cx || "0");
-            const cy = parseFloat(node.attributes.cy || "0");
-            const r = parseFloat(node.attributes.r || "0");
-            if (r === 0) break;
-            if (uniform) ; else {
-              const ox = r * circleBezierConstant;
-              const pTop = applyTransform(cx, cy - r, nodeTransform);
-              const pRight = applyTransform(cx + r, cy, nodeTransform);
-              const pBottom = applyTransform(cx, cy + r, nodeTransform);
-              const pLeft = applyTransform(cx - r, cy, nodeTransform);
-              const cpTopRight = applyTransform(cx + ox, cy - r, nodeTransform);
-              const cpRightTop = applyTransform(cx + r, cy - ox, nodeTransform);
-              const cpRightBottom = applyTransform(cx + r, cy + ox, nodeTransform);
-              const cpBottomRight = applyTransform(cx + ox, cy + r, nodeTransform);
-              const cpBottomLeft = applyTransform(cx - ox, cy + r, nodeTransform);
-              const cpLeftBottom = applyTransform(cx - r, cy + ox, nodeTransform);
-              const cpLeftTop = applyTransform(cx - r, cy - ox, nodeTransform);
-              const cpTopLeft = applyTransform(cx - ox, cy - r, nodeTransform);
-              commands.push({
-                type: "moveTo",
-                x: pTop.x,
-                y: pTop.y
-              });
-              commands.push({
-                type: "bezierCurveTo",
-                cp1x: cpTopRight.x,
-                cp1y: cpTopRight.y,
-                cp2x: cpRightTop.x,
-                cp2y: cpRightTop.y,
-                x: pRight.x,
-                y: pRight.y
-              });
-              commands.push({
-                type: "bezierCurveTo",
-                cp1x: cpRightBottom.x,
-                cp1y: cpRightBottom.y,
-                cp2x: cpBottomRight.x,
-                cp2y: cpBottomRight.y,
-                x: pBottom.x,
-                y: pBottom.y
-              });
-              commands.push({
-                type: "bezierCurveTo",
-                cp1x: cpBottomLeft.x,
-                cp1y: cpBottomLeft.y,
-                cp2x: cpLeftBottom.x,
-                cp2y: cpLeftBottom.y,
-                x: pLeft.x,
-                y: pLeft.y
-              });
-              commands.push({
-                type: "bezierCurveTo",
-                cp1x: cpLeftTop.x,
-                cp1y: cpLeftTop.y,
-                cp2x: cpTopLeft.x,
-                cp2y: cpTopLeft.y,
-                x: pTop.x,
-                y: pTop.y
-              });
-              commands.push({
-                type: "closePath"
-              });
-            }
-            break;
-          }
-        case "ellipse":
-          {
-            const cx = parseFloat(node.attributes.cx || "0");
-            const cy = parseFloat(node.attributes.cy || "0");
-            const rx = parseFloat(node.attributes.rx || "0");
-            const ry = parseFloat(node.attributes.ry || "0");
-            if (rx === 0 || ry === 0) break;
-            if (uniform) ; else {
-              const ox = rx * circleBezierConstant;
-              const oy = ry * circleBezierConstant;
-              const pTop = applyTransform(cx, cy - ry, nodeTransform);
-              const pRight = applyTransform(cx + rx, cy, nodeTransform);
-              const pBottom = applyTransform(cx, cy + ry, nodeTransform);
-              const pLeft = applyTransform(cx - rx, cy, nodeTransform);
-              const cpTopRight = applyTransform(cx + ox, cy - ry, nodeTransform);
-              const cpRightTop = applyTransform(cx + rx, cy - oy, nodeTransform);
-              const cpRightBottom = applyTransform(cx + rx, cy + oy, nodeTransform);
-              const cpBottomRight = applyTransform(cx + ox, cy + ry, nodeTransform);
-              const cpBottomLeft = applyTransform(cx - ox, cy + ry, nodeTransform);
-              const cpLeftBottom = applyTransform(cx - rx, cy + oy, nodeTransform);
-              const cpLeftTop = applyTransform(cx - rx, cy - oy, nodeTransform);
-              const cpTopLeft = applyTransform(cx - ox, cy - ry, nodeTransform);
-              commands.push({
-                type: "moveTo",
-                x: pTop.x,
-                y: pTop.y
-              });
-              commands.push({
-                type: "bezierCurveTo",
-                cp1x: cpTopRight.x,
-                cp1y: cpTopRight.y,
-                cp2x: cpRightTop.x,
-                cp2y: cpRightTop.y,
-                x: pRight.x,
-                y: pRight.y
-              });
-              commands.push({
-                type: "bezierCurveTo",
-                cp1x: cpRightBottom.x,
-                cp1y: cpRightBottom.y,
-                cp2x: cpBottomRight.x,
-                cp2y: cpBottomRight.y,
-                x: pBottom.x,
-                y: pBottom.y
-              });
-              commands.push({
-                type: "bezierCurveTo",
-                cp1x: cpBottomLeft.x,
-                cp1y: cpBottomLeft.y,
-                cp2x: cpLeftBottom.x,
-                cp2y: cpLeftBottom.y,
-                x: pLeft.x,
-                y: pLeft.y
-              });
-              commands.push({
-                type: "bezierCurveTo",
-                cp1x: cpLeftTop.x,
-                cp1y: cpLeftTop.y,
-                cp2x: cpTopLeft.x,
-                cp2y: cpTopLeft.y,
-                x: pTop.x,
-                y: pTop.y
-              });
-              commands.push({
-                type: "closePath"
-              });
-            }
-            break;
-          }
-        case "polyline":
-        case "polygon":
-          {
-            const pointsStr = node.attributes.points || "";
-            const points = pointsStr.trim().split(/[\s,]+/).map(Number).reduce((acc, val, idx) => {
-              if (idx % 2 === 0) acc.push({
-                x: val,
-                y: 0
-              });else acc[acc.length - 1].y = val;
-              return acc;
-            }, []).map(p => ({
-              x: p.x,
-              y: p.y
-            }));
-            if (points.length === 0) break;
-            const start = applyTransform(points[0].x, points[0].y, nodeTransform);
-            commands.push({
-              type: "moveTo",
-              x: start.x,
-              y: start.y
-            });
-            for (let i = 1; i < points.length; i++) {
-              const p = applyTransform(points[i].x, points[i].y, nodeTransform);
-              commands.push({
-                type: "lineTo",
-                x: p.x,
-                y: p.y
-              });
-            }
-            commands.push({
-              type: "closePath"
-            });
-            break;
-          }
-        case "line":
-          {
-            const x1 = parseFloat(node.attributes.x1 || "0");
-            const y1 = parseFloat(node.attributes.y1 || "0");
-            const x2 = parseFloat(node.attributes.x2 || "0");
-            const y2 = parseFloat(node.attributes.y2 || "0");
-            const p1 = applyTransform(x1, y1, nodeTransform);
-            const p2 = applyTransform(x2, y2, nodeTransform);
-            commands.push({
-              type: "line",
-              x1: p1.x,
-              y1: p1.y,
-              x2: p2.x,
-              y2: p2.y
-            });
-            break;
-          }
-        case "svg":
-          break;
-        default:
-          _console$6.log("uncaught node", node);
-          break;
-      }
-      if (node.children) {
-        for (const child of node.children) traverse(child, nodeTransform);
-      }
-    }
-    traverse(svgJson, getSvgTransformToPixels(svgJson));
-    return commands;
-  }
-  function parseLength(str, relativeTo) {
-    if (!str) return undefined;
-    const match = /^([0-9.]+)([a-z%]*)$/.exec(str.trim());
-    if (!match) return undefined;
-    const value = parseFloat(match[1]);
-    const unit = match[2] || "px";
-    switch (unit) {
-      case "px":
-        return value;
-      case "pt":
-        return value * (96 / 72);
-      case "in":
-        return value * 96;
-      case "cm":
-        return value * (96 / 2.54);
-      case "mm":
-        return value * (96 / 25.4);
-      case "%":
-        return undefined;
-      case "":
-        return value;
-      default:
-        return value;
-    }
-  }
-  function getSvgJsonSize(svgJson) {
-    var _width2, _height2;
-    const attrs = svgJson.attributes || {};
-    let width = parseLength(attrs.width);
-    let height = parseLength(attrs.height);
-    if ((width == null || height == null) && attrs.viewBox) {
-      var _width, _height;
-      const [,, vbWidth, vbHeight] = attrs.viewBox.split(/[\s,]+/).map(parseFloat);
-      (_width = width) !== null && _width !== void 0 ? _width : width = vbWidth;
-      (_height = height) !== null && _height !== void 0 ? _height : height = vbHeight;
-    }
-    const size = {
-      width: (_width2 = width) !== null && _width2 !== void 0 ? _width2 : 300,
-      height: (_height2 = height) !== null && _height2 !== void 0 ? _height2 : 150
-    };
-    return size;
-  }
-  function getSvgJsonViewBox(svgJson) {
-    const attrs = svgJson.attributes || {};
-    let x = 0,
-      y = 0,
-      width,
-      height;
-    if (attrs.viewBox) {
-      [x, y, width, height] = attrs.viewBox.split(/[\s,]+/).map(parseFloat);
-    }
-    if (width == null || height == null) {
-      var _width3, _height3;
-      const size = getSvgJsonSize(svgJson);
-      (_width3 = width) !== null && _width3 !== void 0 ? _width3 : width = size.width;
-      (_height3 = height) !== null && _height3 !== void 0 ? _height3 : height = size.height;
-    }
-    const viewBox = {
-      x,
-      y,
-      width: width,
-      height: height
-    };
-    _console$6.log("viewBox", viewBox);
-    return viewBox;
-  }
-  function getSvgJsonBoundingBox(svgJson) {
-    const {
-      width,
-      height
-    } = getSvgJsonSize(svgJson);
-    const viewBox = getSvgJsonViewBox(svgJson);
-    if (width !== undefined && height !== undefined) {
-      return {
-        x: 0,
-        y: 0,
-        width,
-        height
-      };
-    } else if (viewBox.width !== undefined && viewBox.height !== undefined) {
-      return viewBox;
-    } else {
-      return {
-        x: 0,
-        y: 0,
-        width: 300,
-        height: 150
-      };
-    }
-  }
-  function getSvgTransformToPixels(svgJson) {
-    var _attrs$preserveAspect;
-    const attrs = svgJson.attributes || {};
-    const {
-      width,
-      height
-    } = getSvgJsonSize(svgJson);
-    const viewBox = getSvgJsonViewBox(svgJson);
-    _console$6.log({
-      width,
-      height,
-      viewBox
-    });
-    let scaleX = width / viewBox.width;
-    let scaleY = height / viewBox.height;
-    let offsetX = 0;
-    let offsetY = 0;
-    if ((_attrs$preserveAspect = attrs.preserveAspectRatio) !== null && _attrs$preserveAspect !== void 0 && _attrs$preserveAspect.includes("meet")) {
-      const s = Math.min(scaleX, scaleY);
-      offsetX = (width - viewBox.width * s) / 2;
-      offsetY = (height - viewBox.height * s) / 2;
-      scaleX = scaleY = s;
-    }
-    return {
-      a: scaleX,
-      b: 0,
-      c: 0,
-      d: scaleY,
-      e: -viewBox.x * scaleX + offsetX,
-      f: -viewBox.y * scaleY + offsetY
-    };
-  }
-  const defaultParseSvgOptions = {
-    fit: false
-  };
-  function transformCanvasCommands(canvasCommands, xCallback, yCallback, type) {
-    return canvasCommands.map(command => {
-      switch (command.type) {
-        case "moveTo":
-        case "lineTo":
-          {
-            let {
-              x,
-              y
-            } = command;
-            x = xCallback(x);
-            y = yCallback(y);
-            return {
-              type: command.type,
-              x,
-              y
-            };
-          }
-        case "quadraticCurveTo":
-          {
-            let {
-              x,
-              y,
-              cpx,
-              cpy
-            } = command;
-            x = xCallback(x);
-            y = yCallback(y);
-            cpx = xCallback(cpx);
-            cpy = yCallback(cpy);
-            return {
-              type: command.type,
-              x,
-              y,
-              cpx,
-              cpy
-            };
-          }
-        case "bezierCurveTo":
-          {
-            let {
-              x,
-              y,
-              cp1x,
-              cp1y,
-              cp2x,
-              cp2y
-            } = command;
-            x = xCallback(x);
-            y = yCallback(y);
-            cp1x = xCallback(cp1x);
-            cp1y = yCallback(cp1y);
-            cp2x = xCallback(cp2x);
-            cp2y = yCallback(cp2y);
-            return {
-              type: command.type,
-              x,
-              y,
-              cp1x,
-              cp1y,
-              cp2x,
-              cp2y
-            };
-          }
-        case "lineWidth":
-          {
-            if (type == "scale") {
-              let {
-                lineWidth
-              } = command;
-              lineWidth = xCallback(lineWidth);
-              return {
-                type: command.type,
-                lineWidth
-              };
-            }
-          }
-        default:
-          return command;
-      }
-    });
-  }
-  function forEachCanvasCommandVector2(canvasCommands, vectorCallback) {
-    canvasCommands.forEach(command => {
-      switch (command.type) {
-        case "moveTo":
-        case "lineTo":
-          {
-            let {
-              x,
-              y
-            } = command;
-            vectorCallback(x, y);
-          }
-          break;
-        case "quadraticCurveTo":
-          {
-            let {
-              x,
-              y,
-              cpx,
-              cpy
-            } = command;
-            vectorCallback(x, y);
-            vectorCallback(cpx, cpy);
-          }
-          break;
-        case "bezierCurveTo":
-          {
-            let {
-              x,
-              y,
-              cp1x,
-              cp1y,
-              cp2x,
-              cp2y
-            } = command;
-            vectorCallback(x, y);
-            vectorCallback(cp1x, cp1y);
-            vectorCallback(cp2x, cp2y);
-          }
-      }
-    });
-  }
-  function offsetCanvasCommands(canvasCommands) {
-    let offsetX = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-    let offsetY = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-    return transformCanvasCommands(canvasCommands, x => x + offsetX, y => y + offsetY, "offset");
-  }
-  function scaleCanvasCommands(canvasCommands) {
-    let scaleX = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
-    let scaleY = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
-    return transformCanvasCommands(canvasCommands, x => x * scaleX, y => y * scaleY, "scale");
-  }
-  function classifySubpath(subpath, previous, fillRule) {
-    const centroid = subpath.reduce((acc, p) => ({
-      x: acc.x + p.x,
-      y: acc.y + p.y
-    }), {
-      x: 0,
-      y: 0
-    });
-    centroid.x /= subpath.length;
-    centroid.y /= subpath.length;
-    if (fillRule === "evenodd") {
-      let crossings = 0;
-      for (const other of previous) {
-        if (pointInPolygon(centroid, other.path)) crossings++;
-      }
-      const filled = crossings % 2 === 0;
-      return !filled;
-    } else {
-      let winding = 0;
-      for (const other of previous) {
-        if (pointInPolygon(centroid, other.path)) {
-          winding += contourArea(other.path) > 0 ? 1 : -1;
-        }
-      }
-      const filled = winding === 0;
-      return !filled;
-    }
-  }
-  function svgToDisplayContextCommands(svgString, options) {
-    options = _objectSpread2(_objectSpread2({}, defaultParseSvgOptions), options);
-    if (options.numberOfColors == undefined) {
-      var _options$colors$lengt, _options$colors;
-      options.numberOfColors = (_options$colors$lengt = (_options$colors = options.colors) === null || _options$colors === void 0 ? void 0 : _options$colors.length) !== null && _options$colors$lengt !== void 0 ? _options$colors$lengt : 1;
-    }
-    _console$6.assertWithError(options.numberOfColors > 0, "invalid numberOfColors ".concat(options.numberOfColors));
-    const svgJson = svgsonSync(svgString);
-    let canvasCommands = svgJsonToCanvasCommands(svgJson);
-    _console$6.log("canvasCommands", canvasCommands);
-    const boundingBox = getSvgJsonBoundingBox(svgJson);
-    let width = boundingBox.width;
-    let height = boundingBox.height;
-    if (options.fit) {
-      const rangeHelper = {
-        x: new RangeHelper(),
-        y: new RangeHelper()
-      };
-      forEachCanvasCommandVector2(canvasCommands, (x, y) => {
-        rangeHelper.x.update(x);
-        rangeHelper.y.update(y);
-      });
-      width = rangeHelper.x.span;
-      height = rangeHelper.y.span;
-      const offsetX = -rangeHelper.x.min;
-      const offsetY = -rangeHelper.y.min;
-      canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
-    }
-    let scaleX = 1,
-      scaleY = 1;
-    if (options.width && options.height) {
-      scaleX = options.width / width;
-      scaleY = options.height / height;
-    } else if (options.width) {
-      scaleX = scaleY = options.width / width;
-      if (options.aspectRatio) scaleY = scaleX / options.aspectRatio;
-    } else if (options.height) {
-      scaleX = scaleY = options.height / height;
-      if (options.aspectRatio) scaleX = scaleY * options.aspectRatio;
-    }
-    if (scaleX !== 1 || scaleY !== 1) {
-      canvasCommands = scaleCanvasCommands(canvasCommands, scaleX, scaleY);
-    }
-    if (options.offsetX || options.offsetY) {
-      const offsetX = options.offsetX || 0;
-      const offsetY = options.offsetY || 0;
-      canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
-    }
-    let colors = [];
-    canvasCommands.forEach(canvasCommand => {
-      let color;
-      switch (canvasCommand.type) {
-        case "fillStyle":
-          color = canvasCommand.fillStyle;
-          break;
-        case "strokeStyle":
-          color = canvasCommand.strokeStyle;
-          break;
-      }
-      if (color && color != "none" && !colors.includes(color)) {
-        colors.push(color);
-      }
-    });
-    _console$6.log("colors", colors);
-    const colorToIndex = {};
-    if (options.colors) {
-      const mapping = mapToClosestPaletteIndex(colors, options.colors.slice(0, options.numberOfColors));
-      _console$6.log("mapping", mapping);
-      colors.forEach(color => {
-        colorToIndex[color] = mapping[color] + 1;
-      });
-    } else {
-      const {
-        palette,
-        mapping
-      } = kMeansColors(colors, options.numberOfColors);
-      _console$6.log("mapping", mapping);
-      _console$6.log("palette", palette);
-      colors.forEach(color => {
-        colorToIndex[color] = mapping[color] + 1;
-      });
-      colors = palette;
-    }
-    _console$6.log("colorToIndex", colorToIndex);
-    let curves = [];
-    let startPoint = {
-      x: 0,
-      y: 0
-    };
-    let fillRule = "nonzero";
-    let fillStyle;
-    let strokeStyle = "none";
-    let lineWidth = 1;
-    let segmentRadius = 1;
-    let wasHole = false;
-    let ignoreFill = false;
-    let ignoreLine = true;
-    let fillColorIndex = 1;
-    let lineColorIndex = 1;
-    let isDrawingPath = false;
-    const parsedPaths = [];
-    let displayCommands = [];
-    displayCommands.push({
-      type: "setIgnoreLine",
-      ignoreLine: true
-    });
-    displayCommands.push({
-      type: "setLineWidth",
-      lineWidth
-    });
-    displayCommands.push({
-      type: "setSegmentRadius",
-      segmentRadius
-    });
-    canvasCommands.forEach(canvasCommand => {
-      switch (canvasCommand.type) {
-        case "moveTo":
-          {
-            const {
-              x,
-              y
-            } = canvasCommand;
-            startPoint.x = x;
-            startPoint.y = y;
-          }
-          break;
-        case "lineTo":
-          {
-            const {
-              x,
-              y
-            } = canvasCommand;
-            const controlPoints = [{
-              x,
-              y
-            }];
-            if (curves.length === 0) {
-              controlPoints.unshift(_objectSpread2({}, startPoint));
-            }
-            curves.push({
-              type: "segment",
-              controlPoints
-            });
-          }
-          break;
-        case "quadraticCurveTo":
-          {
-            const {
-              x,
-              y,
-              cpx,
-              cpy
-            } = canvasCommand;
-            const controlPoints = [{
-              x: cpx,
-              y: cpy
-            }, {
-              x,
-              y
-            }];
-            if (curves.length === 0) {
-              controlPoints.unshift(_objectSpread2({}, startPoint));
-            }
-            curves.push({
-              type: "quadratic",
-              controlPoints
-            });
-          }
-          break;
-        case "bezierCurveTo":
-          {
-            const {
-              x,
-              y,
-              cp1x,
-              cp1y,
-              cp2x,
-              cp2y
-            } = canvasCommand;
-            const controlPoints = [{
-              x: cp1x,
-              y: cp1y
-            }, {
-              x: cp2x,
-              y: cp2y
-            }, {
-              x,
-              y
-            }];
-            if (curves.length === 0) {
-              controlPoints.unshift(_objectSpread2({}, startPoint));
-            }
-            curves.push({
-              type: "cubic",
-              controlPoints
-            });
-          }
-          break;
-        case "closePath":
-          if (curves.length === 0) break;
-          curves = simplifyCurves(curves);
-          const controlPoints = curves.flatMap(c => c.controlPoints);
-          if (isDrawingPath) {
-            const isHole = classifySubpath(controlPoints, parsedPaths, fillRule);
-            parsedPaths.push({
-              path: controlPoints,
-              isHole
-            });
-            if (isHole != wasHole) {
-              wasHole = isHole;
-              if (isHole) {
-                displayCommands.push({
-                  type: "selectFillColor",
-                  fillColorIndex: 0
-                });
-              } else {
-                displayCommands.push({
-                  type: "selectFillColor",
-                  fillColorIndex
-                });
-              }
-            }
-          }
-          if (ignoreFill) {
-            displayCommands.push({
-              type: "setLineWidth",
-              lineWidth: 0
-            });
-            displayCommands.push({
-              type: "selectFillColor",
-              fillColorIndex: lineColorIndex
-            });
-            displayCommands.push({
-              type: "setIgnoreFill",
-              ignoreFill: false
-            });
-          }
-          const isSegments = curves.every(c => c.type === "segment");
-          if (isSegments) {
-            if (ignoreFill) {
-              displayCommands.push({
-                type: "drawSegments",
-                points: controlPoints
-              });
-            } else {
-              displayCommands.push({
-                type: "drawPolygon",
-                points: controlPoints
-              });
-            }
-          } else {
-            if (ignoreFill) {
-              displayCommands.push({
-                type: "drawPath",
-                curves
-              });
-            } else {
-              displayCommands.push({
-                type: "drawClosedPath",
-                curves
-              });
-            }
-          }
-          if (ignoreFill) {
-            displayCommands.push({
-              type: "setLineWidth",
-              lineWidth
-            });
-            displayCommands.push({
-              type: "selectFillColor",
-              fillColorIndex
-            });
-            displayCommands.push({
-              type: "setIgnoreFill",
-              ignoreFill
-            });
-          }
-          curves = [];
-          break;
-        case "pathStart":
-          parsedPaths.length = 0;
-          if (wasHole) {
-            displayCommands.push({
-              type: "selectFillColor",
-              fillColorIndex
-            });
-          }
-          wasHole = false;
-          isDrawingPath = true;
-          break;
-        case "pathEnd":
-          isDrawingPath = false;
-          break;
-        case "line":
-          if (strokeStyle != "none") {
-            displayCommands.push({
-              type: "setLineWidth",
-              lineWidth: 0
-            });
-            displayCommands.push({
-              type: "selectFillColor",
-              fillColorIndex: lineColorIndex
-            });
-            displayCommands.push({
-              type: "setIgnoreFill",
-              ignoreFill: false
-            });
-            const {
-              x1,
-              y1,
-              x2,
-              y2
-            } = canvasCommand;
-            displayCommands.push({
-              type: "drawSegment",
-              startX: x1,
-              startY: y1,
-              endX: x2,
-              endY: y2
-            });
-            displayCommands.push({
-              type: "setLineWidth",
-              lineWidth
-            });
-            displayCommands.push({
-              type: "selectFillColor",
-              fillColorIndex
-            });
-            displayCommands.push({
-              type: "setIgnoreFill",
-              ignoreFill
-            });
-          }
-          break;
-        case "fillStyle":
-          _console$6.log("fillStyle", canvasCommand.fillStyle);
-          if (fillStyle != canvasCommand.fillStyle) {
-            const newIgnoreFill = canvasCommand.fillStyle == "none";
-            if (ignoreFill != newIgnoreFill) {
-              ignoreFill = newIgnoreFill;
-              _console$6.log({
-                ignoreFill
-              });
-              displayCommands.push({
-                type: "setIgnoreFill",
-                ignoreFill
-              });
-            }
-            if (!ignoreFill) {
-              if (fillStyle != canvasCommand.fillStyle) {
-                fillStyle = canvasCommand.fillStyle;
-                if (fillColorIndex != colorToIndex[fillStyle]) {
-                  _console$6.log({
-                    fillColorIndex
-                  });
-                  fillColorIndex = colorToIndex[fillStyle];
-                  displayCommands.push({
-                    type: "selectFillColor",
-                    fillColorIndex
-                  });
-                }
-              }
-            }
-          }
-          break;
-        case "strokeStyle":
-          _console$6.log("strokeStyle", canvasCommand.strokeStyle);
-          if (strokeStyle != canvasCommand.strokeStyle) {
-            const newIgnoreLine = canvasCommand.strokeStyle == "none";
-            if (ignoreLine != newIgnoreLine) {
-              ignoreLine = newIgnoreLine;
-              _console$6.log({
-                ignoreLine
-              });
-              displayCommands.push({
-                type: "setIgnoreLine",
-                ignoreLine
-              });
-            }
-            if (!ignoreLine) {
-              if (strokeStyle != canvasCommand.strokeStyle) {
-                strokeStyle = canvasCommand.strokeStyle;
-                if (lineColorIndex != colorToIndex[strokeStyle]) {
-                  _console$6.log({
-                    lineColorIndex
-                  });
-                  lineColorIndex = colorToIndex[strokeStyle];
-                  displayCommands.push({
-                    type: "selectLineColor",
-                    lineColorIndex
-                  });
-                }
-              }
-            }
-          }
-          break;
-        case "lineWidth":
-          if (lineWidth != canvasCommand.lineWidth) {
-            lineWidth = canvasCommand.lineWidth;
-            displayCommands.push({
-              type: "setLineWidth",
-              lineWidth
-            });
-            segmentRadius = lineWidth / 2;
-            displayCommands.push({
-              type: "setSegmentRadius",
-              segmentRadius
-            });
-          }
-          break;
-        case "fillRule":
-          fillRule = canvasCommand.fillRule;
-          break;
-      }
-    });
-    displayCommands = trimContextCommands(displayCommands);
-    _console$6.log("displayCommands", displayCommands);
-    _console$6.log("colors", colors);
-    return {
-      commands: displayCommands,
-      colors
-    };
-  }
 
   const _console$5 = createConsole("DevicePairPressureSensorDataManager", {
     log: false
@@ -26987,9 +23372,9 @@
   var _timestamps = new WeakMap();
   class DevicePairSensorDataManager {
     constructor() {
-      _defineProperty$1(this, "eventDispatcher", void 0);
+      _defineProperty(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _timestamps, {});
-      _defineProperty$1(this, "pressureSensorDataManager", new DevicePairPressureSensorDataManager());
+      _defineProperty(this, "pressureSensorDataManager", new DevicePairPressureSensorDataManager());
     }
     get dispatchEvent() {
       return this.eventDispatcher.dispatchEvent;
@@ -27348,15 +23733,15 @@
     constructor() {
       super(...arguments);
       _classPrivateMethodInitSpec(this, _ClientConnectionManager_brand);
-      _defineProperty$1(this, "subType", void 0);
-      _defineProperty$1(this, "client", void 0);
-      _defineProperty$1(this, "discoveredDevice", void 0);
+      _defineProperty(this, "subType", void 0);
+      _defineProperty(this, "client", void 0);
+      _defineProperty(this, "discoveredDevice", void 0);
       _classPrivateFieldInitSpec(this, _bluetoothId, void 0);
       _classPrivateFieldInitSpec(this, _isConnected, false);
-      _defineProperty$1(this, "sendClientMessage", void 0);
-      _defineProperty$1(this, "sendClientConnectMessage", void 0);
-      _defineProperty$1(this, "sendClientDisconnectMessage", void 0);
-      _defineProperty$1(this, "sendRequiredDeviceInformationMessage", void 0);
+      _defineProperty(this, "sendClientMessage", void 0);
+      _defineProperty(this, "sendClientConnectMessage", void 0);
+      _defineProperty(this, "sendClientDisconnectMessage", void 0);
+      _defineProperty(this, "sendRequiredDeviceInformationMessage", void 0);
     }
     static get isSupported() {
       return isInBrowser;
@@ -27481,7 +23866,7 @@
       _classPrivateMethodInitSpec(this, _BaseClient_brand);
       _classPrivateFieldInitSpec(this, _devices, {});
       _classPrivateFieldInitSpec(this, _eventDispatcher, new EventDispatcher(this, ClientEventTypes));
-      _defineProperty$1(this, "_reconnectOnDisconnection", this.baseConstructor.ReconnectOnDisconnection);
+      _defineProperty(this, "_reconnectOnDisconnection", this.baseConstructor.ReconnectOnDisconnection);
       _classPrivateFieldInitSpec(this, _connectionStatus, "notConnected");
       _classPrivateFieldInitSpec(this, _receivedMessageTypes, []);
       _classPrivateFieldInitSpec(this, _isScanningAvailable, false);
@@ -27875,7 +24260,7 @@
     }
     return device;
   }
-  _defineProperty$1(BaseClient, "_reconnectOnDisconnection", true);
+  _defineProperty(BaseClient, "_reconnectOnDisconnection", true);
   var _RequiredMessageTypes = {
     _: ["isScanningAvailable", "discoveredDevices", "connectedDevices"]
   };
@@ -28106,7 +24491,6 @@
   exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
   exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
   exports.stringToSprites = stringToSprites;
-  exports.svgToDisplayContextCommands = svgToDisplayContextCommands;
   exports.wait = wait;
 
 }));

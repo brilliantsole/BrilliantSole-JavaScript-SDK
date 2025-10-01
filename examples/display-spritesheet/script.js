@@ -4136,18 +4136,36 @@ spriteImage.addEventListener("load", async () => {
   if (!selectedPalette) {
     return;
   }
+  console.log(spriteImage.src);
   const { name, width, height } = selectedSprite;
-  await BS.imageToSprite(
-    spriteImage,
-    name,
-    width,
-    height,
-    selectedPalette.numberOfColors,
-    selectedPalette.name,
-    spriteImageOverridePalette,
-    spriteSheet,
-    0
-  );
+  const isSvg = spriteImage.src.startsWith("data:image/svg+xml;");
+  if (isSvg) {
+    const svgString = BS.getSvgStringFromDataUrl(spriteImage.src);
+    const sprite = BS.svgToSprite(
+      svgString,
+      name,
+      selectedPalette.numberOfColors,
+      selectedPalette.name,
+      spriteImageOverridePalette,
+      spriteSheet,
+      0,
+      {
+        height,
+      }
+    );
+  } else {
+    await BS.imageToSprite(
+      spriteImage,
+      name,
+      width,
+      height,
+      selectedPalette.numberOfColors,
+      selectedPalette.name,
+      spriteImageOverridePalette,
+      spriteSheet,
+      0
+    );
+  }
   setSpriteIndex(selectedSpriteIndex);
   setPaletteIndex(selectedPaletteIndex);
 });

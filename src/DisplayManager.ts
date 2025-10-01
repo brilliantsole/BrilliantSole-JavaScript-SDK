@@ -103,7 +103,7 @@ import {
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { wait } from "./utils/Timer.ts";
 
-const _console = createConsole("DisplayManager", { log: true });
+const _console = createConsole("DisplayManager", { log: false });
 
 export const DefaultNumberOfDisplayColors = 16;
 

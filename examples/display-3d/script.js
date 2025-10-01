@@ -952,7 +952,7 @@ BS.DisplayPixelDepths.forEach((pixelDepth) => {
 pixelDepthSelect.value = pixelDepth;
 
 // DRAW
-let defaultMaxFileLength = 10 * 1024; // 10kb
+let defaultMaxFileLength = 14 * 1024; // 14kb
 let isDrawing = false;
 /** @type {BS.DisplaySpriteSheet} */
 let spriteSheet;

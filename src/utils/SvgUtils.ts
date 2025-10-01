@@ -7,7 +7,11 @@ import { INode, parseSync } from "svgson";
 import { SVGPathData } from "svg-pathdata";
 import { DisplayBezierCurve, DisplaySize } from "../DisplayManager.ts";
 import { pointInPolygon, Vector2 } from "./MathUtils.ts";
-import { contourArea } from "./DisplaySpriteSheetUtils.ts";
+import {
+  contourArea,
+  DisplaySprite,
+  DisplaySpriteSheet,
+} from "./DisplaySpriteSheetUtils.ts";
 import { simplifyCurves } from "./PathUtils.ts";
 import { DisplayBoundingBox } from "./DisplayCanvasHelper.ts";
 import RangeHelper from "./RangeHelper.ts";
@@ -76,7 +80,7 @@ interface DecomposedTransform {
   rotation: number; // in radians
   scale: { x: number; y: number };
   skew: { x: number; y: number }; // skewX/Y in radians
-  uniform: boolean; // true if scaleX ≈ scaleY
+  isScaleUniform: boolean; // true if scaleX ≈ scaleY
 }
 
 /** Fully decompose a 2D affine transform */
@@ -107,14 +111,14 @@ function decomposeTransform(
   }
 
   // Uniform scale check
-  const uniform = Math.abs(scaleX - scaleY) < tolerance;
+  const isScaleUniform = Math.abs(scaleX - scaleY) < tolerance;
 
   return {
     translation: { x: tx, y: ty },
     rotation,
     scale: { x: scaleX, y: scaleY },
     skew: { x: skewX, y: skewY },
-    uniform,
+    isScaleUniform,
   };
 }
 
@@ -148,18 +152,18 @@ function parseTransform(transformStr: string): Transform {
 
     switch (fn) {
       case "translate":
-        _console.log("translate", { x: args[0], y: args[1] });
+        //_console.log("translate", { x: args[0], y: args[1] });
         m.e = args[0];
         m.f = args[1] || 0;
         break;
       case "scale":
-        _console.log("scale", { x: args[0], y: args[1] });
+        //_console.log("scale", { x: args[0], y: args[1] });
         m.a = args[0];
         m.d = args[1] !== undefined ? args[1] : args[0];
         break;
       case "rotate":
         const angle = (args[0] * Math.PI) / 180;
-        _console.log("rotate", { angle });
+        //_console.log("rotate", { angle });
         const cos = Math.cos(angle),
           sin = Math.sin(angle);
         if (args[1] !== undefined && args[2] !== undefined) {
@@ -180,7 +184,7 @@ function parseTransform(transformStr: string): Transform {
         }
         break;
       case "matrix":
-        _console.log("matrix", args);
+        //_console.log("matrix", args);
         [m.a, m.b, m.c, m.d, m.e, m.f] = args;
         break;
     }
@@ -217,15 +221,16 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
   const commands: CanvasCommand[] = [];
 
   function traverse(node: any, parentTransform: Transform) {
-    _console.log("traversing node", node, parentTransform);
+    //_console.log("traversing node", node, parentTransform);
     const transform = parseTransform(node.attributes.transform);
     //_console.log("transform", transform);
     const nodeTransform = multiply(parentTransform, transform);
     //_console.log("nodeTransform", nodeTransform);
 
-    const { scale, translation, rotation, uniform } =
+    const { scale, translation, rotation, isScaleUniform } =
       decomposeTransform(nodeTransform);
-    _console.log({ scale, translation, rotation, uniform });
+    //_console.log({ scale, translation, rotation, isScaleUniform });
+    const uniformScale = scale.x;
 
     // Handle styles
     const style = parseStyle(node.attributes.style);
@@ -341,8 +346,7 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
 
         if (rx === 0 && ry === 0) {
           // sharp rect
-          if (uniform) {
-            // FILL
+          if (isScaleUniform) {
             const center = applyTransform(
               x + width / 2,
               y + height / 2,
@@ -352,8 +356,8 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
               type: "rect",
               x: center.x,
               y: center.y,
-              width,
-              height,
+              width: width * uniformScale,
+              height: height * uniformScale,
               rotation,
             });
           } else {
@@ -370,9 +374,21 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
           }
         } else {
           // rounded rect
-
-          if (rx == ry) {
-            // FILL
+          if (rx == ry && isScaleUniform) {
+            const center = applyTransform(
+              x + width / 2,
+              y + height / 2,
+              nodeTransform
+            );
+            commands.push({
+              type: "roundRect",
+              x: center.x,
+              y: center.y,
+              width: width * uniformScale,
+              height: height * uniformScale,
+              rotation,
+              r: rx * uniformScale,
+            });
           } else {
             const ox = rx * circleBezierConstant; // x offset for control points
             const oy = ry * circleBezierConstant; // y offset for control points
@@ -480,8 +496,15 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
 
         if (r === 0) break;
 
-        if (uniform) {
-          // FILL
+        if (isScaleUniform) {
+          //_console.log({ cx, cy, r, uniformScale });
+          const center = applyTransform(cx, cy, nodeTransform);
+          commands.push({
+            type: "circle",
+            x: center.x,
+            y: center.y,
+            r: r * uniformScale,
+          });
         } else {
           const ox = r * circleBezierConstant; // control point offset
 
@@ -490,6 +513,7 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
           const pRight = applyTransform(cx + r, cy, nodeTransform);
           const pBottom = applyTransform(cx, cy + r, nodeTransform);
           const pLeft = applyTransform(cx - r, cy, nodeTransform);
+          //_console.log({ pTop, pRight, pBottom, pLeft });
 
           const cpTopRight = applyTransform(cx + ox, cy - r, nodeTransform);
           const cpRightTop = applyTransform(cx + r, cy - ox, nodeTransform);
@@ -558,8 +582,25 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
 
         if (rx === 0 || ry === 0) break;
 
-        if (uniform) {
-          // FILL
+        if (isScaleUniform) {
+          const center = applyTransform(cx, cy, nodeTransform);
+          if (rx == ry) {
+            commands.push({
+              type: "circle",
+              x: center.x,
+              y: center.y,
+              r: rx * uniformScale,
+            });
+          } else {
+            commands.push({
+              type: "ellipse",
+              x: center.x,
+              y: center.y,
+              rx: rx * uniformScale,
+              ry: ry * uniformScale,
+              rotation,
+            });
+          }
         } else {
           const ox = rx * circleBezierConstant;
           const oy = ry * circleBezierConstant;
@@ -769,7 +810,7 @@ function getSvgJsonViewBox(svgJson: INode): DisplayBoundingBox {
     width: width!,
     height: height!,
   };
-  _console.log("viewBox", viewBox);
+  //_console.log("viewBox", viewBox);
   return viewBox;
 }
 
@@ -791,7 +832,7 @@ function getSvgTransformToPixels(svgJson: INode): Transform {
   const { width, height } = getSvgJsonSize(svgJson); // in px
   const viewBox = getSvgJsonViewBox(svgJson); // { x, y, width, height }
 
-  _console.log({ width, height, viewBox });
+  //_console.log({ width, height, viewBox });
 
   // Base scales
   let scaleX = width / viewBox.width;
@@ -825,11 +866,11 @@ export type ParseSvgOptions = {
   aspectRatio?: number; // width / height, used if only one of width/height is provided
   offsetX?: number;
   offsetY?: number;
-  numberOfColors?: number;
-  colors?: string[];
+  centered?: boolean;
 };
 const defaultParseSvgOptions: ParseSvgOptions = {
   fit: false,
+  centered: true,
 };
 
 function transformCanvasCommands(
@@ -837,7 +878,7 @@ function transformCanvasCommands(
   xCallback: (x: number) => number,
   yCallback: (y: number) => number,
   type: "offset" | "scale"
-) {
+): CanvasCommand[] {
   return canvasCommands.map((command) => {
     switch (command.type) {
       case "moveTo":
@@ -846,6 +887,7 @@ function transformCanvasCommands(
         x = xCallback(x);
         y = yCallback(y);
         return { type: command.type, x, y };
+        break;
       }
       case "quadraticCurveTo": {
         let { x, y, cpx, cpy } = command;
@@ -854,6 +896,7 @@ function transformCanvasCommands(
         cpx = xCallback(cpx);
         cpy = yCallback(cpy);
         return { type: command.type, x, y, cpx, cpy };
+        break;
       }
       case "bezierCurveTo": {
         let { x, y, cp1x, cp1y, cp2x, cp2y } = command;
@@ -864,6 +907,7 @@ function transformCanvasCommands(
         cp2x = xCallback(cp2x);
         cp2y = yCallback(cp2y);
         return { type: command.type, x, y, cp1x, cp1y, cp2x, cp2y };
+        break;
       }
       case "lineWidth": {
         if (type == "scale") {
@@ -871,10 +915,54 @@ function transformCanvasCommands(
           lineWidth = xCallback(lineWidth);
           return { type: command.type, lineWidth };
         }
+        break;
       }
+      case "rect":
+      case "roundRect": {
+        let { x, y, width, height, rotation } = command;
+        x = xCallback(x);
+        y = yCallback(y);
+        if (type == "scale") {
+          width = xCallback(width);
+          height = yCallback(height);
+        }
+        if (command.type == "roundRect") {
+          let { r } = command;
+          if (type == "scale") {
+            r = xCallback(r);
+          }
+          return { type: command.type, x, y, width, height, rotation, r };
+        }
+        return { type: command.type, x, y, width, height, rotation };
+        break;
+      }
+      case "circle":
+        {
+          let { x, y, r } = command;
+          x = xCallback(x);
+          y = yCallback(y);
+          if (type == "scale") {
+            r = xCallback(r);
+          }
+          return { type: command.type, x, y, r };
+        }
+        break;
+      case "ellipse":
+        {
+          let { x, y, rx, ry, rotation } = command;
+          x = xCallback(x);
+          y = yCallback(y);
+          if (type == "scale") {
+            rx = xCallback(rx);
+            ry = xCallback(ry);
+          }
+          return { type: command.type, x, y, rx, ry, rotation };
+        }
+        break;
       default:
         return command;
     }
+    return command;
   });
 }
 function forEachCanvasCommandVector2(
@@ -922,8 +1010,8 @@ function offsetCanvasCommands(
 }
 function scaleCanvasCommands(
   canvasCommands: CanvasCommand[],
-  scaleX = 1,
-  scaleY = 1
+  scaleX: number,
+  scaleY: number
 ) {
   return transformCanvasCommands(
     canvasCommands,
@@ -968,16 +1056,17 @@ function classifySubpath(
 
 export function svgToDisplayContextCommands(
   svgString: string,
+  numberOfColors: number,
+  paletteOffset: number,
+  colors?: string[],
   options?: ParseSvgOptions
 ) {
-  options = { ...defaultParseSvgOptions, ...options };
-  if (options.numberOfColors == undefined) {
-    options.numberOfColors = options.colors?.length ?? 1;
-  }
   _console.assertWithError(
-    options.numberOfColors > 0,
-    `invalid numberOfColors ${options.numberOfColors}`
+    numberOfColors > 1,
+    "numberOfColors must be greater than 1"
   );
+  options = { ...defaultParseSvgOptions, ...options };
+  _console.log("options", options);
 
   const svgJson = parseSync(svgString);
 
@@ -987,8 +1076,34 @@ export function svgToDisplayContextCommands(
   const boundingBox = getSvgJsonBoundingBox(svgJson);
   //_console.log("boundingBox", boundingBox);
 
-  let width = boundingBox.width;
-  let height = boundingBox.height;
+  let intrinsicWidth = boundingBox.width;
+  let intrinsicHeight = boundingBox.height;
+
+  _console.log({ intrinsicWidth, intrinsicHeight });
+
+  let scaleX = 1,
+    scaleY = 1;
+  if (options.width && options.height) {
+    scaleX = options.width / intrinsicWidth;
+    scaleY = options.height / intrinsicHeight;
+  } else if (options.width) {
+    scaleX = scaleY = options.width / intrinsicWidth;
+    if (options.aspectRatio) scaleY = scaleX / options.aspectRatio;
+  } else if (options.height) {
+    scaleX = scaleY = options.height / intrinsicHeight;
+    if (options.aspectRatio) scaleX = scaleY * options.aspectRatio;
+  }
+
+  _console.log({ scaleX, scaleY });
+
+  let width = intrinsicWidth * scaleX;
+  let height = intrinsicWidth * scaleX;
+
+  _console.log({ width, height });
+
+  if (scaleX !== 1 || scaleY !== 1) {
+    canvasCommands = scaleCanvasCommands(canvasCommands, scaleX, scaleY);
+  }
 
   if (options.fit) {
     const rangeHelper = {
@@ -1012,34 +1127,19 @@ export function svgToDisplayContextCommands(
     canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
   }
 
-  // _console.log({ width, height });
-
-  let scaleX = 1,
-    scaleY = 1;
-  if (options.width && options.height) {
-    scaleX = options.width / width;
-    scaleY = options.height / height;
-  } else if (options.width) {
-    scaleX = scaleY = options.width / width;
-    if (options.aspectRatio) scaleY = scaleX / options.aspectRatio;
-  } else if (options.height) {
-    scaleX = scaleY = options.height / height;
-    if (options.aspectRatio) scaleX = scaleY * options.aspectRatio;
-  }
-
-  //_console.log({ scaleX, scaleY });
-
-  if (scaleX !== 1 || scaleY !== 1) {
-    canvasCommands = scaleCanvasCommands(canvasCommands, scaleX, scaleY);
-  }
-
   if (options.offsetX || options.offsetY) {
     const offsetX = options.offsetX || 0;
     const offsetY = options.offsetY || 0;
     canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
   }
 
-  let colors: string[] = [];
+  if (options.centered) {
+    const offsetX = -width / 2;
+    const offsetY = -height / 2;
+    canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
+  }
+
+  let svgColors: string[] = [];
   canvasCommands.forEach((canvasCommand) => {
     let color: string | undefined;
     switch (canvasCommand.type) {
@@ -1049,34 +1149,42 @@ export function svgToDisplayContextCommands(
       case "strokeStyle":
         color = canvasCommand.strokeStyle;
         break;
+      default:
+        return;
     }
-    if (color && color != "none" && !colors.includes(color)) {
-      colors.push(color);
+    if (color && color != "none" && !svgColors.includes(color)) {
+      svgColors.push(color);
     }
   });
-  _console.log("colors", colors);
+  if (svgColors.length == 0) {
+    svgColors.push("black");
+  }
+  if (svgColors.length == 1) {
+    svgColors.push("white");
+  }
+  _console.log("colors", svgColors);
 
   const colorToIndex: Record<string, number> = {};
-  if (options.colors) {
-    const mapping = mapToClosestPaletteIndex(
-      colors,
-      options.colors.slice(0, options.numberOfColors)
-    );
-    _console.log("mapping", mapping);
-    colors.forEach((color) => {
+  if (colors) {
+    colors = colors.slice(0, numberOfColors);
+    const mapping = mapToClosestPaletteIndex(svgColors, colors.slice(1));
+    _console.log("mapping", mapping, colors);
+    svgColors.forEach((color) => {
       colorToIndex[color] = mapping[color] + 1;
     });
   } else {
-    const { palette, mapping } = kMeansColors(colors, options.numberOfColors);
+    const { palette, mapping } = kMeansColors(svgColors, numberOfColors);
     _console.log("mapping", mapping);
     _console.log("palette", palette);
 
-    colors.forEach((color) => {
-      colorToIndex[color] = mapping[color] + 1;
+    svgColors.forEach((color) => {
+      colorToIndex[color] = mapping[color];
     });
     colors = palette;
   }
   _console.log("colorToIndex", colorToIndex);
+
+  _console.log("transformed canvasCommands", canvasCommands);
 
   let curves: DisplayBezierCurve[] = [];
   let startPoint: Vector2 = { x: 0, y: 0 };
@@ -1090,10 +1198,20 @@ export function svgToDisplayContextCommands(
   let ignoreLine = true;
   let fillColorIndex = 1;
   let lineColorIndex = 1;
+  const getFillColorIndex = () => fillColorIndex + paletteOffset;
+  const getLineColorIndex = () => lineColorIndex + paletteOffset;
   let isDrawingPath = false;
   const parsedPaths: { path: Vector2[]; isHole: boolean }[] = [];
 
   let displayCommands: DisplayContextCommand[] = [];
+  displayCommands.push({
+    type: "selectFillColor",
+    fillColorIndex: getFillColorIndex(),
+  });
+  displayCommands.push({
+    type: "selectLineColor",
+    lineColorIndex: getLineColorIndex(),
+  });
   displayCommands.push({ type: "setIgnoreLine", ignoreLine: true });
   displayCommands.push({ type: "setLineWidth", lineWidth });
   displayCommands.push({
@@ -1176,7 +1294,10 @@ export function svgToDisplayContextCommands(
                 fillColorIndex: 0,
               });
             } else {
-              displayCommands.push({ type: "selectFillColor", fillColorIndex });
+              displayCommands.push({
+                type: "selectFillColor",
+                fillColorIndex: getFillColorIndex(),
+              });
             }
           }
         }
@@ -1188,7 +1309,7 @@ export function svgToDisplayContextCommands(
           });
           displayCommands.push({
             type: "selectFillColor",
-            fillColorIndex: lineColorIndex,
+            fillColorIndex: getLineColorIndex(),
           });
           displayCommands.push({
             type: "setIgnoreFill",
@@ -1224,7 +1345,7 @@ export function svgToDisplayContextCommands(
           });
           displayCommands.push({
             type: "selectFillColor",
-            fillColorIndex,
+            fillColorIndex: getFillColorIndex(),
           });
           displayCommands.push({
             type: "setIgnoreFill",
@@ -1243,7 +1364,6 @@ export function svgToDisplayContextCommands(
         wasHole = false;
         isDrawingPath = true;
         break;
-
       case "pathEnd":
         isDrawingPath = false;
         break;
@@ -1255,7 +1375,7 @@ export function svgToDisplayContextCommands(
           });
           displayCommands.push({
             type: "selectFillColor",
-            fillColorIndex: lineColorIndex,
+            fillColorIndex: getLineColorIndex(),
           });
           displayCommands.push({
             type: "setIgnoreFill",
@@ -1277,7 +1397,7 @@ export function svgToDisplayContextCommands(
           });
           displayCommands.push({
             type: "selectFillColor",
-            fillColorIndex,
+            fillColorIndex: getFillColorIndex(),
           });
           displayCommands.push({
             type: "setIgnoreFill",
@@ -1303,7 +1423,7 @@ export function svgToDisplayContextCommands(
                 fillColorIndex = colorToIndex[fillStyle];
                 displayCommands.push({
                   type: "selectFillColor",
-                  fillColorIndex,
+                  fillColorIndex: getFillColorIndex(),
                 });
               }
             }
@@ -1327,7 +1447,7 @@ export function svgToDisplayContextCommands(
                 lineColorIndex = colorToIndex[strokeStyle];
                 displayCommands.push({
                   type: "selectLineColor",
-                  lineColorIndex,
+                  lineColorIndex: getLineColorIndex(),
                 });
               }
             }
@@ -1348,6 +1468,72 @@ export function svgToDisplayContextCommands(
       case "fillRule":
         fillRule = canvasCommand.fillRule;
         break;
+      case "rect":
+        {
+          const { x, y, width, height, rotation } = canvasCommand;
+          displayCommands.push({
+            type: "setRotation",
+            rotation,
+            isRadians: true,
+          });
+          displayCommands.push({
+            type: "drawRect",
+            offsetX: x,
+            offsetY: y,
+            width: width,
+            height: height,
+          });
+        }
+        break;
+      case "roundRect":
+        {
+          const { x, y, width, height, rotation, r } = canvasCommand;
+          displayCommands.push({
+            type: "setRotation",
+            rotation,
+            isRadians: true,
+          });
+          displayCommands.push({
+            type: "drawRoundRect",
+            offsetX: x,
+            offsetY: y,
+            width: width,
+            height: height,
+            borderRadius: r,
+          });
+        }
+        break;
+      case "circle":
+        {
+          const { x, y, r } = canvasCommand;
+          displayCommands.push({
+            type: "drawCircle",
+            offsetX: x,
+            offsetY: y,
+            radius: r,
+          });
+        }
+        break;
+      case "ellipse":
+        {
+          const { x, y, rx, ry, rotation } = canvasCommand;
+          displayCommands.push({
+            type: "setRotation",
+            rotation,
+            isRadians: true,
+          });
+          displayCommands.push({
+            type: "drawEllipse",
+            offsetX: x,
+            offsetY: y,
+            radiusX: rx,
+            radiusY: ry,
+          });
+        }
+        break;
+      default:
+        _console.warn("uncaught canvasCommand", canvasCommand);
+        break;
     }
   });
 
@@ -1355,5 +1541,129 @@ export function svgToDisplayContextCommands(
 
   _console.log("displayCommands", displayCommands);
   _console.log("colors", colors);
-  return { commands: displayCommands, colors };
+  return { commands: displayCommands, colors, width, height };
+}
+
+export function svgToSprite(
+  svgString: string,
+  spriteName: string,
+  numberOfColors: number,
+  paletteName: string,
+  overridePalette: boolean,
+  spriteSheet: DisplaySpriteSheet,
+  paletteOffset = 0,
+  options?: ParseSvgOptions
+) {
+  options = { ...defaultParseSvgOptions, ...options };
+  _console.log("options", options, { overridePalette });
+
+  let palette = spriteSheet.palettes?.find(
+    (palette) => palette.name == paletteName
+  );
+  if (!palette) {
+    palette = {
+      name: paletteName,
+      numberOfColors,
+      colors: new Array(numberOfColors).fill("#000000"),
+    };
+    spriteSheet.palettes = spriteSheet.palettes || [];
+    spriteSheet.palettes?.push(palette);
+  }
+  _console.log("pallete", palette);
+
+  const { commands, colors, width, height } = svgToDisplayContextCommands(
+    svgString,
+    numberOfColors,
+    paletteOffset,
+    !overridePalette ? palette.colors : undefined,
+    options
+  );
+
+  const sprite: DisplaySprite = {
+    name: spriteName,
+    width,
+    height,
+    paletteSwaps: [],
+    commands,
+  };
+  if (overridePalette) {
+    _console.log("overriding palette", colors);
+    colors.forEach((color, index) => {
+      palette.colors[index + paletteOffset] = color;
+    });
+  }
+
+  const spriteIndex = spriteSheet.sprites.findIndex(
+    (sprite) => sprite.name == spriteName
+  );
+  if (spriteIndex == -1) {
+    spriteSheet.sprites.push(sprite);
+  } else {
+    _console.log(`overwriting spriteInde ${spriteIndex}`);
+    spriteSheet.sprites[spriteIndex] = sprite;
+  }
+
+  return sprite;
+}
+
+export function svgToSpriteSheet(
+  svgString: string,
+  spriteSheetName: string,
+  numberOfColors: number,
+  paletteName: string,
+  options?: ParseSvgOptions
+) {
+  const spriteSheet: DisplaySpriteSheet = {
+    name: spriteSheetName,
+    palettes: [],
+    paletteSwaps: [],
+    sprites: [],
+  };
+
+  svgToSprite(
+    svgString,
+    "svg",
+    numberOfColors,
+    paletteName,
+    true,
+    spriteSheet,
+    0,
+    options
+  );
+
+  return spriteSheet;
+}
+
+export function getSvgStringFromDataUrl(string: string) {
+  if (!string.startsWith("data:image/svg+xml"))
+    throw new Error("Not a data URL");
+
+  // Data URL might be base64 or URI encoded
+  const data = string.split(",")[1];
+  if (string.includes("base64")) {
+    return atob(data);
+  } else {
+    return decodeURIComponent(data);
+  }
+}
+
+export function isValidSVG(svgString: string) {
+  if (typeof svgString !== "string") return false;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, "image/svg+xml");
+
+  // Different browsers may put parser errors in different places; check several ways:
+  if (
+    doc.querySelector("parsererror") ||
+    doc.getElementsByTagName("parsererror").length > 0
+  ) {
+    return false;
+  }
+
+  const root = doc.documentElement;
+  return (
+    !!root &&
+    root.nodeName.toLowerCase() === "svg" &&
+    root.namespaceURI === "http://www.w3.org/2000/svg"
+  );
 }

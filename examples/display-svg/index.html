@@ -1,0 +1,119 @@
+<html>
+  <head>
+    <title>Display SVG | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+  </head>
+  <style>
+    #display {
+      background-color: black;
+    }
+
+    #image {
+      height: 400;
+      max-width: fit-content;
+    }
+
+    .verticalLabel {
+      display: inline-flex;
+      flex-direction: column;
+      max-width: fit-content;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Display SVG | BrilliantSole JavaScript SDK</h1>
+
+    <br />
+
+    <button id="toggleConnection">connect</button>
+
+    <label>
+      select image
+      <input type="file" id="imageInput" accept="image/svg+xml" />
+    </label>
+
+    <br />
+
+    <div id="displayColors">
+      <template id="displayColorTemplate">
+        <label class="displayColor">
+          <span hidden class="colorIndex"></span>
+          <input type="color" value="#000000" />
+        </label>
+      </template>
+    </div>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>brightness</span>
+      <select id="setDisplayBrightnessSelect">
+        <optgroup label="select brightness"></optgroup>
+      </select>
+    </label>
+
+    <label id="drawX" class="verticalLabel">
+      <span>x (<span class="value">320</span>px)</span>
+      <input type="range" min="0" max="640" step="5" value="320" />
+    </label>
+    <label id="drawY" class="verticalLabel">
+      <span>y (<span class="value">200</span>px)</span>
+      <input type="range" min="0" max="400" step="5" value="200" />
+    </label>
+
+    <label id="drawRotation" class="verticalLabel">
+      <span>rotation (<span class="value">0</span>deg)</span>
+      <input type="range" min="-360" max="360" step="5" value="0" />
+    </label>
+
+    <label id="drawScale" class="verticalLabel">
+      <span>scale (<span class="value">1</span>x)</span>
+      <input type="range" min="0.1" max="2" step="0.1" value="1" />
+    </label>
+    <label id="drawScaleX" class="verticalLabel">
+      <span>scaleX (<span class="value">1</span>x)</span>
+      <input type="range" min="0.1" max="2" step="0.1" value="1" />
+    </label>
+    <label id="drawScaleY" class="verticalLabel">
+      <span>scaleY (<span class="value">1</span>x)</span>
+      <input type="range" min="0.1" max="2" step="0.1" value="1" />
+    </label>
+
+    <label id="inputHeight" class="verticalLabel">
+      <span>input height (<span class="value">200</span>px)</span>
+      <input type="range" min="100" max="400" step="10" value="200" />
+    </label>
+
+    <label class="verticalLabel">
+      <span>number of colors</span>
+      <select id="numberOfColors">
+        <optgroup label="number of colors"></optgroup>
+      </select>
+    </label>
+
+    <label>
+      <span>override colors</span>
+      <input type="checkbox" id="overrideColors" />
+    </label>
+
+    <br />
+
+    <label>
+      file transfer progress: <span></span>
+      <progress value="0" id="fileTransferProgress"></progress>
+    </label>
+
+    <button id="checkSpriteSheetSize">check spritesheet size</button>
+
+    <br />
+
+    <canvas id="display" width="640" height="400"></canvas>
+    <canvas hidden id="canvas" width="640" height="400"></canvas>
+    <image id="image"></image>
+  </body>
+</html>
