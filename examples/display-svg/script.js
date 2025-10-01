@@ -121,6 +121,7 @@ displayCanvasHelper.addEventListener("color", (event) => {
   const { colorHex, colorIndex } = event.message;
   displayColorInputs[colorIndex].value = colorHex;
 });
+displayCanvasHelper.setColor(1, "white", true);
 
 // IMAGE PREVIEW
 
@@ -169,12 +170,33 @@ function isValidUrl(string) {
     return false;
   }
 }
+function isValidSVG(svgString) {
+  if (typeof svgString !== "string") return false;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, "image/svg+xml");
+
+  // Different browsers may put parser errors in different places; check several ways:
+  if (
+    doc.querySelector("parsererror") ||
+    doc.getElementsByTagName("parsererror").length > 0
+  ) {
+    return false;
+  }
+
+  const root = doc.documentElement;
+  return (
+    !!root &&
+    root.nodeName.toLowerCase() === "svg" &&
+    root.namespaceURI === "http://www.w3.org/2000/svg"
+  );
+}
 window.addEventListener("paste", (event) => {
   const string = event.clipboardData.getData("text");
-  if (!isValidUrl(string)) {
-    return;
+  if (isValidUrl(string)) {
+    image.src = string;
+  } else if (isValidSVG(string)) {
+    image.src = "data:image/svg+xml;utf8," + encodeURIComponent(string);
   }
-  image.src = string;
 });
 window.addEventListener("paste", (event) => {
   const items = event.clipboardData.items;
@@ -197,7 +219,7 @@ let drawX = Number(drawXInput.value);
 
 drawXInput.addEventListener("input", () => {
   drawX = Number(drawXInput.value);
-  console.log({ drawX });
+  //console.log({ drawX });
   drawXSpan.innerText = drawX;
   draw();
 });
@@ -209,44 +231,106 @@ let drawY = Number(drawYInput.value);
 
 drawYInput.addEventListener("input", () => {
   drawY = Number(drawYInput.value);
-  console.log({ drawY });
+  //console.log({ drawY });
   drawYSpan.innerText = drawY;
   draw();
 });
 
-// FILL - rotation, input height/width, svg scaleX/Y, etc
+const drawRotationContainer = document.getElementById("drawRotation");
+const drawRotationInput = drawRotationContainer.querySelector("input");
+const drawRotationSpan = drawRotationContainer.querySelector("span.value");
+let drawRotation = Number(drawRotationInput.value);
 
-let overridePalette = false;
-const overridePaletteInput = document.getElementById("overridePalette");
-overridePaletteInput.addEventListener("input", () => {
-  overridePalette = overridePaletteInput.checked;
-  _console.log({ overridePalette });
+drawRotationInput.addEventListener("input", () => {
+  drawRotation = Number(drawRotationInput.value);
+  //console.log({ drawRotation });
+  drawRotationSpan.innerText = drawRotation;
+  draw();
+});
+
+const drawScaleXContainer = document.getElementById("drawScaleX");
+const drawScaleXInput = drawScaleXContainer.querySelector("input");
+const drawScaleXSpan = drawScaleXContainer.querySelector("span.value");
+let drawScaleX = Number(drawScaleXInput.value);
+
+drawScaleXInput.addEventListener("input", () => {
+  drawScaleX = Number(drawScaleXInput.value);
+  //console.log({ drawScaleX });
+  drawScaleXSpan.innerText = drawScaleX;
+  draw();
+});
+
+const drawScaleYContainer = document.getElementById("drawScaleY");
+const drawScaleYInput = drawScaleYContainer.querySelector("input");
+const drawScaleYSpan = drawScaleYContainer.querySelector("span.value");
+let drawScaleY = Number(drawScaleYInput.value);
+
+drawScaleYInput.addEventListener("input", () => {
+  drawScaleY = Number(drawScaleYInput.value);
+  //console.log({ drawScaleY });
+  drawScaleYSpan.innerText = drawScaleY;
+  draw();
+});
+
+const drawScaleContainer = document.getElementById("drawScale");
+const drawScaleInput = drawScaleContainer.querySelector("input");
+const drawScaleSpan = drawScaleContainer.querySelector("span.value");
+
+drawScaleInput.addEventListener("input", () => {
+  const drawScale = Number(drawScaleInput.value);
+  //console.log({ drawScale });
+  drawScaleSpan.innerText = drawScale;
+
+  drawScaleX = drawScaleY = drawScale;
+  drawScaleXInput.value = drawScaleYInput.value = drawScale;
+  drawScaleXSpan.innerText = drawScaleYSpan.innerText = drawScale;
+
+  draw();
+});
+
+const inputHeightContainer = document.getElementById("inputHeight");
+const inputHeightInput = inputHeightContainer.querySelector("input");
+const inputHeightSpan = inputHeightContainer.querySelector("span.value");
+let inputHeight = Number(inputHeightInput.value);
+inputHeightInput.addEventListener("input", () => {
+  inputHeight = Number(inputHeightInput.value);
+  //console.log({ inputHeight });
+  inputHeightSpan.innerText = inputHeight;
   createSvgSpriteSheet();
 });
-overridePalette = overridePaletteInput.checked;
 
-// PIXEL DEPTH
+let overrideColors = false;
+const overrideColorsInput = document.getElementById("overrideColors");
+overrideColorsInput.addEventListener("input", () => {
+  overrideColors = overrideColorsInput.checked;
+  //console.log({ overrideColors });
+  createSvgSpriteSheet();
+});
+overrideColors = overrideColorsInput.checked;
 
-let pixelDepth = BS.DisplayPixelDepths[2];
-const setPixelDepth = (newPixelDepth) => {
-  pixelDepth = newPixelDepth;
-  console.log({ pixelDepth });
+// NUMBER OF COLORS
+
+let numberOfColors = 2;
+const setNumberOfColors = (newNumberOfColors) => {
+  numberOfColors = newNumberOfColors;
+  console.log({ numberOfColors });
   createSvgSpriteSheet();
 };
-const pixelDepthSelect = document.getElementById("pixelDepth");
-const pixelDepthOptgroup = pixelDepthSelect.querySelector("optgroup");
-pixelDepthSelect.addEventListener("input", () => {
-  setPixelDepth(pixelDepthSelect.value);
+const numberOfColorsSelect = document.getElementById("numberOfColors");
+const numberOfColorsOptgroup = numberOfColorsSelect.querySelector("optgroup");
+numberOfColorsSelect.addEventListener("input", () => {
+  setNumberOfColors(Number(numberOfColorsSelect.value));
 });
-BS.DisplayPixelDepths.forEach((pixelDepth) => {
-  pixelDepthOptgroup.appendChild(
-    new Option(
-      `${BS.pixelDepthToNumberOfColors(pixelDepth)} colors`,
-      pixelDepth
-    )
-  );
+const updateNumberOfColorsSelect = () => {
+  for (let i = 2; i < displayCanvasHelper.numberOfColors; i++) {
+    numberOfColorsOptgroup.appendChild(new Option(i));
+  }
+};
+displayCanvasHelper.addEventListener("numberOfColors", () => {
+  updateNumberOfColorsSelect();
 });
-pixelDepthSelect.value = pixelDepth;
+updateNumberOfColorsSelect();
+numberOfColorsSelect.value = numberOfColors;
 
 // SVG
 
@@ -270,21 +354,31 @@ const createSvgSpriteSheet = async () => {
   console.log("createSvgSpriteSheet", image.src);
   const svgString = getSvgStringFromDataUrl(image);
   console.log({ svgString });
-  const sprite = BS.svgToSprite(
-    svgString,
-    "svg",
-    "svg",
-    overridePalette,
-    spriteSheet,
-    {
-      height: 200,
-      // FILL
-    }
-  );
+  const sprite = BS.svgToSprite(svgString, "svg", "svg", true, spriteSheet, {
+    height: inputHeight,
+    numberOfColors,
+    colors: overrideColors ? undefined : displayCanvasHelper.colors,
+  });
+  checkSpriteSheetSize();
   console.log("sprite", sprite);
+  await displayCanvasHelper.resetSpriteColors();
+  /** @type {BS.DisplaySpriteColorPair[]} */
+  const spriteColorPairs = [];
+  for (let i = 0; i < numberOfColors; i++) {
+    spriteColorPairs.push({ colorIndex: i, spriteColorIndex: i });
+  }
+  await displayCanvasHelper.selectSpriteColors(spriteColorPairs);
+
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await displayCanvasHelper.selectSpriteSheet("mySpriteSheet");
-  // FILL - update colors
+
+  for (let i = 0; i < displayCanvasHelper.numberOfColors; i++) {
+    if (i >= numberOfColors) {
+      await displayCanvasHelper.setColor(i, "black");
+    }
+  }
+  await displayCanvasHelper.selectSpriteSheetPalette("svg");
+
   await draw();
 };
 
@@ -296,6 +390,7 @@ const spriteSheet = {
   sprites: [],
   palettes: [],
 };
+window.spriteSheet = spriteSheet;
 let drawWhenReady = false;
 
 const draw = async () => {
@@ -309,19 +404,21 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  console.log("drawing...");
+  //console.log("drawing...");
 
-  // FILL - rotation, scale, etc
+  await displayCanvasHelper.setSpriteScaleX(drawScaleX);
+  await displayCanvasHelper.setSpriteScaleY(drawScaleY);
+  await displayCanvasHelper.setRotation(drawRotation, false);
   await displayCanvasHelper.drawSprite(drawX, drawY, "svg");
   await displayCanvasHelper.show();
 };
 
 displayCanvasHelper.addEventListener("ready", () => {
-  console.log("ready");
+  //console.log("ready");
   isDrawing = false;
   if (drawWhenReady) {
     drawWhenReady = false;
-    //draw();
+    draw();
   }
 });
 
@@ -341,6 +438,22 @@ device.addEventListener("fileTransferStatus", () => {
   }
 });
 
-displayCanvasHelper.setFillBackground(true);
-displayCanvasHelper.selectSpriteColor(1, 1, true);
-displayCanvasHelper.selectBackgroundColor(2);
+// SIZE
+
+const checkSpriteSheetSizeButton = document.getElementById(
+  "checkSpriteSheetSize"
+);
+const checkSpriteSheetSize = () => {
+  const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(spriteSheet);
+  checkSpriteSheetSizeButton.innerText = `size: ${(
+    arrayBuffer.byteLength / 1024
+  ).toFixed(2)}kb`;
+  if (displayCanvasHelper.device?.isConnected) {
+    checkSpriteSheetSizeButton.innerText += ` (max ${(
+      displayCanvasHelper.device.maxFileLength / 1024
+    ).toFixed(2)}kb)`;
+  }
+};
+checkSpriteSheetSizeButton.addEventListener("click", () => {
+  checkSpriteSheetSize();
+});

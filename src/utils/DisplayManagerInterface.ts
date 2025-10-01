@@ -3,7 +3,6 @@ import {
   DisplayBrightness,
   DisplaySpriteColorPair,
   DisplayBitmap,
-  DisplayWireframeEdge,
   DisplayBezierCurve,
   DisplayBezierCurveType,
   DisplayWireframe,
@@ -1258,6 +1257,7 @@ export async function selectSpriteSheetPalette(
     if (opacity == undefined) {
       opacity = 1;
     }
+    //_console.log({ index, offset, color });
     displayManagerInterface.setColor(index + offset, color, false);
     displayManagerInterface.setColorOpacity(index + offset, opacity, false);
     displayManagerInterface.selectSpriteColor(index, index + offset);

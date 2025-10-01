@@ -66,16 +66,39 @@
       <input type="range" min="0" max="400" step="5" value="200" />
     </label>
 
+    <label id="drawRotation" class="verticalLabel">
+      <span>rotation (<span class="value">0</span>deg)</span>
+      <input type="range" min="-360" max="360" step="5" value="0" />
+    </label>
+
+    <label id="drawScale" class="verticalLabel">
+      <span>scale (<span class="value">1</span>x)</span>
+      <input type="range" min="0.1" max="2" step="0.1" value="1" />
+    </label>
+    <label id="drawScaleX" class="verticalLabel">
+      <span>scaleX (<span class="value">1</span>x)</span>
+      <input type="range" min="0.1" max="2" step="0.1" value="1" />
+    </label>
+    <label id="drawScaleY" class="verticalLabel">
+      <span>scaleY (<span class="value">1</span>x)</span>
+      <input type="range" min="0.1" max="2" step="0.1" value="1" />
+    </label>
+
+    <label id="inputHeight" class="verticalLabel">
+      <span>input height (<span class="value">200</span>px)</span>
+      <input type="range" min="100" max="400" step="10" value="200" />
+    </label>
+
     <label class="verticalLabel">
-      <span>pixel depth</span>
-      <select id="pixelDepth">
-        <optgroup label="pixel depth"></optgroup>
+      <span>number of colors</span>
+      <select id="numberOfColors">
+        <optgroup label="number of colors"></optgroup>
       </select>
     </label>
 
     <label>
-      <span>override palette</span>
-      <input type="checkbox" id="overridePalette" checked />
+      <span>override colors</span>
+      <input type="checkbox" id="overrideColors" />
     </label>
 
     <br />
@@ -85,10 +108,7 @@
       <progress value="0" id="fileTransferProgress"></progress>
     </label>
 
-    <label>
-      draw progress: <span></span>
-      <progress value="0" id="drawProgress"></progress>
-    </label>
+    <button id="checkSpriteSheetSize">check spritesheet size</button>
 
     <br />
 

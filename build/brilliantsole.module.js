@@ -25993,8 +25993,8 @@ function svgToDisplayContextCommands(svgString, options) {
         options.numberOfColors = options.colors?.length ?? 1;
     }
     _console$7.assertWithError(options.numberOfColors > 0, `invalid numberOfColors ${options.numberOfColors}`);
+    _console$7.log("options", options);
     const paletteOffset = options.paletteOffset;
-    options.centered;
     const svgJson = svgson_umdExports.parseSync(svgString);
     let canvasCommands = svgJsonToCanvasCommands(svgJson);
     _console$7.log("canvasCommands", canvasCommands);
@@ -26049,7 +26049,7 @@ function svgToDisplayContextCommands(svgString, options) {
         const offsetY = -height / 2;
         canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
     }
-    let colors = [];
+    let colors = ["black"];
     canvasCommands.forEach((canvasCommand) => {
         let color;
         switch (canvasCommand.type) {
@@ -26059,26 +26059,33 @@ function svgToDisplayContextCommands(svgString, options) {
             case "strokeStyle":
                 color = canvasCommand.strokeStyle;
                 break;
+            default:
+                return;
         }
         if (color && color != "none" && !colors.includes(color)) {
             colors.push(color);
         }
     });
+    if (colors.length == 1) {
+        colors.push("white");
+    }
     _console$7.log("colors", colors);
     const colorToIndex = {};
     if (options.colors) {
-        const mapping = mapToClosestPaletteIndex(colors, options.colors.slice(0, options.numberOfColors));
-        _console$7.log("mapping", mapping);
+        const _colors = options.colors.slice(0, options.numberOfColors);
+        const mapping = mapToClosestPaletteIndex(colors, _colors);
+        _console$7.log("mapping", mapping, _colors);
         colors.forEach((color) => {
-            colorToIndex[color] = mapping[color] + 1;
+            colorToIndex[color] = mapping[color];
         });
+        colors = _colors;
     }
     else {
         const { palette, mapping } = kMeansColors(colors, options.numberOfColors);
         _console$7.log("mapping", mapping);
         _console$7.log("palette", palette);
         colors.forEach((color) => {
-            colorToIndex[color] = mapping[color] + 1;
+            colorToIndex[color] = mapping[color];
         });
         colors = palette;
     }
@@ -26178,7 +26185,10 @@ function svgToDisplayContextCommands(svgString, options) {
                             });
                         }
                         else {
-                            displayCommands.push({ type: "selectFillColor", fillColorIndex });
+                            displayCommands.push({
+                                type: "selectFillColor",
+                                fillColorIndex: getFillColorIndex(),
+                            });
                         }
                     }
                 }
@@ -26422,6 +26432,7 @@ function svgToSprite(svgString, spriteName, paletteName, overridePalette, sprite
     if (options.numberOfColors == undefined) {
         options.numberOfColors = options.colors?.length ?? 1;
     }
+    _console$7.log("options", options, { overridePalette });
     const numberOfColors = options.numberOfColors;
     const paletteOffset = options.paletteOffset;
     const { commands, colors, width, height } = svgToDisplayContextCommands(svgString, options);
@@ -26444,6 +26455,7 @@ function svgToSprite(svgString, spriteName, paletteName, overridePalette, sprite
         commands,
     };
     if (overridePalette) {
+        _console$7.log("overriding palette", colors);
         colors.forEach((color, index) => {
             palette.colors[index + paletteOffset] = color;
         });

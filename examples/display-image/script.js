@@ -709,6 +709,7 @@ const draw = async () => {
       "image",
       maxFileLength
     );
+    checkSpriteSheetSize();
     console.log("spriteSheet", spriteSheet);
 
     await displayCanvasHelper.setSpriteScale(spriteScale);
@@ -1091,3 +1092,26 @@ const createImageSegmenter = async () => {
   console.log("created imageSegmenter", imageSegmenter, labels);
 };
 createImageSegmenter();
+
+// SIZE
+
+const checkSpriteSheetSizeButton = document.getElementById(
+  "checkSpriteSheetSize"
+);
+const checkSpriteSheetSize = () => {
+  if (!spriteSheet) {
+    return;
+  }
+  const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(spriteSheet);
+  checkSpriteSheetSizeButton.innerText = `size: ${(
+    arrayBuffer.byteLength / 1024
+  ).toFixed(2)}kb`;
+  if (displayCanvasHelper.device?.isConnected) {
+    checkSpriteSheetSizeButton.innerText += ` (max ${(
+      displayCanvasHelper.device.maxFileLength / 1024
+    ).toFixed(2)}kb)`;
+  }
+};
+checkSpriteSheetSizeButton.addEventListener("click", () => {
+  checkSpriteSheetSize();
+});

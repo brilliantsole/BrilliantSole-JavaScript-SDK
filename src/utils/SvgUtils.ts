@@ -1070,8 +1070,8 @@ export function svgToDisplayContextCommands(
     options.numberOfColors > 0,
     `invalid numberOfColors ${options.numberOfColors}`
   );
+  _console.log("options", options);
   const paletteOffset = options.paletteOffset!;
-  const centered = options.centered!;
 
   const svgJson = parseSync(svgString);
 
@@ -1144,7 +1144,7 @@ export function svgToDisplayContextCommands(
     canvasCommands = offsetCanvasCommands(canvasCommands, offsetX, offsetY);
   }
 
-  let colors: string[] = [];
+  let colors: string[] = ["black"];
   canvasCommands.forEach((canvasCommand) => {
     let color: string | undefined;
     switch (canvasCommand.type) {
@@ -1154,30 +1154,34 @@ export function svgToDisplayContextCommands(
       case "strokeStyle":
         color = canvasCommand.strokeStyle;
         break;
+      default:
+        return;
     }
     if (color && color != "none" && !colors.includes(color)) {
       colors.push(color);
     }
   });
+  if (colors.length == 1) {
+    colors.push("white");
+  }
   _console.log("colors", colors);
 
   const colorToIndex: Record<string, number> = {};
   if (options.colors) {
-    const mapping = mapToClosestPaletteIndex(
-      colors,
-      options.colors.slice(0, options.numberOfColors)
-    );
-    _console.log("mapping", mapping);
+    const _colors = options.colors.slice(0, options.numberOfColors);
+    const mapping = mapToClosestPaletteIndex(colors, _colors);
+    _console.log("mapping", mapping, _colors);
     colors.forEach((color) => {
-      colorToIndex[color] = mapping[color] + 1;
+      colorToIndex[color] = mapping[color];
     });
+    colors = _colors;
   } else {
     const { palette, mapping } = kMeansColors(colors, options.numberOfColors);
     _console.log("mapping", mapping);
     _console.log("palette", palette);
 
     colors.forEach((color) => {
-      colorToIndex[color] = mapping[color] + 1;
+      colorToIndex[color] = mapping[color];
     });
     colors = palette;
   }
@@ -1293,7 +1297,10 @@ export function svgToDisplayContextCommands(
                 fillColorIndex: 0,
               });
             } else {
-              displayCommands.push({ type: "selectFillColor", fillColorIndex });
+              displayCommands.push({
+                type: "selectFillColor",
+                fillColorIndex: getFillColorIndex(),
+              });
             }
           }
         }
@@ -1552,6 +1559,7 @@ export function svgToSprite(
   if (options.numberOfColors == undefined) {
     options.numberOfColors = options.colors?.length ?? 1;
   }
+  _console.log("options", options, { overridePalette });
   const numberOfColors = options.numberOfColors!;
   const paletteOffset = options.paletteOffset!;
 
@@ -1582,6 +1590,7 @@ export function svgToSprite(
     commands,
   };
   if (overridePalette) {
+    _console.log("overriding palette", colors);
     colors.forEach((color, index) => {
       palette.colors[index + paletteOffset] = color;
     });
