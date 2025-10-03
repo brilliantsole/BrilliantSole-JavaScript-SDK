@@ -154,7 +154,13 @@ const draw = async () => {
     case "glove":
       await displayCanvasHelper.selectFillColor(1);
       await drawScene(gloveScene, (entity) => entity.nodeName == "A-PLANE");
-      await displayCanvasHelper.selectFillColor(boxColorIndex);
+      await displayCanvasHelper.selectFillColor(
+        draggingEntity
+          ? draggingColorIndex
+          : intersecting
+          ? intersectingColorIndex
+          : boxColorIndex
+      );
       await drawScene(gloveScene, (entity) => entity.nodeName == "A-BOX");
       await drawGloveCursor();
       break;
@@ -446,6 +452,9 @@ const onCursorIsDown = (newCursorIsDown) => {
 let draggingEntity = false;
 const onDraggingEntity = (newDraggingEntity) => {
   draggingEntity = newDraggingEntity;
+  if (!draggingEntity) {
+    onIntersection(false);
+  }
   //console.log({ draggingEntity });
 };
 let intersecting = false;
