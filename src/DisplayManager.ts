@@ -41,6 +41,7 @@ import {
   assertValidNumberOfControlPoints,
   assertValidPathNumberOfControlPoints,
   assertValidPath,
+  isWireframePolygon,
 } from "./utils/DisplayUtils.ts";
 import {
   assertValidBitmapPixels,
@@ -879,24 +880,44 @@ class DisplayManager implements DisplayManagerInterface {
     this.#dispatchEvent("displayOpacity", { opacity });
   }
 
-  // async saveContext(sendImmediately?: boolean) {
-  //   const commandType: DisplayContextCommandType = "saveContext";
-  //   const dataView = serializeContextCommand(this, { type: commandType });
-  //   await this.#sendDisplayContextCommand(
-  //     commandType,
-  //     dataView?.buffer,
-  //     sendImmediately
-  //   );
-  // }
-  // async restoreContext(sendImmediately?: boolean) {
-  //   const commandType: DisplayContextCommandType = "restoreContext";
-  //   const dataView = serializeContextCommand(this, { type: commandType });
-  //   await this.#sendDisplayContextCommand(
-  //     commandType,
-  //     dataView?.buffer,
-  //     sendImmediately
-  //   );
-  // }
+  #contextStack: DisplayContextState[] = [];
+  #saveContext(sendImmediately?: boolean) {
+    this.#contextStack.push(structuredClone(this.contextState));
+  }
+  #restoreContext(sendImmediately?: boolean) {
+    const contextState = this.#contextStack.pop();
+    if (!contextState) {
+      _console.warn("#contextStack empty");
+      return;
+    }
+    this.setContextState(contextState, sendImmediately);
+  }
+  async saveContext(sendImmediately?: boolean) {
+    if (true) {
+      this.#saveContext(sendImmediately);
+    } else {
+      // const commandType: DisplayContextCommandType = "saveContext";
+      // const dataView = serializeContextCommand(this, { type: commandType });
+      // await this.#sendDisplayContextCommand(
+      //   commandType,
+      //   dataView?.buffer,
+      //   sendImmediately
+      // );
+    }
+  }
+  async restoreContext(sendImmediately?: boolean) {
+    if (true) {
+      this.#restoreContext(sendImmediately);
+    } else {
+      // const commandType: DisplayContextCommandType = "restoreContext";
+      // const dataView = serializeContextCommand(this, { type: commandType });
+      // await this.#sendDisplayContextCommand(
+      //   commandType,
+      //   dataView?.buffer,
+      //   sendImmediately
+      // );
+    }
+  }
 
   async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
     this.assertValidColorIndex(fillColorIndex);
@@ -2182,6 +2203,12 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     assertValidWireframe(wireframe);
+    if (this.#contextStateHelper.isSegmentUniform) {
+      const polygon = isWireframePolygon(wireframe);
+      if (polygon) {
+        return this.drawSegments(polygon, sendImmediately);
+      }
+    }
     const commandType: DisplayContextCommandType = "drawWireframe";
     const dataView = serializeContextCommand(this, {
       type: commandType,

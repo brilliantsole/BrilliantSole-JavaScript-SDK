@@ -119,6 +119,10 @@ function onIFrameLoaded(gloveContainer) {
   /** @type {HTMLIFrameElement} */
   const iframe = gloveContainer.querySelector("iframe");
   const scene = iframe.contentDocument.querySelector("a-scene");
+  if (side == "right") {
+    window.iframe = iframe;
+    window.scene = scene;
+  }
   const targetEntity = scene.querySelector(".target");
   const targetPositionEntity = targetEntity.querySelector(".position");
   const targetRotationEntity = targetEntity.querySelector(".rotation");
@@ -202,6 +206,7 @@ function onIFrameLoaded(gloveContainer) {
         break;
       case "gyroscope":
         configuration.gyroscope = pinchSensorRate;
+        configuration.gameRotation = pinchSensorRate;
         break;
       default:
         console.error(
@@ -300,6 +305,9 @@ function onIFrameLoaded(gloveContainer) {
       }
     }
 
+    if (device.sensorConfiguration.gyroscope > 0) {
+      newOrientationSelectValue = "gyroscope";
+    }
     orientationSelect.value = newOrientationSelectValue;
     positionSelect.value = newPositionSelectValue;
   });
@@ -374,7 +382,7 @@ function onIFrameLoaded(gloveContainer) {
       return;
     }
 
-    const gameRotation = event.message.gameRotation;
+    const { gameRotation } = event.message;
     updateQuaternion(gameRotation, true);
   });
   devicePair.addEventListener("deviceRotation", (event) => {
@@ -486,6 +494,7 @@ function onIFrameLoaded(gloveContainer) {
   toggleCursorButton.addEventListener("click", () => {
     setIsCursorEnabled(!isCursorEnabled);
   });
+
   /** @type {HTMLButtonElement} */
   const resetCursorButton = gloveContainer.querySelector(".resetCursor");
   resetCursorButton.addEventListener("click", () => {
@@ -499,10 +508,14 @@ function onIFrameLoaded(gloveContainer) {
   let checkCursorIntersectableEntitiesIntervalId;
   const checkCursorIntersectableEntitiesInterval = 1000;
   const xThreshold = 4.5;
+  const yThreshold = -3;
   const checkCursorIntersectableEntities = () => {
     cursorIntersectableEntities.forEach((entity) => {
       const position = entity.object3D.position;
-      if (!isCursorDown && Math.abs(position.x) > xThreshold) {
+      if (
+        !isCursorDown &&
+        (Math.abs(position.x) > xThreshold || position.y < yThreshold)
+      ) {
         entity.removeAttribute("dynamic-body");
         entity.object3D.position.set(0, 1, -20);
         entity.setAttribute("dynamic-body", "");
@@ -555,8 +568,14 @@ function onIFrameLoaded(gloveContainer) {
       clearInterval(checkCursorIntersectableEntitiesIntervalId);
     }
   };
-  window.addEventListener("pinch", () => {
-    if (isCursorDown || intersectedEntities[0]) {
+  if (side == "right") {
+    window.setIsCursorEnabled = setIsCursorEnabled;
+  }
+  window.addEventListener("pinch", async () => {
+    if (side != "right") {
+      return;
+    }
+    if (true || isCursorDown || intersectedEntities[0]) {
       setIsCursorDown(!isCursorDown);
       devicePair[side]?.triggerVibration([
         {
@@ -565,6 +584,11 @@ function onIFrameLoaded(gloveContainer) {
           segments: [{ effect: "buzz100" }],
         },
       ]);
+      //console.log("draggingEntity", draggingEntity);
+      if (isCursorDown && !draggingEntity) {
+        await BS.wait(100);
+        setIsCursorDown(false);
+      }
     }
   });
 
@@ -598,6 +622,22 @@ function onIFrameLoaded(gloveContainer) {
   const cursorHandleEntity = scene.querySelector(".cursorHandle");
   const cursorMeshEntity = cursorEntity.querySelector(".mesh");
   const cursorExample = scene.querySelector(".cursorExample");
+  /** @type {TQuaternion?} */
+  let latestGameRotationQuaternion;
+  devicePair.addEventListener("deviceGameRotation", (event) => {
+    if (event.message.side != side) {
+      return;
+    }
+    if (!isCursorEnabled) {
+      return;
+    }
+    const { gameRotation } = event.message;
+    latestGameRotationQuaternion =
+      latestGameRotationQuaternion || new THREE.Quaternion();
+    latestGameRotationQuaternion.copy(gameRotation).invert();
+  });
+  /** @type {TVector3} */
+  const gyroscopeVector = new THREE.Vector3();
   devicePair.addEventListener("deviceGyroscope", (event) => {
     if (event.message.side != side) {
       return;
@@ -606,7 +646,17 @@ function onIFrameLoaded(gloveContainer) {
       return;
     }
     const { gyroscope } = event.message;
-    const { x: yawDegrees, y: pitchDegrees, z: rollDegrees } = gyroscope;
+    gyroscopeVector.copy(gyroscope);
+    let yawDegrees, pitchDegrees, rollDegrees;
+    if (latestGameRotationQuaternion) {
+      gyroscopeVector.applyQuaternion(latestGameRotationQuaternion);
+
+      [pitchDegrees, yawDegrees, rollDegrees] = gyroscopeVector.toArray();
+      pitchDegrees *= -1;
+      yawDegrees *= -1;
+    } else {
+      [yawDegrees, pitchDegrees, rollDegrees] = gyroscopeVector.toArray();
+    }
     // console.log({ yawDegrees, pitchDegrees, rollDegrees });
     setCursorPosition(yawDegrees * 0.002, pitchDegrees * 0.003, true);
   });
@@ -628,6 +678,7 @@ function onIFrameLoaded(gloveContainer) {
     if (isCursorDown && draggingEntity) {
       dragEntity();
     }
+    window.onCursor?.(cursor2DPosition.x, cursor2DPosition.y);
   };
   const updateCursorEntity = () => {
     cursorRaycaster.setFromCamera(
@@ -649,6 +700,7 @@ function onIFrameLoaded(gloveContainer) {
   };
 
   let intersectedEntities = [];
+  let intersecting = false;
   const intersectEntities = () => {
     intersectedEntities.length = 0;
     cursorIntersectableEntities.forEach((entity) => {
@@ -664,6 +716,12 @@ function onIFrameLoaded(gloveContainer) {
         entity.setAttribute("color", entity.dataset.color);
       }
     });
+
+    const _intersecting = intersectedEntities.length > 0;
+    if (_intersecting != intersecting) {
+      intersecting = _intersecting;
+      window.onIntersection?.(intersecting);
+    }
   };
 
   let isCursorDown = false;
@@ -677,19 +735,20 @@ function onIFrameLoaded(gloveContainer) {
   scene.addEventListener("mousedown", () => {
     setIsCursorDown(true);
   });
-  scene.addEventListener("mouseup", () => {
+  scene.addEventListener("pointerup", () => {
     setIsCursorDown(false);
   });
   let draggingEntity;
   const setIsCursorDown = (newIsCursorDown) => {
     isCursorDown = newIsCursorDown;
+    //console.log({ isCursorDown });
     cursorMeshEntity.setAttribute(
       "color",
       isCursorDown ? "black" : cursorMeshEntity.dataset.color
     );
     if (isCursorDown && intersectedEntities[0]) {
       draggingEntity = intersectedEntities[0];
-      console.log("dragging entity");
+      //console.log("dragging entity");
       draggingEntity.setAttribute("color", "green");
       cursorHandleEntity.setAttribute("static-body", "");
       draggingEntity.setAttribute(
@@ -698,13 +757,15 @@ function onIFrameLoaded(gloveContainer) {
       );
     }
     if (!isCursorDown && draggingEntity) {
-      console.log("removing draggingEntity");
+      //console.log("removing draggingEntity");
       draggingEntity.setAttribute("color", draggingEntity.dataset.color);
 
       draggingEntity.removeAttribute("constraint");
       cursorHandleEntity.removeAttribute("static-body");
       draggingEntity = undefined;
     }
+    window.onCursorIsDown?.(isCursorDown);
+    window.onDraggingEntity?.(Boolean(draggingEntity));
   };
   devicePair.addEventListener("devicePressure", (event) => {
     if (event.message.side != side) {

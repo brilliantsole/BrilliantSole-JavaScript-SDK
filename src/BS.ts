@@ -136,6 +136,7 @@ export {
   displayCurveTypeToNumberOfControlPoints,
   mergeWireframes,
   intersectWireframes,
+  isWireframePolygon,
 } from "./utils/DisplayUtils.ts";
 
 /** BROWSER_START */

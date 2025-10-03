@@ -63,6 +63,7 @@ export declare function assertValidNumberOfControlPoints(curveType: DisplayBezie
 export declare function assertValidPathNumberOfControlPoints(curveType: DisplayBezierCurveType, controlPoints: Vector2[]): void;
 export declare function assertValidPath(curves: DisplayBezierCurve[]): void;
 export declare function assertValidWireframe({ points, edges }: DisplayWireframe): void;
+export declare function isWireframePolygon({ points, edges, }: DisplayWireframe): Vector2[] | undefined;
 export declare function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe): DisplayWireframe;
 export declare function intersectWireframes(a: DisplayWireframe, b: DisplayWireframe, ignoreDirection?: boolean): DisplayWireframe;
 export declare function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe;

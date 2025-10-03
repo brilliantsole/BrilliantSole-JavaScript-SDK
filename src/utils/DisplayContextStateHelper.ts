@@ -15,6 +15,13 @@ class DisplayContextStateHelper {
     return this.#state;
   }
 
+  get isSegmentUniform() {
+    return (
+      this.state.segmentStartRadius == this.state.segmentEndRadius &&
+      this.state.segmentStartCap == this.state.segmentEndCap
+    );
+  }
+
   diff(other: PartialDisplayContextState) {
     let differences: DisplayContextStateKey[] = [];
     const keys = Object.keys(other) as DisplayContextStateKey[];

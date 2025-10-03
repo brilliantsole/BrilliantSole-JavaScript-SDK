@@ -31,7 +31,10 @@
       renderer="colorManagement: true;"
     >
       <a-assets>
-        <a-asset-item id="rightHand" src="../../assets/3d/rightHand.glb"></a-asset-item>
+        <a-asset-item
+          id="rightHand"
+          src="../../assets/3d/rightHand.glb"
+        ></a-asset-item>
       </a-assets>
       <a-light type="directional" position="2 2 -2" target=".target"></a-light>
       <a-light type="directional" position="-2 2 2" target=".target"></a-light>
@@ -76,7 +79,13 @@
             rotation="90 0 0"
           ></a-cylinder>
         </a-entity>
-        <a-box color="blue" dynamic-body data-color="blue" position="0 1 -20" class="intersectable"></a-box>
+        <a-box
+          color="blue"
+          dynamic-body
+          data-color="blue"
+          position="0 1 -20"
+          class="intersectable"
+        ></a-box>
         <a-sphere
           class="cursorHandle"
           radius="0.1"
@@ -85,20 +94,40 @@
           static-body
           color="red"
         ></a-sphere>
-        <a-plane static-body rotation="-90 0 0" width="100" height="100" position="0 -1 0" color="lightgrey"></a-plane>
+        <a-plane
+          static-body
+          rotation="-90 0 0"
+          width="8"
+          height="3"
+          position="0 -2 -20"
+          color="lightgrey"
+        ></a-plane>
       </a-entity>
 
       <a-entity class="target" visible="false">
         <a-entity class="rotation">
           <a-entity class="position" position="0 0 0">
-            <a-entity class="glove" gltf-model="#rightHand" visible="true" scale="0.05 0.05 0.05"></a-entity>
-            <a-entity data-pressure="5" position="-0.02739 0.00949 -0.04775" visible="false">
+            <a-entity
+              class="glove"
+              gltf-model="#rightHand"
+              visible="true"
+              scale="0.05 0.05 0.05"
+            ></a-entity>
+            <a-entity
+              data-pressure="5"
+              position="-0.02739 0.00949 -0.04775"
+              visible="false"
+            >
               <a-sphere color="red" radius="0.007"></a-sphere>
             </a-entity>
             <a-entity data-pressure="2" position="-0.00608 0.0113 -0.04775">
               <a-sphere color="red" radius="0.007"></a-sphere>
             </a-entity>
-            <a-entity data-pressure="0" visible="false" position="0.01241 0.00847 -0.04775">
+            <a-entity
+              data-pressure="0"
+              visible="false"
+              position="0.01241 0.00847 -0.04775"
+            >
               <a-sphere color="red" radius="0.007"></a-sphere>
             </a-entity>
             <a-entity data-pressure="3" position="0.03039 0.0069 -0.03797">

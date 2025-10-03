@@ -81,6 +81,7 @@ import {
   maxNumberOfDisplayCurvePoints,
   displayCurveToleranceSquared,
   assertValidWireframe,
+  isWireframePolygon,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -109,7 +110,6 @@ import {
   serializeSpriteSheet,
   stringToSpriteLines,
 } from "./DisplaySpriteSheetUtils.ts";
-import { Font } from "opentype.js";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
 
@@ -766,29 +766,34 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   // CONTEXT COMMANDS
   #contextStack: DisplayContextState[] = [];
-  #saveContext() {
-    this.#contextStack.push(this.contextState);
+  async #saveContext(sendImmediately?: boolean) {
+    //_console.log("saveContext");
+    this.#contextStack.push(structuredClone(this.contextState));
   }
-  #restoreContext() {
+  async #restoreContext(sendImmediately?: boolean) {
+    //_console.log("restoreContext");
     const contextState = this.#contextStack.pop();
     if (!contextState) {
       _console.warn("#contextStack empty");
       return;
     }
     this.#contextStateHelper.update(contextState);
+    if (!this.#ignoreDevice) {
+      await this.#updateDeviceContextState(sendImmediately);
+    }
   }
-  // async saveContext(sendImmediately?: boolean) {
-  //   this.#saveContext();
-  //   if (this.device?.isConnected && !this.#ignoreDevice) {
-  //     await this.deviceDisplayManager!.saveContext(sendImmediately);
-  //   }
-  // }
-  // async restoreContext(sendImmediately?: boolean) {
-  //   this.#restoreContext();
-  //   if (this.device?.isConnected && !this.#ignoreDevice) {
-  //     await this.deviceDisplayManager!.restoreContext(sendImmediately);
-  //   }
-  // }
+  async saveContext(sendImmediately?: boolean) {
+    await this.#saveContext(sendImmediately);
+    // if (this.device?.isConnected && !this.#ignoreDevice) {
+    //   await this.deviceDisplayManager!.saveContext(sendImmediately);
+    // }
+  }
+  async restoreContext(sendImmediately?: boolean) {
+    await this.#restoreContext(sendImmediately);
+    // if (this.device?.isConnected && !this.#ignoreDevice) {
+    //   await this.deviceDisplayManager!.restoreContext(sendImmediately);
+    // }
+  }
   async selectBackgroundColor(
     backgroundColorIndex: number,
     sendImmediately?: boolean
@@ -2437,6 +2442,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     assertValidWireframe(wireframe);
+    if (this.#contextStateHelper.isSegmentUniform) {
+      const polygon = isWireframePolygon(wireframe);
+      if (polygon) {
+        return this.drawSegments(polygon, sendImmediately);
+      }
+    }
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawWireframeToCanvas(wireframe, contextState)
