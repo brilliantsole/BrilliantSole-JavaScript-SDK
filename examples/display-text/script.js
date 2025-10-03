@@ -160,6 +160,7 @@ const draw = async () => {
     return;
   }
   if (!didLoad) {
+    console.log("hasn't loaded yet");
     return;
   }
 

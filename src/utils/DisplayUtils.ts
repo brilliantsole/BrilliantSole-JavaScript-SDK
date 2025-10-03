@@ -341,6 +341,58 @@ export function assertValidWireframe({ points, edges }: DisplayWireframe) {
     );
   });
 }
+export function isWireframePolygon({
+  points,
+  edges,
+}: DisplayWireframe): Vector2[] | undefined {
+  _console.log("isWireframePolygon?", points, edges);
+  if (points.length != edges.length) {
+    return;
+  }
+  const _edges = edges.slice();
+  let pointIndices: number[] = [];
+  for (let i = 0; i < points.length; i++) {
+    if (i == 0) {
+      const { startIndex, endIndex } = _edges.shift()!;
+      pointIndices.push(startIndex);
+      pointIndices.push(endIndex);
+    } else {
+      const startIndex = pointIndices.at(-1);
+      const edge = _edges.find(
+        (edge) => edge.startIndex == startIndex || edge.endIndex == startIndex
+      );
+      _console.log(i, "edge", edge);
+      if (edge) {
+        _edges.splice(_edges.indexOf(edge), 1);
+        const endIndex =
+          edge.startIndex == startIndex ? edge.endIndex : edge.startIndex;
+        if (i == points.length - 1) {
+          if (endIndex != pointIndices[0]) {
+            return;
+          }
+        } else if (pointIndices.includes(endIndex)) {
+          _console.log("duplicate endIndex", endIndex);
+          return;
+        }
+        pointIndices.push(endIndex);
+      } else {
+        _console.log("no edge found");
+        return;
+      }
+    }
+    _console.log("remaining edges", _edges);
+  }
+  _console.log("pointIndices", pointIndices);
+  const polygon = pointIndices
+    .map((pointIndex) => points[pointIndex])
+    .filter((point, index, polygon) => polygon.indexOf(point) == index);
+
+  if (polygon.length == points.length) {
+    polygon.push(polygon[0]);
+    _console.log("polygon", polygon);
+    return polygon;
+  }
+}
 
 export function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe) {
   const wireframe: DisplayWireframe = structuredClone(a);

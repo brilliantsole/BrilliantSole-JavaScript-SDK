@@ -19,7 +19,7 @@ export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, Microph
 export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, MinSpriteSheetNameLength, MaxSpriteSheetNameLength, DisplayBitmap, DisplaySpriteColorPair, DisplayWireframeEdge, DisplayWireframe, DisplayBezierCurveType, DisplayBezierCurveTypes, } from "./DisplayManager.ts";
 export { wait } from "./utils/Timer.ts";
 export { DisplaySegmentCap, DisplaySegmentCaps, DisplayAlignment, DisplayAlignments, DisplayDirection, DisplayDirections, } from "./utils/DisplayContextState.ts";
-export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, displayCurveTypeToNumberOfControlPoints, mergeWireframes, intersectWireframes, } from "./utils/DisplayUtils.ts";
+export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, displayCurveTypeToNumberOfControlPoints, mergeWireframes, intersectWireframes, isWireframePolygon, } from "./utils/DisplayUtils.ts";
 /** BROWSER_START */
 export { svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, isValidSVG, getSvgStringFromDataUrl, } from "./utils/SvgUtils.ts";
 /** BROWSER_END */

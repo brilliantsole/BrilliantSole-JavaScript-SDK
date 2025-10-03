@@ -119,6 +119,10 @@ function onIFrameLoaded(gloveContainer) {
   /** @type {HTMLIFrameElement} */
   const iframe = gloveContainer.querySelector("iframe");
   const scene = iframe.contentDocument.querySelector("a-scene");
+  if (side == "right") {
+    window.iframe = iframe;
+    window.scene = scene;
+  }
   const targetEntity = scene.querySelector(".target");
   const targetPositionEntity = targetEntity.querySelector(".position");
   const targetRotationEntity = targetEntity.querySelector(".rotation");
@@ -486,6 +490,7 @@ function onIFrameLoaded(gloveContainer) {
   toggleCursorButton.addEventListener("click", () => {
     setIsCursorEnabled(!isCursorEnabled);
   });
+
   /** @type {HTMLButtonElement} */
   const resetCursorButton = gloveContainer.querySelector(".resetCursor");
   resetCursorButton.addEventListener("click", () => {
@@ -499,10 +504,14 @@ function onIFrameLoaded(gloveContainer) {
   let checkCursorIntersectableEntitiesIntervalId;
   const checkCursorIntersectableEntitiesInterval = 1000;
   const xThreshold = 4.5;
+  const yThreshold = -3;
   const checkCursorIntersectableEntities = () => {
     cursorIntersectableEntities.forEach((entity) => {
       const position = entity.object3D.position;
-      if (!isCursorDown && Math.abs(position.x) > xThreshold) {
+      if (
+        !isCursorDown &&
+        (Math.abs(position.x) > xThreshold || position.y < yThreshold)
+      ) {
         entity.removeAttribute("dynamic-body");
         entity.object3D.position.set(0, 1, -20);
         entity.setAttribute("dynamic-body", "");
@@ -555,6 +564,9 @@ function onIFrameLoaded(gloveContainer) {
       clearInterval(checkCursorIntersectableEntitiesIntervalId);
     }
   };
+  if (side == "right") {
+    window.setIsCursorEnabled = setIsCursorEnabled;
+  }
   window.addEventListener("pinch", () => {
     if (isCursorDown || intersectedEntities[0]) {
       setIsCursorDown(!isCursorDown);
@@ -628,6 +640,7 @@ function onIFrameLoaded(gloveContainer) {
     if (isCursorDown && draggingEntity) {
       dragEntity();
     }
+    window.onCursor?.(cursor2DPosition.x, cursor2DPosition.y);
   };
   const updateCursorEntity = () => {
     cursorRaycaster.setFromCamera(
@@ -649,6 +662,7 @@ function onIFrameLoaded(gloveContainer) {
   };
 
   let intersectedEntities = [];
+  let intersecting = false;
   const intersectEntities = () => {
     intersectedEntities.length = 0;
     cursorIntersectableEntities.forEach((entity) => {
@@ -664,6 +678,12 @@ function onIFrameLoaded(gloveContainer) {
         entity.setAttribute("color", entity.dataset.color);
       }
     });
+
+    const _intersecting = intersectedEntities.length > 0;
+    if (_intersecting != intersecting) {
+      intersecting = _intersecting;
+      window.onIntersection?.(intersecting);
+    }
   };
 
   let isCursorDown = false;
@@ -677,19 +697,20 @@ function onIFrameLoaded(gloveContainer) {
   scene.addEventListener("mousedown", () => {
     setIsCursorDown(true);
   });
-  scene.addEventListener("mouseup", () => {
+  scene.addEventListener("pointerup", () => {
     setIsCursorDown(false);
   });
   let draggingEntity;
   const setIsCursorDown = (newIsCursorDown) => {
     isCursorDown = newIsCursorDown;
+    //console.log({ isCursorDown });
     cursorMeshEntity.setAttribute(
       "color",
       isCursorDown ? "black" : cursorMeshEntity.dataset.color
     );
     if (isCursorDown && intersectedEntities[0]) {
       draggingEntity = intersectedEntities[0];
-      console.log("dragging entity");
+      //console.log("dragging entity");
       draggingEntity.setAttribute("color", "green");
       cursorHandleEntity.setAttribute("static-body", "");
       draggingEntity.setAttribute(
@@ -698,13 +719,15 @@ function onIFrameLoaded(gloveContainer) {
       );
     }
     if (!isCursorDown && draggingEntity) {
-      console.log("removing draggingEntity");
+      //console.log("removing draggingEntity");
       draggingEntity.setAttribute("color", draggingEntity.dataset.color);
 
       draggingEntity.removeAttribute("constraint");
       cursorHandleEntity.removeAttribute("static-body");
       draggingEntity = undefined;
     }
+    window.onCursorIsDown?.(isCursorDown);
+    window.onDraggingEntity?.(Boolean(draggingEntity));
   };
   devicePair.addEventListener("devicePressure", (event) => {
     if (event.message.side != side) {

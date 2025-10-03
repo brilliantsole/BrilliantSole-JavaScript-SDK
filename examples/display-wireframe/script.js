@@ -1,6 +1,7 @@
 import * as BS from "../../build/brilliantsole.module.js";
 
 /** @typedef {import("../utils/three/three.module.min").Vector3} TVector3 */
+/** @typedef {import("../utils/three/three.module.min").Vector2} TVector2 */
 /** @typedef {import("../utils/three/three.module.min").Quaternion} TQuaternion */
 /** @typedef {import("../utils/three/three.module.min").Euler} TEuler */
 
@@ -107,8 +108,14 @@ displayCanvasHelper.addEventListener("color", (event) => {
   displayColorInputs[colorIndex].value = colorHex;
 });
 setupColors();
-displayCanvasHelper.setColor(1, "white", true);
-
+const intersectingColorIndex = 2;
+const draggingColorIndex = 3;
+const boxColorIndex = 4;
+displayCanvasHelper.setColor(1, "white");
+displayCanvasHelper.setColor(intersectingColorIndex, "lightgreen");
+displayCanvasHelper.setColor(draggingColorIndex, "green");
+displayCanvasHelper.setColor(boxColorIndex, "#00BFFF");
+displayCanvasHelper.flushContextCommands();
 // DRAW
 let isDrawing = false;
 let isWaitingToRedraw = false;
@@ -144,6 +151,13 @@ const draw = async () => {
     case "punch":
       await drawScene(punchScene);
       break;
+    case "glove":
+      await displayCanvasHelper.selectFillColor(1);
+      await drawScene(gloveScene, (entity) => entity.nodeName == "A-PLANE");
+      await displayCanvasHelper.selectFillColor(boxColorIndex);
+      await drawScene(gloveScene, (entity) => entity.nodeName == "A-BOX");
+      await drawGloveCursor();
+      break;
     case "face":
       await drawFace();
       break;
@@ -157,6 +171,7 @@ const draw = async () => {
 
   await displayCanvasHelper.show();
 };
+window.draw = draw;
 
 const drawButton = document.getElementById("draw");
 drawButton.addEventListener("click", () => {
@@ -191,11 +206,15 @@ const spriteSheet = {
 };
 window.spriteSheet = spriteSheet;
 window.drawWireframeAsSprite = false;
-const drawScene = async (scene) => {
+const drawScene = async (scene, filterCallback) => {
   let entities = Array.from(scene.querySelectorAll(entitiesToDraw.join(",")));
+  //console.log(entities);
+  if (filterCallback) {
+    entities = entities.filter(filterCallback);
+    //console.log("filteredEntities", entities);
+  }
   // entities.push(modelEntity);
   // entities = [modelEntity];
-  console.log(entities);
   let wireframe;
   for (let i in entities) {
     const entity = entities[i];
@@ -208,6 +227,10 @@ const drawScene = async (scene) => {
     } else {
       wireframe = BS.mergeWireframes(wireframe, _wireframe);
     }
+  }
+  //console.log("wireframe", wireframe);
+  if (!wireframe) {
+    return;
   }
   if (drawWireframeAsSprite) {
     spriteSheet.sprites[0] = {
@@ -234,10 +257,7 @@ function getWireframeEdges(entity) {
   const mesh = entity.getObject3D("mesh");
   if (!mesh || !mesh.geometry) return { points: [], edges: [] };
 
-  const camera = entity
-    .closest("a-scene")
-    .querySelector("[camera]")
-    .getObject3D("camera");
+  const camera = entity.closest("a-scene").camera;
   if (!camera) return { points: [], edges: [] };
 
   const geometry = mesh.geometry.index
@@ -293,10 +313,7 @@ function getWireframeCulled(entity) {
   const mesh = entity.getObject3D("mesh");
   if (!mesh || !mesh.geometry) return { points: [], edges: [] };
 
-  const camera = entity
-    .closest("a-scene")
-    .querySelector("[camera]")
-    .getObject3D("camera");
+  const camera = entity.closest("a-scene").camera;
   if (!camera) return { points: [], edges: [] };
 
   const geometry = mesh.geometry.index
@@ -399,6 +416,163 @@ punchIframe.addEventListener("load", () => {
   punchScene.style.width = "100%";
   punchScene.style.height = "100%";
 });
+
+// GLOVES MODE
+/** @type {HTMLIFrameElement} */
+const glovesIframe = document.getElementById("glove");
+window.glovesIframe = glovesIframe;
+let gloveScene, gloveIframe, gloveWindow;
+/** @type {TVector2} */
+let interpolatedGloveCursorPosition = new THREE.Vector2();
+/** @type {TVector2} */
+let latestInterpolatedGloveCursorPosition = new THREE.Vector2();
+/** @type {TVector2} */
+let latestGloveCursorPosition = new THREE.Vector2();
+const onCursor = (x, y) => {
+  // x, y ranges from [-1, 1]
+  //console.log("cursor", { x, y });
+  latestGloveCursorPosition.set(x, y);
+  latestGloveCursorPosition.multiplyScalar(0.5).addScalar(0.5);
+  latestGloveCursorPosition.y = 1 - latestGloveCursorPosition.y;
+  //console.log("gloveCursor", latestGloveCursorPosition);
+};
+let isCursorDown = false;
+let latestIsCursorDownUpdate;
+const onCursorIsDown = (newCursorIsDown) => {
+  isCursorDown = newCursorIsDown;
+  latestIsCursorDownUpdate = Date.now();
+  //console.log({ isCursorDown });
+};
+let draggingEntity = false;
+const onDraggingEntity = (newDraggingEntity) => {
+  draggingEntity = newDraggingEntity;
+  //console.log({ draggingEntity });
+};
+let intersecting = false;
+const onIntersection = (newIntersecting) => {
+  intersecting = newIntersecting;
+  //console.log({ intersecting });
+};
+glovesIframe.addEventListener("load", () => {
+  gloveScene = glovesIframe.contentWindow.scene;
+  gloveWindow = glovesIframe.contentWindow;
+  gloveWindow.onCursor = onCursor;
+  gloveWindow.onCursorIsDown = onCursorIsDown;
+  gloveWindow.onDraggingEntity = onDraggingEntity;
+  gloveWindow.onIntersection = onIntersection;
+  gloveIframe = glovesIframe.contentWindow.iframe;
+
+  glovesIframe.contentWindow.setIsCursorEnabled(true);
+  window.glovesScene = gloveScene;
+  window.gloveIframe = gloveIframe;
+  gloveIframe.parentElement.style.width = displayCanvasHelper.width;
+  gloveIframe.parentElement.style.height = displayCanvasHelper.height;
+  gloveIframe.parentElement.style.margin = "0";
+  gloveIframe.style.width = "100%";
+  gloveIframe.style.height = "100%";
+  gloveIframe.scrollIntoView();
+});
+
+window.movementScalar = 1;
+window.movementRange = { min: 0, max: 0.04 };
+let isBouncing = false;
+window.bounceScaleRange = { min: 0.5, max: 1.4 };
+const drawGloveCursor = async () => {
+  await displayCanvasHelper.saveContext();
+
+  const fillCircle = isCursorDown;
+  let lineColorIndex = 1;
+  if (draggingEntity) {
+    lineColorIndex = draggingColorIndex;
+  } else if (intersecting) {
+    lineColorIndex = intersectingColorIndex;
+  }
+  await displayCanvasHelper.selectLineColor(lineColorIndex);
+  await displayCanvasHelper.selectFillColor(1);
+  if (fillCircle) {
+  } else {
+    await displayCanvasHelper.setIgnoreFill(true);
+  }
+
+  interpolatedGloveCursorPosition.lerpVectors(
+    interpolatedGloveCursorPosition,
+    latestGloveCursorPosition,
+    0.6
+  );
+
+  /** @type {TVector2} */
+  const movement = new THREE.Vector2().subVectors(
+    interpolatedGloveCursorPosition,
+    latestInterpolatedGloveCursorPosition
+  );
+  const movementLength = movement.length();
+  const movementLerp = THREE.MathUtils.inverseLerp(
+    movementRange.min,
+    movementRange.max,
+    movementLength
+  );
+  let scaleX = 1 + movementLerp;
+  const inverseMovementLerp = THREE.MathUtils.inverseLerp(0, 7, movementLerp);
+  let scaleY = 1 - inverseMovementLerp;
+  scaleY = Math.max(0, scaleY);
+  //console.log({ movementLerp, inverseMovementLerp });
+  const rotation = movement.angle();
+
+  latestInterpolatedGloveCursorPosition.copy(interpolatedGloveCursorPosition);
+
+  let x = interpolatedGloveCursorPosition.x;
+  let y = interpolatedGloveCursorPosition.y;
+
+  x *= displayCanvasHelper.width;
+  y *= displayCanvasHelper.height;
+
+  const cursorRadius = isCursorDown ? 8 : 10;
+  let radiusX = cursorRadius * scaleX;
+  let radiusY = cursorRadius * scaleY;
+
+  const timeSinceLastCursorUpdate = Date.now() - latestIsCursorDownUpdate;
+  const cursorBounceTimeout = isCursorDown ? 300 : 500;
+  const bounceCycles = isCursorDown ? 0.8 : 2;
+  if (isBouncing || timeSinceLastCursorUpdate <= cursorBounceTimeout) {
+    if (!isBouncing) {
+      isBouncing = true;
+    }
+    //console.log({ timeSinceLastCursorUpdate });
+    let interpolation = timeSinceLastCursorUpdate / cursorBounceTimeout;
+    interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
+    if (interpolation == 1) {
+      isBouncing = false;
+    }
+    const bounceDamp = (1 - interpolation) ** 2;
+    let bounceScalar = Math.sin(interpolation * (bounceCycles * Math.PI * 2));
+    bounceScalar = bounceScalar * 0.5 + 0.5;
+    //console.log({ interpolation, bounceDamp, bounceScalar });
+
+    let bounceScalarX = THREE.MathUtils.lerp(
+      bounceScaleRange.min,
+      bounceScaleRange.max,
+      bounceScalar
+    );
+    bounceScalarX = THREE.MathUtils.lerp(1, bounceScalarX, bounceDamp);
+    let bounceScalarY = THREE.MathUtils.lerp(
+      bounceScaleRange.min,
+      bounceScaleRange.max,
+      1 - bounceScalar
+    );
+    bounceScalarY = THREE.MathUtils.lerp(1, bounceScalarY, bounceDamp);
+
+    //console.log({ bounceScalarX, bounceScalarY });
+
+    radiusX *= bounceScalarX;
+    radiusY *= bounceScalarY;
+  }
+
+  await displayCanvasHelper.setLineWidth(4);
+  await displayCanvasHelper.setRotation(rotation, true);
+  await displayCanvasHelper.drawEllipse(x, y, radiusX, radiusY);
+
+  await displayCanvasHelper.restoreContext();
+};
 
 // CAMERA
 const cameraContainer = document.getElementById("cameraContainer");
@@ -960,7 +1134,7 @@ const drawPose = async () => {
 
 // MODES
 
-const modes = ["scene", "punch", "hand", "face", "pose"];
+const modes = ["scene", "punch", "hand", "face", "pose", "glove"];
 let mode = modes[0];
 const modeSelect = document.getElementById("modeSelect");
 const modeOptgroup = modeSelect.querySelector("optgroup");
@@ -989,6 +1163,10 @@ const setMode = (newMode) => {
       punchIframe.classList.remove("hidden");
       _cameraRig = punchScene.querySelector("[camera]");
       break;
+    case "glove":
+      glovesIframe.classList.remove("hidden");
+      _cameraRig = gloveScene.querySelector("[camera]");
+      break;
     case "hand":
       cameraContainer.classList.remove("hidden");
       createHandLandmarker();
@@ -1009,7 +1187,7 @@ const setMode = (newMode) => {
 };
 scene.addEventListener("loaded", () => {
   setTimeout(() => {
-    setMode(modes[0]);
+    setMode("glove");
   });
 });
 

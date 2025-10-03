@@ -71,8 +71,8 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
   setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
 
-  // saveContext(sendImmediately?: boolean): Promise<void>;
-  // restoreContext(sendImmediately?: boolean): Promise<void>;
+  saveContext(sendImmediately?: boolean): Promise<void>;
+  restoreContext(sendImmediately?: boolean): Promise<void>;
 
   selectFillColor(
     fillColorIndex: number,
