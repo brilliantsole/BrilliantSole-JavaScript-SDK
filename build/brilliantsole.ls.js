@@ -4186,6 +4186,9 @@
     get state() {
       return _classPrivateFieldGet2(_state, this);
     }
+    get isSegmentUniform() {
+      return this.state.segmentStartRadius == this.state.segmentEndRadius && this.state.segmentStartCap == this.state.segmentEndCap;
+    }
     diff(other) {
       let differences = [];
       const keys = Object.keys(other);
@@ -4375,17 +4378,67 @@
       _console$n.assertRangeWithError("edgeEndIndex.".concat(index), edge.endIndex, 0, points.length);
     });
   }
+  function isWireframePolygon(_ref2) {
+    let {
+      points,
+      edges
+    } = _ref2;
+    _console$n.log("isWireframePolygon?", points, edges);
+    if (points.length != edges.length) {
+      return;
+    }
+    const _edges = edges.slice();
+    let pointIndices = [];
+    for (let i = 0; i < points.length; i++) {
+      if (i == 0) {
+        const {
+          startIndex,
+          endIndex
+        } = _edges.shift();
+        pointIndices.push(startIndex);
+        pointIndices.push(endIndex);
+      } else {
+        const startIndex = pointIndices.at(-1);
+        const edge = _edges.find(edge => edge.startIndex == startIndex || edge.endIndex == startIndex);
+        _console$n.log(i, "edge", edge);
+        if (edge) {
+          _edges.splice(_edges.indexOf(edge), 1);
+          const endIndex = edge.startIndex == startIndex ? edge.endIndex : edge.startIndex;
+          if (i == points.length - 1) {
+            if (endIndex != pointIndices[0]) {
+              return;
+            }
+          } else if (pointIndices.includes(endIndex)) {
+            _console$n.log("duplicate endIndex", endIndex);
+            return;
+          }
+          pointIndices.push(endIndex);
+        } else {
+          _console$n.log("no edge found");
+          return;
+        }
+      }
+      _console$n.log("remaining edges", _edges);
+    }
+    _console$n.log("pointIndices", pointIndices);
+    const polygon = pointIndices.map(pointIndex => points[pointIndex]).filter((point, index, polygon) => polygon.indexOf(point) == index);
+    if (polygon.length == points.length) {
+      polygon.push(polygon[0]);
+      _console$n.log("polygon", polygon);
+      return polygon;
+    }
+  }
   function mergeWireframes(a, b) {
     const wireframe = structuredClone(a);
     const pointIndexOffset = a.points.length;
     b.points.forEach(point => {
       wireframe.points.push(point);
     });
-    b.edges.forEach(_ref2 => {
+    b.edges.forEach(_ref3 => {
       let {
         startIndex,
         endIndex
-      } = _ref2;
+      } = _ref3;
       wireframe.edges.push({
         startIndex: startIndex + pointIndexOffset,
         endIndex: endIndex + pointIndexOffset
@@ -4457,22 +4510,22 @@
       } = edge;
       let startPoint = points[startIndex];
       let endPoint = points[endIndex];
-      let trimmedStartIndex = trimmedPoints.findIndex(_ref3 => {
+      let trimmedStartIndex = trimmedPoints.findIndex(_ref4 => {
         let {
           x,
           y
-        } = _ref3;
+        } = _ref4;
         return startPoint.x == x && startPoint.y == y;
       });
       if (trimmedStartIndex == -1) {
         trimmedPoints.push(startPoint);
         trimmedStartIndex = trimmedPoints.length - 1;
       }
-      let trimmedEndIndex = trimmedPoints.findIndex(_ref4 => {
+      let trimmedEndIndex = trimmedPoints.findIndex(_ref5 => {
         let {
           x,
           y
-        } = _ref4;
+        } = _ref5;
         return endPoint.x == x && endPoint.y == y;
       });
       if (trimmedEndIndex == -1) {
@@ -4483,11 +4536,11 @@
         startIndex: trimmedStartIndex,
         endIndex: trimmedEndIndex
       };
-      let trimmedEdgeIndex = trimmedEdges.findIndex(_ref5 => {
+      let trimmedEdgeIndex = trimmedEdges.findIndex(_ref6 => {
         let {
           startIndex,
           endIndex
-        } = _ref5;
+        } = _ref6;
         return startIndex == trimmedEdge.startIndex && endIndex == trimmedEdge.endIndex;
       });
       if (trimmedEdgeIndex == -1) {
@@ -4503,11 +4556,11 @@
   }
   function getPointDataType(points) {
     const range = new RangeHelper();
-    points.forEach(_ref6 => {
+    points.forEach(_ref7 => {
       let {
         x,
         y
-      } = _ref6;
+      } = _ref7;
       range.update(x);
       range.update(y);
     });
@@ -4537,11 +4590,11 @@
       dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
       dataView.setUint8(offset++, points.length);
     }
-    points.forEach(_ref7 => {
+    points.forEach(_ref8 => {
       let {
         x,
         y
-      } = _ref7;
+      } = _ref8;
       switch (pointDataType) {
         case "int8":
           dataView.setInt8(offset, x);
@@ -17677,6 +17730,7 @@
   var _displayContextCommandBuffers = new WeakMap();
   var _colors = new WeakMap();
   var _opacities = new WeakMap();
+  var _contextStack = new WeakMap();
   var _isReady = new WeakMap();
   var _lastReadyTime = new WeakMap();
   var _lastShowRequestTime = new WeakMap();
@@ -17701,6 +17755,7 @@
       _classPrivateFieldInitSpec(this, _displayContextCommandBuffers, []);
       _classPrivateFieldInitSpec(this, _colors, []);
       _classPrivateFieldInitSpec(this, _opacities, []);
+      _classPrivateFieldInitSpec(this, _contextStack, []);
       _classPrivateFieldInitSpec(this, _isReady, true);
       _classPrivateFieldInitSpec(this, _lastReadyTime, 0);
       _classPrivateFieldInitSpec(this, _lastShowRequestTime, 0);
@@ -18018,6 +18073,16 @@
       _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayOpacity", {
         opacity
       });
+    }
+    async saveContext(sendImmediately) {
+      {
+        _assertClassBrand(_DisplayManager_brand, this, _saveContext).call(this, sendImmediately);
+      }
+    }
+    async restoreContext(sendImmediately) {
+      {
+        _assertClassBrand(_DisplayManager_brand, this, _restoreContext).call(this, sendImmediately);
+      }
     }
     async selectFillColor(fillColorIndex, sendImmediately) {
       this.assertValidColorIndex(fillColorIndex);
@@ -18929,6 +18994,12 @@
         return;
       }
       assertValidWireframe(wireframe);
+      if (_classPrivateFieldGet2(_contextStateHelper, this).isSegmentUniform) {
+        const polygon = isWireframePolygon(wireframe);
+        if (polygon) {
+          return this.drawSegments(polygon, sendImmediately);
+        }
+      }
       const commandType = "drawWireframe";
       const dataView = serializeContextCommand(this, {
         type: commandType,
@@ -19510,6 +19581,17 @@
       type: "displayContextCommands",
       data
     }], true);
+  }
+  function _saveContext(sendImmediately) {
+    _classPrivateFieldGet2(_contextStack, this).push(structuredClone(this.contextState));
+  }
+  function _restoreContext(sendImmediately) {
+    const contextState = _classPrivateFieldGet2(_contextStack, this).pop();
+    if (!contextState) {
+      _console$i.warn("#contextStack empty");
+      return;
+    }
+    this.setContextState(contextState, sendImmediately);
   }
   function _assertValidBitmapSize(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -24483,6 +24565,7 @@
   exports.getFontUnicodeRange = getFontUnicodeRange;
   exports.hexToRGB = hexToRGB;
   exports.intersectWireframes = intersectWireframes;
+  exports.isWireframePolygon = isWireframePolygon;
   exports.maxDisplayScale = maxDisplayScale;
   exports.mergeWireframes = mergeWireframes;
   exports.parseFont = parseFont;
