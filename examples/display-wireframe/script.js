@@ -483,7 +483,7 @@ glovesIframe.addEventListener("load", () => {
 });
 
 window.movementScalar = 1;
-window.movementRange = { min: 0, max: 0.04 };
+window.movementRange = { min: 0, max: 0.05 };
 let isBouncing = false;
 window.bounceScaleRange = { min: 0.5, max: 1.4 };
 const drawGloveCursor = async () => {

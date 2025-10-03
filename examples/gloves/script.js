@@ -206,6 +206,7 @@ function onIFrameLoaded(gloveContainer) {
         break;
       case "gyroscope":
         configuration.gyroscope = pinchSensorRate;
+        configuration.gameRotation = pinchSensorRate;
         break;
       default:
         console.error(
@@ -304,6 +305,9 @@ function onIFrameLoaded(gloveContainer) {
       }
     }
 
+    if (device.sensorConfiguration.gyroscope > 0) {
+      newOrientationSelectValue = "gyroscope";
+    }
     orientationSelect.value = newOrientationSelectValue;
     positionSelect.value = newPositionSelectValue;
   });
@@ -630,7 +634,7 @@ function onIFrameLoaded(gloveContainer) {
     const { gameRotation } = event.message;
     latestGameRotationQuaternion =
       latestGameRotationQuaternion || new THREE.Quaternion();
-    latestGameRotationQuaternion.copy(gameRotation);
+    latestGameRotationQuaternion.copy(gameRotation).invert();
   });
   /** @type {TVector3} */
   const gyroscopeVector = new THREE.Vector3();
@@ -643,14 +647,19 @@ function onIFrameLoaded(gloveContainer) {
     }
     const { gyroscope } = event.message;
     gyroscopeVector.copy(gyroscope);
+    let yawDegrees, pitchDegrees, rollDegrees;
     if (latestGameRotationQuaternion) {
-      // FILL
+      gyroscopeVector.applyQuaternion(latestGameRotationQuaternion);
+
+      [pitchDegrees, yawDegrees, rollDegrees] = gyroscopeVector.toArray();
+      pitchDegrees *= -1;
+      yawDegrees *= -1;
+    } else {
+      [yawDegrees, pitchDegrees, rollDegrees] = gyroscopeVector.toArray();
     }
-    let { x: yawDegrees, y: pitchDegrees, z: rollDegrees } = gyroscopeVector;
     // console.log({ yawDegrees, pitchDegrees, rollDegrees });
     setCursorPosition(yawDegrees * 0.002, pitchDegrees * 0.003, true);
   });
-  // FILL
   const cursorRaycaster = new THREE.Raycaster();
   const cursor2DPosition = new THREE.Vector2();
   const cursor3DPosition = new THREE.Vector3();
