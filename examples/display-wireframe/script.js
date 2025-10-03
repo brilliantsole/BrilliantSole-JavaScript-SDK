@@ -536,8 +536,8 @@ const drawGloveCursor = async () => {
   y *= displayCanvasHelper.height;
 
   const cursorRadius = isCursorDown ? 8 : 10;
-  let radiusX = cursorRadius * scaleX;
-  let radiusY = cursorRadius * scaleY;
+  let radiusX = cursorRadius;
+  let radiusY = cursorRadius;
 
   const timeSinceLastCursorUpdate = Date.now() - latestIsCursorDownUpdate;
   const cursorBounceTimeout = isCursorDown ? 300 : 500;
@@ -577,7 +577,11 @@ const drawGloveCursor = async () => {
   }
 
   await displayCanvasHelper.setLineWidth(4);
-  await displayCanvasHelper.setRotation(rotation, true);
+  if (!isBouncing) {
+    radiusX *= scaleX;
+    radiusY *= scaleY;
+    await displayCanvasHelper.setRotation(rotation, true);
+  }
   await displayCanvasHelper.drawEllipse(x, y, radiusX, radiusY);
 
   await displayCanvasHelper.restoreContext();

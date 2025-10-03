@@ -378,7 +378,7 @@ function onIFrameLoaded(gloveContainer) {
       return;
     }
 
-    const gameRotation = event.message.gameRotation;
+    const { gameRotation } = event.message;
     updateQuaternion(gameRotation, true);
   });
   devicePair.addEventListener("deviceRotation", (event) => {
@@ -567,8 +567,11 @@ function onIFrameLoaded(gloveContainer) {
   if (side == "right") {
     window.setIsCursorEnabled = setIsCursorEnabled;
   }
-  window.addEventListener("pinch", () => {
-    if (isCursorDown || intersectedEntities[0]) {
+  window.addEventListener("pinch", async () => {
+    if (side != "right") {
+      return;
+    }
+    if (true || isCursorDown || intersectedEntities[0]) {
       setIsCursorDown(!isCursorDown);
       devicePair[side]?.triggerVibration([
         {
@@ -577,6 +580,11 @@ function onIFrameLoaded(gloveContainer) {
           segments: [{ effect: "buzz100" }],
         },
       ]);
+      //console.log("draggingEntity", draggingEntity);
+      if (isCursorDown && !draggingEntity) {
+        await BS.wait(100);
+        setIsCursorDown(false);
+      }
     }
   });
 
@@ -610,6 +618,22 @@ function onIFrameLoaded(gloveContainer) {
   const cursorHandleEntity = scene.querySelector(".cursorHandle");
   const cursorMeshEntity = cursorEntity.querySelector(".mesh");
   const cursorExample = scene.querySelector(".cursorExample");
+  /** @type {TQuaternion?} */
+  let latestGameRotationQuaternion;
+  devicePair.addEventListener("deviceGameRotation", (event) => {
+    if (event.message.side != side) {
+      return;
+    }
+    if (!isCursorEnabled) {
+      return;
+    }
+    const { gameRotation } = event.message;
+    latestGameRotationQuaternion =
+      latestGameRotationQuaternion || new THREE.Quaternion();
+    latestGameRotationQuaternion.copy(gameRotation);
+  });
+  /** @type {TVector3} */
+  const gyroscopeVector = new THREE.Vector3();
   devicePair.addEventListener("deviceGyroscope", (event) => {
     if (event.message.side != side) {
       return;
@@ -618,10 +642,15 @@ function onIFrameLoaded(gloveContainer) {
       return;
     }
     const { gyroscope } = event.message;
-    const { x: yawDegrees, y: pitchDegrees, z: rollDegrees } = gyroscope;
+    gyroscopeVector.copy(gyroscope);
+    if (latestGameRotationQuaternion) {
+      // FILL
+    }
+    let { x: yawDegrees, y: pitchDegrees, z: rollDegrees } = gyroscopeVector;
     // console.log({ yawDegrees, pitchDegrees, rollDegrees });
     setCursorPosition(yawDegrees * 0.002, pitchDegrees * 0.003, true);
   });
+  // FILL
   const cursorRaycaster = new THREE.Raycaster();
   const cursor2DPosition = new THREE.Vector2();
   const cursor3DPosition = new THREE.Vector3();
