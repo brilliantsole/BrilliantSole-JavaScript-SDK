@@ -113,7 +113,9 @@
       </div>
 
       <div>
-        <label>enable sensors <input id="toggleSensorData" type="checkbox" disabled /></label>
+        <label
+          >enable sensors <input id="toggleSensorData" type="checkbox" disabled
+        /></label>
       </div>
     </div>
 
@@ -121,13 +123,30 @@
       <h2>recording configuration</h2>
       <label>
         countdown (seconds)
-        <input type="number" min="0" value="0" max="10" step="1" id="recordingCountdownInput" />
+        <input
+          type="number"
+          min="0"
+          value="0"
+          max="10"
+          step="1"
+          id="recordingCountdownInput"
+        />
       </label>
 
-      <label>fixed duration? <input id="isRecordingFixedDuration" type="checkbox" /></label>
+      <label
+        >fixed duration? <input id="isRecordingFixedDuration" type="checkbox"
+      /></label>
       <label>
         duration (seconds)
-        <input type="number" min="1" value="1" max="30" step="1" id="recordingDuration" disabled />
+        <input
+          type="number"
+          min="1"
+          value="1"
+          max="30"
+          step="1"
+          id="recordingDuration"
+          disabled
+        />
       </label>
     </div>
 
@@ -141,7 +160,15 @@
       <h2>recordings</h2>
 
       <div>
-        <label> load recording (json) <input id="loadAsJSON" type="file" multiple accept="application/json" /> </label>
+        <label>
+          load recording (json)
+          <input
+            id="loadAsJSON"
+            type="file"
+            multiple
+            accept="application/json"
+          />
+        </label>
       </div>
 
       <div>
@@ -153,7 +180,10 @@
       <div id="recordings">
         <template id="recordingTemplate">
           <div class="recording">
-            <h3><span class="timestamp"></span> (<span class="duration"></span> seconds)</h3>
+            <h3>
+              <span class="timestamp"></span> (<span class="duration"></span>
+              seconds)
+            </h3>
             <div>
               <button class="saveAsCSV" hidden>save as csv</button>
               <button class="saveAsJSON">save as json</button>
@@ -179,7 +209,9 @@
             <ul>
               <li><b>sensor type:</b> <span class="sensorType"></span></li>
               <li><b>data rate:</b> <span class="dataRate"></span>ms</li>
-              <li><b>initial timestamp:</b> <span class="initialTimestamp"></span></li>
+              <li>
+                <b>initial timestamp:</b> <span class="initialTimestamp"></span>
+              </li>
               <button class="toggleVisualization">visualize</button>
               <div class="hidden visualization">
                 <div class="visualization2">

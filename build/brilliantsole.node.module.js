@@ -8318,8 +8318,8 @@ class DisplayManager {
     }
     #lastReadyTime = 0;
     #lastShowRequestTime = 0;
-    #minReadyInterval = 100;
-    #waitBeforeReady = false;
+    #minReadyInterval = 65;
+    #waitBeforeReady = true;
     async #parseDisplayReady(dataView) {
         const now = Date.now();
         const timeSinceLastDraw = now - this.#lastShowRequestTime;

@@ -759,7 +759,7 @@ function onIFrameLoaded(gloveContainer) {
     setIsCursorDown(false);
   });
   let draggingEntity;
-  let rollDraggingEntity = true;
+  let rollDraggingEntity = !true;
   const setIsCursorDown = (newIsCursorDown) => {
     isCursorDown = newIsCursorDown;
     //console.log({ isCursorDown });
@@ -928,7 +928,7 @@ function classify(features) {
   try {
     let res = classifier.classify(features);
     // console.log(res);
-    const didPinch = res.results[1].value > 0.55;
+    const didPinch = res.results[1].value > 0.5;
     if (didPinch) {
       console.log("pinch");
       window.dispatchEvent(new Event("pinch"));

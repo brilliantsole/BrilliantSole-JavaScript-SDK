@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Face Recognition Demo (Human)</title>
+    <script type="module">
+      import * as Human from "https://cdn.jsdelivr.net/npm/@vladmandic/human@latest/dist/human.esm.js";
+
+      const human = new Human.Human({
+        modelBasePath: "https://cdn.jsdelivr.net/npm/@vladmandic/human/models",
+        cacheSensitivity: 0.01,
+        filter: { enabled: true, equalization: true }, // lets run with histogram equilizer
+        debug: true,
+        face: {
+          enabled: true,
+          detector: { rotation: true, return: true, mask: false }, // return tensor is used to get detected face image
+          description: { enabled: true }, // default model for face descriptor extraction is faceres
+          // mobilefacenet: { enabled: true, modelPath: 'https://vladmandic.github.io/human-models/models/mobilefacenet.json' }, // alternative model
+          // insightface: { enabled: true, modelPath: 'https://vladmandic.github.io/insightface/models/insightface-mobilenet-swish.json' }, // alternative model
+          iris: { enabled: false }, // needed to determine gaze direction
+          emotion: { enabled: false }, // not needed
+          antispoof: { enabled: false }, // enable optional antispoof module
+          liveness: { enabled: false }, // enable optional liveness module
+        },
+        body: { enabled: false },
+        hand: { enabled: false },
+        object: { enabled: false },
+        gesture: { enabled: false }, // parses face and iris gestures
+      });
+
+      await human.load();
+      await human.warmup();
+
+      console.log("human", human);
+      window.human = human;
+
+      const profiles = JSON.parse(localStorage.getItem("profiles") || "{}");
+
+      function saveProfiles() {
+        localStorage.setItem("profiles", JSON.stringify(profiles));
+        updateProfileList();
+      }
+
+      function updateProfileList() {
+        const list = document.getElementById("profiles");
+        list.innerHTML = Object.keys(profiles)
+          .map((name) => `<li>${name}</li>`)
+          .join("");
+      }
+
+      // --- utils
+      async function getEmbeddingFromImage(img) {
+        const result = await human.detect(img);
+        return result.face?.[0]?.embedding || null;
+      }
+
+      function cosineSimilarity(a, b) {
+        const dot = a.reduce((s, v, i) => s + v * b[i], 0);
+        const normA = Math.sqrt(a.reduce((s, v) => s + v * v, 0));
+        const normB = Math.sqrt(b.reduce((s, v) => s + v * v, 0));
+        return dot / (normA * normB);
+      }
+
+      // --- training
+      document.getElementById("addProfile").onclick = async () => {
+        const name = prompt("Enter profile name:");
+        if (!name) return;
+        profiles[name] = { embeddings: [] };
+        saveProfiles();
+        alert(`Profile ${name} created.`);
+      };
+
+      document.getElementById("uploadTrain").onchange = async (e) => {
+        const name = prompt("Assign to which profile?");
+        if (!name || !profiles[name]) return alert("Profile not found!");
+        for (const file of e.target.files) {
+          const img = await createImageBitmap(file);
+          const embedding = await getEmbeddingFromImage(img);
+          console.log("embedding", embedding);
+          if (embedding) profiles[name].embeddings.push(embedding);
+        }
+        // average embedding
+        profiles[name].mean = Array(profiles[name].embeddings[0].length).fill(
+          0
+        );
+        for (const emb of profiles[name].embeddings)
+          emb.forEach(
+            (v, i) =>
+              (profiles[name].mean[i] += v / profiles[name].embeddings.length)
+          );
+        saveProfiles();
+        alert(`Added ${e.target.files.length} image(s) to ${name}`);
+      };
+
+      // --- recognition
+      document.getElementById("uploadTest").onchange = async (e) => {
+        const img = await createImageBitmap(e.target.files[0]);
+        await recognize(img);
+      };
+
+      async function recognize(img) {
+        const embedding = await getEmbeddingFromImage(img);
+        if (!embedding) return alert("No face detected!");
+        let best = { name: "unknown", score: -1 };
+        for (const [name, data] of Object.entries(profiles)) {
+          const score = cosineSimilarity(embedding, data.mean);
+          if (score > best.score) best = { name, score };
+        }
+        document.getElementById("result").textContent = `Result: ${
+          best.name
+        } (score=${best.score.toFixed(2)})`;
+      }
+
+      // --- webcam
+      document.getElementById("startCam").onclick = async () => {
+        const video = document.getElementById("video");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+        });
+        video.srcObject = stream;
+        video.play();
+      };
+
+      document.getElementById("snap").onclick = async () => {
+        const video = document.getElementById("video");
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        const img = await createImageBitmap(canvas);
+        await recognize(img);
+      };
+
+      updateProfileList();
+    </script>
+  </head>
+  <body>
+    <h2>Face Recognition Demo (vladmandic/human)</h2>
+    <button id="addProfile">Add Profile</button>
+    <input id="uploadTrain" type="file" multiple accept="image/*" />
+    <ul id="profiles"></ul>
+    <hr />
+    <h3>Recognition</h3>
+    <input id="uploadTest" type="file" accept="image/*" />
+    <p>or use webcam:</p>
+    <video id="video" width="320" height="240" autoplay muted></video><br />
+    <button id="startCam">Start Webcam</button>
+    <button id="snap">Capture & Recognize</button>
+    <p id="result">Result:</p>
+  </body>
+</html>

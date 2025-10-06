@@ -2568,8 +2568,8 @@ class DisplayManager implements DisplayManagerInterface {
   }
   #lastReadyTime = 0;
   #lastShowRequestTime = 0;
-  #minReadyInterval = 100; // Forced delay due to Frame's fpga timing...
-  #waitBeforeReady = false;
+  #minReadyInterval = 65; // Forced delay due to Frame's fpga timing...
+  #waitBeforeReady = true;
   async #parseDisplayReady(dataView: DataView) {
     const now = Date.now();
     const timeSinceLastDraw = now - this.#lastShowRequestTime;

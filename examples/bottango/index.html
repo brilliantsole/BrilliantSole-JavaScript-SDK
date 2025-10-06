@@ -47,7 +47,10 @@
       <h2>connection</h2>
       <button id="toggleConnection">connect</button>
       <button id="reconnect" disabled>reconnect</button>
-      <label>reconnect on disconnection? <input id="reconnectOnDisconnection" type="checkbox" /></label>
+      <label
+        >reconnect on disconnection?
+        <input id="reconnectOnDisconnection" type="checkbox"
+      /></label>
       <button id="resetDevice" disabled>reset</button>
     </div>
 
@@ -76,7 +79,9 @@
     </div>
 
     <div>
-      <label>port <input type="number" value="59224" id="bottangoPort" /></label>
+      <label
+        >port <input type="number" value="59224" id="bottangoPort"
+      /></label>
     </div>
 
     <div>
@@ -85,8 +90,20 @@
         <button id="addMapping">add mapping</button>
         <template id="mappingTemplate">
           <div class="mapping">
-            <label>identifier <input class="identifier" type="text" placeholder="myIdentifier" /></label>
-            <label>value <input class="value" type="range" min="0" max="1" step="0.001" placeholder="0" /></label>
+            <label
+              >identifier
+              <input class="identifier" type="text" placeholder="myIdentifier"
+            /></label>
+            <label
+              >value
+              <input
+                class="value"
+                type="range"
+                min="0"
+                max="1"
+                step="0.001"
+                placeholder="0"
+            /></label>
             <select class="type">
               <optgroup label="mapping">
                 <option selected>gameRotation.pitch</option>
@@ -110,7 +127,9 @@
                 <option>pressure.7</option>
               </optgroup>
             </select>
-            <label>auto range? <input type="checkbox" class="autoRange" checked /></label>
+            <label
+              >auto range? <input type="checkbox" class="autoRange" checked
+            /></label>
             <button class="setMin">set min</button>
             <button class="setMax">set max</button>
             <button class="reset">reset</button>
