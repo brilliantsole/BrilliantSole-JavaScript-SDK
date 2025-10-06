@@ -41,7 +41,7 @@ declare class InformationManager {
     constructor();
     sendMessage: SendInformationMessageCallback;
     eventDispatcher: InformationEventDispatcher;
-    get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "setName" | "setType" | "setCurrentTime">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime">(type: T) => Promise<{
         type: T;
         target: Device;
         message: InformationEventMessages[T];
@@ -53,7 +53,7 @@ declare class InformationManager {
     get name(): string;
     updateName(updatedName: string): void;
     setName(newName: string): Promise<void>;
-    get type(): "generic" | "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic";
     get typeEnum(): number;
     updateType(updatedType: DeviceType): void;
     setType(newType: DeviceType): Promise<void>;

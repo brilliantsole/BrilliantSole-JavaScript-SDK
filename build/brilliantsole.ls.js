@@ -17759,8 +17759,8 @@
       _classPrivateFieldInitSpec(this, _isReady, true);
       _classPrivateFieldInitSpec(this, _lastReadyTime, 0);
       _classPrivateFieldInitSpec(this, _lastShowRequestTime, 0);
-      _classPrivateFieldInitSpec(this, _minReadyInterval, 100);
-      _classPrivateFieldInitSpec(this, _waitBeforeReady, false);
+      _classPrivateFieldInitSpec(this, _minReadyInterval, 65);
+      _classPrivateFieldInitSpec(this, _waitBeforeReady, true);
       _classPrivateFieldInitSpec(this, _spriteSheets, {});
       _classPrivateFieldInitSpec(this, _spriteSheetIndices, {});
       _classPrivateFieldInitSpec(this, _pendingSpriteSheet, void 0);
