@@ -31,12 +31,18 @@
     <h1>WebXR | BrilliantSole JavaScript SDK</h1>
 
     <div>
-      <label>webSocket url <input id="webSocketUrl" type="url" placeholder="localhost" /></label>
+      <label
+        >webSocket url
+        <input id="webSocketUrl" type="url" placeholder="localhost"
+      /></label>
       <button id="toggleConnection">connect</button>
     </div>
 
     <div>
-      <label> is scanning available? <input id="isScanningAvailable" type="checkbox" readonly disabled /> </label>
+      <label>
+        is scanning available?
+        <input id="isScanningAvailable" type="checkbox" readonly disabled />
+      </label>
       <button id="toggleScan" disabled>scan</button>
     </div>
 
@@ -50,19 +56,49 @@
       obb-collider="showColliders: false;"
     >
       <a-assets>
-        <a-asset-item id="leftInsoleModel" src="../../assets/3d/leftInsole.glb"></a-asset-item>
-        <a-asset-item id="rightInsoleModel" src="../../assets/3d/rightInsole.glb"></a-asset-item>
+        <a-asset-item
+          id="leftInsoleModel"
+          src="../../assets/3d/leftInsole.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="rightInsoleModel"
+          src="../../assets/3d/rightInsole.glb"
+        ></a-asset-item>
 
         <img id="insoleImage" src="../../assets/images/right-insole.svg" />
 
-        <img id="pressureSensorImage0" src="../../assets/images/pressure-0.svg" />
-        <img id="pressureSensorImage1" src="../../assets/images/pressure-1.svg" />
-        <img id="pressureSensorImage2" src="../../assets/images/pressure-2.svg" />
-        <img id="pressureSensorImage3" src="../../assets/images/pressure-3.svg" />
-        <img id="pressureSensorImage4" src="../../assets/images/pressure-4.svg" />
-        <img id="pressureSensorImage5" src="../../assets/images/pressure-5.svg" />
-        <img id="pressureSensorImage6" src="../../assets/images/pressure-6.svg" />
-        <img id="pressureSensorImage7" src="../../assets/images/pressure-7.svg" />
+        <img
+          id="pressureSensorImage0"
+          src="../../assets/images/pressure-0.svg"
+        />
+        <img
+          id="pressureSensorImage1"
+          src="../../assets/images/pressure-1.svg"
+        />
+        <img
+          id="pressureSensorImage2"
+          src="../../assets/images/pressure-2.svg"
+        />
+        <img
+          id="pressureSensorImage3"
+          src="../../assets/images/pressure-3.svg"
+        />
+        <img
+          id="pressureSensorImage4"
+          src="../../assets/images/pressure-4.svg"
+        />
+        <img
+          id="pressureSensorImage5"
+          src="../../assets/images/pressure-5.svg"
+        />
+        <img
+          id="pressureSensorImage6"
+          src="../../assets/images/pressure-6.svg"
+        />
+        <img
+          id="pressureSensorImage7"
+          src="../../assets/images/pressure-7.svg"
+        />
       </a-assets>
 
       <a-camera position="0 1.6 0">
@@ -164,7 +200,11 @@
             layout="marginColumn: 0.3; marginRow: 0.18; columns: 3; align: center; type: box;"
             position="0 -0.03 0"
           >
-            <a-entity class="vibrate" fingertip-button="text: vibrate; rotation: 90 0 0; disabled: true;"> </a-entity>
+            <a-entity
+              class="vibrate"
+              fingertip-button="text: vibrate; rotation: 90 0 0; disabled: true;"
+            >
+            </a-entity>
 
             <a-entity
               class="resetOrientation"
@@ -181,10 +221,19 @@
             </template>
           </a-entity>
 
-          <a-plane color="#ddd" width="1" height="0.5" position="0 0 -0.02"></a-plane>
+          <a-plane
+            color="#ddd"
+            width="1"
+            height="0.5"
+            position="0 0 -0.02"
+          ></a-plane>
         </a-entity>
 
-        <a-entity class="toggleARHitTest" position="-0.4 0 0" fingertip-button="text: move;"></a-entity>
+        <a-entity
+          class="toggleARHitTest"
+          position="-0.4 0 0"
+          fingertip-button="text: move;"
+        ></a-entity>
 
         <a-entity
           class="toggleSetWebSocketUrl"
@@ -192,9 +241,17 @@
           fingertip-button="text: localhost; subtitle: url;"
         ></a-entity>
 
-        <a-entity class="toggleConnection" position="0.4 0 0" fingertip-button="text: connect;"></a-entity>
+        <a-entity
+          class="toggleConnection"
+          position="0.4 0 0"
+          fingertip-button="text: connect;"
+        ></a-entity>
 
-        <a-entity class="toggleScan" position="0.4 0 -0.1" fingertip-button="text: scan; disabled: true;"></a-entity>
+        <a-entity
+          class="toggleScan"
+          position="0.4 0 -0.1"
+          fingertip-button="text: scan; disabled: true;"
+        ></a-entity>
 
         <a-entity
           class="toggleShowDiscoveredDevices"

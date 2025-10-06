@@ -4087,6 +4087,10 @@
 	    get state() {
 	        return this.#state;
 	    }
+	    get isSegmentUniform() {
+	        return (this.state.segmentStartRadius == this.state.segmentEndRadius &&
+	            this.state.segmentStartCap == this.state.segmentEndCap);
+	    }
 	    diff(other) {
 	        let differences = [];
 	        const keys = Object.keys(other);
@@ -4268,6 +4272,54 @@
 	        _console$p.assertRangeWithError(`edgeStartIndex.${index}`, edge.startIndex, 0, points.length);
 	        _console$p.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
 	    });
+	}
+	function isWireframePolygon({ points, edges, }) {
+	    _console$p.log("isWireframePolygon?", points, edges);
+	    if (points.length != edges.length) {
+	        return;
+	    }
+	    const _edges = edges.slice();
+	    let pointIndices = [];
+	    for (let i = 0; i < points.length; i++) {
+	        if (i == 0) {
+	            const { startIndex, endIndex } = _edges.shift();
+	            pointIndices.push(startIndex);
+	            pointIndices.push(endIndex);
+	        }
+	        else {
+	            const startIndex = pointIndices.at(-1);
+	            const edge = _edges.find((edge) => edge.startIndex == startIndex || edge.endIndex == startIndex);
+	            _console$p.log(i, "edge", edge);
+	            if (edge) {
+	                _edges.splice(_edges.indexOf(edge), 1);
+	                const endIndex = edge.startIndex == startIndex ? edge.endIndex : edge.startIndex;
+	                if (i == points.length - 1) {
+	                    if (endIndex != pointIndices[0]) {
+	                        return;
+	                    }
+	                }
+	                else if (pointIndices.includes(endIndex)) {
+	                    _console$p.log("duplicate endIndex", endIndex);
+	                    return;
+	                }
+	                pointIndices.push(endIndex);
+	            }
+	            else {
+	                _console$p.log("no edge found");
+	                return;
+	            }
+	        }
+	        _console$p.log("remaining edges", _edges);
+	    }
+	    _console$p.log("pointIndices", pointIndices);
+	    const polygon = pointIndices
+	        .map((pointIndex) => points[pointIndex])
+	        .filter((point, index, polygon) => polygon.indexOf(point) == index);
+	    if (polygon.length == points.length) {
+	        polygon.push(polygon[0]);
+	        _console$p.log("polygon", polygon);
+	        return polygon;
+	    }
 	}
 	function mergeWireframes(a, b) {
 	    const wireframe = structuredClone(a);
@@ -18025,6 +18077,28 @@
 	        this.#opacities.fill(opacity);
 	        this.#dispatchEvent("displayOpacity", { opacity });
 	    }
+	    #contextStack = [];
+	    #saveContext(sendImmediately) {
+	        this.#contextStack.push(structuredClone(this.contextState));
+	    }
+	    #restoreContext(sendImmediately) {
+	        const contextState = this.#contextStack.pop();
+	        if (!contextState) {
+	            _console$k.warn("#contextStack empty");
+	            return;
+	        }
+	        this.setContextState(contextState, sendImmediately);
+	    }
+	    async saveContext(sendImmediately) {
+	        {
+	            this.#saveContext(sendImmediately);
+	        }
+	    }
+	    async restoreContext(sendImmediately) {
+	        {
+	            this.#restoreContext(sendImmediately);
+	        }
+	    }
 	    async selectFillColor(fillColorIndex, sendImmediately) {
 	        this.assertValidColorIndex(fillColorIndex);
 	        const differences = this.#contextStateHelper.update({
@@ -18909,6 +18983,12 @@
 	            return;
 	        }
 	        assertValidWireframe(wireframe);
+	        if (this.#contextStateHelper.isSegmentUniform) {
+	            const polygon = isWireframePolygon(wireframe);
+	            if (polygon) {
+	                return this.drawSegments(polygon, sendImmediately);
+	            }
+	        }
 	        const commandType = "drawWireframe";
 	        const dataView = serializeContextCommand(this, {
 	            type: commandType,
@@ -19110,8 +19190,8 @@
 	    }
 	    #lastReadyTime = 0;
 	    #lastShowRequestTime = 0;
-	    #minReadyInterval = 100;
-	    #waitBeforeReady = false;
+	    #minReadyInterval = 65;
+	    #waitBeforeReady = true;
 	    async #parseDisplayReady(dataView) {
 	        const now = Date.now();
 	        const timeSinceLastDraw = now - this.#lastShowRequestTime;
@@ -26914,16 +26994,25 @@
 	        this.#dispatchEvent("opacity", { opacity });
 	    }
 	    #contextStack = [];
-	    #saveContext() {
-	        this.#contextStack.push(this.contextState);
+	    async #saveContext(sendImmediately) {
+	        this.#contextStack.push(structuredClone(this.contextState));
 	    }
-	    #restoreContext() {
+	    async #restoreContext(sendImmediately) {
 	        const contextState = this.#contextStack.pop();
 	        if (!contextState) {
 	            _console$6.warn("#contextStack empty");
 	            return;
 	        }
 	        this.#contextStateHelper.update(contextState);
+	        if (!this.#ignoreDevice) {
+	            await this.#updateDeviceContextState(sendImmediately);
+	        }
+	    }
+	    async saveContext(sendImmediately) {
+	        await this.#saveContext(sendImmediately);
+	    }
+	    async restoreContext(sendImmediately) {
+	        await this.#restoreContext(sendImmediately);
 	    }
 	    async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
 	        this.assertValidColorIndex(backgroundColorIndex);
@@ -27889,6 +27978,12 @@
 	            return;
 	        }
 	        assertValidWireframe(wireframe);
+	        if (this.#contextStateHelper.isSegmentUniform) {
+	            const polygon = isWireframePolygon(wireframe);
+	            if (polygon) {
+	                return this.drawSegments(polygon, sendImmediately);
+	            }
+	        }
 	        const contextState = structuredClone(this.contextState);
 	        this.#rearDrawStack.push(() => this.#drawWireframeToCanvas(wireframe, contextState));
 	        if (this.device?.isConnected && !this.#ignoreDevice) {
@@ -30004,6 +30099,7 @@
 	exports.imageToSpriteSheet = imageToSpriteSheet;
 	exports.intersectWireframes = intersectWireframes;
 	exports.isValidSVG = isValidSVG;
+	exports.isWireframePolygon = isWireframePolygon;
 	exports.maxDisplayScale = maxDisplayScale;
 	exports.mergeWireframes = mergeWireframes;
 	exports.parseFont = parseFont;

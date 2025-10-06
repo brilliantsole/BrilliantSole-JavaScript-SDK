@@ -3988,6 +3988,10 @@ class DisplayContextStateHelper {
     get state() {
         return this.#state;
     }
+    get isSegmentUniform() {
+        return (this.state.segmentStartRadius == this.state.segmentEndRadius &&
+            this.state.segmentStartCap == this.state.segmentEndCap);
+    }
     diff(other) {
         let differences = [];
         const keys = Object.keys(other);
@@ -4166,6 +4170,54 @@ function assertValidWireframe({ points, edges }) {
         _console$t.assertRangeWithError(`edgeStartIndex.${index}`, edge.startIndex, 0, points.length);
         _console$t.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
     });
+}
+function isWireframePolygon({ points, edges, }) {
+    _console$t.log("isWireframePolygon?", points, edges);
+    if (points.length != edges.length) {
+        return;
+    }
+    const _edges = edges.slice();
+    let pointIndices = [];
+    for (let i = 0; i < points.length; i++) {
+        if (i == 0) {
+            const { startIndex, endIndex } = _edges.shift();
+            pointIndices.push(startIndex);
+            pointIndices.push(endIndex);
+        }
+        else {
+            const startIndex = pointIndices.at(-1);
+            const edge = _edges.find((edge) => edge.startIndex == startIndex || edge.endIndex == startIndex);
+            _console$t.log(i, "edge", edge);
+            if (edge) {
+                _edges.splice(_edges.indexOf(edge), 1);
+                const endIndex = edge.startIndex == startIndex ? edge.endIndex : edge.startIndex;
+                if (i == points.length - 1) {
+                    if (endIndex != pointIndices[0]) {
+                        return;
+                    }
+                }
+                else if (pointIndices.includes(endIndex)) {
+                    _console$t.log("duplicate endIndex", endIndex);
+                    return;
+                }
+                pointIndices.push(endIndex);
+            }
+            else {
+                _console$t.log("no edge found");
+                return;
+            }
+        }
+        _console$t.log("remaining edges", _edges);
+    }
+    _console$t.log("pointIndices", pointIndices);
+    const polygon = pointIndices
+        .map((pointIndex) => points[pointIndex])
+        .filter((point, index, polygon) => polygon.indexOf(point) == index);
+    if (polygon.length == points.length) {
+        polygon.push(polygon[0]);
+        _console$t.log("polygon", polygon);
+        return polygon;
+    }
 }
 function mergeWireframes(a, b) {
     const wireframe = structuredClone(a);
@@ -7171,6 +7223,28 @@ class DisplayManager {
         this.#opacities.fill(opacity);
         this.#dispatchEvent("displayOpacity", { opacity });
     }
+    #contextStack = [];
+    #saveContext(sendImmediately) {
+        this.#contextStack.push(structuredClone(this.contextState));
+    }
+    #restoreContext(sendImmediately) {
+        const contextState = this.#contextStack.pop();
+        if (!contextState) {
+            _console$o.warn("#contextStack empty");
+            return;
+        }
+        this.setContextState(contextState, sendImmediately);
+    }
+    async saveContext(sendImmediately) {
+        {
+            this.#saveContext(sendImmediately);
+        }
+    }
+    async restoreContext(sendImmediately) {
+        {
+            this.#restoreContext(sendImmediately);
+        }
+    }
     async selectFillColor(fillColorIndex, sendImmediately) {
         this.assertValidColorIndex(fillColorIndex);
         const differences = this.#contextStateHelper.update({
@@ -8055,6 +8129,12 @@ class DisplayManager {
             return;
         }
         assertValidWireframe(wireframe);
+        if (this.#contextStateHelper.isSegmentUniform) {
+            const polygon = isWireframePolygon(wireframe);
+            if (polygon) {
+                return this.drawSegments(polygon, sendImmediately);
+            }
+        }
         const commandType = "drawWireframe";
         const dataView = serializeContextCommand(this, {
             type: commandType,
@@ -8256,8 +8336,8 @@ class DisplayManager {
     }
     #lastReadyTime = 0;
     #lastShowRequestTime = 0;
-    #minReadyInterval = 100;
-    #waitBeforeReady = false;
+    #minReadyInterval = 65;
+    #waitBeforeReady = true;
     async #parseDisplayReady(dataView) {
         const now = Date.now();
         const timeSinceLastDraw = now - this.#lastShowRequestTime;
@@ -14051,6 +14131,7 @@ exports.fontToSpriteSheet = fontToSpriteSheet;
 exports.getFontUnicodeRange = getFontUnicodeRange;
 exports.hexToRGB = hexToRGB;
 exports.intersectWireframes = intersectWireframes;
+exports.isWireframePolygon = isWireframePolygon;
 exports.maxDisplayScale = maxDisplayScale;
 exports.mergeWireframes = mergeWireframes;
 exports.parseFont = parseFont;

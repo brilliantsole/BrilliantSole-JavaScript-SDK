@@ -624,6 +624,8 @@ function onIFrameLoaded(gloveContainer) {
   const cursorExample = scene.querySelector(".cursorExample");
   /** @type {TQuaternion?} */
   let latestGameRotationQuaternion;
+  /** @type {TEuler} */
+  const latestGameRotationEuler = new THREE.Euler(0, 0, 0, "ZYX");
   devicePair.addEventListener("deviceGameRotation", (event) => {
     if (event.message.side != side) {
       return;
@@ -635,9 +637,13 @@ function onIFrameLoaded(gloveContainer) {
     latestGameRotationQuaternion =
       latestGameRotationQuaternion || new THREE.Quaternion();
     latestGameRotationQuaternion.copy(gameRotation).invert();
+    latestGameRotationEuler.setFromQuaternion(latestGameRotationQuaternion);
+    latestGameRotationEuler.y = 0;
   });
   /** @type {TVector3} */
   const gyroscopeVector = new THREE.Vector3();
+  /** @type {TQuaternion} */
+  const rollQuaternion = new THREE.Quaternion();
   devicePair.addEventListener("deviceGyroscope", (event) => {
     if (event.message.side != side) {
       return;
@@ -649,15 +655,25 @@ function onIFrameLoaded(gloveContainer) {
     gyroscopeVector.copy(gyroscope);
     let yawDegrees, pitchDegrees, rollDegrees;
     if (latestGameRotationQuaternion) {
-      gyroscopeVector.applyQuaternion(latestGameRotationQuaternion);
+      gyroscopeVector.applyEuler(latestGameRotationEuler);
 
       [pitchDegrees, yawDegrees, rollDegrees] = gyroscopeVector.toArray();
       pitchDegrees *= -1;
       yawDegrees *= -1;
+      rollDegrees *= -1;
+
+      if (rollDraggingEntity) {
+        if (draggingEntity) {
+          const zAxis = new THREE.Vector3(0, 0, 1); // camera's local Z axis
+          zAxis.applyQuaternion(scene.camera.quaternion); // convert to world space
+          rollQuaternion.setFromAxisAngle(zAxis, rollDegrees * 0.001);
+          draggingEntity.object3D.quaternion.premultiply(rollQuaternion);
+        }
+      }
     } else {
       [yawDegrees, pitchDegrees, rollDegrees] = gyroscopeVector.toArray();
     }
-    // console.log({ yawDegrees, pitchDegrees, rollDegrees });
+    //console.log({ yawDegrees, pitchDegrees, rollDegrees });
     setCursorPosition(yawDegrees * 0.002, pitchDegrees * 0.003, true);
   });
   const cursorRaycaster = new THREE.Raycaster();
@@ -696,7 +712,11 @@ function onIFrameLoaded(gloveContainer) {
   const dragEntity = () => {
     cursorRaycaster.ray.at(20, dragEntityPosition);
     //draggingEntity.object3D.position.copy(dragEntityPosition);
-    cursorHandleEntity.object3D.position.copy(dragEntityPosition);
+    if (rollDraggingEntity) {
+      draggingEntity.object3D.position.copy(dragEntityPosition);
+    } else {
+      cursorHandleEntity.object3D.position.copy(dragEntityPosition);
+    }
   };
 
   let intersectedEntities = [];
@@ -739,6 +759,7 @@ function onIFrameLoaded(gloveContainer) {
     setIsCursorDown(false);
   });
   let draggingEntity;
+  let rollDraggingEntity = !true;
   const setIsCursorDown = (newIsCursorDown) => {
     isCursorDown = newIsCursorDown;
     //console.log({ isCursorDown });
@@ -750,18 +771,28 @@ function onIFrameLoaded(gloveContainer) {
       draggingEntity = intersectedEntities[0];
       //console.log("dragging entity");
       draggingEntity.setAttribute("color", "green");
-      cursorHandleEntity.setAttribute("static-body", "");
-      draggingEntity.setAttribute(
-        "constraint",
-        "target: .cursorHandle; collideConnected: false; type: pointToPoint;"
-      );
+      if (rollDraggingEntity) {
+        draggingEntity.removeAttribute("dynamic-body");
+        draggingEntity.setAttribute("static-body", "");
+      } else {
+        cursorHandleEntity.setAttribute("static-body", "");
+        draggingEntity.setAttribute(
+          "constraint",
+          "target: .cursorHandle; collideConnected: false; type: pointToPoint;"
+        );
+      }
     }
     if (!isCursorDown && draggingEntity) {
       //console.log("removing draggingEntity");
       draggingEntity.setAttribute("color", draggingEntity.dataset.color);
 
-      draggingEntity.removeAttribute("constraint");
-      cursorHandleEntity.removeAttribute("static-body");
+      if (rollDraggingEntity) {
+        draggingEntity.removeAttribute("static-body");
+        draggingEntity.setAttribute("dynamic-body", "");
+      } else {
+        draggingEntity.removeAttribute("constraint");
+        cursorHandleEntity.removeAttribute("static-body");
+      }
       draggingEntity = undefined;
     }
     window.onCursorIsDown?.(isCursorDown);
