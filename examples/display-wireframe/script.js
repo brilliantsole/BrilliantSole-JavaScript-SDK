@@ -1166,6 +1166,7 @@ const setMode = (newMode) => {
   scene.classList.add("hidden");
   punchIframe.classList.add("hidden");
   cameraContainer.classList.add("hidden");
+  glovesIframe.classList.add("hidden");
 
   switch (mode) {
     case "scene":

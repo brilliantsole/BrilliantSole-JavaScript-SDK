@@ -1021,10 +1021,10 @@ function scaleCanvasCommands(
   );
 }
 
-function classifySubpath(
+export function classifySubpath(
   subpath: Vector2[],
   previous: { path: Vector2[]; isHole: boolean }[],
-  fillRule: "evenodd" | "nonzero"
+  fillRule: FillRule
 ): boolean {
   // centroid as test point
   const centroid = subpath.reduce(

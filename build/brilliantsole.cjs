@@ -8,6 +8,8 @@ var autoBind$1 = require('auto-bind');
 var RGBQuant = require('rgbquant');
 var opentype = require('opentype.js');
 var woff2Encoder = require('woff2-encoder');
+require('svgson');
+require('svg-pathdata');
 var webbluetooth = require('webbluetooth');
 var dgram = require('dgram');
 var noble = require('@abandonware/noble');
@@ -5507,7 +5509,24 @@ function simplifyCurves(curves, epsilon = 1) {
     return simplified;
 }
 
-const _console$r = createConsole("DisplaySpriteSheetUtils", { log: true });
+createConsole("SvgUtils", { log: true });
+function classifySubpath(subpath, previous, fillRule) {
+    const centroid = subpath.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+    centroid.x /= subpath.length;
+    centroid.y /= subpath.length;
+    {
+        let winding = 0;
+        for (const other of previous) {
+            if (pointInPolygon(centroid, other.path)) {
+                winding += contourArea(other.path) > 0 ? 1 : -1;
+            }
+        }
+        const filled = winding === 0;
+        return !filled;
+    }
+}
+
+const _console$r = createConsole("DisplaySpriteSheetUtils", { log: false });
 const spriteHeaderLength = 3 * 2;
 function serializeSpriteSheet(displayManager, spriteSheet) {
     const { name, sprites } = spriteSheet;
@@ -5673,7 +5692,8 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                 };
                 let curves = [];
                 let startPoint = { x: 0, y: 0 };
-                const pathCommandObjects = [];
+                const parsedPaths = [];
+                let wasHole = false;
                 let pathCommands = path.commands;
                 pathCommands.forEach((cmd) => {
                     switch (cmd.type) {
@@ -5728,53 +5748,51 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                                     pt.x = Math.floor(pt.x + pathOffset.x);
                                     pt.y = Math.floor(pt.y + pathOffset.y);
                                 });
-                                const area = contourArea(controlPoints);
+                                const isHole = classifySubpath(controlPoints, parsedPaths);
+                                parsedPaths.push({ path: controlPoints, isHole });
+                                if (isHole != wasHole) {
+                                    wasHole = isHole;
+                                    if (isHole) {
+                                        commands.push({
+                                            type: "selectFillColor",
+                                            fillColorIndex: 0,
+                                        });
+                                    }
+                                    else {
+                                        commands.push({
+                                            type: "selectFillColor",
+                                            fillColorIndex: 1,
+                                        });
+                                    }
+                                }
                                 const isSegments = curves.every((c) => c.type === "segment");
                                 if (isSegments) {
-                                    pathCommandObjects.push({
-                                        command: {
+                                    if (options.stroke) {
+                                        commands.push({
+                                            type: "drawSegments",
+                                            points: controlPoints,
+                                        });
+                                    }
+                                    else {
+                                        commands.push({
                                             type: "drawPolygon",
                                             points: controlPoints,
-                                        },
-                                        points: controlPoints,
-                                        area,
-                                    });
+                                        });
+                                    }
                                 }
                                 else {
-                                    pathCommandObjects.push({
-                                        command: {
-                                            type: "drawClosedPath",
-                                            curves,
-                                        },
-                                        area,
-                                        points: controlPoints,
-                                    });
+                                    if (options.stroke) {
+                                        commands.push({ type: "drawPath", curves });
+                                    }
+                                    else {
+                                        commands.push({ type: "drawClosedPath", curves });
+                                    }
                                 }
                                 curves = [];
                             }
                             break;
                     }
                 });
-                if (pathCommandObjects.length > 0) {
-                    pathCommandObjects.sort((a, b) => {
-                        return a.points.every((aPoint) => pointInPolygon(aPoint, b.points))
-                            ? 1
-                            : -1;
-                    });
-                    let isDrawingHole = false;
-                    let isHoleAreaPositive = pathCommandObjects[0].area < 0;
-                    pathCommandObjects.forEach(({ area, command }) => {
-                        const isHole = isHoleAreaPositive ? area > 0 : area < 0;
-                        if (isDrawingHole != isHole) {
-                            isDrawingHole = isHole;
-                            commands.push({
-                                type: "selectFillColor",
-                                fillColorIndex: isHole ? 0 : 1,
-                            });
-                        }
-                        commands.push(command);
-                    });
-                }
             }
             else {
                 if (bitmapWidth > 0 && bitmapHeight > 0) {
@@ -6000,6 +6018,19 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
     });
     _console$r.log(`spriteLines for "${string}"`, spriteLines);
     return spriteLines;
+}
+function getFontMaxHeight(font, fontSize) {
+    const scale = (1 / font.unitsPerEm) * fontSize;
+    const maxHeight = (font.ascender - font.descender) * scale;
+    return maxHeight;
+}
+function getMaxSpriteSheetSize(spriteSheet) {
+    const size = { width: 0, height: 0 };
+    spriteSheet.sprites.forEach((sprite) => {
+        size.width = Math.max(size.width, sprite.width);
+        size.height = Math.max(size.height, sprite.height);
+    });
+    return size;
 }
 
 const _console$q = createConsole("DisplayBitmapUtils", { log: true });
@@ -14128,7 +14159,9 @@ exports.VibrationWaveformEffects = VibrationWaveformEffects;
 exports.WebSocketServer = WebSocketServer;
 exports.displayCurveTypeToNumberOfControlPoints = displayCurveTypeToNumberOfControlPoints;
 exports.fontToSpriteSheet = fontToSpriteSheet;
+exports.getFontMaxHeight = getFontMaxHeight;
 exports.getFontUnicodeRange = getFontUnicodeRange;
+exports.getMaxSpriteSheetSize = getMaxSpriteSheetSize;
 exports.hexToRGB = hexToRGB;
 exports.intersectWireframes = intersectWireframes;
 exports.isWireframePolygon = isWireframePolygon;

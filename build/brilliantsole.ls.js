@@ -33,7 +33,7 @@
   function _classPrivateSetter(s, r, a, t) {
     return r(_assertClassBrand(s, a), t), t;
   }
-  function _defineProperty(e, r, t) {
+  function _defineProperty$1(e, r, t) {
     return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
       value: t,
       enumerable: true,
@@ -55,7 +55,7 @@
     for (var r = 1; r < arguments.length; r++) {
       var t = null != arguments[r] ? arguments[r] : {};
       r % 2 ? ownKeys(Object(t), true).forEach(function (r) {
-        _defineProperty(e, r, t[r]);
+        _defineProperty$1(e, r, t[r]);
       }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) {
         Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r));
       });
@@ -255,9 +255,9 @@
   });
   class EventDispatcher {
     constructor(target, validEventTypes) {
-      _defineProperty(this, "target", void 0);
-      _defineProperty(this, "validEventTypes", void 0);
-      _defineProperty(this, "listeners", {});
+      _defineProperty$1(this, "target", void 0);
+      _defineProperty$1(this, "validEventTypes", void 0);
+      _defineProperty$1(this, "listeners", {});
       this.target = target;
       this.validEventTypes = validEventTypes;
       this.addEventListener = this.addEventListener.bind(this);
@@ -650,8 +650,8 @@
   class FileTransferManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _FileTransferManager_brand);
-      _defineProperty(this, "sendMessage", void 0);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "sendMessage", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _fileTypes, []);
       _classPrivateFieldInitSpec(this, _maxLength, _a$5.MaxLength);
       _classPrivateFieldInitSpec(this, _type$2, void 0);
@@ -661,7 +661,7 @@
       _classPrivateFieldInitSpec(this, _receivedBlocks, []);
       _classPrivateFieldInitSpec(this, _buffer, void 0);
       _classPrivateFieldInitSpec(this, _bytesTransferred, 0);
-      _defineProperty(this, "mtu", void 0);
+      _defineProperty$1(this, "mtu", void 0);
       _classPrivateFieldInitSpec(this, _isCancelling, false);
       _classPrivateFieldInitSpec(this, _isServerSide$2, false);
       autoBind(this);
@@ -1540,8 +1540,8 @@
   class CameraManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _CameraManager_brand);
-      _defineProperty(this, "sendMessage", void 0);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "sendMessage", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _cameraStatus, void 0);
       _classPrivateFieldInitSpec(this, _headerSize, 0);
       _classPrivateFieldInitSpec(this, _headerData, void 0);
@@ -1955,8 +1955,8 @@
   class MicrophoneManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _MicrophoneManager_brand);
-      _defineProperty(this, "sendMessage", void 0);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "sendMessage", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _microphoneStatus, void 0);
       _classPrivateFieldInitSpec(this, _fadeDuration, 0.001);
       _classPrivateFieldInitSpec(this, _playbackTime, 0);
@@ -2329,11 +2329,11 @@
   var _scalars = new WeakMap();
   class SensorDataManager {
     constructor() {
-      _defineProperty(this, "pressureSensorDataManager", new PressureSensorDataManager());
-      _defineProperty(this, "motionSensorDataManager", new MotionSensorDataManager());
-      _defineProperty(this, "barometerSensorDataManager", new BarometerSensorDataManager());
+      _defineProperty$1(this, "pressureSensorDataManager", new PressureSensorDataManager());
+      _defineProperty$1(this, "motionSensorDataManager", new MotionSensorDataManager());
+      _defineProperty$1(this, "barometerSensorDataManager", new BarometerSensorDataManager());
       _classPrivateFieldInitSpec(this, _scalars, new Map());
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
     }
     static AssertValidSensorType(sensorType) {
       _console$w.assertEnumWithError(sensorType, SensorTypes);
@@ -2471,8 +2471,8 @@
   class SensorConfigurationManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _SensorConfigurationManager_brand);
-      _defineProperty(this, "sendMessage", void 0);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "sendMessage", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _availableSensorTypes, void 0);
       _classPrivateFieldInitSpec(this, _configuration$1, {});
       autoBind(this);
@@ -2643,8 +2643,8 @@
   class TfliteManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _TfliteManager_brand);
-      _defineProperty(this, "sendMessage", void 0);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "sendMessage", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _name$2, void 0);
       _classPrivateFieldInitSpec(this, _task, void 0);
       _classPrivateFieldInitSpec(this, _sampleRate, void 0);
@@ -3105,7 +3105,7 @@
   class DeviceInformationManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _DeviceInformationManager_brand);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _information, {});
     }
     get information() {
@@ -3240,8 +3240,8 @@
   class InformationManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _InformationManager_brand);
-      _defineProperty(this, "sendMessage", void 0);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "sendMessage", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _isCharging, false);
       _classPrivateFieldInitSpec(this, _batteryCurrent, void 0);
       _classPrivateFieldInitSpec(this, _id, void 0);
@@ -3249,7 +3249,7 @@
       _classPrivateFieldInitSpec(this, _type$1, void 0);
       _classPrivateFieldInitSpec(this, _mtu$2, 0);
       _classPrivateFieldInitSpec(this, _isCurrentTimeSet, false);
-      _defineProperty(this, "connectionType", void 0);
+      _defineProperty$1(this, "connectionType", void 0);
       autoBind(this);
     }
     get waitForEvent() {
@@ -3528,8 +3528,8 @@
   class VibrationManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _VibrationManager_brand);
-      _defineProperty(this, "sendMessage", void 0);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "sendMessage", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _vibrationLocations, []);
       autoBind(this);
     }
@@ -3796,8 +3796,8 @@
   class WifiManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _WifiManager_brand);
-      _defineProperty(this, "sendMessage", void 0);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "sendMessage", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _isWifiAvailable, false);
       _classPrivateFieldInitSpec(this, _wifiSSID, "");
       _classPrivateFieldInitSpec(this, _wifiPassword, "");
@@ -12663,7 +12663,7 @@
       minDis: 1,
       autoFlip: true
   };
-  function State(env, prog) {
+  function State$1(env, prog) {
       this.env = env;
       this.stack = [];
       this.prog = prog;
@@ -12686,10 +12686,10 @@
       if (!prepState || prepState.ppem !== ppem) {
           var fpgmState = this._fpgmState;
           if (!fpgmState) {
-              State.prototype = defaultState;
+              State$1.prototype = defaultState;
               fpgmState =
               this._fpgmState =
-                  new State('fpgm', font.tables.fpgm);
+                  new State$1('fpgm', font.tables.fpgm);
               fpgmState.funcs = [ ];
               fpgmState.font = font;
               if (exports.DEBUG) {
@@ -12704,10 +12704,10 @@
                   return;
               }
           }
-          State.prototype = fpgmState;
+          State$1.prototype = fpgmState;
           prepState =
           this._prepState =
-              new State('prep', font.tables.prep);
+              new State$1('prep', font.tables.prep);
           prepState.ppem = ppem;
           var oCvt = font.tables.cvt;
           if (oCvt) {
@@ -12751,9 +12751,9 @@
       var contours;
       var gZone;
       var state;
-      State.prototype = prepState;
+      State$1.prototype = prepState;
       if (!components) {
-          state = new State('glyf', glyph.instructions);
+          state = new State$1('glyf', glyph.instructions);
           if (exports.DEBUG) {
               console.log('---EXEC GLYPH---');
               state.step = -1;
@@ -12767,7 +12767,7 @@
           for (var i = 0; i < components.length; i++) {
               var c = components[i];
               var cg = font.glyphs.get(c.glyphIndex);
-              state = new State('glyf', cg.instructions);
+              state = new State$1('glyf', cg.instructions);
               if (exports.DEBUG) {
                   console.log('---EXEC COMP ' + i + '---');
                   state.step = -1;
@@ -12790,7 +12790,7 @@
               }
           }
           if (glyph.instructions && !state.inhibitGridFit) {
-              state = new State('glyf', glyph.instructions);
+              state = new State$1('glyf', glyph.instructions);
               state.gZone = state.z0 = state.z1 = state.z2 = gZone;
               state.contours = contours;
               gZone.push(
@@ -13670,7 +13670,7 @@
       if (exports.DEBUG) { console.log(state.step, 'CEILING[]', n); }
       stack.push(Math.ceil(n / 0x40) * 0x40);
   }
-  function ROUND(dt, state) {
+  function ROUND$1(dt, state) {
       var stack = state.stack;
       var n = stack.pop();
       if (exports.DEBUG) { console.log(state.step, 'ROUND[]'); }
@@ -14030,10 +14030,10 @@
        NEG,
        FLOOR,
        CEILING,
-       ROUND.bind(undefined, 0),
-       ROUND.bind(undefined, 1),
-       ROUND.bind(undefined, 2),
-       ROUND.bind(undefined, 3),
+       ROUND$1.bind(undefined, 0),
+       ROUND$1.bind(undefined, 1),
+       ROUND$1.bind(undefined, 2),
+       ROUND$1.bind(undefined, 3),
        undefined,
        undefined,
        undefined,
@@ -14514,7 +14514,7 @@
   function isLatinChar(c) {
       return /[A-z]/.test(c);
   }
-  function isWhiteSpace(c) {
+  function isWhiteSpace$1(c) {
       return /\s/.test(c);
   }
   function FeatureQuery(font) {
@@ -14876,7 +14876,7 @@
           case nextChar === null:
               return true;
           case (!isArabicChar(nextChar) && !isTashkeelArabicChar(nextChar)):
-              var nextIsWhitespace = isWhiteSpace(nextChar);
+              var nextIsWhitespace = isWhiteSpace$1(nextChar);
               if (!nextIsWhitespace) { return true; }
               if (nextIsWhitespace) {
                   var arabicCharAhead = false;
@@ -16266,8 +16266,2125 @@
     return simplified;
   }
 
-  const _console$l = createConsole("DisplaySpriteSheetUtils", {
+  var isBuffer_1 = function (obj) {
+    return obj != null && (isBuffer$1(obj) || isSlowBuffer(obj) || !!obj._isBuffer)
+  };
+  function isBuffer$1 (obj) {
+    return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
+  }
+  function isSlowBuffer (obj) {
+    return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer$1(obj.slice(0, 0))
+  }
+  getDefaultExportFromCjs(isBuffer_1);
+
+  var isBuffer = isBuffer_1;
+  var toString = Object.prototype.toString;
+  var kindOf = function kindOf(val) {
+    if (typeof val === 'undefined') {
+      return 'undefined';
+    }
+    if (val === null) {
+      return 'null';
+    }
+    if (val === true || val === false || val instanceof Boolean) {
+      return 'boolean';
+    }
+    if (typeof val === 'string' || val instanceof String) {
+      return 'string';
+    }
+    if (typeof val === 'number' || val instanceof Number) {
+      return 'number';
+    }
+    if (typeof val === 'function' || val instanceof Function) {
+      return 'function';
+    }
+    if (typeof Array.isArray !== 'undefined' && Array.isArray(val)) {
+      return 'array';
+    }
+    if (val instanceof RegExp) {
+      return 'regexp';
+    }
+    if (val instanceof Date) {
+      return 'date';
+    }
+    var type = toString.call(val);
+    if (type === '[object RegExp]') {
+      return 'regexp';
+    }
+    if (type === '[object Date]') {
+      return 'date';
+    }
+    if (type === '[object Arguments]') {
+      return 'arguments';
+    }
+    if (type === '[object Error]') {
+      return 'error';
+    }
+    if (isBuffer(val)) {
+      return 'buffer';
+    }
+    if (type === '[object Set]') {
+      return 'set';
+    }
+    if (type === '[object WeakSet]') {
+      return 'weakset';
+    }
+    if (type === '[object Map]') {
+      return 'map';
+    }
+    if (type === '[object WeakMap]') {
+      return 'weakmap';
+    }
+    if (type === '[object Symbol]') {
+      return 'symbol';
+    }
+    if (type === '[object Int8Array]') {
+      return 'int8array';
+    }
+    if (type === '[object Uint8Array]') {
+      return 'uint8array';
+    }
+    if (type === '[object Uint8ClampedArray]') {
+      return 'uint8clampedarray';
+    }
+    if (type === '[object Int16Array]') {
+      return 'int16array';
+    }
+    if (type === '[object Uint16Array]') {
+      return 'uint16array';
+    }
+    if (type === '[object Int32Array]') {
+      return 'int32array';
+    }
+    if (type === '[object Uint32Array]') {
+      return 'uint32array';
+    }
+    if (type === '[object Float32Array]') {
+      return 'float32array';
+    }
+    if (type === '[object Float64Array]') {
+      return 'float64array';
+    }
+    return 'object';
+  };
+  getDefaultExportFromCjs(kindOf);
+
+  var renameKeys = {exports: {}};
+
+  (function (module) {
+  	(function() {
+  	  function rename(obj, fn) {
+  	    if (typeof fn !== 'function') {
+  	      return obj;
+  	    }
+  	    var res = {};
+  	    for (var key in obj) {
+  	      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+  	        res[fn(key, obj[key]) || key] = obj[key];
+  	      }
+  	    }
+  	    return res;
+  	  }
+  	  if (module.exports) {
+  	    module.exports = rename;
+  	  } else {
+  	    {
+  	      window.rename = rename;
+  	    }
+  	  }
+  	})();
+  } (renameKeys));
+  var renameKeysExports = renameKeys.exports;
+  getDefaultExportFromCjs(renameKeysExports);
+
+  var typeOf = kindOf;
+  var rename = renameKeysExports;
+  var deepRenameKeys = function renameDeep(obj, cb) {
+    var type = typeOf(obj);
+    if (type !== 'object' && type !== 'array') {
+      throw new Error('expected an object');
+    }
+    var res = [];
+    if (type === 'object') {
+      obj = rename(obj, cb);
+      res = {};
+    }
+    for (var key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        var val = obj[key];
+        if (typeOf(val) === 'object' || typeOf(val) === 'array') {
+          res[key] = renameDeep(val, cb);
+        } else {
+          res[key] = val;
+        }
+      }
+    }
+    return res;
+  };
+  getDefaultExportFromCjs(deepRenameKeys);
+
+  var eventemitter3 = {exports: {}};
+
+  (function (module) {
+  	var has = Object.prototype.hasOwnProperty
+  	  , prefix = '~';
+  	function Events() {}
+  	if (Object.create) {
+  	  Events.prototype = Object.create(null);
+  	  if (!new Events().__proto__) prefix = false;
+  	}
+  	function EE(fn, context, once) {
+  	  this.fn = fn;
+  	  this.context = context;
+  	  this.once = once || false;
+  	}
+  	function EventEmitter() {
+  	  this._events = new Events();
+  	  this._eventsCount = 0;
+  	}
+  	EventEmitter.prototype.eventNames = function eventNames() {
+  	  var names = []
+  	    , events
+  	    , name;
+  	  if (this._eventsCount === 0) return names;
+  	  for (name in (events = this._events)) {
+  	    if (has.call(events, name)) names.push(prefix ? name.slice(1) : name);
+  	  }
+  	  if (Object.getOwnPropertySymbols) {
+  	    return names.concat(Object.getOwnPropertySymbols(events));
+  	  }
+  	  return names;
+  	};
+  	EventEmitter.prototype.listeners = function listeners(event, exists) {
+  	  var evt = prefix ? prefix + event : event
+  	    , available = this._events[evt];
+  	  if (exists) return !!available;
+  	  if (!available) return [];
+  	  if (available.fn) return [available.fn];
+  	  for (var i = 0, l = available.length, ee = new Array(l); i < l; i++) {
+  	    ee[i] = available[i].fn;
+  	  }
+  	  return ee;
+  	};
+  	EventEmitter.prototype.emit = function emit(event, a1, a2, a3, a4, a5) {
+  	  var evt = prefix ? prefix + event : event;
+  	  if (!this._events[evt]) return false;
+  	  var listeners = this._events[evt]
+  	    , len = arguments.length
+  	    , args
+  	    , i;
+  	  if (listeners.fn) {
+  	    if (listeners.once) this.removeListener(event, listeners.fn, undefined, true);
+  	    switch (len) {
+  	      case 1: return listeners.fn.call(listeners.context), true;
+  	      case 2: return listeners.fn.call(listeners.context, a1), true;
+  	      case 3: return listeners.fn.call(listeners.context, a1, a2), true;
+  	      case 4: return listeners.fn.call(listeners.context, a1, a2, a3), true;
+  	      case 5: return listeners.fn.call(listeners.context, a1, a2, a3, a4), true;
+  	      case 6: return listeners.fn.call(listeners.context, a1, a2, a3, a4, a5), true;
+  	    }
+  	    for (i = 1, args = new Array(len -1); i < len; i++) {
+  	      args[i - 1] = arguments[i];
+  	    }
+  	    listeners.fn.apply(listeners.context, args);
+  	  } else {
+  	    var length = listeners.length
+  	      , j;
+  	    for (i = 0; i < length; i++) {
+  	      if (listeners[i].once) this.removeListener(event, listeners[i].fn, undefined, true);
+  	      switch (len) {
+  	        case 1: listeners[i].fn.call(listeners[i].context); break;
+  	        case 2: listeners[i].fn.call(listeners[i].context, a1); break;
+  	        case 3: listeners[i].fn.call(listeners[i].context, a1, a2); break;
+  	        case 4: listeners[i].fn.call(listeners[i].context, a1, a2, a3); break;
+  	        default:
+  	          if (!args) for (j = 1, args = new Array(len -1); j < len; j++) {
+  	            args[j - 1] = arguments[j];
+  	          }
+  	          listeners[i].fn.apply(listeners[i].context, args);
+  	      }
+  	    }
+  	  }
+  	  return true;
+  	};
+  	EventEmitter.prototype.on = function on(event, fn, context) {
+  	  var listener = new EE(fn, context || this)
+  	    , evt = prefix ? prefix + event : event;
+  	  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
+  	  else if (!this._events[evt].fn) this._events[evt].push(listener);
+  	  else this._events[evt] = [this._events[evt], listener];
+  	  return this;
+  	};
+  	EventEmitter.prototype.once = function once(event, fn, context) {
+  	  var listener = new EE(fn, context || this, true)
+  	    , evt = prefix ? prefix + event : event;
+  	  if (!this._events[evt]) this._events[evt] = listener, this._eventsCount++;
+  	  else if (!this._events[evt].fn) this._events[evt].push(listener);
+  	  else this._events[evt] = [this._events[evt], listener];
+  	  return this;
+  	};
+  	EventEmitter.prototype.removeListener = function removeListener(event, fn, context, once) {
+  	  var evt = prefix ? prefix + event : event;
+  	  if (!this._events[evt]) return this;
+  	  if (!fn) {
+  	    if (--this._eventsCount === 0) this._events = new Events();
+  	    else delete this._events[evt];
+  	    return this;
+  	  }
+  	  var listeners = this._events[evt];
+  	  if (listeners.fn) {
+  	    if (
+  	         listeners.fn === fn
+  	      && (!once || listeners.once)
+  	      && (!context || listeners.context === context)
+  	    ) {
+  	      if (--this._eventsCount === 0) this._events = new Events();
+  	      else delete this._events[evt];
+  	    }
+  	  } else {
+  	    for (var i = 0, events = [], length = listeners.length; i < length; i++) {
+  	      if (
+  	           listeners[i].fn !== fn
+  	        || (once && !listeners[i].once)
+  	        || (context && listeners[i].context !== context)
+  	      ) {
+  	        events.push(listeners[i]);
+  	      }
+  	    }
+  	    if (events.length) this._events[evt] = events.length === 1 ? events[0] : events;
+  	    else if (--this._eventsCount === 0) this._events = new Events();
+  	    else delete this._events[evt];
+  	  }
+  	  return this;
+  	};
+  	EventEmitter.prototype.removeAllListeners = function removeAllListeners(event) {
+  	  var evt;
+  	  if (event) {
+  	    evt = prefix ? prefix + event : event;
+  	    if (this._events[evt]) {
+  	      if (--this._eventsCount === 0) this._events = new Events();
+  	      else delete this._events[evt];
+  	    }
+  	  } else {
+  	    this._events = new Events();
+  	    this._eventsCount = 0;
+  	  }
+  	  return this;
+  	};
+  	EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+  	EventEmitter.prototype.addListener = EventEmitter.prototype.on;
+  	EventEmitter.prototype.setMaxListeners = function setMaxListeners() {
+  	  return this;
+  	};
+  	EventEmitter.prefixed = prefix;
+  	EventEmitter.EventEmitter = EventEmitter;
+  	{
+  	  module.exports = EventEmitter;
+  	}
+  } (eventemitter3));
+  var eventemitter3Exports = eventemitter3.exports;
+  getDefaultExportFromCjs(eventemitter3Exports);
+
+  function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+  var EventEmitter$1 = eventemitter3Exports;
+  var noop = function noop() {};
+  var State = {
+      data: 'state-data',
+      cdata: 'state-cdata',
+      tagBegin: 'state-tag-begin',
+      tagName: 'state-tag-name',
+      tagEnd: 'state-tag-end',
+      attributeNameStart: 'state-attribute-name-start',
+      attributeName: 'state-attribute-name',
+      attributeNameEnd: 'state-attribute-name-end',
+      attributeValueBegin: 'state-attribute-value-begin',
+      attributeValue: 'state-attribute-value'
+  };
+  var Action = {
+      lt: 'action-lt',
+      gt: 'action-gt',
+      space: 'action-space',
+      equal: 'action-equal',
+      quote: 'action-quote',
+      slash: 'action-slash',
+      char: 'action-char',
+      error: 'action-error'
+  };
+  var Type$1 = {
+      text: 'text',
+      openTag: 'open-tag',
+      closeTag: 'close-tag',
+      attributeName: 'attribute-name',
+      attributeValue: 'attribute-value'
+  };
+  var charToAction = {
+      ' ': Action.space,
+      '\t': Action.space,
+      '\n': Action.space,
+      '\r': Action.space,
+      '<': Action.lt,
+      '>': Action.gt,
+      '"': Action.quote,
+      "'": Action.quote,
+      '=': Action.equal,
+      '/': Action.slash
+  };
+  var getAction = function getAction(char) {
+      return charToAction[char] || Action.char;
+  };
+  var create$1 = function create(options) {
+      var _State$data, _State$tagBegin, _State$tagName, _State$tagEnd, _State$attributeNameS, _State$attributeName, _State$attributeNameE, _State$attributeValue, _State$attributeValue2, _lexer$stateMachine;
+      options = Object.assign({ debug: false }, options);
+      var lexer = new EventEmitter$1();
+      var state = State.data;
+      var data = '';
+      var tagName = '';
+      var attrName = '';
+      var attrValue = '';
+      var isClosing = '';
+      var openingQuote = '';
+      var emit = function emit(type, value) {
+          if (tagName[0] === '?' || tagName[0] === '!') {
+              return;
+          }
+          var event = { type: type, value: value };
+          if (options.debug) {
+              console.log('emit:', event);
+          }
+          lexer.emit('data', event);
+      };
+      lexer.stateMachine = (_lexer$stateMachine = {}, _defineProperty(_lexer$stateMachine, State.data, (_State$data = {}, _defineProperty(_State$data, Action.lt, function () {
+          if (data.trim()) {
+              emit(Type$1.text, data);
+          }
+          tagName = '';
+          isClosing = false;
+          state = State.tagBegin;
+      }), _defineProperty(_State$data, Action.char, function (char) {
+          data += char;
+      }), _State$data)), _defineProperty(_lexer$stateMachine, State.cdata, _defineProperty({}, Action.char, function (char) {
+          data += char;
+          if (data.substr(-3) === ']]>') {
+              emit(Type$1.text, data.slice(0, -3));
+              data = '';
+              state = State.data;
+          }
+      })), _defineProperty(_lexer$stateMachine, State.tagBegin, (_State$tagBegin = {}, _defineProperty(_State$tagBegin, Action.space, noop), _defineProperty(_State$tagBegin, Action.char, function (char) {
+          tagName = char;
+          state = State.tagName;
+      }), _defineProperty(_State$tagBegin, Action.slash, function () {
+          tagName = '';
+          isClosing = true;
+      }), _State$tagBegin)), _defineProperty(_lexer$stateMachine, State.tagName, (_State$tagName = {}, _defineProperty(_State$tagName, Action.space, function () {
+          if (isClosing) {
+              state = State.tagEnd;
+          } else {
+              state = State.attributeNameStart;
+              emit(Type$1.openTag, tagName);
+          }
+      }), _defineProperty(_State$tagName, Action.gt, function () {
+          if (isClosing) {
+              emit(Type$1.closeTag, tagName);
+          } else {
+              emit(Type$1.openTag, tagName);
+          }
+          data = '';
+          state = State.data;
+      }), _defineProperty(_State$tagName, Action.slash, function () {
+          state = State.tagEnd;
+          emit(Type$1.openTag, tagName);
+      }), _defineProperty(_State$tagName, Action.char, function (char) {
+          tagName += char;
+          if (tagName === '![CDATA[') {
+              state = State.cdata;
+              data = '';
+              tagName = '';
+          }
+      }), _State$tagName)), _defineProperty(_lexer$stateMachine, State.tagEnd, (_State$tagEnd = {}, _defineProperty(_State$tagEnd, Action.gt, function () {
+          emit(Type$1.closeTag, tagName);
+          data = '';
+          state = State.data;
+      }), _defineProperty(_State$tagEnd, Action.char, noop), _State$tagEnd)), _defineProperty(_lexer$stateMachine, State.attributeNameStart, (_State$attributeNameS = {}, _defineProperty(_State$attributeNameS, Action.char, function (char) {
+          attrName = char;
+          state = State.attributeName;
+      }), _defineProperty(_State$attributeNameS, Action.gt, function () {
+          data = '';
+          state = State.data;
+      }), _defineProperty(_State$attributeNameS, Action.space, noop), _defineProperty(_State$attributeNameS, Action.slash, function () {
+          isClosing = true;
+          state = State.tagEnd;
+      }), _State$attributeNameS)), _defineProperty(_lexer$stateMachine, State.attributeName, (_State$attributeName = {}, _defineProperty(_State$attributeName, Action.space, function () {
+          state = State.attributeNameEnd;
+      }), _defineProperty(_State$attributeName, Action.equal, function () {
+          emit(Type$1.attributeName, attrName);
+          state = State.attributeValueBegin;
+      }), _defineProperty(_State$attributeName, Action.gt, function () {
+          attrValue = '';
+          emit(Type$1.attributeName, attrName);
+          emit(Type$1.attributeValue, attrValue);
+          data = '';
+          state = State.data;
+      }), _defineProperty(_State$attributeName, Action.slash, function () {
+          isClosing = true;
+          attrValue = '';
+          emit(Type$1.attributeName, attrName);
+          emit(Type$1.attributeValue, attrValue);
+          state = State.tagEnd;
+      }), _defineProperty(_State$attributeName, Action.char, function (char) {
+          attrName += char;
+      }), _State$attributeName)), _defineProperty(_lexer$stateMachine, State.attributeNameEnd, (_State$attributeNameE = {}, _defineProperty(_State$attributeNameE, Action.space, noop), _defineProperty(_State$attributeNameE, Action.equal, function () {
+          emit(Type$1.attributeName, attrName);
+          state = State.attributeValueBegin;
+      }), _defineProperty(_State$attributeNameE, Action.gt, function () {
+          attrValue = '';
+          emit(Type$1.attributeName, attrName);
+          emit(Type$1.attributeValue, attrValue);
+          data = '';
+          state = State.data;
+      }), _defineProperty(_State$attributeNameE, Action.char, function (char) {
+          attrValue = '';
+          emit(Type$1.attributeName, attrName);
+          emit(Type$1.attributeValue, attrValue);
+          attrName = char;
+          state = State.attributeName;
+      }), _State$attributeNameE)), _defineProperty(_lexer$stateMachine, State.attributeValueBegin, (_State$attributeValue = {}, _defineProperty(_State$attributeValue, Action.space, noop), _defineProperty(_State$attributeValue, Action.quote, function (char) {
+          openingQuote = char;
+          attrValue = '';
+          state = State.attributeValue;
+      }), _defineProperty(_State$attributeValue, Action.gt, function () {
+          attrValue = '';
+          emit(Type$1.attributeValue, attrValue);
+          data = '';
+          state = State.data;
+      }), _defineProperty(_State$attributeValue, Action.char, function (char) {
+          openingQuote = '';
+          attrValue = char;
+          state = State.attributeValue;
+      }), _State$attributeValue)), _defineProperty(_lexer$stateMachine, State.attributeValue, (_State$attributeValue2 = {}, _defineProperty(_State$attributeValue2, Action.space, function (char) {
+          if (openingQuote) {
+              attrValue += char;
+          } else {
+              emit(Type$1.attributeValue, attrValue);
+              state = State.attributeNameStart;
+          }
+      }), _defineProperty(_State$attributeValue2, Action.quote, function (char) {
+          if (openingQuote === char) {
+              emit(Type$1.attributeValue, attrValue);
+              state = State.attributeNameStart;
+          } else {
+              attrValue += char;
+          }
+      }), _defineProperty(_State$attributeValue2, Action.gt, function (char) {
+          if (openingQuote) {
+              attrValue += char;
+          } else {
+              emit(Type$1.attributeValue, attrValue);
+              data = '';
+              state = State.data;
+          }
+      }), _defineProperty(_State$attributeValue2, Action.slash, function (char) {
+          if (openingQuote) {
+              attrValue += char;
+          } else {
+              emit(Type$1.attributeValue, attrValue);
+              isClosing = true;
+              state = State.tagEnd;
+          }
+      }), _defineProperty(_State$attributeValue2, Action.char, function (char) {
+          attrValue += char;
+      }), _State$attributeValue2)), _lexer$stateMachine);
+      var step = function step(char) {
+          if (options.debug) {
+              console.log(state, char);
+          }
+          var actions = lexer.stateMachine[state];
+          var action = actions[getAction(char)] || actions[Action.error] || actions[Action.char];
+          action(char);
+      };
+      lexer.write = function (str) {
+          var len = str.length;
+          for (var i = 0; i < len; i++) {
+              step(str[i]);
+          }
+      };
+      return lexer;
+  };
+  var lexer = {
+      State: State,
+      Action: Action,
+      Type: Type$1,
+      create: create$1
+  };
+  getDefaultExportFromCjs(lexer);
+
+  var EventEmitter = eventemitter3Exports;
+  var Lexer = lexer;
+  var Type = Lexer.Type;
+  var NodeType = {
+      element: 'element',
+      text: 'text'
+  };
+  var createNode = function createNode(params) {
+      return Object.assign({
+          name: '',
+          type: NodeType.element,
+          value: '',
+          parent: null,
+          attributes: {},
+          children: []
+      }, params);
+  };
+  var create = function create(options) {
+      options = Object.assign({
+          stream: false,
+          parentNodes: true,
+          doneEvent: 'done',
+          tagPrefix: 'tag:',
+          emitTopLevelOnly: false,
+          debug: false
+      }, options);
+      var lexer = void 0,
+          rootNode = void 0,
+          current = void 0,
+          attrName = void 0;
+      var reader = new EventEmitter();
+      var handleLexerData = function handleLexerData(data) {
+          switch (data.type) {
+              case Type.openTag:
+                  if (current === null) {
+                      current = rootNode;
+                      current.name = data.value;
+                  } else {
+                      var node = createNode({
+                          name: data.value,
+                          parent: current
+                      });
+                      current.children.push(node);
+                      current = node;
+                  }
+                  break;
+              case Type.closeTag:
+                  var parent = current.parent;
+                  if (!options.parentNodes) {
+                      current.parent = null;
+                  }
+                  if (current.name !== data.value) {
+                      break;
+                  }
+                  if (options.stream && parent === rootNode) {
+                      rootNode.children = [];
+                      current.parent = null;
+                  }
+                  if (!options.emitTopLevelOnly || parent === rootNode) {
+                      reader.emit(options.tagPrefix + current.name, current);
+                      reader.emit('tag', current.name, current);
+                  }
+                  if (current === rootNode) {
+                      lexer.removeAllListeners('data');
+                      reader.emit(options.doneEvent, current);
+                      rootNode = null;
+                  }
+                  current = parent;
+                  break;
+              case Type.text:
+                  if (current) {
+                      current.children.push(createNode({
+                          type: NodeType.text,
+                          value: data.value,
+                          parent: options.parentNodes ? current : null
+                      }));
+                  }
+                  break;
+              case Type.attributeName:
+                  attrName = data.value;
+                  current.attributes[attrName] = '';
+                  break;
+              case Type.attributeValue:
+                  current.attributes[attrName] = data.value;
+                  break;
+          }
+      };
+      reader.reset = function () {
+          lexer = Lexer.create({ debug: options.debug });
+          lexer.on('data', handleLexerData);
+          rootNode = createNode();
+          current = null;
+          attrName = '';
+          reader.parse = lexer.write;
+      };
+      reader.reset();
+      return reader;
+  };
+  var parseSync = function parseSync(xml, options) {
+      options = Object.assign({}, options, { stream: false, tagPrefix: ':' });
+      var reader = create(options);
+      var res = void 0;
+      reader.on('done', function (ast) {
+          res = ast;
+      });
+      reader.parse(xml);
+      return res;
+  };
+  var reader = {
+      parseSync: parseSync,
+      create: create,
+      NodeType: NodeType
+  };
+  getDefaultExportFromCjs(reader);
+
+  const WSP = ' ';
+  function encodeSVGPath(commands) {
+      let str = '';
+      if (!Array.isArray(commands)) {
+          commands = [commands];
+      }
+      for (let i = 0; i < commands.length; i++) {
+          const command = commands[i];
+          if (command.type === SVGPathData.CLOSE_PATH) {
+              str += 'z';
+          }
+          else if (command.type === SVGPathData.HORIZ_LINE_TO) {
+              str += (command.relative ? 'h' : 'H') + command.x;
+          }
+          else if (command.type === SVGPathData.VERT_LINE_TO) {
+              str += (command.relative ? 'v' : 'V') + command.y;
+          }
+          else if (command.type === SVGPathData.MOVE_TO) {
+              str += (command.relative ? 'm' : 'M') + command.x + WSP + command.y;
+          }
+          else if (command.type === SVGPathData.LINE_TO) {
+              str += (command.relative ? 'l' : 'L') + command.x + WSP + command.y;
+          }
+          else if (command.type === SVGPathData.CURVE_TO) {
+              str +=
+                  (command.relative ? 'c' : 'C') +
+                      command.x1 +
+                      WSP +
+                      command.y1 +
+                      WSP +
+                      command.x2 +
+                      WSP +
+                      command.y2 +
+                      WSP +
+                      command.x +
+                      WSP +
+                      command.y;
+          }
+          else if (command.type === SVGPathData.SMOOTH_CURVE_TO) {
+              str +=
+                  (command.relative ? 's' : 'S') +
+                      command.x2 +
+                      WSP +
+                      command.y2 +
+                      WSP +
+                      command.x +
+                      WSP +
+                      command.y;
+          }
+          else if (command.type === SVGPathData.QUAD_TO) {
+              str +=
+                  (command.relative ? 'q' : 'Q') +
+                      command.x1 +
+                      WSP +
+                      command.y1 +
+                      WSP +
+                      command.x +
+                      WSP +
+                      command.y;
+          }
+          else if (command.type === SVGPathData.SMOOTH_QUAD_TO) {
+              str += (command.relative ? 't' : 'T') + command.x + WSP + command.y;
+          }
+          else if (command.type === SVGPathData.ARC) {
+              str +=
+                  (command.relative ? 'a' : 'A') +
+                      command.rX +
+                      WSP +
+                      command.rY +
+                      WSP +
+                      command.xRot +
+                      WSP +
+                      +command.lArcFlag +
+                      WSP +
+                      +command.sweepFlag +
+                      WSP +
+                      command.x +
+                      WSP +
+                      command.y;
+          }
+          else {
+              throw new Error(`Unexpected command type "${command?.type}" at index ${i}.`);
+          }
+      }
+      return str;
+  }
+
+  function rotate([x, y], rad) {
+      return [
+          x * Math.cos(rad) - y * Math.sin(rad),
+          x * Math.sin(rad) + y * Math.cos(rad),
+      ];
+  }
+  function assertNumbers(...numbers) {
+      {
+          for (let i = 0; i < numbers.length; i++) {
+              if ('number' !== typeof numbers[i]) {
+                  throw new Error(`assertNumbers arguments[${i}] is not a number. ${typeof numbers[i]} == typeof ${numbers[i]}`);
+              }
+          }
+      }
+      return true;
+  }
+  const PI = Math.PI;
+  function annotateArcCommand(c, x1, y1) {
+      c.lArcFlag = 0 === c.lArcFlag ? 0 : 1;
+      c.sweepFlag = 0 === c.sweepFlag ? 0 : 1;
+      let { rX, rY } = c;
+      const { x, y } = c;
+      if (Math.abs(rX) < 1e-10 || Math.abs(rY) < 1e-10) {
+          c.rX = 0;
+          c.rY = 0;
+          c.cX = (x1 + x) / 2;
+          c.cY = (y1 + y) / 2;
+          c.phi1 = 0;
+          c.phi2 = 0;
+          return;
+      }
+      rX = Math.abs(c.rX);
+      rY = Math.abs(c.rY);
+      const xRotRad = (c.xRot / 180) * PI;
+      const [x1_, y1_] = rotate([(x1 - x) / 2, (y1 - y) / 2], -xRotRad);
+      const testValue = Math.pow(x1_, 2) / Math.pow(rX, 2) + Math.pow(y1_, 2) / Math.pow(rY, 2);
+      if (1 < testValue) {
+          rX *= Math.sqrt(testValue);
+          rY *= Math.sqrt(testValue);
+      }
+      c.rX = rX;
+      c.rY = rY;
+      const c_ScaleTemp = Math.pow(rX, 2) * Math.pow(y1_, 2) + Math.pow(rY, 2) * Math.pow(x1_, 2);
+      const c_Scale = (c.lArcFlag !== c.sweepFlag ? 1 : -1) *
+          Math.sqrt(Math.max(0, (Math.pow(rX, 2) * Math.pow(rY, 2) - c_ScaleTemp) / c_ScaleTemp));
+      const cx_ = ((rX * y1_) / rY) * c_Scale;
+      const cy_ = ((-rY * x1_) / rX) * c_Scale;
+      const cRot = rotate([cx_, cy_], xRotRad);
+      c.cX = cRot[0] + (x1 + x) / 2;
+      c.cY = cRot[1] + (y1 + y) / 2;
+      c.phi1 = Math.atan2((y1_ - cy_) / rY, (x1_ - cx_) / rX);
+      c.phi2 = Math.atan2((-y1_ - cy_) / rY, (-x1_ - cx_) / rX);
+      if (0 === c.sweepFlag && c.phi2 > c.phi1) {
+          c.phi2 -= 2 * PI;
+      }
+      if (1 === c.sweepFlag && c.phi2 < c.phi1) {
+          c.phi2 += 2 * PI;
+      }
+      c.phi1 *= 180 / PI;
+      c.phi2 *= 180 / PI;
+  }
+  function intersectionUnitCircleLine(a, b, c) {
+      assertNumbers(a, b, c);
+      const termSqr = a * a + b * b - c * c;
+      if (0 > termSqr) {
+          return [];
+      }
+      else if (0 === termSqr) {
+          return [[(a * c) / (a * a + b * b), (b * c) / (a * a + b * b)]];
+      }
+      const term = Math.sqrt(termSqr);
+      return [
+          [
+              (a * c + b * term) / (a * a + b * b),
+              (b * c - a * term) / (a * a + b * b),
+          ],
+          [
+              (a * c - b * term) / (a * a + b * b),
+              (b * c + a * term) / (a * a + b * b),
+          ],
+      ];
+  }
+  const DEG = Math.PI / 180;
+  function lerp(a, b, t) {
+      return (1 - t) * a + t * b;
+  }
+  function arcAt(c, x1, x2, phiDeg) {
+      return (c + Math.cos((phiDeg / 180) * PI) * x1 + Math.sin((phiDeg / 180) * PI) * x2);
+  }
+  function bezierRoot(x0, x1, x2, x3) {
+      const EPS = 1e-6;
+      const x01 = x1 - x0;
+      const x12 = x2 - x1;
+      const x23 = x3 - x2;
+      const a = 3 * x01 + 3 * x23 - 6 * x12;
+      const b = (x12 - x01) * 6;
+      const c = 3 * x01;
+      if (Math.abs(a) < EPS) {
+          return Math.abs(b) < EPS ? [] : [-c / b];
+      }
+      return pqFormula(b / a, c / a, EPS);
+  }
+  function bezierAt(x0, x1, x2, x3, t) {
+      const s = 1 - t;
+      const c0 = s * s * s;
+      const c1 = 3 * s * s * t;
+      const c2 = 3 * s * t * t;
+      const c3 = t * t * t;
+      return x0 * c0 + x1 * c1 + x2 * c2 + x3 * c3;
+  }
+  function pqFormula(p, q, PRECISION = 1e-6) {
+      const discriminantX4 = (p * p) / 4 - q;
+      if (discriminantX4 < -PRECISION) {
+          return [];
+      }
+      else if (discriminantX4 <= PRECISION) {
+          return [-p / 2];
+      }
+      const root = Math.sqrt(discriminantX4);
+      return [-(p / 2) - root, -(p / 2) + root];
+  }
+  function a2c(arc, x0, y0) {
+      if (!arc.cX) {
+          annotateArcCommand(arc, x0, y0);
+      }
+      const xRotRad = (arc.xRot / 180) * PI;
+      if (Math.abs(arc.rX) < 1e-10 || Math.abs(arc.rY) < 1e-10) {
+          return [
+              {
+                  relative: arc.relative,
+                  type: SVGPathData.CURVE_TO,
+                  x1: x0 + (arc.x - x0) / 3,
+                  y1: y0 + (arc.y - y0) / 3,
+                  x2: x0 + (2 * (arc.x - x0)) / 3,
+                  y2: y0 + (2 * (arc.y - y0)) / 3,
+                  x: arc.x,
+                  y: arc.y,
+              },
+          ];
+      }
+      const phiMin = Math.min(arc.phi1, arc.phi2), phiMax = Math.max(arc.phi1, arc.phi2), deltaPhi = phiMax - phiMin;
+      const partCount = Math.ceil(deltaPhi / 90);
+      const result = new Array(partCount);
+      let prevX = x0;
+      let prevY = y0;
+      const transform = (x, y) => {
+          const [xTemp, yTemp] = rotate([x * arc.rX, y * arc.rY], xRotRad);
+          return [arc.cX + xTemp, arc.cY + yTemp];
+      };
+      for (let i = 0; i < partCount; i++) {
+          const phiStart = lerp(arc.phi1, arc.phi2, i / partCount);
+          const phiEnd = lerp(arc.phi1, arc.phi2, (i + 1) / partCount);
+          const deltaPhi = phiEnd - phiStart;
+          const f = (4 / 3) * Math.tan((deltaPhi * DEG) / 4);
+          const x1 = Math.cos(phiStart * DEG) - f * Math.sin(phiStart * DEG);
+          const y1 = Math.sin(phiStart * DEG) + f * Math.cos(phiStart * DEG);
+          const x = Math.cos(phiEnd * DEG);
+          const y = Math.sin(phiEnd * DEG);
+          const x2 = x + f * y;
+          const y2 = y - f * x;
+          const cp1 = transform(x1, y1);
+          const cp2 = transform(x2, y2);
+          const end = transform(x, y);
+          const command = {
+              relative: arc.relative,
+              type: SVGPathData.CURVE_TO,
+              x: end[0],
+              y: end[1],
+              x1: cp1[0],
+              y1: cp1[1],
+              x2: cp2[0],
+              y2: cp2[1],
+          };
+          if (arc.relative) {
+              command.x1 -= prevX;
+              command.y1 -= prevY;
+              command.x2 -= prevX;
+              command.y2 -= prevY;
+              command.x -= prevX;
+              command.y -= prevY;
+          }
+          prevX = end[0];
+          prevY = end[1];
+          result[i] = command;
+      }
+      return result;
+  }
+  function arePointsCollinear(p1, p2, p3) {
+      const v1x = p2[0] - p1[0];
+      const v1y = p2[1] - p1[1];
+      const v2x = p3[0] - p1[0];
+      const v2y = p3[1] - p1[1];
+      const cross = v1x * v2y - v1y * v2x;
+      const isCollinear = Math.abs(cross) < 1e-10;
+      if (!isCollinear)
+          return false;
+      const dot = v1x * v2x + v1y * v2y;
+      const lenSqV1 = v1x * v1x + v1y * v1y;
+      const lenSqV2 = v2x * v2x + v2y * v2y;
+      return 0 <= dot && dot <= lenSqV2 && lenSqV1 <= lenSqV2;
+  }
+
+  function REMOVE_COLLINEAR(commands) {
+      if (commands.length <= 2)
+          return commands;
+      const results = [];
+      const points = commands.map(SVGPathDataTransformer.INFO((cmd, pXAbs, pYAbs) => {
+          const isRelatve = 'relative' in cmd && cmd.relative;
+          return [
+              'x' in cmd ? cmd.x + (isRelatve ? pXAbs : 0) : pXAbs,
+              'y' in cmd ? cmd.y + (isRelatve ? pYAbs : 0) : pYAbs,
+          ];
+      }));
+      let prevPoint = points[0];
+      results.push(commands[0]);
+      for (let i = 1; i < commands.length; i++) {
+          const cmd = commands[i];
+          const nextCmd = commands[i + 1];
+          if (i < commands.length - 1 &&
+              nextCmd &&
+              cmd.type & SVGPathData.LINE_COMMANDS &&
+              nextCmd.type & SVGPathData.LINE_COMMANDS) {
+              const nextPoint = points[i + 1];
+              if (arePointsCollinear(prevPoint, points[i], nextPoint)) {
+                  if ('relative' in nextCmd && nextCmd.relative) {
+                      if ('x' in nextCmd)
+                          nextCmd.x = nextPoint[0] - prevPoint[0];
+                      if ('y' in nextCmd)
+                          nextCmd.y = nextPoint[1] - prevPoint[1];
+                  }
+                  continue;
+              }
+          }
+          results.push(cmd);
+          prevPoint = points[i];
+      }
+      return results;
+  }
+
+  function REVERSE_PATH(commands, preserveSubpathOrder = true) {
+      if (commands.length < 2)
+          return commands;
+      const normalized = SVGPathDataTransformer.INFO((command, px, py) => ({
+          ...command,
+          x: command.x ?? px,
+          y: command.y ?? py,
+          relative: command.relative ?? false,
+      }));
+      const result = [];
+      let processing = [];
+      for (const original of commands) {
+          const cmd = normalized(original);
+          if (cmd.type === SVGPathData.MOVE_TO && processing.length > 0) {
+              if (preserveSubpathOrder) {
+                  result.push(...reverseSubpath(processing));
+              }
+              else {
+                  result.unshift(...reverseSubpath(processing));
+              }
+              processing = [];
+          }
+          processing.push(cmd);
+      }
+      if (processing.length > 0) {
+          if (preserveSubpathOrder) {
+              result.push(...reverseSubpath(processing));
+          }
+          else {
+              result.unshift(...reverseSubpath(processing));
+          }
+      }
+      return result;
+  }
+  function reverseSubpath(commands) {
+      const isExplicitlyClosed = commands[commands.length - 1]?.type === SVGPathData.CLOSE_PATH;
+      const startPointIndex = isExplicitlyClosed
+          ? commands.length - 2
+          : commands.length - 1;
+      const reversed = [
+          {
+              type: SVGPathData.MOVE_TO,
+              relative: false,
+              x: commands[startPointIndex].x,
+              y: commands[startPointIndex].y,
+          },
+      ];
+      for (let i = startPointIndex; i > 0; i--) {
+          const curCmd = commands[i];
+          const prevPoint = commands[i - 1];
+          if (curCmd.relative) {
+              throw new Error('Relative command are not supported convert first with `toAbs()`');
+          }
+          switch (curCmd.type) {
+              case SVGPathData.HORIZ_LINE_TO:
+                  reversed.push({
+                      type: SVGPathData.HORIZ_LINE_TO,
+                      relative: false,
+                      x: prevPoint.x,
+                  });
+                  break;
+              case SVGPathData.VERT_LINE_TO:
+                  reversed.push({
+                      type: SVGPathData.VERT_LINE_TO,
+                      relative: false,
+                      y: prevPoint.y,
+                  });
+                  break;
+              case SVGPathData.LINE_TO:
+              case SVGPathData.MOVE_TO:
+                  reversed.push({
+                      type: SVGPathData.LINE_TO,
+                      relative: false,
+                      x: prevPoint.x,
+                      y: prevPoint.y,
+                  });
+                  break;
+              case SVGPathData.CURVE_TO:
+                  reversed.push({
+                      type: SVGPathData.CURVE_TO,
+                      relative: false,
+                      x: prevPoint.x,
+                      y: prevPoint.y,
+                      x1: curCmd.x2,
+                      y1: curCmd.y2,
+                      x2: curCmd.x1,
+                      y2: curCmd.y1,
+                  });
+                  break;
+              case SVGPathData.SMOOTH_CURVE_TO:
+                  throw new Error(`Unsupported command: S (smooth cubic bezier)`);
+              case SVGPathData.SMOOTH_QUAD_TO:
+                  throw new Error(`Unsupported command: T (smooth quadratic bezier)`);
+              case SVGPathData.ARC:
+                  throw new Error(`Unsupported command: A (arc)`);
+              case SVGPathData.QUAD_TO:
+                  throw new Error(`Unsupported command: Q (quadratic bezier)`);
+          }
+      }
+      if (isExplicitlyClosed) {
+          reversed.push({ type: SVGPathData.CLOSE_PATH });
+      }
+      return reversed;
+  }
+
+  function ROUND(roundVal = 1e13) {
+      assertNumbers(roundVal);
+      function rf(val) {
+          return Math.round(val * roundVal) / roundVal;
+      }
+      return function round(command) {
+          if ('x1' in command && 'undefined' !== typeof command.x1) {
+              command.x1 = rf(command.x1);
+          }
+          if ('y1' in command && 'undefined' !== typeof command.y1) {
+              command.y1 = rf(command.y1);
+          }
+          if ('x2' in command && 'undefined' !== typeof command.x2) {
+              command.x2 = rf(command.x2);
+          }
+          if ('y2' in command && 'undefined' !== typeof command.y2) {
+              command.y2 = rf(command.y2);
+          }
+          if ('x' in command && 'undefined' !== typeof command.x) {
+              command.x = rf(command.x);
+          }
+          if ('y' in command && 'undefined' !== typeof command.y) {
+              command.y = rf(command.y);
+          }
+          if ('rX' in command && 'undefined' !== typeof command.rX) {
+              command.rX = rf(command.rX);
+          }
+          if ('rY' in command && 'undefined' !== typeof command.rY) {
+              command.rY = rf(command.rY);
+          }
+          return command;
+      };
+  }
+  function TO_ABS() {
+      return INFO((command, prevX, prevY) => {
+          if (command.relative) {
+              if ('undefined' !== typeof command.x1) {
+                  command.x1 += prevX;
+              }
+              if ('undefined' !== typeof command.y1) {
+                  command.y1 += prevY;
+              }
+              if ('undefined' !== typeof command.x2) {
+                  command.x2 += prevX;
+              }
+              if ('undefined' !== typeof command.y2) {
+                  command.y2 += prevY;
+              }
+              if ('undefined' !== typeof command.x) {
+                  command.x += prevX;
+              }
+              if ('undefined' !== typeof command.y) {
+                  command.y += prevY;
+              }
+              command.relative = false;
+          }
+          return command;
+      });
+  }
+  function TO_REL() {
+      return INFO((command, prevX, prevY) => {
+          if (!command.relative) {
+              if ('undefined' !== typeof command.x1) {
+                  command.x1 -= prevX;
+              }
+              if ('undefined' !== typeof command.y1) {
+                  command.y1 -= prevY;
+              }
+              if ('undefined' !== typeof command.x2) {
+                  command.x2 -= prevX;
+              }
+              if ('undefined' !== typeof command.y2) {
+                  command.y2 -= prevY;
+              }
+              if ('undefined' !== typeof command.x) {
+                  command.x -= prevX;
+              }
+              if ('undefined' !== typeof command.y) {
+                  command.y -= prevY;
+              }
+              command.relative = true;
+          }
+          return command;
+      });
+  }
+  function NORMALIZE_HVZ(normalizeZ = true, normalizeH = true, normalizeV = true, normalizeC = true) {
+      return INFO((command, prevX, prevY, pathStartX, pathStartY) => {
+          if (isNaN(pathStartX) && !(command.type & SVGPathData.MOVE_TO)) {
+              throw new Error('path must start with moveto');
+          }
+          if (normalizeH && command.type & SVGPathData.HORIZ_LINE_TO) {
+              command.type = SVGPathData.LINE_TO;
+              command.y = command.relative ? 0 : prevY;
+          }
+          if (normalizeV && command.type & SVGPathData.VERT_LINE_TO) {
+              command.type = SVGPathData.LINE_TO;
+              command.x = command.relative ? 0 : prevX;
+          }
+          if (normalizeZ && command.type & SVGPathData.CLOSE_PATH) {
+              command.type = SVGPathData.LINE_TO;
+              command.x = command.relative ? pathStartX - prevX : pathStartX;
+              command.y = command.relative ? pathStartY - prevY : pathStartY;
+          }
+          if (command.type & SVGPathData.ARC &&
+              (0 === command.rX || 0 === command.rY)) {
+              command.type = SVGPathData.LINE_TO;
+              delete command.rX;
+              delete command.rY;
+              delete command.xRot;
+              delete command.lArcFlag;
+              delete command.sweepFlag;
+          }
+          if (normalizeC && command.type & SVGPathData.QUAD_TO) {
+              const startPoint = [prevX, prevY];
+              const controlPoint = command.relative
+                  ? [prevX + command.x1, prevY + command.y1]
+                  : [command.x1, command.y1];
+              const endPoint = command.relative
+                  ? [prevX + command.x, prevY + command.y]
+                  : [command.x, command.y];
+              if (arePointsCollinear(startPoint, controlPoint, endPoint)) {
+                  command.type = SVGPathData.LINE_TO;
+                  delete command.x1;
+                  delete command.y1;
+              }
+          }
+          if (normalizeC && command.type & SVGPathData.CURVE_TO) {
+              const startPoint = [prevX, prevY];
+              const control1 = command.relative
+                  ? [prevX + command.x1, prevY + command.y1]
+                  : [command.x1, command.y1];
+              const control2 = command.relative
+                  ? [prevX + command.x2, prevY + command.y2]
+                  : [command.x2, command.y2];
+              const endPoint = command.relative
+                  ? [prevX + command.x, prevY + command.y]
+                  : [command.x, command.y];
+              if (arePointsCollinear(startPoint, control1, endPoint) &&
+                  arePointsCollinear(startPoint, control2, endPoint)) {
+                  command.type = SVGPathData.LINE_TO;
+                  delete command.x1;
+                  delete command.y1;
+                  delete command.x2;
+                  delete command.y2;
+              }
+          }
+          return command;
+      });
+  }
+  function NORMALIZE_ST() {
+      let prevCurveC2X = NaN;
+      let prevCurveC2Y = NaN;
+      let prevQuadCX = NaN;
+      let prevQuadCY = NaN;
+      return INFO((command, prevX, prevY) => {
+          if (command.type & SVGPathData.SMOOTH_CURVE_TO) {
+              command.type = SVGPathData.CURVE_TO;
+              prevCurveC2X = isNaN(prevCurveC2X) ? prevX : prevCurveC2X;
+              prevCurveC2Y = isNaN(prevCurveC2Y) ? prevY : prevCurveC2Y;
+              command.x1 = command.relative
+                  ? prevX - prevCurveC2X
+                  : 2 * prevX - prevCurveC2X;
+              command.y1 = command.relative
+                  ? prevY - prevCurveC2Y
+                  : 2 * prevY - prevCurveC2Y;
+          }
+          if (command.type & SVGPathData.CURVE_TO) {
+              prevCurveC2X = command.relative ? prevX + command.x2 : command.x2;
+              prevCurveC2Y = command.relative ? prevY + command.y2 : command.y2;
+          }
+          else {
+              prevCurveC2X = NaN;
+              prevCurveC2Y = NaN;
+          }
+          if (command.type & SVGPathData.SMOOTH_QUAD_TO) {
+              command.type = SVGPathData.QUAD_TO;
+              prevQuadCX = isNaN(prevQuadCX) ? prevX : prevQuadCX;
+              prevQuadCY = isNaN(prevQuadCY) ? prevY : prevQuadCY;
+              command.x1 = command.relative
+                  ? prevX - prevQuadCX
+                  : 2 * prevX - prevQuadCX;
+              command.y1 = command.relative
+                  ? prevY - prevQuadCY
+                  : 2 * prevY - prevQuadCY;
+          }
+          if (command.type & SVGPathData.QUAD_TO) {
+              prevQuadCX = command.relative ? prevX + command.x1 : command.x1;
+              prevQuadCY = command.relative ? prevY + command.y1 : command.y1;
+          }
+          else {
+              prevQuadCX = NaN;
+              prevQuadCY = NaN;
+          }
+          return command;
+      });
+  }
+  function QT_TO_C() {
+      let prevQuadX1 = NaN;
+      let prevQuadY1 = NaN;
+      return INFO((command, prevX, prevY) => {
+          if (command.type & SVGPathData.SMOOTH_QUAD_TO) {
+              command.type = SVGPathData.QUAD_TO;
+              prevQuadX1 = isNaN(prevQuadX1) ? prevX : prevQuadX1;
+              prevQuadY1 = isNaN(prevQuadY1) ? prevY : prevQuadY1;
+              command.x1 = command.relative
+                  ? prevX - prevQuadX1
+                  : 2 * prevX - prevQuadX1;
+              command.y1 = command.relative
+                  ? prevY - prevQuadY1
+                  : 2 * prevY - prevQuadY1;
+          }
+          if (command.type & SVGPathData.QUAD_TO) {
+              prevQuadX1 = command.relative ? prevX + command.x1 : command.x1;
+              prevQuadY1 = command.relative ? prevY + command.y1 : command.y1;
+              const x1 = command.x1;
+              const y1 = command.y1;
+              command.type = SVGPathData.CURVE_TO;
+              command.x1 = ((command.relative ? 0 : prevX) + x1 * 2) / 3;
+              command.y1 = ((command.relative ? 0 : prevY) + y1 * 2) / 3;
+              command.x2 = (command.x + x1 * 2) / 3;
+              command.y2 = (command.y + y1 * 2) / 3;
+          }
+          else {
+              prevQuadX1 = NaN;
+              prevQuadY1 = NaN;
+          }
+          return command;
+      });
+  }
+  function INFO(f) {
+      let prevXAbs = 0;
+      let prevYAbs = 0;
+      let pathStartXAbs = NaN;
+      let pathStartYAbs = NaN;
+      return function transform(command) {
+          if (isNaN(pathStartXAbs) && !(command.type & SVGPathData.MOVE_TO)) {
+              throw new Error('path must start with moveto');
+          }
+          const result = f(command, prevXAbs, prevYAbs, pathStartXAbs, pathStartYAbs);
+          if (command.type & SVGPathData.CLOSE_PATH) {
+              prevXAbs = pathStartXAbs;
+              prevYAbs = pathStartYAbs;
+          }
+          if ('x' in command && 'undefined' !== typeof command.x) {
+              prevXAbs = command.relative ? prevXAbs + command.x : command.x;
+          }
+          if ('y' in command && 'undefined' !== typeof command.y) {
+              prevYAbs = command.relative ? prevYAbs + command.y : command.y;
+          }
+          if (command.type & SVGPathData.MOVE_TO) {
+              pathStartXAbs = prevXAbs;
+              pathStartYAbs = prevYAbs;
+          }
+          return result;
+      };
+  }
+  function SANITIZE(EPS = 0) {
+      assertNumbers(EPS);
+      let prevCurveC2X = NaN;
+      let prevCurveC2Y = NaN;
+      let prevQuadCX = NaN;
+      let prevQuadCY = NaN;
+      return INFO((command, prevX, prevY, pathStartX, pathStartY) => {
+          const abs = Math.abs;
+          let skip = false;
+          let x1Rel = 0;
+          let y1Rel = 0;
+          if (command.type & SVGPathData.SMOOTH_CURVE_TO) {
+              x1Rel = isNaN(prevCurveC2X) ? 0 : prevX - prevCurveC2X;
+              y1Rel = isNaN(prevCurveC2Y) ? 0 : prevY - prevCurveC2Y;
+          }
+          if (command.type & (SVGPathData.CURVE_TO | SVGPathData.SMOOTH_CURVE_TO)) {
+              prevCurveC2X = command.relative ? prevX + command.x2 : command.x2;
+              prevCurveC2Y = command.relative ? prevY + command.y2 : command.y2;
+          }
+          else {
+              prevCurveC2X = NaN;
+              prevCurveC2Y = NaN;
+          }
+          if (command.type & SVGPathData.SMOOTH_QUAD_TO) {
+              prevQuadCX = isNaN(prevQuadCX) ? prevX : 2 * prevX - prevQuadCX;
+              prevQuadCY = isNaN(prevQuadCY) ? prevY : 2 * prevY - prevQuadCY;
+          }
+          else if (command.type & SVGPathData.QUAD_TO) {
+              prevQuadCX = command.relative ? prevX + command.x1 : command.x1;
+              prevQuadCY = command.relative ? prevY + command.y1 : command.y2;
+          }
+          else {
+              prevQuadCX = NaN;
+              prevQuadCY = NaN;
+          }
+          if (command.type & SVGPathData.LINE_COMMANDS ||
+              (command.type & SVGPathData.ARC &&
+                  (0 === command.rX || 0 === command.rY || !command.lArcFlag)) ||
+              command.type & SVGPathData.CURVE_TO ||
+              command.type & SVGPathData.SMOOTH_CURVE_TO ||
+              command.type & SVGPathData.QUAD_TO ||
+              command.type & SVGPathData.SMOOTH_QUAD_TO) {
+              const xRel = 'undefined' === typeof command.x
+                  ? 0
+                  : command.relative
+                      ? command.x
+                      : command.x - prevX;
+              const yRel = 'undefined' === typeof command.y
+                  ? 0
+                  : command.relative
+                      ? command.y
+                      : command.y - prevY;
+              x1Rel = !isNaN(prevQuadCX)
+                  ? prevQuadCX - prevX
+                  : 'undefined' === typeof command.x1
+                      ? x1Rel
+                      : command.relative
+                          ? command.x
+                          : command.x1 - prevX;
+              y1Rel = !isNaN(prevQuadCY)
+                  ? prevQuadCY - prevY
+                  : 'undefined' === typeof command.y1
+                      ? y1Rel
+                      : command.relative
+                          ? command.y
+                          : command.y1 - prevY;
+              const x2Rel = 'undefined' === typeof command.x2
+                  ? 0
+                  : command.relative
+                      ? command.x
+                      : command.x2 - prevX;
+              const y2Rel = 'undefined' === typeof command.y2
+                  ? 0
+                  : command.relative
+                      ? command.y
+                      : command.y2 - prevY;
+              if (abs(xRel) <= EPS &&
+                  abs(yRel) <= EPS &&
+                  abs(x1Rel) <= EPS &&
+                  abs(y1Rel) <= EPS &&
+                  abs(x2Rel) <= EPS &&
+                  abs(y2Rel) <= EPS) {
+                  skip = true;
+              }
+          }
+          if (command.type & SVGPathData.CLOSE_PATH) {
+              if (abs(prevX - pathStartX) <= EPS && abs(prevY - pathStartY) <= EPS) {
+                  skip = true;
+              }
+          }
+          return skip ? [] : command;
+      });
+  }
+  function MATRIX(a, b, c, d, e, f) {
+      assertNumbers(a, b, c, d, e, f);
+      return INFO((command, prevX, prevY, pathStartX) => {
+          const origX1 = command.x1;
+          const origX2 = command.x2;
+          const comRel = command.relative && !isNaN(pathStartX);
+          const x = 'undefined' !== typeof command.x ? command.x : comRel ? 0 : prevX;
+          const y = 'undefined' !== typeof command.y ? command.y : comRel ? 0 : prevY;
+          if (command.type & SVGPathData.HORIZ_LINE_TO && 0 !== b) {
+              command.type = SVGPathData.LINE_TO;
+              command.y = command.relative ? 0 : prevY;
+          }
+          if (command.type & SVGPathData.VERT_LINE_TO && 0 !== c) {
+              command.type = SVGPathData.LINE_TO;
+              command.x = command.relative ? 0 : prevX;
+          }
+          if ('undefined' !== typeof command.x) {
+              command.x = command.x * a + y * c + (comRel ? 0 : e);
+          }
+          if ('undefined' !== typeof command.y) {
+              command.y = x * b + command.y * d + (comRel ? 0 : f);
+          }
+          if ('undefined' !== typeof command.x1) {
+              command.x1 = command.x1 * a + command.y1 * c + (comRel ? 0 : e);
+          }
+          if ('undefined' !== typeof command.y1) {
+              command.y1 = origX1 * b + command.y1 * d + (comRel ? 0 : f);
+          }
+          if ('undefined' !== typeof command.x2) {
+              command.x2 = command.x2 * a + command.y2 * c + (comRel ? 0 : e);
+          }
+          if ('undefined' !== typeof command.y2) {
+              command.y2 = origX2 * b + command.y2 * d + (comRel ? 0 : f);
+          }
+          function sqr(x) {
+              return x * x;
+          }
+          const det = a * d - b * c;
+          if ('undefined' !== typeof command.xRot) {
+              if (1 !== a || 0 !== b || 0 !== c || 1 !== d) {
+                  if (0 === det) {
+                      delete command.rX;
+                      delete command.rY;
+                      delete command.xRot;
+                      delete command.lArcFlag;
+                      delete command.sweepFlag;
+                      command.type = SVGPathData.LINE_TO;
+                  }
+                  else {
+                      const xRot = (command.xRot * Math.PI) / 180;
+                      const sinRot = Math.sin(xRot);
+                      const cosRot = Math.cos(xRot);
+                      const xCurve = 1 / sqr(command.rX);
+                      const yCurve = 1 / sqr(command.rY);
+                      const A = sqr(cosRot) * xCurve + sqr(sinRot) * yCurve;
+                      const B = 2 * sinRot * cosRot * (xCurve - yCurve);
+                      const C = sqr(sinRot) * xCurve + sqr(cosRot) * yCurve;
+                      const A1 = A * d * d - B * b * d + C * b * b;
+                      const B1 = B * (a * d + b * c) - 2 * (A * c * d + C * a * b);
+                      const C1 = A * c * c - B * a * c + C * a * a;
+                      const newXRot = ((Math.atan2(B1, A1 - C1) + Math.PI) % Math.PI) / 2;
+                      const newSinRot = Math.sin(newXRot);
+                      const newCosRot = Math.cos(newXRot);
+                      command.rX =
+                          Math.abs(det) /
+                              Math.sqrt(A1 * sqr(newCosRot) +
+                                  B1 * newSinRot * newCosRot +
+                                  C1 * sqr(newSinRot));
+                      command.rY =
+                          Math.abs(det) /
+                              Math.sqrt(A1 * sqr(newSinRot) -
+                                  B1 * newSinRot * newCosRot +
+                                  C1 * sqr(newCosRot));
+                      command.xRot = (newXRot * 180) / Math.PI;
+                  }
+              }
+          }
+          if ('undefined' !== typeof command.sweepFlag && 0 > det) {
+              command.sweepFlag = +!command.sweepFlag;
+          }
+          return command;
+      });
+  }
+  function ROTATE(a, x = 0, y = 0) {
+      assertNumbers(a, x, y);
+      const sin = Math.sin(a);
+      const cos = Math.cos(a);
+      return MATRIX(cos, sin, -sin, cos, x - x * cos + y * sin, y - x * sin - y * cos);
+  }
+  function TRANSLATE(dX, dY = 0) {
+      assertNumbers(dX, dY);
+      return MATRIX(1, 0, 0, 1, dX, dY);
+  }
+  function SCALE(dX, dY = dX) {
+      assertNumbers(dX, dY);
+      return MATRIX(dX, 0, 0, dY, 0, 0);
+  }
+  function SKEW_X(a) {
+      assertNumbers(a);
+      return MATRIX(1, 0, Math.tan(a), 1, 0, 0);
+  }
+  function SKEW_Y(a) {
+      assertNumbers(a);
+      return MATRIX(1, Math.tan(a), 0, 1, 0, 0);
+  }
+  function X_AXIS_SYMMETRY(xOffset = 0) {
+      assertNumbers(xOffset);
+      return MATRIX(-1, 0, 0, 1, xOffset, 0);
+  }
+  function Y_AXIS_SYMMETRY(yOffset = 0) {
+      assertNumbers(yOffset);
+      return MATRIX(1, 0, 0, -1, 0, yOffset);
+  }
+  function A_TO_C() {
+      return INFO((command, prevX, prevY) => {
+          if (SVGPathData.ARC === command.type) {
+              return a2c(command, command.relative ? 0 : prevX, command.relative ? 0 : prevY);
+          }
+          return command;
+      });
+  }
+  function ANNOTATE_ARCS() {
+      return INFO((c, x1, y1) => {
+          if (c.relative) {
+              x1 = 0;
+              y1 = 0;
+          }
+          if (SVGPathData.ARC === c.type) {
+              annotateArcCommand(c, x1, y1);
+          }
+          return c;
+      });
+  }
+  function CLONE() {
+      return (c) => {
+          return { ...c };
+      };
+  }
+  function CALCULATE_BOUNDS() {
+      const clone = CLONE();
+      const toAbs = TO_ABS();
+      const qtToC = QT_TO_C();
+      const normST = NORMALIZE_ST();
+      const f = INFO((command, prevXAbs, prevYAbs) => {
+          const c = normST(qtToC(toAbs(clone(command))));
+          function fixX(absX) {
+              if (absX > f.maxX) {
+                  f.maxX = absX;
+              }
+              if (absX < f.minX) {
+                  f.minX = absX;
+              }
+          }
+          function fixY(absY) {
+              if (absY > f.maxY) {
+                  f.maxY = absY;
+              }
+              if (absY < f.minY) {
+                  f.minY = absY;
+              }
+          }
+          if (c.type & SVGPathData.DRAWING_COMMANDS) {
+              fixX(prevXAbs);
+              fixY(prevYAbs);
+          }
+          if (c.type & SVGPathData.HORIZ_LINE_TO) {
+              fixX(c.x);
+          }
+          if (c.type & SVGPathData.VERT_LINE_TO) {
+              fixY(c.y);
+          }
+          if (c.type & SVGPathData.LINE_TO) {
+              fixX(c.x);
+              fixY(c.y);
+          }
+          if (c.type & SVGPathData.CURVE_TO) {
+              fixX(c.x);
+              fixY(c.y);
+              const xDerivRoots = bezierRoot(prevXAbs, c.x1, c.x2, c.x);
+              for (const derivRoot of xDerivRoots) {
+                  if (0 < derivRoot && 1 > derivRoot) {
+                      fixX(bezierAt(prevXAbs, c.x1, c.x2, c.x, derivRoot));
+                  }
+              }
+              const yDerivRoots = bezierRoot(prevYAbs, c.y1, c.y2, c.y);
+              for (const derivRoot of yDerivRoots) {
+                  if (0 < derivRoot && 1 > derivRoot) {
+                      fixY(bezierAt(prevYAbs, c.y1, c.y2, c.y, derivRoot));
+                  }
+              }
+          }
+          if (c.type & SVGPathData.ARC) {
+              fixX(c.x);
+              fixY(c.y);
+              annotateArcCommand(c, prevXAbs, prevYAbs);
+              const xRotRad = (c.xRot / 180) * Math.PI;
+              const x0 = Math.cos(xRotRad) * c.rX;
+              const y0 = Math.sin(xRotRad) * c.rX;
+              const x90 = -Math.sin(xRotRad) * c.rY;
+              const y90 = Math.cos(xRotRad) * c.rY;
+              const [phiMin, phiMax] = c.phi1 < c.phi2
+                  ? [c.phi1, c.phi2]
+                  : -180 > c.phi2
+                      ? [c.phi2 + 360, c.phi1 + 360]
+                      : [c.phi2, c.phi1];
+              const normalizeXiEta = ([xi, eta]) => {
+                  const phiRad = Math.atan2(eta, xi);
+                  const phi = (phiRad * 180) / Math.PI;
+                  return phi < phiMin ? phi + 360 : phi;
+              };
+              const xDerivRoots = intersectionUnitCircleLine(x90, -x0, 0).map(normalizeXiEta);
+              for (const derivRoot of xDerivRoots) {
+                  if (derivRoot > phiMin && derivRoot < phiMax) {
+                      fixX(arcAt(c.cX, x0, x90, derivRoot));
+                  }
+              }
+              const yDerivRoots = intersectionUnitCircleLine(y90, -y0, 0).map(normalizeXiEta);
+              for (const derivRoot of yDerivRoots) {
+                  if (derivRoot > phiMin && derivRoot < phiMax) {
+                      fixY(arcAt(c.cY, y0, y90, derivRoot));
+                  }
+              }
+          }
+          return command;
+      });
+      f.minX = Infinity;
+      f.maxX = -Infinity;
+      f.minY = Infinity;
+      f.maxY = -Infinity;
+      return f;
+  }
+  const SVGPathDataTransformer = {
+      ROUND,
+      TO_ABS,
+      TO_REL,
+      NORMALIZE_HVZ,
+      NORMALIZE_ST,
+      QT_TO_C,
+      INFO,
+      SANITIZE,
+      MATRIX,
+      ROTATE,
+      TRANSLATE,
+      SCALE,
+      SKEW_X,
+      SKEW_Y,
+      X_AXIS_SYMMETRY,
+      Y_AXIS_SYMMETRY,
+      A_TO_C,
+      ANNOTATE_ARCS,
+      CLONE,
+      CALCULATE_BOUNDS,
+      REVERSE_PATH,
+      REMOVE_COLLINEAR,
+  };
+
+  class TransformableSVG {
+      round(x) {
+          return this.transform(SVGPathDataTransformer.ROUND(x));
+      }
+      toAbs() {
+          return this.transform(SVGPathDataTransformer.TO_ABS());
+      }
+      toRel() {
+          return this.transform(SVGPathDataTransformer.TO_REL());
+      }
+      normalizeHVZ(a, b, c) {
+          return this.transform(SVGPathDataTransformer.NORMALIZE_HVZ(a, b, c));
+      }
+      normalizeST() {
+          return this.transform(SVGPathDataTransformer.NORMALIZE_ST());
+      }
+      qtToC() {
+          return this.transform(SVGPathDataTransformer.QT_TO_C());
+      }
+      aToC() {
+          return this.transform(SVGPathDataTransformer.A_TO_C());
+      }
+      sanitize(eps) {
+          return this.transform(SVGPathDataTransformer.SANITIZE(eps));
+      }
+      translate(x, y) {
+          return this.transform(SVGPathDataTransformer.TRANSLATE(x, y));
+      }
+      scale(x, y) {
+          return this.transform(SVGPathDataTransformer.SCALE(x, y));
+      }
+      rotate(a, x, y) {
+          return this.transform(SVGPathDataTransformer.ROTATE(a, x, y));
+      }
+      matrix(a, b, c, d, e, f) {
+          return this.transform(SVGPathDataTransformer.MATRIX(a, b, c, d, e, f));
+      }
+      skewX(a) {
+          return this.transform(SVGPathDataTransformer.SKEW_X(a));
+      }
+      skewY(a) {
+          return this.transform(SVGPathDataTransformer.SKEW_Y(a));
+      }
+      xSymmetry(xOffset) {
+          return this.transform(SVGPathDataTransformer.X_AXIS_SYMMETRY(xOffset));
+      }
+      ySymmetry(yOffset) {
+          return this.transform(SVGPathDataTransformer.Y_AXIS_SYMMETRY(yOffset));
+      }
+      annotateArcs() {
+          return this.transform(SVGPathDataTransformer.ANNOTATE_ARCS());
+      }
+  }
+
+  const isWhiteSpace = (c) => ' ' === c || '\t' === c || '\r' === c || '\n' === c;
+  const isDigit = (c) => '0'.charCodeAt(0) <= c.charCodeAt(0) && c.charCodeAt(0) <= '9'.charCodeAt(0);
+  class SVGPathDataParser extends TransformableSVG {
+      curNumber = '';
+      curCommandType = -1;
+      curCommandRelative = false;
+      canParseCommandOrComma = true;
+      curNumberHasExp = false;
+      curNumberHasExpDigits = false;
+      curNumberHasDecimal = false;
+      curArgs = [];
+      constructor() {
+          super();
+      }
+      finish(commands = []) {
+          this.parse(' ', commands);
+          if (0 !== this.curArgs.length || !this.canParseCommandOrComma) {
+              throw new SyntaxError('Unterminated command at the path end.');
+          }
+          return commands;
+      }
+      parse(str, commands = []) {
+          const finishCommand = (command) => {
+              commands.push(command);
+              this.curArgs.length = 0;
+              this.canParseCommandOrComma = true;
+          };
+          for (let i = 0; i < str.length; i++) {
+              const c = str[i];
+              const isAArcFlag = this.curCommandType === SVGPathData.ARC &&
+                  (this.curArgs.length === 3 || this.curArgs.length === 4) &&
+                  this.curNumber.length === 1 &&
+                  (this.curNumber === '0' || this.curNumber === '1');
+              const isEndingDigit = isDigit(c) && ((this.curNumber === '0' && c === '0') || isAArcFlag);
+              if (isDigit(c) && !isEndingDigit) {
+                  this.curNumber += c;
+                  this.curNumberHasExpDigits = this.curNumberHasExp;
+                  continue;
+              }
+              if ('e' === c || 'E' === c) {
+                  this.curNumber += c;
+                  this.curNumberHasExp = true;
+                  continue;
+              }
+              if (('-' === c || '+' === c) &&
+                  this.curNumberHasExp &&
+                  !this.curNumberHasExpDigits) {
+                  this.curNumber += c;
+                  continue;
+              }
+              if ('.' === c &&
+                  !this.curNumberHasExp &&
+                  !this.curNumberHasDecimal &&
+                  !isAArcFlag) {
+                  this.curNumber += c;
+                  this.curNumberHasDecimal = true;
+                  continue;
+              }
+              if (this.curNumber && -1 !== this.curCommandType) {
+                  const val = Number(this.curNumber);
+                  if (isNaN(val)) {
+                      throw new SyntaxError(`Invalid number ending at ${i}`);
+                  }
+                  if (this.curCommandType === SVGPathData.ARC) {
+                      if (0 === this.curArgs.length || 1 === this.curArgs.length) {
+                          if (0 > val) {
+                              throw new SyntaxError(`Expected positive number, got "${val}" at index "${i}"`);
+                          }
+                      }
+                      else if (3 === this.curArgs.length || 4 === this.curArgs.length) {
+                          if ('0' !== this.curNumber && '1' !== this.curNumber) {
+                              throw new SyntaxError(`Expected a flag, got "${this.curNumber}" at index "${i}"`);
+                          }
+                      }
+                  }
+                  this.curArgs.push(val);
+                  if (this.curArgs.length === COMMAND_ARG_COUNTS[this.curCommandType]) {
+                      if (SVGPathData.HORIZ_LINE_TO === this.curCommandType) {
+                          finishCommand({
+                              type: SVGPathData.HORIZ_LINE_TO,
+                              relative: this.curCommandRelative,
+                              x: val,
+                          });
+                      }
+                      else if (SVGPathData.VERT_LINE_TO === this.curCommandType) {
+                          finishCommand({
+                              type: SVGPathData.VERT_LINE_TO,
+                              relative: this.curCommandRelative,
+                              y: val,
+                          });
+                      }
+                      else if (this.curCommandType === SVGPathData.MOVE_TO ||
+                          this.curCommandType === SVGPathData.LINE_TO ||
+                          this.curCommandType === SVGPathData.SMOOTH_QUAD_TO) {
+                          finishCommand({
+                              type: this.curCommandType,
+                              relative: this.curCommandRelative,
+                              x: this.curArgs[0],
+                              y: this.curArgs[1],
+                          });
+                          if (SVGPathData.MOVE_TO === this.curCommandType) {
+                              this.curCommandType = SVGPathData.LINE_TO;
+                          }
+                      }
+                      else if (this.curCommandType === SVGPathData.CURVE_TO) {
+                          finishCommand({
+                              type: SVGPathData.CURVE_TO,
+                              relative: this.curCommandRelative,
+                              x1: this.curArgs[0],
+                              y1: this.curArgs[1],
+                              x2: this.curArgs[2],
+                              y2: this.curArgs[3],
+                              x: this.curArgs[4],
+                              y: this.curArgs[5],
+                          });
+                      }
+                      else if (this.curCommandType === SVGPathData.SMOOTH_CURVE_TO) {
+                          finishCommand({
+                              type: SVGPathData.SMOOTH_CURVE_TO,
+                              relative: this.curCommandRelative,
+                              x2: this.curArgs[0],
+                              y2: this.curArgs[1],
+                              x: this.curArgs[2],
+                              y: this.curArgs[3],
+                          });
+                      }
+                      else if (this.curCommandType === SVGPathData.QUAD_TO) {
+                          finishCommand({
+                              type: SVGPathData.QUAD_TO,
+                              relative: this.curCommandRelative,
+                              x1: this.curArgs[0],
+                              y1: this.curArgs[1],
+                              x: this.curArgs[2],
+                              y: this.curArgs[3],
+                          });
+                      }
+                      else if (this.curCommandType === SVGPathData.ARC) {
+                          finishCommand({
+                              type: SVGPathData.ARC,
+                              relative: this.curCommandRelative,
+                              rX: this.curArgs[0],
+                              rY: this.curArgs[1],
+                              xRot: this.curArgs[2],
+                              lArcFlag: this.curArgs[3],
+                              sweepFlag: this.curArgs[4],
+                              x: this.curArgs[5],
+                              y: this.curArgs[6],
+                          });
+                      }
+                  }
+                  this.curNumber = '';
+                  this.curNumberHasExpDigits = false;
+                  this.curNumberHasExp = false;
+                  this.curNumberHasDecimal = false;
+                  this.canParseCommandOrComma = true;
+              }
+              if (isWhiteSpace(c)) {
+                  continue;
+              }
+              if (',' === c && this.canParseCommandOrComma) {
+                  this.canParseCommandOrComma = false;
+                  continue;
+              }
+              if ('+' === c || '-' === c || '.' === c) {
+                  this.curNumber = c;
+                  this.curNumberHasDecimal = '.' === c;
+                  continue;
+              }
+              if (isEndingDigit) {
+                  this.curNumber = c;
+                  this.curNumberHasDecimal = false;
+                  continue;
+              }
+              if (0 !== this.curArgs.length) {
+                  throw new SyntaxError(`Unterminated command at index ${i}.`);
+              }
+              if (!this.canParseCommandOrComma) {
+                  throw new SyntaxError(`Unexpected character "${c}" at index ${i}. Command cannot follow comma`);
+              }
+              this.canParseCommandOrComma = false;
+              if ('z' === c || 'Z' === c) {
+                  commands.push({
+                      type: SVGPathData.CLOSE_PATH,
+                  });
+                  this.canParseCommandOrComma = true;
+                  this.curCommandType = -1;
+                  continue;
+              }
+              else if ('h' === c || 'H' === c) {
+                  this.curCommandType = SVGPathData.HORIZ_LINE_TO;
+                  this.curCommandRelative = 'h' === c;
+              }
+              else if ('v' === c || 'V' === c) {
+                  this.curCommandType = SVGPathData.VERT_LINE_TO;
+                  this.curCommandRelative = 'v' === c;
+              }
+              else if ('m' === c || 'M' === c) {
+                  this.curCommandType = SVGPathData.MOVE_TO;
+                  this.curCommandRelative = 'm' === c;
+              }
+              else if ('l' === c || 'L' === c) {
+                  this.curCommandType = SVGPathData.LINE_TO;
+                  this.curCommandRelative = 'l' === c;
+              }
+              else if ('c' === c || 'C' === c) {
+                  this.curCommandType = SVGPathData.CURVE_TO;
+                  this.curCommandRelative = 'c' === c;
+              }
+              else if ('s' === c || 'S' === c) {
+                  this.curCommandType = SVGPathData.SMOOTH_CURVE_TO;
+                  this.curCommandRelative = 's' === c;
+              }
+              else if ('q' === c || 'Q' === c) {
+                  this.curCommandType = SVGPathData.QUAD_TO;
+                  this.curCommandRelative = 'q' === c;
+              }
+              else if ('t' === c || 'T' === c) {
+                  this.curCommandType = SVGPathData.SMOOTH_QUAD_TO;
+                  this.curCommandRelative = 't' === c;
+              }
+              else if ('a' === c || 'A' === c) {
+                  this.curCommandType = SVGPathData.ARC;
+                  this.curCommandRelative = 'a' === c;
+              }
+              else {
+                  throw new SyntaxError(`Unexpected character "${c}" at index ${i}.`);
+              }
+          }
+          return commands;
+      }
+      transform(transform) {
+          const result = Object.create(this, {
+              parse: {
+                  value(chunk, commands = []) {
+                      const parsedCommands = Object.getPrototypeOf(this).parse.call(this, chunk);
+                      for (const c of parsedCommands) {
+                          const cT = transform(c);
+                          if (Array.isArray(cT)) {
+                              commands.push(...cT);
+                          }
+                          else {
+                              commands.push(cT);
+                          }
+                      }
+                      return commands;
+                  },
+              },
+          });
+          return result;
+      }
+  }
+
+  class SVGPathData extends TransformableSVG {
+      commands;
+      constructor(content) {
+          super();
+          if ('string' === typeof content) {
+              this.commands = SVGPathData.parse(content);
+          }
+          else {
+              this.commands = content;
+          }
+      }
+      encode() {
+          return SVGPathData.encode(this.commands);
+      }
+      getBounds() {
+          const boundsTransform = SVGPathDataTransformer.CALCULATE_BOUNDS();
+          this.transform(boundsTransform);
+          return boundsTransform;
+      }
+      transform(transformFunction) {
+          const newCommands = [];
+          for (const command of this.commands) {
+              const transformedCommand = transformFunction(command);
+              if (Array.isArray(transformedCommand)) {
+                  newCommands.push(...transformedCommand);
+              }
+              else {
+                  newCommands.push(transformedCommand);
+              }
+          }
+          this.commands = newCommands;
+          return this;
+      }
+      reverse(preserveSubpathOrder = true) {
+          this.commands = SVGPathDataTransformer.REVERSE_PATH(this.commands, preserveSubpathOrder);
+          return this;
+      }
+      removeCollinear() {
+          this.commands = SVGPathDataTransformer.REMOVE_COLLINEAR(this.commands);
+          return this;
+      }
+      static encode(commands) {
+          return encodeSVGPath(commands);
+      }
+      static parse(path) {
+          const parser = new SVGPathDataParser();
+          const commands = [];
+          parser.parse(path, commands);
+          parser.finish(commands);
+          return commands;
+      }
+      static CLOSE_PATH = 1;
+      static MOVE_TO = 2;
+      static HORIZ_LINE_TO = 4;
+      static VERT_LINE_TO = 8;
+      static LINE_TO = 16;
+      static CURVE_TO = 32;
+      static SMOOTH_CURVE_TO = 64;
+      static QUAD_TO = 128;
+      static SMOOTH_QUAD_TO = 256;
+      static ARC = 512;
+      static LINE_COMMANDS = SVGPathData.LINE_TO | SVGPathData.HORIZ_LINE_TO | SVGPathData.VERT_LINE_TO;
+      static DRAWING_COMMANDS = SVGPathData.HORIZ_LINE_TO |
+          SVGPathData.VERT_LINE_TO |
+          SVGPathData.LINE_TO |
+          SVGPathData.CURVE_TO |
+          SVGPathData.SMOOTH_CURVE_TO |
+          SVGPathData.QUAD_TO |
+          SVGPathData.SMOOTH_QUAD_TO |
+          SVGPathData.ARC;
+  }
+  const COMMAND_ARG_COUNTS = {
+      [SVGPathData.MOVE_TO]: 2,
+      [SVGPathData.LINE_TO]: 2,
+      [SVGPathData.HORIZ_LINE_TO]: 1,
+      [SVGPathData.VERT_LINE_TO]: 1,
+      [SVGPathData.CLOSE_PATH]: 0,
+      [SVGPathData.QUAD_TO]: 4,
+      [SVGPathData.SMOOTH_QUAD_TO]: 2,
+      [SVGPathData.CURVE_TO]: 6,
+      [SVGPathData.SMOOTH_CURVE_TO]: 4,
+      [SVGPathData.ARC]: 7,
+  };
+
+  createConsole("SvgUtils", {
     log: true
+  });
+  function classifySubpath(subpath, previous, fillRule) {
+    const centroid = subpath.reduce((acc, p) => ({
+      x: acc.x + p.x,
+      y: acc.y + p.y
+    }), {
+      x: 0,
+      y: 0
+    });
+    centroid.x /= subpath.length;
+    centroid.y /= subpath.length;
+    {
+      let winding = 0;
+      for (const other of previous) {
+        if (pointInPolygon(centroid, other.path)) {
+          winding += contourArea(other.path) > 0 ? 1 : -1;
+        }
+      }
+      const filled = winding === 0;
+      return !filled;
+    }
+  }
+
+  const _console$l = createConsole("DisplaySpriteSheetUtils", {
+    log: false
   });
   const spriteHeaderLength = 3 * 2;
   function serializeSpriteSheet(displayManager, spriteSheet) {
@@ -16437,7 +18554,8 @@
             x: 0,
             y: 0
           };
-          const pathCommandObjects = [];
+          const parsedPaths = [];
+          let wasHole = false;
           let pathCommands = path.commands;
           pathCommands.forEach(cmd => {
             switch (cmd.type) {
@@ -16512,54 +18630,56 @@
                     pt.x = Math.floor(pt.x + pathOffset.x);
                     pt.y = Math.floor(pt.y + pathOffset.y);
                   });
-                  const area = contourArea(controlPoints);
+                  const isHole = classifySubpath(controlPoints, parsedPaths);
+                  parsedPaths.push({
+                    path: controlPoints,
+                    isHole
+                  });
+                  if (isHole != wasHole) {
+                    wasHole = isHole;
+                    if (isHole) {
+                      commands.push({
+                        type: "selectFillColor",
+                        fillColorIndex: 0
+                      });
+                    } else {
+                      commands.push({
+                        type: "selectFillColor",
+                        fillColorIndex: 1
+                      });
+                    }
+                  }
                   const isSegments = curves.every(c => c.type === "segment");
                   if (isSegments) {
-                    pathCommandObjects.push({
-                      command: {
+                    if (options.stroke) {
+                      commands.push({
+                        type: "drawSegments",
+                        points: controlPoints
+                      });
+                    } else {
+                      commands.push({
                         type: "drawPolygon",
                         points: controlPoints
-                      },
-                      points: controlPoints,
-                      area
-                    });
+                      });
+                    }
                   } else {
-                    pathCommandObjects.push({
-                      command: {
+                    if (options.stroke) {
+                      commands.push({
+                        type: "drawPath",
+                        curves
+                      });
+                    } else {
+                      commands.push({
                         type: "drawClosedPath",
                         curves
-                      },
-                      area,
-                      points: controlPoints
-                    });
+                      });
+                    }
                   }
                   curves = [];
                 }
                 break;
             }
           });
-          if (pathCommandObjects.length > 0) {
-            pathCommandObjects.sort((a, b) => {
-              return a.points.every(aPoint => pointInPolygon(aPoint, b.points)) ? 1 : -1;
-            });
-            let isDrawingHole = false;
-            let isHoleAreaPositive = pathCommandObjects[0].area < 0;
-            pathCommandObjects.forEach(_ref => {
-              let {
-                area,
-                command
-              } = _ref;
-              const isHole = isHoleAreaPositive ? area > 0 : area < 0;
-              if (isDrawingHole != isHole) {
-                isDrawingHole = isHole;
-                commands.push({
-                  type: "selectFillColor",
-                  fillColorIndex: isHole ? 0 : 1
-                });
-              }
-              commands.push(command);
-            });
-          }
         } else {
           if (bitmapWidth > 0 && bitmapHeight > 0) {
             canvas.width = bitmapWidth;
@@ -16754,11 +18874,11 @@
       let spriteLine = [];
       spriteLines.push(spriteLine);
       let spriteSubLine;
-      _sprites.forEach((_ref2, index) => {
+      _sprites.forEach((_ref, index) => {
         let {
           sprite,
           spriteSheet
-        } = _ref2;
+        } = _ref;
         if (spritesLineIndices[i].includes(index)) {
           spriteLine = [];
           spriteLines.push(spriteLine);
@@ -16776,6 +18896,22 @@
     });
     _console$l.log("spriteLines for \"".concat(string, "\""), spriteLines);
     return spriteLines;
+  }
+  function getFontMaxHeight(font, fontSize) {
+    const scale = 1 / font.unitsPerEm * fontSize;
+    const maxHeight = (font.ascender - font.descender) * scale;
+    return maxHeight;
+  }
+  function getMaxSpriteSheetSize(spriteSheet) {
+    const size = {
+      width: 0,
+      height: 0
+    };
+    spriteSheet.sprites.forEach(sprite => {
+      size.width = Math.max(size.width, sprite.width);
+      size.height = Math.max(size.height, sprite.height);
+    });
+    return size;
   }
 
   const _console$k = createConsole("DisplayBitmapUtils", {
@@ -17745,8 +19881,8 @@
   class DisplayManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _DisplayManager_brand);
-      _defineProperty(this, "sendMessage", void 0);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "sendMessage", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _isAvailable, false);
       _classPrivateFieldInitSpec(this, _contextStateHelper, new DisplayContextStateHelper());
       _classPrivateFieldInitSpec(this, _displayStatus, void 0);
@@ -17765,7 +19901,7 @@
       _classPrivateFieldInitSpec(this, _spriteSheetIndices, {});
       _classPrivateFieldInitSpec(this, _pendingSpriteSheet, void 0);
       _classPrivateFieldInitSpec(this, _pendingSpriteSheetName, void 0);
-      _defineProperty(this, "sendFile", void 0);
+      _defineProperty$1(this, "sendFile", void 0);
       _classPrivateFieldInitSpec(this, _mtu$1, void 0);
       _classPrivateFieldInitSpec(this, _isServerSide$1, false);
       autoBind(this);
@@ -19690,14 +21826,14 @@
     }
     constructor() {
       _classPrivateMethodInitSpec(this, _BaseConnectionManager_brand);
-      _defineProperty(this, "onStatusUpdated", void 0);
-      _defineProperty(this, "onMessageReceived", void 0);
-      _defineProperty(this, "onMessagesReceived", void 0);
+      _defineProperty$1(this, "onStatusUpdated", void 0);
+      _defineProperty$1(this, "onMessageReceived", void 0);
+      _defineProperty$1(this, "onMessagesReceived", void 0);
       _classPrivateFieldInitSpec(this, _status$1, "notConnected");
       _classPrivateFieldInitSpec(this, _pendingMessages, []);
       _classPrivateFieldInitSpec(this, _isSendingMessages, false);
-      _defineProperty(this, "defaultMtu", 23);
-      _defineProperty(this, "mtu", this.defaultMtu);
+      _defineProperty$1(this, "defaultMtu", 23);
+      _defineProperty$1(this, "mtu", this.defaultMtu);
       _classPrivateFieldInitSpec(this, _timer, new Timer(_assertClassBrand(_BaseConnectionManager_brand, this, _checkConnection$1).bind(this), 5000));
       _assertClassBrand(_BaseConnectionManager_brand, this, _assertIsSupported).call(this);
     }
@@ -19871,7 +22007,7 @@
       this.status = "notConnected";
     }
   }
-  _defineProperty(BaseConnectionManager, "type", void 0);
+  _defineProperty$1(BaseConnectionManager, "type", void 0);
 
   function capitalizeFirstCharacter(string) {
     return string[0].toUpperCase() + string.slice(1);
@@ -20088,7 +22224,7 @@
   class BluetoothConnectionManager extends BaseConnectionManager {
     constructor() {
       super(...arguments);
-      _defineProperty(this, "isInRange", true);
+      _defineProperty$1(this, "isInRange", true);
     }
     get isAvailable() {
       return true;
@@ -21056,8 +23192,8 @@
   class FirmwareManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _FirmwareManager_brand);
-      _defineProperty(this, "sendMessage", void 0);
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "sendMessage", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _status, "idle");
       _classPrivateFieldInitSpec(this, _images, void 0);
       _classPrivateFieldInitSpec(this, _mtu, void 0);
@@ -21629,7 +23765,7 @@
       connectedDevices: this.ConnectedDevices
     });
   }
-  _defineProperty(DeviceManager, "shared", new _DeviceManager());
+  _defineProperty$1(DeviceManager, "shared", new _DeviceManager());
   var DeviceManager$1 = DeviceManager.shared;
 
   const _console$9 = createConsole("ServerUtils", {
@@ -21731,7 +23867,7 @@
       super();
       _classPrivateMethodInitSpec(this, _WebSocketConnectionManager_brand);
       _classPrivateFieldInitSpec(this, _bluetoothId$1, void 0);
-      _defineProperty(this, "defaultMtu", 2 ** 10);
+      _defineProperty$1(this, "defaultMtu", 2 ** 10);
       _classPrivateFieldInitSpec(this, _webSocket$1, void 0);
       _classPrivateFieldInitSpec(this, _ipAddress, void 0);
       _classPrivateFieldInitSpec(this, _isSecure, false);
@@ -21954,14 +24090,14 @@
       _classPrivateMethodInitSpec(this, _Device_brand);
       _classPrivateFieldInitSpec(this, _eventDispatcher$2, new EventDispatcher(this, DeviceEventTypes));
       _classPrivateFieldInitSpec(this, _connectionManager, void 0);
-      _defineProperty(this, "sendTxMessages", _assertClassBrand(_Device_brand, this, _sendTxMessages).bind(this));
+      _defineProperty$1(this, "sendTxMessages", _assertClassBrand(_Device_brand, this, _sendTxMessages).bind(this));
       _classPrivateFieldInitSpec(this, _isConnected$1, false);
       _classPrivateFieldInitSpec(this, _reconnectOnDisconnection, _a$1.ReconnectOnDisconnection);
       _classPrivateFieldInitSpec(this, _reconnectIntervalId, void 0);
-      _defineProperty(this, "latestConnectionMessages", new Map());
+      _defineProperty$1(this, "latestConnectionMessages", new Map());
       _classPrivateFieldInitSpec(this, _deviceInformationManager, new DeviceInformationManager());
       _classPrivateFieldInitSpec(this, _batteryLevel, 0);
-      _defineProperty(this, "_informationManager", new InformationManager());
+      _defineProperty$1(this, "_informationManager", new InformationManager());
       _classPrivateFieldInitSpec(this, _sensorConfigurationManager, new SensorConfigurationManager());
       _classPrivateFieldInitSpec(this, _clearSensorConfigurationOnLeave, _a$1.ClearSensorConfigurationOnLeave);
       _classPrivateFieldInitSpec(this, _sensorDataManager$1, new SensorDataManager());
@@ -21969,7 +24105,7 @@
       _classPrivateFieldInitSpec(this, _fileTransferManager, new FileTransferManager());
       _classPrivateFieldInitSpec(this, _tfliteManager, new TfliteManager());
       _classPrivateFieldInitSpec(this, _firmwareManager, new FirmwareManager());
-      _defineProperty(this, "sendSmpMessage", _assertClassBrand(_Device_brand, this, _sendSmpMessage).bind(this));
+      _defineProperty$1(this, "sendSmpMessage", _assertClassBrand(_Device_brand, this, _sendSmpMessage).bind(this));
       _classPrivateFieldInitSpec(this, _isServerSide, false);
       _classPrivateFieldInitSpec(this, _wifiManager, new WifiManager());
       _classPrivateFieldInitSpec(this, _cameraManager, new CameraManager());
@@ -23454,9 +25590,9 @@
   var _timestamps = new WeakMap();
   class DevicePairSensorDataManager {
     constructor() {
-      _defineProperty(this, "eventDispatcher", void 0);
+      _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _timestamps, {});
-      _defineProperty(this, "pressureSensorDataManager", new DevicePairPressureSensorDataManager());
+      _defineProperty$1(this, "pressureSensorDataManager", new DevicePairPressureSensorDataManager());
     }
     get dispatchEvent() {
       return this.eventDispatcher.dispatchEvent;
@@ -23815,15 +25951,15 @@
     constructor() {
       super(...arguments);
       _classPrivateMethodInitSpec(this, _ClientConnectionManager_brand);
-      _defineProperty(this, "subType", void 0);
-      _defineProperty(this, "client", void 0);
-      _defineProperty(this, "discoveredDevice", void 0);
+      _defineProperty$1(this, "subType", void 0);
+      _defineProperty$1(this, "client", void 0);
+      _defineProperty$1(this, "discoveredDevice", void 0);
       _classPrivateFieldInitSpec(this, _bluetoothId, void 0);
       _classPrivateFieldInitSpec(this, _isConnected, false);
-      _defineProperty(this, "sendClientMessage", void 0);
-      _defineProperty(this, "sendClientConnectMessage", void 0);
-      _defineProperty(this, "sendClientDisconnectMessage", void 0);
-      _defineProperty(this, "sendRequiredDeviceInformationMessage", void 0);
+      _defineProperty$1(this, "sendClientMessage", void 0);
+      _defineProperty$1(this, "sendClientConnectMessage", void 0);
+      _defineProperty$1(this, "sendClientDisconnectMessage", void 0);
+      _defineProperty$1(this, "sendRequiredDeviceInformationMessage", void 0);
     }
     static get isSupported() {
       return isInBrowser;
@@ -23948,7 +26084,7 @@
       _classPrivateMethodInitSpec(this, _BaseClient_brand);
       _classPrivateFieldInitSpec(this, _devices, {});
       _classPrivateFieldInitSpec(this, _eventDispatcher, new EventDispatcher(this, ClientEventTypes));
-      _defineProperty(this, "_reconnectOnDisconnection", this.baseConstructor.ReconnectOnDisconnection);
+      _defineProperty$1(this, "_reconnectOnDisconnection", this.baseConstructor.ReconnectOnDisconnection);
       _classPrivateFieldInitSpec(this, _connectionStatus, "notConnected");
       _classPrivateFieldInitSpec(this, _receivedMessageTypes, []);
       _classPrivateFieldInitSpec(this, _isScanningAvailable, false);
@@ -24342,7 +26478,7 @@
     }
     return device;
   }
-  _defineProperty(BaseClient, "_reconnectOnDisconnection", true);
+  _defineProperty$1(BaseClient, "_reconnectOnDisconnection", true);
   var _RequiredMessageTypes = {
     _: ["isScanningAvailable", "discoveredDevices", "connectedDevices"]
   };
@@ -24562,7 +26698,9 @@
   exports.WebSocketClient = WebSocketClient;
   exports.displayCurveTypeToNumberOfControlPoints = displayCurveTypeToNumberOfControlPoints;
   exports.fontToSpriteSheet = fontToSpriteSheet;
+  exports.getFontMaxHeight = getFontMaxHeight;
   exports.getFontUnicodeRange = getFontUnicodeRange;
+  exports.getMaxSpriteSheetSize = getMaxSpriteSheetSize;
   exports.hexToRGB = hexToRGB;
   exports.intersectWireframes = intersectWireframes;
   exports.isWireframePolygon = isWireframePolygon;

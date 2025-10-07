@@ -169,6 +169,8 @@ export {
   DisplaySpriteSubLine,
   DisplaySpriteLine,
   DisplaySpriteLines,
+  getFontMaxHeight,
+  getMaxSpriteSheetSize,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 
 /** BROWSER_START */

@@ -24,7 +24,7 @@ export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, displayCu
 export { svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, isValidSVG, getSvgStringFromDataUrl, } from "./utils/SvgUtils.ts";
 /** BROWSER_END */
 export { DisplayContextCommand, DisplayContextCommandType, DisplayContextCommandTypes, DisplaySpriteContextCommandType, DisplaySpriteContextCommandTypes, } from "./utils/DisplayContextCommand.ts";
-export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, fontToSpriteSheet, DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, } from "./utils/DisplaySpriteSheetUtils.ts";
+export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, fontToSpriteSheet, DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, getFontMaxHeight, getMaxSpriteSheetSize, } from "./utils/DisplaySpriteSheetUtils.ts";
 /** BROWSER_START */
 export { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, } from "./utils/DisplayCanvasHelper.ts";
 /** BROWSER_END */

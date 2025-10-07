@@ -1,3 +1,4 @@
+import { DisplaySize } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import opentype, { Font } from "opentype.js";
@@ -71,3 +72,5 @@ export declare function stringToSpriteLines(string: string, spriteSheets: Record
 export declare function getSpriteLinesBoundingBox(spriteLines: DisplaySpriteLines, spriteSheets: Record<string, DisplaySpriteSheet>, contextState: DisplayContextState): DisplayBoundingBox;
 export declare function getSpriteLinesOffset(spriteLines: DisplaySpriteLines, lineIndex: number, subLineIndex: number, contextState: DisplayContextState): Vector2;
 export declare function splitStringInto(string: string, spriteSheets: Record<string, DisplaySpriteSheet>, separators?: string[], requireAll?: boolean): void;
+export declare function getFontMaxHeight(font: Font, fontSize: number): number;
+export declare function getMaxSpriteSheetSize(spriteSheet: DisplaySpriteSheet): DisplaySize;

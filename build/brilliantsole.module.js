@@ -16151,6950 +16151,6 @@ function simplifyCurves(curves, epsilon = 1) {
     return simplified;
 }
 
-const _console$n = createConsole("DisplaySpriteSheetUtils", { log: true });
-const spriteHeaderLength = 3 * 2;
-function calculateSpriteSheetHeaderLength(numberOfSprites) {
-    return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
-}
-function serializeSpriteSheet(displayManager, spriteSheet) {
-    const { name, sprites } = spriteSheet;
-    _console$n.log(`serializing ${name} spriteSheet`, spriteSheet);
-    const numberOfSprites = sprites.length;
-    const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
-    numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
-    const spritePayloads = sprites.map((sprite, index) => {
-        const commandsData = serializeContextCommands(displayManager, sprite.commands);
-        const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
-        dataView.setUint16(0, sprite.width, true);
-        dataView.setUint16(2, sprite.height, true);
-        dataView.setUint16(4, commandsData.byteLength, true);
-        const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
-        _console$n.log("serializedSprite", sprite, serializedSprite);
-        return serializedSprite;
-    });
-    const spriteOffsetsDataView = new DataView(new ArrayBuffer(sprites.length * 2));
-    let offset = numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
-    spritePayloads.forEach((spritePayload, index) => {
-        spriteOffsetsDataView.setUint16(index * 2, offset, true);
-        offset += spritePayload.byteLength;
-    });
-    const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
-    _console$n.log("serializedSpriteSheet", serializedSpriteSheet);
-    return serializedSpriteSheet;
-}
-const defaultFontToSpriteSheetOptions = {
-    stroke: false,
-    strokeWidth: 1,
-    unicodeOnly: true,
-    englishOnly: true,
-    usePath: false,
-};
-function isWoff2(arrayBuffer) {
-    if (arrayBuffer.byteLength < 4)
-        return false;
-    const header = new Uint8Array(arrayBuffer, 0, 4);
-    return (header[0] === 0x77 &&
-        header[1] === 0x4f &&
-        header[2] === 0x46 &&
-        header[3] === 0x32
-    );
-}
-async function parseFont(arrayBuffer) {
-    if (isWoff2(arrayBuffer)) {
-        const result = await Q(arrayBuffer);
-        arrayBuffer = result.buffer;
-    }
-    const font = opentype.parse(arrayBuffer);
-    return font;
-}
-function getFontUnicodeRange(font) {
-    const rangeHelper = new RangeHelper();
-    for (let i = 0; i < font.glyphs.length; i++) {
-        const glyph = font.glyphs.get(i);
-        if (!glyph.unicodes || glyph.unicodes.length === 0)
-            continue;
-        glyph.unicodes
-            .filter((unicode) => {
-            const char = String.fromCodePoint(unicode);
-            return /\p{Letter}/u.test(char);
-        })
-            .forEach((unicode) => rangeHelper.update(unicode));
-    }
-    return rangeHelper.span > 0 ? rangeHelper.range : undefined;
-}
-const englishRegex = /^[A-Za-z0-9 !"#$%&'()*+,\-./:;?@[\]^_`{|}~\\]+$/;
-function contourArea(points) {
-    let area = 0;
-    for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
-        area += (points[j].x - points[i].x) * (points[j].y + points[i].y);
-    }
-    return area;
-}
-async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
-    _console$n.assertTypeWithError(fontSize, "number");
-    options = options
-        ? { ...defaultFontToSpriteSheetOptions, ...options }
-        : defaultFontToSpriteSheetOptions;
-    const fonts = Array.isArray(font) ? font : [font];
-    font = fonts[0];
-    spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
-    const spriteSheet = {
-        name: spriteSheetName,
-        sprites: [],
-    };
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    for (let font of fonts) {
-        const fontScale = (1 / font.unitsPerEm) * fontSize;
-        let minSpriteY = Infinity;
-        let maxSpriteY = -Infinity;
-        const glyphs = [];
-        let filteredGlyphs;
-        if (options.string) {
-            filteredGlyphs = font
-                .stringToGlyphs(options.string)
-                .filter((glyph) => glyph.unicode != undefined);
-        }
-        for (let index = 0; index < font.glyphs.length; index++) {
-            const glyph = font.glyphs.get(index);
-            const hasUnicode = glyph.unicode != undefined;
-            if (filteredGlyphs) {
-                if (!filteredGlyphs.includes(glyph)) {
-                    continue;
-                }
-            }
-            if (options.unicodeOnly || options.englishOnly) {
-                if (!hasUnicode) {
-                    continue;
-                }
-            }
-            if (options.script && hasUnicode) {
-                const regex = new RegExp(`\\p{Script=${options.script}}`, "u");
-                if (!regex.test(String.fromCharCode(glyph.unicode))) {
-                    continue;
-                }
-            }
-            if (options.englishOnly) {
-                if (!englishRegex.test(String.fromCharCode(glyph.unicode))) {
-                    continue;
-                }
-            }
-            const bbox = glyph.getBoundingBox();
-            minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
-            maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
-            glyphs.push(glyph);
-        }
-        const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
-        const maxSpriteHeight = maxSpriteY - minSpriteY + strokeWidth;
-        for (let i = 0; i < glyphs.length; i++) {
-            const glyph = glyphs[i];
-            let name = glyph.name;
-            if (glyph.unicode != undefined) {
-                name = String.fromCharCode(glyph.unicode);
-            }
-            if (typeof name != "string") {
-                continue;
-            }
-            const bbox = glyph.getBoundingBox();
-            const spriteWidth = Math.round(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) * fontScale) + strokeWidth;
-            const spriteHeight = Math.round(maxSpriteHeight);
-            const commands = [];
-            const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
-            if (options.stroke) {
-                path.stroke = "white";
-                path.strokeWidth = strokeWidth;
-                commands.push({ type: "setLineWidth", lineWidth: strokeWidth });
-                commands.push({ type: "setIgnoreFill", ignoreFill: true });
-            }
-            else {
-                path.fill = "white";
-            }
-            const bitmapWidth = Math.floor((bbox.x2 - bbox.x1) * fontScale) + strokeWidth;
-            const bitmapHeight = Math.floor((bbox.y2 - bbox.y1) * fontScale) + strokeWidth;
-            const bitmapX = Math.floor((spriteWidth - bitmapWidth) / 2);
-            const bitmapY = Math.floor((spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY));
-            if (options.usePath) {
-                const pathOffset = {
-                    x: -bitmapWidth / 2 + bitmapX,
-                    y: -bitmapHeight / 2 + bitmapY,
-                };
-                let curves = [];
-                let startPoint = { x: 0, y: 0 };
-                const pathCommandObjects = [];
-                let pathCommands = path.commands;
-                pathCommands.forEach((cmd) => {
-                    switch (cmd.type) {
-                        case "M":
-                            {
-                                startPoint.x = cmd.x;
-                                startPoint.y = cmd.y;
-                            }
-                            break;
-                        case "L":
-                            {
-                                const controlPoints = [{ x: cmd.x, y: cmd.y }];
-                                if (curves.length === 0) {
-                                    controlPoints.unshift({ ...startPoint });
-                                }
-                                curves.push({ type: "segment", controlPoints });
-                            }
-                            break;
-                        case "Q":
-                            {
-                                const controlPoints = [
-                                    { x: cmd.x1, y: cmd.y1 },
-                                    { x: cmd.x, y: cmd.y },
-                                ];
-                                if (curves.length === 0) {
-                                    controlPoints.unshift({ ...startPoint });
-                                }
-                                curves.push({ type: "quadratic", controlPoints });
-                            }
-                            break;
-                        case "C":
-                            {
-                                const controlPoints = [
-                                    { x: cmd.x1, y: cmd.y1 },
-                                    { x: cmd.x2, y: cmd.y2 },
-                                    { x: cmd.x, y: cmd.y },
-                                ];
-                                if (curves.length === 0) {
-                                    controlPoints.unshift({ ...startPoint });
-                                }
-                                curves.push({ type: "cubic", controlPoints });
-                            }
-                            break;
-                        case "Z":
-                            {
-                                if (curves.length === 0) {
-                                    break;
-                                }
-                                curves = simplifyCurves(curves);
-                                const controlPoints = curves.flatMap((c) => c.controlPoints);
-                                controlPoints.forEach((pt) => {
-                                    pt.x = Math.floor(pt.x + pathOffset.x);
-                                    pt.y = Math.floor(pt.y + pathOffset.y);
-                                });
-                                const area = contourArea(controlPoints);
-                                const isSegments = curves.every((c) => c.type === "segment");
-                                if (isSegments) {
-                                    pathCommandObjects.push({
-                                        command: {
-                                            type: "drawPolygon",
-                                            points: controlPoints,
-                                        },
-                                        points: controlPoints,
-                                        area,
-                                    });
-                                }
-                                else {
-                                    pathCommandObjects.push({
-                                        command: {
-                                            type: "drawClosedPath",
-                                            curves,
-                                        },
-                                        area,
-                                        points: controlPoints,
-                                    });
-                                }
-                                curves = [];
-                            }
-                            break;
-                    }
-                });
-                if (pathCommandObjects.length > 0) {
-                    pathCommandObjects.sort((a, b) => {
-                        return a.points.every((aPoint) => pointInPolygon(aPoint, b.points))
-                            ? 1
-                            : -1;
-                    });
-                    let isDrawingHole = false;
-                    let isHoleAreaPositive = pathCommandObjects[0].area < 0;
-                    pathCommandObjects.forEach(({ area, command }) => {
-                        const isHole = isHoleAreaPositive ? area > 0 : area < 0;
-                        if (isDrawingHole != isHole) {
-                            isDrawingHole = isHole;
-                            commands.push({
-                                type: "selectFillColor",
-                                fillColorIndex: isHole ? 0 : 1,
-                            });
-                        }
-                        commands.push(command);
-                    });
-                }
-            }
-            else {
-                if (bitmapWidth > 0 && bitmapHeight > 0) {
-                    canvas.width = bitmapWidth;
-                    canvas.height = bitmapHeight;
-                    ctx.imageSmoothingEnabled = false;
-                    ctx.fillStyle = "black";
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    path.draw(ctx);
-                    const { colorIndices } = await quantizeCanvas(canvas, 2, [
-                        "#000000",
-                        "#ffffff",
-                    ]);
-                    const bitmap = {
-                        width: bitmapWidth,
-                        height: bitmapHeight,
-                        numberOfColors: 2,
-                        pixels: colorIndices,
-                    };
-                    commands.push({
-                        type: "selectBitmapColor",
-                        bitmapColorIndex: 1,
-                        colorIndex: 1,
-                    });
-                    commands.push({
-                        type: "drawBitmap",
-                        offsetX: bitmapX,
-                        offsetY: bitmapY,
-                        bitmap,
-                    });
-                }
-            }
-            const sprite = {
-                name,
-                commands,
-                width: spriteWidth,
-                height: spriteHeight,
-            };
-            spriteSheet.sprites.push(sprite);
-        }
-    }
-    return spriteSheet;
-}
-function stringToSprites(string, spriteSheet, requireAll = false) {
-    const sprites = [];
-    let substring = string;
-    while (substring.length > 0) {
-        let longestSprite;
-        spriteSheet.sprites.forEach((sprite) => {
-            if (substring.startsWith(sprite.name)) {
-                if (!longestSprite || sprite.name.length > longestSprite.name.length) {
-                    longestSprite = sprite;
-                }
-            }
-        });
-        if (requireAll) {
-            _console$n.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${substring}"`);
-        }
-        if (longestSprite) {
-            sprites.push(longestSprite);
-            substring = substring.substring(longestSprite.name.length);
-        }
-        else {
-            substring = substring.substring(1);
-        }
-    }
-    return sprites;
-}
-function getReferencedSprites(sprite, spriteSheet) {
-    const sprites = [];
-    sprite.commands
-        .filter((command) => command.type == "drawSprite")
-        .map((command) => command.spriteIndex)
-        .map((spriteIndex) => spriteSheet.sprites[spriteIndex])
-        .forEach((_sprite) => {
-        if (!sprites.includes(_sprite)) {
-            sprites.push(_sprite);
-            sprites.push(...getReferencedSprites(_sprite, spriteSheet));
-        }
-    });
-    _console$n.log("referencedSprites", sprite, sprites);
-    return sprites;
-}
-function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
-    const reducedSpriteSheet = Object.assign({}, spriteSheet);
-    if (!(spriteNames instanceof Array)) {
-        spriteNames = stringToSprites(spriteNames, spriteSheet, requireAll).map((sprite) => sprite.name);
-    }
-    _console$n.log("reducingSpriteSheet", spriteSheet, spriteNames);
-    reducedSpriteSheet.sprites = [];
-    spriteSheet.sprites.forEach((sprite) => {
-        if (spriteNames.includes(sprite.name)) {
-            reducedSpriteSheet.sprites.push(sprite);
-            reducedSpriteSheet.sprites.push(...getReferencedSprites(sprite, spriteSheet));
-        }
-    });
-    _console$n.log("reducedSpriteSheet", reducedSpriteSheet);
-    return reducedSpriteSheet;
-}
-function stringToSpriteLines(string, spriteSheets, contextState, requireAll = false, maxLineBreadth = Infinity, separators = [" "]) {
-    _console$n.log("stringToSpriteLines", string);
-    const isSpritesDirectionHorizontal = isDirectionHorizontal(contextState.spritesDirection);
-    const isSpritesLineDirectionHorizontal = isDirectionHorizontal(contextState.spritesLineDirection);
-    const areSpritesDirectionsOrthogonal = isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
-    const lineStrings = string.split("\n");
-    let lineBreadth = 0;
-    if (isSpritesLineDirectionHorizontal) {
-        maxLineBreadth /= contextState.spriteScaleX;
-    }
-    else {
-        maxLineBreadth /= contextState.spriteScaleY;
-    }
-    const sprites = [];
-    let latestSeparatorIndex = -1;
-    let latestSeparator;
-    let latestSeparatorLineBreadth;
-    let latestSeparatorBreadth;
-    const spritesLineIndices = [];
-    lineStrings.forEach((lineString) => {
-        sprites.push([]);
-        spritesLineIndices.push([]);
-        const i = sprites.length - 1;
-        if (areSpritesDirectionsOrthogonal) {
-            lineBreadth = 0;
-        }
-        else {
-            lineBreadth += contextState.spritesLineSpacing;
-        }
-        let lineSubstring = lineString;
-        while (lineSubstring.length > 0) {
-            let longestSprite;
-            let longestSpriteSheet;
-            for (let spriteSheetName in spriteSheets) {
-                const spriteSheet = spriteSheets[spriteSheetName];
-                spriteSheet.sprites.forEach((sprite) => {
-                    if (lineSubstring.startsWith(sprite.name)) {
-                        if (!longestSprite ||
-                            sprite.name.length > longestSprite.name.length) {
-                            longestSprite = sprite;
-                            longestSpriteSheet = spriteSheet;
-                        }
-                    }
-                });
-            }
-            if (requireAll) {
-                _console$n.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${lineSubstring}"`);
-            }
-            if (longestSprite && longestSpriteSheet) {
-                const isSeparator = separators.length > 0
-                    ? separators.includes(longestSprite.name)
-                    : true;
-                sprites[i].push({
-                    sprite: longestSprite,
-                    spriteSheet: longestSpriteSheet,
-                });
-                let newLineBreadth = lineBreadth;
-                const longestSpriteBreadth = isSpritesDirectionHorizontal
-                    ? longestSprite.width
-                    : longestSprite.height;
-                newLineBreadth += longestSpriteBreadth;
-                newLineBreadth += contextState.spritesSpacing;
-                if (newLineBreadth >= maxLineBreadth) {
-                    if (isSeparator) {
-                        if (longestSprite.name.trim().length == 0) {
-                            sprites[i].pop();
-                        }
-                        spritesLineIndices[i].push(sprites[i].length);
-                        lineBreadth = 0;
-                    }
-                    else {
-                        if (latestSeparatorIndex != -1) {
-                            if (latestSeparator.trim().length == 0) {
-                                sprites[i].splice(latestSeparatorIndex, 1);
-                                lineBreadth -= latestSeparatorBreadth;
-                            }
-                            spritesLineIndices[i].push(latestSeparatorIndex);
-                            lineBreadth = newLineBreadth - latestSeparatorLineBreadth;
-                        }
-                        else {
-                            spritesLineIndices[i].push(sprites[i].length - 1);
-                            lineBreadth = 0;
-                        }
-                    }
-                    latestSeparatorIndex = -1;
-                    latestSeparator = undefined;
-                }
-                else {
-                    lineBreadth = newLineBreadth;
-                    if (isSeparator) {
-                        latestSeparator = longestSprite.name;
-                        latestSeparatorIndex = sprites[i].length - 1;
-                        latestSeparatorLineBreadth = lineBreadth;
-                        latestSeparatorBreadth = longestSpriteBreadth;
-                    }
-                }
-                lineSubstring = lineSubstring.substring(longestSprite.name.length);
-            }
-            else {
-                lineSubstring = lineSubstring.substring(1);
-            }
-        }
-    });
-    const spriteLines = [];
-    sprites.forEach((_sprites, i) => {
-        let spriteLine = [];
-        spriteLines.push(spriteLine);
-        let spriteSubLine;
-        _sprites.forEach(({ sprite, spriteSheet }, index) => {
-            if (spritesLineIndices[i].includes(index)) {
-                spriteLine = [];
-                spriteLines.push(spriteLine);
-                spriteSubLine = undefined;
-            }
-            if (!spriteSubLine || spriteSubLine.spriteSheetName != spriteSheet.name) {
-                spriteSubLine = {
-                    spriteSheetName: spriteSheet.name,
-                    spriteNames: [],
-                };
-                spriteLine.push(spriteSubLine);
-            }
-            spriteSubLine.spriteNames.push(sprite.name);
-        });
-    });
-    _console$n.log(`spriteLines for "${string}"`, spriteLines);
-    return spriteLines;
-}
-
-const _console$m = createConsole("DisplayBitmapUtils", { log: true });
-const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
-function getBitmapData(bitmap) {
-    const pixelDataLength = getBitmapNumberOfBytes(bitmap);
-    const dataView = new DataView(new ArrayBuffer(pixelDataLength));
-    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
-    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
-    bitmap.pixels.forEach((bitmapColorIndex, pixelIndex) => {
-        const byteIndex = Math.floor(pixelIndex / pixelsPerByte);
-        const byteSlot = pixelIndex % pixelsPerByte;
-        const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
-        const bitOffset = pixelBitWidth * byteSlot;
-        const shift = 8 - pixelBitWidth - bitOffset;
-        let value = dataView.getUint8(byteIndex);
-        value |= bitmapColorIndex << shift;
-        dataView.setUint8(byteIndex, value);
-    });
-    _console$m.log("getBitmapData", bitmap, dataView);
-    return dataView;
-}
-async function quantizeCanvas(canvas, numberOfColors, colors) {
-    _console$m.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    removeAlphaFromCanvas(canvas);
-    const isSmall = canvas.width * canvas.height < 4;
-    const quantOptions = {
-        method: isSmall ? 1 : 2,
-        colors: numberOfColors,
-        dithKern: null,
-        useCache: false,
-        reIndex: true,
-        orDist: "manhattan",
-    };
-    if (colors) {
-        quantOptions.palette = colors.map((color) => {
-            const rgb = hexToRGB(color);
-            if (rgb) {
-                const { r, g, b } = rgb;
-                return [r, g, b];
-            }
-            else {
-                _console$m.error(`invalid rgb hex "${color}"`);
-            }
-        });
-    }
-    const quantizer = new RGBQuant(quantOptions);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    quantizer.sample(imageData);
-    const quantizedPixels = quantizer.reduce(imageData.data);
-    const quantizedImageData = new ImageData(new Uint8ClampedArray(quantizedPixels.buffer), canvas.width, canvas.height);
-    ctx.putImageData(quantizedImageData, 0, 0);
-    const pixels = quantizedImageData.data;
-    const quantizedPaletteData = quantizer.palette();
-    const numberOfQuantizedPaletteColors = quantizedPaletteData.byteLength / 4;
-    const quantizedPaletteColors = [];
-    let closestColorIndexToBlack = 0;
-    let closestColorDistanceToBlack = Infinity;
-    const vector3 = { x: 0, y: 0, z: 0 };
-    for (let colorIndex = 0; colorIndex < numberOfQuantizedPaletteColors; colorIndex++) {
-        const rgb = {
-            r: quantizedPaletteData[colorIndex * 4],
-            g: quantizedPaletteData[colorIndex * 4 + 1],
-            b: quantizedPaletteData[colorIndex * 4 + 2],
-        };
-        quantizedPaletteColors.push(rgb);
-        vector3.x = rgb.r;
-        vector3.y = rgb.g;
-        vector3.z = rgb.b;
-        const distanceToBlack = getVector3Length(vector3);
-        if (distanceToBlack < closestColorDistanceToBlack) {
-            closestColorDistanceToBlack = distanceToBlack;
-            closestColorIndexToBlack = colorIndex;
-        }
-    }
-    if (closestColorIndexToBlack != 0) {
-        const [currentBlack, newBlack] = [
-            quantizedPaletteColors[0],
-            quantizedPaletteColors[closestColorIndexToBlack],
-        ];
-        quantizedPaletteColors[0] = newBlack;
-        quantizedPaletteColors[closestColorIndexToBlack] = currentBlack;
-    }
-    const quantizedColors = quantizedPaletteColors.map((rgb, index) => {
-        const hex = rgbToHex(rgb);
-        return hex;
-    });
-    const quantizedColorIndices = [];
-    for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
-        pixels[i + 3];
-        const hex = rgbToHex({ r, g, b });
-        quantizedColorIndices.push(quantizedColors.indexOf(hex));
-    }
-    const promise = new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-            if (blob) {
-                resolve(blob);
-            }
-            else {
-                reject();
-            }
-        }, "image/png");
-    });
-    const blob = await promise;
-    return {
-        blob,
-        colors: quantizedColors,
-        colorIndices: quantizedColorIndices,
-    };
-}
-async function quantizeImage(image, width, height, numberOfColors, colors, canvas) {
-    canvas = canvas || document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
-    _console$m.log({ imageWidth, imageHeight });
-    canvas.width = width;
-    canvas.height = height;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(image, 0, 0, width, height);
-    return quantizeCanvas(canvas, numberOfColors, colors);
-}
-function resizeImage(image, width, height, canvas) {
-    canvas = canvas || document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    canvas.width = width;
-    canvas.height = height;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(image, 0, 0, width, height);
-    return canvas;
-}
-function cropCanvas(canvas, x, y, width, height, targetCanvas) {
-    targetCanvas = targetCanvas || document.createElement("canvas");
-    const ctx = targetCanvas.getContext("2d", { willReadFrequently: true });
-    targetCanvas.width = width;
-    targetCanvas.height = height;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
-    return targetCanvas;
-}
-function removeAlphaFromCanvas(canvas) {
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3];
-        if (alpha < 255) {
-            data[i] = 0;
-            data[i + 1] = 0;
-            data[i + 2] = 0;
-            data[i + 3] = 255;
-        }
-    }
-    ctx.putImageData(imageData, 0, 0);
-    return canvas;
-}
-async function resizeAndQuantizeImage(image, width, height, numberOfColors, colors, canvas) {
-    canvas = canvas || document.createElement("canvas");
-    resizeImage(image, width, height, canvas);
-    removeAlphaFromCanvas(canvas);
-    return quantizeCanvas(canvas, numberOfColors, colors);
-}
-async function imageToBitmap(image, width, height, colors, bitmapColorIndices, numberOfColors) {
-    if (numberOfColors == undefined) {
-        numberOfColors = colors.length;
-    }
-    const bitmapColors = bitmapColorIndices
-        .map((bitmapColorIndex) => colors[bitmapColorIndex])
-        .slice(0, numberOfColors);
-    const { blob, colorIndices } = await resizeAndQuantizeImage(image, width, height, numberOfColors, bitmapColors);
-    const bitmap = {
-        numberOfColors,
-        pixels: colorIndices,
-        width,
-        height,
-    };
-    return { blob, bitmap };
-}
-const drawSpriteBitmapCommandHeaderLength = 1 + 2 + 2 + 2 + 2 + 1 + 2;
-async function canvasToBitmaps(canvas, numberOfColors, mtu) {
-    const { blob, colors, colorIndices } = await quantizeCanvas(canvas, numberOfColors);
-    const bitmapRows = [];
-    const { width, height } = canvas;
-    const numberOfPixels = width * height;
-    const pixelDepth = DisplayPixelDepths.find((pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors);
-    _console$m.assertWithError(pixelDepth, `no pixelDepth found that covers ${numberOfColors} colors`);
-    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
-    const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
-    _console$m.log({
-        width,
-        height,
-        numberOfPixels,
-        pixelDepth,
-        pixelsPerByte,
-        numberOfBytes,
-        mtu,
-    });
-    const maxPixelDataLength = mtu - (drawSpriteBitmapCommandHeaderLength + 5);
-    const maxPixels = Math.floor(maxPixelDataLength / pixelsPerByte);
-    const maxBitmapWidth = Math.min(maxPixels, width);
-    let maxBitmapHeight = 1;
-    if (maxBitmapWidth == width) {
-        const bitmapRowPixelDataLength = Math.ceil(width / pixelsPerByte);
-        maxBitmapHeight = Math.floor(maxPixelDataLength / bitmapRowPixelDataLength);
-    }
-    _console$m.log({
-        maxPixelDataLength,
-        maxPixels,
-        maxBitmapHeight,
-        maxBitmapWidth,
-    });
-    if (maxBitmapHeight >= height) {
-        _console$m.log("image is small enough for a single bitmap");
-        const bitmap = {
-            numberOfColors,
-            pixels: colorIndices,
-            width,
-            height,
-        };
-        bitmapRows.push([bitmap]);
-    }
-    else {
-        let offsetX = 0;
-        let offsetY = 0;
-        const bitmapCanvas = document.createElement("canvas");
-        const bitmapColorIndices = new Array(numberOfColors)
-            .fill(0)
-            .map((_, i) => i);
-        while (offsetY < height) {
-            const bitmapHeight = Math.min(maxBitmapHeight, height - offsetY);
-            offsetX = 0;
-            const bitmapRow = [];
-            bitmapRows.push(bitmapRow);
-            while (offsetX < width) {
-                const bitmapWidth = Math.min(maxBitmapWidth, width - offsetX);
-                cropCanvas(canvas, offsetX, offsetY, bitmapWidth, bitmapHeight, bitmapCanvas);
-                const { bitmap } = await imageToBitmap(bitmapCanvas, bitmapWidth, bitmapHeight, colors, bitmapColorIndices, numberOfColors);
-                bitmapRow.push(bitmap);
-                offsetX += bitmapWidth;
-            }
-            offsetY += bitmapHeight;
-        }
-    }
-    return { bitmapRows, colors };
-}
-async function imageToBitmaps(image, width, height, numberOfColors, mtu) {
-    const canvas = resizeImage(image, width, height);
-    return canvasToBitmaps(canvas, numberOfColors, mtu);
-}
-function getBitmapNumberOfBytes(bitmap) {
-    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
-    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
-    const numberOfPixels = bitmap.pixels.length;
-    const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
-    _console$m.log({
-        pixelDepth,
-        pixelsPerByte,
-        numberOfPixels,
-        pixelDataLength,
-    });
-    return pixelDataLength;
-}
-function assertValidBitmapPixels(bitmap) {
-    _console$m.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, bitmap.width * (bitmap.height - 1) + 1, bitmap.width * bitmap.height);
-    bitmap.pixels.forEach((pixel, index) => {
-        _console$m.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
-    });
-}
-async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0) {
-    const { width, height } = canvas;
-    let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
-    if (!palette) {
-        palette = {
-            name: paletteName,
-            numberOfColors,
-            colors: new Array(numberOfColors).fill("#000000"),
-        };
-        spriteSheet.palettes = spriteSheet.palettes || [];
-        spriteSheet.palettes?.push(palette);
-    }
-    _console$m.log("pallete", palette);
-    const sprite = {
-        name: spriteName,
-        width,
-        height,
-        paletteSwaps: [],
-        commands: [],
-    };
-    const results = await quantizeCanvas(canvas, numberOfColors, !overridePalette ? palette.colors : undefined);
-    const blob = results.blob;
-    const colorIndices = results.colorIndices;
-    if (overridePalette) {
-        results.colors.forEach((color, index) => {
-            palette.colors[index + paletteOffset] = color;
-        });
-    }
-    sprite.commands.push({
-        type: "selectBitmapColors",
-        bitmapColorPairs: new Array(numberOfColors).fill(0).map((_, index) => ({
-            bitmapColorIndex: index,
-            colorIndex: index + paletteOffset,
-        })),
-    });
-    const bitmap = {
-        numberOfColors,
-        pixels: colorIndices,
-        width,
-        height,
-    };
-    sprite.commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
-    const spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
-    if (spriteIndex == -1) {
-        spriteSheet.sprites.push(sprite);
-    }
-    else {
-        _console$m.log(`overwriting spriteIndex ${spriteIndex}`);
-        spriteSheet.sprites[spriteIndex] = sprite;
-    }
-    return { sprite, blob };
-}
-async function imageToSprite(image, spriteName, width, height, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0) {
-    const canvas = resizeImage(image, width, height);
-    return canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset);
-}
-const spriteSheetWithSingleBitmapCommandLength = calculateSpriteSheetHeaderLength(1) + drawSpriteBitmapCommandHeaderLength;
-function spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) {
-    return (spriteSheetWithSingleBitmapCommandLength + (1 + 1 + numberOfColors * 2));
-}
-async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength) {
-    const spriteSheet = {
-        name: spriteSheetName,
-        palettes: [],
-        paletteSwaps: [],
-        sprites: [],
-    };
-    if (maxFileLength == undefined) {
-        await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
-    }
-    else {
-        const { width, height } = canvas;
-        const numberOfPixels = width * height;
-        const pixelDepth = DisplayPixelDepths.find((pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors);
-        _console$m.assertWithError(pixelDepth, `no pixelDepth found that covers ${numberOfColors} colors`);
-        const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
-        const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
-        _console$m.log({
-            width,
-            height,
-            numberOfPixels,
-            pixelDepth,
-            pixelsPerByte,
-            numberOfBytes,
-            maxFileLength,
-        });
-        const maxPixelDataLength = maxFileLength -
-            (spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) +
-                5);
-        const imageRowPixelDataLength = Math.ceil(width / pixelsPerByte);
-        const maxSpriteHeight = Math.floor(maxPixelDataLength / imageRowPixelDataLength);
-        if (maxSpriteHeight >= height) {
-            _console$m.log("image is small enough for a single sprite");
-            await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
-        }
-        else {
-            const { colors } = await quantizeCanvas(canvas, numberOfColors);
-            spriteSheet.palettes?.push({ name: paletteName, numberOfColors, colors });
-            let offsetY = 0;
-            let imageIndex = 0;
-            const spriteCanvas = document.createElement("canvas");
-            while (offsetY < height) {
-                const spriteHeight = Math.min(maxSpriteHeight, height - offsetY);
-                cropCanvas(canvas, 0, offsetY, width, spriteHeight, spriteCanvas);
-                offsetY += spriteHeight;
-                _console$m.log(`cropping sprite ${imageIndex}`, {
-                    offsetY,
-                    width,
-                    spriteHeight,
-                });
-                await canvasToSprite(spriteCanvas, `image${imageIndex}`, numberOfColors, paletteName, false, spriteSheet);
-                imageIndex++;
-            }
-        }
-    }
-    return spriteSheet;
-}
-async function imageToSpriteSheet(image, spriteSheetName, width, height, numberOfColors, paletteName, maxFileLength) {
-    const canvas = resizeImage(image, width, height);
-    return canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength);
-}
-
-const _console$l = createConsole("DisplayManagerInterface", { log: true });
-async function runDisplayContextCommand(displayManager, command, sendImmediately) {
-    if (command.hide) {
-        return;
-    }
-    switch (command.type) {
-        case "show":
-            await displayManager.show(sendImmediately);
-            break;
-        case "clear":
-            await displayManager.clear(sendImmediately);
-            break;
-        case "saveContext":
-            break;
-        case "restoreContext":
-            break;
-        case "clearRotation":
-            await displayManager.clearRotation(sendImmediately);
-            break;
-        case "clearCrop":
-            await displayManager.clearCrop(sendImmediately);
-            break;
-        case "clearRotationCrop":
-            await displayManager.clearRotationCrop(sendImmediately);
-            break;
-        case "resetBitmapScale":
-            await displayManager.resetBitmapScale(sendImmediately);
-            break;
-        case "resetSpriteScale":
-            await displayManager.resetSpriteScale(sendImmediately);
-            break;
-        case "setColor":
-            {
-                const { colorIndex, color } = command;
-                await displayManager.setColor(colorIndex, color, sendImmediately);
-            }
-            break;
-        case "setColorOpacity":
-            {
-                const { colorIndex, opacity } = command;
-                await displayManager.setColorOpacity(colorIndex, opacity, sendImmediately);
-            }
-            break;
-        case "setOpacity":
-            {
-                const { opacity } = command;
-                await displayManager.setOpacity(opacity, sendImmediately);
-            }
-            break;
-        case "selectBackgroundColor":
-            {
-                const { backgroundColorIndex } = command;
-                await displayManager.selectBackgroundColor(backgroundColorIndex, sendImmediately);
-            }
-            break;
-        case "selectFillColor":
-            {
-                const { fillColorIndex } = command;
-                await displayManager.selectFillColor(fillColorIndex, sendImmediately);
-            }
-            break;
-        case "selectLineColor":
-            {
-                const { lineColorIndex } = command;
-                await displayManager.selectLineColor(lineColorIndex, sendImmediately);
-            }
-            break;
-        case "setIgnoreFill":
-            {
-                const { ignoreFill } = command;
-                await displayManager.setIgnoreFill(ignoreFill, sendImmediately);
-            }
-            break;
-        case "setIgnoreLine":
-            {
-                const { ignoreLine } = command;
-                await displayManager.setIgnoreLine(ignoreLine, sendImmediately);
-            }
-            break;
-        case "setFillBackground":
-            {
-                const { fillBackground } = command;
-                await displayManager.setFillBackground(fillBackground, sendImmediately);
-            }
-            break;
-        case "setLineWidth":
-            {
-                const { lineWidth } = command;
-                await displayManager.setLineWidth(lineWidth, sendImmediately);
-            }
-            break;
-        case "setRotation":
-            {
-                let { rotation, isRadians } = command;
-                rotation = isRadians ? rotation : degToRad(rotation);
-                await displayManager.setRotation(rotation, true, sendImmediately);
-            }
-            break;
-        case "setSegmentStartCap":
-            {
-                const { segmentStartCap } = command;
-                await displayManager.setSegmentStartCap(segmentStartCap, sendImmediately);
-            }
-            break;
-        case "setSegmentEndCap":
-            {
-                const { segmentEndCap } = command;
-                await displayManager.setSegmentEndCap(segmentEndCap, sendImmediately);
-            }
-            break;
-        case "setSegmentCap":
-            {
-                const { segmentCap } = command;
-                await displayManager.setSegmentCap(segmentCap, sendImmediately);
-            }
-            break;
-        case "setSegmentStartRadius":
-            {
-                const { segmentStartRadius } = command;
-                await displayManager.setSegmentStartRadius(segmentStartRadius, sendImmediately);
-            }
-            break;
-        case "setSegmentEndRadius":
-            {
-                const { segmentEndRadius } = command;
-                await displayManager.setSegmentEndRadius(segmentEndRadius, sendImmediately);
-            }
-            break;
-        case "setSegmentRadius":
-            {
-                const { segmentRadius } = command;
-                await displayManager.setSegmentRadius(segmentRadius, sendImmediately);
-            }
-            break;
-        case "setHorizontalAlignment":
-            {
-                const { horizontalAlignment } = command;
-                await displayManager.setHorizontalAlignment(horizontalAlignment, sendImmediately);
-            }
-            break;
-        case "setVerticalAlignment":
-            {
-                const { verticalAlignment } = command;
-                await displayManager.setVerticalAlignment(verticalAlignment, sendImmediately);
-            }
-            break;
-        case "resetAlignment":
-            {
-                await displayManager.resetAlignment(sendImmediately);
-            }
-            break;
-        case "setCropTop":
-            {
-                const { cropTop } = command;
-                await displayManager.setCropTop(cropTop, sendImmediately);
-            }
-            break;
-        case "setCropRight":
-            {
-                const { cropRight } = command;
-                await displayManager.setCropRight(cropRight, sendImmediately);
-            }
-            break;
-        case "setCropBottom":
-            {
-                const { cropBottom } = command;
-                await displayManager.setCropBottom(cropBottom, sendImmediately);
-            }
-            break;
-        case "setCropLeft":
-            {
-                const { cropLeft } = command;
-                await displayManager.setCropLeft(cropLeft, sendImmediately);
-            }
-            break;
-        case "setRotationCropTop":
-            {
-                const { rotationCropTop } = command;
-                await displayManager.setRotationCropTop(rotationCropTop, sendImmediately);
-            }
-            break;
-        case "setRotationCropRight":
-            {
-                const { rotationCropRight } = command;
-                await displayManager.setRotationCropRight(rotationCropRight, sendImmediately);
-            }
-            break;
-        case "setRotationCropBottom":
-            {
-                const { rotationCropBottom } = command;
-                await displayManager.setRotationCropBottom(rotationCropBottom, sendImmediately);
-            }
-            break;
-        case "setRotationCropLeft":
-            {
-                const { rotationCropLeft } = command;
-                await displayManager.setRotationCropLeft(rotationCropLeft, sendImmediately);
-            }
-            break;
-        case "selectBitmapColor":
-            {
-                const { bitmapColorIndex, colorIndex } = command;
-                await displayManager.selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately);
-            }
-            break;
-        case "selectBitmapColors":
-            {
-                const { bitmapColorPairs } = command;
-                await displayManager.selectBitmapColors(bitmapColorPairs, sendImmediately);
-            }
-            break;
-        case "setBitmapScaleX":
-            {
-                const { bitmapScaleX } = command;
-                await displayManager.setBitmapScaleX(bitmapScaleX, sendImmediately);
-            }
-            break;
-        case "setBitmapScaleY":
-            {
-                const { bitmapScaleY } = command;
-                await displayManager.setBitmapScaleY(bitmapScaleY, sendImmediately);
-            }
-            break;
-        case "setBitmapScale":
-            {
-                const { bitmapScale } = command;
-                await displayManager.setBitmapScale(bitmapScale, sendImmediately);
-            }
-            break;
-        case "selectSpriteColor":
-            {
-                const { spriteColorIndex, colorIndex } = command;
-                await displayManager.selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately);
-            }
-            break;
-        case "selectSpriteColors":
-            {
-                const { spriteColorPairs } = command;
-                await displayManager.selectSpriteColors(spriteColorPairs, sendImmediately);
-            }
-            break;
-        case "setSpriteScaleX":
-            {
-                const { spriteScaleX } = command;
-                await displayManager.setSpriteScaleX(spriteScaleX, sendImmediately);
-            }
-            break;
-        case "setSpriteScaleY":
-            {
-                const { spriteScaleY } = command;
-                await displayManager.setSpriteScaleY(spriteScaleY, sendImmediately);
-            }
-            break;
-        case "setSpriteScale":
-            {
-                const { spriteScale } = command;
-                await displayManager.setSpriteScale(spriteScale, sendImmediately);
-            }
-            break;
-        case "clearRect":
-            {
-                const { x, y, width, height } = command;
-                await displayManager.clearRect(x, y, width, height, sendImmediately);
-            }
-            break;
-        case "drawRect":
-            {
-                const { offsetX, offsetY, width, height } = command;
-                await displayManager.drawRect(offsetX, offsetY, width, height, sendImmediately);
-            }
-            break;
-        case "drawRoundRect":
-            {
-                const { offsetX, offsetY, width, height, borderRadius } = command;
-                await displayManager.drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately);
-            }
-            break;
-        case "drawCircle":
-            {
-                const { offsetX, offsetY, radius } = command;
-                await displayManager.drawCircle(offsetX, offsetY, radius, sendImmediately);
-            }
-            break;
-        case "drawEllipse":
-            {
-                const { offsetX, offsetY, radiusX, radiusY } = command;
-                await displayManager.drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
-            }
-            break;
-        case "drawPolygon":
-            {
-                const { points } = command;
-                await displayManager.drawPolygon(points, sendImmediately);
-            }
-            break;
-        case "drawRegularPolygon":
-            {
-                const { offsetX, offsetY, radius, numberOfSides } = command;
-                await displayManager.drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
-            }
-            break;
-        case "drawWireframe":
-            {
-                const { wireframe } = command;
-                await displayManager.drawWireframe(wireframe, sendImmediately);
-            }
-            break;
-        case "drawSegment":
-            {
-                const { startX, startY, endX, endY } = command;
-                await displayManager.drawSegment(startX, startY, endX, endY, sendImmediately);
-            }
-            break;
-        case "drawSegments":
-            {
-                const { points } = command;
-                await displayManager.drawSegments(points.map(({ x, y }) => ({ x: x, y: y })), sendImmediately);
-            }
-            break;
-        case "drawArc":
-            {
-                let { offsetX, offsetY, radius, startAngle, angleOffset, isRadians } = command;
-                startAngle = isRadians ? startAngle : degToRad(startAngle);
-                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                await displayManager.drawArc(offsetX, offsetY, radius, startAngle, angleOffset, true, sendImmediately);
-            }
-            break;
-        case "drawArcEllipse":
-            {
-                let { offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, } = command;
-                startAngle = isRadians ? startAngle : degToRad(startAngle);
-                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                await displayManager.drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
-            }
-            break;
-        case "drawBitmap":
-            {
-                const { offsetX, offsetY, bitmap } = command;
-                await displayManager.drawBitmap(offsetX, offsetY, bitmap, sendImmediately);
-            }
-            break;
-        case "drawSprite":
-            {
-                const { offsetX, offsetY, spriteIndex } = command;
-                const spriteName = displayManager.selectedSpriteSheet?.sprites[spriteIndex].name;
-                await displayManager.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
-            }
-            break;
-        case "selectSpriteSheet":
-            {
-                const { spriteSheetIndex } = command;
-                const spriteSheetName = Object.entries(displayManager.spriteSheetIndices).find((entry) => entry[1] == spriteSheetIndex)?.[0];
-                await displayManager.selectSpriteSheet(spriteSheetName, sendImmediately);
-            }
-            break;
-        case "resetSpriteColors":
-            await displayManager.resetSpriteColors(sendImmediately);
-            break;
-        case "drawQuadraticBezierCurve":
-            {
-                const { controlPoints } = command;
-                await displayManager.drawQuadraticBezierCurve(controlPoints, sendImmediately);
-            }
-            break;
-        case "drawQuadraticBezierCurves":
-            {
-                const { controlPoints } = command;
-                await displayManager.drawQuadraticBezierCurves(controlPoints, sendImmediately);
-            }
-            break;
-        case "drawCubicBezierCurve":
-            {
-                const { controlPoints } = command;
-                await displayManager.drawCubicBezierCurve(controlPoints, sendImmediately);
-            }
-            break;
-        case "drawCubicBezierCurves":
-            {
-                const { controlPoints } = command;
-                await displayManager.drawCubicBezierCurves(controlPoints, sendImmediately);
-            }
-            break;
-        case "drawClosedPath":
-            {
-                const { curves } = command;
-                await displayManager.drawClosedPath(curves, sendImmediately);
-            }
-            break;
-        case "drawPath":
-            {
-                const { curves } = command;
-                await displayManager.drawPath(curves, sendImmediately);
-            }
-            break;
-    }
-}
-async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
-    _console$l.log("runDisplayContextCommands", commands);
-    commands
-        .filter((command) => !command.hide)
-        .forEach((command) => {
-        runDisplayContextCommand(displayManager, command, false);
-    });
-    if (sendImmediately) {
-        displayManager.flushContextCommands();
-    }
-}
-function assertLoadedSpriteSheet(displayManager, spriteSheetName) {
-    _console$l.assertWithError(displayManager.spriteSheets[spriteSheetName], `spriteSheet "${spriteSheetName}" not loaded`);
-}
-function assertSelectedSpriteSheet(displayManager, spriteSheetName) {
-    displayManager.assertLoadedSpriteSheet(spriteSheetName);
-    _console$l.assertWithError(displayManager.selectedSpriteSheetName == spriteSheetName, `spriteSheet "${spriteSheetName}" not selected`);
-}
-function assertAnySelectedSpriteSheet(displayManager) {
-    _console$l.assertWithError(displayManager.selectedSpriteSheet, "no spriteSheet selected");
-}
-function getSprite(displayManager, spriteName) {
-    displayManager.assertAnySelectedSpriteSheet();
-    return displayManager.selectedSpriteSheet.sprites.find((sprite) => sprite.name == spriteName);
-}
-function assertSprite(displayManager, spriteName) {
-    displayManager.assertAnySelectedSpriteSheet();
-    const sprite = displayManager.getSprite(spriteName);
-    _console$l.assertWithError(sprite, `no sprite found with name "${spriteName}"`);
-}
-function getSpriteSheetPalette(displayManager, paletteName) {
-    return displayManager.selectedSpriteSheet?.palettes?.find((palette) => palette.name == paletteName);
-}
-function getSpriteSheetPaletteSwap(displayManager, paletteSwapName) {
-    return displayManager.selectedSpriteSheet?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
-}
-function getSpritePaletteSwap(displayManager, spriteName, paletteSwapName) {
-    return displayManager
-        .getSprite(spriteName)
-        ?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
-}
-function assertSpriteSheetPalette(displayManagerInterface, paletteName) {
-    const spriteSheetPalette = displayManagerInterface.getSpriteSheetPalette(paletteName);
-    _console$l.assertWithError(spriteSheetPalette, `no spriteSheetPalette found with name "${paletteName}"`);
-}
-function assertSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName) {
-    const spriteSheetPaletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
-    _console$l.assertWithError(spriteSheetPaletteSwap, `no paletteSwapName found with name "${paletteSwapName}"`);
-}
-function assertSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName) {
-    const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
-    _console$l.assertWithError(spritePaletteSwap, `no spritePaletteSwap found for sprite "${spriteName}" name "${paletteSwapName}"`);
-}
-async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, sendImmediately) {
-    offset = offset || 0;
-    displayManagerInterface.assertAnySelectedSpriteSheet();
-    displayManagerInterface.assertSpriteSheetPalette(paletteName);
-    const palette = displayManagerInterface.getSpriteSheetPalette(paletteName);
-    _console$l.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`);
-    for (let index = 0; index < palette.numberOfColors; index++) {
-        const color = palette.colors[index];
-        let opacity = palette.opacities?.[index];
-        if (opacity == undefined) {
-            opacity = 1;
-        }
-        displayManagerInterface.setColor(index + offset, color, false);
-        displayManagerInterface.setColorOpacity(index + offset, opacity, false);
-        displayManagerInterface.selectSpriteColor(index, index + offset);
-    }
-    if (sendImmediately) {
-        displayManagerInterface.flushContextCommands();
-    }
-}
-async function selectSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName, offset, sendImmediately) {
-    offset = offset || 0;
-    displayManagerInterface.assertAnySelectedSpriteSheet();
-    displayManagerInterface.assertSpriteSheetPaletteSwap(paletteSwapName);
-    const paletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
-    const spriteColorPairs = [];
-    for (let spriteColorIndex = 0; spriteColorIndex < paletteSwap.numberOfColors; spriteColorIndex++) {
-        const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
-        spriteColorPairs.push({
-            spriteColorIndex: spriteColorIndex + offset,
-            colorIndex,
-        });
-    }
-    displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
-    if (sendImmediately) {
-        displayManagerInterface.flushContextCommands();
-    }
-}
-async function selectSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName, offset, sendImmediately) {
-    offset = offset || 0;
-    displayManagerInterface.assertAnySelectedSpriteSheet();
-    const paletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
-    const spriteColorPairs = [];
-    for (let spriteColorIndex = 0; spriteColorIndex < paletteSwap.numberOfColors; spriteColorIndex++) {
-        const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
-        spriteColorPairs.push({
-            spriteColorIndex: spriteColorIndex + offset,
-            colorIndex,
-        });
-    }
-    displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
-    if (sendImmediately) {
-        displayManagerInterface.flushContextCommands();
-    }
-}
-async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
-    const reducedSpriteSheet = reduceSpriteSheet(spriteSheet, [spriteName]);
-    await displayManagerInterface.uploadSpriteSheet(reducedSpriteSheet);
-    await displayManagerInterface.selectSpriteSheet(spriteSheet.name);
-    await displayManagerInterface.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
-    if (paletteName != undefined) {
-        await displayManagerInterface.selectSpriteSheetPalette(paletteName);
-    }
-}
-
-const _console$k = createConsole("DisplayManager", { log: false });
-const DefaultNumberOfDisplayColors = 16;
-const DisplayCommands = ["sleep", "wake"];
-const DisplayStatuses = ["awake", "asleep"];
-const DisplayInformationTypes = [
-    "type",
-    "width",
-    "height",
-    "pixelDepth",
-];
-const DisplayTypes = [
-    "none",
-    "generic",
-    "monocularLeft",
-    "monocularRight",
-    "binocular",
-];
-const DisplayPixelDepths = ["1", "2", "4"];
-const DisplayBrightnesses = [
-    "veryLow",
-    "low",
-    "medium",
-    "high",
-    "veryHigh",
-];
-const DisplayMessageTypes = [
-    "isDisplayAvailable",
-    "displayStatus",
-    "displayInformation",
-    "displayCommand",
-    "getDisplayBrightness",
-    "setDisplayBrightness",
-    "displayContextCommands",
-    "displayReady",
-    "getSpriteSheetName",
-    "setSpriteSheetName",
-    "spriteSheetIndex",
-];
-const DisplayBezierCurveTypes = [
-    "segment",
-    "quadratic",
-    "cubic",
-];
-const displayCurveTypeBitWidth = 2;
-const displayCurveTypesPerByte = 8 / displayCurveTypeBitWidth;
-const DisplayPointDataTypes = ["int8", "int16", "float"];
-const displayPointDataTypeToSize = {
-    int8: 1 * 2,
-    int16: 2 * 2,
-    float: 4 * 2,
-};
-const displayPointDataTypeToRange = {
-    int8: { min: -128, max: 2 ** 7 - 1 },
-    int16: { min: -32768, max: 2 ** 15 - 1 },
-    float: { min: -Infinity, max: Infinity },
-};
-const DisplayInformationValues = {
-    type: DisplayTypes,
-    pixelDepth: DisplayPixelDepths,
-};
-const RequiredDisplayMessageTypes = [
-    "isDisplayAvailable",
-    "displayInformation",
-    "displayStatus",
-    "getDisplayBrightness",
-];
-const DisplayEventTypes = [
-    ...DisplayMessageTypes,
-    "displayContextState",
-    "displayColor",
-    "displayColorOpacity",
-    "displayOpacity",
-    "displaySpriteSheetUploadStart",
-    "displaySpriteSheetUploadProgress",
-    "displaySpriteSheetUploadComplete",
-];
-const MinSpriteSheetNameLength = 1;
-const MaxSpriteSheetNameLength = 30;
-class DisplayManager {
-    constructor() {
-        autoBind(this);
-    }
-    sendMessage;
-    eventDispatcher;
-    get #dispatchEvent() {
-        return this.eventDispatcher.dispatchEvent;
-    }
-    get waitForEvent() {
-        return this.eventDispatcher.waitForEvent;
-    }
-    requestRequiredInformation() {
-        _console$k.log("requesting required display information");
-        const messages = RequiredDisplayMessageTypes.map((messageType) => ({
-            type: messageType,
-        }));
-        this.sendMessage(messages, false);
-    }
-    #isAvailable = false;
-    get isAvailable() {
-        return this.#isAvailable;
-    }
-    #assertDisplayIsAvailable() {
-        _console$k.assertWithError(this.#isAvailable, "display is not available");
-    }
-    #parseIsDisplayAvailable(dataView) {
-        const newIsDisplayAvailable = dataView.getUint8(0) == 1;
-        this.#isAvailable = newIsDisplayAvailable;
-        _console$k.log({ isDisplayAvailable: this.#isAvailable });
-        this.#dispatchEvent("isDisplayAvailable", {
-            isDisplayAvailable: this.#isAvailable,
-        });
-    }
-    #contextStateHelper = new DisplayContextStateHelper();
-    get contextState() {
-        return this.#contextStateHelper.state;
-    }
-    #onContextStateUpdate(differences) {
-        this.#dispatchEvent("displayContextState", {
-            displayContextState: structuredClone(this.contextState),
-            differences,
-        });
-    }
-    async setContextState(newState, sendImmediately) {
-        const differences = this.#contextStateHelper.diff(newState);
-        if (differences.length == 0) {
-            return;
-        }
-        differences.forEach((difference) => {
-            switch (difference) {
-                case "backgroundColorIndex":
-                    this.selectBackgroundColor(newState.backgroundColorIndex);
-                    break;
-                case "fillBackground":
-                    this.setFillBackground(newState.fillBackground);
-                    break;
-                case "ignoreFill":
-                    this.setIgnoreFill(newState.ignoreFill);
-                    break;
-                case "ignoreLine":
-                    this.setIgnoreLine(newState.ignoreLine);
-                    break;
-                case "fillColorIndex":
-                    this.selectFillColor(newState.fillColorIndex);
-                    break;
-                case "lineColorIndex":
-                    this.selectLineColor(newState.lineColorIndex);
-                    break;
-                case "lineWidth":
-                    this.setLineWidth(newState.lineWidth);
-                    break;
-                case "horizontalAlignment":
-                    this.setHorizontalAlignment(newState.horizontalAlignment);
-                    break;
-                case "verticalAlignment":
-                    this.setVerticalAlignment(newState.verticalAlignment);
-                    break;
-                case "rotation":
-                    this.setRotation(newState.rotation, true);
-                    break;
-                case "segmentStartCap":
-                    this.setSegmentStartCap(newState.segmentStartCap);
-                    break;
-                case "segmentEndCap":
-                    this.setSegmentEndCap(newState.segmentEndCap);
-                    break;
-                case "segmentStartRadius":
-                    this.setSegmentStartRadius(newState.segmentStartRadius);
-                    break;
-                case "segmentEndRadius":
-                    this.setSegmentEndRadius(newState.segmentEndRadius);
-                    break;
-                case "cropTop":
-                    this.setCropTop(newState.cropTop);
-                    break;
-                case "cropRight":
-                    this.setCropRight(newState.cropRight);
-                    break;
-                case "cropBottom":
-                    this.setCropBottom(newState.cropBottom);
-                    break;
-                case "cropLeft":
-                    this.setCropLeft(newState.cropLeft);
-                    break;
-                case "rotationCropTop":
-                    this.setRotationCropTop(newState.rotationCropTop);
-                    break;
-                case "rotationCropRight":
-                    this.setRotationCropRight(newState.rotationCropRight);
-                    break;
-                case "rotationCropBottom":
-                    this.setRotationCropBottom(newState.rotationCropBottom);
-                    break;
-                case "rotationCropLeft":
-                    this.setRotationCropLeft(newState.rotationCropLeft);
-                    break;
-                case "bitmapColorIndices":
-                    const bitmapColors = [];
-                    newState.bitmapColorIndices.forEach((colorIndex, bitmapColorIndex) => {
-                        bitmapColors.push({ bitmapColorIndex, colorIndex });
-                    });
-                    this.selectBitmapColors(bitmapColors);
-                    break;
-                case "bitmapScaleX":
-                    this.setBitmapScaleX(newState.bitmapScaleX);
-                    break;
-                case "bitmapScaleY":
-                    this.setBitmapScaleY(newState.bitmapScaleY);
-                    break;
-                case "spriteColorIndices":
-                    const spriteColors = [];
-                    newState.spriteColorIndices.forEach((colorIndex, spriteColorIndex) => {
-                        spriteColors.push({ spriteColorIndex, colorIndex });
-                    });
-                    this.selectSpriteColors(spriteColors);
-                    break;
-                case "spriteScaleX":
-                    this.setSpriteScaleX(newState.spriteScaleX);
-                    break;
-                case "spriteScaleY":
-                    this.setSpriteScaleY(newState.spriteScaleY);
-                    break;
-                case "spritesLineHeight":
-                    this.setSpritesLineHeight(newState.spritesLineHeight);
-                    break;
-                case "spritesDirection":
-                    this.setSpritesDirection(newState.spritesDirection);
-                    break;
-                case "spritesLineDirection":
-                    this.setSpritesLineDirection(newState.spritesLineDirection);
-                    break;
-                case "spritesSpacing":
-                    this.setSpritesSpacing(newState.spritesSpacing);
-                    break;
-                case "spritesLineSpacing":
-                    this.setSpritesLineSpacing(newState.spritesLineSpacing);
-                    break;
-                case "spritesAlignment":
-                    this.setSpritesAlignment(newState.spritesAlignment);
-                    break;
-                case "spritesLineAlignment":
-                    this.setSpritesLineAlignment(newState.spritesLineAlignment);
-                    break;
-            }
-        });
-        if (sendImmediately) {
-            await this.#sendContextCommands();
-        }
-    }
-    #displayStatus;
-    get displayStatus() {
-        return this.#displayStatus;
-    }
-    get isDisplayAwake() {
-        return this.#displayStatus == "awake";
-    }
-    #parseDisplayStatus(dataView) {
-        const displayStatusIndex = dataView.getUint8(0);
-        const newDisplayStatus = DisplayStatuses[displayStatusIndex];
-        this.#updateDisplayStatus(newDisplayStatus);
-    }
-    #updateDisplayStatus(newDisplayStatus) {
-        _console$k.assertEnumWithError(newDisplayStatus, DisplayStatuses);
-        if (newDisplayStatus == this.#displayStatus) {
-            _console$k.log(`redundant displayStatus ${newDisplayStatus}`);
-            return;
-        }
-        const previousDisplayStatus = this.#displayStatus;
-        this.#displayStatus = newDisplayStatus;
-        _console$k.log(`updated displayStatus to "${this.displayStatus}"`);
-        this.#dispatchEvent("displayStatus", {
-            displayStatus: this.displayStatus,
-            previousDisplayStatus,
-        });
-    }
-    async #sendDisplayCommand(command, sendImmediately) {
-        _console$k.assertEnumWithError(command, DisplayCommands);
-        _console$k.log(`sending display command "${command}"`);
-        const promise = this.waitForEvent("displayStatus");
-        _console$k.log(`setting command "${command}"`);
-        const commandEnum = DisplayCommands.indexOf(command);
-        this.sendMessage([
-            {
-                type: "displayCommand",
-                data: UInt8ByteBuffer(commandEnum),
-            },
-        ], sendImmediately);
-        await promise;
-    }
-    #assertIsAwake() {
-        _console$k.assertWithError(this.#displayStatus == "awake", `display is not awake - currently ${this.#displayStatus}`);
-    }
-    #assertIsNotAwake() {
-        _console$k.assertWithError(this.#displayStatus != "awake", `display is awake`);
-    }
-    async wake() {
-        this.#assertIsNotAwake();
-        await this.#sendDisplayCommand("wake");
-    }
-    async sleep() {
-        this.#assertIsAwake();
-        await this.#sendDisplayCommand("sleep");
-    }
-    async toggle() {
-        switch (this.displayStatus) {
-            case "asleep":
-                this.wake();
-                break;
-            case "awake":
-                this.sleep();
-                break;
-        }
-    }
-    get numberOfColors() {
-        return 2 ** Number(this.pixelDepth);
-    }
-    #displayInformation;
-    get displayInformation() {
-        return this.#displayInformation;
-    }
-    get pixelDepth() {
-        return this.#displayInformation?.pixelDepth;
-    }
-    get width() {
-        return this.#displayInformation?.width;
-    }
-    get height() {
-        return this.#displayInformation?.width;
-    }
-    get size() {
-        return {
-            width: this.width,
-            height: this.height,
-        };
-    }
-    get type() {
-        return this.#displayInformation?.type;
-    }
-    #parseDisplayInformation(dataView) {
-        const parsedDisplayInformation = {};
-        let byteOffset = 0;
-        while (byteOffset < dataView.byteLength) {
-            const displayInformationTypeIndex = dataView.getUint8(byteOffset++);
-            const displayInformationType = DisplayInformationTypes[displayInformationTypeIndex];
-            _console$k.assertWithError(displayInformationType, `invalid displayInformationTypeIndex ${displayInformationType}`);
-            _console$k.log({ displayInformationType });
-            switch (displayInformationType) {
-                case "width":
-                case "height":
-                    {
-                        const value = dataView.getUint16(byteOffset, true);
-                        parsedDisplayInformation[displayInformationType] = value;
-                        byteOffset += 2;
-                    }
-                    break;
-                case "pixelDepth":
-                case "type":
-                    {
-                        const values = DisplayInformationValues[displayInformationType];
-                        let rawValue = dataView.getUint8(byteOffset++);
-                        const value = values[rawValue];
-                        _console$k.assertEnumWithError(value, values);
-                        parsedDisplayInformation[displayInformationType] = value;
-                    }
-                    break;
-            }
-        }
-        _console$k.log({ parsedDisplayInformation });
-        const missingDisplayInformationType = DisplayInformationTypes.find((type) => !(type in parsedDisplayInformation));
-        _console$k.assertWithError(!missingDisplayInformationType, `missingDisplayInformationType ${missingDisplayInformationType}`);
-        this.#displayInformation = parsedDisplayInformation;
-        this.#colors = new Array(this.numberOfColors).fill("#000000");
-        this.#opacities = new Array(this.numberOfColors).fill(1);
-        this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-        this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
-        this.#dispatchEvent("displayInformation", {
-            displayInformation: this.#displayInformation,
-        });
-    }
-    #brightness;
-    get brightness() {
-        return this.#brightness;
-    }
-    #parseDisplayBrightness(dataView) {
-        const newDisplayBrightnessEnum = dataView.getUint8(0);
-        const newDisplayBrightness = DisplayBrightnesses[newDisplayBrightnessEnum];
-        assertValidDisplayBrightness(newDisplayBrightness);
-        this.#brightness = newDisplayBrightness;
-        _console$k.log({ displayBrightness: this.#brightness });
-        this.#dispatchEvent("getDisplayBrightness", {
-            displayBrightness: this.#brightness,
-        });
-    }
-    async setBrightness(newDisplayBrightness, sendImmediately) {
-        this.#assertDisplayIsAvailable();
-        assertValidDisplayBrightness(newDisplayBrightness);
-        if (this.brightness == newDisplayBrightness) {
-            _console$k.log(`redundant displayBrightness ${newDisplayBrightness}`);
-            return;
-        }
-        const newDisplayBrightnessEnum = DisplayBrightnesses.indexOf(newDisplayBrightness);
-        const newDisplayBrightnessData = UInt8ByteBuffer(newDisplayBrightnessEnum);
-        const promise = this.waitForEvent("getDisplayBrightness");
-        this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
-        await promise;
-    }
-    #assertValidDisplayContextCommand(displayContextCommand) {
-        _console$k.assertEnumWithError(displayContextCommand, DisplayContextCommandTypes);
-    }
-    get #maxCommandDataLength() {
-        return this.mtu - 7;
-    }
-    #displayContextCommandBuffers = [];
-    async #sendDisplayContextCommand(displayContextCommand, arrayBuffer, sendImmediately) {
-        this.#assertValidDisplayContextCommand(displayContextCommand);
-        _console$k.log("sendDisplayContextCommand", { displayContextCommand, sendImmediately }, arrayBuffer);
-        const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(displayContextCommand);
-        const _arrayBuffer = concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), arrayBuffer);
-        const newLength = this.#displayContextCommandBuffers.reduce((sum, buffer) => sum + buffer.byteLength, _arrayBuffer.byteLength);
-        if (newLength > this.#maxCommandDataLength) {
-            _console$k.log("displayContextCommandBuffers too full - sending now");
-            await this.#sendContextCommands();
-        }
-        this.#displayContextCommandBuffers.push(_arrayBuffer);
-        if (sendImmediately) {
-            await this.#sendContextCommands();
-        }
-    }
-    async #sendContextCommands() {
-        if (this.#displayContextCommandBuffers.length == 0) {
-            return;
-        }
-        const data = concatenateArrayBuffers(this.#displayContextCommandBuffers);
-        _console$k.log(`sending displayContextCommands`, this.#displayContextCommandBuffers.slice(), data);
-        this.#displayContextCommandBuffers.length = 0;
-        await this.sendMessage([{ type: "displayContextCommands", data }], true);
-    }
-    async flushContextCommands() {
-        await this.#sendContextCommands();
-    }
-    async show(sendImmediately = true) {
-        _console$k.log("showDisplay");
-        this.#isReady = false;
-        this.#lastShowRequestTime = Date.now();
-        await this.#sendDisplayContextCommand("show", undefined, sendImmediately);
-    }
-    async clear(sendImmediately = true) {
-        _console$k.log("clearDisplay");
-        this.#isReady = false;
-        this.#lastShowRequestTime = Date.now();
-        await this.#sendDisplayContextCommand("clear", undefined, sendImmediately);
-    }
-    assertValidColorIndex(colorIndex) {
-        _console$k.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
-    }
-    #colors = [];
-    get colors() {
-        return this.#colors;
-    }
-    async setColor(colorIndex, color, sendImmediately) {
-        let colorRGB;
-        if (typeof color == "string") {
-            colorRGB = stringToRGB(color);
-        }
-        else {
-            colorRGB = color;
-        }
-        const colorHex = rgbToHex(colorRGB);
-        if (this.colors[colorIndex] == colorHex) {
-            _console$k.log(`redundant color #${colorIndex} ${colorHex}`);
-            return;
-        }
-        this.assertValidColorIndex(colorIndex);
-        assertValidColor(colorRGB);
-        const dataView = new DataView(new ArrayBuffer(4));
-        dataView.setUint8(0, colorIndex);
-        dataView.setUint8(1, colorRGB.r);
-        dataView.setUint8(2, colorRGB.g);
-        dataView.setUint8(3, colorRGB.b);
-        await this.#sendDisplayContextCommand("setColor", dataView.buffer, sendImmediately);
-        this.colors[colorIndex] = colorHex;
-        this.#dispatchEvent("displayColor", {
-            colorIndex,
-            colorRGB,
-            colorHex,
-        });
-    }
-    #opacities = [];
-    get opacities() {
-        return this.#opacities;
-    }
-    async setColorOpacity(colorIndex, opacity, sendImmediately) {
-        const commandType = "setColorOpacity";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            colorIndex,
-            opacity,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#opacities[colorIndex] = opacity;
-        this.#dispatchEvent("displayColorOpacity", { colorIndex, opacity });
-    }
-    async setOpacity(opacity, sendImmediately) {
-        const commandType = "setOpacity";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            opacity,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#opacities.fill(opacity);
-        this.#dispatchEvent("displayOpacity", { opacity });
-    }
-    #contextStack = [];
-    #saveContext(sendImmediately) {
-        this.#contextStack.push(structuredClone(this.contextState));
-    }
-    #restoreContext(sendImmediately) {
-        const contextState = this.#contextStack.pop();
-        if (!contextState) {
-            _console$k.warn("#contextStack empty");
-            return;
-        }
-        this.setContextState(contextState, sendImmediately);
-    }
-    async saveContext(sendImmediately) {
-        {
-            this.#saveContext(sendImmediately);
-        }
-    }
-    async restoreContext(sendImmediately) {
-        {
-            this.#restoreContext(sendImmediately);
-        }
-    }
-    async selectFillColor(fillColorIndex, sendImmediately) {
-        this.assertValidColorIndex(fillColorIndex);
-        const differences = this.#contextStateHelper.update({
-            fillColorIndex,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "selectFillColor";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            fillColorIndex,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
-        this.assertValidColorIndex(backgroundColorIndex);
-        const differences = this.#contextStateHelper.update({
-            backgroundColorIndex,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "selectBackgroundColor";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            backgroundColorIndex,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async selectLineColor(lineColorIndex, sendImmediately) {
-        this.assertValidColorIndex(lineColorIndex);
-        const differences = this.#contextStateHelper.update({
-            lineColorIndex,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "selectLineColor";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            lineColorIndex,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setIgnoreFill(ignoreFill, sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            ignoreFill,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setIgnoreFill";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            ignoreFill,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setIgnoreLine(ignoreLine, sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            ignoreLine,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setIgnoreLine";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            ignoreLine,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setFillBackground(fillBackground, sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            fillBackground,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setFillBackground";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            fillBackground,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    assertValidLineWidth(lineWidth) {
-        _console$k.assertRangeWithError("lineWidth", lineWidth, 0, Math.max(this.width, this.height));
-    }
-    async setLineWidth(lineWidth, sendImmediately) {
-        this.assertValidLineWidth(lineWidth);
-        const differences = this.#contextStateHelper.update({
-            lineWidth,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setLineWidth";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            lineWidth,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setAlignment(alignmentDirection, alignment, sendImmediately) {
-        assertValidAlignmentDirection(alignmentDirection);
-        const alignmentCommand = DisplayAlignmentDirectionToCommandType[alignmentDirection];
-        const alignmentKey = DisplayAlignmentDirectionToStateKey[alignmentDirection];
-        const differences = this.#contextStateHelper.update({
-            [alignmentKey]: alignment,
-        });
-        _console$k.log({ alignmentKey, alignment, differences });
-        if (differences.length == 0) {
-            return;
-        }
-        const dataView = serializeContextCommand(this, {
-            type: alignmentCommand,
-            [alignmentKey]: alignment,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(alignmentCommand, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setHorizontalAlignment(horizontalAlignment, sendImmediately) {
-        await this.setAlignment("horizontal", horizontalAlignment, sendImmediately);
-    }
-    async setVerticalAlignment(verticalAlignment, sendImmediately) {
-        await this.setAlignment("vertical", verticalAlignment, sendImmediately);
-    }
-    async resetAlignment(sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            verticalAlignment: DefaultDisplayContextState.verticalAlignment,
-            horizontalAlignment: DefaultDisplayContextState.horizontalAlignment,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "resetAlignment";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setRotation(rotation, isRadians, sendImmediately) {
-        rotation = isRadians ? rotation : degToRad(rotation);
-        rotation = normalizeRadians(rotation);
-        isRadians = true;
-        const differences = this.#contextStateHelper.update({
-            rotation,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setRotation";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            rotation,
-            isRadians,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async clearRotation(sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            rotation: 0,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "clearRotation";
-        const dataView = serializeContextCommand(this, { type: commandType });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSegmentStartCap(segmentStartCap, sendImmediately) {
-        assertValidSegmentCap(segmentStartCap);
-        const differences = this.#contextStateHelper.update({
-            segmentStartCap,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setSegmentStartCap";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            segmentStartCap,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSegmentEndCap(segmentEndCap, sendImmediately) {
-        assertValidSegmentCap(segmentEndCap);
-        const differences = this.#contextStateHelper.update({
-            segmentEndCap,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setSegmentEndCap";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            segmentEndCap,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSegmentCap(segmentCap, sendImmediately) {
-        assertValidSegmentCap(segmentCap);
-        const differences = this.#contextStateHelper.update({
-            segmentStartCap: segmentCap,
-            segmentEndCap: segmentCap,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setSegmentCap";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            segmentCap,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSegmentStartRadius(segmentStartRadius, sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            segmentStartRadius,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setSegmentStartRadius";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            segmentStartRadius,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSegmentEndRadius(segmentEndRadius, sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            segmentEndRadius,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setSegmentEndRadius";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            segmentEndRadius,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSegmentRadius(segmentRadius, sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            segmentStartRadius: segmentRadius,
-            segmentEndRadius: segmentRadius,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setSegmentRadius";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            segmentRadius,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setCrop(cropDirection, crop, sendImmediately) {
-        _console$k.assertEnumWithError(cropDirection, DisplayCropDirections);
-        crop = Math.max(0, crop);
-        const cropCommand = DisplayCropDirectionToCommandType[cropDirection];
-        const cropKey = DisplayCropDirectionToStateKey[cropDirection];
-        const differences = this.#contextStateHelper.update({
-            [cropKey]: crop,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const dataView = serializeContextCommand(this, {
-            type: cropCommand,
-            [cropKey]: crop,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(cropCommand, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setCropTop(cropTop, sendImmediately) {
-        await this.setCrop("top", cropTop, sendImmediately);
-    }
-    async setCropRight(cropRight, sendImmediately) {
-        await this.setCrop("right", cropRight, sendImmediately);
-    }
-    async setCropBottom(cropBottom, sendImmediately) {
-        await this.setCrop("bottom", cropBottom, sendImmediately);
-    }
-    async setCropLeft(cropLeft, sendImmediately) {
-        await this.setCrop("left", cropLeft, sendImmediately);
-    }
-    async clearCrop(sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            cropTop: 0,
-            cropRight: 0,
-            cropBottom: 0,
-            cropLeft: 0,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "clearCrop";
-        const dataView = serializeContextCommand(this, { type: commandType });
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setRotationCrop(cropDirection, crop, sendImmediately) {
-        _console$k.assertEnumWithError(cropDirection, DisplayCropDirections);
-        const cropCommand = DisplayRotationCropDirectionToCommandType[cropDirection];
-        const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
-        const differences = this.#contextStateHelper.update({
-            [cropKey]: crop,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const dataView = serializeContextCommand(this, {
-            type: cropCommand,
-            [cropKey]: crop,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(cropCommand, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setRotationCropTop(rotationCropTop, sendImmediately) {
-        await this.setRotationCrop("top", rotationCropTop, sendImmediately);
-    }
-    async setRotationCropRight(rotationCropRight, sendImmediately) {
-        await this.setRotationCrop("right", rotationCropRight, sendImmediately);
-    }
-    async setRotationCropBottom(rotationCropBottom, sendImmediately) {
-        await this.setRotationCrop("bottom", rotationCropBottom, sendImmediately);
-    }
-    async setRotationCropLeft(rotationCropLeft, sendImmediately) {
-        await this.setRotationCrop("left", rotationCropLeft, sendImmediately);
-    }
-    async clearRotationCrop(sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            rotationCropTop: 0,
-            rotationCropRight: 0,
-            rotationCropBottom: 0,
-            rotationCropLeft: 0,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "clearRotationCrop";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-        });
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately) {
-        this.assertValidColorIndex(bitmapColorIndex);
-        this.assertValidColorIndex(colorIndex);
-        const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
-        bitmapColorIndices[bitmapColorIndex] = colorIndex;
-        const differences = this.#contextStateHelper.update({
-            bitmapColorIndices,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "selectBitmapColor";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            bitmapColorIndex,
-            colorIndex,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    get bitmapColorIndices() {
-        return this.contextState.bitmapColorIndices;
-    }
-    get bitmapColors() {
-        return this.bitmapColorIndices.map((colorIndex) => this.colors[colorIndex]);
-    }
-    async selectBitmapColors(bitmapColorPairs, sendImmediately) {
-        _console$k.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, this.numberOfColors);
-        const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
-        bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
-            this.assertValidColorIndex(bitmapColorIndex);
-            this.assertValidColorIndex(colorIndex);
-            bitmapColorIndices[bitmapColorIndex] = colorIndex;
-        });
-        const differences = this.#contextStateHelper.update({
-            bitmapColorIndices,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "selectBitmapColors";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            bitmapColorPairs,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setBitmapColor(bitmapColorIndex, color, sendImmediately) {
-        return this.setColor(this.bitmapColorIndices[bitmapColorIndex], color, sendImmediately);
-    }
-    async setBitmapColorOpacity(bitmapColorIndex, opacity, sendImmediately) {
-        return this.setColorOpacity(this.bitmapColorIndices[bitmapColorIndex], opacity, sendImmediately);
-    }
-    async setBitmapScaleDirection(direction, bitmapScale, sendImmediately) {
-        bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
-        bitmapScale = roundScale(bitmapScale);
-        const commandType = DisplayBitmapScaleDirectionToCommandType[direction];
-        _console$k.log({ [commandType]: bitmapScale });
-        const newState = {};
-        let command;
-        switch (direction) {
-            case "all":
-                newState.bitmapScaleX = bitmapScale;
-                newState.bitmapScaleY = bitmapScale;
-                command = { type: "setBitmapScale", bitmapScale };
-                break;
-            case "x":
-                newState.bitmapScaleX = bitmapScale;
-                command = { type: "setBitmapScaleX", bitmapScaleX: bitmapScale };
-                break;
-            case "y":
-                newState.bitmapScaleY = bitmapScale;
-                command = { type: "setBitmapScaleY", bitmapScaleY: bitmapScale };
-                break;
-        }
-        const differences = this.#contextStateHelper.update(newState);
-        if (differences.length == 0) {
-            return;
-        }
-        const dataView = serializeContextCommand(this, command);
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setBitmapScaleX(bitmapScaleX, sendImmediately) {
-        return this.setBitmapScaleDirection("x", bitmapScaleX, sendImmediately);
-    }
-    async setBitmapScaleY(bitmapScaleY, sendImmediately) {
-        return this.setBitmapScaleDirection("y", bitmapScaleY, sendImmediately);
-    }
-    async setBitmapScale(bitmapScale, sendImmediately) {
-        return this.setBitmapScaleDirection("all", bitmapScale, sendImmediately);
-    }
-    async resetBitmapScale(sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            bitmapScaleX: 1,
-            bitmapScaleY: 1,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "resetBitmapScale";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-        });
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately) {
-        this.assertValidColorIndex(spriteColorIndex);
-        this.assertValidColorIndex(colorIndex);
-        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
-        spriteColorIndices[spriteColorIndex] = colorIndex;
-        const differences = this.#contextStateHelper.update({
-            spriteColorIndices,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "selectSpriteColor";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            spriteColorIndex,
-            colorIndex,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    get spriteColorIndices() {
-        return this.contextState.spriteColorIndices;
-    }
-    get spriteColors() {
-        return this.spriteColorIndices.map((colorIndex) => this.colors[colorIndex]);
-    }
-    async selectSpriteColors(spriteColorPairs, sendImmediately) {
-        _console$k.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, this.numberOfColors);
-        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
-        spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
-            this.assertValidColorIndex(spriteColorIndex);
-            this.assertValidColorIndex(colorIndex);
-            spriteColorIndices[spriteColorIndex] = colorIndex;
-        });
-        const differences = this.#contextStateHelper.update({
-            spriteColorIndices,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "selectSpriteColors";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            spriteColorPairs,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSpriteColor(spriteColorIndex, color, sendImmediately) {
-        return this.setColor(this.spriteColorIndices[spriteColorIndex], color, sendImmediately);
-    }
-    async setSpriteColorOpacity(spriteColorIndex, opacity, sendImmediately) {
-        return this.setColorOpacity(this.spriteColorIndices[spriteColorIndex], opacity, sendImmediately);
-    }
-    async resetSpriteColors(sendImmediately) {
-        const spriteColorIndices = new Array(this.numberOfColors).fill(0);
-        const differences = this.#contextStateHelper.update({
-            spriteColorIndices,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "resetSpriteColors";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-        });
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
-        spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
-        spriteScale = roundScale(spriteScale);
-        const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
-        _console$k.log({ [commandType]: spriteScale });
-        const newState = {};
-        let command;
-        switch (direction) {
-            case "all":
-                newState.spriteScaleX = spriteScale;
-                newState.spriteScaleY = spriteScale;
-                command = { type: "setSpriteScale", spriteScale };
-                break;
-            case "x":
-                newState.spriteScaleX = spriteScale;
-                command = { type: "setSpriteScaleX", spriteScaleX: spriteScale };
-                break;
-            case "y":
-                newState.spriteScaleY = spriteScale;
-                command = { type: "setSpriteScaleY", spriteScaleY: spriteScale };
-                break;
-        }
-        const differences = this.#contextStateHelper.update(newState);
-        if (differences.length == 0) {
-            return;
-        }
-        const dataView = serializeContextCommand(this, command);
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSpriteScaleX(spriteScaleX, sendImmediately) {
-        return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
-    }
-    async setSpriteScaleY(spriteScaleY, sendImmediately) {
-        return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
-    }
-    async setSpriteScale(spriteScale, sendImmediately) {
-        return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
-    }
-    async resetSpriteScale(sendImmediately) {
-        const differences = this.#contextStateHelper.update({
-            spriteScaleX: 1,
-            spriteScaleY: 1,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "resetSpriteScale";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-        });
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSpritesLineHeight(spritesLineHeight, sendImmediately) {
-        this.assertValidLineWidth(spritesLineHeight);
-        const differences = this.#contextStateHelper.update({
-            spritesLineHeight,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const commandType = "setSpritesLineHeight";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            spritesLineHeight,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSpritesDirectionGeneric(direction, isOrthogonal, sendImmediately) {
-        assertValidDirection(direction);
-        const stateKey = isOrthogonal
-            ? "spritesLineDirection"
-            : "spritesDirection";
-        const commandType = isOrthogonal
-            ? "setSpritesLineDirection"
-            : "setSpritesDirection";
-        const differences = this.#contextStateHelper.update({
-            [stateKey]: direction,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            [stateKey]: direction,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSpritesDirection(spritesDirection, sendImmediately) {
-        await this.setSpritesDirectionGeneric(spritesDirection, false, sendImmediately);
-    }
-    async setSpritesLineDirection(spritesLineDirection, sendImmediately) {
-        await this.setSpritesDirectionGeneric(spritesLineDirection, true, sendImmediately);
-    }
-    async setSpritesSpacingGeneric(spacing, isOrthogonal, sendImmediately) {
-        const stateKey = isOrthogonal
-            ? "spritesLineSpacing"
-            : "spritesSpacing";
-        const commandType = isOrthogonal
-            ? "setSpritesLineSpacing"
-            : "setSpritesSpacing";
-        const differences = this.#contextStateHelper.update({
-            [stateKey]: spacing,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            [stateKey]: spacing,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSpritesSpacing(spritesSpacing, sendImmediately) {
-        await this.setSpritesSpacingGeneric(spritesSpacing, false, sendImmediately);
-    }
-    async setSpritesLineSpacing(spritesSpacing, sendImmediately) {
-        await this.setSpritesSpacingGeneric(spritesSpacing, true, sendImmediately);
-    }
-    async setSpritesAlignmentGeneric(alignment, isOrthogonal, sendImmediately) {
-        assertValidAlignment(alignment);
-        const stateKey = isOrthogonal
-            ? "spritesLineAlignment"
-            : "spritesAlignment";
-        const commandType = isOrthogonal
-            ? "setSpritesLineAlignment"
-            : "setSpritesAlignment";
-        const differences = this.#contextStateHelper.update({
-            [stateKey]: alignment,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            [stateKey]: alignment,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async setSpritesAlignment(spritesAlignment, sendImmediately) {
-        await this.setSpritesAlignmentGeneric(spritesAlignment, false, sendImmediately);
-    }
-    async setSpritesLineAlignment(spritesLineAlignment, sendImmediately) {
-        await this.setSpritesAlignmentGeneric(spritesLineAlignment, true, sendImmediately);
-    }
-    async clearRect(x, y, width, height, sendImmediately) {
-        const commandType = "clearRect";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            x,
-            y,
-            width,
-            height,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawRect(offsetX, offsetY, width, height, sendImmediately) {
-        const commandType = "drawRect";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            offsetX,
-            offsetY,
-            width,
-            height,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately) {
-        const commandType = "drawRoundRect";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            offsetX,
-            offsetY,
-            width,
-            height,
-            borderRadius,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawCircle(offsetX, offsetY, radius, sendImmediately) {
-        const commandType = "drawCircle";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            offsetX,
-            offsetY,
-            radius,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately) {
-        const commandType = "drawEllipse";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            offsetX,
-            offsetY,
-            radiusX,
-            radiusY,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately) {
-        const commandType = "drawRegularPolygon";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            offsetX,
-            offsetY,
-            radius,
-            numberOfSides,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawPolygon(points, sendImmediately) {
-        _console$k.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-        const commandType = "drawPolygon";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            points,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawWireframe(wireframe, sendImmediately) {
-        wireframe = trimWireframe(wireframe);
-        if (wireframe.points.length == 0) {
-            return;
-        }
-        assertValidWireframe(wireframe);
-        if (this.#contextStateHelper.isSegmentUniform) {
-            const polygon = isWireframePolygon(wireframe);
-            if (polygon) {
-                return this.drawSegments(polygon, sendImmediately);
-            }
-        }
-        const commandType = "drawWireframe";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            wireframe,
-        });
-        if (!dataView) {
-            return;
-        }
-        if (dataView.byteLength > this.#maxCommandDataLength) {
-            _console$k.error(`wireframe data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawCurve(curveType, controlPoints, sendImmediately) {
-        assertValidNumberOfControlPoints(curveType, controlPoints);
-        const commandType = curveType == "cubic"
-            ? "drawCubicBezierCurve"
-            : "drawQuadraticBezierCurve";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            controlPoints,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawCurves(curveType, controlPoints, sendImmediately) {
-        assertValidPathNumberOfControlPoints(curveType, controlPoints);
-        const commandType = curveType == "cubic"
-            ? "drawCubicBezierCurves"
-            : "drawQuadraticBezierCurves";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            controlPoints,
-        });
-        if (!dataView) {
-            return;
-        }
-        if (dataView.byteLength > this.#maxCommandDataLength) {
-            _console$k.error(`curve data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawQuadraticBezierCurve(controlPoints, sendImmediately) {
-        await this.drawCurve("quadratic", controlPoints, sendImmediately);
-    }
-    async drawQuadraticBezierCurves(controlPoints, sendImmediately) {
-        await this.drawCurves("quadratic", controlPoints, sendImmediately);
-    }
-    async drawCubicBezierCurve(controlPoints, sendImmediately) {
-        await this.drawCurve("cubic", controlPoints, sendImmediately);
-    }
-    async drawCubicBezierCurves(controlPoints, sendImmediately) {
-        await this.drawCurves("cubic", controlPoints, sendImmediately);
-    }
-    async _drawPath(isClosed, curves, sendImmediately) {
-        assertValidPath(curves);
-        const commandType = isClosed
-            ? "drawClosedPath"
-            : "drawPath";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            curves,
-        });
-        if (!dataView) {
-            return;
-        }
-        if (dataView.byteLength > this.#maxCommandDataLength) {
-            _console$k.error(`path data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawPath(curves, sendImmediately) {
-        await this._drawPath(false, curves, sendImmediately);
-    }
-    async drawClosedPath(curves, sendImmediately) {
-        await this._drawPath(true, curves, sendImmediately);
-    }
-    async drawSegment(startX, startY, endX, endY, sendImmediately) {
-        const commandType = "drawSegment";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            startX,
-            startY,
-            endX,
-            endY,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawSegments(points, sendImmediately) {
-        _console$k.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-        const commandType = "drawSegments";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            points,
-        });
-        if (!dataView) {
-            return;
-        }
-        if (dataView.byteLength > this.#maxCommandDataLength) {
-            const mid = Math.floor(points.length / 2);
-            const firstHalf = points.slice(0, mid + 1);
-            const secondHalf = points.slice(mid);
-            _console$k.log({ firstHalf, secondHalf });
-            _console$k.log("sending first half", firstHalf);
-            await this.drawSegments(firstHalf, false);
-            _console$k.log("sending second half", secondHalf);
-            await this.drawSegments(secondHalf, sendImmediately);
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawArc(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
-        const commandType = "drawArc";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            offsetX,
-            offsetY,
-            radius,
-            startAngle,
-            angleOffset,
-            isRadians,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
-        const commandType = "drawArcEllipse";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            offsetX,
-            offsetY,
-            radiusX,
-            radiusY,
-            startAngle,
-            angleOffset,
-            isRadians,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    assertValidNumberOfColors(numberOfColors) {
-        _console$k.assertRangeWithError("numberOfColors", numberOfColors, 2, this.numberOfColors);
-    }
-    assertValidBitmap(bitmap, checkSize) {
-        this.assertValidNumberOfColors(bitmap.numberOfColors);
-        assertValidBitmapPixels(bitmap);
-        if (checkSize) {
-            this.#assertValidBitmapSize(bitmap);
-        }
-    }
-    #assertValidBitmapSize(bitmap) {
-        const pixelDataLength = getBitmapNumberOfBytes(bitmap);
-        _console$k.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, this.#maxCommandDataLength - drawBitmapHeaderLength);
-    }
-    async drawBitmap(offsetX, offsetY, bitmap, sendImmediately) {
-        this.assertValidBitmap(bitmap, true);
-        const commandType = "drawBitmap";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            offsetX,
-            offsetY,
-            bitmap,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async imageToBitmap(image, width, height, numberOfColors) {
-        return imageToBitmap(image, width, height, this.colors, this.bitmapColorIndices, numberOfColors);
-    }
-    async quantizeImage(image, width, height, numberOfColors) {
-        return quantizeImage(image, width, height, numberOfColors);
-    }
-    async resizeAndQuantizeImage(image, width, height, numberOfColors, colors) {
-        return resizeAndQuantizeImage(image, width, height, numberOfColors, colors);
-    }
-    async runContextCommand(command, sendImmediately) {
-        return runDisplayContextCommand(this, command, sendImmediately);
-    }
-    async runContextCommands(commands, sendImmediately) {
-        return runDisplayContextCommands(this, commands, sendImmediately);
-    }
-    #isReady = true;
-    get isReady() {
-        return this.isAvailable && this.#isReady;
-    }
-    #lastReadyTime = 0;
-    #lastShowRequestTime = 0;
-    #minReadyInterval = 65;
-    #waitBeforeReady = true;
-    async #parseDisplayReady(dataView) {
-        const now = Date.now();
-        const timeSinceLastDraw = now - this.#lastShowRequestTime;
-        const timeSinceLastReady = now - this.#lastReadyTime;
-        _console$k.log(`${timeSinceLastDraw}ms draw time`);
-        if (this.#waitBeforeReady && timeSinceLastReady < this.#minReadyInterval) {
-            const timeToWait = this.#minReadyInterval - timeSinceLastReady;
-            _console$k.log(`waiting ${timeToWait}ms`);
-            await wait(timeToWait);
-        }
-        this.#isReady = true;
-        this.#lastReadyTime = Date.now();
-        this.#dispatchEvent("displayReady", {});
-    }
-    #spriteSheets = {};
-    #spriteSheetIndices = {};
-    get spriteSheets() {
-        return this.#spriteSheets;
-    }
-    get spriteSheetIndices() {
-        return this.#spriteSheetIndices;
-    }
-    async #setSpriteSheetName(spriteSheetName, sendImmediately) {
-        _console$k.assertTypeWithError(spriteSheetName, "string");
-        _console$k.assertRangeWithError("newName", spriteSheetName.length, MinSpriteSheetNameLength, MaxSpriteSheetNameLength);
-        const setSpriteSheetNameData = textEncoder.encode(spriteSheetName);
-        _console$k.log({ setSpriteSheetNameData });
-        const promise = this.waitForEvent("getSpriteSheetName");
-        this.sendMessage([{ type: "setSpriteSheetName", data: setSpriteSheetNameData.buffer }], sendImmediately);
-        await promise;
-    }
-    #pendingSpriteSheet;
-    get pendingSpriteSheet() {
-        return this.#pendingSpriteSheet;
-    }
-    #pendingSpriteSheetName;
-    get pendingSpriteSheetName() {
-        return this.#pendingSpriteSheetName;
-    }
-    #updateSpriteSheetName(updatedSpriteSheetName) {
-        _console$k.assertTypeWithError(updatedSpriteSheetName, "string");
-        this.#pendingSpriteSheetName = updatedSpriteSheetName;
-        _console$k.log({ updatedSpriteSheetName: this.#pendingSpriteSheetName });
-        this.#dispatchEvent("getSpriteSheetName", {
-            spriteSheetName: this.#pendingSpriteSheetName,
-        });
-    }
-    sendFile;
-    serializeSpriteSheet(spriteSheet) {
-        return serializeSpriteSheet(this, spriteSheet);
-    }
-    async uploadSpriteSheet(spriteSheet) {
-        spriteSheet = structuredClone(spriteSheet);
-        this.#pendingSpriteSheet = spriteSheet;
-        const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet);
-        await this.#setSpriteSheetName(this.#pendingSpriteSheet.name);
-        const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
-        this.sendFile("spriteSheet", buffer, true);
-        await promise;
-    }
-    async uploadSpriteSheets(spriteSheets) {
-        for (const spriteSheet of spriteSheets) {
-            await this.uploadSpriteSheet(spriteSheet);
-        }
-    }
-    assertLoadedSpriteSheet(spriteSheetName) {
-        assertLoadedSpriteSheet(this, spriteSheetName);
-    }
-    assertSelectedSpriteSheet(spriteSheetName) {
-        assertSelectedSpriteSheet(this, spriteSheetName);
-    }
-    assertAnySelectedSpriteSheet() {
-        assertAnySelectedSpriteSheet(this);
-    }
-    assertSprite(spriteName) {
-        return assertSprite(this, spriteName);
-    }
-    getSprite(spriteName) {
-        return getSprite(this, spriteName);
-    }
-    getSpriteSheetPalette(paletteName) {
-        return getSpriteSheetPalette(this, paletteName);
-    }
-    getSpriteSheetPaletteSwap(paletteSwapName) {
-        return getSpriteSheetPaletteSwap(this, paletteSwapName);
-    }
-    getSpritePaletteSwap(spriteName, paletteSwapName) {
-        return getSpritePaletteSwap(this, spriteName, paletteSwapName);
-    }
-    get selectedSpriteSheet() {
-        if (this.contextState.spriteSheetName) {
-            return this.#spriteSheets[this.contextState.spriteSheetName];
-        }
-    }
-    get selectedSpriteSheetName() {
-        return this.selectedSpriteSheet?.name;
-    }
-    async selectSpriteSheet(spriteSheetName, sendImmediately) {
-        this.assertLoadedSpriteSheet(spriteSheetName);
-        const differences = this.#contextStateHelper.update({
-            spriteSheetName,
-        });
-        if (differences.length == 0) {
-            return;
-        }
-        const spriteSheetIndex = this.spriteSheetIndices[spriteSheetName];
-        const commandType = "selectSpriteSheet";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            spriteSheetIndex,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-        this.#onContextStateUpdate(differences);
-    }
-    async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
-        _console$k.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
-        let spriteIndex = this.selectedSpriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
-        _console$k.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
-        spriteIndex = spriteIndex;
-        const commandType = "drawSprite";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            offsetX,
-            offsetY,
-            spriteIndex,
-            use2Bytes: this.selectedSpriteSheet.sprites.length > 255,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
-        const spriteSerializedLines = [];
-        spriteLines.forEach((spriteLine) => {
-            const serializedLine = [];
-            spriteLine.forEach((spriteSubLine) => {
-                this.assertLoadedSpriteSheet(spriteSubLine.spriteSheetName);
-                const spriteSheet = this.spriteSheets[spriteSubLine.spriteSheetName];
-                const spriteSheetIndex = this.spriteSheetIndices[spriteSheet.name];
-                const serializedSubLine = {
-                    spriteSheetIndex,
-                    spriteIndices: [],
-                    use2Bytes: spriteSheet.sprites.length > 255,
-                };
-                spriteSubLine.spriteNames.forEach((spriteName) => {
-                    let spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
-                    _console$k.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
-                    spriteIndex = spriteIndex;
-                    serializedSubLine.spriteIndices.push(spriteIndex);
-                });
-                serializedLine.push(serializedSubLine);
-            });
-            spriteSerializedLines.push(serializedLine);
-        });
-        _console$k.log("spriteSerializedLines", spriteSerializedLines);
-        const commandType = "drawSprites";
-        const dataView = serializeContextCommand(this, {
-            type: commandType,
-            offsetX,
-            offsetY,
-            spriteSerializedLines: spriteSerializedLines,
-        });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
-    }
-    async drawSpritesString(offsetX, offsetY, string, requireAll, maxLineBreadth, separators, sendImmediately) {
-        const spriteLines = this.stringToSpriteLines(string, requireAll, maxLineBreadth, separators);
-        await this.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
-    }
-    stringToSpriteLines(string, requireAll, maxLineBreadth, separators) {
-        return stringToSpriteLines(string, this.spriteSheets, this.contextState, requireAll, maxLineBreadth, separators);
-    }
-    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
-        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
-    }
-    #parseSpriteSheetIndex(dataView) {
-        const spriteSheetIndex = dataView.getUint8(0);
-        _console$k.log({
-            pendingSpriteSheet: this.#pendingSpriteSheet,
-            spriteSheetName: this.#pendingSpriteSheetName,
-            spriteSheetIndex,
-        });
-        if (this.isServerSide) {
-            return;
-        }
-        _console$k.assertWithError(this.#pendingSpriteSheetName != undefined, "expected spriteSheetName when receiving spriteSheetIndex");
-        _console$k.assertWithError(this.#pendingSpriteSheet != undefined, "expected pendingSpriteSheet when receiving spriteSheetIndex");
-        this.#spriteSheets[this.#pendingSpriteSheetName] =
-            this.#pendingSpriteSheet;
-        this.#spriteSheetIndices[this.#pendingSpriteSheetName] = spriteSheetIndex;
-        this.#dispatchEvent("displaySpriteSheetUploadComplete", {
-            spriteSheetName: this.#pendingSpriteSheetName,
-            spriteSheet: this.#pendingSpriteSheet,
-        });
-        this.#pendingSpriteSheet = undefined;
-    }
-    parseMessage(messageType, dataView) {
-        _console$k.log({ messageType, dataView });
-        switch (messageType) {
-            case "isDisplayAvailable":
-                this.#parseIsDisplayAvailable(dataView);
-                break;
-            case "displayStatus":
-                this.#parseDisplayStatus(dataView);
-                break;
-            case "displayInformation":
-                this.#parseDisplayInformation(dataView);
-                break;
-            case "getDisplayBrightness":
-            case "setDisplayBrightness":
-                this.#parseDisplayBrightness(dataView);
-                break;
-            case "displayReady":
-                this.#parseDisplayReady(dataView);
-                break;
-            case "getSpriteSheetName":
-            case "setSpriteSheetName":
-                const spriteSheetName = textDecoder.decode(dataView.buffer);
-                _console$k.log({ spriteSheetName });
-                this.#updateSpriteSheetName(spriteSheetName);
-                break;
-            case "spriteSheetIndex":
-                this.#parseSpriteSheetIndex(dataView);
-                break;
-            default:
-                throw Error(`uncaught messageType ${messageType}`);
-        }
-    }
-    assertSpriteSheetPalette(paletteName) {
-        assertSpriteSheetPalette(this, paletteName);
-    }
-    assertSpriteSheetPaletteSwap(paletteSwapName) {
-        assertSpriteSheetPaletteSwap(this, paletteSwapName);
-    }
-    assertSpritePaletteSwap(spriteName, paletteSwapName) {
-        assertSpritePaletteSwap(this, spriteName, paletteSwapName);
-    }
-    async selectSpriteSheetPalette(paletteName, offset, sendImmediately) {
-        await selectSpriteSheetPalette(this, paletteName, offset, sendImmediately);
-    }
-    async selectSpriteSheetPaletteSwap(paletteSwapName, offset, sendImmediately) {
-        await selectSpriteSheetPaletteSwap(this, paletteSwapName, offset, sendImmediately);
-    }
-    async selectSpritePaletteSwap(spriteName, paletteSwapName, offset, sendImmediately) {
-        await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
-    }
-    reset() {
-        _console$k.log("clearing displayManager");
-        this.#displayStatus = undefined;
-        this.#isAvailable = false;
-        this.#displayInformation = undefined;
-        this.#brightness = undefined;
-        this.#displayContextCommandBuffers = [];
-        this.#isAvailable = false;
-        this.#contextStateHelper.reset();
-        this.#colors.length = 0;
-        this.#opacities.length = 0;
-        this.#isReady = true;
-        this.#pendingSpriteSheet = undefined;
-        this.#pendingSpriteSheetName = undefined;
-        this.isServerSide = false;
-        Object.keys(this.#spriteSheetIndices).forEach((spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]);
-        Object.keys(this.#spriteSheets).forEach((spriteSheetName) => delete this.#spriteSheets[spriteSheetName]);
-    }
-    #mtu;
-    get mtu() {
-        return this.#mtu;
-    }
-    set mtu(newMtu) {
-        this.#mtu = newMtu;
-    }
-    #isServerSide = false;
-    get isServerSide() {
-        return this.#isServerSide;
-    }
-    set isServerSide(newIsServerSide) {
-        if (this.#isServerSide == newIsServerSide) {
-            _console$k.log("redundant isServerSide assignment");
-            return;
-        }
-        _console$k.log({ newIsServerSide });
-        this.#isServerSide = newIsServerSide;
-    }
-}
-
-const _console$j = createConsole("BaseConnectionManager", { log: false });
-const ConnectionTypes = [
-    "webBluetooth",
-    "noble",
-    "client",
-    "webSocket",
-    "udp",
-];
-const ConnectionStatuses = [
-    "notConnected",
-    "connecting",
-    "connected",
-    "disconnecting",
-];
-const ConnectionEventTypes = [
-    ...ConnectionStatuses,
-    "connectionStatus",
-    "isConnected",
-];
-const TxRxMessageTypes = [
-    ...InformationMessageTypes,
-    ...SensorConfigurationMessageTypes,
-    ...SensorDataMessageTypes,
-    ...VibrationMessageTypes,
-    ...FileTransferMessageTypes,
-    ...TfliteMessageTypes,
-    ...WifiMessageTypes,
-    ...CameraMessageTypes,
-    ...MicrophoneMessageTypes,
-    ...DisplayMessageTypes,
-];
-const SMPMessageTypes = ["smp"];
-const BatteryLevelMessageTypes = ["batteryLevel"];
-const MetaConnectionMessageTypes = ["rx", "tx"];
-const ConnectionMessageTypes = [
-    ...BatteryLevelMessageTypes,
-    ...DeviceInformationTypes,
-    ...MetaConnectionMessageTypes,
-    ...TxRxMessageTypes,
-    ...SMPMessageTypes,
-];
-class BaseConnectionManager {
-    static #AssertValidTxRxMessageType(messageType) {
-        _console$j.assertEnumWithError(messageType, TxRxMessageTypes);
-    }
-    onStatusUpdated;
-    onMessageReceived;
-    onMessagesReceived;
-    get baseConstructor() {
-        return this.constructor;
-    }
-    static get isSupported() {
-        return false;
-    }
-    get isSupported() {
-        return this.baseConstructor.isSupported;
-    }
-    get canUpdateFirmware() {
-        return false;
-    }
-    static type;
-    get type() {
-        return this.baseConstructor.type;
-    }
-    #assertIsSupported() {
-        _console$j.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
-    }
-    constructor() {
-        this.#assertIsSupported();
-    }
-    #status = "notConnected";
-    get status() {
-        return this.#status;
-    }
-    set status(newConnectionStatus) {
-        _console$j.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
-        if (this.#status == newConnectionStatus) {
-            _console$j.log(`tried to assign same connection status "${newConnectionStatus}"`);
-            return;
-        }
-        _console$j.log(`new connection status "${newConnectionStatus}"`);
-        this.#status = newConnectionStatus;
-        this.onStatusUpdated(this.status);
-        if (this.isConnected) {
-            this.#timer.start();
-        }
-        else {
-            this.#timer.stop();
-        }
-        if (this.#status == "notConnected") {
-            this.mtu = this.defaultMtu;
-        }
-    }
-    get isConnected() {
-        return this.status == "connected";
-    }
-    get isAvailable() {
-        return false;
-    }
-    assertIsNotConnected() {
-        _console$j.assertWithError(!this.isConnected, "device is already connected");
-    }
-    #assertIsNotConnecting() {
-        _console$j.assertWithError(this.status != "connecting", "device is already connecting");
-    }
-    assertIsConnected() {
-        _console$j.assertWithError(this.isConnected, "device is not connected");
-    }
-    #assertIsNotDisconnecting() {
-        _console$j.assertWithError(this.status != "disconnecting", "device is already disconnecting");
-    }
-    assertIsConnectedAndNotDisconnecting() {
-        this.assertIsConnected();
-        this.#assertIsNotDisconnecting();
-    }
-    async connect() {
-        this.assertIsNotConnected();
-        this.#assertIsNotConnecting();
-        this.status = "connecting";
-    }
-    get canReconnect() {
-        return false;
-    }
-    async reconnect() {
-        this.assertIsNotConnected();
-        this.#assertIsNotConnecting();
-        _console$j.assertWithError(this.canReconnect, "unable to reconnect");
-        this.status = "connecting";
-        _console$j.log("attempting to reconnect...");
-    }
-    async disconnect() {
-        this.assertIsConnected();
-        this.#assertIsNotDisconnecting();
-        this.status = "disconnecting";
-        _console$j.log("disconnecting from device...");
-    }
-    async sendSmpMessage(data) {
-        this.assertIsConnectedAndNotDisconnecting();
-        _console$j.log("sending smp message", data);
-    }
-    #pendingMessages = [];
-    #isSendingMessages = false;
-    async sendTxMessages(messages, sendImmediately = true) {
-        this.assertIsConnectedAndNotDisconnecting();
-        if (messages) {
-            this.#pendingMessages.push(...messages);
-            _console$j.log(`appended ${messages.length} messages`);
-        }
-        if (!sendImmediately) {
-            _console$j.log("not sending immediately - waiting until later");
-            return;
-        }
-        if (this.#isSendingMessages) {
-            _console$j.log("already sending messages - waiting until later");
-            return;
-        }
-        if (this.#pendingMessages.length == 0) {
-            _console$j.log("no pendingMessages");
-            return;
-        }
-        this.#isSendingMessages = true;
-        _console$j.log("sendTxMessages", this.#pendingMessages.slice());
-        const arrayBuffers = this.#pendingMessages.map((message) => {
-            BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
-            const messageTypeEnum = TxRxMessageTypes.indexOf(message.type);
-            const dataLength = new DataView(new ArrayBuffer(2));
-            dataLength.setUint16(0, message.data?.byteLength || 0, true);
-            return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
-        });
-        this.#pendingMessages.length = 0;
-        if (this.mtu) {
-            while (arrayBuffers.length > 0) {
-                if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
-                    _console$j.log("every arrayBuffer is too big to send");
-                    break;
-                }
-                _console$j.log("remaining arrayBuffers.length", arrayBuffers.length);
-                let arrayBufferByteLength = 0;
-                let arrayBufferCount = 0;
-                arrayBuffers.some((arrayBuffer) => {
-                    if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu - 3) {
-                        _console$j.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
-                        return true;
-                    }
-                    _console$j.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
-                    arrayBufferCount++;
-                    arrayBufferByteLength += arrayBuffer.byteLength;
-                });
-                const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
-                _console$j.log({ arrayBufferCount, arrayBuffersToSend });
-                const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
-                _console$j.log("sending arrayBuffer (partitioned)", arrayBuffer);
-                await this.sendTxData(arrayBuffer);
-            }
-        }
-        else {
-            const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
-            _console$j.log("sending arrayBuffer (all)", arrayBuffer);
-            await this.sendTxData(arrayBuffer);
-        }
-        this.#isSendingMessages = false;
-        this.sendTxMessages(undefined, true);
-    }
-    defaultMtu = 23;
-    mtu = this.defaultMtu;
-    async sendTxData(data) {
-        _console$j.log("sendTxData", data);
-    }
-    parseRxMessage(dataView) {
-        parseMessage(dataView, TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
-        this.onMessagesReceived();
-    }
-    #onRxMessage(messageType, dataView) {
-        _console$j.log({ messageType, dataView });
-        this.onMessageReceived(messageType, dataView);
-    }
-    #timer = new Timer(this.#checkConnection.bind(this), 5000);
-    #checkConnection() {
-        if (!this.isConnected) {
-            _console$j.log("timer detected disconnection");
-            this.status = "notConnected";
-        }
-    }
-    clear() {
-        this.#isSendingMessages = false;
-        this.#pendingMessages.length = 0;
-    }
-    remove() {
-        this.clear();
-        this.onStatusUpdated = undefined;
-        this.onMessageReceived = undefined;
-        this.onMessagesReceived = undefined;
-    }
-}
-
-function capitalizeFirstCharacter(string) {
-    return string[0].toUpperCase() + string.slice(1);
-}
-
-const _console$i = createConsole("EventUtils", { log: false });
-function addEventListeners(target, boundEventListeners) {
-    let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
-    _console$i.assertWithError(addEventListener, "no add listener function found for target");
-    addEventListener = addEventListener.bind(target);
-    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
-        addEventListener(eventType, eventListener);
-    });
-}
-function removeEventListeners(target, boundEventListeners) {
-    let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
-    _console$i.assertWithError(removeEventListener, "no remove listener function found for target");
-    removeEventListener = removeEventListener.bind(target);
-    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
-        removeEventListener(eventType, eventListener);
-    });
-}
-
-const _console$h = createConsole("bluetoothUUIDs", { log: false });
-if (isInBrowser) {
-    var BluetoothUUID = window.BluetoothUUID;
-}
-function generateBluetoothUUID(value) {
-    _console$h.assertTypeWithError(value, "string");
-    _console$h.assertWithError(value.length == 4, "value must be 4 characters long");
-    return `ea6d${value}-a725-4f9b-893d-c3913e33b39f`;
-}
-function stringToCharacteristicUUID(identifier) {
-    return BluetoothUUID?.getCharacteristic?.(identifier);
-}
-function stringToServiceUUID(identifier) {
-    return BluetoothUUID?.getService?.(identifier);
-}
-const bluetoothUUIDs = Object.freeze({
-    services: {
-        deviceInformation: {
-            uuid: stringToServiceUUID("device_information"),
-            characteristics: {
-                manufacturerName: {
-                    uuid: stringToCharacteristicUUID("manufacturer_name_string"),
-                },
-                modelNumber: {
-                    uuid: stringToCharacteristicUUID("model_number_string"),
-                },
-                hardwareRevision: {
-                    uuid: stringToCharacteristicUUID("hardware_revision_string"),
-                },
-                firmwareRevision: {
-                    uuid: stringToCharacteristicUUID("firmware_revision_string"),
-                },
-                softwareRevision: {
-                    uuid: stringToCharacteristicUUID("software_revision_string"),
-                },
-                pnpId: {
-                    uuid: stringToCharacteristicUUID("pnp_id"),
-                },
-                serialNumber: {
-                    uuid: stringToCharacteristicUUID("serial_number_string"),
-                },
-            },
-        },
-        battery: {
-            uuid: stringToServiceUUID("battery_service"),
-            characteristics: {
-                batteryLevel: {
-                    uuid: stringToCharacteristicUUID("battery_level"),
-                },
-            },
-        },
-        main: {
-            uuid: generateBluetoothUUID("0000"),
-            characteristics: {
-                rx: { uuid: generateBluetoothUUID("1000") },
-                tx: { uuid: generateBluetoothUUID("1001") },
-            },
-        },
-        smp: {
-            uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
-            characteristics: {
-                smp: { uuid: "da2e7828-fbce-4e01-ae9e-261174997c48" },
-            },
-        },
-    },
-});
-const serviceUUIDs = [bluetoothUUIDs.services.main.uuid];
-const optionalServiceUUIDs = [
-    bluetoothUUIDs.services.deviceInformation.uuid,
-    bluetoothUUIDs.services.battery.uuid,
-    bluetoothUUIDs.services.smp.uuid,
-];
-[...serviceUUIDs, ...optionalServiceUUIDs];
-function getServiceNameFromUUID(serviceUUID) {
-    serviceUUID = serviceUUID.toString().toLowerCase();
-    const serviceNames = Object.keys(bluetoothUUIDs.services);
-    return serviceNames.find((serviceName) => {
-        const serviceInfo = bluetoothUUIDs.services[serviceName];
-        let serviceInfoUUID = serviceInfo.uuid.toString();
-        if (serviceUUID.length == 4) {
-            serviceInfoUUID = serviceInfoUUID.slice(4, 8);
-        }
-        if (!serviceUUID.includes("-")) {
-            serviceInfoUUID = serviceInfoUUID.replaceAll("-", "");
-        }
-        return serviceUUID == serviceInfoUUID;
-    });
-}
-const characteristicUUIDs = [];
-const allCharacteristicUUIDs = [];
-Object.values(bluetoothUUIDs.services).forEach((serviceInfo) => {
-    if (!serviceInfo.characteristics) {
-        return;
-    }
-    const characteristicNames = Object.keys(serviceInfo.characteristics);
-    characteristicNames.forEach((characteristicName) => {
-        const characteristicInfo = serviceInfo.characteristics[characteristicName];
-        if (serviceUUIDs.includes(serviceInfo.uuid)) {
-            characteristicUUIDs.push(characteristicInfo.uuid);
-            characteristicNames.push(characteristicName);
-        }
-        allCharacteristicUUIDs.push(characteristicInfo.uuid);
-    });
-}, []);
-function getCharacteristicNameFromUUID(characteristicUUID) {
-    characteristicUUID = characteristicUUID.toString().toLowerCase();
-    var characteristicName;
-    Object.values(bluetoothUUIDs.services).some((serviceInfo) => {
-        const characteristicNames = Object.keys(serviceInfo.characteristics);
-        characteristicName = characteristicNames.find((_characteristicName) => {
-            const characteristicInfo = serviceInfo.characteristics[_characteristicName];
-            let characteristicInfoUUID = characteristicInfo.uuid.toString();
-            if (characteristicUUID.length == 4) {
-                characteristicInfoUUID = characteristicInfoUUID.slice(4, 8);
-            }
-            if (!characteristicUUID.includes("-")) {
-                characteristicInfoUUID = characteristicInfoUUID.replaceAll("-", "");
-            }
-            return characteristicUUID == characteristicInfoUUID;
-        });
-        return characteristicName;
-    });
-    return characteristicName;
-}
-function getCharacteristicProperties(characteristicName) {
-    const properties = {
-        broadcast: false,
-        read: true,
-        writeWithoutResponse: false,
-        write: false,
-        notify: false,
-        indicate: false,
-        authenticatedSignedWrites: false,
-        reliableWrite: false,
-        writableAuxiliaries: false,
-    };
-    switch (characteristicName) {
-        case "rx":
-        case "tx":
-        case "smp":
-            properties.read = false;
-            break;
-    }
-    switch (characteristicName) {
-        case "batteryLevel":
-        case "rx":
-        case "smp":
-            properties.notify = true;
-            break;
-    }
-    switch (characteristicName) {
-        case "smp":
-            properties.writeWithoutResponse = true;
-            break;
-    }
-    switch (characteristicName) {
-        case "tx":
-            properties.write = true;
-            break;
-    }
-    return properties;
-}
-
-const _console$g = createConsole("BluetoothConnectionManager", { log: false });
-class BluetoothConnectionManager extends BaseConnectionManager {
-    get isAvailable() {
-        return true;
-    }
-    isInRange = true;
-    onCharacteristicValueChanged(characteristicName, dataView) {
-        if (characteristicName == "rx") {
-            this.parseRxMessage(dataView);
-        }
-        else {
-            this.onMessageReceived?.(characteristicName, dataView);
-        }
-    }
-    async writeCharacteristic(characteristicName, data) {
-        _console$g.log("writeCharacteristic", ...arguments);
-    }
-    async sendSmpMessage(data) {
-        super.sendSmpMessage(data);
-        await this.writeCharacteristic("smp", data);
-    }
-    async sendTxData(data) {
-        super.sendTxData(data);
-        if (data.byteLength == 0) {
-            return;
-        }
-        await this.writeCharacteristic("tx", data);
-    }
-}
-
-const _console$f = createConsole("WebBluetoothConnectionManager", { log: false });
-var bluetooth;
-if (isInBrowser) {
-    bluetooth = window.navigator.bluetooth;
-}
-class WebBluetoothConnectionManager extends BluetoothConnectionManager {
-    get bluetoothId() {
-        return this.device.id;
-    }
-    get canUpdateFirmware() {
-        return this.#characteristics.has("smp");
-    }
-    #boundBluetoothCharacteristicEventListeners = {
-        characteristicvaluechanged: this.#onCharacteristicvaluechanged.bind(this),
-    };
-    #boundBluetoothDeviceEventListeners = {
-        gattserverdisconnected: this.#onGattserverdisconnected.bind(this),
-    };
-    static get isSupported() {
-        return Boolean(bluetooth);
-    }
-    static get type() {
-        return "webBluetooth";
-    }
-    #device;
-    get device() {
-        return this.#device;
-    }
-    set device(newDevice) {
-        if (this.#device == newDevice) {
-            _console$f.log("tried to assign the same BluetoothDevice");
-            return;
-        }
-        if (this.#device) {
-            removeEventListeners(this.#device, this.#boundBluetoothDeviceEventListeners);
-        }
-        if (newDevice) {
-            addEventListeners(newDevice, this.#boundBluetoothDeviceEventListeners);
-        }
-        this.#device = newDevice;
-    }
-    get server() {
-        return this.#device?.gatt;
-    }
-    get isConnected() {
-        return this.server?.connected || false;
-    }
-    #services = new Map();
-    #characteristics = new Map();
-    async connect() {
-        await super.connect();
-        try {
-            const device = await bluetooth.requestDevice({
-                filters: [{ services: serviceUUIDs }],
-                optionalServices: isInBrowser ? optionalServiceUUIDs : [],
-            });
-            _console$f.log("got BluetoothDevice");
-            this.device = device;
-            _console$f.log("connecting to device...");
-            const server = await this.server.connect();
-            _console$f.log(`connected to device? ${server.connected}`);
-            await this.#getServicesAndCharacteristics();
-            _console$f.log("fully connected");
-            this.status = "connected";
-        }
-        catch (error) {
-            _console$f.error(error);
-            this.status = "notConnected";
-            this.server?.disconnect();
-            this.#removeEventListeners();
-        }
-    }
-    async #getServicesAndCharacteristics() {
-        this.#removeEventListeners();
-        _console$f.log("getting services...");
-        const services = await this.server.getPrimaryServices();
-        _console$f.log("got services", services.length);
-        _console$f.log("getting characteristics...");
-        for (const serviceIndex in services) {
-            const service = services[serviceIndex];
-            _console$f.log({ service });
-            const serviceName = getServiceNameFromUUID(service.uuid);
-            _console$f.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-            _console$f.log(`got "${serviceName}" service`);
-            service.name = serviceName;
-            this.#services.set(serviceName, service);
-            _console$f.log(`getting characteristics for "${serviceName}" service`);
-            const characteristics = await service.getCharacteristics();
-            _console$f.log(`got characteristics for "${serviceName}" service`);
-            for (const characteristicIndex in characteristics) {
-                const characteristic = characteristics[characteristicIndex];
-                _console$f.log({ characteristic });
-                const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-                _console$f.assertWithError(Boolean(characteristicName), `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`);
-                _console$f.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
-                characteristic.name = characteristicName;
-                this.#characteristics.set(characteristicName, characteristic);
-                addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-                const characteristicProperties = characteristic.properties ||
-                    getCharacteristicProperties(characteristicName);
-                if (characteristicProperties.notify) {
-                    _console$f.log(`starting notifications for "${characteristicName}" characteristic`);
-                    await characteristic.startNotifications();
-                }
-                if (characteristicProperties.read) {
-                    _console$f.log(`reading "${characteristicName}" characteristic...`);
-                    await characteristic.readValue();
-                    if (isInBluefy || isInWebBLE) {
-                        this.#onCharacteristicValueChanged(characteristic);
-                    }
-                }
-            }
-        }
-    }
-    async #removeEventListeners() {
-        if (this.device) {
-            removeEventListeners(this.device, this.#boundBluetoothDeviceEventListeners);
-        }
-        const promises = Array.from(this.#characteristics.keys()).map((characteristicName) => {
-            const characteristic = this.#characteristics.get(characteristicName);
-            removeEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-            const characteristicProperties = characteristic.properties ||
-                getCharacteristicProperties(characteristicName);
-            if (characteristicProperties.notify) {
-                _console$f.log(`stopping notifications for "${characteristicName}" characteristic`);
-                return characteristic.stopNotifications();
-            }
-        });
-        return Promise.allSettled(promises);
-    }
-    async disconnect() {
-        await this.#removeEventListeners();
-        await super.disconnect();
-        this.server?.disconnect();
-        this.status = "notConnected";
-    }
-    #onCharacteristicvaluechanged(event) {
-        _console$f.log("oncharacteristicvaluechanged");
-        const characteristic = event.target;
-        this.#onCharacteristicValueChanged(characteristic);
-    }
-    #onCharacteristicValueChanged(characteristic) {
-        _console$f.log("onCharacteristicValue");
-        const characteristicName = characteristic.name;
-        _console$f.assertWithError(Boolean(characteristicName), `no name found for characteristic with uuid "${characteristic.uuid}"`);
-        _console$f.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
-        const dataView = characteristic.value;
-        _console$f.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-        _console$f.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
-        try {
-            this.onCharacteristicValueChanged(characteristicName, dataView);
-        }
-        catch (error) {
-            _console$f.error(error);
-        }
-    }
-    async writeCharacteristic(characteristicName, data) {
-        super.writeCharacteristic(characteristicName, data);
-        const characteristic = this.#characteristics.get(characteristicName);
-        _console$f.assertWithError(characteristic, `${characteristicName} characteristic not found`);
-        _console$f.log("writing characteristic", characteristic, data);
-        const characteristicProperties = characteristic.properties ||
-            getCharacteristicProperties(characteristicName);
-        if (characteristicProperties.writeWithoutResponse) {
-            _console$f.log("writing without response");
-            await characteristic.writeValueWithoutResponse(data);
-        }
-        else {
-            _console$f.log("writing with response");
-            await characteristic.writeValueWithResponse(data);
-        }
-        _console$f.log("wrote characteristic");
-        if (characteristicProperties.read && !characteristicProperties.notify) {
-            _console$f.log("reading value after write...");
-            await characteristic.readValue();
-            if (isInBluefy || isInWebBLE) {
-                this.#onCharacteristicValueChanged(characteristic);
-            }
-        }
-    }
-    #onGattserverdisconnected() {
-        _console$f.log("gattserverdisconnected");
-        this.status = "notConnected";
-    }
-    get canReconnect() {
-        return Boolean(this.server && !this.server.connected && this.isInRange);
-    }
-    async reconnect() {
-        await super.reconnect();
-        try {
-            await this.server.connect();
-        }
-        catch (error) {
-            _console$f.error(error);
-            this.isInRange = false;
-        }
-        if (this.isConnected) {
-            _console$f.log("successfully reconnected!");
-            await this.#getServicesAndCharacteristics();
-            this.status = "connected";
-        }
-        else {
-            _console$f.log("unable to reconnect");
-            this.status = "notConnected";
-        }
-    }
-    remove() {
-        super.remove();
-        this.device = undefined;
-    }
-}
-
-const POW_2_24 = 5.960464477539063e-8;
-const POW_2_32 = 4294967296;
-const POW_2_53 = 9007199254740992;
-function encode(value) {
-  let data = new ArrayBuffer(256);
-  let dataView = new DataView(data);
-  let lastLength;
-  let offset = 0;
-  function prepareWrite(length) {
-    let newByteLength = data.byteLength;
-    const requiredLength = offset + length;
-    while (newByteLength < requiredLength) {
-      newByteLength <<= 1;
-    }
-    if (newByteLength !== data.byteLength) {
-      const oldDataView = dataView;
-      data = new ArrayBuffer(newByteLength);
-      dataView = new DataView(data);
-      const uint32count = (offset + 3) >> 2;
-      for (let i = 0; i < uint32count; ++i) {
-        dataView.setUint32(i << 2, oldDataView.getUint32(i << 2));
-      }
-    }
-    lastLength = length;
-    return dataView;
-  }
-  function commitWrite() {
-    offset += lastLength;
-  }
-  function writeFloat64(value) {
-    commitWrite(prepareWrite(8).setFloat64(offset, value));
-  }
-  function writeUint8(value) {
-    commitWrite(prepareWrite(1).setUint8(offset, value));
-  }
-  function writeUint8Array(value) {
-    const dataView = prepareWrite(value.length);
-    for (let i = 0; i < value.length; ++i) {
-      dataView.setUint8(offset + i, value[i]);
-    }
-    commitWrite();
-  }
-  function writeUint16(value) {
-    commitWrite(prepareWrite(2).setUint16(offset, value));
-  }
-  function writeUint32(value) {
-    commitWrite(prepareWrite(4).setUint32(offset, value));
-  }
-  function writeUint64(value) {
-    const low = value % POW_2_32;
-    const high = (value - low) / POW_2_32;
-    const dataView = prepareWrite(8);
-    dataView.setUint32(offset, high);
-    dataView.setUint32(offset + 4, low);
-    commitWrite();
-  }
-  function writeTypeAndLength(type, length) {
-    if (length < 24) {
-      writeUint8((type << 5) | length);
-    } else if (length < 0x100) {
-      writeUint8((type << 5) | 24);
-      writeUint8(length);
-    } else if (length < 0x10000) {
-      writeUint8((type << 5) | 25);
-      writeUint16(length);
-    } else if (length < 0x100000000) {
-      writeUint8((type << 5) | 26);
-      writeUint32(length);
-    } else {
-      writeUint8((type << 5) | 27);
-      writeUint64(length);
-    }
-  }
-  function encodeItem(value) {
-    let i;
-    const utf8data = [];
-    let length;
-    if (value === false) {
-      return writeUint8(0xf4);
-    }
-    if (value === true) {
-      return writeUint8(0xf5);
-    }
-    if (value === null) {
-      return writeUint8(0xf6);
-    }
-    if (value === undefined) {
-      return writeUint8(0xf7);
-    }
-    switch (typeof value) {
-      case "number":
-        if (Math.floor(value) === value) {
-          if (value >= 0 && value <= POW_2_53) {
-            return writeTypeAndLength(0, value);
-          }
-          if (-POW_2_53 <= value && value < 0) {
-            return writeTypeAndLength(1, -(value + 1));
-          }
-        }
-        writeUint8(0xfb);
-        return writeFloat64(value);
-      case "string":
-        for (i = 0; i < value.length; ++i) {
-          let charCode = value.charCodeAt(i);
-          if (charCode < 0x80) {
-            utf8data.push(charCode);
-          } else if (charCode < 0x800) {
-            utf8data.push(0xc0 | (charCode >> 6));
-            utf8data.push(0x80 | (charCode & 0x3f));
-          } else if (charCode < 0xd800) {
-            utf8data.push(0xe0 | (charCode >> 12));
-            utf8data.push(0x80 | ((charCode >> 6) & 0x3f));
-            utf8data.push(0x80 | (charCode & 0x3f));
-          } else {
-            charCode = (charCode & 0x3ff) << 10;
-            charCode |= value.charCodeAt(++i) & 0x3ff;
-            charCode += 0x10000;
-            utf8data.push(0xf0 | (charCode >> 18));
-            utf8data.push(0x80 | ((charCode >> 12) & 0x3f));
-            utf8data.push(0x80 | ((charCode >> 6) & 0x3f));
-            utf8data.push(0x80 | (charCode & 0x3f));
-          }
-        }
-        writeTypeAndLength(3, utf8data.length);
-        return writeUint8Array(utf8data);
-      default:
-        if (Array.isArray(value)) {
-          length = value.length;
-          writeTypeAndLength(4, length);
-          for (i = 0; i < length; ++i) {
-            encodeItem(value[i]);
-          }
-        } else if (value instanceof Uint8Array) {
-          writeTypeAndLength(2, value.length);
-          writeUint8Array(value);
-        } else {
-          const keys = Object.keys(value);
-          length = keys.length;
-          writeTypeAndLength(5, length);
-          for (i = 0; i < length; ++i) {
-            const key = keys[i];
-            encodeItem(key);
-            encodeItem(value[key]);
-          }
-        }
-    }
-  }
-  encodeItem(value);
-  if ("slice" in data) {
-    return data.slice(0, offset);
-  }
-  const ret = new ArrayBuffer(offset);
-  const retView = new DataView(ret);
-  for (let i = 0; i < offset; ++i) {
-    retView.setUint8(i, dataView.getUint8(i));
-  }
-  return ret;
-}
-function decode(data, tagger, simpleValue) {
-  const dataView = new DataView(data);
-  let offset = 0;
-  if (typeof tagger !== "function") {
-    tagger = function (value) {
-      return value;
-    };
-  }
-  if (typeof simpleValue !== "function") {
-    simpleValue = function () {
-      return undefined;
-    };
-  }
-  function commitRead(length, value) {
-    offset += length;
-    return value;
-  }
-  function readArrayBuffer(length) {
-    return commitRead(length, new Uint8Array(data, offset, length));
-  }
-  function readFloat16() {
-    const tempArrayBuffer = new ArrayBuffer(4);
-    const tempDataView = new DataView(tempArrayBuffer);
-    const value = readUint16();
-    const sign = value & 0x8000;
-    let exponent = value & 0x7c00;
-    const fraction = value & 0x03ff;
-    if (exponent === 0x7c00) {
-      exponent = 0xff << 10;
-    } else if (exponent !== 0) {
-      exponent += (127 - 15) << 10;
-    } else if (fraction !== 0) {
-      return (sign ? -1 : 1) * fraction * POW_2_24;
-    }
-    tempDataView.setUint32(0, (sign << 16) | (exponent << 13) | (fraction << 13));
-    return tempDataView.getFloat32(0);
-  }
-  function readFloat32() {
-    return commitRead(4, dataView.getFloat32(offset));
-  }
-  function readFloat64() {
-    return commitRead(8, dataView.getFloat64(offset));
-  }
-  function readUint8() {
-    return commitRead(1, dataView.getUint8(offset));
-  }
-  function readUint16() {
-    return commitRead(2, dataView.getUint16(offset));
-  }
-  function readUint32() {
-    return commitRead(4, dataView.getUint32(offset));
-  }
-  function readUint64() {
-    return readUint32() * POW_2_32 + readUint32();
-  }
-  function readBreak() {
-    if (dataView.getUint8(offset) !== 0xff) {
-      return false;
-    }
-    offset += 1;
-    return true;
-  }
-  function readLength(additionalInformation) {
-    if (additionalInformation < 24) {
-      return additionalInformation;
-    }
-    if (additionalInformation === 24) {
-      return readUint8();
-    }
-    if (additionalInformation === 25) {
-      return readUint16();
-    }
-    if (additionalInformation === 26) {
-      return readUint32();
-    }
-    if (additionalInformation === 27) {
-      return readUint64();
-    }
-    if (additionalInformation === 31) {
-      return -1;
-    }
-    throw new Error("Invalid length encoding");
-  }
-  function readIndefiniteStringLength(majorType) {
-    const initialByte = readUint8();
-    if (initialByte === 0xff) {
-      return -1;
-    }
-    const length = readLength(initialByte & 0x1f);
-    if (length < 0 || initialByte >> 5 !== majorType) {
-      throw new Error("Invalid indefinite length element");
-    }
-    return length;
-  }
-  function appendUtf16Data(utf16data, length) {
-    for (let i = 0; i < length; ++i) {
-      let value = readUint8();
-      if (value & 0x80) {
-        if (value < 0xe0) {
-          value = ((value & 0x1f) << 6) | (readUint8() & 0x3f);
-          length -= 1;
-        } else if (value < 0xf0) {
-          value = ((value & 0x0f) << 12) | ((readUint8() & 0x3f) << 6) | (readUint8() & 0x3f);
-          length -= 2;
-        } else {
-          value =
-            ((value & 0x0f) << 18) | ((readUint8() & 0x3f) << 12) | ((readUint8() & 0x3f) << 6) | (readUint8() & 0x3f);
-          length -= 3;
-        }
-      }
-      if (value < 0x10000) {
-        utf16data.push(value);
-      } else {
-        value -= 0x10000;
-        utf16data.push(0xd800 | (value >> 10));
-        utf16data.push(0xdc00 | (value & 0x3ff));
-      }
-    }
-  }
-  function decodeItem() {
-    const initialByte = readUint8();
-    const majorType = initialByte >> 5;
-    const additionalInformation = initialByte & 0x1f;
-    let i;
-    let length;
-    if (majorType === 7) {
-      switch (additionalInformation) {
-        case 25:
-          return readFloat16();
-        case 26:
-          return readFloat32();
-        case 27:
-          return readFloat64();
-      }
-    }
-    length = readLength(additionalInformation);
-    if (length < 0 && (majorType < 2 || majorType > 6)) {
-      throw new Error("Invalid length");
-    }
-    const utf16data = [];
-    let retArray;
-    const retObject = {};
-    switch (majorType) {
-      case 0:
-        return length;
-      case 1:
-        return -1 - length;
-      case 2:
-        if (length < 0) {
-          const elements = [];
-          let fullArrayLength = 0;
-          while ((length = readIndefiniteStringLength(majorType)) >= 0) {
-            fullArrayLength += length;
-            elements.push(readArrayBuffer(length));
-          }
-          const fullArray = new Uint8Array(fullArrayLength);
-          let fullArrayOffset = 0;
-          for (i = 0; i < elements.length; ++i) {
-            fullArray.set(elements[i], fullArrayOffset);
-            fullArrayOffset += elements[i].length;
-          }
-          return fullArray;
-        }
-        return readArrayBuffer(length);
-      case 3:
-        if (length < 0) {
-          while ((length = readIndefiniteStringLength(majorType)) >= 0) {
-            appendUtf16Data(utf16data, length);
-          }
-        } else {
-          appendUtf16Data(utf16data, length);
-        }
-        return String.fromCharCode.apply(null, utf16data);
-      case 4:
-        if (length < 0) {
-          retArray = [];
-          while (!readBreak()) {
-            retArray.push(decodeItem());
-          }
-        } else {
-          retArray = new Array(length);
-          for (i = 0; i < length; ++i) {
-            retArray[i] = decodeItem();
-          }
-        }
-        return retArray;
-      case 5:
-        for (i = 0; i < length || (length < 0 && !readBreak()); ++i) {
-          const key = decodeItem();
-          retObject[key] = decodeItem();
-        }
-        return retObject;
-      case 6:
-        return tagger(decodeItem(), length);
-      case 7:
-        switch (length) {
-          case 20:
-            return false;
-          case 21:
-            return true;
-          case 22:
-            return null;
-          case 23:
-            return undefined;
-          default:
-            return simpleValue(length);
-        }
-    }
-  }
-  const ret = decodeItem();
-  if (offset !== data.byteLength) {
-    throw new Error("Remaining bytes");
-  }
-  return ret;
-}
-const CBOR = {
-  encode,
-  decode,
-};
-
-const _console$e = createConsole("mcumgr", { log: false });
-const constants = {
-  MGMT_OP_READ: 0,
-  MGMT_OP_READ_RSP: 1,
-  MGMT_OP_WRITE: 2,
-  MGMT_OP_WRITE_RSP: 3,
-  MGMT_GROUP_ID_OS: 0,
-  MGMT_GROUP_ID_IMAGE: 1,
-  MGMT_GROUP_ID_FS: 8,
-  OS_MGMT_ID_ECHO: 0,
-  OS_MGMT_ID_TASKSTAT: 2,
-  OS_MGMT_ID_MPSTAT: 3,
-  OS_MGMT_ID_RESET: 5,
-  IMG_MGMT_ID_STATE: 0,
-  IMG_MGMT_ID_UPLOAD: 1,
-  IMG_MGMT_ID_ERASE: 5,
-  FS_MGMT_ID_FILE: 0,
-};
-class MCUManager {
-  constructor() {
-    this._mtu = 256;
-    this._messageCallback = null;
-    this._imageUploadProgressCallback = null;
-    this._imageUploadNextCallback = null;
-    this._fileUploadProgressCallback = null;
-    this._fileUploadNextCallback = null;
-    this._uploadIsInProgress = false;
-    this._downloadIsInProgress = false;
-    this._buffer = new Uint8Array();
-    this._seq = 0;
-  }
-  onMessage(callback) {
-    this._messageCallback = callback;
-    return this;
-  }
-  onImageUploadNext(callback) {
-    this._imageUploadNextCallback = callback;
-    return this;
-  }
-  onImageUploadProgress(callback) {
-    this._imageUploadProgressCallback = callback;
-    return this;
-  }
-  onImageUploadFinished(callback) {
-    this._imageUploadFinishedCallback = callback;
-    return this;
-  }
-  onFileUploadNext(callback) {
-    this._fileUploadNextCallback = callback;
-    return this;
-  }
-  onFileUploadProgress(callback) {
-    this._fileUploadProgressCallback = callback;
-    return this;
-  }
-  onFileUploadFinished(callback) {
-    this._fileUploadFinishedCallback = callback;
-    return this;
-  }
-  onFileDownloadNext(callback) {
-    this._fileDownloadNextCallback = callback;
-    return this;
-  }
-  onFileDownloadProgress(callback) {
-    this._fileDownloadProgressCallback = callback;
-    return this;
-  }
-  onFileDownloadFinished(callback) {
-    this._fileDownloadFinishedCallback = callback;
-    return this;
-  }
-  _getMessage(op, group, id, data) {
-    const _flags = 0;
-    let encodedData = [];
-    if (typeof data !== "undefined") {
-      encodedData = [...new Uint8Array(CBOR.encode(data))];
-    }
-    const lengthLo = encodedData.length & 255;
-    const lengthHi = encodedData.length >> 8;
-    const groupLo = group & 255;
-    const groupHi = group >> 8;
-    const message = [op, _flags, lengthHi, lengthLo, groupHi, groupLo, this._seq, id, ...encodedData];
-    this._seq = (this._seq + 1) % 256;
-    return message;
-  }
-  _notification(buffer) {
-    _console$e.log("mcumgr - message received");
-    const message = new Uint8Array(buffer);
-    this._buffer = new Uint8Array([...this._buffer, ...message]);
-    const messageLength = this._buffer[2] * 256 + this._buffer[3];
-    if (this._buffer.length < messageLength + 8) return;
-    this._processMessage(this._buffer.slice(0, messageLength + 8));
-    this._buffer = this._buffer.slice(messageLength + 8);
-  }
-  _processMessage(message) {
-    const [op, , lengthHi, lengthLo, groupHi, groupLo, , id] = message;
-    const data = CBOR.decode(message.slice(8).buffer);
-    const length = lengthHi * 256 + lengthLo;
-    const group = groupHi * 256 + groupLo;
-    _console$e.log("mcumgr - Process Message - Group: " + group + ", Id: " + id + ", Off: " + data.off);
-    if (group === constants.MGMT_GROUP_ID_IMAGE && id === constants.IMG_MGMT_ID_UPLOAD && data.off) {
-      this._uploadOffset = data.off;
-      this._uploadNext();
-      return;
-    }
-    if (
-      op === constants.MGMT_OP_WRITE_RSP &&
-      group === constants.MGMT_GROUP_ID_FS &&
-      id === constants.FS_MGMT_ID_FILE &&
-      data.off
-    ) {
-      this._uploadFileOffset = data.off;
-      this._uploadFileNext();
-      return;
-    }
-    if (op === constants.MGMT_OP_READ_RSP && group === constants.MGMT_GROUP_ID_FS && id === constants.FS_MGMT_ID_FILE) {
-      this._downloadFileOffset += data.data.length;
-      if (data.len != undefined) {
-        this._downloadFileLength = data.len;
-      }
-      _console$e.log("downloaded " + this._downloadFileOffset + " bytes of " + this._downloadFileLength);
-      if (this._downloadFileLength > 0) {
-        this._fileDownloadProgressCallback({
-          percentage: Math.floor((this._downloadFileOffset / this._downloadFileLength) * 100),
-        });
-      }
-      if (this._messageCallback) this._messageCallback({ op, group, id, data, length });
-      this._downloadFileNext();
-      return;
-    }
-    if (this._messageCallback) this._messageCallback({ op, group, id, data, length });
-  }
-  cmdReset() {
-    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_OS, constants.OS_MGMT_ID_RESET);
-  }
-  smpEcho(message) {
-    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_OS, constants.OS_MGMT_ID_ECHO, {
-      d: message,
-    });
-  }
-  cmdImageState() {
-    return this._getMessage(constants.MGMT_OP_READ, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE);
-  }
-  cmdImageErase() {
-    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_ERASE, {});
-  }
-  cmdImageTest(hash) {
-    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE, {
-      hash,
-      confirm: false,
-    });
-  }
-  cmdImageConfirm(hash) {
-    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE, {
-      hash,
-      confirm: true,
-    });
-  }
-  _hash(image) {
-    return crypto.subtle.digest("SHA-256", image);
-  }
-  async _uploadNext() {
-    if (!this._uploadImage) {
-      return;
-    }
-    if (this._uploadOffset >= this._uploadImage.byteLength) {
-      this._uploadIsInProgress = false;
-      this._imageUploadFinishedCallback();
-      return;
-    }
-    const nmpOverhead = 8;
-    const message = { data: new Uint8Array(), off: this._uploadOffset };
-    if (this._uploadOffset === 0) {
-      message.len = this._uploadImage.byteLength;
-      message.sha = new Uint8Array(await this._hash(this._uploadImage));
-    }
-    this._imageUploadProgressCallback({
-      percentage: Math.floor((this._uploadOffset / this._uploadImage.byteLength) * 100),
-    });
-    const length = this._mtu - CBOR.encode(message).byteLength - nmpOverhead - 3 - 5;
-    message.data = new Uint8Array(this._uploadImage.slice(this._uploadOffset, this._uploadOffset + length));
-    this._uploadOffset += length;
-    const packet = this._getMessage(
-      constants.MGMT_OP_WRITE,
-      constants.MGMT_GROUP_ID_IMAGE,
-      constants.IMG_MGMT_ID_UPLOAD,
-      message
-    );
-    _console$e.log("mcumgr - _uploadNext: Message Length: " + packet.length);
-    this._imageUploadNextCallback({ packet });
-  }
-  async reset() {
-    this._messageCallback = null;
-    this._imageUploadProgressCallback = null;
-    this._imageUploadNextCallback = null;
-    this._fileUploadProgressCallback = null;
-    this._fileUploadNextCallback = null;
-    this._uploadIsInProgress = false;
-    this._downloadIsInProgress = false;
-    this._buffer = new Uint8Array();
-    this._seq = 0;
-  }
-  async cmdUpload(image, slot = 0) {
-    if (this._uploadIsInProgress) {
-      _console$e.error("Upload is already in progress.");
-      return;
-    }
-    this._uploadIsInProgress = true;
-    this._uploadOffset = 0;
-    this._uploadImage = image;
-    this._uploadSlot = slot;
-    this._uploadNext();
-  }
-  async cmdUploadFile(filebuf, destFilename) {
-    if (this._uploadIsInProgress) {
-      _console$e.error("Upload is already in progress.");
-      return;
-    }
-    this._uploadIsInProgress = true;
-    this._uploadFileOffset = 0;
-    this._uploadFile = filebuf;
-    this._uploadFilename = destFilename;
-    this._uploadFileNext();
-  }
-  async _uploadFileNext() {
-    _console$e.log("uploadFileNext - offset: " + this._uploadFileOffset + ", length: " + this._uploadFile.byteLength);
-    if (this._uploadFileOffset >= this._uploadFile.byteLength) {
-      this._uploadIsInProgress = false;
-      this._fileUploadFinishedCallback();
-      return;
-    }
-    const nmpOverhead = 8;
-    const message = { data: new Uint8Array(), off: this._uploadFileOffset };
-    if (this._uploadFileOffset === 0) {
-      message.len = this._uploadFile.byteLength;
-    }
-    message.name = this._uploadFilename;
-    this._fileUploadProgressCallback({
-      percentage: Math.floor((this._uploadFileOffset / this._uploadFile.byteLength) * 100),
-    });
-    const length = this._mtu - CBOR.encode(message).byteLength - nmpOverhead;
-    message.data = new Uint8Array(this._uploadFile.slice(this._uploadFileOffset, this._uploadFileOffset + length));
-    this._uploadFileOffset += length;
-    const packet = this._getMessage(
-      constants.MGMT_OP_WRITE,
-      constants.MGMT_GROUP_ID_FS,
-      constants.FS_MGMT_ID_FILE,
-      message
-    );
-    _console$e.log("mcumgr - _uploadNext: Message Length: " + packet.length);
-    this._fileUploadNextCallback({ packet });
-  }
-  async cmdDownloadFile(filename, destFilename) {
-    if (this._downloadIsInProgress) {
-      _console$e.error("Download is already in progress.");
-      return;
-    }
-    this._downloadIsInProgress = true;
-    this._downloadFileOffset = 0;
-    this._downloadFileLength = 0;
-    this._downloadRemoteFilename = filename;
-    this._downloadLocalFilename = destFilename;
-    this._downloadFileNext();
-  }
-  async _downloadFileNext() {
-    if (this._downloadFileLength > 0) {
-      if (this._downloadFileOffset >= this._downloadFileLength) {
-        this._downloadIsInProgress = false;
-        this._fileDownloadFinishedCallback();
-        return;
-      }
-    }
-    const message = { off: this._downloadFileOffset };
-    if (this._downloadFileOffset === 0) {
-      message.name = this._downloadRemoteFilename;
-    }
-    const packet = this._getMessage(
-      constants.MGMT_OP_READ,
-      constants.MGMT_GROUP_ID_FS,
-      constants.FS_MGMT_ID_FILE,
-      message
-    );
-    _console$e.log("mcumgr - _downloadNext: Message Length: " + packet.length);
-    this._fileDownloadNextCallback({ packet });
-  }
-  async imageInfo(image) {
-    const info = {};
-    const view = new Uint8Array(image);
-    if (view.length < 32) {
-      throw new Error("Invalid image (too short file)");
-    }
-    if (view[0] !== 0x3d || view[1] !== 0xb8 || view[2] !== 0xf3 || view[3] !== 0x96) {
-      throw new Error("Invalid image (wrong magic bytes)");
-    }
-    if (view[4] !== 0x00 || view[5] !== 0x00 || view[6] !== 0x00 || view[7] !== 0x00) {
-      throw new Error("Invalid image (wrong load address)");
-    }
-    const headerSize = view[8] + view[9] * 2 ** 8;
-    if (view[10] !== 0x00 || view[11] !== 0x00) {
-      throw new Error("Invalid image (wrong protected TLV area size)");
-    }
-    const imageSize = view[12] + view[13] * 2 ** 8 + view[14] * 2 ** 16 + view[15] * 2 ** 24;
-    info.imageSize = imageSize;
-    if (view.length < imageSize + headerSize) {
-      throw new Error("Invalid image (wrong image size)");
-    }
-    if (view[16] !== 0x00 || view[17] !== 0x00 || view[18] !== 0x00 || view[19] !== 0x00) {
-      throw new Error("Invalid image (wrong flags)");
-    }
-    const version = `${view[20]}.${view[21]}.${view[22] + view[23] * 2 ** 8}`;
-    info.version = version;
-    info.hash = [...new Uint8Array(await this._hash(image.slice(0, imageSize + 32)))]
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-    return info;
-  }
-}
-
-const _console$d = createConsole("FirmwareManager", { log: false });
-const FirmwareMessageTypes = ["smp"];
-const FirmwareEventTypes = [
-    ...FirmwareMessageTypes,
-    "firmwareImages",
-    "firmwareUploadProgress",
-    "firmwareStatus",
-    "firmwareUploadComplete",
-];
-const FirmwareStatuses = ["idle", "uploading", "uploaded", "pending", "testing", "erasing"];
-class FirmwareManager {
-    sendMessage;
-    constructor() {
-        this.#assignMcuManagerCallbacks();
-        autoBind(this);
-    }
-    eventDispatcher;
-    get addEventListenter() {
-        return this.eventDispatcher.addEventListener;
-    }
-    get #dispatchEvent() {
-        return this.eventDispatcher.dispatchEvent;
-    }
-    get removeEventListener() {
-        return this.eventDispatcher.removeEventListener;
-    }
-    get waitForEvent() {
-        return this.eventDispatcher.waitForEvent;
-    }
-    parseMessage(messageType, dataView) {
-        _console$d.log({ messageType });
-        switch (messageType) {
-            case "smp":
-                this.#mcuManager._notification(Array.from(new Uint8Array(dataView.buffer)));
-                this.#dispatchEvent("smp", { dataView });
-                break;
-            default:
-                throw Error(`uncaught messageType ${messageType}`);
-        }
-    }
-    async uploadFirmware(file) {
-        _console$d.log("uploadFirmware", file);
-        const promise = this.waitForEvent("firmwareUploadComplete");
-        await this.getImages();
-        const arrayBuffer = await getFileBuffer(file);
-        const imageInfo = await this.#mcuManager.imageInfo(arrayBuffer);
-        _console$d.log({ imageInfo });
-        this.#mcuManager.cmdUpload(arrayBuffer, 1);
-        this.#updateStatus("uploading");
-        await promise;
-    }
-    #status = "idle";
-    get status() {
-        return this.#status;
-    }
-    #updateStatus(newStatus) {
-        _console$d.assertEnumWithError(newStatus, FirmwareStatuses);
-        if (this.#status == newStatus) {
-            _console$d.log(`redundant firmwareStatus assignment "${newStatus}"`);
-            return;
-        }
-        this.#status = newStatus;
-        _console$d.log({ firmwareStatus: this.#status });
-        this.#dispatchEvent("firmwareStatus", { firmwareStatus: this.#status });
-    }
-    #images;
-    get images() {
-        return this.#images;
-    }
-    #assertImages() {
-        _console$d.assertWithError(this.#images, "didn't get imageState");
-    }
-    #assertValidImageIndex(imageIndex) {
-        _console$d.assertTypeWithError(imageIndex, "number");
-        _console$d.assertWithError(imageIndex == 0 || imageIndex == 1, "imageIndex must be 0 or 1");
-    }
-    async getImages() {
-        const promise = this.waitForEvent("firmwareImages");
-        _console$d.log("getting firmware image state...");
-        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageState()).buffer);
-        await promise;
-    }
-    async testImage(imageIndex = 1) {
-        this.#assertValidImageIndex(imageIndex);
-        this.#assertImages();
-        if (!this.#images[imageIndex]) {
-            _console$d.log(`image ${imageIndex} not found`);
-            return;
-        }
-        if (this.#images[imageIndex].pending == true) {
-            _console$d.log(`image ${imageIndex} is already pending`);
-            return;
-        }
-        if (this.#images[imageIndex].empty) {
-            _console$d.log(`image ${imageIndex} is empty`);
-            return;
-        }
-        const promise = this.waitForEvent("smp");
-        _console$d.log("testing firmware image...");
-        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageTest(this.#images[imageIndex].hash)).buffer);
-        await promise;
-    }
-    async eraseImage() {
-        this.#assertImages();
-        const promise = this.waitForEvent("smp");
-        _console$d.log("erasing image...");
-        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageErase()).buffer);
-        this.#updateStatus("erasing");
-        await promise;
-        await this.getImages();
-    }
-    async confirmImage(imageIndex = 0) {
-        this.#assertValidImageIndex(imageIndex);
-        this.#assertImages();
-        if (this.#images[imageIndex].confirmed === true) {
-            _console$d.log(`image ${imageIndex} is already confirmed`);
-            return;
-        }
-        const promise = this.waitForEvent("smp");
-        _console$d.log("confirming image...");
-        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[imageIndex].hash)).buffer);
-        await promise;
-    }
-    async echo(string) {
-        _console$d.assertTypeWithError(string, "string");
-        const promise = this.waitForEvent("smp");
-        _console$d.log("sending echo...");
-        this.sendMessage(Uint8Array.from(this.#mcuManager.smpEcho(string)).buffer);
-        await promise;
-    }
-    async reset() {
-        const promise = this.waitForEvent("smp");
-        _console$d.log("resetting...");
-        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdReset()).buffer);
-        await promise;
-    }
-    #mtu;
-    get mtu() {
-        return this.#mtu;
-    }
-    set mtu(newMtu) {
-        this.#mtu = newMtu;
-        this.#mcuManager._mtu = newMtu;
-    }
-    #mcuManager = new MCUManager();
-    #assignMcuManagerCallbacks() {
-        this.#mcuManager.onMessage(this.#onMcuMessage.bind(this));
-        this.#mcuManager.onFileDownloadNext(this.#onMcuFileDownloadNext);
-        this.#mcuManager.onFileDownloadProgress(this.#onMcuFileDownloadProgress.bind(this));
-        this.#mcuManager.onFileDownloadFinished(this.#onMcuFileDownloadFinished.bind(this));
-        this.#mcuManager.onFileUploadNext(this.#onMcuFileUploadNext.bind(this));
-        this.#mcuManager.onFileUploadProgress(this.#onMcuFileUploadProgress.bind(this));
-        this.#mcuManager.onFileUploadFinished(this.#onMcuFileUploadFinished.bind(this));
-        this.#mcuManager.onImageUploadNext(this.#onMcuImageUploadNext.bind(this));
-        this.#mcuManager.onImageUploadProgress(this.#onMcuImageUploadProgress.bind(this));
-        this.#mcuManager.onImageUploadFinished(this.#onMcuImageUploadFinished.bind(this));
-    }
-    #onMcuMessage({ op, group, id, data, length }) {
-        _console$d.log("onMcuMessage", ...arguments);
-        switch (group) {
-            case constants.MGMT_GROUP_ID_OS:
-                switch (id) {
-                    case constants.OS_MGMT_ID_ECHO:
-                        _console$d.log(`echo "${data.r}"`);
-                        break;
-                    case constants.OS_MGMT_ID_TASKSTAT:
-                        _console$d.table(data.tasks);
-                        break;
-                    case constants.OS_MGMT_ID_MPSTAT:
-                        _console$d.log(data);
-                        break;
-                }
-                break;
-            case constants.MGMT_GROUP_ID_IMAGE:
-                switch (id) {
-                    case constants.IMG_MGMT_ID_STATE:
-                        this.#onMcuImageState(data);
-                }
-                break;
-            default:
-                throw Error(`uncaught mcuMessage group ${group}`);
-        }
-    }
-    #onMcuFileDownloadNext() {
-        _console$d.log("onMcuFileDownloadNext", ...arguments);
-    }
-    #onMcuFileDownloadProgress() {
-        _console$d.log("onMcuFileDownloadProgress", ...arguments);
-    }
-    #onMcuFileDownloadFinished() {
-        _console$d.log("onMcuFileDownloadFinished", ...arguments);
-    }
-    #onMcuFileUploadNext() {
-        _console$d.log("onMcuFileUploadNext");
-    }
-    #onMcuFileUploadProgress() {
-        _console$d.log("onMcuFileUploadProgress");
-    }
-    #onMcuFileUploadFinished() {
-        _console$d.log("onMcuFileUploadFinished");
-    }
-    #onMcuImageUploadNext({ packet }) {
-        _console$d.log("onMcuImageUploadNext");
-        this.sendMessage(Uint8Array.from(packet).buffer);
-    }
-    #onMcuImageUploadProgress({ percentage }) {
-        const progress = percentage / 100;
-        _console$d.log("onMcuImageUploadProgress", ...arguments);
-        this.#dispatchEvent("firmwareUploadProgress", { progress });
-    }
-    async #onMcuImageUploadFinished() {
-        _console$d.log("onMcuImageUploadFinished", ...arguments);
-        await this.getImages();
-        this.#dispatchEvent("firmwareUploadProgress", { progress: 100 });
-        this.#dispatchEvent("firmwareUploadComplete", {});
-    }
-    #onMcuImageState({ images }) {
-        if (images) {
-            this.#images = images;
-            _console$d.log("images", this.#images);
-        }
-        else {
-            _console$d.log("no images found");
-            return;
-        }
-        let newStatus = "idle";
-        if (this.#images.length == 2) {
-            if (!this.#images[1].bootable) {
-                _console$d.warn('Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image');
-            }
-            else if (!this.#images[0].confirmed) {
-                _console$d.log('Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.');
-                newStatus = "testing";
-            }
-            else {
-                if (this.#images[1].pending) {
-                    _console$d.log("reset to upload to the new firmware image");
-                    newStatus = "pending";
-                }
-                else {
-                    _console$d.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
-                    newStatus = "uploaded";
-                }
-            }
-        }
-        if (this.#images.length == 1) {
-            this.#images.push({
-                slot: 1,
-                empty: true,
-                version: "Empty",
-                pending: false,
-                confirmed: false,
-                bootable: false,
-                active: false,
-                permanent: false,
-            });
-            _console$d.log("Select a firmware upload image to upload to slot 1.");
-        }
-        this.#updateStatus(newStatus);
-        this.#dispatchEvent("firmwareImages", { firmwareImages: this.#images });
-    }
-}
-
-const _console$c = createConsole("DeviceManager", { log: false });
-const DeviceManagerEventTypes = [
-    "deviceConnected",
-    "deviceDisconnected",
-    "deviceIsConnected",
-    "availableDevices",
-    "connectedDevices",
-];
-class DeviceManager {
-    static shared = new DeviceManager();
-    constructor() {
-        if (DeviceManager.shared && this != DeviceManager.shared) {
-            throw Error("DeviceManager is a singleton - use DeviceManager.shared");
-        }
-        if (this.CanUseLocalStorage) {
-            this.UseLocalStorage = true;
-        }
-    }
-    #boundDeviceEventListeners = {
-        getType: this.#onDeviceType.bind(this),
-        isConnected: this.#OnDeviceIsConnected.bind(this),
-    };
-    onDevice(device) {
-        addEventListeners(device, this.#boundDeviceEventListeners);
-    }
-    #onDeviceType(event) {
-        if (this.#UseLocalStorage) {
-            this.#UpdateLocalStorageConfigurationForDevice(event.target);
-        }
-    }
-    OnDeviceConnectionStatusUpdated(device, connectionStatus) {
-        if (connectionStatus == "notConnected" &&
-            !device.canReconnect &&
-            this.#AvailableDevices.includes(device)) {
-            const deviceIndex = this.#AvailableDevices.indexOf(device);
-            this.AvailableDevices.splice(deviceIndex, 1);
-            this.#DispatchAvailableDevices();
-        }
-    }
-    #ConnectedDevices = [];
-    get ConnectedDevices() {
-        return this.#ConnectedDevices;
-    }
-    #UseLocalStorage = false;
-    get UseLocalStorage() {
-        return this.#UseLocalStorage;
-    }
-    set UseLocalStorage(newUseLocalStorage) {
-        this.#AssertLocalStorage();
-        _console$c.assertTypeWithError(newUseLocalStorage, "boolean");
-        this.#UseLocalStorage = newUseLocalStorage;
-        if (this.#UseLocalStorage && !this.#LocalStorageConfiguration) {
-            this.#LoadFromLocalStorage();
-        }
-    }
-    #DefaultLocalStorageConfiguration = {
-        devices: [],
-    };
-    #LocalStorageConfiguration;
-    get CanUseLocalStorage() {
-        return isInBrowser && window.localStorage;
-    }
-    #AssertLocalStorage() {
-        _console$c.assertWithError(isInBrowser, "localStorage is only available in the browser");
-        _console$c.assertWithError(window.localStorage, "localStorage not found");
-    }
-    #LocalStorageKey = "BS.Device";
-    #SaveToLocalStorage() {
-        this.#AssertLocalStorage();
-        localStorage.setItem(this.#LocalStorageKey, JSON.stringify(this.#LocalStorageConfiguration));
-    }
-    async #LoadFromLocalStorage() {
-        this.#AssertLocalStorage();
-        let localStorageString = localStorage.getItem(this.#LocalStorageKey);
-        if (typeof localStorageString != "string") {
-            _console$c.log("no info found in localStorage");
-            this.#LocalStorageConfiguration = Object.assign({}, this.#DefaultLocalStorageConfiguration);
-            this.#SaveToLocalStorage();
-            return;
-        }
-        try {
-            const configuration = JSON.parse(localStorageString);
-            _console$c.log({ configuration });
-            this.#LocalStorageConfiguration = configuration;
-            if (this.CanGetDevices) {
-                await this.GetDevices();
-            }
-        }
-        catch (error) {
-            _console$c.error(error);
-        }
-    }
-    #UpdateLocalStorageConfigurationForDevice(device) {
-        if (device.connectionType != "webBluetooth") {
-            _console$c.log("localStorage is only for webBluetooth devices");
-            return;
-        }
-        this.#AssertLocalStorage();
-        const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex((deviceInformation) => {
-            return deviceInformation.bluetoothId == device.bluetoothId;
-        });
-        if (deviceInformationIndex == -1) {
-            return;
-        }
-        this.#LocalStorageConfiguration.devices[deviceInformationIndex].type =
-            device.type;
-        this.#SaveToLocalStorage();
-    }
-    #AvailableDevices = [];
-    get AvailableDevices() {
-        return this.#AvailableDevices;
-    }
-    get CanGetDevices() {
-        return isInBrowser && navigator.bluetooth?.getDevices;
-    }
-    async GetDevices() {
-        if (!isInBrowser) {
-            _console$c.warn("GetDevices is only available in the browser");
-            return;
-        }
-        if (!navigator.bluetooth) {
-            _console$c.warn("bluetooth is not available in this browser");
-            return;
-        }
-        if (isInBluefy) {
-            _console$c.warn("bluefy lists too many devices...");
-            return;
-        }
-        if (!navigator.bluetooth.getDevices) {
-            _console$c.warn("bluetooth.getDevices() is not available in this browser");
-            return;
-        }
-        if (!this.CanGetDevices) {
-            _console$c.log("CanGetDevices is false");
-            return;
-        }
-        if (!this.#LocalStorageConfiguration) {
-            this.#LoadFromLocalStorage();
-        }
-        const configuration = this.#LocalStorageConfiguration;
-        if (!configuration.devices || configuration.devices.length == 0) {
-            _console$c.log("no devices found in configuration");
-            return;
-        }
-        const bluetoothDevices = await navigator.bluetooth.getDevices();
-        _console$c.log({ bluetoothDevices });
-        bluetoothDevices.forEach((bluetoothDevice) => {
-            if (!bluetoothDevice.gatt) {
-                return;
-            }
-            let deviceInformation = configuration.devices.find((deviceInformation) => bluetoothDevice.id == deviceInformation.bluetoothId);
-            if (!deviceInformation) {
-                return;
-            }
-            let existingConnectedDevice = this.ConnectedDevices.filter((device) => device.connectionType == "webBluetooth").find((device) => device.bluetoothId == bluetoothDevice.id);
-            const existingAvailableDevice = this.AvailableDevices.filter((device) => device.connectionType == "webBluetooth").find((device) => device.bluetoothId == bluetoothDevice.id);
-            if (existingAvailableDevice) {
-                if (existingConnectedDevice &&
-                    existingConnectedDevice?.bluetoothId ==
-                        existingAvailableDevice.bluetoothId &&
-                    existingConnectedDevice != existingAvailableDevice) {
-                    this.AvailableDevices[this.#AvailableDevices.indexOf(existingAvailableDevice)] = existingConnectedDevice;
-                }
-                return;
-            }
-            if (existingConnectedDevice) {
-                this.AvailableDevices.push(existingConnectedDevice);
-                return;
-            }
-            const device = new Device();
-            const connectionManager = new WebBluetoothConnectionManager();
-            connectionManager.device = bluetoothDevice;
-            if (bluetoothDevice.name) {
-                device._informationManager.updateName(bluetoothDevice.name);
-            }
-            device._informationManager.updateType(deviceInformation.type);
-            device.connectionManager = connectionManager;
-            this.AvailableDevices.push(device);
-        });
-        this.#DispatchAvailableDevices();
-        return this.AvailableDevices;
-    }
-    #EventDispatcher = new EventDispatcher(this, DeviceManagerEventTypes);
-    get AddEventListener() {
-        return this.#EventDispatcher.addEventListener;
-    }
-    get #DispatchEvent() {
-        return this.#EventDispatcher.dispatchEvent;
-    }
-    get RemoveEventListener() {
-        return this.#EventDispatcher.removeEventListener;
-    }
-    get RemoveEventListeners() {
-        return this.#EventDispatcher.removeEventListeners;
-    }
-    get RemoveAllEventListeners() {
-        return this.#EventDispatcher.removeAllEventListeners;
-    }
-    #OnDeviceIsConnected(event) {
-        const { target: device } = event;
-        if (device.isConnected) {
-            if (!this.#ConnectedDevices.includes(device)) {
-                _console$c.log("adding device", device);
-                this.#ConnectedDevices.push(device);
-                if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
-                    const deviceInformation = {
-                        type: device.type,
-                        bluetoothId: device.bluetoothId,
-                        ipAddress: device.ipAddress,
-                        isWifiSecure: device.isWifiSecure,
-                    };
-                    const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex((_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId);
-                    if (deviceInformationIndex == -1) {
-                        this.#LocalStorageConfiguration.devices.push(deviceInformation);
-                    }
-                    else {
-                        this.#LocalStorageConfiguration.devices[deviceInformationIndex] =
-                            deviceInformation;
-                    }
-                    this.#SaveToLocalStorage();
-                }
-                this.#DispatchEvent("deviceConnected", { device });
-                this.#DispatchEvent("deviceIsConnected", { device });
-                this.#DispatchConnectedDevices();
-            }
-            else {
-                _console$c.log("device already included");
-            }
-        }
-        else {
-            if (this.#ConnectedDevices.includes(device)) {
-                _console$c.log("removing device", device);
-                this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
-                this.#DispatchEvent("deviceDisconnected", { device });
-                this.#DispatchEvent("deviceIsConnected", { device });
-                this.#DispatchConnectedDevices();
-            }
-            else {
-                _console$c.log("device already not included");
-            }
-        }
-        if (this.CanGetDevices) {
-            this.GetDevices();
-        }
-        if (device.isConnected && !this.AvailableDevices.includes(device)) {
-            const existingAvailableDevice = this.AvailableDevices.find((_device) => _device.bluetoothId == device.bluetoothId);
-            _console$c.log({ existingAvailableDevice });
-            if (existingAvailableDevice) {
-                this.AvailableDevices[this.AvailableDevices.indexOf(existingAvailableDevice)] = device;
-            }
-            else {
-                this.AvailableDevices.push(device);
-            }
-            this.#DispatchAvailableDevices();
-        }
-        this._CheckDeviceAvailability(device);
-    }
-    _CheckDeviceAvailability(device) {
-        if (!device.isConnected &&
-            !device.isAvailable &&
-            this.#AvailableDevices.includes(device)) {
-            _console$c.log("removing device from availableDevices...");
-            this.#AvailableDevices.splice(this.#AvailableDevices.indexOf(device), 1);
-            this.#DispatchAvailableDevices();
-        }
-    }
-    #DispatchAvailableDevices() {
-        _console$c.log({ AvailableDevices: this.AvailableDevices });
-        this.#DispatchEvent("availableDevices", {
-            availableDevices: this.AvailableDevices,
-        });
-    }
-    #DispatchConnectedDevices() {
-        _console$c.log({ ConnectedDevices: this.ConnectedDevices });
-        this.#DispatchEvent("connectedDevices", {
-            connectedDevices: this.ConnectedDevices,
-        });
-    }
-}
-var DeviceManager$1 = DeviceManager.shared;
-
-const _console$b = createConsole("ServerUtils", { log: false });
-const ServerMessageTypes = [
-    "isScanningAvailable",
-    "isScanning",
-    "startScan",
-    "stopScan",
-    "discoveredDevice",
-    "discoveredDevices",
-    "expiredDiscoveredDevice",
-    "connectToDevice",
-    "disconnectFromDevice",
-    "connectedDevices",
-    "deviceMessage",
-    "requiredDeviceInformation",
-];
-function createMessage(enumeration, ...messages) {
-    _console$b.log("createMessage", ...messages);
-    const messageBuffers = messages.map((message) => {
-        if (typeof message == "string") {
-            message = { type: message };
-        }
-        if (message.data != undefined) {
-            if (!Array.isArray(message.data)) {
-                message.data = [message.data];
-            }
-        }
-        else {
-            message.data = [];
-        }
-        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
-        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
-        _console$b.assertEnumWithError(message.type, enumeration);
-        const messageTypeEnum = enumeration.indexOf(message.type);
-        const messageDataLengthDataView = new DataView(new ArrayBuffer(2));
-        messageDataLengthDataView.setUint16(0, messageDataArrayBufferByteLength, true);
-        return concatenateArrayBuffers(messageTypeEnum, messageDataLengthDataView, messageDataArrayBuffer);
-    });
-    _console$b.log("messageBuffers", ...messageBuffers);
-    return concatenateArrayBuffers(...messageBuffers);
-}
-function createServerMessage(...messages) {
-    _console$b.log("createServerMessage", ...messages);
-    return createMessage(ServerMessageTypes, ...messages);
-}
-function createClientDeviceMessage(...messages) {
-    _console$b.log("createClientDeviceMessage", ...messages);
-    return createMessage(ConnectionMessageTypes, ...messages);
-}
-createServerMessage("isScanningAvailable");
-createServerMessage("isScanning");
-createServerMessage("startScan");
-createServerMessage("stopScan");
-createServerMessage("discoveredDevices");
-
-const _console$a = createConsole("WebSocketUtils", { log: false });
-const webSocketPingTimeout = 30_000;
-const webSocketReconnectTimeout = 3_000;
-const WebSocketMessageTypes$1 = ["ping", "pong", "serverMessage"];
-function createWebSocketMessage$1(...messages) {
-    _console$a.log("createWebSocketMessage", ...messages);
-    return createMessage(WebSocketMessageTypes$1, ...messages);
-}
-createWebSocketMessage$1("ping");
-createWebSocketMessage$1("pong");
-
-const _console$9 = createConsole("WebSocketConnectionManager", { log: false });
-const WebSocketMessageTypes = [
-    "ping",
-    "pong",
-    "batteryLevel",
-    "deviceInformation",
-    "message",
-];
-function createWebSocketMessage(...messages) {
-    _console$9.log("createWebSocketMessage", ...messages);
-    return createMessage(WebSocketMessageTypes, ...messages);
-}
-const WebSocketDeviceInformationMessageTypes = [
-    "deviceInformation",
-    "batteryLevel",
-];
-class WebSocketConnectionManager extends BaseConnectionManager {
-    #bluetoothId;
-    get bluetoothId() {
-        return this.#bluetoothId ?? "";
-    }
-    defaultMtu = 2 ** 10;
-    constructor(ipAddress, isSecure = false, bluetoothId) {
-        super();
-        this.ipAddress = ipAddress;
-        this.isSecure = isSecure;
-        this.mtu = this.defaultMtu;
-        this.#bluetoothId = bluetoothId;
-    }
-    get isAvailable() {
-        return true;
-    }
-    static get isSupported() {
-        return true;
-    }
-    static get type() {
-        return "webSocket";
-    }
-    #webSocket;
-    get webSocket() {
-        return this.#webSocket;
-    }
-    set webSocket(newWebSocket) {
-        if (this.#webSocket == newWebSocket) {
-            _console$9.log("redundant webSocket assignment");
-            return;
-        }
-        _console$9.log("assigning webSocket", newWebSocket);
-        if (this.#webSocket) {
-            removeEventListeners(this.#webSocket, this.#boundWebSocketEventListeners);
-            if (this.#webSocket.readyState == this.#webSocket.OPEN) {
-                this.#webSocket.close();
-            }
-        }
-        if (newWebSocket) {
-            addEventListeners(newWebSocket, this.#boundWebSocketEventListeners);
-        }
-        this.#webSocket = newWebSocket;
-        _console$9.log("assigned webSocket");
-    }
-    #ipAddress;
-    get ipAddress() {
-        return this.#ipAddress;
-    }
-    set ipAddress(newIpAddress) {
-        this.assertIsNotConnected();
-        if (this.#ipAddress == newIpAddress) {
-            _console$9.log(`redundnant ipAddress assignment "${newIpAddress}"`);
-            return;
-        }
-        this.#ipAddress = newIpAddress;
-        _console$9.log(`updated ipAddress to "${this.ipAddress}"`);
-    }
-    #isSecure = false;
-    get isSecure() {
-        return this.#isSecure;
-    }
-    set isSecure(newIsSecure) {
-        this.assertIsNotConnected();
-        if (this.#isSecure == newIsSecure) {
-            _console$9.log(`redundant isSecure assignment ${newIsSecure}`);
-            return;
-        }
-        this.#isSecure = newIsSecure;
-        _console$9.log(`updated isSecure to "${this.isSecure}"`);
-    }
-    get url() {
-        return `${this.isSecure ? "wss" : "ws"}://${this.ipAddress}/ws`;
-    }
-    async connect() {
-        await super.connect();
-        try {
-            this.webSocket = new WebSocket(this.url);
-        }
-        catch (error) {
-            _console$9.error("error connecting to webSocket", error);
-            this.status = "notConnected";
-        }
-    }
-    async disconnect() {
-        await super.disconnect();
-        _console$9.log("closing websocket");
-        this.#pingTimer.stop();
-        this.#webSocket?.close();
-    }
-    get canReconnect() {
-        return Boolean(this.webSocket);
-    }
-    async reconnect() {
-        await super.reconnect();
-        this.webSocket = new WebSocket(this.url);
-    }
-    async sendSmpMessage(data) {
-        super.sendSmpMessage(data);
-        _console$9.error("smp not supported on webSockets");
-    }
-    async sendTxData(data) {
-        await super.sendTxData(data);
-        if (data.byteLength == 0) {
-            return;
-        }
-        this.#sendWebSocketMessage({ type: "message", data });
-    }
-    #sendMessage(message) {
-        this.assertIsConnected();
-        _console$9.log("sending webSocket message", message);
-        this.#webSocket.send(message);
-        this.#pingTimer.restart();
-    }
-    #sendWebSocketMessage(...messages) {
-        this.#sendMessage(createWebSocketMessage(...messages));
-    }
-    #boundWebSocketEventListeners = {
-        open: this.#onWebSocketOpen.bind(this),
-        message: this.#onWebSocketMessage.bind(this),
-        close: this.#onWebSocketClose.bind(this),
-        error: this.#onWebSocketError.bind(this),
-    };
-    #onWebSocketOpen(event) {
-        _console$9.log("webSocket.open", event);
-        this.#pingTimer.start();
-        this.status = "connected";
-        this.#requestDeviceInformation();
-    }
-    async #onWebSocketMessage(event) {
-        const arrayBuffer = await event.data.arrayBuffer();
-        const dataView = new DataView(arrayBuffer);
-        _console$9.log(`webSocket.message (${dataView.byteLength} bytes)`);
-        this.#parseWebSocketMessage(dataView);
-    }
-    #onWebSocketClose(event) {
-        _console$9.log("webSocket.close", event);
-        this.status = "notConnected";
-        this.#pingTimer.stop();
-    }
-    #onWebSocketError(event) {
-        _console$9.error("webSocket.error", event);
-    }
-    #parseWebSocketMessage(dataView) {
-        parseMessage(dataView, WebSocketMessageTypes, this.#onMessage.bind(this), null, true);
-    }
-    #onMessage(messageType, dataView) {
-        _console$9.log(`received "${messageType}" message (${dataView.byteLength} bytes)`);
-        switch (messageType) {
-            case "ping":
-                this.#pong();
-                break;
-            case "pong":
-                break;
-            case "batteryLevel":
-                this.onMessageReceived?.("batteryLevel", dataView);
-                break;
-            case "deviceInformation":
-                parseMessage(dataView, DeviceInformationTypes, (deviceInformationType, dataView) => {
-                    this.onMessageReceived(deviceInformationType, dataView);
-                });
-                break;
-            case "message":
-                this.parseRxMessage(dataView);
-                break;
-            default:
-                _console$9.error(`uncaught messageType "${messageType}"`);
-                break;
-        }
-    }
-    #pingTimer = new Timer(this.#ping.bind(this), webSocketPingTimeout - 1_000);
-    #ping() {
-        _console$9.log("pinging");
-        this.#sendWebSocketMessage("ping");
-    }
-    #pong() {
-        _console$9.log("ponging");
-        this.#sendWebSocketMessage("pong");
-    }
-    #requestDeviceInformation() {
-        this.#sendWebSocketMessage(...WebSocketDeviceInformationMessageTypes);
-    }
-    remove() {
-        super.remove();
-        this.webSocket = undefined;
-    }
-}
-
-var _a$1;
-const _console$8 = createConsole("Device", { log: false });
-const DeviceEventTypes = [
-    "connectionMessage",
-    ...ConnectionEventTypes,
-    ...MetaConnectionMessageTypes,
-    ...BatteryLevelMessageTypes,
-    ...InformationEventTypes,
-    ...DeviceInformationEventTypes,
-    ...SensorConfigurationEventTypes,
-    ...SensorDataEventTypes,
-    ...VibrationEventTypes,
-    ...FileTransferEventTypes,
-    ...TfliteEventTypes,
-    ...WifiEventTypes,
-    ...CameraEventTypes,
-    ...MicrophoneEventTypes,
-    ...DisplayEventTypes,
-    ...FirmwareEventTypes,
-];
-const RequiredInformationConnectionMessages = [
-    "isCharging",
-    "getBatteryCurrent",
-    "getId",
-    "getMtu",
-    "getName",
-    "getType",
-    "getCurrentTime",
-    "getSensorConfiguration",
-    "getSensorScalars",
-    "getVibrationLocations",
-    "getFileTypes",
-    "isWifiAvailable",
-];
-class Device {
-    get bluetoothId() {
-        return this.#connectionManager?.bluetoothId;
-    }
-    get isAvailable() {
-        return this.#connectionManager?.isAvailable;
-    }
-    constructor() {
-        this.#deviceInformationManager.eventDispatcher = this
-            .#eventDispatcher;
-        this._informationManager.sendMessage = this
-            .sendTxMessages;
-        this._informationManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.#sensorConfigurationManager.sendMessage = this
-            .sendTxMessages;
-        this.#sensorConfigurationManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.#sensorDataManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.#vibrationManager.sendMessage = this
-            .sendTxMessages;
-        this.#vibrationManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.#tfliteManager.sendMessage = this
-            .sendTxMessages;
-        this.#tfliteManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.#fileTransferManager.sendMessage = this
-            .sendTxMessages;
-        this.#fileTransferManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.#wifiManager.sendMessage = this
-            .sendTxMessages;
-        this.#wifiManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.#cameraManager.sendMessage = this
-            .sendTxMessages;
-        this.#cameraManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.#microphoneManager.sendMessage = this
-            .sendTxMessages;
-        this.#microphoneManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.#displayManager.sendMessage = this
-            .sendTxMessages;
-        this.#displayManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.#displayManager.sendFile = this.#fileTransferManager
-            .send;
-        this.#firmwareManager.sendMessage = this
-            .sendSmpMessage;
-        this.#firmwareManager.eventDispatcher = this
-            .#eventDispatcher;
-        this.addEventListener("getMtu", () => {
-            this.#firmwareManager.mtu = this.mtu;
-            this.#fileTransferManager.mtu = this.mtu;
-            this.connectionManager.mtu = this.mtu;
-            this.#displayManager.mtu = this.mtu;
-        });
-        this.addEventListener("getSensorConfiguration", () => {
-            if (this.connectionStatus != "connecting") {
-                return;
-            }
-            if (this.sensorTypes.includes("pressure")) {
-                _console$8.log("requesting required pressure information");
-                const messages = RequiredPressureMessageTypes.map((messageType) => ({
-                    type: messageType,
-                }));
-                this.sendTxMessages(messages, false);
-            }
-            else {
-                _console$8.log("don't need to request pressure infomration");
-            }
-            if (this.sensorTypes.includes("camera")) {
-                _console$8.log("requesting required camera information");
-                const messages = RequiredCameraMessageTypes.map((messageType) => ({
-                    type: messageType,
-                }));
-                this.sendTxMessages(messages, false);
-            }
-            else {
-                _console$8.log("don't need to request camera infomration");
-            }
-            if (this.sensorTypes.includes("microphone")) {
-                _console$8.log("requesting required microphone information");
-                const messages = RequiredMicrophoneMessageTypes.map((messageType) => ({
-                    type: messageType,
-                }));
-                this.sendTxMessages(messages, false);
-            }
-            else {
-                _console$8.log("don't need to request microphone infomration");
-            }
-        });
-        this.addEventListener("getFileTypes", () => {
-            if (this.connectionStatus != "connecting") {
-                return;
-            }
-            if (this.fileTypes.length > 0) {
-                this.#fileTransferManager.requestRequiredInformation();
-            }
-            if (this.fileTypes.includes("tflite")) {
-                this.#tfliteManager.requestRequiredInformation();
-            }
-        });
-        this.addEventListener("isWifiAvailable", () => {
-            if (this.connectionStatus != "connecting") {
-                return;
-            }
-            if (this.connectionType == "client" && !isInNode) {
-                return;
-            }
-            if (this.isWifiAvailable) {
-                if (this.connectionType != "client") {
-                    this.#wifiManager.requestRequiredInformation();
-                }
-            }
-        });
-        this.addEventListener("getType", () => {
-            if (this.connectionStatus != "connecting") {
-                return;
-            }
-            if (this.type == "glasses") {
-                this.#displayManager.requestRequiredInformation();
-            }
-        });
-        this.addEventListener("fileTransferProgress", (event) => {
-            const { fileType, progress } = event.message;
-            switch (fileType) {
-                case "spriteSheet":
-                    this.#dispatchEvent("displaySpriteSheetUploadProgress", {
-                        spriteSheet: this.#displayManager.pendingSpriteSheet,
-                        spriteSheetName: this.#displayManager.pendingSpriteSheetName,
-                        progress,
-                    });
-                    break;
-            }
-        });
-        this.addEventListener("fileTransferStatus", (event) => {
-            const { fileType, fileTransferStatus } = event.message;
-            switch (fileType) {
-                case "spriteSheet":
-                    if (fileTransferStatus == "sending") {
-                        this.#dispatchEvent("displaySpriteSheetUploadStart", {
-                            spriteSheet: this.#displayManager.pendingSpriteSheet,
-                            spriteSheetName: this.#displayManager.pendingSpriteSheetName,
-                        });
-                    }
-                    break;
-            }
-        });
-        DeviceManager$1.onDevice(this);
-        if (isInBrowser) {
-            window.addEventListener("beforeunload", () => {
-                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
-                    this.clearSensorConfiguration();
-                }
-            });
-        }
-        if (isInNode) {
-            process.on("exit", () => {
-                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
-                    this.clearSensorConfiguration();
-                }
-            });
-        }
-    }
-    static #DefaultConnectionManager() {
-        return new WebBluetoothConnectionManager();
-    }
-    #eventDispatcher = new EventDispatcher(this, DeviceEventTypes);
-    get addEventListener() {
-        return this.#eventDispatcher.addEventListener;
-    }
-    get #dispatchEvent() {
-        return this.#eventDispatcher.dispatchEvent;
-    }
-    get removeEventListener() {
-        return this.#eventDispatcher.removeEventListener;
-    }
-    get waitForEvent() {
-        return this.#eventDispatcher.waitForEvent;
-    }
-    get removeEventListeners() {
-        return this.#eventDispatcher.removeEventListeners;
-    }
-    get removeAllEventListeners() {
-        return this.#eventDispatcher.removeAllEventListeners;
-    }
-    #connectionManager;
-    get connectionManager() {
-        return this.#connectionManager;
-    }
-    set connectionManager(newConnectionManager) {
-        if (this.connectionManager == newConnectionManager) {
-            _console$8.log("same connectionManager is already assigned");
-            return;
-        }
-        if (this.connectionManager) {
-            this.connectionManager.remove();
-        }
-        if (newConnectionManager) {
-            newConnectionManager.onStatusUpdated =
-                this.#onConnectionStatusUpdated.bind(this);
-            newConnectionManager.onMessageReceived =
-                this.#onConnectionMessageReceived.bind(this);
-            newConnectionManager.onMessagesReceived =
-                this.#onConnectionMessagesReceived.bind(this);
-        }
-        this.#connectionManager = newConnectionManager;
-        _console$8.log("assigned new connectionManager", this.#connectionManager);
-        this._informationManager.connectionType = this.connectionType;
-    }
-    async #sendTxMessages(messages, sendImmediately) {
-        await this.#connectionManager?.sendTxMessages(messages, sendImmediately);
-    }
-    sendTxMessages = this.#sendTxMessages.bind(this);
-    async connect(options) {
-        _console$8.log("connect options", options);
-        if (options) {
-            switch (options.type) {
-                case "webBluetooth":
-                    if (this.connectionType != "webBluetooth") {
-                        this.connectionManager = new WebBluetoothConnectionManager();
-                    }
-                    break;
-                case "webSocket":
-                    {
-                        let createConnectionManager = false;
-                        if (this.connectionType == "webSocket") {
-                            const connectionManager = this
-                                .connectionManager;
-                            if (connectionManager.ipAddress != options.ipAddress ||
-                                connectionManager.isSecure != options.isWifiSecure) {
-                                createConnectionManager = true;
-                            }
-                        }
-                        else {
-                            createConnectionManager = true;
-                        }
-                        if (createConnectionManager) {
-                            this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isWifiSecure, this.bluetoothId);
-                        }
-                    }
-                    break;
-                case "udp":
-                    {
-                        let createConnectionManager = false;
-                        if (this.connectionType == "udp") {
-                            const connectionManager = this
-                                .connectionManager;
-                            if (connectionManager.ipAddress != options.ipAddress) {
-                                createConnectionManager = true;
-                            }
-                            this.reconnectOnDisconnection = true;
-                        }
-                        else {
-                            createConnectionManager = true;
-                        }
-                        if (createConnectionManager) {
-                            this.connectionManager = new UDPConnectionManager(options.ipAddress, this.bluetoothId);
-                        }
-                    }
-                    break;
-            }
-        }
-        if (!this.connectionManager) {
-            this.connectionManager = _a$1.#DefaultConnectionManager();
-        }
-        this.#clear();
-        if (options?.type == "client") {
-            _console$8.assertWithError(this.connectionType == "client", "expected clientConnectionManager");
-            const clientConnectionManager = this
-                .connectionManager;
-            clientConnectionManager.subType = options.subType;
-            return clientConnectionManager.connect();
-        }
-        _console$8.log("connectionManager type", this.connectionManager.type);
-        return this.connectionManager.connect();
-    }
-    #isConnected = false;
-    get isConnected() {
-        return this.#isConnected;
-    }
-    #assertIsConnected() {
-        _console$8.assertWithError(this.isConnected, "notConnected");
-    }
-    #didReceiveMessageTypes(messageTypes) {
-        return messageTypes.every((messageType) => {
-            const hasConnectionMessage = this.latestConnectionMessages.has(messageType);
-            if (!hasConnectionMessage) {
-                _console$8.log(`didn't receive "${messageType}" message`);
-            }
-            return hasConnectionMessage;
-        });
-    }
-    get #hasRequiredInformation() {
-        let hasRequiredInformation = this.#didReceiveMessageTypes(RequiredInformationConnectionMessages);
-        if (hasRequiredInformation && this.sensorTypes.includes("pressure")) {
-            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredPressureMessageTypes);
-        }
-        if (hasRequiredInformation && this.isWifiAvailable) {
-            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredWifiMessageTypes);
-        }
-        if (hasRequiredInformation && this.fileTypes.length > 0) {
-            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredFileTransferMessageTypes);
-        }
-        if (hasRequiredInformation && this.fileTypes.includes("tflite")) {
-            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredTfliteMessageTypes);
-        }
-        if (hasRequiredInformation && this.hasCamera) {
-            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredCameraMessageTypes);
-        }
-        if (hasRequiredInformation && this.hasMicrophone) {
-            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredMicrophoneMessageTypes);
-        }
-        if (hasRequiredInformation && this.isDisplayAvailable) {
-            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredDisplayMessageTypes);
-        }
-        return hasRequiredInformation;
-    }
-    #requestRequiredInformation() {
-        _console$8.log("requesting required information");
-        const messages = RequiredInformationConnectionMessages.map((messageType) => ({
-            type: messageType,
-        }));
-        this.#sendTxMessages(messages);
-    }
-    get canReconnect() {
-        return this.connectionManager?.canReconnect;
-    }
-    #assertCanReconnect() {
-        _console$8.assertWithError(this.canReconnect, "cannot reconnect to device");
-    }
-    async reconnect() {
-        this.#assertCanReconnect();
-        this.#clear();
-        return this.connectionManager?.reconnect();
-    }
-    static async Connect() {
-        const device = new _a$1();
-        await device.connect();
-        return device;
-    }
-    static #ReconnectOnDisconnection = false;
-    static get ReconnectOnDisconnection() {
-        return this.#ReconnectOnDisconnection;
-    }
-    static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$8.assertTypeWithError(newReconnectOnDisconnection, "boolean");
-        this.#ReconnectOnDisconnection = newReconnectOnDisconnection;
-    }
-    #reconnectOnDisconnection = _a$1.ReconnectOnDisconnection;
-    get reconnectOnDisconnection() {
-        return this.#reconnectOnDisconnection;
-    }
-    set reconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$8.assertTypeWithError(newReconnectOnDisconnection, "boolean");
-        this.#reconnectOnDisconnection = newReconnectOnDisconnection;
-    }
-    #reconnectIntervalId;
-    get connectionType() {
-        return this.connectionManager?.type;
-    }
-    async disconnect() {
-        this.#assertIsConnected();
-        if (this.reconnectOnDisconnection) {
-            this.reconnectOnDisconnection = false;
-            this.addEventListener("isConnected", () => {
-                this.reconnectOnDisconnection = true;
-            }, { once: true });
-        }
-        return this.connectionManager.disconnect();
-    }
-    toggleConnection() {
-        if (this.isConnected) {
-            this.disconnect();
-        }
-        else if (this.canReconnect) {
-            try {
-                this.reconnect();
-            }
-            catch (error) {
-                _console$8.error("error trying to reconnect", error);
-                this.connect();
-            }
-        }
-        else {
-            this.connect();
-        }
-    }
-    get connectionStatus() {
-        switch (this.#connectionManager?.status) {
-            case "connected":
-                return this.isConnected ? "connected" : "connecting";
-            case "notConnected":
-            case "connecting":
-            case "disconnecting":
-                return this.#connectionManager.status;
-            default:
-                return "notConnected";
-        }
-    }
-    get isConnectionBusy() {
-        return (this.connectionStatus == "connecting" ||
-            this.connectionStatus == "disconnecting");
-    }
-    #onConnectionStatusUpdated(connectionStatus) {
-        _console$8.log({ connectionStatus });
-        if (connectionStatus == "notConnected") {
-            this.#clearConnection();
-            if (this.canReconnect && this.reconnectOnDisconnection) {
-                _console$8.log("starting reconnect interval...");
-                this.#reconnectIntervalId = setInterval(() => {
-                    _console$8.log("attempting reconnect...");
-                    this.reconnect();
-                }, 1000);
-            }
-        }
-        else {
-            if (this.#reconnectIntervalId != undefined) {
-                _console$8.log("clearing reconnect interval");
-                clearInterval(this.#reconnectIntervalId);
-                this.#reconnectIntervalId = undefined;
-            }
-        }
-        this.#checkConnection();
-        if (connectionStatus == "connected" && !this.#isConnected) {
-            if (this.connectionType != "client") {
-                this.#requestRequiredInformation();
-            }
-        }
-        DeviceManager$1.OnDeviceConnectionStatusUpdated(this, connectionStatus);
-    }
-    #dispatchConnectionEvents(includeIsConnected = false) {
-        this.#dispatchEvent("connectionStatus", {
-            connectionStatus: this.connectionStatus,
-        });
-        this.#dispatchEvent(this.connectionStatus, {});
-        if (includeIsConnected) {
-            this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
-        }
-    }
-    #checkConnection() {
-        this.#isConnected =
-            Boolean(this.connectionManager?.isConnected) &&
-                this.#hasRequiredInformation &&
-                this._informationManager.isCurrentTimeSet;
-        switch (this.connectionStatus) {
-            case "connected":
-                if (this.#isConnected) {
-                    this.#dispatchConnectionEvents(true);
-                }
-                break;
-            case "notConnected":
-                this.#dispatchConnectionEvents(true);
-                break;
-            default:
-                this.#dispatchConnectionEvents(false);
-                break;
-        }
-    }
-    #clear() {
-        this.#clearConnection();
-        this._informationManager.clear();
-        this.#deviceInformationManager.clear();
-        this.#tfliteManager.clear();
-        this.#fileTransferManager.clear();
-        this.#wifiManager.clear();
-        this.#cameraManager.clear();
-        this.#microphoneManager.clear();
-        this.#sensorConfigurationManager.clear();
-        this.#displayManager.reset();
-    }
-    #clearConnection() {
-        this.connectionManager?.clear();
-        this.latestConnectionMessages.clear();
-    }
-    #onConnectionMessageReceived(messageType, dataView) {
-        _console$8.log({ messageType, dataView });
-        switch (messageType) {
-            case "batteryLevel":
-                const batteryLevel = dataView.getUint8(0);
-                _console$8.log("received battery level", { batteryLevel });
-                this.#updateBatteryLevel(batteryLevel);
-                break;
-            default:
-                if (FileTransferMessageTypes.includes(messageType)) {
-                    this.#fileTransferManager.parseMessage(messageType, dataView);
-                }
-                else if (TfliteMessageTypes.includes(messageType)) {
-                    this.#tfliteManager.parseMessage(messageType, dataView);
-                }
-                else if (SensorDataMessageTypes.includes(messageType)) {
-                    this.#sensorDataManager.parseMessage(messageType, dataView);
-                }
-                else if (FirmwareMessageTypes.includes(messageType)) {
-                    this.#firmwareManager.parseMessage(messageType, dataView);
-                }
-                else if (DeviceInformationTypes.includes(messageType)) {
-                    this.#deviceInformationManager.parseMessage(messageType, dataView);
-                }
-                else if (InformationMessageTypes.includes(messageType)) {
-                    this._informationManager.parseMessage(messageType, dataView);
-                }
-                else if (SensorConfigurationMessageTypes.includes(messageType)) {
-                    this.#sensorConfigurationManager.parseMessage(messageType, dataView);
-                }
-                else if (VibrationMessageTypes.includes(messageType)) {
-                    this.#vibrationManager.parseMessage(messageType, dataView);
-                }
-                else if (WifiMessageTypes.includes(messageType)) {
-                    this.#wifiManager.parseMessage(messageType, dataView);
-                }
-                else if (CameraMessageTypes.includes(messageType)) {
-                    this.#cameraManager.parseMessage(messageType, dataView);
-                }
-                else if (MicrophoneMessageTypes.includes(messageType)) {
-                    this.#microphoneManager.parseMessage(messageType, dataView);
-                }
-                else if (DisplayMessageTypes.includes(messageType)) {
-                    this.#displayManager.parseMessage(messageType, dataView);
-                }
-                else {
-                    throw Error(`uncaught messageType ${messageType}`);
-                }
-        }
-        this.latestConnectionMessages.set(messageType, dataView);
-        if (messageType.startsWith("set")) {
-            this.latestConnectionMessages.set(
-            messageType.replace("set", "get"), dataView);
-        }
-        this.#dispatchEvent("connectionMessage", { messageType, dataView });
-    }
-    #onConnectionMessagesReceived() {
-        if (!this.isConnected && this.#hasRequiredInformation) {
-            this.#checkConnection();
-        }
-        if (this.connectionStatus == "notConnected" ||
-            this.connectionStatus == "disconnecting") {
-            return;
-        }
-        this.#sendTxMessages();
-    }
-    latestConnectionMessages = new Map();
-    #deviceInformationManager = new DeviceInformationManager();
-    get deviceInformation() {
-        return this.#deviceInformationManager.information;
-    }
-    #batteryLevel = 0;
-    get batteryLevel() {
-        return this.#batteryLevel;
-    }
-    #updateBatteryLevel(updatedBatteryLevel) {
-        _console$8.assertTypeWithError(updatedBatteryLevel, "number");
-        if (this.#batteryLevel == updatedBatteryLevel) {
-            _console$8.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
-            return;
-        }
-        this.#batteryLevel = updatedBatteryLevel;
-        _console$8.log({ updatedBatteryLevel: this.#batteryLevel });
-        this.#dispatchEvent("batteryLevel", { batteryLevel: this.#batteryLevel });
-    }
-    _informationManager = new InformationManager();
-    get id() {
-        return this._informationManager.id;
-    }
-    get isCharging() {
-        return this._informationManager.isCharging;
-    }
-    get batteryCurrent() {
-        return this._informationManager.batteryCurrent;
-    }
-    get getBatteryCurrent() {
-        return this._informationManager.getBatteryCurrent;
-    }
-    get name() {
-        return this._informationManager.name;
-    }
-    get setName() {
-        return this._informationManager.setName;
-    }
-    get type() {
-        return this._informationManager.type;
-    }
-    get setType() {
-        return this._informationManager.setType;
-    }
-    get isInsole() {
-        return this._informationManager.isInsole;
-    }
-    get isGlove() {
-        return this._informationManager.isGlove;
-    }
-    get side() {
-        return this._informationManager.side;
-    }
-    get mtu() {
-        return this._informationManager.mtu;
-    }
-    get sensorTypes() {
-        return Object.keys(this.sensorConfiguration);
-    }
-    get continuousSensorTypes() {
-        return ContinuousSensorTypes.filter((sensorType) => this.sensorTypes.includes(sensorType));
-    }
-    #sensorConfigurationManager = new SensorConfigurationManager();
-    get sensorConfiguration() {
-        return this.#sensorConfigurationManager.configuration;
-    }
-    get setSensorConfiguration() {
-        return this.#sensorConfigurationManager.setConfiguration;
-    }
-    async clearSensorConfiguration() {
-        return this.#sensorConfigurationManager.clearSensorConfiguration();
-    }
-    static #ClearSensorConfigurationOnLeave = true;
-    static get ClearSensorConfigurationOnLeave() {
-        return this.#ClearSensorConfigurationOnLeave;
-    }
-    static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
-        _console$8.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
-        this.#ClearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
-    }
-    #clearSensorConfigurationOnLeave = _a$1.ClearSensorConfigurationOnLeave;
-    get clearSensorConfigurationOnLeave() {
-        return this.#clearSensorConfigurationOnLeave;
-    }
-    set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
-        _console$8.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
-        this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
-    }
-    get numberOfPressureSensors() {
-        return this.#sensorDataManager.pressureSensorDataManager.numberOfSensors;
-    }
-    #sensorDataManager = new SensorDataManager();
-    resetPressureRange() {
-        this.#sensorDataManager.pressureSensorDataManager.resetRange();
-    }
-    get vibrationLocations() {
-        return this.#vibrationManager.vibrationLocations;
-    }
-    #vibrationManager = new VibrationManager();
-    async triggerVibration(vibrationConfigurations, sendImmediately) {
-        this.#vibrationManager.triggerVibration(vibrationConfigurations, sendImmediately);
-    }
-    #fileTransferManager = new FileTransferManager();
-    get fileTypes() {
-        return this.#fileTransferManager.fileTypes;
-    }
-    get maxFileLength() {
-        return this.#fileTransferManager.maxLength;
-    }
-    get validFileTypes() {
-        return FileTypes.filter((fileType) => {
-            if (fileType.includes("wifi") && !this.isWifiAvailable) {
-                return false;
-            }
-            return true;
-        });
-    }
-    async sendFile(fileType, file) {
-        _console$8.assertWithError(this.validFileTypes.includes(fileType), `invalid fileType ${fileType}`);
-        const promise = this.waitForEvent("fileTransferComplete");
-        this.#fileTransferManager.send(fileType, file);
-        await promise;
-    }
-    async receiveFile(fileType) {
-        const promise = this.waitForEvent("fileTransferComplete");
-        this.#fileTransferManager.receive(fileType);
-        await promise;
-    }
-    get fileTransferStatus() {
-        return this.#fileTransferManager.status;
-    }
-    cancelFileTransfer() {
-        this.#fileTransferManager.cancel();
-    }
-    #tfliteManager = new TfliteManager();
-    get tfliteName() {
-        return this.#tfliteManager.name;
-    }
-    get setTfliteName() {
-        return this.#tfliteManager.setName;
-    }
-    async sendTfliteConfiguration(configuration) {
-        configuration.type = "tflite";
-        this.#tfliteManager.sendConfiguration(configuration, false);
-        const didSendFile = await this.#fileTransferManager.send(configuration.type, configuration.file);
-        if (!didSendFile) {
-            this.#sendTxMessages();
-        }
-    }
-    get tfliteTask() {
-        return this.#tfliteManager.task;
-    }
-    get setTfliteTask() {
-        return this.#tfliteManager.setTask;
-    }
-    get tfliteSampleRate() {
-        return this.#tfliteManager.sampleRate;
-    }
-    get setTfliteSampleRate() {
-        return this.#tfliteManager.setSampleRate;
-    }
-    get tfliteSensorTypes() {
-        return this.#tfliteManager.sensorTypes;
-    }
-    get allowedTfliteSensorTypes() {
-        return this.sensorTypes.filter((sensorType) => TfliteSensorTypes.includes(sensorType));
-    }
-    get setTfliteSensorTypes() {
-        return this.#tfliteManager.setSensorTypes;
-    }
-    get tfliteIsReady() {
-        return this.#tfliteManager.isReady;
-    }
-    get tfliteInferencingEnabled() {
-        return this.#tfliteManager.inferencingEnabled;
-    }
-    get setTfliteInferencingEnabled() {
-        return this.#tfliteManager.setInferencingEnabled;
-    }
-    async enableTfliteInferencing() {
-        return this.setTfliteInferencingEnabled(true);
-    }
-    async disableTfliteInferencing() {
-        return this.setTfliteInferencingEnabled(false);
-    }
-    get toggleTfliteInferencing() {
-        return this.#tfliteManager.toggleInferencingEnabled;
-    }
-    get tfliteCaptureDelay() {
-        return this.#tfliteManager.captureDelay;
-    }
-    get setTfliteCaptureDelay() {
-        return this.#tfliteManager.setCaptureDelay;
-    }
-    get tfliteThreshold() {
-        return this.#tfliteManager.threshold;
-    }
-    get setTfliteThreshold() {
-        return this.#tfliteManager.setThreshold;
-    }
-    #firmwareManager = new FirmwareManager();
-    get canUpdateFirmware() {
-        return this.#connectionManager?.canUpdateFirmware;
-    }
-    #assertCanUpdateFirmware() {
-        _console$8.assertWithError(this.canUpdateFirmware, "can't update firmware");
-    }
-    #sendSmpMessage(data) {
-        this.#assertCanUpdateFirmware();
-        return this.#connectionManager.sendSmpMessage(data);
-    }
-    sendSmpMessage = this.#sendSmpMessage.bind(this);
-    get uploadFirmware() {
-        this.#assertCanUpdateFirmware();
-        return this.#firmwareManager.uploadFirmware;
-    }
-    get canReset() {
-        return this.canUpdateFirmware;
-    }
-    async reset() {
-        _console$8.assertWithError(this.canReset, "reset is not enabled for this device");
-        await this.#firmwareManager.reset();
-        return this.#connectionManager.disconnect();
-    }
-    get firmwareStatus() {
-        return this.#firmwareManager.status;
-    }
-    get getFirmwareImages() {
-        this.#assertCanUpdateFirmware();
-        return this.#firmwareManager.getImages;
-    }
-    get firmwareImages() {
-        return this.#firmwareManager.images;
-    }
-    get eraseFirmwareImage() {
-        this.#assertCanUpdateFirmware();
-        return this.#firmwareManager.eraseImage;
-    }
-    get confirmFirmwareImage() {
-        this.#assertCanUpdateFirmware();
-        return this.#firmwareManager.confirmImage;
-    }
-    get testFirmwareImage() {
-        this.#assertCanUpdateFirmware();
-        return this.#firmwareManager.testImage;
-    }
-    #isServerSide = false;
-    get isServerSide() {
-        return this.#isServerSide;
-    }
-    set isServerSide(newIsServerSide) {
-        if (this.#isServerSide == newIsServerSide) {
-            _console$8.log("redundant isServerSide assignment");
-            return;
-        }
-        _console$8.log({ newIsServerSide });
-        this.#isServerSide = newIsServerSide;
-        this.#fileTransferManager.isServerSide = this.isServerSide;
-        this.#displayManager.isServerSide = this.isServerSide;
-    }
-    get isUkaton() {
-        return this.deviceInformation.modelNumber.includes("Ukaton");
-    }
-    #wifiManager = new WifiManager();
-    get isWifiAvailable() {
-        return this.#wifiManager.isWifiAvailable;
-    }
-    get wifiSSID() {
-        return this.#wifiManager.wifiSSID;
-    }
-    async setWifiSSID(newWifiSSID) {
-        return this.#wifiManager.setWifiSSID(newWifiSSID);
-    }
-    get wifiPassword() {
-        return this.#wifiManager.wifiPassword;
-    }
-    async setWifiPassword(newWifiPassword) {
-        return this.#wifiManager.setWifiPassword(newWifiPassword);
-    }
-    get isWifiConnected() {
-        return this.#wifiManager.isWifiConnected;
-    }
-    get ipAddress() {
-        return this.#wifiManager.ipAddress;
-    }
-    get wifiConnectionEnabled() {
-        return this.#wifiManager.wifiConnectionEnabled;
-    }
-    get enableWifiConnection() {
-        return this.#wifiManager.enableWifiConnection;
-    }
-    get setWifiConnectionEnabled() {
-        return this.#wifiManager.setWifiConnectionEnabled;
-    }
-    get disableWifiConnection() {
-        return this.#wifiManager.disableWifiConnection;
-    }
-    get toggleWifiConnection() {
-        return this.#wifiManager.toggleWifiConnection;
-    }
-    get isWifiSecure() {
-        return this.#wifiManager.isWifiSecure;
-    }
-    async reconnectViaWebSockets() {
-        _console$8.assertWithError(this.isWifiConnected, "wifi is not connected");
-        _console$8.assertWithError(this.connectionType != "webSocket", "already connected via webSockets");
-        _console$8.assertTypeWithError(this.ipAddress, "string");
-        _console$8.log("reconnecting via websockets...");
-        await this.disconnect();
-        await this.connect({
-            type: "webSocket",
-            ipAddress: this.ipAddress,
-            isWifiSecure: this.isWifiSecure,
-        });
-    }
-    async reconnectViaUDP() {
-        _console$8.assertWithError(isInNode, "udp is only available in node");
-        _console$8.assertWithError(this.isWifiConnected, "wifi is not connected");
-        _console$8.assertWithError(this.connectionType != "udp", "already connected via udp");
-        _console$8.assertTypeWithError(this.ipAddress, "string");
-        _console$8.log("reconnecting via udp...");
-        await this.disconnect();
-        await this.connect({
-            type: "udp",
-            ipAddress: this.ipAddress,
-        });
-    }
-    #cameraManager = new CameraManager();
-    get hasCamera() {
-        return this.sensorTypes.includes("camera");
-    }
-    get cameraStatus() {
-        return this.#cameraManager.cameraStatus;
-    }
-    #assertHasCamera() {
-        _console$8.assertWithError(this.hasCamera, "camera not available");
-    }
-    async takePicture(sensorRate = 10) {
-        this.#assertHasCamera();
-        if (this.sensorConfiguration.camera == 0) {
-            this.setSensorConfiguration({ camera: sensorRate }, false, false);
-        }
-        await this.#cameraManager.takePicture();
-    }
-    async focusCamera(sensorRate = 10) {
-        this.#assertHasCamera();
-        if (this.sensorConfiguration.camera == 0) {
-            this.setSensorConfiguration({ camera: sensorRate }, false, false);
-        }
-        await this.#cameraManager.focus();
-    }
-    async stopCamera() {
-        this.#assertHasCamera();
-        await this.#cameraManager.stop();
-    }
-    async wakeCamera() {
-        this.#assertHasCamera();
-        await this.#cameraManager.wake();
-    }
-    async sleepCamera() {
-        this.#assertHasCamera();
-        await this.#cameraManager.sleep();
-    }
-    get cameraConfiguration() {
-        return this.#cameraManager.cameraConfiguration;
-    }
-    get availableCameraConfigurationTypes() {
-        return this.#cameraManager.availableCameraConfigurationTypes;
-    }
-    get cameraConfigurationRanges() {
-        return this.#cameraManager.cameraConfigurationRanges;
-    }
-    get setCameraConfiguration() {
-        return this.#cameraManager.setCameraConfiguration;
-    }
-    #microphoneManager = new MicrophoneManager();
-    get hasMicrophone() {
-        return this.sensorTypes.includes("microphone");
-    }
-    get microphoneStatus() {
-        return this.#microphoneManager.microphoneStatus;
-    }
-    #assertHasMicrophone() {
-        _console$8.assertWithError(this.hasMicrophone, "microphone not available");
-    }
-    async startMicrophone(sensorRate = 10) {
-        this.#assertHasMicrophone();
-        if (this.sensorConfiguration.microphone == 0) {
-            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
-        }
-        await this.#microphoneManager.start();
-    }
-    async stopMicrophone() {
-        this.#assertHasMicrophone();
-        await this.#microphoneManager.stop();
-    }
-    async enableMicrophoneVad() {
-        this.#assertHasMicrophone();
-        await this.#microphoneManager.vad();
-    }
-    async toggleMicrophone(sensorRate = 10) {
-        this.#assertHasMicrophone();
-        if (this.sensorConfiguration.microphone == 0) {
-            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
-        }
-        await this.#microphoneManager.toggle();
-    }
-    get microphoneConfiguration() {
-        return this.#microphoneManager.microphoneConfiguration;
-    }
-    get availableMicrophoneConfigurationTypes() {
-        return this.#microphoneManager.availableMicrophoneConfigurationTypes;
-    }
-    get setMicrophoneConfiguration() {
-        return this.#microphoneManager.setMicrophoneConfiguration;
-    }
-    #assertWebAudioSupport() {
-        _console$8.assertWithError(AudioContext, "WebAudio is not supported");
-    }
-    get audioContext() {
-        this.#assertWebAudioSupport();
-        return this.#microphoneManager.audioContext;
-    }
-    set audioContext(newAudioContext) {
-        this.#assertWebAudioSupport();
-        this.#microphoneManager.audioContext = newAudioContext;
-    }
-    get microphoneMediaStreamDestination() {
-        this.#assertWebAudioSupport();
-        return this.#microphoneManager.mediaStreamDestination;
-    }
-    get microphoneGainNode() {
-        this.#assertWebAudioSupport();
-        return this.#microphoneManager.gainNode;
-    }
-    get isRecordingMicrophone() {
-        return this.#microphoneManager.isRecording;
-    }
-    startRecordingMicrophone() {
-        this.#assertWebAudioSupport();
-        this.#microphoneManager.startRecording();
-    }
-    stopRecordingMicrophone() {
-        this.#assertWebAudioSupport();
-        this.#microphoneManager.stopRecording();
-    }
-    toggleMicrophoneRecording() {
-        this.#assertWebAudioSupport();
-        this.#microphoneManager.toggleRecording();
-    }
-    #displayManager = new DisplayManager();
-    get isDisplayAvailable() {
-        return this.#displayManager.isAvailable;
-    }
-    get isDisplayReady() {
-        return this.#displayManager.isReady;
-    }
-    get displayContextState() {
-        return this.#displayManager.contextState;
-    }
-    get displayColors() {
-        return this.#displayManager.colors;
-    }
-    get displayBitmapColors() {
-        return this.#displayManager.bitmapColors;
-    }
-    get displayBitmapColorIndices() {
-        return this.#displayManager.bitmapColorIndices;
-    }
-    get displayColorOpacities() {
-        return this.#displayManager.opacities;
-    }
-    #assertDisplayIsAvailable() {
-        _console$8.assertWithError(this.isDisplayAvailable, "display not available");
-    }
-    get displayStatus() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.displayStatus;
-    }
-    get displayBrightness() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.brightness;
-    }
-    get setDisplayBrightness() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setBrightness;
-    }
-    get displayInformation() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.displayInformation;
-    }
-    get numberOfDisplayColors() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.numberOfColors;
-    }
-    get wakeDisplay() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.wake;
-    }
-    get sleepDisplay() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.sleep;
-    }
-    get toggleDisplay() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.toggle;
-    }
-    get isDisplayAwake() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.isDisplayAwake;
-    }
-    get showDisplay() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.show;
-    }
-    get clearDisplay() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.clear;
-    }
-    get setDisplayColor() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setColor;
-    }
-    get setDisplayColorOpacity() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setColorOpacity;
-    }
-    get setDisplayOpacity() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setOpacity;
-    }
-    get saveDisplayContext() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.saveContext;
-    }
-    get restoreDisplayContext() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.restoreContext;
-    }
-    get clearDisplayRect() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.clearRect;
-    }
-    get selectDisplayBackgroundColor() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.selectBackgroundColor;
-    }
-    get selectDisplayFillColor() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.selectFillColor;
-    }
-    get selectDisplayLineColor() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.selectLineColor;
-    }
-    get setDisplayIgnoreFill() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setIgnoreFill;
-    }
-    get setDisplayIgnoreLine() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setIgnoreLine;
-    }
-    get setDisplayFillBackground() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setFillBackground;
-    }
-    get setDisplayLineWidth() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setLineWidth;
-    }
-    get setDisplayRotation() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setRotation;
-    }
-    get clearDisplayRotation() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.clearRotation;
-    }
-    get setDisplaySegmentStartCap() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSegmentStartCap;
-    }
-    get setDisplaySegmentEndCap() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSegmentEndCap;
-    }
-    get setDisplaySegmentCap() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSegmentCap;
-    }
-    get setDisplaySegmentStartRadius() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSegmentStartRadius;
-    }
-    get setDisplaySegmentEndRadius() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSegmentEndRadius;
-    }
-    get setDisplaySegmentRadius() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSegmentRadius;
-    }
-    get setDisplayCropTop() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setCropTop;
-    }
-    get setDisplayCropRight() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setCropRight;
-    }
-    get setDisplayCropBottom() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setCropBottom;
-    }
-    get setDisplayCropLeft() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setCropLeft;
-    }
-    get setDisplayCrop() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setCrop;
-    }
-    get clearDisplayCrop() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.clearCrop;
-    }
-    get setDisplayRotationCropTop() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setRotationCropTop;
-    }
-    get setDisplayRotationCropRight() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setRotationCropRight;
-    }
-    get setDisplayRotationCropBottom() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setRotationCropBottom;
-    }
-    get setDisplayRotationCropLeft() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setRotationCropLeft;
-    }
-    get setDisplayRotationCrop() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setRotationCrop;
-    }
-    get clearDisplayRotationCrop() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.clearRotationCrop;
-    }
-    get flushDisplayContextCommands() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.flushContextCommands;
-    }
-    get drawDisplayRect() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawRect;
-    }
-    get drawDisplayCircle() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawCircle;
-    }
-    get drawDisplayEllipse() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawEllipse;
-    }
-    get drawDisplayRoundRect() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawRoundRect;
-    }
-    get drawDisplayRegularPolygon() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawRegularPolygon;
-    }
-    get drawDisplayPolygon() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawPolygon;
-    }
-    get drawDisplayWireframe() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawWireframe;
-    }
-    get drawDisplaySegment() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawSegment;
-    }
-    get drawDisplaySegments() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawSegments;
-    }
-    get drawDisplayArc() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawArc;
-    }
-    get drawDisplayArcEllipse() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawArcEllipse;
-    }
-    get drawDisplayBitmap() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawBitmap;
-    }
-    get imageToDisplayBitmap() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.imageToBitmap;
-    }
-    get quantizeDisplayImage() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.quantizeImage;
-    }
-    get resizeAndQuantizeDisplayImage() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.resizeAndQuantizeImage;
-    }
-    get setDisplayContextState() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setContextState;
-    }
-    get selectDisplayBitmapColor() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.selectBitmapColor;
-    }
-    get selectDisplayBitmapColors() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.selectBitmapColors;
-    }
-    get setDisplayBitmapColor() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setBitmapColor;
-    }
-    get setDisplayBitmapColorOpacity() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setBitmapColorOpacity;
-    }
-    get setDisplayBitmapScaleDirection() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setBitmapScaleDirection;
-    }
-    get setDisplayBitmapScaleX() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setBitmapScaleX;
-    }
-    get setDisplayBitmapScaleY() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setBitmapScaleY;
-    }
-    get setDisplayBitmapScale() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setBitmapScale;
-    }
-    get resetDisplayBitmapScale() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.resetBitmapScale;
-    }
-    get selectDisplaySpriteColor() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.selectSpriteColor;
-    }
-    get selectDisplaySpriteColors() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.selectSpriteColors;
-    }
-    get setDisplaySpriteColor() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSpriteColor;
-    }
-    get setDisplaySpriteColorOpacity() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSpriteColorOpacity;
-    }
-    get resetDisplaySpriteColors() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.resetSpriteColors;
-    }
-    get setDisplaySpriteScaleDirection() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSpriteScaleDirection;
-    }
-    get setDisplaySpriteScaleX() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSpriteScaleX;
-    }
-    get setDisplaySpriteScaleY() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSpriteScaleY;
-    }
-    get setDisplaySpriteScale() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.setSpriteScale;
-    }
-    get resetDisplaySpriteScale() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.resetSpriteScale;
-    }
-    get displayManager() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager;
-    }
-    get uploadDisplaySpriteSheet() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.uploadSpriteSheet;
-    }
-    get uploadDisplaySpriteSheets() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.uploadSpriteSheets;
-    }
-    get selectDisplaySpriteSheet() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.selectSpriteSheet;
-    }
-    get drawDisplaySprite() {
-        this.#assertDisplayIsAvailable();
-        return this.#displayManager.drawSprite;
-    }
-    get displaySpriteSheets() {
-        return this.#displayManager.spriteSheets;
-    }
-    get serializeDisplaySpriteSheet() {
-        return this.#displayManager.serializeSpriteSheet;
-    }
-    get setDisplayAlignment() {
-        return this.#displayManager.setAlignment;
-    }
-    get setDisplayVerticalAlignment() {
-        return this.#displayManager.setVerticalAlignment;
-    }
-    get setDisplayHorizontalAlignment() {
-        return this.#displayManager.setHorizontalAlignment;
-    }
-    get resetDisplayAlignment() {
-        return this.#displayManager.resetAlignment;
-    }
-    get setDisplaySpritesDirection() {
-        return this.#displayManager.setSpritesDirection;
-    }
-    get setDisplaySpritesLineDirection() {
-        return this.#displayManager.setSpritesLineDirection;
-    }
-    get setDisplaySpritesSpacing() {
-        return this.#displayManager.setSpritesSpacing;
-    }
-    get setDisplaySpritesLineSpacing() {
-        return this.#displayManager.setSpritesLineSpacing;
-    }
-    get setDisplaySpritesAlignment() {
-        return this.#displayManager.setSpritesAlignment;
-    }
-    get drawDisplayQuadraticBezierCurve() {
-        return this.#displayManager.drawQuadraticBezierCurve;
-    }
-    get drawDisplayQuadraticBezierCurves() {
-        return this.#displayManager.drawQuadraticBezierCurves;
-    }
-    get drawDisplayCubicBezierCurve() {
-        return this.#displayManager.drawCubicBezierCurve;
-    }
-    get drawDisplayCubicBezierCurves() {
-        return this.#displayManager.drawCubicBezierCurves;
-    }
-    get drawDisplayPath() {
-        return this.#displayManager.drawPath;
-    }
-    get drawDisplayClosedPath() {
-        return this.#displayManager.drawClosedPath;
-    }
-}
-_a$1 = Device;
-
 var svgson_umd = {exports: {}};
 
 (function (module, exports) {
@@ -25284,7 +18340,7 @@ const COMMAND_ARG_COUNTS = {
     [SVGPathData.ARC]: 7,
 };
 
-const _console$7 = createConsole("SvgUtils", { log: true });
+const _console$n = createConsole("SvgUtils", { log: true });
 function decomposeTransform(t, tolerance = 1e-6) {
     const tx = t.e;
     const ty = t.f;
@@ -25475,7 +18531,7 @@ function svgJsonToCanvasCommands(svgJson) {
                             commands.push({ type: "closePath" });
                             break;
                         default:
-                            _console$7.warn("uncaught command", cmd);
+                            _console$n.warn("uncaught command", cmd);
                             break;
                     }
                 }
@@ -25811,7 +18867,7 @@ function svgJsonToCanvasCommands(svgJson) {
             case "svg":
                 break;
             default:
-                _console$7.log("uncaught node", node);
+                _console$n.log("uncaught node", node);
                 break;
         }
         if (node.children) {
@@ -26063,16 +19119,16 @@ function classifySubpath(subpath, previous, fillRule) {
     }
 }
 function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, colors, options) {
-    _console$7.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
+    _console$n.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
     options = { ...defaultParseSvgOptions, ...options };
-    _console$7.log("options", options);
+    _console$n.log("options", options);
     const svgJson = svgson_umdExports.parseSync(svgString);
     let canvasCommands = svgJsonToCanvasCommands(svgJson);
-    _console$7.log("canvasCommands", canvasCommands);
+    _console$n.log("canvasCommands", canvasCommands);
     const boundingBox = getSvgJsonBoundingBox(svgJson);
     let intrinsicWidth = boundingBox.width;
     let intrinsicHeight = boundingBox.height;
-    _console$7.log({ intrinsicWidth, intrinsicHeight });
+    _console$n.log({ intrinsicWidth, intrinsicHeight });
     let scaleX = 1, scaleY = 1;
     if (options.width && options.height) {
         scaleX = options.width / intrinsicWidth;
@@ -26088,10 +19144,10 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
         if (options.aspectRatio)
             scaleX = scaleY * options.aspectRatio;
     }
-    _console$7.log({ scaleX, scaleY });
+    _console$n.log({ scaleX, scaleY });
     let width = intrinsicWidth * scaleX;
     let height = intrinsicWidth * scaleX;
-    _console$7.log({ width, height });
+    _console$n.log({ width, height });
     if (scaleX !== 1 || scaleY !== 1) {
         canvasCommands = scaleCanvasCommands(canvasCommands, scaleX, scaleY);
     }
@@ -26143,27 +19199,27 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
     if (svgColors.length == 1) {
         svgColors.push("white");
     }
-    _console$7.log("colors", svgColors);
+    _console$n.log("colors", svgColors);
     const colorToIndex = {};
     if (colors) {
         colors = colors.slice(0, numberOfColors);
         const mapping = mapToClosestPaletteIndex(svgColors, colors.slice(1));
-        _console$7.log("mapping", mapping, colors);
+        _console$n.log("mapping", mapping, colors);
         svgColors.forEach((color) => {
             colorToIndex[color] = mapping[color] + 1;
         });
     }
     else {
         const { palette, mapping } = kMeansColors(svgColors, numberOfColors);
-        _console$7.log("mapping", mapping);
-        _console$7.log("palette", palette);
+        _console$n.log("mapping", mapping);
+        _console$n.log("palette", palette);
         svgColors.forEach((color) => {
             colorToIndex[color] = mapping[color];
         });
         colors = palette;
     }
-    _console$7.log("colorToIndex", colorToIndex);
-    _console$7.log("transformed canvasCommands", canvasCommands);
+    _console$n.log("colorToIndex", colorToIndex);
+    _console$n.log("transformed canvasCommands", canvasCommands);
     let curves = [];
     let startPoint = { x: 0, y: 0 };
     let fillRule = "nonzero";
@@ -26366,19 +19422,19 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                 }
                 break;
             case "fillStyle":
-                _console$7.log("fillStyle", canvasCommand.fillStyle);
+                _console$n.log("fillStyle", canvasCommand.fillStyle);
                 if (fillStyle != canvasCommand.fillStyle) {
                     const newIgnoreFill = canvasCommand.fillStyle == "none";
                     if (ignoreFill != newIgnoreFill) {
                         ignoreFill = newIgnoreFill;
-                        _console$7.log({ ignoreFill });
+                        _console$n.log({ ignoreFill });
                         displayCommands.push({ type: "setIgnoreFill", ignoreFill });
                     }
                     if (!ignoreFill) {
                         if (fillStyle != canvasCommand.fillStyle) {
                             fillStyle = canvasCommand.fillStyle;
                             if (fillColorIndex != colorToIndex[fillStyle]) {
-                                _console$7.log({ fillColorIndex });
+                                _console$n.log({ fillColorIndex });
                                 fillColorIndex = colorToIndex[fillStyle];
                                 displayCommands.push({
                                     type: "selectFillColor",
@@ -26390,19 +19446,19 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                 }
                 break;
             case "strokeStyle":
-                _console$7.log("strokeStyle", canvasCommand.strokeStyle);
+                _console$n.log("strokeStyle", canvasCommand.strokeStyle);
                 if (strokeStyle != canvasCommand.strokeStyle) {
                     const newIgnoreLine = canvasCommand.strokeStyle == "none";
                     if (ignoreLine != newIgnoreLine) {
                         ignoreLine = newIgnoreLine;
-                        _console$7.log({ ignoreLine });
+                        _console$n.log({ ignoreLine });
                         displayCommands.push({ type: "setIgnoreLine", ignoreLine });
                     }
                     if (!ignoreLine) {
                         if (strokeStyle != canvasCommand.strokeStyle) {
                             strokeStyle = canvasCommand.strokeStyle;
                             if (lineColorIndex != colorToIndex[strokeStyle]) {
-                                _console$7.log({ lineColorIndex });
+                                _console$n.log({ lineColorIndex });
                                 lineColorIndex = colorToIndex[strokeStyle];
                                 displayCommands.push({
                                     type: "selectLineColor",
@@ -26491,18 +19547,18 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                 }
                 break;
             default:
-                _console$7.warn("uncaught canvasCommand", canvasCommand);
+                _console$n.warn("uncaught canvasCommand", canvasCommand);
                 break;
         }
     });
     displayCommands = trimContextCommands(displayCommands);
-    _console$7.log("displayCommands", displayCommands);
-    _console$7.log("colors", colors);
+    _console$n.log("displayCommands", displayCommands);
+    _console$n.log("colors", colors);
     return { commands: displayCommands, colors, width, height };
 }
 function svgToSprite(svgString, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0, options) {
     options = { ...defaultParseSvgOptions, ...options };
-    _console$7.log("options", options, { overridePalette });
+    _console$n.log("options", options, { overridePalette });
     let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
     if (!palette) {
         palette = {
@@ -26513,7 +19569,7 @@ function svgToSprite(svgString, spriteName, numberOfColors, paletteName, overrid
         spriteSheet.palettes = spriteSheet.palettes || [];
         spriteSheet.palettes?.push(palette);
     }
-    _console$7.log("pallete", palette);
+    _console$n.log("pallete", palette);
     const { commands, colors, width, height } = svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, !overridePalette ? palette.colors : undefined, options);
     const sprite = {
         name: spriteName,
@@ -26523,7 +19579,7 @@ function svgToSprite(svgString, spriteName, numberOfColors, paletteName, overrid
         commands,
     };
     if (overridePalette) {
-        _console$7.log("overriding palette", colors);
+        _console$n.log("overriding palette", colors);
         colors.forEach((color, index) => {
             palette.colors[index + paletteOffset] = color;
         });
@@ -26533,7 +19589,7 @@ function svgToSprite(svgString, spriteName, numberOfColors, paletteName, overrid
         spriteSheet.sprites.push(sprite);
     }
     else {
-        _console$7.log(`overwriting spriteInde ${spriteIndex}`);
+        _console$n.log(`overwriting spriteInde ${spriteIndex}`);
         spriteSheet.sprites[spriteIndex] = sprite;
     }
     return sprite;
@@ -26573,6 +19629,6962 @@ function isValidSVG(svgString) {
         root.nodeName.toLowerCase() === "svg" &&
         root.namespaceURI === "http://www.w3.org/2000/svg");
 }
+
+const _console$m = createConsole("DisplaySpriteSheetUtils", { log: false });
+const spriteHeaderLength = 3 * 2;
+function calculateSpriteSheetHeaderLength(numberOfSprites) {
+    return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
+}
+function serializeSpriteSheet(displayManager, spriteSheet) {
+    const { name, sprites } = spriteSheet;
+    _console$m.log(`serializing ${name} spriteSheet`, spriteSheet);
+    const numberOfSprites = sprites.length;
+    const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
+    numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
+    const spritePayloads = sprites.map((sprite, index) => {
+        const commandsData = serializeContextCommands(displayManager, sprite.commands);
+        const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
+        dataView.setUint16(0, sprite.width, true);
+        dataView.setUint16(2, sprite.height, true);
+        dataView.setUint16(4, commandsData.byteLength, true);
+        const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
+        _console$m.log("serializedSprite", sprite, serializedSprite);
+        return serializedSprite;
+    });
+    const spriteOffsetsDataView = new DataView(new ArrayBuffer(sprites.length * 2));
+    let offset = numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
+    spritePayloads.forEach((spritePayload, index) => {
+        spriteOffsetsDataView.setUint16(index * 2, offset, true);
+        offset += spritePayload.byteLength;
+    });
+    const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
+    _console$m.log("serializedSpriteSheet", serializedSpriteSheet);
+    return serializedSpriteSheet;
+}
+const defaultFontToSpriteSheetOptions = {
+    stroke: false,
+    strokeWidth: 1,
+    unicodeOnly: true,
+    englishOnly: true,
+    usePath: false,
+};
+function isWoff2(arrayBuffer) {
+    if (arrayBuffer.byteLength < 4)
+        return false;
+    const header = new Uint8Array(arrayBuffer, 0, 4);
+    return (header[0] === 0x77 &&
+        header[1] === 0x4f &&
+        header[2] === 0x46 &&
+        header[3] === 0x32
+    );
+}
+async function parseFont(arrayBuffer) {
+    if (isWoff2(arrayBuffer)) {
+        const result = await Q(arrayBuffer);
+        arrayBuffer = result.buffer;
+    }
+    const font = opentype.parse(arrayBuffer);
+    return font;
+}
+function getFontUnicodeRange(font) {
+    const rangeHelper = new RangeHelper();
+    for (let i = 0; i < font.glyphs.length; i++) {
+        const glyph = font.glyphs.get(i);
+        if (!glyph.unicodes || glyph.unicodes.length === 0)
+            continue;
+        glyph.unicodes
+            .filter((unicode) => {
+            const char = String.fromCodePoint(unicode);
+            return /\p{Letter}/u.test(char);
+        })
+            .forEach((unicode) => rangeHelper.update(unicode));
+    }
+    return rangeHelper.span > 0 ? rangeHelper.range : undefined;
+}
+const englishRegex = /^[A-Za-z0-9 !"#$%&'()*+,\-./:;?@[\]^_`{|}~\\]+$/;
+function contourArea(points) {
+    let area = 0;
+    for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+        area += (points[j].x - points[i].x) * (points[j].y + points[i].y);
+    }
+    return area;
+}
+async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
+    _console$m.assertTypeWithError(fontSize, "number");
+    options = options
+        ? { ...defaultFontToSpriteSheetOptions, ...options }
+        : defaultFontToSpriteSheetOptions;
+    const fonts = Array.isArray(font) ? font : [font];
+    font = fonts[0];
+    spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
+    const spriteSheet = {
+        name: spriteSheetName,
+        sprites: [],
+    };
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    for (let font of fonts) {
+        const fontScale = (1 / font.unitsPerEm) * fontSize;
+        let minSpriteY = Infinity;
+        let maxSpriteY = -Infinity;
+        const glyphs = [];
+        let filteredGlyphs;
+        if (options.string) {
+            filteredGlyphs = font
+                .stringToGlyphs(options.string)
+                .filter((glyph) => glyph.unicode != undefined);
+        }
+        for (let index = 0; index < font.glyphs.length; index++) {
+            const glyph = font.glyphs.get(index);
+            const hasUnicode = glyph.unicode != undefined;
+            if (filteredGlyphs) {
+                if (!filteredGlyphs.includes(glyph)) {
+                    continue;
+                }
+            }
+            if (options.unicodeOnly || options.englishOnly) {
+                if (!hasUnicode) {
+                    continue;
+                }
+            }
+            if (options.script && hasUnicode) {
+                const regex = new RegExp(`\\p{Script=${options.script}}`, "u");
+                if (!regex.test(String.fromCharCode(glyph.unicode))) {
+                    continue;
+                }
+            }
+            if (options.englishOnly) {
+                if (!englishRegex.test(String.fromCharCode(glyph.unicode))) {
+                    continue;
+                }
+            }
+            const bbox = glyph.getBoundingBox();
+            minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
+            maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
+            glyphs.push(glyph);
+        }
+        const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
+        const maxSpriteHeight = maxSpriteY - minSpriteY + strokeWidth;
+        for (let i = 0; i < glyphs.length; i++) {
+            const glyph = glyphs[i];
+            let name = glyph.name;
+            if (glyph.unicode != undefined) {
+                name = String.fromCharCode(glyph.unicode);
+            }
+            if (typeof name != "string") {
+                continue;
+            }
+            const bbox = glyph.getBoundingBox();
+            const spriteWidth = Math.round(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) * fontScale) + strokeWidth;
+            const spriteHeight = Math.round(maxSpriteHeight);
+            const commands = [];
+            const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
+            if (options.stroke) {
+                path.stroke = "white";
+                path.strokeWidth = strokeWidth;
+                commands.push({ type: "setLineWidth", lineWidth: strokeWidth });
+                commands.push({ type: "setIgnoreFill", ignoreFill: true });
+            }
+            else {
+                path.fill = "white";
+            }
+            const bitmapWidth = Math.floor((bbox.x2 - bbox.x1) * fontScale) + strokeWidth;
+            const bitmapHeight = Math.floor((bbox.y2 - bbox.y1) * fontScale) + strokeWidth;
+            const bitmapX = Math.floor((spriteWidth - bitmapWidth) / 2);
+            const bitmapY = Math.floor((spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY));
+            if (options.usePath) {
+                const pathOffset = {
+                    x: -bitmapWidth / 2 + bitmapX,
+                    y: -bitmapHeight / 2 + bitmapY,
+                };
+                let curves = [];
+                let startPoint = { x: 0, y: 0 };
+                const parsedPaths = [];
+                let wasHole = false;
+                let pathCommands = path.commands;
+                pathCommands.forEach((cmd) => {
+                    switch (cmd.type) {
+                        case "M":
+                            {
+                                startPoint.x = cmd.x;
+                                startPoint.y = cmd.y;
+                            }
+                            break;
+                        case "L":
+                            {
+                                const controlPoints = [{ x: cmd.x, y: cmd.y }];
+                                if (curves.length === 0) {
+                                    controlPoints.unshift({ ...startPoint });
+                                }
+                                curves.push({ type: "segment", controlPoints });
+                            }
+                            break;
+                        case "Q":
+                            {
+                                const controlPoints = [
+                                    { x: cmd.x1, y: cmd.y1 },
+                                    { x: cmd.x, y: cmd.y },
+                                ];
+                                if (curves.length === 0) {
+                                    controlPoints.unshift({ ...startPoint });
+                                }
+                                curves.push({ type: "quadratic", controlPoints });
+                            }
+                            break;
+                        case "C":
+                            {
+                                const controlPoints = [
+                                    { x: cmd.x1, y: cmd.y1 },
+                                    { x: cmd.x2, y: cmd.y2 },
+                                    { x: cmd.x, y: cmd.y },
+                                ];
+                                if (curves.length === 0) {
+                                    controlPoints.unshift({ ...startPoint });
+                                }
+                                curves.push({ type: "cubic", controlPoints });
+                            }
+                            break;
+                        case "Z":
+                            {
+                                if (curves.length === 0) {
+                                    break;
+                                }
+                                curves = simplifyCurves(curves);
+                                const controlPoints = curves.flatMap((c) => c.controlPoints);
+                                controlPoints.forEach((pt) => {
+                                    pt.x = Math.floor(pt.x + pathOffset.x);
+                                    pt.y = Math.floor(pt.y + pathOffset.y);
+                                });
+                                const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
+                                parsedPaths.push({ path: controlPoints, isHole });
+                                if (isHole != wasHole) {
+                                    wasHole = isHole;
+                                    if (isHole) {
+                                        commands.push({
+                                            type: "selectFillColor",
+                                            fillColorIndex: 0,
+                                        });
+                                    }
+                                    else {
+                                        commands.push({
+                                            type: "selectFillColor",
+                                            fillColorIndex: 1,
+                                        });
+                                    }
+                                }
+                                const isSegments = curves.every((c) => c.type === "segment");
+                                if (isSegments) {
+                                    if (options.stroke) {
+                                        commands.push({
+                                            type: "drawSegments",
+                                            points: controlPoints,
+                                        });
+                                    }
+                                    else {
+                                        commands.push({
+                                            type: "drawPolygon",
+                                            points: controlPoints,
+                                        });
+                                    }
+                                }
+                                else {
+                                    if (options.stroke) {
+                                        commands.push({ type: "drawPath", curves });
+                                    }
+                                    else {
+                                        commands.push({ type: "drawClosedPath", curves });
+                                    }
+                                }
+                                curves = [];
+                            }
+                            break;
+                    }
+                });
+            }
+            else {
+                if (bitmapWidth > 0 && bitmapHeight > 0) {
+                    canvas.width = bitmapWidth;
+                    canvas.height = bitmapHeight;
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.fillStyle = "black";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    path.draw(ctx);
+                    const { colorIndices } = await quantizeCanvas(canvas, 2, [
+                        "#000000",
+                        "#ffffff",
+                    ]);
+                    const bitmap = {
+                        width: bitmapWidth,
+                        height: bitmapHeight,
+                        numberOfColors: 2,
+                        pixels: colorIndices,
+                    };
+                    commands.push({
+                        type: "selectBitmapColor",
+                        bitmapColorIndex: 1,
+                        colorIndex: 1,
+                    });
+                    commands.push({
+                        type: "drawBitmap",
+                        offsetX: bitmapX,
+                        offsetY: bitmapY,
+                        bitmap,
+                    });
+                }
+            }
+            const sprite = {
+                name,
+                commands,
+                width: spriteWidth,
+                height: spriteHeight,
+            };
+            spriteSheet.sprites.push(sprite);
+        }
+    }
+    return spriteSheet;
+}
+function stringToSprites(string, spriteSheet, requireAll = false) {
+    const sprites = [];
+    let substring = string;
+    while (substring.length > 0) {
+        let longestSprite;
+        spriteSheet.sprites.forEach((sprite) => {
+            if (substring.startsWith(sprite.name)) {
+                if (!longestSprite || sprite.name.length > longestSprite.name.length) {
+                    longestSprite = sprite;
+                }
+            }
+        });
+        if (requireAll) {
+            _console$m.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${substring}"`);
+        }
+        if (longestSprite) {
+            sprites.push(longestSprite);
+            substring = substring.substring(longestSprite.name.length);
+        }
+        else {
+            substring = substring.substring(1);
+        }
+    }
+    return sprites;
+}
+function getReferencedSprites(sprite, spriteSheet) {
+    const sprites = [];
+    sprite.commands
+        .filter((command) => command.type == "drawSprite")
+        .map((command) => command.spriteIndex)
+        .map((spriteIndex) => spriteSheet.sprites[spriteIndex])
+        .forEach((_sprite) => {
+        if (!sprites.includes(_sprite)) {
+            sprites.push(_sprite);
+            sprites.push(...getReferencedSprites(_sprite, spriteSheet));
+        }
+    });
+    _console$m.log("referencedSprites", sprite, sprites);
+    return sprites;
+}
+function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
+    const reducedSpriteSheet = Object.assign({}, spriteSheet);
+    if (!(spriteNames instanceof Array)) {
+        spriteNames = stringToSprites(spriteNames, spriteSheet, requireAll).map((sprite) => sprite.name);
+    }
+    _console$m.log("reducingSpriteSheet", spriteSheet, spriteNames);
+    reducedSpriteSheet.sprites = [];
+    spriteSheet.sprites.forEach((sprite) => {
+        if (spriteNames.includes(sprite.name)) {
+            reducedSpriteSheet.sprites.push(sprite);
+            reducedSpriteSheet.sprites.push(...getReferencedSprites(sprite, spriteSheet));
+        }
+    });
+    _console$m.log("reducedSpriteSheet", reducedSpriteSheet);
+    return reducedSpriteSheet;
+}
+function stringToSpriteLines(string, spriteSheets, contextState, requireAll = false, maxLineBreadth = Infinity, separators = [" "]) {
+    _console$m.log("stringToSpriteLines", string);
+    const isSpritesDirectionHorizontal = isDirectionHorizontal(contextState.spritesDirection);
+    const isSpritesLineDirectionHorizontal = isDirectionHorizontal(contextState.spritesLineDirection);
+    const areSpritesDirectionsOrthogonal = isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
+    const lineStrings = string.split("\n");
+    let lineBreadth = 0;
+    if (isSpritesLineDirectionHorizontal) {
+        maxLineBreadth /= contextState.spriteScaleX;
+    }
+    else {
+        maxLineBreadth /= contextState.spriteScaleY;
+    }
+    const sprites = [];
+    let latestSeparatorIndex = -1;
+    let latestSeparator;
+    let latestSeparatorLineBreadth;
+    let latestSeparatorBreadth;
+    const spritesLineIndices = [];
+    lineStrings.forEach((lineString) => {
+        sprites.push([]);
+        spritesLineIndices.push([]);
+        const i = sprites.length - 1;
+        if (areSpritesDirectionsOrthogonal) {
+            lineBreadth = 0;
+        }
+        else {
+            lineBreadth += contextState.spritesLineSpacing;
+        }
+        let lineSubstring = lineString;
+        while (lineSubstring.length > 0) {
+            let longestSprite;
+            let longestSpriteSheet;
+            for (let spriteSheetName in spriteSheets) {
+                const spriteSheet = spriteSheets[spriteSheetName];
+                spriteSheet.sprites.forEach((sprite) => {
+                    if (lineSubstring.startsWith(sprite.name)) {
+                        if (!longestSprite ||
+                            sprite.name.length > longestSprite.name.length) {
+                            longestSprite = sprite;
+                            longestSpriteSheet = spriteSheet;
+                        }
+                    }
+                });
+            }
+            if (requireAll) {
+                _console$m.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${lineSubstring}"`);
+            }
+            if (longestSprite && longestSpriteSheet) {
+                const isSeparator = separators.length > 0
+                    ? separators.includes(longestSprite.name)
+                    : true;
+                sprites[i].push({
+                    sprite: longestSprite,
+                    spriteSheet: longestSpriteSheet,
+                });
+                let newLineBreadth = lineBreadth;
+                const longestSpriteBreadth = isSpritesDirectionHorizontal
+                    ? longestSprite.width
+                    : longestSprite.height;
+                newLineBreadth += longestSpriteBreadth;
+                newLineBreadth += contextState.spritesSpacing;
+                if (newLineBreadth >= maxLineBreadth) {
+                    if (isSeparator) {
+                        if (longestSprite.name.trim().length == 0) {
+                            sprites[i].pop();
+                        }
+                        spritesLineIndices[i].push(sprites[i].length);
+                        lineBreadth = 0;
+                    }
+                    else {
+                        if (latestSeparatorIndex != -1) {
+                            if (latestSeparator.trim().length == 0) {
+                                sprites[i].splice(latestSeparatorIndex, 1);
+                                lineBreadth -= latestSeparatorBreadth;
+                            }
+                            spritesLineIndices[i].push(latestSeparatorIndex);
+                            lineBreadth = newLineBreadth - latestSeparatorLineBreadth;
+                        }
+                        else {
+                            spritesLineIndices[i].push(sprites[i].length - 1);
+                            lineBreadth = 0;
+                        }
+                    }
+                    latestSeparatorIndex = -1;
+                    latestSeparator = undefined;
+                }
+                else {
+                    lineBreadth = newLineBreadth;
+                    if (isSeparator) {
+                        latestSeparator = longestSprite.name;
+                        latestSeparatorIndex = sprites[i].length - 1;
+                        latestSeparatorLineBreadth = lineBreadth;
+                        latestSeparatorBreadth = longestSpriteBreadth;
+                    }
+                }
+                lineSubstring = lineSubstring.substring(longestSprite.name.length);
+            }
+            else {
+                lineSubstring = lineSubstring.substring(1);
+            }
+        }
+    });
+    const spriteLines = [];
+    sprites.forEach((_sprites, i) => {
+        let spriteLine = [];
+        spriteLines.push(spriteLine);
+        let spriteSubLine;
+        _sprites.forEach(({ sprite, spriteSheet }, index) => {
+            if (spritesLineIndices[i].includes(index)) {
+                spriteLine = [];
+                spriteLines.push(spriteLine);
+                spriteSubLine = undefined;
+            }
+            if (!spriteSubLine || spriteSubLine.spriteSheetName != spriteSheet.name) {
+                spriteSubLine = {
+                    spriteSheetName: spriteSheet.name,
+                    spriteNames: [],
+                };
+                spriteLine.push(spriteSubLine);
+            }
+            spriteSubLine.spriteNames.push(sprite.name);
+        });
+    });
+    _console$m.log(`spriteLines for "${string}"`, spriteLines);
+    return spriteLines;
+}
+function getFontMaxHeight(font, fontSize) {
+    const scale = (1 / font.unitsPerEm) * fontSize;
+    const maxHeight = (font.ascender - font.descender) * scale;
+    return maxHeight;
+}
+function getMaxSpriteSheetSize(spriteSheet) {
+    const size = { width: 0, height: 0 };
+    spriteSheet.sprites.forEach((sprite) => {
+        size.width = Math.max(size.width, sprite.width);
+        size.height = Math.max(size.height, sprite.height);
+    });
+    return size;
+}
+
+const _console$l = createConsole("DisplayBitmapUtils", { log: true });
+const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
+function getBitmapData(bitmap) {
+    const pixelDataLength = getBitmapNumberOfBytes(bitmap);
+    const dataView = new DataView(new ArrayBuffer(pixelDataLength));
+    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    bitmap.pixels.forEach((bitmapColorIndex, pixelIndex) => {
+        const byteIndex = Math.floor(pixelIndex / pixelsPerByte);
+        const byteSlot = pixelIndex % pixelsPerByte;
+        const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
+        const bitOffset = pixelBitWidth * byteSlot;
+        const shift = 8 - pixelBitWidth - bitOffset;
+        let value = dataView.getUint8(byteIndex);
+        value |= bitmapColorIndex << shift;
+        dataView.setUint8(byteIndex, value);
+    });
+    _console$l.log("getBitmapData", bitmap, dataView);
+    return dataView;
+}
+async function quantizeCanvas(canvas, numberOfColors, colors) {
+    _console$l.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    removeAlphaFromCanvas(canvas);
+    const isSmall = canvas.width * canvas.height < 4;
+    const quantOptions = {
+        method: isSmall ? 1 : 2,
+        colors: numberOfColors,
+        dithKern: null,
+        useCache: false,
+        reIndex: true,
+        orDist: "manhattan",
+    };
+    if (colors) {
+        quantOptions.palette = colors.map((color) => {
+            const rgb = hexToRGB(color);
+            if (rgb) {
+                const { r, g, b } = rgb;
+                return [r, g, b];
+            }
+            else {
+                _console$l.error(`invalid rgb hex "${color}"`);
+            }
+        });
+    }
+    const quantizer = new RGBQuant(quantOptions);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    quantizer.sample(imageData);
+    const quantizedPixels = quantizer.reduce(imageData.data);
+    const quantizedImageData = new ImageData(new Uint8ClampedArray(quantizedPixels.buffer), canvas.width, canvas.height);
+    ctx.putImageData(quantizedImageData, 0, 0);
+    const pixels = quantizedImageData.data;
+    const quantizedPaletteData = quantizer.palette();
+    const numberOfQuantizedPaletteColors = quantizedPaletteData.byteLength / 4;
+    const quantizedPaletteColors = [];
+    let closestColorIndexToBlack = 0;
+    let closestColorDistanceToBlack = Infinity;
+    const vector3 = { x: 0, y: 0, z: 0 };
+    for (let colorIndex = 0; colorIndex < numberOfQuantizedPaletteColors; colorIndex++) {
+        const rgb = {
+            r: quantizedPaletteData[colorIndex * 4],
+            g: quantizedPaletteData[colorIndex * 4 + 1],
+            b: quantizedPaletteData[colorIndex * 4 + 2],
+        };
+        quantizedPaletteColors.push(rgb);
+        vector3.x = rgb.r;
+        vector3.y = rgb.g;
+        vector3.z = rgb.b;
+        const distanceToBlack = getVector3Length(vector3);
+        if (distanceToBlack < closestColorDistanceToBlack) {
+            closestColorDistanceToBlack = distanceToBlack;
+            closestColorIndexToBlack = colorIndex;
+        }
+    }
+    if (closestColorIndexToBlack != 0) {
+        const [currentBlack, newBlack] = [
+            quantizedPaletteColors[0],
+            quantizedPaletteColors[closestColorIndexToBlack],
+        ];
+        quantizedPaletteColors[0] = newBlack;
+        quantizedPaletteColors[closestColorIndexToBlack] = currentBlack;
+    }
+    const quantizedColors = quantizedPaletteColors.map((rgb, index) => {
+        const hex = rgbToHex(rgb);
+        return hex;
+    });
+    const quantizedColorIndices = [];
+    for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        pixels[i + 3];
+        const hex = rgbToHex({ r, g, b });
+        quantizedColorIndices.push(quantizedColors.indexOf(hex));
+    }
+    const promise = new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) {
+                resolve(blob);
+            }
+            else {
+                reject();
+            }
+        }, "image/png");
+    });
+    const blob = await promise;
+    return {
+        blob,
+        colors: quantizedColors,
+        colorIndices: quantizedColorIndices,
+    };
+}
+async function quantizeImage(image, width, height, numberOfColors, colors, canvas) {
+    canvas = canvas || document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
+    _console$l.log({ imageWidth, imageHeight });
+    canvas.width = width;
+    canvas.height = height;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(image, 0, 0, width, height);
+    return quantizeCanvas(canvas, numberOfColors, colors);
+}
+function resizeImage(image, width, height, canvas) {
+    canvas = canvas || document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    canvas.width = width;
+    canvas.height = height;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(image, 0, 0, width, height);
+    return canvas;
+}
+function cropCanvas(canvas, x, y, width, height, targetCanvas) {
+    targetCanvas = targetCanvas || document.createElement("canvas");
+    const ctx = targetCanvas.getContext("2d", { willReadFrequently: true });
+    targetCanvas.width = width;
+    targetCanvas.height = height;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
+    return targetCanvas;
+}
+function removeAlphaFromCanvas(canvas) {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3];
+        if (alpha < 255) {
+            data[i] = 0;
+            data[i + 1] = 0;
+            data[i + 2] = 0;
+            data[i + 3] = 255;
+        }
+    }
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+}
+async function resizeAndQuantizeImage(image, width, height, numberOfColors, colors, canvas) {
+    canvas = canvas || document.createElement("canvas");
+    resizeImage(image, width, height, canvas);
+    removeAlphaFromCanvas(canvas);
+    return quantizeCanvas(canvas, numberOfColors, colors);
+}
+async function imageToBitmap(image, width, height, colors, bitmapColorIndices, numberOfColors) {
+    if (numberOfColors == undefined) {
+        numberOfColors = colors.length;
+    }
+    const bitmapColors = bitmapColorIndices
+        .map((bitmapColorIndex) => colors[bitmapColorIndex])
+        .slice(0, numberOfColors);
+    const { blob, colorIndices } = await resizeAndQuantizeImage(image, width, height, numberOfColors, bitmapColors);
+    const bitmap = {
+        numberOfColors,
+        pixels: colorIndices,
+        width,
+        height,
+    };
+    return { blob, bitmap };
+}
+const drawSpriteBitmapCommandHeaderLength = 1 + 2 + 2 + 2 + 2 + 1 + 2;
+async function canvasToBitmaps(canvas, numberOfColors, mtu) {
+    const { blob, colors, colorIndices } = await quantizeCanvas(canvas, numberOfColors);
+    const bitmapRows = [];
+    const { width, height } = canvas;
+    const numberOfPixels = width * height;
+    const pixelDepth = DisplayPixelDepths.find((pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors);
+    _console$l.assertWithError(pixelDepth, `no pixelDepth found that covers ${numberOfColors} colors`);
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
+    _console$l.log({
+        width,
+        height,
+        numberOfPixels,
+        pixelDepth,
+        pixelsPerByte,
+        numberOfBytes,
+        mtu,
+    });
+    const maxPixelDataLength = mtu - (drawSpriteBitmapCommandHeaderLength + 5);
+    const maxPixels = Math.floor(maxPixelDataLength / pixelsPerByte);
+    const maxBitmapWidth = Math.min(maxPixels, width);
+    let maxBitmapHeight = 1;
+    if (maxBitmapWidth == width) {
+        const bitmapRowPixelDataLength = Math.ceil(width / pixelsPerByte);
+        maxBitmapHeight = Math.floor(maxPixelDataLength / bitmapRowPixelDataLength);
+    }
+    _console$l.log({
+        maxPixelDataLength,
+        maxPixels,
+        maxBitmapHeight,
+        maxBitmapWidth,
+    });
+    if (maxBitmapHeight >= height) {
+        _console$l.log("image is small enough for a single bitmap");
+        const bitmap = {
+            numberOfColors,
+            pixels: colorIndices,
+            width,
+            height,
+        };
+        bitmapRows.push([bitmap]);
+    }
+    else {
+        let offsetX = 0;
+        let offsetY = 0;
+        const bitmapCanvas = document.createElement("canvas");
+        const bitmapColorIndices = new Array(numberOfColors)
+            .fill(0)
+            .map((_, i) => i);
+        while (offsetY < height) {
+            const bitmapHeight = Math.min(maxBitmapHeight, height - offsetY);
+            offsetX = 0;
+            const bitmapRow = [];
+            bitmapRows.push(bitmapRow);
+            while (offsetX < width) {
+                const bitmapWidth = Math.min(maxBitmapWidth, width - offsetX);
+                cropCanvas(canvas, offsetX, offsetY, bitmapWidth, bitmapHeight, bitmapCanvas);
+                const { bitmap } = await imageToBitmap(bitmapCanvas, bitmapWidth, bitmapHeight, colors, bitmapColorIndices, numberOfColors);
+                bitmapRow.push(bitmap);
+                offsetX += bitmapWidth;
+            }
+            offsetY += bitmapHeight;
+        }
+    }
+    return { bitmapRows, colors };
+}
+async function imageToBitmaps(image, width, height, numberOfColors, mtu) {
+    const canvas = resizeImage(image, width, height);
+    return canvasToBitmaps(canvas, numberOfColors, mtu);
+}
+function getBitmapNumberOfBytes(bitmap) {
+    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    const numberOfPixels = bitmap.pixels.length;
+    const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
+    _console$l.log({
+        pixelDepth,
+        pixelsPerByte,
+        numberOfPixels,
+        pixelDataLength,
+    });
+    return pixelDataLength;
+}
+function assertValidBitmapPixels(bitmap) {
+    _console$l.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, bitmap.width * (bitmap.height - 1) + 1, bitmap.width * bitmap.height);
+    bitmap.pixels.forEach((pixel, index) => {
+        _console$l.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
+    });
+}
+async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0) {
+    const { width, height } = canvas;
+    let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
+    if (!palette) {
+        palette = {
+            name: paletteName,
+            numberOfColors,
+            colors: new Array(numberOfColors).fill("#000000"),
+        };
+        spriteSheet.palettes = spriteSheet.palettes || [];
+        spriteSheet.palettes?.push(palette);
+    }
+    _console$l.log("pallete", palette);
+    const sprite = {
+        name: spriteName,
+        width,
+        height,
+        paletteSwaps: [],
+        commands: [],
+    };
+    const results = await quantizeCanvas(canvas, numberOfColors, !overridePalette ? palette.colors : undefined);
+    const blob = results.blob;
+    const colorIndices = results.colorIndices;
+    if (overridePalette) {
+        results.colors.forEach((color, index) => {
+            palette.colors[index + paletteOffset] = color;
+        });
+    }
+    sprite.commands.push({
+        type: "selectBitmapColors",
+        bitmapColorPairs: new Array(numberOfColors).fill(0).map((_, index) => ({
+            bitmapColorIndex: index,
+            colorIndex: index + paletteOffset,
+        })),
+    });
+    const bitmap = {
+        numberOfColors,
+        pixels: colorIndices,
+        width,
+        height,
+    };
+    sprite.commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
+    const spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
+    if (spriteIndex == -1) {
+        spriteSheet.sprites.push(sprite);
+    }
+    else {
+        _console$l.log(`overwriting spriteIndex ${spriteIndex}`);
+        spriteSheet.sprites[spriteIndex] = sprite;
+    }
+    return { sprite, blob };
+}
+async function imageToSprite(image, spriteName, width, height, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0) {
+    const canvas = resizeImage(image, width, height);
+    return canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset);
+}
+const spriteSheetWithSingleBitmapCommandLength = calculateSpriteSheetHeaderLength(1) + drawSpriteBitmapCommandHeaderLength;
+function spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) {
+    return (spriteSheetWithSingleBitmapCommandLength + (1 + 1 + numberOfColors * 2));
+}
+async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength) {
+    const spriteSheet = {
+        name: spriteSheetName,
+        palettes: [],
+        paletteSwaps: [],
+        sprites: [],
+    };
+    if (maxFileLength == undefined) {
+        await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
+    }
+    else {
+        const { width, height } = canvas;
+        const numberOfPixels = width * height;
+        const pixelDepth = DisplayPixelDepths.find((pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors);
+        _console$l.assertWithError(pixelDepth, `no pixelDepth found that covers ${numberOfColors} colors`);
+        const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+        const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
+        _console$l.log({
+            width,
+            height,
+            numberOfPixels,
+            pixelDepth,
+            pixelsPerByte,
+            numberOfBytes,
+            maxFileLength,
+        });
+        const maxPixelDataLength = maxFileLength -
+            (spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) +
+                5);
+        const imageRowPixelDataLength = Math.ceil(width / pixelsPerByte);
+        const maxSpriteHeight = Math.floor(maxPixelDataLength / imageRowPixelDataLength);
+        if (maxSpriteHeight >= height) {
+            _console$l.log("image is small enough for a single sprite");
+            await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
+        }
+        else {
+            const { colors } = await quantizeCanvas(canvas, numberOfColors);
+            spriteSheet.palettes?.push({ name: paletteName, numberOfColors, colors });
+            let offsetY = 0;
+            let imageIndex = 0;
+            const spriteCanvas = document.createElement("canvas");
+            while (offsetY < height) {
+                const spriteHeight = Math.min(maxSpriteHeight, height - offsetY);
+                cropCanvas(canvas, 0, offsetY, width, spriteHeight, spriteCanvas);
+                offsetY += spriteHeight;
+                _console$l.log(`cropping sprite ${imageIndex}`, {
+                    offsetY,
+                    width,
+                    spriteHeight,
+                });
+                await canvasToSprite(spriteCanvas, `image${imageIndex}`, numberOfColors, paletteName, false, spriteSheet);
+                imageIndex++;
+            }
+        }
+    }
+    return spriteSheet;
+}
+async function imageToSpriteSheet(image, spriteSheetName, width, height, numberOfColors, paletteName, maxFileLength) {
+    const canvas = resizeImage(image, width, height);
+    return canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength);
+}
+
+const _console$k = createConsole("DisplayManagerInterface", { log: true });
+async function runDisplayContextCommand(displayManager, command, sendImmediately) {
+    if (command.hide) {
+        return;
+    }
+    switch (command.type) {
+        case "show":
+            await displayManager.show(sendImmediately);
+            break;
+        case "clear":
+            await displayManager.clear(sendImmediately);
+            break;
+        case "saveContext":
+            break;
+        case "restoreContext":
+            break;
+        case "clearRotation":
+            await displayManager.clearRotation(sendImmediately);
+            break;
+        case "clearCrop":
+            await displayManager.clearCrop(sendImmediately);
+            break;
+        case "clearRotationCrop":
+            await displayManager.clearRotationCrop(sendImmediately);
+            break;
+        case "resetBitmapScale":
+            await displayManager.resetBitmapScale(sendImmediately);
+            break;
+        case "resetSpriteScale":
+            await displayManager.resetSpriteScale(sendImmediately);
+            break;
+        case "setColor":
+            {
+                const { colorIndex, color } = command;
+                await displayManager.setColor(colorIndex, color, sendImmediately);
+            }
+            break;
+        case "setColorOpacity":
+            {
+                const { colorIndex, opacity } = command;
+                await displayManager.setColorOpacity(colorIndex, opacity, sendImmediately);
+            }
+            break;
+        case "setOpacity":
+            {
+                const { opacity } = command;
+                await displayManager.setOpacity(opacity, sendImmediately);
+            }
+            break;
+        case "selectBackgroundColor":
+            {
+                const { backgroundColorIndex } = command;
+                await displayManager.selectBackgroundColor(backgroundColorIndex, sendImmediately);
+            }
+            break;
+        case "selectFillColor":
+            {
+                const { fillColorIndex } = command;
+                await displayManager.selectFillColor(fillColorIndex, sendImmediately);
+            }
+            break;
+        case "selectLineColor":
+            {
+                const { lineColorIndex } = command;
+                await displayManager.selectLineColor(lineColorIndex, sendImmediately);
+            }
+            break;
+        case "setIgnoreFill":
+            {
+                const { ignoreFill } = command;
+                await displayManager.setIgnoreFill(ignoreFill, sendImmediately);
+            }
+            break;
+        case "setIgnoreLine":
+            {
+                const { ignoreLine } = command;
+                await displayManager.setIgnoreLine(ignoreLine, sendImmediately);
+            }
+            break;
+        case "setFillBackground":
+            {
+                const { fillBackground } = command;
+                await displayManager.setFillBackground(fillBackground, sendImmediately);
+            }
+            break;
+        case "setLineWidth":
+            {
+                const { lineWidth } = command;
+                await displayManager.setLineWidth(lineWidth, sendImmediately);
+            }
+            break;
+        case "setRotation":
+            {
+                let { rotation, isRadians } = command;
+                rotation = isRadians ? rotation : degToRad(rotation);
+                await displayManager.setRotation(rotation, true, sendImmediately);
+            }
+            break;
+        case "setSegmentStartCap":
+            {
+                const { segmentStartCap } = command;
+                await displayManager.setSegmentStartCap(segmentStartCap, sendImmediately);
+            }
+            break;
+        case "setSegmentEndCap":
+            {
+                const { segmentEndCap } = command;
+                await displayManager.setSegmentEndCap(segmentEndCap, sendImmediately);
+            }
+            break;
+        case "setSegmentCap":
+            {
+                const { segmentCap } = command;
+                await displayManager.setSegmentCap(segmentCap, sendImmediately);
+            }
+            break;
+        case "setSegmentStartRadius":
+            {
+                const { segmentStartRadius } = command;
+                await displayManager.setSegmentStartRadius(segmentStartRadius, sendImmediately);
+            }
+            break;
+        case "setSegmentEndRadius":
+            {
+                const { segmentEndRadius } = command;
+                await displayManager.setSegmentEndRadius(segmentEndRadius, sendImmediately);
+            }
+            break;
+        case "setSegmentRadius":
+            {
+                const { segmentRadius } = command;
+                await displayManager.setSegmentRadius(segmentRadius, sendImmediately);
+            }
+            break;
+        case "setHorizontalAlignment":
+            {
+                const { horizontalAlignment } = command;
+                await displayManager.setHorizontalAlignment(horizontalAlignment, sendImmediately);
+            }
+            break;
+        case "setVerticalAlignment":
+            {
+                const { verticalAlignment } = command;
+                await displayManager.setVerticalAlignment(verticalAlignment, sendImmediately);
+            }
+            break;
+        case "resetAlignment":
+            {
+                await displayManager.resetAlignment(sendImmediately);
+            }
+            break;
+        case "setCropTop":
+            {
+                const { cropTop } = command;
+                await displayManager.setCropTop(cropTop, sendImmediately);
+            }
+            break;
+        case "setCropRight":
+            {
+                const { cropRight } = command;
+                await displayManager.setCropRight(cropRight, sendImmediately);
+            }
+            break;
+        case "setCropBottom":
+            {
+                const { cropBottom } = command;
+                await displayManager.setCropBottom(cropBottom, sendImmediately);
+            }
+            break;
+        case "setCropLeft":
+            {
+                const { cropLeft } = command;
+                await displayManager.setCropLeft(cropLeft, sendImmediately);
+            }
+            break;
+        case "setRotationCropTop":
+            {
+                const { rotationCropTop } = command;
+                await displayManager.setRotationCropTop(rotationCropTop, sendImmediately);
+            }
+            break;
+        case "setRotationCropRight":
+            {
+                const { rotationCropRight } = command;
+                await displayManager.setRotationCropRight(rotationCropRight, sendImmediately);
+            }
+            break;
+        case "setRotationCropBottom":
+            {
+                const { rotationCropBottom } = command;
+                await displayManager.setRotationCropBottom(rotationCropBottom, sendImmediately);
+            }
+            break;
+        case "setRotationCropLeft":
+            {
+                const { rotationCropLeft } = command;
+                await displayManager.setRotationCropLeft(rotationCropLeft, sendImmediately);
+            }
+            break;
+        case "selectBitmapColor":
+            {
+                const { bitmapColorIndex, colorIndex } = command;
+                await displayManager.selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately);
+            }
+            break;
+        case "selectBitmapColors":
+            {
+                const { bitmapColorPairs } = command;
+                await displayManager.selectBitmapColors(bitmapColorPairs, sendImmediately);
+            }
+            break;
+        case "setBitmapScaleX":
+            {
+                const { bitmapScaleX } = command;
+                await displayManager.setBitmapScaleX(bitmapScaleX, sendImmediately);
+            }
+            break;
+        case "setBitmapScaleY":
+            {
+                const { bitmapScaleY } = command;
+                await displayManager.setBitmapScaleY(bitmapScaleY, sendImmediately);
+            }
+            break;
+        case "setBitmapScale":
+            {
+                const { bitmapScale } = command;
+                await displayManager.setBitmapScale(bitmapScale, sendImmediately);
+            }
+            break;
+        case "selectSpriteColor":
+            {
+                const { spriteColorIndex, colorIndex } = command;
+                await displayManager.selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately);
+            }
+            break;
+        case "selectSpriteColors":
+            {
+                const { spriteColorPairs } = command;
+                await displayManager.selectSpriteColors(spriteColorPairs, sendImmediately);
+            }
+            break;
+        case "setSpriteScaleX":
+            {
+                const { spriteScaleX } = command;
+                await displayManager.setSpriteScaleX(spriteScaleX, sendImmediately);
+            }
+            break;
+        case "setSpriteScaleY":
+            {
+                const { spriteScaleY } = command;
+                await displayManager.setSpriteScaleY(spriteScaleY, sendImmediately);
+            }
+            break;
+        case "setSpriteScale":
+            {
+                const { spriteScale } = command;
+                await displayManager.setSpriteScale(spriteScale, sendImmediately);
+            }
+            break;
+        case "clearRect":
+            {
+                const { x, y, width, height } = command;
+                await displayManager.clearRect(x, y, width, height, sendImmediately);
+            }
+            break;
+        case "drawRect":
+            {
+                const { offsetX, offsetY, width, height } = command;
+                await displayManager.drawRect(offsetX, offsetY, width, height, sendImmediately);
+            }
+            break;
+        case "drawRoundRect":
+            {
+                const { offsetX, offsetY, width, height, borderRadius } = command;
+                await displayManager.drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately);
+            }
+            break;
+        case "drawCircle":
+            {
+                const { offsetX, offsetY, radius } = command;
+                await displayManager.drawCircle(offsetX, offsetY, radius, sendImmediately);
+            }
+            break;
+        case "drawEllipse":
+            {
+                const { offsetX, offsetY, radiusX, radiusY } = command;
+                await displayManager.drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
+            }
+            break;
+        case "drawPolygon":
+            {
+                const { points } = command;
+                await displayManager.drawPolygon(points, sendImmediately);
+            }
+            break;
+        case "drawRegularPolygon":
+            {
+                const { offsetX, offsetY, radius, numberOfSides } = command;
+                await displayManager.drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
+            }
+            break;
+        case "drawWireframe":
+            {
+                const { wireframe } = command;
+                await displayManager.drawWireframe(wireframe, sendImmediately);
+            }
+            break;
+        case "drawSegment":
+            {
+                const { startX, startY, endX, endY } = command;
+                await displayManager.drawSegment(startX, startY, endX, endY, sendImmediately);
+            }
+            break;
+        case "drawSegments":
+            {
+                const { points } = command;
+                await displayManager.drawSegments(points.map(({ x, y }) => ({ x: x, y: y })), sendImmediately);
+            }
+            break;
+        case "drawArc":
+            {
+                let { offsetX, offsetY, radius, startAngle, angleOffset, isRadians } = command;
+                startAngle = isRadians ? startAngle : degToRad(startAngle);
+                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+                await displayManager.drawArc(offsetX, offsetY, radius, startAngle, angleOffset, true, sendImmediately);
+            }
+            break;
+        case "drawArcEllipse":
+            {
+                let { offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, } = command;
+                startAngle = isRadians ? startAngle : degToRad(startAngle);
+                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+                await displayManager.drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
+            }
+            break;
+        case "drawBitmap":
+            {
+                const { offsetX, offsetY, bitmap } = command;
+                await displayManager.drawBitmap(offsetX, offsetY, bitmap, sendImmediately);
+            }
+            break;
+        case "drawSprite":
+            {
+                const { offsetX, offsetY, spriteIndex } = command;
+                const spriteName = displayManager.selectedSpriteSheet?.sprites[spriteIndex].name;
+                await displayManager.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
+            }
+            break;
+        case "selectSpriteSheet":
+            {
+                const { spriteSheetIndex } = command;
+                const spriteSheetName = Object.entries(displayManager.spriteSheetIndices).find((entry) => entry[1] == spriteSheetIndex)?.[0];
+                await displayManager.selectSpriteSheet(spriteSheetName, sendImmediately);
+            }
+            break;
+        case "resetSpriteColors":
+            await displayManager.resetSpriteColors(sendImmediately);
+            break;
+        case "drawQuadraticBezierCurve":
+            {
+                const { controlPoints } = command;
+                await displayManager.drawQuadraticBezierCurve(controlPoints, sendImmediately);
+            }
+            break;
+        case "drawQuadraticBezierCurves":
+            {
+                const { controlPoints } = command;
+                await displayManager.drawQuadraticBezierCurves(controlPoints, sendImmediately);
+            }
+            break;
+        case "drawCubicBezierCurve":
+            {
+                const { controlPoints } = command;
+                await displayManager.drawCubicBezierCurve(controlPoints, sendImmediately);
+            }
+            break;
+        case "drawCubicBezierCurves":
+            {
+                const { controlPoints } = command;
+                await displayManager.drawCubicBezierCurves(controlPoints, sendImmediately);
+            }
+            break;
+        case "drawClosedPath":
+            {
+                const { curves } = command;
+                await displayManager.drawClosedPath(curves, sendImmediately);
+            }
+            break;
+        case "drawPath":
+            {
+                const { curves } = command;
+                await displayManager.drawPath(curves, sendImmediately);
+            }
+            break;
+    }
+}
+async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
+    _console$k.log("runDisplayContextCommands", commands);
+    commands
+        .filter((command) => !command.hide)
+        .forEach((command) => {
+        runDisplayContextCommand(displayManager, command, false);
+    });
+    if (sendImmediately) {
+        displayManager.flushContextCommands();
+    }
+}
+function assertLoadedSpriteSheet(displayManager, spriteSheetName) {
+    _console$k.assertWithError(displayManager.spriteSheets[spriteSheetName], `spriteSheet "${spriteSheetName}" not loaded`);
+}
+function assertSelectedSpriteSheet(displayManager, spriteSheetName) {
+    displayManager.assertLoadedSpriteSheet(spriteSheetName);
+    _console$k.assertWithError(displayManager.selectedSpriteSheetName == spriteSheetName, `spriteSheet "${spriteSheetName}" not selected`);
+}
+function assertAnySelectedSpriteSheet(displayManager) {
+    _console$k.assertWithError(displayManager.selectedSpriteSheet, "no spriteSheet selected");
+}
+function getSprite(displayManager, spriteName) {
+    displayManager.assertAnySelectedSpriteSheet();
+    return displayManager.selectedSpriteSheet.sprites.find((sprite) => sprite.name == spriteName);
+}
+function assertSprite(displayManager, spriteName) {
+    displayManager.assertAnySelectedSpriteSheet();
+    const sprite = displayManager.getSprite(spriteName);
+    _console$k.assertWithError(sprite, `no sprite found with name "${spriteName}"`);
+}
+function getSpriteSheetPalette(displayManager, paletteName) {
+    return displayManager.selectedSpriteSheet?.palettes?.find((palette) => palette.name == paletteName);
+}
+function getSpriteSheetPaletteSwap(displayManager, paletteSwapName) {
+    return displayManager.selectedSpriteSheet?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
+}
+function getSpritePaletteSwap(displayManager, spriteName, paletteSwapName) {
+    return displayManager
+        .getSprite(spriteName)
+        ?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
+}
+function assertSpriteSheetPalette(displayManagerInterface, paletteName) {
+    const spriteSheetPalette = displayManagerInterface.getSpriteSheetPalette(paletteName);
+    _console$k.assertWithError(spriteSheetPalette, `no spriteSheetPalette found with name "${paletteName}"`);
+}
+function assertSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName) {
+    const spriteSheetPaletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
+    _console$k.assertWithError(spriteSheetPaletteSwap, `no paletteSwapName found with name "${paletteSwapName}"`);
+}
+function assertSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName) {
+    const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
+    _console$k.assertWithError(spritePaletteSwap, `no spritePaletteSwap found for sprite "${spriteName}" name "${paletteSwapName}"`);
+}
+async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, sendImmediately) {
+    offset = offset || 0;
+    displayManagerInterface.assertAnySelectedSpriteSheet();
+    displayManagerInterface.assertSpriteSheetPalette(paletteName);
+    const palette = displayManagerInterface.getSpriteSheetPalette(paletteName);
+    _console$k.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`);
+    for (let index = 0; index < palette.numberOfColors; index++) {
+        const color = palette.colors[index];
+        let opacity = palette.opacities?.[index];
+        if (opacity == undefined) {
+            opacity = 1;
+        }
+        displayManagerInterface.setColor(index + offset, color, false);
+        displayManagerInterface.setColorOpacity(index + offset, opacity, false);
+        displayManagerInterface.selectSpriteColor(index, index + offset);
+    }
+    if (sendImmediately) {
+        displayManagerInterface.flushContextCommands();
+    }
+}
+async function selectSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName, offset, sendImmediately) {
+    offset = offset || 0;
+    displayManagerInterface.assertAnySelectedSpriteSheet();
+    displayManagerInterface.assertSpriteSheetPaletteSwap(paletteSwapName);
+    const paletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
+    const spriteColorPairs = [];
+    for (let spriteColorIndex = 0; spriteColorIndex < paletteSwap.numberOfColors; spriteColorIndex++) {
+        const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
+        spriteColorPairs.push({
+            spriteColorIndex: spriteColorIndex + offset,
+            colorIndex,
+        });
+    }
+    displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
+    if (sendImmediately) {
+        displayManagerInterface.flushContextCommands();
+    }
+}
+async function selectSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName, offset, sendImmediately) {
+    offset = offset || 0;
+    displayManagerInterface.assertAnySelectedSpriteSheet();
+    const paletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
+    const spriteColorPairs = [];
+    for (let spriteColorIndex = 0; spriteColorIndex < paletteSwap.numberOfColors; spriteColorIndex++) {
+        const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
+        spriteColorPairs.push({
+            spriteColorIndex: spriteColorIndex + offset,
+            colorIndex,
+        });
+    }
+    displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
+    if (sendImmediately) {
+        displayManagerInterface.flushContextCommands();
+    }
+}
+async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
+    const reducedSpriteSheet = reduceSpriteSheet(spriteSheet, [spriteName]);
+    await displayManagerInterface.uploadSpriteSheet(reducedSpriteSheet);
+    await displayManagerInterface.selectSpriteSheet(spriteSheet.name);
+    await displayManagerInterface.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
+    if (paletteName != undefined) {
+        await displayManagerInterface.selectSpriteSheetPalette(paletteName);
+    }
+}
+
+const _console$j = createConsole("DisplayManager", { log: false });
+const DefaultNumberOfDisplayColors = 16;
+const DisplayCommands = ["sleep", "wake"];
+const DisplayStatuses = ["awake", "asleep"];
+const DisplayInformationTypes = [
+    "type",
+    "width",
+    "height",
+    "pixelDepth",
+];
+const DisplayTypes = [
+    "none",
+    "generic",
+    "monocularLeft",
+    "monocularRight",
+    "binocular",
+];
+const DisplayPixelDepths = ["1", "2", "4"];
+const DisplayBrightnesses = [
+    "veryLow",
+    "low",
+    "medium",
+    "high",
+    "veryHigh",
+];
+const DisplayMessageTypes = [
+    "isDisplayAvailable",
+    "displayStatus",
+    "displayInformation",
+    "displayCommand",
+    "getDisplayBrightness",
+    "setDisplayBrightness",
+    "displayContextCommands",
+    "displayReady",
+    "getSpriteSheetName",
+    "setSpriteSheetName",
+    "spriteSheetIndex",
+];
+const DisplayBezierCurveTypes = [
+    "segment",
+    "quadratic",
+    "cubic",
+];
+const displayCurveTypeBitWidth = 2;
+const displayCurveTypesPerByte = 8 / displayCurveTypeBitWidth;
+const DisplayPointDataTypes = ["int8", "int16", "float"];
+const displayPointDataTypeToSize = {
+    int8: 1 * 2,
+    int16: 2 * 2,
+    float: 4 * 2,
+};
+const displayPointDataTypeToRange = {
+    int8: { min: -128, max: 2 ** 7 - 1 },
+    int16: { min: -32768, max: 2 ** 15 - 1 },
+    float: { min: -Infinity, max: Infinity },
+};
+const DisplayInformationValues = {
+    type: DisplayTypes,
+    pixelDepth: DisplayPixelDepths,
+};
+const RequiredDisplayMessageTypes = [
+    "isDisplayAvailable",
+    "displayInformation",
+    "displayStatus",
+    "getDisplayBrightness",
+];
+const DisplayEventTypes = [
+    ...DisplayMessageTypes,
+    "displayContextState",
+    "displayColor",
+    "displayColorOpacity",
+    "displayOpacity",
+    "displaySpriteSheetUploadStart",
+    "displaySpriteSheetUploadProgress",
+    "displaySpriteSheetUploadComplete",
+];
+const MinSpriteSheetNameLength = 1;
+const MaxSpriteSheetNameLength = 30;
+class DisplayManager {
+    constructor() {
+        autoBind(this);
+    }
+    sendMessage;
+    eventDispatcher;
+    get #dispatchEvent() {
+        return this.eventDispatcher.dispatchEvent;
+    }
+    get waitForEvent() {
+        return this.eventDispatcher.waitForEvent;
+    }
+    requestRequiredInformation() {
+        _console$j.log("requesting required display information");
+        const messages = RequiredDisplayMessageTypes.map((messageType) => ({
+            type: messageType,
+        }));
+        this.sendMessage(messages, false);
+    }
+    #isAvailable = false;
+    get isAvailable() {
+        return this.#isAvailable;
+    }
+    #assertDisplayIsAvailable() {
+        _console$j.assertWithError(this.#isAvailable, "display is not available");
+    }
+    #parseIsDisplayAvailable(dataView) {
+        const newIsDisplayAvailable = dataView.getUint8(0) == 1;
+        this.#isAvailable = newIsDisplayAvailable;
+        _console$j.log({ isDisplayAvailable: this.#isAvailable });
+        this.#dispatchEvent("isDisplayAvailable", {
+            isDisplayAvailable: this.#isAvailable,
+        });
+    }
+    #contextStateHelper = new DisplayContextStateHelper();
+    get contextState() {
+        return this.#contextStateHelper.state;
+    }
+    #onContextStateUpdate(differences) {
+        this.#dispatchEvent("displayContextState", {
+            displayContextState: structuredClone(this.contextState),
+            differences,
+        });
+    }
+    async setContextState(newState, sendImmediately) {
+        const differences = this.#contextStateHelper.diff(newState);
+        if (differences.length == 0) {
+            return;
+        }
+        differences.forEach((difference) => {
+            switch (difference) {
+                case "backgroundColorIndex":
+                    this.selectBackgroundColor(newState.backgroundColorIndex);
+                    break;
+                case "fillBackground":
+                    this.setFillBackground(newState.fillBackground);
+                    break;
+                case "ignoreFill":
+                    this.setIgnoreFill(newState.ignoreFill);
+                    break;
+                case "ignoreLine":
+                    this.setIgnoreLine(newState.ignoreLine);
+                    break;
+                case "fillColorIndex":
+                    this.selectFillColor(newState.fillColorIndex);
+                    break;
+                case "lineColorIndex":
+                    this.selectLineColor(newState.lineColorIndex);
+                    break;
+                case "lineWidth":
+                    this.setLineWidth(newState.lineWidth);
+                    break;
+                case "horizontalAlignment":
+                    this.setHorizontalAlignment(newState.horizontalAlignment);
+                    break;
+                case "verticalAlignment":
+                    this.setVerticalAlignment(newState.verticalAlignment);
+                    break;
+                case "rotation":
+                    this.setRotation(newState.rotation, true);
+                    break;
+                case "segmentStartCap":
+                    this.setSegmentStartCap(newState.segmentStartCap);
+                    break;
+                case "segmentEndCap":
+                    this.setSegmentEndCap(newState.segmentEndCap);
+                    break;
+                case "segmentStartRadius":
+                    this.setSegmentStartRadius(newState.segmentStartRadius);
+                    break;
+                case "segmentEndRadius":
+                    this.setSegmentEndRadius(newState.segmentEndRadius);
+                    break;
+                case "cropTop":
+                    this.setCropTop(newState.cropTop);
+                    break;
+                case "cropRight":
+                    this.setCropRight(newState.cropRight);
+                    break;
+                case "cropBottom":
+                    this.setCropBottom(newState.cropBottom);
+                    break;
+                case "cropLeft":
+                    this.setCropLeft(newState.cropLeft);
+                    break;
+                case "rotationCropTop":
+                    this.setRotationCropTop(newState.rotationCropTop);
+                    break;
+                case "rotationCropRight":
+                    this.setRotationCropRight(newState.rotationCropRight);
+                    break;
+                case "rotationCropBottom":
+                    this.setRotationCropBottom(newState.rotationCropBottom);
+                    break;
+                case "rotationCropLeft":
+                    this.setRotationCropLeft(newState.rotationCropLeft);
+                    break;
+                case "bitmapColorIndices":
+                    const bitmapColors = [];
+                    newState.bitmapColorIndices.forEach((colorIndex, bitmapColorIndex) => {
+                        bitmapColors.push({ bitmapColorIndex, colorIndex });
+                    });
+                    this.selectBitmapColors(bitmapColors);
+                    break;
+                case "bitmapScaleX":
+                    this.setBitmapScaleX(newState.bitmapScaleX);
+                    break;
+                case "bitmapScaleY":
+                    this.setBitmapScaleY(newState.bitmapScaleY);
+                    break;
+                case "spriteColorIndices":
+                    const spriteColors = [];
+                    newState.spriteColorIndices.forEach((colorIndex, spriteColorIndex) => {
+                        spriteColors.push({ spriteColorIndex, colorIndex });
+                    });
+                    this.selectSpriteColors(spriteColors);
+                    break;
+                case "spriteScaleX":
+                    this.setSpriteScaleX(newState.spriteScaleX);
+                    break;
+                case "spriteScaleY":
+                    this.setSpriteScaleY(newState.spriteScaleY);
+                    break;
+                case "spritesLineHeight":
+                    this.setSpritesLineHeight(newState.spritesLineHeight);
+                    break;
+                case "spritesDirection":
+                    this.setSpritesDirection(newState.spritesDirection);
+                    break;
+                case "spritesLineDirection":
+                    this.setSpritesLineDirection(newState.spritesLineDirection);
+                    break;
+                case "spritesSpacing":
+                    this.setSpritesSpacing(newState.spritesSpacing);
+                    break;
+                case "spritesLineSpacing":
+                    this.setSpritesLineSpacing(newState.spritesLineSpacing);
+                    break;
+                case "spritesAlignment":
+                    this.setSpritesAlignment(newState.spritesAlignment);
+                    break;
+                case "spritesLineAlignment":
+                    this.setSpritesLineAlignment(newState.spritesLineAlignment);
+                    break;
+            }
+        });
+        if (sendImmediately) {
+            await this.#sendContextCommands();
+        }
+    }
+    #displayStatus;
+    get displayStatus() {
+        return this.#displayStatus;
+    }
+    get isDisplayAwake() {
+        return this.#displayStatus == "awake";
+    }
+    #parseDisplayStatus(dataView) {
+        const displayStatusIndex = dataView.getUint8(0);
+        const newDisplayStatus = DisplayStatuses[displayStatusIndex];
+        this.#updateDisplayStatus(newDisplayStatus);
+    }
+    #updateDisplayStatus(newDisplayStatus) {
+        _console$j.assertEnumWithError(newDisplayStatus, DisplayStatuses);
+        if (newDisplayStatus == this.#displayStatus) {
+            _console$j.log(`redundant displayStatus ${newDisplayStatus}`);
+            return;
+        }
+        const previousDisplayStatus = this.#displayStatus;
+        this.#displayStatus = newDisplayStatus;
+        _console$j.log(`updated displayStatus to "${this.displayStatus}"`);
+        this.#dispatchEvent("displayStatus", {
+            displayStatus: this.displayStatus,
+            previousDisplayStatus,
+        });
+    }
+    async #sendDisplayCommand(command, sendImmediately) {
+        _console$j.assertEnumWithError(command, DisplayCommands);
+        _console$j.log(`sending display command "${command}"`);
+        const promise = this.waitForEvent("displayStatus");
+        _console$j.log(`setting command "${command}"`);
+        const commandEnum = DisplayCommands.indexOf(command);
+        this.sendMessage([
+            {
+                type: "displayCommand",
+                data: UInt8ByteBuffer(commandEnum),
+            },
+        ], sendImmediately);
+        await promise;
+    }
+    #assertIsAwake() {
+        _console$j.assertWithError(this.#displayStatus == "awake", `display is not awake - currently ${this.#displayStatus}`);
+    }
+    #assertIsNotAwake() {
+        _console$j.assertWithError(this.#displayStatus != "awake", `display is awake`);
+    }
+    async wake() {
+        this.#assertIsNotAwake();
+        await this.#sendDisplayCommand("wake");
+    }
+    async sleep() {
+        this.#assertIsAwake();
+        await this.#sendDisplayCommand("sleep");
+    }
+    async toggle() {
+        switch (this.displayStatus) {
+            case "asleep":
+                this.wake();
+                break;
+            case "awake":
+                this.sleep();
+                break;
+        }
+    }
+    get numberOfColors() {
+        return 2 ** Number(this.pixelDepth);
+    }
+    #displayInformation;
+    get displayInformation() {
+        return this.#displayInformation;
+    }
+    get pixelDepth() {
+        return this.#displayInformation?.pixelDepth;
+    }
+    get width() {
+        return this.#displayInformation?.width;
+    }
+    get height() {
+        return this.#displayInformation?.width;
+    }
+    get size() {
+        return {
+            width: this.width,
+            height: this.height,
+        };
+    }
+    get type() {
+        return this.#displayInformation?.type;
+    }
+    #parseDisplayInformation(dataView) {
+        const parsedDisplayInformation = {};
+        let byteOffset = 0;
+        while (byteOffset < dataView.byteLength) {
+            const displayInformationTypeIndex = dataView.getUint8(byteOffset++);
+            const displayInformationType = DisplayInformationTypes[displayInformationTypeIndex];
+            _console$j.assertWithError(displayInformationType, `invalid displayInformationTypeIndex ${displayInformationType}`);
+            _console$j.log({ displayInformationType });
+            switch (displayInformationType) {
+                case "width":
+                case "height":
+                    {
+                        const value = dataView.getUint16(byteOffset, true);
+                        parsedDisplayInformation[displayInformationType] = value;
+                        byteOffset += 2;
+                    }
+                    break;
+                case "pixelDepth":
+                case "type":
+                    {
+                        const values = DisplayInformationValues[displayInformationType];
+                        let rawValue = dataView.getUint8(byteOffset++);
+                        const value = values[rawValue];
+                        _console$j.assertEnumWithError(value, values);
+                        parsedDisplayInformation[displayInformationType] = value;
+                    }
+                    break;
+            }
+        }
+        _console$j.log({ parsedDisplayInformation });
+        const missingDisplayInformationType = DisplayInformationTypes.find((type) => !(type in parsedDisplayInformation));
+        _console$j.assertWithError(!missingDisplayInformationType, `missingDisplayInformationType ${missingDisplayInformationType}`);
+        this.#displayInformation = parsedDisplayInformation;
+        this.#colors = new Array(this.numberOfColors).fill("#000000");
+        this.#opacities = new Array(this.numberOfColors).fill(1);
+        this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
+        this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
+        this.#dispatchEvent("displayInformation", {
+            displayInformation: this.#displayInformation,
+        });
+    }
+    #brightness;
+    get brightness() {
+        return this.#brightness;
+    }
+    #parseDisplayBrightness(dataView) {
+        const newDisplayBrightnessEnum = dataView.getUint8(0);
+        const newDisplayBrightness = DisplayBrightnesses[newDisplayBrightnessEnum];
+        assertValidDisplayBrightness(newDisplayBrightness);
+        this.#brightness = newDisplayBrightness;
+        _console$j.log({ displayBrightness: this.#brightness });
+        this.#dispatchEvent("getDisplayBrightness", {
+            displayBrightness: this.#brightness,
+        });
+    }
+    async setBrightness(newDisplayBrightness, sendImmediately) {
+        this.#assertDisplayIsAvailable();
+        assertValidDisplayBrightness(newDisplayBrightness);
+        if (this.brightness == newDisplayBrightness) {
+            _console$j.log(`redundant displayBrightness ${newDisplayBrightness}`);
+            return;
+        }
+        const newDisplayBrightnessEnum = DisplayBrightnesses.indexOf(newDisplayBrightness);
+        const newDisplayBrightnessData = UInt8ByteBuffer(newDisplayBrightnessEnum);
+        const promise = this.waitForEvent("getDisplayBrightness");
+        this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
+        await promise;
+    }
+    #assertValidDisplayContextCommand(displayContextCommand) {
+        _console$j.assertEnumWithError(displayContextCommand, DisplayContextCommandTypes);
+    }
+    get #maxCommandDataLength() {
+        return this.mtu - 7;
+    }
+    #displayContextCommandBuffers = [];
+    async #sendDisplayContextCommand(displayContextCommand, arrayBuffer, sendImmediately) {
+        this.#assertValidDisplayContextCommand(displayContextCommand);
+        _console$j.log("sendDisplayContextCommand", { displayContextCommand, sendImmediately }, arrayBuffer);
+        const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(displayContextCommand);
+        const _arrayBuffer = concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), arrayBuffer);
+        const newLength = this.#displayContextCommandBuffers.reduce((sum, buffer) => sum + buffer.byteLength, _arrayBuffer.byteLength);
+        if (newLength > this.#maxCommandDataLength) {
+            _console$j.log("displayContextCommandBuffers too full - sending now");
+            await this.#sendContextCommands();
+        }
+        this.#displayContextCommandBuffers.push(_arrayBuffer);
+        if (sendImmediately) {
+            await this.#sendContextCommands();
+        }
+    }
+    async #sendContextCommands() {
+        if (this.#displayContextCommandBuffers.length == 0) {
+            return;
+        }
+        const data = concatenateArrayBuffers(this.#displayContextCommandBuffers);
+        _console$j.log(`sending displayContextCommands`, this.#displayContextCommandBuffers.slice(), data);
+        this.#displayContextCommandBuffers.length = 0;
+        await this.sendMessage([{ type: "displayContextCommands", data }], true);
+    }
+    async flushContextCommands() {
+        await this.#sendContextCommands();
+    }
+    async show(sendImmediately = true) {
+        _console$j.log("showDisplay");
+        this.#isReady = false;
+        this.#lastShowRequestTime = Date.now();
+        await this.#sendDisplayContextCommand("show", undefined, sendImmediately);
+    }
+    async clear(sendImmediately = true) {
+        _console$j.log("clearDisplay");
+        this.#isReady = false;
+        this.#lastShowRequestTime = Date.now();
+        await this.#sendDisplayContextCommand("clear", undefined, sendImmediately);
+    }
+    assertValidColorIndex(colorIndex) {
+        _console$j.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
+    }
+    #colors = [];
+    get colors() {
+        return this.#colors;
+    }
+    async setColor(colorIndex, color, sendImmediately) {
+        let colorRGB;
+        if (typeof color == "string") {
+            colorRGB = stringToRGB(color);
+        }
+        else {
+            colorRGB = color;
+        }
+        const colorHex = rgbToHex(colorRGB);
+        if (this.colors[colorIndex] == colorHex) {
+            _console$j.log(`redundant color #${colorIndex} ${colorHex}`);
+            return;
+        }
+        this.assertValidColorIndex(colorIndex);
+        assertValidColor(colorRGB);
+        const dataView = new DataView(new ArrayBuffer(4));
+        dataView.setUint8(0, colorIndex);
+        dataView.setUint8(1, colorRGB.r);
+        dataView.setUint8(2, colorRGB.g);
+        dataView.setUint8(3, colorRGB.b);
+        await this.#sendDisplayContextCommand("setColor", dataView.buffer, sendImmediately);
+        this.colors[colorIndex] = colorHex;
+        this.#dispatchEvent("displayColor", {
+            colorIndex,
+            colorRGB,
+            colorHex,
+        });
+    }
+    #opacities = [];
+    get opacities() {
+        return this.#opacities;
+    }
+    async setColorOpacity(colorIndex, opacity, sendImmediately) {
+        const commandType = "setColorOpacity";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            colorIndex,
+            opacity,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#opacities[colorIndex] = opacity;
+        this.#dispatchEvent("displayColorOpacity", { colorIndex, opacity });
+    }
+    async setOpacity(opacity, sendImmediately) {
+        const commandType = "setOpacity";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            opacity,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#opacities.fill(opacity);
+        this.#dispatchEvent("displayOpacity", { opacity });
+    }
+    #contextStack = [];
+    #saveContext(sendImmediately) {
+        this.#contextStack.push(structuredClone(this.contextState));
+    }
+    #restoreContext(sendImmediately) {
+        const contextState = this.#contextStack.pop();
+        if (!contextState) {
+            _console$j.warn("#contextStack empty");
+            return;
+        }
+        this.setContextState(contextState, sendImmediately);
+    }
+    async saveContext(sendImmediately) {
+        {
+            this.#saveContext(sendImmediately);
+        }
+    }
+    async restoreContext(sendImmediately) {
+        {
+            this.#restoreContext(sendImmediately);
+        }
+    }
+    async selectFillColor(fillColorIndex, sendImmediately) {
+        this.assertValidColorIndex(fillColorIndex);
+        const differences = this.#contextStateHelper.update({
+            fillColorIndex,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "selectFillColor";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            fillColorIndex,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
+        this.assertValidColorIndex(backgroundColorIndex);
+        const differences = this.#contextStateHelper.update({
+            backgroundColorIndex,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "selectBackgroundColor";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            backgroundColorIndex,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async selectLineColor(lineColorIndex, sendImmediately) {
+        this.assertValidColorIndex(lineColorIndex);
+        const differences = this.#contextStateHelper.update({
+            lineColorIndex,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "selectLineColor";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            lineColorIndex,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setIgnoreFill(ignoreFill, sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            ignoreFill,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setIgnoreFill";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            ignoreFill,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setIgnoreLine(ignoreLine, sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            ignoreLine,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setIgnoreLine";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            ignoreLine,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setFillBackground(fillBackground, sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            fillBackground,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setFillBackground";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            fillBackground,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    assertValidLineWidth(lineWidth) {
+        _console$j.assertRangeWithError("lineWidth", lineWidth, 0, Math.max(this.width, this.height));
+    }
+    async setLineWidth(lineWidth, sendImmediately) {
+        this.assertValidLineWidth(lineWidth);
+        const differences = this.#contextStateHelper.update({
+            lineWidth,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setLineWidth";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            lineWidth,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setAlignment(alignmentDirection, alignment, sendImmediately) {
+        assertValidAlignmentDirection(alignmentDirection);
+        const alignmentCommand = DisplayAlignmentDirectionToCommandType[alignmentDirection];
+        const alignmentKey = DisplayAlignmentDirectionToStateKey[alignmentDirection];
+        const differences = this.#contextStateHelper.update({
+            [alignmentKey]: alignment,
+        });
+        _console$j.log({ alignmentKey, alignment, differences });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: alignmentCommand,
+            [alignmentKey]: alignment,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(alignmentCommand, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setHorizontalAlignment(horizontalAlignment, sendImmediately) {
+        await this.setAlignment("horizontal", horizontalAlignment, sendImmediately);
+    }
+    async setVerticalAlignment(verticalAlignment, sendImmediately) {
+        await this.setAlignment("vertical", verticalAlignment, sendImmediately);
+    }
+    async resetAlignment(sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            verticalAlignment: DefaultDisplayContextState.verticalAlignment,
+            horizontalAlignment: DefaultDisplayContextState.horizontalAlignment,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "resetAlignment";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setRotation(rotation, isRadians, sendImmediately) {
+        rotation = isRadians ? rotation : degToRad(rotation);
+        rotation = normalizeRadians(rotation);
+        isRadians = true;
+        const differences = this.#contextStateHelper.update({
+            rotation,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setRotation";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            rotation,
+            isRadians,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async clearRotation(sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            rotation: 0,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "clearRotation";
+        const dataView = serializeContextCommand(this, { type: commandType });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSegmentStartCap(segmentStartCap, sendImmediately) {
+        assertValidSegmentCap(segmentStartCap);
+        const differences = this.#contextStateHelper.update({
+            segmentStartCap,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setSegmentStartCap";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            segmentStartCap,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSegmentEndCap(segmentEndCap, sendImmediately) {
+        assertValidSegmentCap(segmentEndCap);
+        const differences = this.#contextStateHelper.update({
+            segmentEndCap,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setSegmentEndCap";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            segmentEndCap,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSegmentCap(segmentCap, sendImmediately) {
+        assertValidSegmentCap(segmentCap);
+        const differences = this.#contextStateHelper.update({
+            segmentStartCap: segmentCap,
+            segmentEndCap: segmentCap,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setSegmentCap";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            segmentCap,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSegmentStartRadius(segmentStartRadius, sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            segmentStartRadius,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setSegmentStartRadius";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            segmentStartRadius,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSegmentEndRadius(segmentEndRadius, sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            segmentEndRadius,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setSegmentEndRadius";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            segmentEndRadius,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSegmentRadius(segmentRadius, sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            segmentStartRadius: segmentRadius,
+            segmentEndRadius: segmentRadius,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setSegmentRadius";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            segmentRadius,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setCrop(cropDirection, crop, sendImmediately) {
+        _console$j.assertEnumWithError(cropDirection, DisplayCropDirections);
+        crop = Math.max(0, crop);
+        const cropCommand = DisplayCropDirectionToCommandType[cropDirection];
+        const cropKey = DisplayCropDirectionToStateKey[cropDirection];
+        const differences = this.#contextStateHelper.update({
+            [cropKey]: crop,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: cropCommand,
+            [cropKey]: crop,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(cropCommand, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setCropTop(cropTop, sendImmediately) {
+        await this.setCrop("top", cropTop, sendImmediately);
+    }
+    async setCropRight(cropRight, sendImmediately) {
+        await this.setCrop("right", cropRight, sendImmediately);
+    }
+    async setCropBottom(cropBottom, sendImmediately) {
+        await this.setCrop("bottom", cropBottom, sendImmediately);
+    }
+    async setCropLeft(cropLeft, sendImmediately) {
+        await this.setCrop("left", cropLeft, sendImmediately);
+    }
+    async clearCrop(sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            cropTop: 0,
+            cropRight: 0,
+            cropBottom: 0,
+            cropLeft: 0,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "clearCrop";
+        const dataView = serializeContextCommand(this, { type: commandType });
+        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setRotationCrop(cropDirection, crop, sendImmediately) {
+        _console$j.assertEnumWithError(cropDirection, DisplayCropDirections);
+        const cropCommand = DisplayRotationCropDirectionToCommandType[cropDirection];
+        const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
+        const differences = this.#contextStateHelper.update({
+            [cropKey]: crop,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: cropCommand,
+            [cropKey]: crop,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(cropCommand, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setRotationCropTop(rotationCropTop, sendImmediately) {
+        await this.setRotationCrop("top", rotationCropTop, sendImmediately);
+    }
+    async setRotationCropRight(rotationCropRight, sendImmediately) {
+        await this.setRotationCrop("right", rotationCropRight, sendImmediately);
+    }
+    async setRotationCropBottom(rotationCropBottom, sendImmediately) {
+        await this.setRotationCrop("bottom", rotationCropBottom, sendImmediately);
+    }
+    async setRotationCropLeft(rotationCropLeft, sendImmediately) {
+        await this.setRotationCrop("left", rotationCropLeft, sendImmediately);
+    }
+    async clearRotationCrop(sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            rotationCropTop: 0,
+            rotationCropRight: 0,
+            rotationCropBottom: 0,
+            rotationCropLeft: 0,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "clearRotationCrop";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+        });
+        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately) {
+        this.assertValidColorIndex(bitmapColorIndex);
+        this.assertValidColorIndex(colorIndex);
+        const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
+        bitmapColorIndices[bitmapColorIndex] = colorIndex;
+        const differences = this.#contextStateHelper.update({
+            bitmapColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "selectBitmapColor";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            bitmapColorIndex,
+            colorIndex,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    get bitmapColorIndices() {
+        return this.contextState.bitmapColorIndices;
+    }
+    get bitmapColors() {
+        return this.bitmapColorIndices.map((colorIndex) => this.colors[colorIndex]);
+    }
+    async selectBitmapColors(bitmapColorPairs, sendImmediately) {
+        _console$j.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, this.numberOfColors);
+        const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
+        bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
+            this.assertValidColorIndex(bitmapColorIndex);
+            this.assertValidColorIndex(colorIndex);
+            bitmapColorIndices[bitmapColorIndex] = colorIndex;
+        });
+        const differences = this.#contextStateHelper.update({
+            bitmapColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "selectBitmapColors";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            bitmapColorPairs,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setBitmapColor(bitmapColorIndex, color, sendImmediately) {
+        return this.setColor(this.bitmapColorIndices[bitmapColorIndex], color, sendImmediately);
+    }
+    async setBitmapColorOpacity(bitmapColorIndex, opacity, sendImmediately) {
+        return this.setColorOpacity(this.bitmapColorIndices[bitmapColorIndex], opacity, sendImmediately);
+    }
+    async setBitmapScaleDirection(direction, bitmapScale, sendImmediately) {
+        bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
+        bitmapScale = roundScale(bitmapScale);
+        const commandType = DisplayBitmapScaleDirectionToCommandType[direction];
+        _console$j.log({ [commandType]: bitmapScale });
+        const newState = {};
+        let command;
+        switch (direction) {
+            case "all":
+                newState.bitmapScaleX = bitmapScale;
+                newState.bitmapScaleY = bitmapScale;
+                command = { type: "setBitmapScale", bitmapScale };
+                break;
+            case "x":
+                newState.bitmapScaleX = bitmapScale;
+                command = { type: "setBitmapScaleX", bitmapScaleX: bitmapScale };
+                break;
+            case "y":
+                newState.bitmapScaleY = bitmapScale;
+                command = { type: "setBitmapScaleY", bitmapScaleY: bitmapScale };
+                break;
+        }
+        const differences = this.#contextStateHelper.update(newState);
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, command);
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setBitmapScaleX(bitmapScaleX, sendImmediately) {
+        return this.setBitmapScaleDirection("x", bitmapScaleX, sendImmediately);
+    }
+    async setBitmapScaleY(bitmapScaleY, sendImmediately) {
+        return this.setBitmapScaleDirection("y", bitmapScaleY, sendImmediately);
+    }
+    async setBitmapScale(bitmapScale, sendImmediately) {
+        return this.setBitmapScaleDirection("all", bitmapScale, sendImmediately);
+    }
+    async resetBitmapScale(sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            bitmapScaleX: 1,
+            bitmapScaleY: 1,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "resetBitmapScale";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+        });
+        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately) {
+        this.assertValidColorIndex(spriteColorIndex);
+        this.assertValidColorIndex(colorIndex);
+        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+        spriteColorIndices[spriteColorIndex] = colorIndex;
+        const differences = this.#contextStateHelper.update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "selectSpriteColor";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            spriteColorIndex,
+            colorIndex,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    get spriteColorIndices() {
+        return this.contextState.spriteColorIndices;
+    }
+    get spriteColors() {
+        return this.spriteColorIndices.map((colorIndex) => this.colors[colorIndex]);
+    }
+    async selectSpriteColors(spriteColorPairs, sendImmediately) {
+        _console$j.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, this.numberOfColors);
+        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+        spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
+            this.assertValidColorIndex(spriteColorIndex);
+            this.assertValidColorIndex(colorIndex);
+            spriteColorIndices[spriteColorIndex] = colorIndex;
+        });
+        const differences = this.#contextStateHelper.update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "selectSpriteColors";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            spriteColorPairs,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSpriteColor(spriteColorIndex, color, sendImmediately) {
+        return this.setColor(this.spriteColorIndices[spriteColorIndex], color, sendImmediately);
+    }
+    async setSpriteColorOpacity(spriteColorIndex, opacity, sendImmediately) {
+        return this.setColorOpacity(this.spriteColorIndices[spriteColorIndex], opacity, sendImmediately);
+    }
+    async resetSpriteColors(sendImmediately) {
+        const spriteColorIndices = new Array(this.numberOfColors).fill(0);
+        const differences = this.#contextStateHelper.update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "resetSpriteColors";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+        });
+        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
+        spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
+        spriteScale = roundScale(spriteScale);
+        const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
+        _console$j.log({ [commandType]: spriteScale });
+        const newState = {};
+        let command;
+        switch (direction) {
+            case "all":
+                newState.spriteScaleX = spriteScale;
+                newState.spriteScaleY = spriteScale;
+                command = { type: "setSpriteScale", spriteScale };
+                break;
+            case "x":
+                newState.spriteScaleX = spriteScale;
+                command = { type: "setSpriteScaleX", spriteScaleX: spriteScale };
+                break;
+            case "y":
+                newState.spriteScaleY = spriteScale;
+                command = { type: "setSpriteScaleY", spriteScaleY: spriteScale };
+                break;
+        }
+        const differences = this.#contextStateHelper.update(newState);
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, command);
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSpriteScaleX(spriteScaleX, sendImmediately) {
+        return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
+    }
+    async setSpriteScaleY(spriteScaleY, sendImmediately) {
+        return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
+    }
+    async setSpriteScale(spriteScale, sendImmediately) {
+        return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
+    }
+    async resetSpriteScale(sendImmediately) {
+        const differences = this.#contextStateHelper.update({
+            spriteScaleX: 1,
+            spriteScaleY: 1,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "resetSpriteScale";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+        });
+        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSpritesLineHeight(spritesLineHeight, sendImmediately) {
+        this.assertValidLineWidth(spritesLineHeight);
+        const differences = this.#contextStateHelper.update({
+            spritesLineHeight,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const commandType = "setSpritesLineHeight";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            spritesLineHeight,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSpritesDirectionGeneric(direction, isOrthogonal, sendImmediately) {
+        assertValidDirection(direction);
+        const stateKey = isOrthogonal
+            ? "spritesLineDirection"
+            : "spritesDirection";
+        const commandType = isOrthogonal
+            ? "setSpritesLineDirection"
+            : "setSpritesDirection";
+        const differences = this.#contextStateHelper.update({
+            [stateKey]: direction,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            [stateKey]: direction,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSpritesDirection(spritesDirection, sendImmediately) {
+        await this.setSpritesDirectionGeneric(spritesDirection, false, sendImmediately);
+    }
+    async setSpritesLineDirection(spritesLineDirection, sendImmediately) {
+        await this.setSpritesDirectionGeneric(spritesLineDirection, true, sendImmediately);
+    }
+    async setSpritesSpacingGeneric(spacing, isOrthogonal, sendImmediately) {
+        const stateKey = isOrthogonal
+            ? "spritesLineSpacing"
+            : "spritesSpacing";
+        const commandType = isOrthogonal
+            ? "setSpritesLineSpacing"
+            : "setSpritesSpacing";
+        const differences = this.#contextStateHelper.update({
+            [stateKey]: spacing,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            [stateKey]: spacing,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSpritesSpacing(spritesSpacing, sendImmediately) {
+        await this.setSpritesSpacingGeneric(spritesSpacing, false, sendImmediately);
+    }
+    async setSpritesLineSpacing(spritesSpacing, sendImmediately) {
+        await this.setSpritesSpacingGeneric(spritesSpacing, true, sendImmediately);
+    }
+    async setSpritesAlignmentGeneric(alignment, isOrthogonal, sendImmediately) {
+        assertValidAlignment(alignment);
+        const stateKey = isOrthogonal
+            ? "spritesLineAlignment"
+            : "spritesAlignment";
+        const commandType = isOrthogonal
+            ? "setSpritesLineAlignment"
+            : "setSpritesAlignment";
+        const differences = this.#contextStateHelper.update({
+            [stateKey]: alignment,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            [stateKey]: alignment,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async setSpritesAlignment(spritesAlignment, sendImmediately) {
+        await this.setSpritesAlignmentGeneric(spritesAlignment, false, sendImmediately);
+    }
+    async setSpritesLineAlignment(spritesLineAlignment, sendImmediately) {
+        await this.setSpritesAlignmentGeneric(spritesLineAlignment, true, sendImmediately);
+    }
+    async clearRect(x, y, width, height, sendImmediately) {
+        const commandType = "clearRect";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            x,
+            y,
+            width,
+            height,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawRect(offsetX, offsetY, width, height, sendImmediately) {
+        const commandType = "drawRect";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            width,
+            height,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately) {
+        const commandType = "drawRoundRect";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            width,
+            height,
+            borderRadius,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawCircle(offsetX, offsetY, radius, sendImmediately) {
+        const commandType = "drawCircle";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            radius,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately) {
+        const commandType = "drawEllipse";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            radiusX,
+            radiusY,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately) {
+        const commandType = "drawRegularPolygon";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            radius,
+            numberOfSides,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawPolygon(points, sendImmediately) {
+        _console$j.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+        const commandType = "drawPolygon";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            points,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawWireframe(wireframe, sendImmediately) {
+        wireframe = trimWireframe(wireframe);
+        if (wireframe.points.length == 0) {
+            return;
+        }
+        assertValidWireframe(wireframe);
+        if (this.#contextStateHelper.isSegmentUniform) {
+            const polygon = isWireframePolygon(wireframe);
+            if (polygon) {
+                return this.drawSegments(polygon, sendImmediately);
+            }
+        }
+        const commandType = "drawWireframe";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            wireframe,
+        });
+        if (!dataView) {
+            return;
+        }
+        if (dataView.byteLength > this.#maxCommandDataLength) {
+            _console$j.error(`wireframe data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawCurve(curveType, controlPoints, sendImmediately) {
+        assertValidNumberOfControlPoints(curveType, controlPoints);
+        const commandType = curveType == "cubic"
+            ? "drawCubicBezierCurve"
+            : "drawQuadraticBezierCurve";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            controlPoints,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawCurves(curveType, controlPoints, sendImmediately) {
+        assertValidPathNumberOfControlPoints(curveType, controlPoints);
+        const commandType = curveType == "cubic"
+            ? "drawCubicBezierCurves"
+            : "drawQuadraticBezierCurves";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            controlPoints,
+        });
+        if (!dataView) {
+            return;
+        }
+        if (dataView.byteLength > this.#maxCommandDataLength) {
+            _console$j.error(`curve data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawQuadraticBezierCurve(controlPoints, sendImmediately) {
+        await this.drawCurve("quadratic", controlPoints, sendImmediately);
+    }
+    async drawQuadraticBezierCurves(controlPoints, sendImmediately) {
+        await this.drawCurves("quadratic", controlPoints, sendImmediately);
+    }
+    async drawCubicBezierCurve(controlPoints, sendImmediately) {
+        await this.drawCurve("cubic", controlPoints, sendImmediately);
+    }
+    async drawCubicBezierCurves(controlPoints, sendImmediately) {
+        await this.drawCurves("cubic", controlPoints, sendImmediately);
+    }
+    async _drawPath(isClosed, curves, sendImmediately) {
+        assertValidPath(curves);
+        const commandType = isClosed
+            ? "drawClosedPath"
+            : "drawPath";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            curves,
+        });
+        if (!dataView) {
+            return;
+        }
+        if (dataView.byteLength > this.#maxCommandDataLength) {
+            _console$j.error(`path data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawPath(curves, sendImmediately) {
+        await this._drawPath(false, curves, sendImmediately);
+    }
+    async drawClosedPath(curves, sendImmediately) {
+        await this._drawPath(true, curves, sendImmediately);
+    }
+    async drawSegment(startX, startY, endX, endY, sendImmediately) {
+        const commandType = "drawSegment";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            startX,
+            startY,
+            endX,
+            endY,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawSegments(points, sendImmediately) {
+        _console$j.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+        const commandType = "drawSegments";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            points,
+        });
+        if (!dataView) {
+            return;
+        }
+        if (dataView.byteLength > this.#maxCommandDataLength) {
+            const mid = Math.floor(points.length / 2);
+            const firstHalf = points.slice(0, mid + 1);
+            const secondHalf = points.slice(mid);
+            _console$j.log({ firstHalf, secondHalf });
+            _console$j.log("sending first half", firstHalf);
+            await this.drawSegments(firstHalf, false);
+            _console$j.log("sending second half", secondHalf);
+            await this.drawSegments(secondHalf, sendImmediately);
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawArc(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
+        const commandType = "drawArc";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            radius,
+            startAngle,
+            angleOffset,
+            isRadians,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
+        const commandType = "drawArcEllipse";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            radiusX,
+            radiusY,
+            startAngle,
+            angleOffset,
+            isRadians,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    assertValidNumberOfColors(numberOfColors) {
+        _console$j.assertRangeWithError("numberOfColors", numberOfColors, 2, this.numberOfColors);
+    }
+    assertValidBitmap(bitmap, checkSize) {
+        this.assertValidNumberOfColors(bitmap.numberOfColors);
+        assertValidBitmapPixels(bitmap);
+        if (checkSize) {
+            this.#assertValidBitmapSize(bitmap);
+        }
+    }
+    #assertValidBitmapSize(bitmap) {
+        const pixelDataLength = getBitmapNumberOfBytes(bitmap);
+        _console$j.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, this.#maxCommandDataLength - drawBitmapHeaderLength);
+    }
+    async drawBitmap(offsetX, offsetY, bitmap, sendImmediately) {
+        this.assertValidBitmap(bitmap, true);
+        const commandType = "drawBitmap";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            bitmap,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async imageToBitmap(image, width, height, numberOfColors) {
+        return imageToBitmap(image, width, height, this.colors, this.bitmapColorIndices, numberOfColors);
+    }
+    async quantizeImage(image, width, height, numberOfColors) {
+        return quantizeImage(image, width, height, numberOfColors);
+    }
+    async resizeAndQuantizeImage(image, width, height, numberOfColors, colors) {
+        return resizeAndQuantizeImage(image, width, height, numberOfColors, colors);
+    }
+    async runContextCommand(command, sendImmediately) {
+        return runDisplayContextCommand(this, command, sendImmediately);
+    }
+    async runContextCommands(commands, sendImmediately) {
+        return runDisplayContextCommands(this, commands, sendImmediately);
+    }
+    #isReady = true;
+    get isReady() {
+        return this.isAvailable && this.#isReady;
+    }
+    #lastReadyTime = 0;
+    #lastShowRequestTime = 0;
+    #minReadyInterval = 65;
+    #waitBeforeReady = true;
+    async #parseDisplayReady(dataView) {
+        const now = Date.now();
+        const timeSinceLastDraw = now - this.#lastShowRequestTime;
+        const timeSinceLastReady = now - this.#lastReadyTime;
+        _console$j.log(`${timeSinceLastDraw}ms draw time`);
+        if (this.#waitBeforeReady && timeSinceLastReady < this.#minReadyInterval) {
+            const timeToWait = this.#minReadyInterval - timeSinceLastReady;
+            _console$j.log(`waiting ${timeToWait}ms`);
+            await wait(timeToWait);
+        }
+        this.#isReady = true;
+        this.#lastReadyTime = Date.now();
+        this.#dispatchEvent("displayReady", {});
+    }
+    #spriteSheets = {};
+    #spriteSheetIndices = {};
+    get spriteSheets() {
+        return this.#spriteSheets;
+    }
+    get spriteSheetIndices() {
+        return this.#spriteSheetIndices;
+    }
+    async #setSpriteSheetName(spriteSheetName, sendImmediately) {
+        _console$j.assertTypeWithError(spriteSheetName, "string");
+        _console$j.assertRangeWithError("newName", spriteSheetName.length, MinSpriteSheetNameLength, MaxSpriteSheetNameLength);
+        const setSpriteSheetNameData = textEncoder.encode(spriteSheetName);
+        _console$j.log({ setSpriteSheetNameData });
+        const promise = this.waitForEvent("getSpriteSheetName");
+        this.sendMessage([{ type: "setSpriteSheetName", data: setSpriteSheetNameData.buffer }], sendImmediately);
+        await promise;
+    }
+    #pendingSpriteSheet;
+    get pendingSpriteSheet() {
+        return this.#pendingSpriteSheet;
+    }
+    #pendingSpriteSheetName;
+    get pendingSpriteSheetName() {
+        return this.#pendingSpriteSheetName;
+    }
+    #updateSpriteSheetName(updatedSpriteSheetName) {
+        _console$j.assertTypeWithError(updatedSpriteSheetName, "string");
+        this.#pendingSpriteSheetName = updatedSpriteSheetName;
+        _console$j.log({ updatedSpriteSheetName: this.#pendingSpriteSheetName });
+        this.#dispatchEvent("getSpriteSheetName", {
+            spriteSheetName: this.#pendingSpriteSheetName,
+        });
+    }
+    sendFile;
+    serializeSpriteSheet(spriteSheet) {
+        return serializeSpriteSheet(this, spriteSheet);
+    }
+    async uploadSpriteSheet(spriteSheet) {
+        spriteSheet = structuredClone(spriteSheet);
+        this.#pendingSpriteSheet = spriteSheet;
+        const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet);
+        await this.#setSpriteSheetName(this.#pendingSpriteSheet.name);
+        const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
+        this.sendFile("spriteSheet", buffer, true);
+        await promise;
+    }
+    async uploadSpriteSheets(spriteSheets) {
+        for (const spriteSheet of spriteSheets) {
+            await this.uploadSpriteSheet(spriteSheet);
+        }
+    }
+    assertLoadedSpriteSheet(spriteSheetName) {
+        assertLoadedSpriteSheet(this, spriteSheetName);
+    }
+    assertSelectedSpriteSheet(spriteSheetName) {
+        assertSelectedSpriteSheet(this, spriteSheetName);
+    }
+    assertAnySelectedSpriteSheet() {
+        assertAnySelectedSpriteSheet(this);
+    }
+    assertSprite(spriteName) {
+        return assertSprite(this, spriteName);
+    }
+    getSprite(spriteName) {
+        return getSprite(this, spriteName);
+    }
+    getSpriteSheetPalette(paletteName) {
+        return getSpriteSheetPalette(this, paletteName);
+    }
+    getSpriteSheetPaletteSwap(paletteSwapName) {
+        return getSpriteSheetPaletteSwap(this, paletteSwapName);
+    }
+    getSpritePaletteSwap(spriteName, paletteSwapName) {
+        return getSpritePaletteSwap(this, spriteName, paletteSwapName);
+    }
+    get selectedSpriteSheet() {
+        if (this.contextState.spriteSheetName) {
+            return this.#spriteSheets[this.contextState.spriteSheetName];
+        }
+    }
+    get selectedSpriteSheetName() {
+        return this.selectedSpriteSheet?.name;
+    }
+    async selectSpriteSheet(spriteSheetName, sendImmediately) {
+        this.assertLoadedSpriteSheet(spriteSheetName);
+        const differences = this.#contextStateHelper.update({
+            spriteSheetName,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const spriteSheetIndex = this.spriteSheetIndices[spriteSheetName];
+        const commandType = "selectSpriteSheet";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            spriteSheetIndex,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        this.#onContextStateUpdate(differences);
+    }
+    async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
+        _console$j.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
+        let spriteIndex = this.selectedSpriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
+        _console$j.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
+        spriteIndex = spriteIndex;
+        const commandType = "drawSprite";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            spriteIndex,
+            use2Bytes: this.selectedSpriteSheet.sprites.length > 255,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
+        const spriteSerializedLines = [];
+        spriteLines.forEach((spriteLine) => {
+            const serializedLine = [];
+            spriteLine.forEach((spriteSubLine) => {
+                this.assertLoadedSpriteSheet(spriteSubLine.spriteSheetName);
+                const spriteSheet = this.spriteSheets[spriteSubLine.spriteSheetName];
+                const spriteSheetIndex = this.spriteSheetIndices[spriteSheet.name];
+                const serializedSubLine = {
+                    spriteSheetIndex,
+                    spriteIndices: [],
+                    use2Bytes: spriteSheet.sprites.length > 255,
+                };
+                spriteSubLine.spriteNames.forEach((spriteName) => {
+                    let spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
+                    _console$j.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
+                    spriteIndex = spriteIndex;
+                    serializedSubLine.spriteIndices.push(spriteIndex);
+                });
+                serializedLine.push(serializedSubLine);
+            });
+            spriteSerializedLines.push(serializedLine);
+        });
+        _console$j.log("spriteSerializedLines", spriteSerializedLines);
+        const commandType = "drawSprites";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            spriteSerializedLines: spriteSerializedLines,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async drawSpritesString(offsetX, offsetY, string, requireAll, maxLineBreadth, separators, sendImmediately) {
+        const spriteLines = this.stringToSpriteLines(string, requireAll, maxLineBreadth, separators);
+        await this.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
+    }
+    stringToSpriteLines(string, requireAll, maxLineBreadth, separators) {
+        return stringToSpriteLines(string, this.spriteSheets, this.contextState, requireAll, maxLineBreadth, separators);
+    }
+    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
+        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
+    }
+    #parseSpriteSheetIndex(dataView) {
+        const spriteSheetIndex = dataView.getUint8(0);
+        _console$j.log({
+            pendingSpriteSheet: this.#pendingSpriteSheet,
+            spriteSheetName: this.#pendingSpriteSheetName,
+            spriteSheetIndex,
+        });
+        if (this.isServerSide) {
+            return;
+        }
+        _console$j.assertWithError(this.#pendingSpriteSheetName != undefined, "expected spriteSheetName when receiving spriteSheetIndex");
+        _console$j.assertWithError(this.#pendingSpriteSheet != undefined, "expected pendingSpriteSheet when receiving spriteSheetIndex");
+        this.#spriteSheets[this.#pendingSpriteSheetName] =
+            this.#pendingSpriteSheet;
+        this.#spriteSheetIndices[this.#pendingSpriteSheetName] = spriteSheetIndex;
+        this.#dispatchEvent("displaySpriteSheetUploadComplete", {
+            spriteSheetName: this.#pendingSpriteSheetName,
+            spriteSheet: this.#pendingSpriteSheet,
+        });
+        this.#pendingSpriteSheet = undefined;
+    }
+    parseMessage(messageType, dataView) {
+        _console$j.log({ messageType, dataView });
+        switch (messageType) {
+            case "isDisplayAvailable":
+                this.#parseIsDisplayAvailable(dataView);
+                break;
+            case "displayStatus":
+                this.#parseDisplayStatus(dataView);
+                break;
+            case "displayInformation":
+                this.#parseDisplayInformation(dataView);
+                break;
+            case "getDisplayBrightness":
+            case "setDisplayBrightness":
+                this.#parseDisplayBrightness(dataView);
+                break;
+            case "displayReady":
+                this.#parseDisplayReady(dataView);
+                break;
+            case "getSpriteSheetName":
+            case "setSpriteSheetName":
+                const spriteSheetName = textDecoder.decode(dataView.buffer);
+                _console$j.log({ spriteSheetName });
+                this.#updateSpriteSheetName(spriteSheetName);
+                break;
+            case "spriteSheetIndex":
+                this.#parseSpriteSheetIndex(dataView);
+                break;
+            default:
+                throw Error(`uncaught messageType ${messageType}`);
+        }
+    }
+    assertSpriteSheetPalette(paletteName) {
+        assertSpriteSheetPalette(this, paletteName);
+    }
+    assertSpriteSheetPaletteSwap(paletteSwapName) {
+        assertSpriteSheetPaletteSwap(this, paletteSwapName);
+    }
+    assertSpritePaletteSwap(spriteName, paletteSwapName) {
+        assertSpritePaletteSwap(this, spriteName, paletteSwapName);
+    }
+    async selectSpriteSheetPalette(paletteName, offset, sendImmediately) {
+        await selectSpriteSheetPalette(this, paletteName, offset, sendImmediately);
+    }
+    async selectSpriteSheetPaletteSwap(paletteSwapName, offset, sendImmediately) {
+        await selectSpriteSheetPaletteSwap(this, paletteSwapName, offset, sendImmediately);
+    }
+    async selectSpritePaletteSwap(spriteName, paletteSwapName, offset, sendImmediately) {
+        await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
+    }
+    reset() {
+        _console$j.log("clearing displayManager");
+        this.#displayStatus = undefined;
+        this.#isAvailable = false;
+        this.#displayInformation = undefined;
+        this.#brightness = undefined;
+        this.#displayContextCommandBuffers = [];
+        this.#isAvailable = false;
+        this.#contextStateHelper.reset();
+        this.#colors.length = 0;
+        this.#opacities.length = 0;
+        this.#isReady = true;
+        this.#pendingSpriteSheet = undefined;
+        this.#pendingSpriteSheetName = undefined;
+        this.isServerSide = false;
+        Object.keys(this.#spriteSheetIndices).forEach((spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]);
+        Object.keys(this.#spriteSheets).forEach((spriteSheetName) => delete this.#spriteSheets[spriteSheetName]);
+    }
+    #mtu;
+    get mtu() {
+        return this.#mtu;
+    }
+    set mtu(newMtu) {
+        this.#mtu = newMtu;
+    }
+    #isServerSide = false;
+    get isServerSide() {
+        return this.#isServerSide;
+    }
+    set isServerSide(newIsServerSide) {
+        if (this.#isServerSide == newIsServerSide) {
+            _console$j.log("redundant isServerSide assignment");
+            return;
+        }
+        _console$j.log({ newIsServerSide });
+        this.#isServerSide = newIsServerSide;
+    }
+}
+
+const _console$i = createConsole("BaseConnectionManager", { log: false });
+const ConnectionTypes = [
+    "webBluetooth",
+    "noble",
+    "client",
+    "webSocket",
+    "udp",
+];
+const ConnectionStatuses = [
+    "notConnected",
+    "connecting",
+    "connected",
+    "disconnecting",
+];
+const ConnectionEventTypes = [
+    ...ConnectionStatuses,
+    "connectionStatus",
+    "isConnected",
+];
+const TxRxMessageTypes = [
+    ...InformationMessageTypes,
+    ...SensorConfigurationMessageTypes,
+    ...SensorDataMessageTypes,
+    ...VibrationMessageTypes,
+    ...FileTransferMessageTypes,
+    ...TfliteMessageTypes,
+    ...WifiMessageTypes,
+    ...CameraMessageTypes,
+    ...MicrophoneMessageTypes,
+    ...DisplayMessageTypes,
+];
+const SMPMessageTypes = ["smp"];
+const BatteryLevelMessageTypes = ["batteryLevel"];
+const MetaConnectionMessageTypes = ["rx", "tx"];
+const ConnectionMessageTypes = [
+    ...BatteryLevelMessageTypes,
+    ...DeviceInformationTypes,
+    ...MetaConnectionMessageTypes,
+    ...TxRxMessageTypes,
+    ...SMPMessageTypes,
+];
+class BaseConnectionManager {
+    static #AssertValidTxRxMessageType(messageType) {
+        _console$i.assertEnumWithError(messageType, TxRxMessageTypes);
+    }
+    onStatusUpdated;
+    onMessageReceived;
+    onMessagesReceived;
+    get baseConstructor() {
+        return this.constructor;
+    }
+    static get isSupported() {
+        return false;
+    }
+    get isSupported() {
+        return this.baseConstructor.isSupported;
+    }
+    get canUpdateFirmware() {
+        return false;
+    }
+    static type;
+    get type() {
+        return this.baseConstructor.type;
+    }
+    #assertIsSupported() {
+        _console$i.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+    }
+    constructor() {
+        this.#assertIsSupported();
+    }
+    #status = "notConnected";
+    get status() {
+        return this.#status;
+    }
+    set status(newConnectionStatus) {
+        _console$i.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
+        if (this.#status == newConnectionStatus) {
+            _console$i.log(`tried to assign same connection status "${newConnectionStatus}"`);
+            return;
+        }
+        _console$i.log(`new connection status "${newConnectionStatus}"`);
+        this.#status = newConnectionStatus;
+        this.onStatusUpdated(this.status);
+        if (this.isConnected) {
+            this.#timer.start();
+        }
+        else {
+            this.#timer.stop();
+        }
+        if (this.#status == "notConnected") {
+            this.mtu = this.defaultMtu;
+        }
+    }
+    get isConnected() {
+        return this.status == "connected";
+    }
+    get isAvailable() {
+        return false;
+    }
+    assertIsNotConnected() {
+        _console$i.assertWithError(!this.isConnected, "device is already connected");
+    }
+    #assertIsNotConnecting() {
+        _console$i.assertWithError(this.status != "connecting", "device is already connecting");
+    }
+    assertIsConnected() {
+        _console$i.assertWithError(this.isConnected, "device is not connected");
+    }
+    #assertIsNotDisconnecting() {
+        _console$i.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+    }
+    assertIsConnectedAndNotDisconnecting() {
+        this.assertIsConnected();
+        this.#assertIsNotDisconnecting();
+    }
+    async connect() {
+        this.assertIsNotConnected();
+        this.#assertIsNotConnecting();
+        this.status = "connecting";
+    }
+    get canReconnect() {
+        return false;
+    }
+    async reconnect() {
+        this.assertIsNotConnected();
+        this.#assertIsNotConnecting();
+        _console$i.assertWithError(this.canReconnect, "unable to reconnect");
+        this.status = "connecting";
+        _console$i.log("attempting to reconnect...");
+    }
+    async disconnect() {
+        this.assertIsConnected();
+        this.#assertIsNotDisconnecting();
+        this.status = "disconnecting";
+        _console$i.log("disconnecting from device...");
+    }
+    async sendSmpMessage(data) {
+        this.assertIsConnectedAndNotDisconnecting();
+        _console$i.log("sending smp message", data);
+    }
+    #pendingMessages = [];
+    #isSendingMessages = false;
+    async sendTxMessages(messages, sendImmediately = true) {
+        this.assertIsConnectedAndNotDisconnecting();
+        if (messages) {
+            this.#pendingMessages.push(...messages);
+            _console$i.log(`appended ${messages.length} messages`);
+        }
+        if (!sendImmediately) {
+            _console$i.log("not sending immediately - waiting until later");
+            return;
+        }
+        if (this.#isSendingMessages) {
+            _console$i.log("already sending messages - waiting until later");
+            return;
+        }
+        if (this.#pendingMessages.length == 0) {
+            _console$i.log("no pendingMessages");
+            return;
+        }
+        this.#isSendingMessages = true;
+        _console$i.log("sendTxMessages", this.#pendingMessages.slice());
+        const arrayBuffers = this.#pendingMessages.map((message) => {
+            BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
+            const messageTypeEnum = TxRxMessageTypes.indexOf(message.type);
+            const dataLength = new DataView(new ArrayBuffer(2));
+            dataLength.setUint16(0, message.data?.byteLength || 0, true);
+            return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
+        });
+        this.#pendingMessages.length = 0;
+        if (this.mtu) {
+            while (arrayBuffers.length > 0) {
+                if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
+                    _console$i.log("every arrayBuffer is too big to send");
+                    break;
+                }
+                _console$i.log("remaining arrayBuffers.length", arrayBuffers.length);
+                let arrayBufferByteLength = 0;
+                let arrayBufferCount = 0;
+                arrayBuffers.some((arrayBuffer) => {
+                    if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu - 3) {
+                        _console$i.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
+                        return true;
+                    }
+                    _console$i.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
+                    arrayBufferCount++;
+                    arrayBufferByteLength += arrayBuffer.byteLength;
+                });
+                const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
+                _console$i.log({ arrayBufferCount, arrayBuffersToSend });
+                const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
+                _console$i.log("sending arrayBuffer (partitioned)", arrayBuffer);
+                await this.sendTxData(arrayBuffer);
+            }
+        }
+        else {
+            const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
+            _console$i.log("sending arrayBuffer (all)", arrayBuffer);
+            await this.sendTxData(arrayBuffer);
+        }
+        this.#isSendingMessages = false;
+        this.sendTxMessages(undefined, true);
+    }
+    defaultMtu = 23;
+    mtu = this.defaultMtu;
+    async sendTxData(data) {
+        _console$i.log("sendTxData", data);
+    }
+    parseRxMessage(dataView) {
+        parseMessage(dataView, TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
+        this.onMessagesReceived();
+    }
+    #onRxMessage(messageType, dataView) {
+        _console$i.log({ messageType, dataView });
+        this.onMessageReceived(messageType, dataView);
+    }
+    #timer = new Timer(this.#checkConnection.bind(this), 5000);
+    #checkConnection() {
+        if (!this.isConnected) {
+            _console$i.log("timer detected disconnection");
+            this.status = "notConnected";
+        }
+    }
+    clear() {
+        this.#isSendingMessages = false;
+        this.#pendingMessages.length = 0;
+    }
+    remove() {
+        this.clear();
+        this.onStatusUpdated = undefined;
+        this.onMessageReceived = undefined;
+        this.onMessagesReceived = undefined;
+    }
+}
+
+function capitalizeFirstCharacter(string) {
+    return string[0].toUpperCase() + string.slice(1);
+}
+
+const _console$h = createConsole("EventUtils", { log: false });
+function addEventListeners(target, boundEventListeners) {
+    let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
+    _console$h.assertWithError(addEventListener, "no add listener function found for target");
+    addEventListener = addEventListener.bind(target);
+    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
+        addEventListener(eventType, eventListener);
+    });
+}
+function removeEventListeners(target, boundEventListeners) {
+    let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
+    _console$h.assertWithError(removeEventListener, "no remove listener function found for target");
+    removeEventListener = removeEventListener.bind(target);
+    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
+        removeEventListener(eventType, eventListener);
+    });
+}
+
+const _console$g = createConsole("bluetoothUUIDs", { log: false });
+if (isInBrowser) {
+    var BluetoothUUID = window.BluetoothUUID;
+}
+function generateBluetoothUUID(value) {
+    _console$g.assertTypeWithError(value, "string");
+    _console$g.assertWithError(value.length == 4, "value must be 4 characters long");
+    return `ea6d${value}-a725-4f9b-893d-c3913e33b39f`;
+}
+function stringToCharacteristicUUID(identifier) {
+    return BluetoothUUID?.getCharacteristic?.(identifier);
+}
+function stringToServiceUUID(identifier) {
+    return BluetoothUUID?.getService?.(identifier);
+}
+const bluetoothUUIDs = Object.freeze({
+    services: {
+        deviceInformation: {
+            uuid: stringToServiceUUID("device_information"),
+            characteristics: {
+                manufacturerName: {
+                    uuid: stringToCharacteristicUUID("manufacturer_name_string"),
+                },
+                modelNumber: {
+                    uuid: stringToCharacteristicUUID("model_number_string"),
+                },
+                hardwareRevision: {
+                    uuid: stringToCharacteristicUUID("hardware_revision_string"),
+                },
+                firmwareRevision: {
+                    uuid: stringToCharacteristicUUID("firmware_revision_string"),
+                },
+                softwareRevision: {
+                    uuid: stringToCharacteristicUUID("software_revision_string"),
+                },
+                pnpId: {
+                    uuid: stringToCharacteristicUUID("pnp_id"),
+                },
+                serialNumber: {
+                    uuid: stringToCharacteristicUUID("serial_number_string"),
+                },
+            },
+        },
+        battery: {
+            uuid: stringToServiceUUID("battery_service"),
+            characteristics: {
+                batteryLevel: {
+                    uuid: stringToCharacteristicUUID("battery_level"),
+                },
+            },
+        },
+        main: {
+            uuid: generateBluetoothUUID("0000"),
+            characteristics: {
+                rx: { uuid: generateBluetoothUUID("1000") },
+                tx: { uuid: generateBluetoothUUID("1001") },
+            },
+        },
+        smp: {
+            uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
+            characteristics: {
+                smp: { uuid: "da2e7828-fbce-4e01-ae9e-261174997c48" },
+            },
+        },
+    },
+});
+const serviceUUIDs = [bluetoothUUIDs.services.main.uuid];
+const optionalServiceUUIDs = [
+    bluetoothUUIDs.services.deviceInformation.uuid,
+    bluetoothUUIDs.services.battery.uuid,
+    bluetoothUUIDs.services.smp.uuid,
+];
+[...serviceUUIDs, ...optionalServiceUUIDs];
+function getServiceNameFromUUID(serviceUUID) {
+    serviceUUID = serviceUUID.toString().toLowerCase();
+    const serviceNames = Object.keys(bluetoothUUIDs.services);
+    return serviceNames.find((serviceName) => {
+        const serviceInfo = bluetoothUUIDs.services[serviceName];
+        let serviceInfoUUID = serviceInfo.uuid.toString();
+        if (serviceUUID.length == 4) {
+            serviceInfoUUID = serviceInfoUUID.slice(4, 8);
+        }
+        if (!serviceUUID.includes("-")) {
+            serviceInfoUUID = serviceInfoUUID.replaceAll("-", "");
+        }
+        return serviceUUID == serviceInfoUUID;
+    });
+}
+const characteristicUUIDs = [];
+const allCharacteristicUUIDs = [];
+Object.values(bluetoothUUIDs.services).forEach((serviceInfo) => {
+    if (!serviceInfo.characteristics) {
+        return;
+    }
+    const characteristicNames = Object.keys(serviceInfo.characteristics);
+    characteristicNames.forEach((characteristicName) => {
+        const characteristicInfo = serviceInfo.characteristics[characteristicName];
+        if (serviceUUIDs.includes(serviceInfo.uuid)) {
+            characteristicUUIDs.push(characteristicInfo.uuid);
+            characteristicNames.push(characteristicName);
+        }
+        allCharacteristicUUIDs.push(characteristicInfo.uuid);
+    });
+}, []);
+function getCharacteristicNameFromUUID(characteristicUUID) {
+    characteristicUUID = characteristicUUID.toString().toLowerCase();
+    var characteristicName;
+    Object.values(bluetoothUUIDs.services).some((serviceInfo) => {
+        const characteristicNames = Object.keys(serviceInfo.characteristics);
+        characteristicName = characteristicNames.find((_characteristicName) => {
+            const characteristicInfo = serviceInfo.characteristics[_characteristicName];
+            let characteristicInfoUUID = characteristicInfo.uuid.toString();
+            if (characteristicUUID.length == 4) {
+                characteristicInfoUUID = characteristicInfoUUID.slice(4, 8);
+            }
+            if (!characteristicUUID.includes("-")) {
+                characteristicInfoUUID = characteristicInfoUUID.replaceAll("-", "");
+            }
+            return characteristicUUID == characteristicInfoUUID;
+        });
+        return characteristicName;
+    });
+    return characteristicName;
+}
+function getCharacteristicProperties(characteristicName) {
+    const properties = {
+        broadcast: false,
+        read: true,
+        writeWithoutResponse: false,
+        write: false,
+        notify: false,
+        indicate: false,
+        authenticatedSignedWrites: false,
+        reliableWrite: false,
+        writableAuxiliaries: false,
+    };
+    switch (characteristicName) {
+        case "rx":
+        case "tx":
+        case "smp":
+            properties.read = false;
+            break;
+    }
+    switch (characteristicName) {
+        case "batteryLevel":
+        case "rx":
+        case "smp":
+            properties.notify = true;
+            break;
+    }
+    switch (characteristicName) {
+        case "smp":
+            properties.writeWithoutResponse = true;
+            break;
+    }
+    switch (characteristicName) {
+        case "tx":
+            properties.write = true;
+            break;
+    }
+    return properties;
+}
+
+const _console$f = createConsole("BluetoothConnectionManager", { log: false });
+class BluetoothConnectionManager extends BaseConnectionManager {
+    get isAvailable() {
+        return true;
+    }
+    isInRange = true;
+    onCharacteristicValueChanged(characteristicName, dataView) {
+        if (characteristicName == "rx") {
+            this.parseRxMessage(dataView);
+        }
+        else {
+            this.onMessageReceived?.(characteristicName, dataView);
+        }
+    }
+    async writeCharacteristic(characteristicName, data) {
+        _console$f.log("writeCharacteristic", ...arguments);
+    }
+    async sendSmpMessage(data) {
+        super.sendSmpMessage(data);
+        await this.writeCharacteristic("smp", data);
+    }
+    async sendTxData(data) {
+        super.sendTxData(data);
+        if (data.byteLength == 0) {
+            return;
+        }
+        await this.writeCharacteristic("tx", data);
+    }
+}
+
+const _console$e = createConsole("WebBluetoothConnectionManager", { log: false });
+var bluetooth;
+if (isInBrowser) {
+    bluetooth = window.navigator.bluetooth;
+}
+class WebBluetoothConnectionManager extends BluetoothConnectionManager {
+    get bluetoothId() {
+        return this.device.id;
+    }
+    get canUpdateFirmware() {
+        return this.#characteristics.has("smp");
+    }
+    #boundBluetoothCharacteristicEventListeners = {
+        characteristicvaluechanged: this.#onCharacteristicvaluechanged.bind(this),
+    };
+    #boundBluetoothDeviceEventListeners = {
+        gattserverdisconnected: this.#onGattserverdisconnected.bind(this),
+    };
+    static get isSupported() {
+        return Boolean(bluetooth);
+    }
+    static get type() {
+        return "webBluetooth";
+    }
+    #device;
+    get device() {
+        return this.#device;
+    }
+    set device(newDevice) {
+        if (this.#device == newDevice) {
+            _console$e.log("tried to assign the same BluetoothDevice");
+            return;
+        }
+        if (this.#device) {
+            removeEventListeners(this.#device, this.#boundBluetoothDeviceEventListeners);
+        }
+        if (newDevice) {
+            addEventListeners(newDevice, this.#boundBluetoothDeviceEventListeners);
+        }
+        this.#device = newDevice;
+    }
+    get server() {
+        return this.#device?.gatt;
+    }
+    get isConnected() {
+        return this.server?.connected || false;
+    }
+    #services = new Map();
+    #characteristics = new Map();
+    async connect() {
+        await super.connect();
+        try {
+            const device = await bluetooth.requestDevice({
+                filters: [{ services: serviceUUIDs }],
+                optionalServices: isInBrowser ? optionalServiceUUIDs : [],
+            });
+            _console$e.log("got BluetoothDevice");
+            this.device = device;
+            _console$e.log("connecting to device...");
+            const server = await this.server.connect();
+            _console$e.log(`connected to device? ${server.connected}`);
+            await this.#getServicesAndCharacteristics();
+            _console$e.log("fully connected");
+            this.status = "connected";
+        }
+        catch (error) {
+            _console$e.error(error);
+            this.status = "notConnected";
+            this.server?.disconnect();
+            this.#removeEventListeners();
+        }
+    }
+    async #getServicesAndCharacteristics() {
+        this.#removeEventListeners();
+        _console$e.log("getting services...");
+        const services = await this.server.getPrimaryServices();
+        _console$e.log("got services", services.length);
+        _console$e.log("getting characteristics...");
+        for (const serviceIndex in services) {
+            const service = services[serviceIndex];
+            _console$e.log({ service });
+            const serviceName = getServiceNameFromUUID(service.uuid);
+            _console$e.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console$e.log(`got "${serviceName}" service`);
+            service.name = serviceName;
+            this.#services.set(serviceName, service);
+            _console$e.log(`getting characteristics for "${serviceName}" service`);
+            const characteristics = await service.getCharacteristics();
+            _console$e.log(`got characteristics for "${serviceName}" service`);
+            for (const characteristicIndex in characteristics) {
+                const characteristic = characteristics[characteristicIndex];
+                _console$e.log({ characteristic });
+                const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
+                _console$e.assertWithError(Boolean(characteristicName), `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`);
+                _console$e.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+                characteristic.name = characteristicName;
+                this.#characteristics.set(characteristicName, characteristic);
+                addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
+                const characteristicProperties = characteristic.properties ||
+                    getCharacteristicProperties(characteristicName);
+                if (characteristicProperties.notify) {
+                    _console$e.log(`starting notifications for "${characteristicName}" characteristic`);
+                    await characteristic.startNotifications();
+                }
+                if (characteristicProperties.read) {
+                    _console$e.log(`reading "${characteristicName}" characteristic...`);
+                    await characteristic.readValue();
+                    if (isInBluefy || isInWebBLE) {
+                        this.#onCharacteristicValueChanged(characteristic);
+                    }
+                }
+            }
+        }
+    }
+    async #removeEventListeners() {
+        if (this.device) {
+            removeEventListeners(this.device, this.#boundBluetoothDeviceEventListeners);
+        }
+        const promises = Array.from(this.#characteristics.keys()).map((characteristicName) => {
+            const characteristic = this.#characteristics.get(characteristicName);
+            removeEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
+            const characteristicProperties = characteristic.properties ||
+                getCharacteristicProperties(characteristicName);
+            if (characteristicProperties.notify) {
+                _console$e.log(`stopping notifications for "${characteristicName}" characteristic`);
+                return characteristic.stopNotifications();
+            }
+        });
+        return Promise.allSettled(promises);
+    }
+    async disconnect() {
+        await this.#removeEventListeners();
+        await super.disconnect();
+        this.server?.disconnect();
+        this.status = "notConnected";
+    }
+    #onCharacteristicvaluechanged(event) {
+        _console$e.log("oncharacteristicvaluechanged");
+        const characteristic = event.target;
+        this.#onCharacteristicValueChanged(characteristic);
+    }
+    #onCharacteristicValueChanged(characteristic) {
+        _console$e.log("onCharacteristicValue");
+        const characteristicName = characteristic.name;
+        _console$e.assertWithError(Boolean(characteristicName), `no name found for characteristic with uuid "${characteristic.uuid}"`);
+        _console$e.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
+        const dataView = characteristic.value;
+        _console$e.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+        _console$e.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+        try {
+            this.onCharacteristicValueChanged(characteristicName, dataView);
+        }
+        catch (error) {
+            _console$e.error(error);
+        }
+    }
+    async writeCharacteristic(characteristicName, data) {
+        super.writeCharacteristic(characteristicName, data);
+        const characteristic = this.#characteristics.get(characteristicName);
+        _console$e.assertWithError(characteristic, `${characteristicName} characteristic not found`);
+        _console$e.log("writing characteristic", characteristic, data);
+        const characteristicProperties = characteristic.properties ||
+            getCharacteristicProperties(characteristicName);
+        if (characteristicProperties.writeWithoutResponse) {
+            _console$e.log("writing without response");
+            await characteristic.writeValueWithoutResponse(data);
+        }
+        else {
+            _console$e.log("writing with response");
+            await characteristic.writeValueWithResponse(data);
+        }
+        _console$e.log("wrote characteristic");
+        if (characteristicProperties.read && !characteristicProperties.notify) {
+            _console$e.log("reading value after write...");
+            await characteristic.readValue();
+            if (isInBluefy || isInWebBLE) {
+                this.#onCharacteristicValueChanged(characteristic);
+            }
+        }
+    }
+    #onGattserverdisconnected() {
+        _console$e.log("gattserverdisconnected");
+        this.status = "notConnected";
+    }
+    get canReconnect() {
+        return Boolean(this.server && !this.server.connected && this.isInRange);
+    }
+    async reconnect() {
+        await super.reconnect();
+        try {
+            await this.server.connect();
+        }
+        catch (error) {
+            _console$e.error(error);
+            this.isInRange = false;
+        }
+        if (this.isConnected) {
+            _console$e.log("successfully reconnected!");
+            await this.#getServicesAndCharacteristics();
+            this.status = "connected";
+        }
+        else {
+            _console$e.log("unable to reconnect");
+            this.status = "notConnected";
+        }
+    }
+    remove() {
+        super.remove();
+        this.device = undefined;
+    }
+}
+
+const POW_2_24 = 5.960464477539063e-8;
+const POW_2_32 = 4294967296;
+const POW_2_53 = 9007199254740992;
+function encode(value) {
+  let data = new ArrayBuffer(256);
+  let dataView = new DataView(data);
+  let lastLength;
+  let offset = 0;
+  function prepareWrite(length) {
+    let newByteLength = data.byteLength;
+    const requiredLength = offset + length;
+    while (newByteLength < requiredLength) {
+      newByteLength <<= 1;
+    }
+    if (newByteLength !== data.byteLength) {
+      const oldDataView = dataView;
+      data = new ArrayBuffer(newByteLength);
+      dataView = new DataView(data);
+      const uint32count = (offset + 3) >> 2;
+      for (let i = 0; i < uint32count; ++i) {
+        dataView.setUint32(i << 2, oldDataView.getUint32(i << 2));
+      }
+    }
+    lastLength = length;
+    return dataView;
+  }
+  function commitWrite() {
+    offset += lastLength;
+  }
+  function writeFloat64(value) {
+    commitWrite(prepareWrite(8).setFloat64(offset, value));
+  }
+  function writeUint8(value) {
+    commitWrite(prepareWrite(1).setUint8(offset, value));
+  }
+  function writeUint8Array(value) {
+    const dataView = prepareWrite(value.length);
+    for (let i = 0; i < value.length; ++i) {
+      dataView.setUint8(offset + i, value[i]);
+    }
+    commitWrite();
+  }
+  function writeUint16(value) {
+    commitWrite(prepareWrite(2).setUint16(offset, value));
+  }
+  function writeUint32(value) {
+    commitWrite(prepareWrite(4).setUint32(offset, value));
+  }
+  function writeUint64(value) {
+    const low = value % POW_2_32;
+    const high = (value - low) / POW_2_32;
+    const dataView = prepareWrite(8);
+    dataView.setUint32(offset, high);
+    dataView.setUint32(offset + 4, low);
+    commitWrite();
+  }
+  function writeTypeAndLength(type, length) {
+    if (length < 24) {
+      writeUint8((type << 5) | length);
+    } else if (length < 0x100) {
+      writeUint8((type << 5) | 24);
+      writeUint8(length);
+    } else if (length < 0x10000) {
+      writeUint8((type << 5) | 25);
+      writeUint16(length);
+    } else if (length < 0x100000000) {
+      writeUint8((type << 5) | 26);
+      writeUint32(length);
+    } else {
+      writeUint8((type << 5) | 27);
+      writeUint64(length);
+    }
+  }
+  function encodeItem(value) {
+    let i;
+    const utf8data = [];
+    let length;
+    if (value === false) {
+      return writeUint8(0xf4);
+    }
+    if (value === true) {
+      return writeUint8(0xf5);
+    }
+    if (value === null) {
+      return writeUint8(0xf6);
+    }
+    if (value === undefined) {
+      return writeUint8(0xf7);
+    }
+    switch (typeof value) {
+      case "number":
+        if (Math.floor(value) === value) {
+          if (value >= 0 && value <= POW_2_53) {
+            return writeTypeAndLength(0, value);
+          }
+          if (-POW_2_53 <= value && value < 0) {
+            return writeTypeAndLength(1, -(value + 1));
+          }
+        }
+        writeUint8(0xfb);
+        return writeFloat64(value);
+      case "string":
+        for (i = 0; i < value.length; ++i) {
+          let charCode = value.charCodeAt(i);
+          if (charCode < 0x80) {
+            utf8data.push(charCode);
+          } else if (charCode < 0x800) {
+            utf8data.push(0xc0 | (charCode >> 6));
+            utf8data.push(0x80 | (charCode & 0x3f));
+          } else if (charCode < 0xd800) {
+            utf8data.push(0xe0 | (charCode >> 12));
+            utf8data.push(0x80 | ((charCode >> 6) & 0x3f));
+            utf8data.push(0x80 | (charCode & 0x3f));
+          } else {
+            charCode = (charCode & 0x3ff) << 10;
+            charCode |= value.charCodeAt(++i) & 0x3ff;
+            charCode += 0x10000;
+            utf8data.push(0xf0 | (charCode >> 18));
+            utf8data.push(0x80 | ((charCode >> 12) & 0x3f));
+            utf8data.push(0x80 | ((charCode >> 6) & 0x3f));
+            utf8data.push(0x80 | (charCode & 0x3f));
+          }
+        }
+        writeTypeAndLength(3, utf8data.length);
+        return writeUint8Array(utf8data);
+      default:
+        if (Array.isArray(value)) {
+          length = value.length;
+          writeTypeAndLength(4, length);
+          for (i = 0; i < length; ++i) {
+            encodeItem(value[i]);
+          }
+        } else if (value instanceof Uint8Array) {
+          writeTypeAndLength(2, value.length);
+          writeUint8Array(value);
+        } else {
+          const keys = Object.keys(value);
+          length = keys.length;
+          writeTypeAndLength(5, length);
+          for (i = 0; i < length; ++i) {
+            const key = keys[i];
+            encodeItem(key);
+            encodeItem(value[key]);
+          }
+        }
+    }
+  }
+  encodeItem(value);
+  if ("slice" in data) {
+    return data.slice(0, offset);
+  }
+  const ret = new ArrayBuffer(offset);
+  const retView = new DataView(ret);
+  for (let i = 0; i < offset; ++i) {
+    retView.setUint8(i, dataView.getUint8(i));
+  }
+  return ret;
+}
+function decode(data, tagger, simpleValue) {
+  const dataView = new DataView(data);
+  let offset = 0;
+  if (typeof tagger !== "function") {
+    tagger = function (value) {
+      return value;
+    };
+  }
+  if (typeof simpleValue !== "function") {
+    simpleValue = function () {
+      return undefined;
+    };
+  }
+  function commitRead(length, value) {
+    offset += length;
+    return value;
+  }
+  function readArrayBuffer(length) {
+    return commitRead(length, new Uint8Array(data, offset, length));
+  }
+  function readFloat16() {
+    const tempArrayBuffer = new ArrayBuffer(4);
+    const tempDataView = new DataView(tempArrayBuffer);
+    const value = readUint16();
+    const sign = value & 0x8000;
+    let exponent = value & 0x7c00;
+    const fraction = value & 0x03ff;
+    if (exponent === 0x7c00) {
+      exponent = 0xff << 10;
+    } else if (exponent !== 0) {
+      exponent += (127 - 15) << 10;
+    } else if (fraction !== 0) {
+      return (sign ? -1 : 1) * fraction * POW_2_24;
+    }
+    tempDataView.setUint32(0, (sign << 16) | (exponent << 13) | (fraction << 13));
+    return tempDataView.getFloat32(0);
+  }
+  function readFloat32() {
+    return commitRead(4, dataView.getFloat32(offset));
+  }
+  function readFloat64() {
+    return commitRead(8, dataView.getFloat64(offset));
+  }
+  function readUint8() {
+    return commitRead(1, dataView.getUint8(offset));
+  }
+  function readUint16() {
+    return commitRead(2, dataView.getUint16(offset));
+  }
+  function readUint32() {
+    return commitRead(4, dataView.getUint32(offset));
+  }
+  function readUint64() {
+    return readUint32() * POW_2_32 + readUint32();
+  }
+  function readBreak() {
+    if (dataView.getUint8(offset) !== 0xff) {
+      return false;
+    }
+    offset += 1;
+    return true;
+  }
+  function readLength(additionalInformation) {
+    if (additionalInformation < 24) {
+      return additionalInformation;
+    }
+    if (additionalInformation === 24) {
+      return readUint8();
+    }
+    if (additionalInformation === 25) {
+      return readUint16();
+    }
+    if (additionalInformation === 26) {
+      return readUint32();
+    }
+    if (additionalInformation === 27) {
+      return readUint64();
+    }
+    if (additionalInformation === 31) {
+      return -1;
+    }
+    throw new Error("Invalid length encoding");
+  }
+  function readIndefiniteStringLength(majorType) {
+    const initialByte = readUint8();
+    if (initialByte === 0xff) {
+      return -1;
+    }
+    const length = readLength(initialByte & 0x1f);
+    if (length < 0 || initialByte >> 5 !== majorType) {
+      throw new Error("Invalid indefinite length element");
+    }
+    return length;
+  }
+  function appendUtf16Data(utf16data, length) {
+    for (let i = 0; i < length; ++i) {
+      let value = readUint8();
+      if (value & 0x80) {
+        if (value < 0xe0) {
+          value = ((value & 0x1f) << 6) | (readUint8() & 0x3f);
+          length -= 1;
+        } else if (value < 0xf0) {
+          value = ((value & 0x0f) << 12) | ((readUint8() & 0x3f) << 6) | (readUint8() & 0x3f);
+          length -= 2;
+        } else {
+          value =
+            ((value & 0x0f) << 18) | ((readUint8() & 0x3f) << 12) | ((readUint8() & 0x3f) << 6) | (readUint8() & 0x3f);
+          length -= 3;
+        }
+      }
+      if (value < 0x10000) {
+        utf16data.push(value);
+      } else {
+        value -= 0x10000;
+        utf16data.push(0xd800 | (value >> 10));
+        utf16data.push(0xdc00 | (value & 0x3ff));
+      }
+    }
+  }
+  function decodeItem() {
+    const initialByte = readUint8();
+    const majorType = initialByte >> 5;
+    const additionalInformation = initialByte & 0x1f;
+    let i;
+    let length;
+    if (majorType === 7) {
+      switch (additionalInformation) {
+        case 25:
+          return readFloat16();
+        case 26:
+          return readFloat32();
+        case 27:
+          return readFloat64();
+      }
+    }
+    length = readLength(additionalInformation);
+    if (length < 0 && (majorType < 2 || majorType > 6)) {
+      throw new Error("Invalid length");
+    }
+    const utf16data = [];
+    let retArray;
+    const retObject = {};
+    switch (majorType) {
+      case 0:
+        return length;
+      case 1:
+        return -1 - length;
+      case 2:
+        if (length < 0) {
+          const elements = [];
+          let fullArrayLength = 0;
+          while ((length = readIndefiniteStringLength(majorType)) >= 0) {
+            fullArrayLength += length;
+            elements.push(readArrayBuffer(length));
+          }
+          const fullArray = new Uint8Array(fullArrayLength);
+          let fullArrayOffset = 0;
+          for (i = 0; i < elements.length; ++i) {
+            fullArray.set(elements[i], fullArrayOffset);
+            fullArrayOffset += elements[i].length;
+          }
+          return fullArray;
+        }
+        return readArrayBuffer(length);
+      case 3:
+        if (length < 0) {
+          while ((length = readIndefiniteStringLength(majorType)) >= 0) {
+            appendUtf16Data(utf16data, length);
+          }
+        } else {
+          appendUtf16Data(utf16data, length);
+        }
+        return String.fromCharCode.apply(null, utf16data);
+      case 4:
+        if (length < 0) {
+          retArray = [];
+          while (!readBreak()) {
+            retArray.push(decodeItem());
+          }
+        } else {
+          retArray = new Array(length);
+          for (i = 0; i < length; ++i) {
+            retArray[i] = decodeItem();
+          }
+        }
+        return retArray;
+      case 5:
+        for (i = 0; i < length || (length < 0 && !readBreak()); ++i) {
+          const key = decodeItem();
+          retObject[key] = decodeItem();
+        }
+        return retObject;
+      case 6:
+        return tagger(decodeItem(), length);
+      case 7:
+        switch (length) {
+          case 20:
+            return false;
+          case 21:
+            return true;
+          case 22:
+            return null;
+          case 23:
+            return undefined;
+          default:
+            return simpleValue(length);
+        }
+    }
+  }
+  const ret = decodeItem();
+  if (offset !== data.byteLength) {
+    throw new Error("Remaining bytes");
+  }
+  return ret;
+}
+const CBOR = {
+  encode,
+  decode,
+};
+
+const _console$d = createConsole("mcumgr", { log: false });
+const constants = {
+  MGMT_OP_READ: 0,
+  MGMT_OP_READ_RSP: 1,
+  MGMT_OP_WRITE: 2,
+  MGMT_OP_WRITE_RSP: 3,
+  MGMT_GROUP_ID_OS: 0,
+  MGMT_GROUP_ID_IMAGE: 1,
+  MGMT_GROUP_ID_FS: 8,
+  OS_MGMT_ID_ECHO: 0,
+  OS_MGMT_ID_TASKSTAT: 2,
+  OS_MGMT_ID_MPSTAT: 3,
+  OS_MGMT_ID_RESET: 5,
+  IMG_MGMT_ID_STATE: 0,
+  IMG_MGMT_ID_UPLOAD: 1,
+  IMG_MGMT_ID_ERASE: 5,
+  FS_MGMT_ID_FILE: 0,
+};
+class MCUManager {
+  constructor() {
+    this._mtu = 256;
+    this._messageCallback = null;
+    this._imageUploadProgressCallback = null;
+    this._imageUploadNextCallback = null;
+    this._fileUploadProgressCallback = null;
+    this._fileUploadNextCallback = null;
+    this._uploadIsInProgress = false;
+    this._downloadIsInProgress = false;
+    this._buffer = new Uint8Array();
+    this._seq = 0;
+  }
+  onMessage(callback) {
+    this._messageCallback = callback;
+    return this;
+  }
+  onImageUploadNext(callback) {
+    this._imageUploadNextCallback = callback;
+    return this;
+  }
+  onImageUploadProgress(callback) {
+    this._imageUploadProgressCallback = callback;
+    return this;
+  }
+  onImageUploadFinished(callback) {
+    this._imageUploadFinishedCallback = callback;
+    return this;
+  }
+  onFileUploadNext(callback) {
+    this._fileUploadNextCallback = callback;
+    return this;
+  }
+  onFileUploadProgress(callback) {
+    this._fileUploadProgressCallback = callback;
+    return this;
+  }
+  onFileUploadFinished(callback) {
+    this._fileUploadFinishedCallback = callback;
+    return this;
+  }
+  onFileDownloadNext(callback) {
+    this._fileDownloadNextCallback = callback;
+    return this;
+  }
+  onFileDownloadProgress(callback) {
+    this._fileDownloadProgressCallback = callback;
+    return this;
+  }
+  onFileDownloadFinished(callback) {
+    this._fileDownloadFinishedCallback = callback;
+    return this;
+  }
+  _getMessage(op, group, id, data) {
+    const _flags = 0;
+    let encodedData = [];
+    if (typeof data !== "undefined") {
+      encodedData = [...new Uint8Array(CBOR.encode(data))];
+    }
+    const lengthLo = encodedData.length & 255;
+    const lengthHi = encodedData.length >> 8;
+    const groupLo = group & 255;
+    const groupHi = group >> 8;
+    const message = [op, _flags, lengthHi, lengthLo, groupHi, groupLo, this._seq, id, ...encodedData];
+    this._seq = (this._seq + 1) % 256;
+    return message;
+  }
+  _notification(buffer) {
+    _console$d.log("mcumgr - message received");
+    const message = new Uint8Array(buffer);
+    this._buffer = new Uint8Array([...this._buffer, ...message]);
+    const messageLength = this._buffer[2] * 256 + this._buffer[3];
+    if (this._buffer.length < messageLength + 8) return;
+    this._processMessage(this._buffer.slice(0, messageLength + 8));
+    this._buffer = this._buffer.slice(messageLength + 8);
+  }
+  _processMessage(message) {
+    const [op, , lengthHi, lengthLo, groupHi, groupLo, , id] = message;
+    const data = CBOR.decode(message.slice(8).buffer);
+    const length = lengthHi * 256 + lengthLo;
+    const group = groupHi * 256 + groupLo;
+    _console$d.log("mcumgr - Process Message - Group: " + group + ", Id: " + id + ", Off: " + data.off);
+    if (group === constants.MGMT_GROUP_ID_IMAGE && id === constants.IMG_MGMT_ID_UPLOAD && data.off) {
+      this._uploadOffset = data.off;
+      this._uploadNext();
+      return;
+    }
+    if (
+      op === constants.MGMT_OP_WRITE_RSP &&
+      group === constants.MGMT_GROUP_ID_FS &&
+      id === constants.FS_MGMT_ID_FILE &&
+      data.off
+    ) {
+      this._uploadFileOffset = data.off;
+      this._uploadFileNext();
+      return;
+    }
+    if (op === constants.MGMT_OP_READ_RSP && group === constants.MGMT_GROUP_ID_FS && id === constants.FS_MGMT_ID_FILE) {
+      this._downloadFileOffset += data.data.length;
+      if (data.len != undefined) {
+        this._downloadFileLength = data.len;
+      }
+      _console$d.log("downloaded " + this._downloadFileOffset + " bytes of " + this._downloadFileLength);
+      if (this._downloadFileLength > 0) {
+        this._fileDownloadProgressCallback({
+          percentage: Math.floor((this._downloadFileOffset / this._downloadFileLength) * 100),
+        });
+      }
+      if (this._messageCallback) this._messageCallback({ op, group, id, data, length });
+      this._downloadFileNext();
+      return;
+    }
+    if (this._messageCallback) this._messageCallback({ op, group, id, data, length });
+  }
+  cmdReset() {
+    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_OS, constants.OS_MGMT_ID_RESET);
+  }
+  smpEcho(message) {
+    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_OS, constants.OS_MGMT_ID_ECHO, {
+      d: message,
+    });
+  }
+  cmdImageState() {
+    return this._getMessage(constants.MGMT_OP_READ, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE);
+  }
+  cmdImageErase() {
+    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_ERASE, {});
+  }
+  cmdImageTest(hash) {
+    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE, {
+      hash,
+      confirm: false,
+    });
+  }
+  cmdImageConfirm(hash) {
+    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE, {
+      hash,
+      confirm: true,
+    });
+  }
+  _hash(image) {
+    return crypto.subtle.digest("SHA-256", image);
+  }
+  async _uploadNext() {
+    if (!this._uploadImage) {
+      return;
+    }
+    if (this._uploadOffset >= this._uploadImage.byteLength) {
+      this._uploadIsInProgress = false;
+      this._imageUploadFinishedCallback();
+      return;
+    }
+    const nmpOverhead = 8;
+    const message = { data: new Uint8Array(), off: this._uploadOffset };
+    if (this._uploadOffset === 0) {
+      message.len = this._uploadImage.byteLength;
+      message.sha = new Uint8Array(await this._hash(this._uploadImage));
+    }
+    this._imageUploadProgressCallback({
+      percentage: Math.floor((this._uploadOffset / this._uploadImage.byteLength) * 100),
+    });
+    const length = this._mtu - CBOR.encode(message).byteLength - nmpOverhead - 3 - 5;
+    message.data = new Uint8Array(this._uploadImage.slice(this._uploadOffset, this._uploadOffset + length));
+    this._uploadOffset += length;
+    const packet = this._getMessage(
+      constants.MGMT_OP_WRITE,
+      constants.MGMT_GROUP_ID_IMAGE,
+      constants.IMG_MGMT_ID_UPLOAD,
+      message
+    );
+    _console$d.log("mcumgr - _uploadNext: Message Length: " + packet.length);
+    this._imageUploadNextCallback({ packet });
+  }
+  async reset() {
+    this._messageCallback = null;
+    this._imageUploadProgressCallback = null;
+    this._imageUploadNextCallback = null;
+    this._fileUploadProgressCallback = null;
+    this._fileUploadNextCallback = null;
+    this._uploadIsInProgress = false;
+    this._downloadIsInProgress = false;
+    this._buffer = new Uint8Array();
+    this._seq = 0;
+  }
+  async cmdUpload(image, slot = 0) {
+    if (this._uploadIsInProgress) {
+      _console$d.error("Upload is already in progress.");
+      return;
+    }
+    this._uploadIsInProgress = true;
+    this._uploadOffset = 0;
+    this._uploadImage = image;
+    this._uploadSlot = slot;
+    this._uploadNext();
+  }
+  async cmdUploadFile(filebuf, destFilename) {
+    if (this._uploadIsInProgress) {
+      _console$d.error("Upload is already in progress.");
+      return;
+    }
+    this._uploadIsInProgress = true;
+    this._uploadFileOffset = 0;
+    this._uploadFile = filebuf;
+    this._uploadFilename = destFilename;
+    this._uploadFileNext();
+  }
+  async _uploadFileNext() {
+    _console$d.log("uploadFileNext - offset: " + this._uploadFileOffset + ", length: " + this._uploadFile.byteLength);
+    if (this._uploadFileOffset >= this._uploadFile.byteLength) {
+      this._uploadIsInProgress = false;
+      this._fileUploadFinishedCallback();
+      return;
+    }
+    const nmpOverhead = 8;
+    const message = { data: new Uint8Array(), off: this._uploadFileOffset };
+    if (this._uploadFileOffset === 0) {
+      message.len = this._uploadFile.byteLength;
+    }
+    message.name = this._uploadFilename;
+    this._fileUploadProgressCallback({
+      percentage: Math.floor((this._uploadFileOffset / this._uploadFile.byteLength) * 100),
+    });
+    const length = this._mtu - CBOR.encode(message).byteLength - nmpOverhead;
+    message.data = new Uint8Array(this._uploadFile.slice(this._uploadFileOffset, this._uploadFileOffset + length));
+    this._uploadFileOffset += length;
+    const packet = this._getMessage(
+      constants.MGMT_OP_WRITE,
+      constants.MGMT_GROUP_ID_FS,
+      constants.FS_MGMT_ID_FILE,
+      message
+    );
+    _console$d.log("mcumgr - _uploadNext: Message Length: " + packet.length);
+    this._fileUploadNextCallback({ packet });
+  }
+  async cmdDownloadFile(filename, destFilename) {
+    if (this._downloadIsInProgress) {
+      _console$d.error("Download is already in progress.");
+      return;
+    }
+    this._downloadIsInProgress = true;
+    this._downloadFileOffset = 0;
+    this._downloadFileLength = 0;
+    this._downloadRemoteFilename = filename;
+    this._downloadLocalFilename = destFilename;
+    this._downloadFileNext();
+  }
+  async _downloadFileNext() {
+    if (this._downloadFileLength > 0) {
+      if (this._downloadFileOffset >= this._downloadFileLength) {
+        this._downloadIsInProgress = false;
+        this._fileDownloadFinishedCallback();
+        return;
+      }
+    }
+    const message = { off: this._downloadFileOffset };
+    if (this._downloadFileOffset === 0) {
+      message.name = this._downloadRemoteFilename;
+    }
+    const packet = this._getMessage(
+      constants.MGMT_OP_READ,
+      constants.MGMT_GROUP_ID_FS,
+      constants.FS_MGMT_ID_FILE,
+      message
+    );
+    _console$d.log("mcumgr - _downloadNext: Message Length: " + packet.length);
+    this._fileDownloadNextCallback({ packet });
+  }
+  async imageInfo(image) {
+    const info = {};
+    const view = new Uint8Array(image);
+    if (view.length < 32) {
+      throw new Error("Invalid image (too short file)");
+    }
+    if (view[0] !== 0x3d || view[1] !== 0xb8 || view[2] !== 0xf3 || view[3] !== 0x96) {
+      throw new Error("Invalid image (wrong magic bytes)");
+    }
+    if (view[4] !== 0x00 || view[5] !== 0x00 || view[6] !== 0x00 || view[7] !== 0x00) {
+      throw new Error("Invalid image (wrong load address)");
+    }
+    const headerSize = view[8] + view[9] * 2 ** 8;
+    if (view[10] !== 0x00 || view[11] !== 0x00) {
+      throw new Error("Invalid image (wrong protected TLV area size)");
+    }
+    const imageSize = view[12] + view[13] * 2 ** 8 + view[14] * 2 ** 16 + view[15] * 2 ** 24;
+    info.imageSize = imageSize;
+    if (view.length < imageSize + headerSize) {
+      throw new Error("Invalid image (wrong image size)");
+    }
+    if (view[16] !== 0x00 || view[17] !== 0x00 || view[18] !== 0x00 || view[19] !== 0x00) {
+      throw new Error("Invalid image (wrong flags)");
+    }
+    const version = `${view[20]}.${view[21]}.${view[22] + view[23] * 2 ** 8}`;
+    info.version = version;
+    info.hash = [...new Uint8Array(await this._hash(image.slice(0, imageSize + 32)))]
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    return info;
+  }
+}
+
+const _console$c = createConsole("FirmwareManager", { log: false });
+const FirmwareMessageTypes = ["smp"];
+const FirmwareEventTypes = [
+    ...FirmwareMessageTypes,
+    "firmwareImages",
+    "firmwareUploadProgress",
+    "firmwareStatus",
+    "firmwareUploadComplete",
+];
+const FirmwareStatuses = ["idle", "uploading", "uploaded", "pending", "testing", "erasing"];
+class FirmwareManager {
+    sendMessage;
+    constructor() {
+        this.#assignMcuManagerCallbacks();
+        autoBind(this);
+    }
+    eventDispatcher;
+    get addEventListenter() {
+        return this.eventDispatcher.addEventListener;
+    }
+    get #dispatchEvent() {
+        return this.eventDispatcher.dispatchEvent;
+    }
+    get removeEventListener() {
+        return this.eventDispatcher.removeEventListener;
+    }
+    get waitForEvent() {
+        return this.eventDispatcher.waitForEvent;
+    }
+    parseMessage(messageType, dataView) {
+        _console$c.log({ messageType });
+        switch (messageType) {
+            case "smp":
+                this.#mcuManager._notification(Array.from(new Uint8Array(dataView.buffer)));
+                this.#dispatchEvent("smp", { dataView });
+                break;
+            default:
+                throw Error(`uncaught messageType ${messageType}`);
+        }
+    }
+    async uploadFirmware(file) {
+        _console$c.log("uploadFirmware", file);
+        const promise = this.waitForEvent("firmwareUploadComplete");
+        await this.getImages();
+        const arrayBuffer = await getFileBuffer(file);
+        const imageInfo = await this.#mcuManager.imageInfo(arrayBuffer);
+        _console$c.log({ imageInfo });
+        this.#mcuManager.cmdUpload(arrayBuffer, 1);
+        this.#updateStatus("uploading");
+        await promise;
+    }
+    #status = "idle";
+    get status() {
+        return this.#status;
+    }
+    #updateStatus(newStatus) {
+        _console$c.assertEnumWithError(newStatus, FirmwareStatuses);
+        if (this.#status == newStatus) {
+            _console$c.log(`redundant firmwareStatus assignment "${newStatus}"`);
+            return;
+        }
+        this.#status = newStatus;
+        _console$c.log({ firmwareStatus: this.#status });
+        this.#dispatchEvent("firmwareStatus", { firmwareStatus: this.#status });
+    }
+    #images;
+    get images() {
+        return this.#images;
+    }
+    #assertImages() {
+        _console$c.assertWithError(this.#images, "didn't get imageState");
+    }
+    #assertValidImageIndex(imageIndex) {
+        _console$c.assertTypeWithError(imageIndex, "number");
+        _console$c.assertWithError(imageIndex == 0 || imageIndex == 1, "imageIndex must be 0 or 1");
+    }
+    async getImages() {
+        const promise = this.waitForEvent("firmwareImages");
+        _console$c.log("getting firmware image state...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageState()).buffer);
+        await promise;
+    }
+    async testImage(imageIndex = 1) {
+        this.#assertValidImageIndex(imageIndex);
+        this.#assertImages();
+        if (!this.#images[imageIndex]) {
+            _console$c.log(`image ${imageIndex} not found`);
+            return;
+        }
+        if (this.#images[imageIndex].pending == true) {
+            _console$c.log(`image ${imageIndex} is already pending`);
+            return;
+        }
+        if (this.#images[imageIndex].empty) {
+            _console$c.log(`image ${imageIndex} is empty`);
+            return;
+        }
+        const promise = this.waitForEvent("smp");
+        _console$c.log("testing firmware image...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageTest(this.#images[imageIndex].hash)).buffer);
+        await promise;
+    }
+    async eraseImage() {
+        this.#assertImages();
+        const promise = this.waitForEvent("smp");
+        _console$c.log("erasing image...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageErase()).buffer);
+        this.#updateStatus("erasing");
+        await promise;
+        await this.getImages();
+    }
+    async confirmImage(imageIndex = 0) {
+        this.#assertValidImageIndex(imageIndex);
+        this.#assertImages();
+        if (this.#images[imageIndex].confirmed === true) {
+            _console$c.log(`image ${imageIndex} is already confirmed`);
+            return;
+        }
+        const promise = this.waitForEvent("smp");
+        _console$c.log("confirming image...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[imageIndex].hash)).buffer);
+        await promise;
+    }
+    async echo(string) {
+        _console$c.assertTypeWithError(string, "string");
+        const promise = this.waitForEvent("smp");
+        _console$c.log("sending echo...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.smpEcho(string)).buffer);
+        await promise;
+    }
+    async reset() {
+        const promise = this.waitForEvent("smp");
+        _console$c.log("resetting...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdReset()).buffer);
+        await promise;
+    }
+    #mtu;
+    get mtu() {
+        return this.#mtu;
+    }
+    set mtu(newMtu) {
+        this.#mtu = newMtu;
+        this.#mcuManager._mtu = newMtu;
+    }
+    #mcuManager = new MCUManager();
+    #assignMcuManagerCallbacks() {
+        this.#mcuManager.onMessage(this.#onMcuMessage.bind(this));
+        this.#mcuManager.onFileDownloadNext(this.#onMcuFileDownloadNext);
+        this.#mcuManager.onFileDownloadProgress(this.#onMcuFileDownloadProgress.bind(this));
+        this.#mcuManager.onFileDownloadFinished(this.#onMcuFileDownloadFinished.bind(this));
+        this.#mcuManager.onFileUploadNext(this.#onMcuFileUploadNext.bind(this));
+        this.#mcuManager.onFileUploadProgress(this.#onMcuFileUploadProgress.bind(this));
+        this.#mcuManager.onFileUploadFinished(this.#onMcuFileUploadFinished.bind(this));
+        this.#mcuManager.onImageUploadNext(this.#onMcuImageUploadNext.bind(this));
+        this.#mcuManager.onImageUploadProgress(this.#onMcuImageUploadProgress.bind(this));
+        this.#mcuManager.onImageUploadFinished(this.#onMcuImageUploadFinished.bind(this));
+    }
+    #onMcuMessage({ op, group, id, data, length }) {
+        _console$c.log("onMcuMessage", ...arguments);
+        switch (group) {
+            case constants.MGMT_GROUP_ID_OS:
+                switch (id) {
+                    case constants.OS_MGMT_ID_ECHO:
+                        _console$c.log(`echo "${data.r}"`);
+                        break;
+                    case constants.OS_MGMT_ID_TASKSTAT:
+                        _console$c.table(data.tasks);
+                        break;
+                    case constants.OS_MGMT_ID_MPSTAT:
+                        _console$c.log(data);
+                        break;
+                }
+                break;
+            case constants.MGMT_GROUP_ID_IMAGE:
+                switch (id) {
+                    case constants.IMG_MGMT_ID_STATE:
+                        this.#onMcuImageState(data);
+                }
+                break;
+            default:
+                throw Error(`uncaught mcuMessage group ${group}`);
+        }
+    }
+    #onMcuFileDownloadNext() {
+        _console$c.log("onMcuFileDownloadNext", ...arguments);
+    }
+    #onMcuFileDownloadProgress() {
+        _console$c.log("onMcuFileDownloadProgress", ...arguments);
+    }
+    #onMcuFileDownloadFinished() {
+        _console$c.log("onMcuFileDownloadFinished", ...arguments);
+    }
+    #onMcuFileUploadNext() {
+        _console$c.log("onMcuFileUploadNext");
+    }
+    #onMcuFileUploadProgress() {
+        _console$c.log("onMcuFileUploadProgress");
+    }
+    #onMcuFileUploadFinished() {
+        _console$c.log("onMcuFileUploadFinished");
+    }
+    #onMcuImageUploadNext({ packet }) {
+        _console$c.log("onMcuImageUploadNext");
+        this.sendMessage(Uint8Array.from(packet).buffer);
+    }
+    #onMcuImageUploadProgress({ percentage }) {
+        const progress = percentage / 100;
+        _console$c.log("onMcuImageUploadProgress", ...arguments);
+        this.#dispatchEvent("firmwareUploadProgress", { progress });
+    }
+    async #onMcuImageUploadFinished() {
+        _console$c.log("onMcuImageUploadFinished", ...arguments);
+        await this.getImages();
+        this.#dispatchEvent("firmwareUploadProgress", { progress: 100 });
+        this.#dispatchEvent("firmwareUploadComplete", {});
+    }
+    #onMcuImageState({ images }) {
+        if (images) {
+            this.#images = images;
+            _console$c.log("images", this.#images);
+        }
+        else {
+            _console$c.log("no images found");
+            return;
+        }
+        let newStatus = "idle";
+        if (this.#images.length == 2) {
+            if (!this.#images[1].bootable) {
+                _console$c.warn('Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image');
+            }
+            else if (!this.#images[0].confirmed) {
+                _console$c.log('Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.');
+                newStatus = "testing";
+            }
+            else {
+                if (this.#images[1].pending) {
+                    _console$c.log("reset to upload to the new firmware image");
+                    newStatus = "pending";
+                }
+                else {
+                    _console$c.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
+                    newStatus = "uploaded";
+                }
+            }
+        }
+        if (this.#images.length == 1) {
+            this.#images.push({
+                slot: 1,
+                empty: true,
+                version: "Empty",
+                pending: false,
+                confirmed: false,
+                bootable: false,
+                active: false,
+                permanent: false,
+            });
+            _console$c.log("Select a firmware upload image to upload to slot 1.");
+        }
+        this.#updateStatus(newStatus);
+        this.#dispatchEvent("firmwareImages", { firmwareImages: this.#images });
+    }
+}
+
+const _console$b = createConsole("DeviceManager", { log: false });
+const DeviceManagerEventTypes = [
+    "deviceConnected",
+    "deviceDisconnected",
+    "deviceIsConnected",
+    "availableDevices",
+    "connectedDevices",
+];
+class DeviceManager {
+    static shared = new DeviceManager();
+    constructor() {
+        if (DeviceManager.shared && this != DeviceManager.shared) {
+            throw Error("DeviceManager is a singleton - use DeviceManager.shared");
+        }
+        if (this.CanUseLocalStorage) {
+            this.UseLocalStorage = true;
+        }
+    }
+    #boundDeviceEventListeners = {
+        getType: this.#onDeviceType.bind(this),
+        isConnected: this.#OnDeviceIsConnected.bind(this),
+    };
+    onDevice(device) {
+        addEventListeners(device, this.#boundDeviceEventListeners);
+    }
+    #onDeviceType(event) {
+        if (this.#UseLocalStorage) {
+            this.#UpdateLocalStorageConfigurationForDevice(event.target);
+        }
+    }
+    OnDeviceConnectionStatusUpdated(device, connectionStatus) {
+        if (connectionStatus == "notConnected" &&
+            !device.canReconnect &&
+            this.#AvailableDevices.includes(device)) {
+            const deviceIndex = this.#AvailableDevices.indexOf(device);
+            this.AvailableDevices.splice(deviceIndex, 1);
+            this.#DispatchAvailableDevices();
+        }
+    }
+    #ConnectedDevices = [];
+    get ConnectedDevices() {
+        return this.#ConnectedDevices;
+    }
+    #UseLocalStorage = false;
+    get UseLocalStorage() {
+        return this.#UseLocalStorage;
+    }
+    set UseLocalStorage(newUseLocalStorage) {
+        this.#AssertLocalStorage();
+        _console$b.assertTypeWithError(newUseLocalStorage, "boolean");
+        this.#UseLocalStorage = newUseLocalStorage;
+        if (this.#UseLocalStorage && !this.#LocalStorageConfiguration) {
+            this.#LoadFromLocalStorage();
+        }
+    }
+    #DefaultLocalStorageConfiguration = {
+        devices: [],
+    };
+    #LocalStorageConfiguration;
+    get CanUseLocalStorage() {
+        return isInBrowser && window.localStorage;
+    }
+    #AssertLocalStorage() {
+        _console$b.assertWithError(isInBrowser, "localStorage is only available in the browser");
+        _console$b.assertWithError(window.localStorage, "localStorage not found");
+    }
+    #LocalStorageKey = "BS.Device";
+    #SaveToLocalStorage() {
+        this.#AssertLocalStorage();
+        localStorage.setItem(this.#LocalStorageKey, JSON.stringify(this.#LocalStorageConfiguration));
+    }
+    async #LoadFromLocalStorage() {
+        this.#AssertLocalStorage();
+        let localStorageString = localStorage.getItem(this.#LocalStorageKey);
+        if (typeof localStorageString != "string") {
+            _console$b.log("no info found in localStorage");
+            this.#LocalStorageConfiguration = Object.assign({}, this.#DefaultLocalStorageConfiguration);
+            this.#SaveToLocalStorage();
+            return;
+        }
+        try {
+            const configuration = JSON.parse(localStorageString);
+            _console$b.log({ configuration });
+            this.#LocalStorageConfiguration = configuration;
+            if (this.CanGetDevices) {
+                await this.GetDevices();
+            }
+        }
+        catch (error) {
+            _console$b.error(error);
+        }
+    }
+    #UpdateLocalStorageConfigurationForDevice(device) {
+        if (device.connectionType != "webBluetooth") {
+            _console$b.log("localStorage is only for webBluetooth devices");
+            return;
+        }
+        this.#AssertLocalStorage();
+        const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex((deviceInformation) => {
+            return deviceInformation.bluetoothId == device.bluetoothId;
+        });
+        if (deviceInformationIndex == -1) {
+            return;
+        }
+        this.#LocalStorageConfiguration.devices[deviceInformationIndex].type =
+            device.type;
+        this.#SaveToLocalStorage();
+    }
+    #AvailableDevices = [];
+    get AvailableDevices() {
+        return this.#AvailableDevices;
+    }
+    get CanGetDevices() {
+        return isInBrowser && navigator.bluetooth?.getDevices;
+    }
+    async GetDevices() {
+        if (!isInBrowser) {
+            _console$b.warn("GetDevices is only available in the browser");
+            return;
+        }
+        if (!navigator.bluetooth) {
+            _console$b.warn("bluetooth is not available in this browser");
+            return;
+        }
+        if (isInBluefy) {
+            _console$b.warn("bluefy lists too many devices...");
+            return;
+        }
+        if (!navigator.bluetooth.getDevices) {
+            _console$b.warn("bluetooth.getDevices() is not available in this browser");
+            return;
+        }
+        if (!this.CanGetDevices) {
+            _console$b.log("CanGetDevices is false");
+            return;
+        }
+        if (!this.#LocalStorageConfiguration) {
+            this.#LoadFromLocalStorage();
+        }
+        const configuration = this.#LocalStorageConfiguration;
+        if (!configuration.devices || configuration.devices.length == 0) {
+            _console$b.log("no devices found in configuration");
+            return;
+        }
+        const bluetoothDevices = await navigator.bluetooth.getDevices();
+        _console$b.log({ bluetoothDevices });
+        bluetoothDevices.forEach((bluetoothDevice) => {
+            if (!bluetoothDevice.gatt) {
+                return;
+            }
+            let deviceInformation = configuration.devices.find((deviceInformation) => bluetoothDevice.id == deviceInformation.bluetoothId);
+            if (!deviceInformation) {
+                return;
+            }
+            let existingConnectedDevice = this.ConnectedDevices.filter((device) => device.connectionType == "webBluetooth").find((device) => device.bluetoothId == bluetoothDevice.id);
+            const existingAvailableDevice = this.AvailableDevices.filter((device) => device.connectionType == "webBluetooth").find((device) => device.bluetoothId == bluetoothDevice.id);
+            if (existingAvailableDevice) {
+                if (existingConnectedDevice &&
+                    existingConnectedDevice?.bluetoothId ==
+                        existingAvailableDevice.bluetoothId &&
+                    existingConnectedDevice != existingAvailableDevice) {
+                    this.AvailableDevices[this.#AvailableDevices.indexOf(existingAvailableDevice)] = existingConnectedDevice;
+                }
+                return;
+            }
+            if (existingConnectedDevice) {
+                this.AvailableDevices.push(existingConnectedDevice);
+                return;
+            }
+            const device = new Device();
+            const connectionManager = new WebBluetoothConnectionManager();
+            connectionManager.device = bluetoothDevice;
+            if (bluetoothDevice.name) {
+                device._informationManager.updateName(bluetoothDevice.name);
+            }
+            device._informationManager.updateType(deviceInformation.type);
+            device.connectionManager = connectionManager;
+            this.AvailableDevices.push(device);
+        });
+        this.#DispatchAvailableDevices();
+        return this.AvailableDevices;
+    }
+    #EventDispatcher = new EventDispatcher(this, DeviceManagerEventTypes);
+    get AddEventListener() {
+        return this.#EventDispatcher.addEventListener;
+    }
+    get #DispatchEvent() {
+        return this.#EventDispatcher.dispatchEvent;
+    }
+    get RemoveEventListener() {
+        return this.#EventDispatcher.removeEventListener;
+    }
+    get RemoveEventListeners() {
+        return this.#EventDispatcher.removeEventListeners;
+    }
+    get RemoveAllEventListeners() {
+        return this.#EventDispatcher.removeAllEventListeners;
+    }
+    #OnDeviceIsConnected(event) {
+        const { target: device } = event;
+        if (device.isConnected) {
+            if (!this.#ConnectedDevices.includes(device)) {
+                _console$b.log("adding device", device);
+                this.#ConnectedDevices.push(device);
+                if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
+                    const deviceInformation = {
+                        type: device.type,
+                        bluetoothId: device.bluetoothId,
+                        ipAddress: device.ipAddress,
+                        isWifiSecure: device.isWifiSecure,
+                    };
+                    const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex((_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId);
+                    if (deviceInformationIndex == -1) {
+                        this.#LocalStorageConfiguration.devices.push(deviceInformation);
+                    }
+                    else {
+                        this.#LocalStorageConfiguration.devices[deviceInformationIndex] =
+                            deviceInformation;
+                    }
+                    this.#SaveToLocalStorage();
+                }
+                this.#DispatchEvent("deviceConnected", { device });
+                this.#DispatchEvent("deviceIsConnected", { device });
+                this.#DispatchConnectedDevices();
+            }
+            else {
+                _console$b.log("device already included");
+            }
+        }
+        else {
+            if (this.#ConnectedDevices.includes(device)) {
+                _console$b.log("removing device", device);
+                this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
+                this.#DispatchEvent("deviceDisconnected", { device });
+                this.#DispatchEvent("deviceIsConnected", { device });
+                this.#DispatchConnectedDevices();
+            }
+            else {
+                _console$b.log("device already not included");
+            }
+        }
+        if (this.CanGetDevices) {
+            this.GetDevices();
+        }
+        if (device.isConnected && !this.AvailableDevices.includes(device)) {
+            const existingAvailableDevice = this.AvailableDevices.find((_device) => _device.bluetoothId == device.bluetoothId);
+            _console$b.log({ existingAvailableDevice });
+            if (existingAvailableDevice) {
+                this.AvailableDevices[this.AvailableDevices.indexOf(existingAvailableDevice)] = device;
+            }
+            else {
+                this.AvailableDevices.push(device);
+            }
+            this.#DispatchAvailableDevices();
+        }
+        this._CheckDeviceAvailability(device);
+    }
+    _CheckDeviceAvailability(device) {
+        if (!device.isConnected &&
+            !device.isAvailable &&
+            this.#AvailableDevices.includes(device)) {
+            _console$b.log("removing device from availableDevices...");
+            this.#AvailableDevices.splice(this.#AvailableDevices.indexOf(device), 1);
+            this.#DispatchAvailableDevices();
+        }
+    }
+    #DispatchAvailableDevices() {
+        _console$b.log({ AvailableDevices: this.AvailableDevices });
+        this.#DispatchEvent("availableDevices", {
+            availableDevices: this.AvailableDevices,
+        });
+    }
+    #DispatchConnectedDevices() {
+        _console$b.log({ ConnectedDevices: this.ConnectedDevices });
+        this.#DispatchEvent("connectedDevices", {
+            connectedDevices: this.ConnectedDevices,
+        });
+    }
+}
+var DeviceManager$1 = DeviceManager.shared;
+
+const _console$a = createConsole("ServerUtils", { log: false });
+const ServerMessageTypes = [
+    "isScanningAvailable",
+    "isScanning",
+    "startScan",
+    "stopScan",
+    "discoveredDevice",
+    "discoveredDevices",
+    "expiredDiscoveredDevice",
+    "connectToDevice",
+    "disconnectFromDevice",
+    "connectedDevices",
+    "deviceMessage",
+    "requiredDeviceInformation",
+];
+function createMessage(enumeration, ...messages) {
+    _console$a.log("createMessage", ...messages);
+    const messageBuffers = messages.map((message) => {
+        if (typeof message == "string") {
+            message = { type: message };
+        }
+        if (message.data != undefined) {
+            if (!Array.isArray(message.data)) {
+                message.data = [message.data];
+            }
+        }
+        else {
+            message.data = [];
+        }
+        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
+        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
+        _console$a.assertEnumWithError(message.type, enumeration);
+        const messageTypeEnum = enumeration.indexOf(message.type);
+        const messageDataLengthDataView = new DataView(new ArrayBuffer(2));
+        messageDataLengthDataView.setUint16(0, messageDataArrayBufferByteLength, true);
+        return concatenateArrayBuffers(messageTypeEnum, messageDataLengthDataView, messageDataArrayBuffer);
+    });
+    _console$a.log("messageBuffers", ...messageBuffers);
+    return concatenateArrayBuffers(...messageBuffers);
+}
+function createServerMessage(...messages) {
+    _console$a.log("createServerMessage", ...messages);
+    return createMessage(ServerMessageTypes, ...messages);
+}
+function createClientDeviceMessage(...messages) {
+    _console$a.log("createClientDeviceMessage", ...messages);
+    return createMessage(ConnectionMessageTypes, ...messages);
+}
+createServerMessage("isScanningAvailable");
+createServerMessage("isScanning");
+createServerMessage("startScan");
+createServerMessage("stopScan");
+createServerMessage("discoveredDevices");
+
+const _console$9 = createConsole("WebSocketUtils", { log: false });
+const webSocketPingTimeout = 30_000;
+const webSocketReconnectTimeout = 3_000;
+const WebSocketMessageTypes$1 = ["ping", "pong", "serverMessage"];
+function createWebSocketMessage$1(...messages) {
+    _console$9.log("createWebSocketMessage", ...messages);
+    return createMessage(WebSocketMessageTypes$1, ...messages);
+}
+createWebSocketMessage$1("ping");
+createWebSocketMessage$1("pong");
+
+const _console$8 = createConsole("WebSocketConnectionManager", { log: false });
+const WebSocketMessageTypes = [
+    "ping",
+    "pong",
+    "batteryLevel",
+    "deviceInformation",
+    "message",
+];
+function createWebSocketMessage(...messages) {
+    _console$8.log("createWebSocketMessage", ...messages);
+    return createMessage(WebSocketMessageTypes, ...messages);
+}
+const WebSocketDeviceInformationMessageTypes = [
+    "deviceInformation",
+    "batteryLevel",
+];
+class WebSocketConnectionManager extends BaseConnectionManager {
+    #bluetoothId;
+    get bluetoothId() {
+        return this.#bluetoothId ?? "";
+    }
+    defaultMtu = 2 ** 10;
+    constructor(ipAddress, isSecure = false, bluetoothId) {
+        super();
+        this.ipAddress = ipAddress;
+        this.isSecure = isSecure;
+        this.mtu = this.defaultMtu;
+        this.#bluetoothId = bluetoothId;
+    }
+    get isAvailable() {
+        return true;
+    }
+    static get isSupported() {
+        return true;
+    }
+    static get type() {
+        return "webSocket";
+    }
+    #webSocket;
+    get webSocket() {
+        return this.#webSocket;
+    }
+    set webSocket(newWebSocket) {
+        if (this.#webSocket == newWebSocket) {
+            _console$8.log("redundant webSocket assignment");
+            return;
+        }
+        _console$8.log("assigning webSocket", newWebSocket);
+        if (this.#webSocket) {
+            removeEventListeners(this.#webSocket, this.#boundWebSocketEventListeners);
+            if (this.#webSocket.readyState == this.#webSocket.OPEN) {
+                this.#webSocket.close();
+            }
+        }
+        if (newWebSocket) {
+            addEventListeners(newWebSocket, this.#boundWebSocketEventListeners);
+        }
+        this.#webSocket = newWebSocket;
+        _console$8.log("assigned webSocket");
+    }
+    #ipAddress;
+    get ipAddress() {
+        return this.#ipAddress;
+    }
+    set ipAddress(newIpAddress) {
+        this.assertIsNotConnected();
+        if (this.#ipAddress == newIpAddress) {
+            _console$8.log(`redundnant ipAddress assignment "${newIpAddress}"`);
+            return;
+        }
+        this.#ipAddress = newIpAddress;
+        _console$8.log(`updated ipAddress to "${this.ipAddress}"`);
+    }
+    #isSecure = false;
+    get isSecure() {
+        return this.#isSecure;
+    }
+    set isSecure(newIsSecure) {
+        this.assertIsNotConnected();
+        if (this.#isSecure == newIsSecure) {
+            _console$8.log(`redundant isSecure assignment ${newIsSecure}`);
+            return;
+        }
+        this.#isSecure = newIsSecure;
+        _console$8.log(`updated isSecure to "${this.isSecure}"`);
+    }
+    get url() {
+        return `${this.isSecure ? "wss" : "ws"}://${this.ipAddress}/ws`;
+    }
+    async connect() {
+        await super.connect();
+        try {
+            this.webSocket = new WebSocket(this.url);
+        }
+        catch (error) {
+            _console$8.error("error connecting to webSocket", error);
+            this.status = "notConnected";
+        }
+    }
+    async disconnect() {
+        await super.disconnect();
+        _console$8.log("closing websocket");
+        this.#pingTimer.stop();
+        this.#webSocket?.close();
+    }
+    get canReconnect() {
+        return Boolean(this.webSocket);
+    }
+    async reconnect() {
+        await super.reconnect();
+        this.webSocket = new WebSocket(this.url);
+    }
+    async sendSmpMessage(data) {
+        super.sendSmpMessage(data);
+        _console$8.error("smp not supported on webSockets");
+    }
+    async sendTxData(data) {
+        await super.sendTxData(data);
+        if (data.byteLength == 0) {
+            return;
+        }
+        this.#sendWebSocketMessage({ type: "message", data });
+    }
+    #sendMessage(message) {
+        this.assertIsConnected();
+        _console$8.log("sending webSocket message", message);
+        this.#webSocket.send(message);
+        this.#pingTimer.restart();
+    }
+    #sendWebSocketMessage(...messages) {
+        this.#sendMessage(createWebSocketMessage(...messages));
+    }
+    #boundWebSocketEventListeners = {
+        open: this.#onWebSocketOpen.bind(this),
+        message: this.#onWebSocketMessage.bind(this),
+        close: this.#onWebSocketClose.bind(this),
+        error: this.#onWebSocketError.bind(this),
+    };
+    #onWebSocketOpen(event) {
+        _console$8.log("webSocket.open", event);
+        this.#pingTimer.start();
+        this.status = "connected";
+        this.#requestDeviceInformation();
+    }
+    async #onWebSocketMessage(event) {
+        const arrayBuffer = await event.data.arrayBuffer();
+        const dataView = new DataView(arrayBuffer);
+        _console$8.log(`webSocket.message (${dataView.byteLength} bytes)`);
+        this.#parseWebSocketMessage(dataView);
+    }
+    #onWebSocketClose(event) {
+        _console$8.log("webSocket.close", event);
+        this.status = "notConnected";
+        this.#pingTimer.stop();
+    }
+    #onWebSocketError(event) {
+        _console$8.error("webSocket.error", event);
+    }
+    #parseWebSocketMessage(dataView) {
+        parseMessage(dataView, WebSocketMessageTypes, this.#onMessage.bind(this), null, true);
+    }
+    #onMessage(messageType, dataView) {
+        _console$8.log(`received "${messageType}" message (${dataView.byteLength} bytes)`);
+        switch (messageType) {
+            case "ping":
+                this.#pong();
+                break;
+            case "pong":
+                break;
+            case "batteryLevel":
+                this.onMessageReceived?.("batteryLevel", dataView);
+                break;
+            case "deviceInformation":
+                parseMessage(dataView, DeviceInformationTypes, (deviceInformationType, dataView) => {
+                    this.onMessageReceived(deviceInformationType, dataView);
+                });
+                break;
+            case "message":
+                this.parseRxMessage(dataView);
+                break;
+            default:
+                _console$8.error(`uncaught messageType "${messageType}"`);
+                break;
+        }
+    }
+    #pingTimer = new Timer(this.#ping.bind(this), webSocketPingTimeout - 1_000);
+    #ping() {
+        _console$8.log("pinging");
+        this.#sendWebSocketMessage("ping");
+    }
+    #pong() {
+        _console$8.log("ponging");
+        this.#sendWebSocketMessage("pong");
+    }
+    #requestDeviceInformation() {
+        this.#sendWebSocketMessage(...WebSocketDeviceInformationMessageTypes);
+    }
+    remove() {
+        super.remove();
+        this.webSocket = undefined;
+    }
+}
+
+var _a$1;
+const _console$7 = createConsole("Device", { log: false });
+const DeviceEventTypes = [
+    "connectionMessage",
+    ...ConnectionEventTypes,
+    ...MetaConnectionMessageTypes,
+    ...BatteryLevelMessageTypes,
+    ...InformationEventTypes,
+    ...DeviceInformationEventTypes,
+    ...SensorConfigurationEventTypes,
+    ...SensorDataEventTypes,
+    ...VibrationEventTypes,
+    ...FileTransferEventTypes,
+    ...TfliteEventTypes,
+    ...WifiEventTypes,
+    ...CameraEventTypes,
+    ...MicrophoneEventTypes,
+    ...DisplayEventTypes,
+    ...FirmwareEventTypes,
+];
+const RequiredInformationConnectionMessages = [
+    "isCharging",
+    "getBatteryCurrent",
+    "getId",
+    "getMtu",
+    "getName",
+    "getType",
+    "getCurrentTime",
+    "getSensorConfiguration",
+    "getSensorScalars",
+    "getVibrationLocations",
+    "getFileTypes",
+    "isWifiAvailable",
+];
+class Device {
+    get bluetoothId() {
+        return this.#connectionManager?.bluetoothId;
+    }
+    get isAvailable() {
+        return this.#connectionManager?.isAvailable;
+    }
+    constructor() {
+        this.#deviceInformationManager.eventDispatcher = this
+            .#eventDispatcher;
+        this._informationManager.sendMessage = this
+            .sendTxMessages;
+        this._informationManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#sensorConfigurationManager.sendMessage = this
+            .sendTxMessages;
+        this.#sensorConfigurationManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#sensorDataManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#vibrationManager.sendMessage = this
+            .sendTxMessages;
+        this.#vibrationManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#tfliteManager.sendMessage = this
+            .sendTxMessages;
+        this.#tfliteManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#fileTransferManager.sendMessage = this
+            .sendTxMessages;
+        this.#fileTransferManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#wifiManager.sendMessage = this
+            .sendTxMessages;
+        this.#wifiManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#cameraManager.sendMessage = this
+            .sendTxMessages;
+        this.#cameraManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#microphoneManager.sendMessage = this
+            .sendTxMessages;
+        this.#microphoneManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#displayManager.sendMessage = this
+            .sendTxMessages;
+        this.#displayManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#displayManager.sendFile = this.#fileTransferManager
+            .send;
+        this.#firmwareManager.sendMessage = this
+            .sendSmpMessage;
+        this.#firmwareManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.addEventListener("getMtu", () => {
+            this.#firmwareManager.mtu = this.mtu;
+            this.#fileTransferManager.mtu = this.mtu;
+            this.connectionManager.mtu = this.mtu;
+            this.#displayManager.mtu = this.mtu;
+        });
+        this.addEventListener("getSensorConfiguration", () => {
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
+            if (this.sensorTypes.includes("pressure")) {
+                _console$7.log("requesting required pressure information");
+                const messages = RequiredPressureMessageTypes.map((messageType) => ({
+                    type: messageType,
+                }));
+                this.sendTxMessages(messages, false);
+            }
+            else {
+                _console$7.log("don't need to request pressure infomration");
+            }
+            if (this.sensorTypes.includes("camera")) {
+                _console$7.log("requesting required camera information");
+                const messages = RequiredCameraMessageTypes.map((messageType) => ({
+                    type: messageType,
+                }));
+                this.sendTxMessages(messages, false);
+            }
+            else {
+                _console$7.log("don't need to request camera infomration");
+            }
+            if (this.sensorTypes.includes("microphone")) {
+                _console$7.log("requesting required microphone information");
+                const messages = RequiredMicrophoneMessageTypes.map((messageType) => ({
+                    type: messageType,
+                }));
+                this.sendTxMessages(messages, false);
+            }
+            else {
+                _console$7.log("don't need to request microphone infomration");
+            }
+        });
+        this.addEventListener("getFileTypes", () => {
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
+            if (this.fileTypes.length > 0) {
+                this.#fileTransferManager.requestRequiredInformation();
+            }
+            if (this.fileTypes.includes("tflite")) {
+                this.#tfliteManager.requestRequiredInformation();
+            }
+        });
+        this.addEventListener("isWifiAvailable", () => {
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
+            if (this.connectionType == "client" && !isInNode) {
+                return;
+            }
+            if (this.isWifiAvailable) {
+                if (this.connectionType != "client") {
+                    this.#wifiManager.requestRequiredInformation();
+                }
+            }
+        });
+        this.addEventListener("getType", () => {
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
+            if (this.type == "glasses") {
+                this.#displayManager.requestRequiredInformation();
+            }
+        });
+        this.addEventListener("fileTransferProgress", (event) => {
+            const { fileType, progress } = event.message;
+            switch (fileType) {
+                case "spriteSheet":
+                    this.#dispatchEvent("displaySpriteSheetUploadProgress", {
+                        spriteSheet: this.#displayManager.pendingSpriteSheet,
+                        spriteSheetName: this.#displayManager.pendingSpriteSheetName,
+                        progress,
+                    });
+                    break;
+            }
+        });
+        this.addEventListener("fileTransferStatus", (event) => {
+            const { fileType, fileTransferStatus } = event.message;
+            switch (fileType) {
+                case "spriteSheet":
+                    if (fileTransferStatus == "sending") {
+                        this.#dispatchEvent("displaySpriteSheetUploadStart", {
+                            spriteSheet: this.#displayManager.pendingSpriteSheet,
+                            spriteSheetName: this.#displayManager.pendingSpriteSheetName,
+                        });
+                    }
+                    break;
+            }
+        });
+        DeviceManager$1.onDevice(this);
+        if (isInBrowser) {
+            window.addEventListener("beforeunload", () => {
+                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+                    this.clearSensorConfiguration();
+                }
+            });
+        }
+        if (isInNode) {
+            process.on("exit", () => {
+                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+                    this.clearSensorConfiguration();
+                }
+            });
+        }
+    }
+    static #DefaultConnectionManager() {
+        return new WebBluetoothConnectionManager();
+    }
+    #eventDispatcher = new EventDispatcher(this, DeviceEventTypes);
+    get addEventListener() {
+        return this.#eventDispatcher.addEventListener;
+    }
+    get #dispatchEvent() {
+        return this.#eventDispatcher.dispatchEvent;
+    }
+    get removeEventListener() {
+        return this.#eventDispatcher.removeEventListener;
+    }
+    get waitForEvent() {
+        return this.#eventDispatcher.waitForEvent;
+    }
+    get removeEventListeners() {
+        return this.#eventDispatcher.removeEventListeners;
+    }
+    get removeAllEventListeners() {
+        return this.#eventDispatcher.removeAllEventListeners;
+    }
+    #connectionManager;
+    get connectionManager() {
+        return this.#connectionManager;
+    }
+    set connectionManager(newConnectionManager) {
+        if (this.connectionManager == newConnectionManager) {
+            _console$7.log("same connectionManager is already assigned");
+            return;
+        }
+        if (this.connectionManager) {
+            this.connectionManager.remove();
+        }
+        if (newConnectionManager) {
+            newConnectionManager.onStatusUpdated =
+                this.#onConnectionStatusUpdated.bind(this);
+            newConnectionManager.onMessageReceived =
+                this.#onConnectionMessageReceived.bind(this);
+            newConnectionManager.onMessagesReceived =
+                this.#onConnectionMessagesReceived.bind(this);
+        }
+        this.#connectionManager = newConnectionManager;
+        _console$7.log("assigned new connectionManager", this.#connectionManager);
+        this._informationManager.connectionType = this.connectionType;
+    }
+    async #sendTxMessages(messages, sendImmediately) {
+        await this.#connectionManager?.sendTxMessages(messages, sendImmediately);
+    }
+    sendTxMessages = this.#sendTxMessages.bind(this);
+    async connect(options) {
+        _console$7.log("connect options", options);
+        if (options) {
+            switch (options.type) {
+                case "webBluetooth":
+                    if (this.connectionType != "webBluetooth") {
+                        this.connectionManager = new WebBluetoothConnectionManager();
+                    }
+                    break;
+                case "webSocket":
+                    {
+                        let createConnectionManager = false;
+                        if (this.connectionType == "webSocket") {
+                            const connectionManager = this
+                                .connectionManager;
+                            if (connectionManager.ipAddress != options.ipAddress ||
+                                connectionManager.isSecure != options.isWifiSecure) {
+                                createConnectionManager = true;
+                            }
+                        }
+                        else {
+                            createConnectionManager = true;
+                        }
+                        if (createConnectionManager) {
+                            this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isWifiSecure, this.bluetoothId);
+                        }
+                    }
+                    break;
+                case "udp":
+                    {
+                        let createConnectionManager = false;
+                        if (this.connectionType == "udp") {
+                            const connectionManager = this
+                                .connectionManager;
+                            if (connectionManager.ipAddress != options.ipAddress) {
+                                createConnectionManager = true;
+                            }
+                            this.reconnectOnDisconnection = true;
+                        }
+                        else {
+                            createConnectionManager = true;
+                        }
+                        if (createConnectionManager) {
+                            this.connectionManager = new UDPConnectionManager(options.ipAddress, this.bluetoothId);
+                        }
+                    }
+                    break;
+            }
+        }
+        if (!this.connectionManager) {
+            this.connectionManager = _a$1.#DefaultConnectionManager();
+        }
+        this.#clear();
+        if (options?.type == "client") {
+            _console$7.assertWithError(this.connectionType == "client", "expected clientConnectionManager");
+            const clientConnectionManager = this
+                .connectionManager;
+            clientConnectionManager.subType = options.subType;
+            return clientConnectionManager.connect();
+        }
+        _console$7.log("connectionManager type", this.connectionManager.type);
+        return this.connectionManager.connect();
+    }
+    #isConnected = false;
+    get isConnected() {
+        return this.#isConnected;
+    }
+    #assertIsConnected() {
+        _console$7.assertWithError(this.isConnected, "notConnected");
+    }
+    #didReceiveMessageTypes(messageTypes) {
+        return messageTypes.every((messageType) => {
+            const hasConnectionMessage = this.latestConnectionMessages.has(messageType);
+            if (!hasConnectionMessage) {
+                _console$7.log(`didn't receive "${messageType}" message`);
+            }
+            return hasConnectionMessage;
+        });
+    }
+    get #hasRequiredInformation() {
+        let hasRequiredInformation = this.#didReceiveMessageTypes(RequiredInformationConnectionMessages);
+        if (hasRequiredInformation && this.sensorTypes.includes("pressure")) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredPressureMessageTypes);
+        }
+        if (hasRequiredInformation && this.isWifiAvailable) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredWifiMessageTypes);
+        }
+        if (hasRequiredInformation && this.fileTypes.length > 0) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredFileTransferMessageTypes);
+        }
+        if (hasRequiredInformation && this.fileTypes.includes("tflite")) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredTfliteMessageTypes);
+        }
+        if (hasRequiredInformation && this.hasCamera) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredCameraMessageTypes);
+        }
+        if (hasRequiredInformation && this.hasMicrophone) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredMicrophoneMessageTypes);
+        }
+        if (hasRequiredInformation && this.isDisplayAvailable) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredDisplayMessageTypes);
+        }
+        return hasRequiredInformation;
+    }
+    #requestRequiredInformation() {
+        _console$7.log("requesting required information");
+        const messages = RequiredInformationConnectionMessages.map((messageType) => ({
+            type: messageType,
+        }));
+        this.#sendTxMessages(messages);
+    }
+    get canReconnect() {
+        return this.connectionManager?.canReconnect;
+    }
+    #assertCanReconnect() {
+        _console$7.assertWithError(this.canReconnect, "cannot reconnect to device");
+    }
+    async reconnect() {
+        this.#assertCanReconnect();
+        this.#clear();
+        return this.connectionManager?.reconnect();
+    }
+    static async Connect() {
+        const device = new _a$1();
+        await device.connect();
+        return device;
+    }
+    static #ReconnectOnDisconnection = false;
+    static get ReconnectOnDisconnection() {
+        return this.#ReconnectOnDisconnection;
+    }
+    static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
+        _console$7.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        this.#ReconnectOnDisconnection = newReconnectOnDisconnection;
+    }
+    #reconnectOnDisconnection = _a$1.ReconnectOnDisconnection;
+    get reconnectOnDisconnection() {
+        return this.#reconnectOnDisconnection;
+    }
+    set reconnectOnDisconnection(newReconnectOnDisconnection) {
+        _console$7.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        this.#reconnectOnDisconnection = newReconnectOnDisconnection;
+    }
+    #reconnectIntervalId;
+    get connectionType() {
+        return this.connectionManager?.type;
+    }
+    async disconnect() {
+        this.#assertIsConnected();
+        if (this.reconnectOnDisconnection) {
+            this.reconnectOnDisconnection = false;
+            this.addEventListener("isConnected", () => {
+                this.reconnectOnDisconnection = true;
+            }, { once: true });
+        }
+        return this.connectionManager.disconnect();
+    }
+    toggleConnection() {
+        if (this.isConnected) {
+            this.disconnect();
+        }
+        else if (this.canReconnect) {
+            try {
+                this.reconnect();
+            }
+            catch (error) {
+                _console$7.error("error trying to reconnect", error);
+                this.connect();
+            }
+        }
+        else {
+            this.connect();
+        }
+    }
+    get connectionStatus() {
+        switch (this.#connectionManager?.status) {
+            case "connected":
+                return this.isConnected ? "connected" : "connecting";
+            case "notConnected":
+            case "connecting":
+            case "disconnecting":
+                return this.#connectionManager.status;
+            default:
+                return "notConnected";
+        }
+    }
+    get isConnectionBusy() {
+        return (this.connectionStatus == "connecting" ||
+            this.connectionStatus == "disconnecting");
+    }
+    #onConnectionStatusUpdated(connectionStatus) {
+        _console$7.log({ connectionStatus });
+        if (connectionStatus == "notConnected") {
+            this.#clearConnection();
+            if (this.canReconnect && this.reconnectOnDisconnection) {
+                _console$7.log("starting reconnect interval...");
+                this.#reconnectIntervalId = setInterval(() => {
+                    _console$7.log("attempting reconnect...");
+                    this.reconnect();
+                }, 1000);
+            }
+        }
+        else {
+            if (this.#reconnectIntervalId != undefined) {
+                _console$7.log("clearing reconnect interval");
+                clearInterval(this.#reconnectIntervalId);
+                this.#reconnectIntervalId = undefined;
+            }
+        }
+        this.#checkConnection();
+        if (connectionStatus == "connected" && !this.#isConnected) {
+            if (this.connectionType != "client") {
+                this.#requestRequiredInformation();
+            }
+        }
+        DeviceManager$1.OnDeviceConnectionStatusUpdated(this, connectionStatus);
+    }
+    #dispatchConnectionEvents(includeIsConnected = false) {
+        this.#dispatchEvent("connectionStatus", {
+            connectionStatus: this.connectionStatus,
+        });
+        this.#dispatchEvent(this.connectionStatus, {});
+        if (includeIsConnected) {
+            this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
+        }
+    }
+    #checkConnection() {
+        this.#isConnected =
+            Boolean(this.connectionManager?.isConnected) &&
+                this.#hasRequiredInformation &&
+                this._informationManager.isCurrentTimeSet;
+        switch (this.connectionStatus) {
+            case "connected":
+                if (this.#isConnected) {
+                    this.#dispatchConnectionEvents(true);
+                }
+                break;
+            case "notConnected":
+                this.#dispatchConnectionEvents(true);
+                break;
+            default:
+                this.#dispatchConnectionEvents(false);
+                break;
+        }
+    }
+    #clear() {
+        this.#clearConnection();
+        this._informationManager.clear();
+        this.#deviceInformationManager.clear();
+        this.#tfliteManager.clear();
+        this.#fileTransferManager.clear();
+        this.#wifiManager.clear();
+        this.#cameraManager.clear();
+        this.#microphoneManager.clear();
+        this.#sensorConfigurationManager.clear();
+        this.#displayManager.reset();
+    }
+    #clearConnection() {
+        this.connectionManager?.clear();
+        this.latestConnectionMessages.clear();
+    }
+    #onConnectionMessageReceived(messageType, dataView) {
+        _console$7.log({ messageType, dataView });
+        switch (messageType) {
+            case "batteryLevel":
+                const batteryLevel = dataView.getUint8(0);
+                _console$7.log("received battery level", { batteryLevel });
+                this.#updateBatteryLevel(batteryLevel);
+                break;
+            default:
+                if (FileTransferMessageTypes.includes(messageType)) {
+                    this.#fileTransferManager.parseMessage(messageType, dataView);
+                }
+                else if (TfliteMessageTypes.includes(messageType)) {
+                    this.#tfliteManager.parseMessage(messageType, dataView);
+                }
+                else if (SensorDataMessageTypes.includes(messageType)) {
+                    this.#sensorDataManager.parseMessage(messageType, dataView);
+                }
+                else if (FirmwareMessageTypes.includes(messageType)) {
+                    this.#firmwareManager.parseMessage(messageType, dataView);
+                }
+                else if (DeviceInformationTypes.includes(messageType)) {
+                    this.#deviceInformationManager.parseMessage(messageType, dataView);
+                }
+                else if (InformationMessageTypes.includes(messageType)) {
+                    this._informationManager.parseMessage(messageType, dataView);
+                }
+                else if (SensorConfigurationMessageTypes.includes(messageType)) {
+                    this.#sensorConfigurationManager.parseMessage(messageType, dataView);
+                }
+                else if (VibrationMessageTypes.includes(messageType)) {
+                    this.#vibrationManager.parseMessage(messageType, dataView);
+                }
+                else if (WifiMessageTypes.includes(messageType)) {
+                    this.#wifiManager.parseMessage(messageType, dataView);
+                }
+                else if (CameraMessageTypes.includes(messageType)) {
+                    this.#cameraManager.parseMessage(messageType, dataView);
+                }
+                else if (MicrophoneMessageTypes.includes(messageType)) {
+                    this.#microphoneManager.parseMessage(messageType, dataView);
+                }
+                else if (DisplayMessageTypes.includes(messageType)) {
+                    this.#displayManager.parseMessage(messageType, dataView);
+                }
+                else {
+                    throw Error(`uncaught messageType ${messageType}`);
+                }
+        }
+        this.latestConnectionMessages.set(messageType, dataView);
+        if (messageType.startsWith("set")) {
+            this.latestConnectionMessages.set(
+            messageType.replace("set", "get"), dataView);
+        }
+        this.#dispatchEvent("connectionMessage", { messageType, dataView });
+    }
+    #onConnectionMessagesReceived() {
+        if (!this.isConnected && this.#hasRequiredInformation) {
+            this.#checkConnection();
+        }
+        if (this.connectionStatus == "notConnected" ||
+            this.connectionStatus == "disconnecting") {
+            return;
+        }
+        this.#sendTxMessages();
+    }
+    latestConnectionMessages = new Map();
+    #deviceInformationManager = new DeviceInformationManager();
+    get deviceInformation() {
+        return this.#deviceInformationManager.information;
+    }
+    #batteryLevel = 0;
+    get batteryLevel() {
+        return this.#batteryLevel;
+    }
+    #updateBatteryLevel(updatedBatteryLevel) {
+        _console$7.assertTypeWithError(updatedBatteryLevel, "number");
+        if (this.#batteryLevel == updatedBatteryLevel) {
+            _console$7.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
+            return;
+        }
+        this.#batteryLevel = updatedBatteryLevel;
+        _console$7.log({ updatedBatteryLevel: this.#batteryLevel });
+        this.#dispatchEvent("batteryLevel", { batteryLevel: this.#batteryLevel });
+    }
+    _informationManager = new InformationManager();
+    get id() {
+        return this._informationManager.id;
+    }
+    get isCharging() {
+        return this._informationManager.isCharging;
+    }
+    get batteryCurrent() {
+        return this._informationManager.batteryCurrent;
+    }
+    get getBatteryCurrent() {
+        return this._informationManager.getBatteryCurrent;
+    }
+    get name() {
+        return this._informationManager.name;
+    }
+    get setName() {
+        return this._informationManager.setName;
+    }
+    get type() {
+        return this._informationManager.type;
+    }
+    get setType() {
+        return this._informationManager.setType;
+    }
+    get isInsole() {
+        return this._informationManager.isInsole;
+    }
+    get isGlove() {
+        return this._informationManager.isGlove;
+    }
+    get side() {
+        return this._informationManager.side;
+    }
+    get mtu() {
+        return this._informationManager.mtu;
+    }
+    get sensorTypes() {
+        return Object.keys(this.sensorConfiguration);
+    }
+    get continuousSensorTypes() {
+        return ContinuousSensorTypes.filter((sensorType) => this.sensorTypes.includes(sensorType));
+    }
+    #sensorConfigurationManager = new SensorConfigurationManager();
+    get sensorConfiguration() {
+        return this.#sensorConfigurationManager.configuration;
+    }
+    get setSensorConfiguration() {
+        return this.#sensorConfigurationManager.setConfiguration;
+    }
+    async clearSensorConfiguration() {
+        return this.#sensorConfigurationManager.clearSensorConfiguration();
+    }
+    static #ClearSensorConfigurationOnLeave = true;
+    static get ClearSensorConfigurationOnLeave() {
+        return this.#ClearSensorConfigurationOnLeave;
+    }
+    static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
+        _console$7.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        this.#ClearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
+    }
+    #clearSensorConfigurationOnLeave = _a$1.ClearSensorConfigurationOnLeave;
+    get clearSensorConfigurationOnLeave() {
+        return this.#clearSensorConfigurationOnLeave;
+    }
+    set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
+        _console$7.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
+    }
+    get numberOfPressureSensors() {
+        return this.#sensorDataManager.pressureSensorDataManager.numberOfSensors;
+    }
+    #sensorDataManager = new SensorDataManager();
+    resetPressureRange() {
+        this.#sensorDataManager.pressureSensorDataManager.resetRange();
+    }
+    get vibrationLocations() {
+        return this.#vibrationManager.vibrationLocations;
+    }
+    #vibrationManager = new VibrationManager();
+    async triggerVibration(vibrationConfigurations, sendImmediately) {
+        this.#vibrationManager.triggerVibration(vibrationConfigurations, sendImmediately);
+    }
+    #fileTransferManager = new FileTransferManager();
+    get fileTypes() {
+        return this.#fileTransferManager.fileTypes;
+    }
+    get maxFileLength() {
+        return this.#fileTransferManager.maxLength;
+    }
+    get validFileTypes() {
+        return FileTypes.filter((fileType) => {
+            if (fileType.includes("wifi") && !this.isWifiAvailable) {
+                return false;
+            }
+            return true;
+        });
+    }
+    async sendFile(fileType, file) {
+        _console$7.assertWithError(this.validFileTypes.includes(fileType), `invalid fileType ${fileType}`);
+        const promise = this.waitForEvent("fileTransferComplete");
+        this.#fileTransferManager.send(fileType, file);
+        await promise;
+    }
+    async receiveFile(fileType) {
+        const promise = this.waitForEvent("fileTransferComplete");
+        this.#fileTransferManager.receive(fileType);
+        await promise;
+    }
+    get fileTransferStatus() {
+        return this.#fileTransferManager.status;
+    }
+    cancelFileTransfer() {
+        this.#fileTransferManager.cancel();
+    }
+    #tfliteManager = new TfliteManager();
+    get tfliteName() {
+        return this.#tfliteManager.name;
+    }
+    get setTfliteName() {
+        return this.#tfliteManager.setName;
+    }
+    async sendTfliteConfiguration(configuration) {
+        configuration.type = "tflite";
+        this.#tfliteManager.sendConfiguration(configuration, false);
+        const didSendFile = await this.#fileTransferManager.send(configuration.type, configuration.file);
+        if (!didSendFile) {
+            this.#sendTxMessages();
+        }
+    }
+    get tfliteTask() {
+        return this.#tfliteManager.task;
+    }
+    get setTfliteTask() {
+        return this.#tfliteManager.setTask;
+    }
+    get tfliteSampleRate() {
+        return this.#tfliteManager.sampleRate;
+    }
+    get setTfliteSampleRate() {
+        return this.#tfliteManager.setSampleRate;
+    }
+    get tfliteSensorTypes() {
+        return this.#tfliteManager.sensorTypes;
+    }
+    get allowedTfliteSensorTypes() {
+        return this.sensorTypes.filter((sensorType) => TfliteSensorTypes.includes(sensorType));
+    }
+    get setTfliteSensorTypes() {
+        return this.#tfliteManager.setSensorTypes;
+    }
+    get tfliteIsReady() {
+        return this.#tfliteManager.isReady;
+    }
+    get tfliteInferencingEnabled() {
+        return this.#tfliteManager.inferencingEnabled;
+    }
+    get setTfliteInferencingEnabled() {
+        return this.#tfliteManager.setInferencingEnabled;
+    }
+    async enableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(true);
+    }
+    async disableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(false);
+    }
+    get toggleTfliteInferencing() {
+        return this.#tfliteManager.toggleInferencingEnabled;
+    }
+    get tfliteCaptureDelay() {
+        return this.#tfliteManager.captureDelay;
+    }
+    get setTfliteCaptureDelay() {
+        return this.#tfliteManager.setCaptureDelay;
+    }
+    get tfliteThreshold() {
+        return this.#tfliteManager.threshold;
+    }
+    get setTfliteThreshold() {
+        return this.#tfliteManager.setThreshold;
+    }
+    #firmwareManager = new FirmwareManager();
+    get canUpdateFirmware() {
+        return this.#connectionManager?.canUpdateFirmware;
+    }
+    #assertCanUpdateFirmware() {
+        _console$7.assertWithError(this.canUpdateFirmware, "can't update firmware");
+    }
+    #sendSmpMessage(data) {
+        this.#assertCanUpdateFirmware();
+        return this.#connectionManager.sendSmpMessage(data);
+    }
+    sendSmpMessage = this.#sendSmpMessage.bind(this);
+    get uploadFirmware() {
+        this.#assertCanUpdateFirmware();
+        return this.#firmwareManager.uploadFirmware;
+    }
+    get canReset() {
+        return this.canUpdateFirmware;
+    }
+    async reset() {
+        _console$7.assertWithError(this.canReset, "reset is not enabled for this device");
+        await this.#firmwareManager.reset();
+        return this.#connectionManager.disconnect();
+    }
+    get firmwareStatus() {
+        return this.#firmwareManager.status;
+    }
+    get getFirmwareImages() {
+        this.#assertCanUpdateFirmware();
+        return this.#firmwareManager.getImages;
+    }
+    get firmwareImages() {
+        return this.#firmwareManager.images;
+    }
+    get eraseFirmwareImage() {
+        this.#assertCanUpdateFirmware();
+        return this.#firmwareManager.eraseImage;
+    }
+    get confirmFirmwareImage() {
+        this.#assertCanUpdateFirmware();
+        return this.#firmwareManager.confirmImage;
+    }
+    get testFirmwareImage() {
+        this.#assertCanUpdateFirmware();
+        return this.#firmwareManager.testImage;
+    }
+    #isServerSide = false;
+    get isServerSide() {
+        return this.#isServerSide;
+    }
+    set isServerSide(newIsServerSide) {
+        if (this.#isServerSide == newIsServerSide) {
+            _console$7.log("redundant isServerSide assignment");
+            return;
+        }
+        _console$7.log({ newIsServerSide });
+        this.#isServerSide = newIsServerSide;
+        this.#fileTransferManager.isServerSide = this.isServerSide;
+        this.#displayManager.isServerSide = this.isServerSide;
+    }
+    get isUkaton() {
+        return this.deviceInformation.modelNumber.includes("Ukaton");
+    }
+    #wifiManager = new WifiManager();
+    get isWifiAvailable() {
+        return this.#wifiManager.isWifiAvailable;
+    }
+    get wifiSSID() {
+        return this.#wifiManager.wifiSSID;
+    }
+    async setWifiSSID(newWifiSSID) {
+        return this.#wifiManager.setWifiSSID(newWifiSSID);
+    }
+    get wifiPassword() {
+        return this.#wifiManager.wifiPassword;
+    }
+    async setWifiPassword(newWifiPassword) {
+        return this.#wifiManager.setWifiPassword(newWifiPassword);
+    }
+    get isWifiConnected() {
+        return this.#wifiManager.isWifiConnected;
+    }
+    get ipAddress() {
+        return this.#wifiManager.ipAddress;
+    }
+    get wifiConnectionEnabled() {
+        return this.#wifiManager.wifiConnectionEnabled;
+    }
+    get enableWifiConnection() {
+        return this.#wifiManager.enableWifiConnection;
+    }
+    get setWifiConnectionEnabled() {
+        return this.#wifiManager.setWifiConnectionEnabled;
+    }
+    get disableWifiConnection() {
+        return this.#wifiManager.disableWifiConnection;
+    }
+    get toggleWifiConnection() {
+        return this.#wifiManager.toggleWifiConnection;
+    }
+    get isWifiSecure() {
+        return this.#wifiManager.isWifiSecure;
+    }
+    async reconnectViaWebSockets() {
+        _console$7.assertWithError(this.isWifiConnected, "wifi is not connected");
+        _console$7.assertWithError(this.connectionType != "webSocket", "already connected via webSockets");
+        _console$7.assertTypeWithError(this.ipAddress, "string");
+        _console$7.log("reconnecting via websockets...");
+        await this.disconnect();
+        await this.connect({
+            type: "webSocket",
+            ipAddress: this.ipAddress,
+            isWifiSecure: this.isWifiSecure,
+        });
+    }
+    async reconnectViaUDP() {
+        _console$7.assertWithError(isInNode, "udp is only available in node");
+        _console$7.assertWithError(this.isWifiConnected, "wifi is not connected");
+        _console$7.assertWithError(this.connectionType != "udp", "already connected via udp");
+        _console$7.assertTypeWithError(this.ipAddress, "string");
+        _console$7.log("reconnecting via udp...");
+        await this.disconnect();
+        await this.connect({
+            type: "udp",
+            ipAddress: this.ipAddress,
+        });
+    }
+    #cameraManager = new CameraManager();
+    get hasCamera() {
+        return this.sensorTypes.includes("camera");
+    }
+    get cameraStatus() {
+        return this.#cameraManager.cameraStatus;
+    }
+    #assertHasCamera() {
+        _console$7.assertWithError(this.hasCamera, "camera not available");
+    }
+    async takePicture(sensorRate = 10) {
+        this.#assertHasCamera();
+        if (this.sensorConfiguration.camera == 0) {
+            this.setSensorConfiguration({ camera: sensorRate }, false, false);
+        }
+        await this.#cameraManager.takePicture();
+    }
+    async focusCamera(sensorRate = 10) {
+        this.#assertHasCamera();
+        if (this.sensorConfiguration.camera == 0) {
+            this.setSensorConfiguration({ camera: sensorRate }, false, false);
+        }
+        await this.#cameraManager.focus();
+    }
+    async stopCamera() {
+        this.#assertHasCamera();
+        await this.#cameraManager.stop();
+    }
+    async wakeCamera() {
+        this.#assertHasCamera();
+        await this.#cameraManager.wake();
+    }
+    async sleepCamera() {
+        this.#assertHasCamera();
+        await this.#cameraManager.sleep();
+    }
+    get cameraConfiguration() {
+        return this.#cameraManager.cameraConfiguration;
+    }
+    get availableCameraConfigurationTypes() {
+        return this.#cameraManager.availableCameraConfigurationTypes;
+    }
+    get cameraConfigurationRanges() {
+        return this.#cameraManager.cameraConfigurationRanges;
+    }
+    get setCameraConfiguration() {
+        return this.#cameraManager.setCameraConfiguration;
+    }
+    #microphoneManager = new MicrophoneManager();
+    get hasMicrophone() {
+        return this.sensorTypes.includes("microphone");
+    }
+    get microphoneStatus() {
+        return this.#microphoneManager.microphoneStatus;
+    }
+    #assertHasMicrophone() {
+        _console$7.assertWithError(this.hasMicrophone, "microphone not available");
+    }
+    async startMicrophone(sensorRate = 10) {
+        this.#assertHasMicrophone();
+        if (this.sensorConfiguration.microphone == 0) {
+            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
+        }
+        await this.#microphoneManager.start();
+    }
+    async stopMicrophone() {
+        this.#assertHasMicrophone();
+        await this.#microphoneManager.stop();
+    }
+    async enableMicrophoneVad() {
+        this.#assertHasMicrophone();
+        await this.#microphoneManager.vad();
+    }
+    async toggleMicrophone(sensorRate = 10) {
+        this.#assertHasMicrophone();
+        if (this.sensorConfiguration.microphone == 0) {
+            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
+        }
+        await this.#microphoneManager.toggle();
+    }
+    get microphoneConfiguration() {
+        return this.#microphoneManager.microphoneConfiguration;
+    }
+    get availableMicrophoneConfigurationTypes() {
+        return this.#microphoneManager.availableMicrophoneConfigurationTypes;
+    }
+    get setMicrophoneConfiguration() {
+        return this.#microphoneManager.setMicrophoneConfiguration;
+    }
+    #assertWebAudioSupport() {
+        _console$7.assertWithError(AudioContext, "WebAudio is not supported");
+    }
+    get audioContext() {
+        this.#assertWebAudioSupport();
+        return this.#microphoneManager.audioContext;
+    }
+    set audioContext(newAudioContext) {
+        this.#assertWebAudioSupport();
+        this.#microphoneManager.audioContext = newAudioContext;
+    }
+    get microphoneMediaStreamDestination() {
+        this.#assertWebAudioSupport();
+        return this.#microphoneManager.mediaStreamDestination;
+    }
+    get microphoneGainNode() {
+        this.#assertWebAudioSupport();
+        return this.#microphoneManager.gainNode;
+    }
+    get isRecordingMicrophone() {
+        return this.#microphoneManager.isRecording;
+    }
+    startRecordingMicrophone() {
+        this.#assertWebAudioSupport();
+        this.#microphoneManager.startRecording();
+    }
+    stopRecordingMicrophone() {
+        this.#assertWebAudioSupport();
+        this.#microphoneManager.stopRecording();
+    }
+    toggleMicrophoneRecording() {
+        this.#assertWebAudioSupport();
+        this.#microphoneManager.toggleRecording();
+    }
+    #displayManager = new DisplayManager();
+    get isDisplayAvailable() {
+        return this.#displayManager.isAvailable;
+    }
+    get isDisplayReady() {
+        return this.#displayManager.isReady;
+    }
+    get displayContextState() {
+        return this.#displayManager.contextState;
+    }
+    get displayColors() {
+        return this.#displayManager.colors;
+    }
+    get displayBitmapColors() {
+        return this.#displayManager.bitmapColors;
+    }
+    get displayBitmapColorIndices() {
+        return this.#displayManager.bitmapColorIndices;
+    }
+    get displayColorOpacities() {
+        return this.#displayManager.opacities;
+    }
+    #assertDisplayIsAvailable() {
+        _console$7.assertWithError(this.isDisplayAvailable, "display not available");
+    }
+    get displayStatus() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.displayStatus;
+    }
+    get displayBrightness() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.brightness;
+    }
+    get setDisplayBrightness() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBrightness;
+    }
+    get displayInformation() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.displayInformation;
+    }
+    get numberOfDisplayColors() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.numberOfColors;
+    }
+    get wakeDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.wake;
+    }
+    get sleepDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.sleep;
+    }
+    get toggleDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.toggle;
+    }
+    get isDisplayAwake() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.isDisplayAwake;
+    }
+    get showDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.show;
+    }
+    get clearDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clear;
+    }
+    get setDisplayColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setColor;
+    }
+    get setDisplayColorOpacity() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setColorOpacity;
+    }
+    get setDisplayOpacity() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setOpacity;
+    }
+    get saveDisplayContext() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.saveContext;
+    }
+    get restoreDisplayContext() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.restoreContext;
+    }
+    get clearDisplayRect() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clearRect;
+    }
+    get selectDisplayBackgroundColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectBackgroundColor;
+    }
+    get selectDisplayFillColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectFillColor;
+    }
+    get selectDisplayLineColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectLineColor;
+    }
+    get setDisplayIgnoreFill() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setIgnoreFill;
+    }
+    get setDisplayIgnoreLine() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setIgnoreLine;
+    }
+    get setDisplayFillBackground() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setFillBackground;
+    }
+    get setDisplayLineWidth() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setLineWidth;
+    }
+    get setDisplayRotation() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotation;
+    }
+    get clearDisplayRotation() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clearRotation;
+    }
+    get setDisplaySegmentStartCap() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentStartCap;
+    }
+    get setDisplaySegmentEndCap() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentEndCap;
+    }
+    get setDisplaySegmentCap() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentCap;
+    }
+    get setDisplaySegmentStartRadius() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentStartRadius;
+    }
+    get setDisplaySegmentEndRadius() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentEndRadius;
+    }
+    get setDisplaySegmentRadius() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentRadius;
+    }
+    get setDisplayCropTop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setCropTop;
+    }
+    get setDisplayCropRight() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setCropRight;
+    }
+    get setDisplayCropBottom() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setCropBottom;
+    }
+    get setDisplayCropLeft() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setCropLeft;
+    }
+    get setDisplayCrop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setCrop;
+    }
+    get clearDisplayCrop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clearCrop;
+    }
+    get setDisplayRotationCropTop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotationCropTop;
+    }
+    get setDisplayRotationCropRight() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotationCropRight;
+    }
+    get setDisplayRotationCropBottom() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotationCropBottom;
+    }
+    get setDisplayRotationCropLeft() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotationCropLeft;
+    }
+    get setDisplayRotationCrop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotationCrop;
+    }
+    get clearDisplayRotationCrop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clearRotationCrop;
+    }
+    get flushDisplayContextCommands() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.flushContextCommands;
+    }
+    get drawDisplayRect() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawRect;
+    }
+    get drawDisplayCircle() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawCircle;
+    }
+    get drawDisplayEllipse() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawEllipse;
+    }
+    get drawDisplayRoundRect() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawRoundRect;
+    }
+    get drawDisplayRegularPolygon() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawRegularPolygon;
+    }
+    get drawDisplayPolygon() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawPolygon;
+    }
+    get drawDisplayWireframe() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawWireframe;
+    }
+    get drawDisplaySegment() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawSegment;
+    }
+    get drawDisplaySegments() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawSegments;
+    }
+    get drawDisplayArc() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawArc;
+    }
+    get drawDisplayArcEllipse() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawArcEllipse;
+    }
+    get drawDisplayBitmap() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawBitmap;
+    }
+    get imageToDisplayBitmap() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.imageToBitmap;
+    }
+    get quantizeDisplayImage() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.quantizeImage;
+    }
+    get resizeAndQuantizeDisplayImage() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.resizeAndQuantizeImage;
+    }
+    get setDisplayContextState() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setContextState;
+    }
+    get selectDisplayBitmapColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectBitmapColor;
+    }
+    get selectDisplayBitmapColors() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectBitmapColors;
+    }
+    get setDisplayBitmapColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapColor;
+    }
+    get setDisplayBitmapColorOpacity() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapColorOpacity;
+    }
+    get setDisplayBitmapScaleDirection() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapScaleDirection;
+    }
+    get setDisplayBitmapScaleX() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapScaleX;
+    }
+    get setDisplayBitmapScaleY() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapScaleY;
+    }
+    get setDisplayBitmapScale() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapScale;
+    }
+    get resetDisplayBitmapScale() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.resetBitmapScale;
+    }
+    get selectDisplaySpriteColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectSpriteColor;
+    }
+    get selectDisplaySpriteColors() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectSpriteColors;
+    }
+    get setDisplaySpriteColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteColor;
+    }
+    get setDisplaySpriteColorOpacity() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteColorOpacity;
+    }
+    get resetDisplaySpriteColors() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.resetSpriteColors;
+    }
+    get setDisplaySpriteScaleDirection() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteScaleDirection;
+    }
+    get setDisplaySpriteScaleX() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteScaleX;
+    }
+    get setDisplaySpriteScaleY() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteScaleY;
+    }
+    get setDisplaySpriteScale() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteScale;
+    }
+    get resetDisplaySpriteScale() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.resetSpriteScale;
+    }
+    get displayManager() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager;
+    }
+    get uploadDisplaySpriteSheet() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.uploadSpriteSheet;
+    }
+    get uploadDisplaySpriteSheets() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.uploadSpriteSheets;
+    }
+    get selectDisplaySpriteSheet() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectSpriteSheet;
+    }
+    get drawDisplaySprite() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawSprite;
+    }
+    get displaySpriteSheets() {
+        return this.#displayManager.spriteSheets;
+    }
+    get serializeDisplaySpriteSheet() {
+        return this.#displayManager.serializeSpriteSheet;
+    }
+    get setDisplayAlignment() {
+        return this.#displayManager.setAlignment;
+    }
+    get setDisplayVerticalAlignment() {
+        return this.#displayManager.setVerticalAlignment;
+    }
+    get setDisplayHorizontalAlignment() {
+        return this.#displayManager.setHorizontalAlignment;
+    }
+    get resetDisplayAlignment() {
+        return this.#displayManager.resetAlignment;
+    }
+    get setDisplaySpritesDirection() {
+        return this.#displayManager.setSpritesDirection;
+    }
+    get setDisplaySpritesLineDirection() {
+        return this.#displayManager.setSpritesLineDirection;
+    }
+    get setDisplaySpritesSpacing() {
+        return this.#displayManager.setSpritesSpacing;
+    }
+    get setDisplaySpritesLineSpacing() {
+        return this.#displayManager.setSpritesLineSpacing;
+    }
+    get setDisplaySpritesAlignment() {
+        return this.#displayManager.setSpritesAlignment;
+    }
+    get drawDisplayQuadraticBezierCurve() {
+        return this.#displayManager.drawQuadraticBezierCurve;
+    }
+    get drawDisplayQuadraticBezierCurves() {
+        return this.#displayManager.drawQuadraticBezierCurves;
+    }
+    get drawDisplayCubicBezierCurve() {
+        return this.#displayManager.drawCubicBezierCurve;
+    }
+    get drawDisplayCubicBezierCurves() {
+        return this.#displayManager.drawCubicBezierCurves;
+    }
+    get drawDisplayPath() {
+        return this.#displayManager.drawPath;
+    }
+    get drawDisplayClosedPath() {
+        return this.#displayManager.drawClosedPath;
+    }
+}
+_a$1 = Device;
 
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
@@ -30026,5 +30038,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontUnicodeRange, getSvgStringFromDataUrl, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isValidSVG, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontMaxHeight, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isValidSVG, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
 //# sourceMappingURL=brilliantsole.module.js.map
