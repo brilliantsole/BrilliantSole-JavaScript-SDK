@@ -1,4 +1,4 @@
-import { DisplaySize } from "../DisplayManager.ts";
+import { DisplayBezierCurve, DisplaySize } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import opentype, { Font } from "opentype.js";
@@ -49,6 +49,7 @@ export type DisplaySpriteSheet = {
 };
 export declare const spriteHeaderLength: number;
 export declare function calculateSpriteSheetHeaderLength(numberOfSprites: number): number;
+export declare function getCurvesPoints(curves: DisplayBezierCurve[]): Vector2[];
 export declare function serializeSpriteSheet(displayManager: DisplayManagerInterface, spriteSheet: DisplaySpriteSheet): ArrayBuffer;
 export declare function parseSpriteSheet(dataView: DataView): void;
 export type FontToSpriteSheetOptions = {

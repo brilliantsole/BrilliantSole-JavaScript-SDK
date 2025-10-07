@@ -75,6 +75,16 @@ export function calculateSpriteSheetHeaderLength(numberOfSprites: number) {
   // numberOfSprites, spriteOffsets, spriteHeader
   return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
 }
+export function getCurvesPoints(curves: DisplayBezierCurve[]) {
+  const curvePoints: Vector2[] = [];
+  curves.forEach((curve, index) => {
+    if (index == 0) {
+      curvePoints.push(curve.controlPoints[0]);
+    }
+    curvePoints.push(curve.controlPoints.at(-1)!);
+  });
+  return curvePoints;
+}
 export function serializeSpriteSheet(
   displayManager: DisplayManagerInterface,
   spriteSheet: DisplaySpriteSheet
@@ -337,6 +347,7 @@ export async function fontToSpriteSheet(
         let curves: DisplayBezierCurve[] = [];
         let startPoint: Vector2 = { x: 0, y: 0 };
 
+        const allCurves: DisplayBezierCurve[][] = [];
         const parsedPaths: { path: Vector2[]; isHole: boolean }[] = [];
         let wasHole = false;
 
@@ -404,62 +415,48 @@ export async function fontToSpriteSheet(
                   pt.y = Math.floor(pt.y + pathOffset.y);
                 });
 
-                const isHole = classifySubpath(
-                  controlPoints,
-                  parsedPaths,
-                  "nonzero"
-                );
-                parsedPaths.push({ path: controlPoints, isHole });
-
-                // _console.log({
-                //   pathIndex: parsedPaths.length - 1,
-                //   isHole,
-                //   fillStyle,
-                //   strokeStyle,
-                //   fillRule,
-                //   lineWidth,
-                // });
-
-                if (isHole != wasHole) {
-                  wasHole = isHole;
-                  if (isHole) {
-                    commands.push({
-                      type: "selectFillColor",
-                      fillColorIndex: 0,
-                    });
-                  } else {
-                    commands.push({
-                      type: "selectFillColor",
-                      fillColorIndex: 1,
-                    });
-                  }
-                }
-
-                const isSegments = curves.every((c) => c.type === "segment");
-                if (isSegments) {
-                  if (options.stroke) {
-                    commands.push({
-                      type: "drawSegments",
-                      points: controlPoints,
-                    });
-                  } else {
-                    commands.push({
-                      type: "drawPolygon",
-                      points: controlPoints,
-                    });
-                  }
-                } else {
-                  if (options.stroke) {
-                    commands.push({ type: "drawPath", curves });
-                  } else {
-                    commands.push({ type: "drawClosedPath", curves });
-                  }
-                }
+                allCurves.push(curves);
 
                 // Reset curves
                 curves = [];
               }
               break;
+          }
+        });
+
+        allCurves.sort((a, b) => {
+          const aPoints = getCurvesPoints(a);
+          const bPoints = getCurvesPoints(b);
+          return contourArea(bPoints) - contourArea(aPoints);
+        });
+
+        allCurves.forEach((curve) => {
+          const controlPoints = curve.flatMap((c) => c.controlPoints);
+          const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
+          parsedPaths.push({ path: controlPoints, isHole });
+          if (isHole != wasHole) {
+            wasHole = isHole;
+            if (isHole) {
+              commands.push({
+                type: "selectFillColor",
+                fillColorIndex: 0,
+              });
+            } else {
+              commands.push({
+                type: "selectFillColor",
+                fillColorIndex: 1,
+              });
+            }
+          }
+
+          const isSegments = curves.every((c) => c.type === "segment");
+          if (isSegments) {
+            commands.push({
+              type: "drawPolygon",
+              points: controlPoints,
+            });
+          } else {
+            commands.push({ type: "drawClosedPath", curves });
           }
         });
       } else {

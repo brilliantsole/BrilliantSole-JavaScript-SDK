@@ -19641,6 +19641,16 @@
 	function calculateSpriteSheetHeaderLength(numberOfSprites) {
 	    return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
 	}
+	function getCurvesPoints(curves) {
+	    const curvePoints = [];
+	    curves.forEach((curve, index) => {
+	        if (index == 0) {
+	            curvePoints.push(curve.controlPoints[0]);
+	        }
+	        curvePoints.push(curve.controlPoints.at(-1));
+	    });
+	    return curvePoints;
+	}
 	function serializeSpriteSheet(displayManager, spriteSheet) {
 	    const { name, sprites } = spriteSheet;
 	    _console$m.log(`serializing ${name} spriteSheet`, spriteSheet);
@@ -19805,6 +19815,7 @@
 	                };
 	                let curves = [];
 	                let startPoint = { x: 0, y: 0 };
+	                const allCurves = [];
 	                const parsedPaths = [];
 	                let wasHole = false;
 	                let pathCommands = path.commands;
@@ -19861,49 +19872,45 @@
 	                                    pt.x = Math.floor(pt.x + pathOffset.x);
 	                                    pt.y = Math.floor(pt.y + pathOffset.y);
 	                                });
-	                                const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
-	                                parsedPaths.push({ path: controlPoints, isHole });
-	                                if (isHole != wasHole) {
-	                                    wasHole = isHole;
-	                                    if (isHole) {
-	                                        commands.push({
-	                                            type: "selectFillColor",
-	                                            fillColorIndex: 0,
-	                                        });
-	                                    }
-	                                    else {
-	                                        commands.push({
-	                                            type: "selectFillColor",
-	                                            fillColorIndex: 1,
-	                                        });
-	                                    }
-	                                }
-	                                const isSegments = curves.every((c) => c.type === "segment");
-	                                if (isSegments) {
-	                                    if (options.stroke) {
-	                                        commands.push({
-	                                            type: "drawSegments",
-	                                            points: controlPoints,
-	                                        });
-	                                    }
-	                                    else {
-	                                        commands.push({
-	                                            type: "drawPolygon",
-	                                            points: controlPoints,
-	                                        });
-	                                    }
-	                                }
-	                                else {
-	                                    if (options.stroke) {
-	                                        commands.push({ type: "drawPath", curves });
-	                                    }
-	                                    else {
-	                                        commands.push({ type: "drawClosedPath", curves });
-	                                    }
-	                                }
+	                                allCurves.push(curves);
 	                                curves = [];
 	                            }
 	                            break;
+	                    }
+	                });
+	                allCurves.sort((a, b) => {
+	                    const aPoints = getCurvesPoints(a);
+	                    const bPoints = getCurvesPoints(b);
+	                    return contourArea(bPoints) - contourArea(aPoints);
+	                });
+	                allCurves.forEach((curve) => {
+	                    const controlPoints = curve.flatMap((c) => c.controlPoints);
+	                    const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
+	                    parsedPaths.push({ path: controlPoints, isHole });
+	                    if (isHole != wasHole) {
+	                        wasHole = isHole;
+	                        if (isHole) {
+	                            commands.push({
+	                                type: "selectFillColor",
+	                                fillColorIndex: 0,
+	                            });
+	                        }
+	                        else {
+	                            commands.push({
+	                                type: "selectFillColor",
+	                                fillColorIndex: 1,
+	                            });
+	                        }
+	                    }
+	                    const isSegments = curves.every((c) => c.type === "segment");
+	                    if (isSegments) {
+	                        commands.push({
+	                            type: "drawPolygon",
+	                            points: controlPoints,
+	                        });
+	                    }
+	                    else {
+	                        commands.push({ type: "drawClosedPath", curves });
 	                    }
 	                });
 	            }
