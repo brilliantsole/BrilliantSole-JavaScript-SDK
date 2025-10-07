@@ -1,4 +1,8 @@
-import { DisplayBezierCurve, DisplayBitmap } from "../DisplayManager.ts";
+import {
+  DisplayBezierCurve,
+  DisplayBitmap,
+  DisplaySize,
+} from "../DisplayManager.ts";
 import { concatenateArrayBuffers } from "./ArrayBufferUtils.ts";
 import { createConsole } from "./Console.ts";
 import { quantizeCanvas } from "./DisplayBitmapUtils.ts";
@@ -17,8 +21,9 @@ import {
   DisplayContextState,
   isDirectionHorizontal,
 } from "./DisplayContextState.ts";
+import { classifySubpath } from "./SvgUtils.ts";
 
-const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
+const _console = createConsole("DisplaySpriteSheetUtils", { log: false });
 
 export type DisplaySpriteSubLine = {
   spriteSheetName: string;
@@ -151,6 +156,7 @@ function isWoff2(arrayBuffer: ArrayBuffer) {
 export async function parseFont(arrayBuffer: ArrayBuffer) {
   if (isWoff2(arrayBuffer)) {
     const result = await decompress(arrayBuffer);
+    // @ts-expect-error
     arrayBuffer = result.buffer;
   }
   const font = opentype.parse(arrayBuffer);
@@ -331,11 +337,8 @@ export async function fontToSpriteSheet(
         let curves: DisplayBezierCurve[] = [];
         let startPoint: Vector2 = { x: 0, y: 0 };
 
-        const pathCommandObjects: {
-          command: DisplayContextCommand;
-          area: number;
-          points: Vector2[];
-        }[] = [];
+        const parsedPaths: { path: Vector2[]; isHole: boolean }[] = [];
+        let wasHole = false;
 
         let pathCommands = path.commands;
         pathCommands.forEach((cmd) => {
@@ -401,27 +404,56 @@ export async function fontToSpriteSheet(
                   pt.y = Math.floor(pt.y + pathOffset.y);
                 });
 
-                const area = contourArea(controlPoints);
+                const isHole = classifySubpath(
+                  controlPoints,
+                  parsedPaths,
+                  "nonzero"
+                );
+                parsedPaths.push({ path: controlPoints, isHole });
+
+                // _console.log({
+                //   pathIndex: parsedPaths.length - 1,
+                //   isHole,
+                //   fillStyle,
+                //   strokeStyle,
+                //   fillRule,
+                //   lineWidth,
+                // });
+
+                if (isHole != wasHole) {
+                  wasHole = isHole;
+                  if (isHole) {
+                    commands.push({
+                      type: "selectFillColor",
+                      fillColorIndex: 0,
+                    });
+                  } else {
+                    commands.push({
+                      type: "selectFillColor",
+                      fillColorIndex: 1,
+                    });
+                  }
+                }
 
                 const isSegments = curves.every((c) => c.type === "segment");
                 if (isSegments) {
-                  pathCommandObjects.push({
-                    command: {
+                  if (options.stroke) {
+                    commands.push({
+                      type: "drawSegments",
+                      points: controlPoints,
+                    });
+                  } else {
+                    commands.push({
                       type: "drawPolygon",
                       points: controlPoints,
-                    },
-                    points: controlPoints,
-                    area,
-                  });
+                    });
+                  }
                 } else {
-                  pathCommandObjects.push({
-                    command: {
-                      type: "drawClosedPath",
-                      curves,
-                    },
-                    area,
-                    points: controlPoints,
-                  });
+                  if (options.stroke) {
+                    commands.push({ type: "drawPath", curves });
+                  } else {
+                    commands.push({ type: "drawClosedPath", curves });
+                  }
                 }
 
                 // Reset curves
@@ -430,28 +462,6 @@ export async function fontToSpriteSheet(
               break;
           }
         });
-
-        if (pathCommandObjects.length > 0) {
-          pathCommandObjects.sort((a, b) => {
-            return a.points.every((aPoint) => pointInPolygon(aPoint, b.points))
-              ? 1
-              : -1;
-          });
-
-          let isDrawingHole = false;
-          let isHoleAreaPositive = pathCommandObjects[0].area < 0;
-          pathCommandObjects.forEach(({ area, command }) => {
-            const isHole = isHoleAreaPositive ? area > 0 : area < 0;
-            if (isDrawingHole != isHole) {
-              isDrawingHole = isHole;
-              commands.push({
-                type: "selectFillColor",
-                fillColorIndex: isHole ? 0 : 1,
-              });
-            }
-            commands.push(command);
-          });
-        }
       } else {
         if (bitmapWidth > 0 && bitmapHeight > 0) {
           canvas.width = bitmapWidth;
@@ -794,4 +804,18 @@ export function splitStringInto(
   requireAll = false
 ) {
   // FILL
+}
+
+export function getFontMaxHeight(font: Font, fontSize: number) {
+  const scale = (1 / font.unitsPerEm) * fontSize;
+  const maxHeight = (font.ascender - font.descender) * scale;
+  return maxHeight;
+}
+export function getMaxSpriteSheetSize(spriteSheet: DisplaySpriteSheet) {
+  const size: DisplaySize = { width: 0, height: 0 };
+  spriteSheet.sprites.forEach((sprite) => {
+    size.width = Math.max(size.width, sprite.width);
+    size.height = Math.max(size.height, sprite.height);
+  });
+  return size;
 }

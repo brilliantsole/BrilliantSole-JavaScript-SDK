@@ -653,7 +653,6 @@ const loadFontUrl = async (string, isEnglish = true) => {
 };
 window.addEventListener("paste", (event) => {
   const string = event.clipboardData.getData("text");
-
   loadFontUrl(string);
 });
 window.addEventListener("paste", async (event) => {
@@ -678,7 +677,7 @@ const loadFont = async (arrayBuffer) => {
     await addFont(font);
   }
 };
-3;
+
 /** @type {Object.<string, BS.Font[]>} */
 const fonts = {};
 /** @type {Object.<string, BS.Font[]>} */
