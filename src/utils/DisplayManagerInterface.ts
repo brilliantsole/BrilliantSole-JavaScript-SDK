@@ -1252,7 +1252,7 @@ export async function selectSpriteSheetPalette(
     `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`
   );
 
-  console.log({ indicesOnly });
+  //_console.log({ indicesOnly });
   for (let index = 0; index < palette.numberOfColors; index++) {
     if (!indicesOnly) {
       const color = palette.colors[index];

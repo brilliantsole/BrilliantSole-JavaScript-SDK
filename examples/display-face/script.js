@@ -180,7 +180,7 @@ let previousState = "idle";
 let stateAnimationEndTime = 0;
 let isAnimatingState = false;
 /** @type {Record<State, number>} */
-window.animationDuration = 600;
+window.animationDuration = 700;
 /** @param {State} newState */
 const setState = async (newState) => {
   if (state == newState) {
@@ -254,7 +254,7 @@ const draw = async () => {
   }
 
   if (isDrawing) {
-    console.warn("busy drawing");
+    //console.warn("busy drawing");
     isWaitingToRedraw = true;
     return;
   }
@@ -276,17 +276,14 @@ const draw = async () => {
       didFinishAnimating = true;
     }
 
-    console.log({ interpolation });
+    //console.log({ interpolation });
 
     await displayCanvasHelper.setVerticalAlignment("end");
 
     const isDrawingProfile = [state, previousState].includes("profile");
     if (isDrawingProfile) {
       const isMovingIn = state == "profile";
-      const easedInterpolation = ease(
-        interpolation,
-        isMovingIn ? "easeOut" : "easeIn"
-      );
+      const easedInterpolation = ease(interpolation, "easeInOutSine");
 
       let profile = isMovingIn ? selectedProfile : previouslySelectedProfile;
       profile = profile || selectedProfile || previouslySelectedProfile;
@@ -1660,7 +1657,7 @@ const selectFont = async (newFontName) => {
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
 
 // IMAGES
-const imageHeight = 160;
+const imageHeight = 140;
 /** @type {Record<number, {spriteSheet: BS.DisplaySpriteSheet, profileImage: HTMLImageElement}>} */
 const profileImageSpriteSheets = {};
 /** @param {Profile} profile */
@@ -1681,19 +1678,97 @@ const createProfileImageSpriteSheet = async (profile) => {
     return profileImageSpriteSheets[profile.id].spriteSheet;
   }
   const aspectRatio = profileImage.naturalWidth / profileImage.naturalHeight;
-  const spriteSheet = await BS.imageToSpriteSheet(
-    profileImage,
-    profile.id,
-    imageHeight * aspectRatio,
-    imageHeight,
-    displayCanvasHelper.numberOfColors - 1,
-    profile.id
-  );
+  let spriteSheet;
+  if (true) {
+    console.log("size", imageHeight * aspectRatio, imageHeight);
+    const roundProfileImage = await imageToRoundedCanvas(
+      profileImage,
+      imageHeight * aspectRatio,
+      imageHeight,
+      25
+    );
+    console.log("roundProfileImage", roundProfileImage);
+    spriteSheet = await BS.canvasToSpriteSheet(
+      roundProfileImage,
+      profile.id,
+      displayCanvasHelper.numberOfColors - 1,
+      profile.id
+    );
+    console.log("spriteSheet", spriteSheet);
+  } else {
+    spriteSheet = await BS.imageToSpriteSheet(
+      profileImage,
+      profile.id,
+      imageHeight * aspectRatio,
+      imageHeight,
+      displayCanvasHelper.numberOfColors - 1,
+      profile.id
+    );
+  }
   spriteSheet.palettes[0].colors[0] = "black";
   console.log("profile spriteSheet", profile, spriteSheet);
   profileImageSpriteSheets[profile.id] = { spriteSheet, profileImage };
   return spriteSheet;
 };
+
+async function imageToRoundedCanvas(src, width, height, radius) {
+  // get source dimensions
+  const srcW =
+    src instanceof HTMLVideoElement
+      ? src.videoWidth
+      : src.naturalWidth || src.width;
+  const srcH =
+    src instanceof HTMLVideoElement
+      ? src.videoHeight
+      : src.naturalHeight || src.height;
+
+  if (!srcW || !srcH) {
+    throw new Error("Source image has no dimensions.");
+  }
+
+  // devicePixelRatio for crispness
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(width);
+  canvas.height = Math.round(height);
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+
+  const ctx = canvas.getContext("2d");
+
+  // --- normalize radius ---
+  let borderRadius = { tl: radius, tr: radius, br: radius, bl: radius };
+  // clamp to half size
+  borderRadius.tl = Math.min(borderRadius.tl, width / 2, height / 2);
+  borderRadius.tr = Math.min(borderRadius.tr, width / 2, height / 2);
+  borderRadius.br = Math.min(borderRadius.br, width / 2, height / 2);
+  borderRadius.bl = Math.min(borderRadius.bl, width / 2, height / 2);
+
+  // --- draw rounded rect path and clip ---
+  function roundedRectPath(ctx, x, y, w, h, rad) {
+    ctx.beginPath();
+    ctx.moveTo(x + rad.tl, y);
+    ctx.lineTo(x + w - rad.tr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rad.tr);
+    ctx.lineTo(x + w, y + h - rad.br);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rad.br, y + h);
+    ctx.lineTo(x + rad.bl, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rad.bl);
+    ctx.lineTo(x, y + rad.tl);
+    ctx.quadraticCurveTo(x, y, x + rad.tl, y);
+    ctx.closePath();
+  }
+
+  roundedRectPath(ctx, 0, 0, width, height, borderRadius);
+  ctx.clip();
+
+  // --- compute draw parameters based on fit mode ---
+  const imgW = srcW;
+  const imgH = srcH;
+
+  ctx.drawImage(src, 0, 0, imgW, imgH, 0, 0, width, height);
+
+  return canvas;
+}
 
 didLoad = true;
 updateYPositions();
