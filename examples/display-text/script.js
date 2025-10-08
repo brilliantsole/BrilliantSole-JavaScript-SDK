@@ -160,7 +160,11 @@ const draw = async () => {
     return;
   }
   if (!didLoad) {
-    console.log("hasn't loaded yet");
+    //console.log("hasn't loaded yet");
+    //return;
+  }
+  if (!displayCanvasHelper.spriteSheets["english"]) {
+    console.log("no english loaded");
     return;
   }
 
@@ -719,7 +723,9 @@ const addFont = async (font) => {
     englishFontSpriteSheets[fullName] = spriteSheet;
     //console.log(`added english font spriteSheet "${fullName}"`, spriteSheet);
     await updateFontSelect();
-    await selectFont(fullName);
+    if (didLoad || !selectedFont) {
+      await selectFont(fullName);
+    }
   }
 };
 

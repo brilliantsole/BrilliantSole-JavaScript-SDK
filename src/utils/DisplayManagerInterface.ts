@@ -1238,6 +1238,7 @@ export async function selectSpriteSheetPalette(
   displayManagerInterface: DisplayManagerInterface,
   paletteName: string,
   offset?: number,
+  indicesOnly?: boolean,
   sendImmediately?: boolean
 ) {
   offset = offset || 0;
@@ -1251,15 +1252,18 @@ export async function selectSpriteSheetPalette(
     `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`
   );
 
+  console.log({ indicesOnly });
   for (let index = 0; index < palette.numberOfColors; index++) {
-    const color = palette.colors[index];
-    let opacity = palette.opacities?.[index];
-    if (opacity == undefined) {
-      opacity = 1;
+    if (!indicesOnly) {
+      const color = palette.colors[index];
+      let opacity = palette.opacities?.[index];
+      if (opacity == undefined) {
+        opacity = 1;
+      }
+      //_console.log({ index, offset, color });
+      displayManagerInterface.setColor(index + offset, color, false);
+      displayManagerInterface.setColorOpacity(index + offset, opacity, false);
     }
-    //_console.log({ index, offset, color });
-    displayManagerInterface.setColor(index + offset, color, false);
-    displayManagerInterface.setColorOpacity(index + offset, opacity, false);
     displayManagerInterface.selectSpriteColor(index, index + offset);
   }
 

@@ -293,6 +293,7 @@ export interface DisplayEventMessages {
     spriteSheetName: string;
     spriteSheet: DisplaySpriteSheet;
   };
+  displayContextCommands: {};
 }
 
 export type DisplayEventDispatcher = EventDispatcher<
@@ -714,7 +715,7 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   // DISPLAY CONTEXT
-  #assertValidDisplayContextCommand(
+  #assertValidDisplayContextCommandType(
     displayContextCommand: DisplayContextCommandType
   ) {
     _console.assertEnumWithError(
@@ -726,26 +727,25 @@ class DisplayManager implements DisplayManagerInterface {
   get #maxCommandDataLength() {
     return this.mtu - 7;
   }
-  #displayContextCommandBuffers: ArrayBuffer[] = [];
-  async #sendDisplayContextCommand(
-    displayContextCommand: DisplayContextCommandType,
+  #contextCommandBuffers: ArrayBuffer[] = [];
+  async #sendContextCommand(
+    contextCommandType: DisplayContextCommandType,
     arrayBuffer?: ArrayBufferLike,
     sendImmediately?: boolean
   ) {
-    this.#assertValidDisplayContextCommand(displayContextCommand);
+    this.#assertValidDisplayContextCommandType(contextCommandType);
     _console.log(
-      "sendDisplayContextCommand",
-      { displayContextCommand, sendImmediately },
+      "sendContextCommand",
+      { displayContextCommand: contextCommandType, sendImmediately },
       arrayBuffer
     );
-    const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
-      displayContextCommand
-    );
+    const displayContextCommandEnum =
+      DisplayContextCommandTypes.indexOf(contextCommandType);
     const _arrayBuffer = concatenateArrayBuffers(
       UInt8ByteBuffer(displayContextCommandEnum),
       arrayBuffer
     );
-    const newLength = this.#displayContextCommandBuffers.reduce(
+    const newLength = this.#contextCommandBuffers.reduce(
       (sum, buffer) => sum + buffer.byteLength,
       _arrayBuffer.byteLength
     );
@@ -753,23 +753,24 @@ class DisplayManager implements DisplayManagerInterface {
       _console.log("displayContextCommandBuffers too full - sending now");
       await this.#sendContextCommands();
     }
-    this.#displayContextCommandBuffers.push(_arrayBuffer);
+    this.#contextCommandBuffers.push(_arrayBuffer);
     if (sendImmediately) {
       await this.#sendContextCommands();
     }
   }
   async #sendContextCommands() {
-    if (this.#displayContextCommandBuffers.length == 0) {
+    if (this.#contextCommandBuffers.length == 0) {
       return;
     }
-    const data = concatenateArrayBuffers(this.#displayContextCommandBuffers);
+    const data = concatenateArrayBuffers(this.#contextCommandBuffers);
     _console.log(
       `sending displayContextCommands`,
-      this.#displayContextCommandBuffers.slice(),
+      this.#contextCommandBuffers.slice(),
       data
     );
-    this.#displayContextCommandBuffers.length = 0;
+    this.#contextCommandBuffers.length = 0;
     await this.sendMessage([{ type: "displayContextCommands", data }], true);
+    this.#dispatchEvent("displayContextCommands", {});
   }
   async flushContextCommands() {
     await this.#sendContextCommands();
@@ -778,13 +779,13 @@ class DisplayManager implements DisplayManagerInterface {
     _console.log("showDisplay");
     this.#isReady = false;
     this.#lastShowRequestTime = Date.now();
-    await this.#sendDisplayContextCommand("show", undefined, sendImmediately);
+    await this.#sendContextCommand("show", undefined, sendImmediately);
   }
   async clear(sendImmediately = true) {
     _console.log("clearDisplay");
     this.#isReady = false;
     this.#lastShowRequestTime = Date.now();
-    await this.#sendDisplayContextCommand("clear", undefined, sendImmediately);
+    await this.#sendContextCommand("clear", undefined, sendImmediately);
   }
 
   assertValidColorIndex(colorIndex: number) {
@@ -824,7 +825,7 @@ class DisplayManager implements DisplayManagerInterface {
     dataView.setUint8(1, colorRGB.r);
     dataView.setUint8(2, colorRGB.g);
     dataView.setUint8(3, colorRGB.b);
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       "setColor",
       dataView.buffer,
       sendImmediately
@@ -854,7 +855,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -871,7 +872,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -935,7 +936,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -961,7 +962,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -984,7 +985,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1006,7 +1007,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1028,7 +1029,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1050,7 +1051,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1081,7 +1082,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1114,7 +1115,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       alignmentCommand,
       dataView.buffer,
       sendImmediately
@@ -1148,7 +1149,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView?.buffer,
       sendImmediately
@@ -1179,7 +1180,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1199,7 +1200,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1226,7 +1227,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1252,7 +1253,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1279,7 +1280,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1305,7 +1306,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1330,7 +1331,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1353,7 +1354,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1384,7 +1385,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       cropCommand,
       dataView.buffer,
       sendImmediately
@@ -1415,7 +1416,7 @@ class DisplayManager implements DisplayManagerInterface {
     }
     const commandType: DisplayContextCommandType = "clearCrop";
     const dataView = serializeContextCommand(this, { type: commandType });
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView?.buffer,
       sendImmediately
@@ -1446,7 +1447,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       cropCommand,
       dataView.buffer,
       sendImmediately
@@ -1488,7 +1489,7 @@ class DisplayManager implements DisplayManagerInterface {
     const dataView = serializeContextCommand(this, {
       type: commandType,
     });
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView?.buffer,
       sendImmediately
@@ -1520,7 +1521,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1564,7 +1565,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1627,7 +1628,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1658,7 +1659,7 @@ class DisplayManager implements DisplayManagerInterface {
     const dataView = serializeContextCommand(this, {
       type: commandType,
     });
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView?.buffer,
       sendImmediately
@@ -1690,7 +1691,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1734,7 +1735,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1776,7 +1777,7 @@ class DisplayManager implements DisplayManagerInterface {
     const dataView = serializeContextCommand(this, {
       type: commandType,
     });
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView?.buffer,
       sendImmediately
@@ -1818,7 +1819,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1849,7 +1850,7 @@ class DisplayManager implements DisplayManagerInterface {
     const dataView = serializeContextCommand(this, {
       type: commandType,
     });
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView?.buffer,
       sendImmediately
@@ -1876,7 +1877,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1911,7 +1912,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -1965,7 +1966,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2008,7 +2009,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2054,7 +2055,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2078,7 +2079,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2104,7 +2105,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2126,7 +2127,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2150,7 +2151,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2174,7 +2175,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2190,7 +2191,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2225,7 +2226,7 @@ class DisplayManager implements DisplayManagerInterface {
       );
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2249,7 +2250,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2280,7 +2281,7 @@ class DisplayManager implements DisplayManagerInterface {
       );
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2338,7 +2339,7 @@ class DisplayManager implements DisplayManagerInterface {
       );
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2372,7 +2373,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2399,7 +2400,7 @@ class DisplayManager implements DisplayManagerInterface {
       await this.drawSegments(secondHalf, sendImmediately);
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2428,7 +2429,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2458,7 +2459,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2507,7 +2508,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2599,6 +2600,10 @@ class DisplayManager implements DisplayManagerInterface {
     spriteSheetName: string,
     sendImmediately?: boolean
   ) {
+    if (typeof spriteSheetName == "number") {
+      // @ts-expect-error
+      spriteSheetName = spriteSheetName.toString();
+    }
     _console.assertTypeWithError(spriteSheetName, "string");
     _console.assertRangeWithError(
       "newName",
@@ -2707,7 +2712,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2743,7 +2748,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2756,6 +2761,10 @@ class DisplayManager implements DisplayManagerInterface {
     spriteLines: DisplaySpriteLines,
     sendImmediately?: boolean
   ) {
+    _console.assertWithError(
+      this.contextState.spritesLineHeight > 0,
+      `spritesLineHeight must be >0`
+    );
     const spriteSerializedLines: DisplaySpriteSerializedLines = [];
     spriteLines.forEach((spriteLine) => {
       const serializedLine: DisplaySpriteSerializedLine = [];
@@ -2794,7 +2803,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendDisplayContextCommand(
+    await this.#sendContextCommand(
       commandType,
       dataView.buffer,
       sendImmediately
@@ -2932,9 +2941,16 @@ class DisplayManager implements DisplayManagerInterface {
   async selectSpriteSheetPalette(
     paletteName: string,
     offset?: number,
+    indicesOnly?: boolean,
     sendImmediately?: boolean
   ) {
-    await selectSpriteSheetPalette(this, paletteName, offset, sendImmediately);
+    await selectSpriteSheetPalette(
+      this,
+      paletteName,
+      offset,
+      indicesOnly,
+      sendImmediately
+    );
   }
   async selectSpriteSheetPaletteSwap(
     paletteSwapName: string,
@@ -2971,7 +2987,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.#displayInformation = undefined;
     // @ts-ignore
     this.#brightness = undefined;
-    this.#displayContextCommandBuffers = [];
+    this.#contextCommandBuffers = [];
     this.#isAvailable = false;
 
     this.#contextStateHelper.reset();

@@ -2317,16 +2317,21 @@ displayCanvasHelper.setSegmentRadius(1, true);
 fetch("./owl.svg").then(async (response) => {
   const svgString = await response.text();
 
-  const { commands, colors } = BS.svgToDisplayContextCommands(svgString, {
-    // height: 200,
-    // width: 300,
-    //numberOfColors: 2,
-    //fit: true,
-    //aspectRatio: 0.6,
-    //width: 300,
-    //offsetX: 100,
-    // offsetY: 100,
-  });
+  const { commands, colors } = BS.svgToDisplayContextCommands(
+    svgString,
+    2,
+    0,
+    ["white", "black"],
+    {
+      height: 200,
+      // width: 300,
+      //fit: true,
+      //aspectRatio: 0.6,
+      //width: 300,
+      offsetX: 100,
+      offsetY: 100,
+    }
+  );
   //console.log("commands", commands);
   //console.log("colors", colors);
   displayCanvasHelper.previewSpriteCommands(commands);

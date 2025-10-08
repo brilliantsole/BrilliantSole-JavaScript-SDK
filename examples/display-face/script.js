@@ -104,8 +104,11 @@ displayCanvasHelper.addEventListener("color", (event) => {
   displayColorInputs[colorIndex].value = colorHex;
 });
 setupColors();
-displayCanvasHelper.setColor(1, "white");
-displayCanvasHelper.selectSpriteColor(1, 1);
+displayCanvasHelper.setColor(displayCanvasHelper.numberOfColors - 1, "white");
+displayCanvasHelper.selectSpriteColor(
+  displayCanvasHelper.numberOfColors - 1,
+  displayCanvasHelper.numberOfColors - 1
+);
 displayCanvasHelper.flushContextCommands();
 
 // DRAW
@@ -138,6 +141,16 @@ const draw = async () => {
   isDrawing = true;
 
   // FILL
+  if (selectedProfile) {
+    await displayCanvasHelper.selectSpriteSheet(selectedProfile.id);
+    await displayCanvasHelper.selectSpriteSheetPalette(
+      selectedProfile.id,
+      0,
+      true
+    );
+    await displayCanvasHelper.drawSprite(100, 100, "image");
+    await displayCanvasHelper.selectSpriteSheetPalette(selectedProfile.id, 0);
+  }
 
   await displayCanvasHelper.show();
 };
@@ -611,6 +624,9 @@ const autoImageCheckbox = document.getElementById("autoImage");
 let autoImage = autoImageCheckbox.checked;
 autoImageCheckbox.addEventListener("input", () => {
   autoImage = autoImageCheckbox.checked;
+  if (autoImage) {
+    setTestImages(true);
+  }
   console.log({ autoImage });
 });
 device.addEventListener("cameraImage", async (event) => {
@@ -780,7 +796,7 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
 
 /** @type {Profile?} */
 let selectedProfile;
-const selectProfile = (selectedProfileId) => {
+const selectProfile = async (selectedProfileId) => {
   const newSelectedProfile = profiles.find(
     (profile) => profile.id == selectedProfileId
   );
@@ -799,6 +815,13 @@ const selectProfile = (selectedProfileId) => {
   updateAddCameraImageButton();
   updateTestCameraImageButton();
   selectProfileSelect.value = selectedProfile?.id ?? "none";
+
+  if (selectedProfile) {
+    const spriteSheet = await createProfileImageSpriteSheet(selectedProfile);
+    await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
+  } else {
+  }
+  await draw();
 };
 
 const addProfileButton = document.getElementById("addProfile");
@@ -1371,5 +1394,39 @@ const selectFont = async (newFontName) => {
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
 
 // IMAGES
-/** @type {Record<number, BS.DisplaySpriteSheet>} */
+const imageHeight = 160;
+/** @type {Record<number, {spriteSheet: BS.DisplaySpriteSheet, profileImage: HTMLImageElement}>} */
 const profileImageSpriteSheets = {};
+/** @param {Profile} profile */
+const createProfileImageSpriteSheet = async (profile) => {
+  const profileImages = allProfileImages[profile.id];
+  if (!profileImages) {
+    return;
+  }
+  const profileImage = profileImages.find((profileImage) =>
+    profileImage.classList.contains("selected")
+  );
+  if (!profileImage) {
+    console.log("no profileImage found");
+    return;
+  }
+  if (profileImageSpriteSheets[profile.id]?.profileImage == profileImage) {
+    console.log("already made profile spriteSheet");
+    return profileImageSpriteSheets[profile.id].spriteSheet;
+  }
+  const aspectRatio = profileImage.naturalWidth / profileImage.naturalHeight;
+  const spriteSheet = await BS.imageToSpriteSheet(
+    profileImage,
+    profile.id,
+    imageHeight * aspectRatio,
+    imageHeight,
+    displayCanvasHelper.numberOfColors - 1,
+    profile.id
+  );
+  spriteSheet.palettes[0].colors[0] = "black";
+  console.log("profile spriteSheet", profile, spriteSheet);
+  profileImageSpriteSheets[profile.id] = { spriteSheet, profileImage };
+  return spriteSheet;
+};
+
+didLoad = true;
