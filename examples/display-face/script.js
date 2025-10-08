@@ -1,5 +1,11 @@
 import * as BS from "../../build/brilliantsole.module.js";
 
+import * as three from "../utils/three/three.module.min.js";
+
+/** @type {import("../utils/three/three.module.min")} */
+const THREE = three;
+window.THREE = THREE;
+
 // DEVICE
 const device = new BS.Device();
 window.device = device;
@@ -123,7 +129,121 @@ displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
   isUploading = false;
 });
 
+/**
+ * @param {number} t
+ * @param {"smoothstep" | "smootherstep" | "easeInOutSine" | "easeInOutCubic" | "easeIn" | "easeOut" | "circle"} type
+ */
+function ease(t, type = "smoothstep") {
+  t = Math.min(Math.max(t, 0), 1); // clamp to [0,1]
+
+  switch (type) {
+    case "smoothstep":
+      return t * t * (3 - 2 * t);
+
+    case "smootherstep":
+      return t * t * t * (t * (t * 6 - 15) + 10);
+
+    case "easeInOutSine":
+      return 0.5 - 0.5 * Math.cos(Math.PI * t);
+
+    case "easeInOutCubic":
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    // ✨ smoother easeIn (cubic)
+    case "easeIn":
+      return t * t * t; // cubic ease-in
+
+    // ✨ smoother easeOut (cubic)
+    case "easeOut":
+      return 1 - Math.pow(1 - t, 3); // cubic ease-out
+
+    // circular ease-in-out
+    case "circle":
+      return t < 0.5
+        ? (1 - Math.sqrt(1 - (2 * t) ** 2)) / 2
+        : (Math.sqrt(1 - Math.pow(-2 * t + 2, 2)) + 1) / 2;
+
+    default:
+      console.warn(`Unknown easing type: ${type}, using smoothstep.`);
+      return t * t * (3 - 2 * t);
+  }
+}
+
 let didLoad = false;
+/** @typedef {"idle" | "scanning" | "profile"} State */
+/** @type {State} */
+let state = "idle";
+/** @type {State?} */
+let nextState;
+/** @type {State} */
+let previousState = "idle";
+let stateAnimationEndTime = 0;
+let isAnimatingState = false;
+/** @type {Record<State, number>} */
+window.animationDuration = 600;
+/** @param {State} newState */
+const setState = async (newState) => {
+  if (state == newState) {
+    return;
+  }
+  previousState = state;
+  state = newState;
+  const now = Date.now();
+  stateAnimationEndTime = now + window.animationDuration;
+  isAnimatingState = true;
+  console.log({ previousState, state, stateAnimationEndTime });
+  Object.assign(startYPositons, latestYPositions);
+  await draw();
+};
+const startYPositons = {
+  profile: 0,
+  profileImage: 0,
+  scanning: 0,
+};
+const latestYPositions = {
+  profile: 0,
+  profileImage: 0,
+  scanning: 0,
+};
+const yPositions = {
+  profile: { start: 0, end: 0 },
+  profileImage: { start: 0, end: 0 },
+  scanning: { start: 0, end: 0 },
+};
+const imagePadding = 10;
+const textPadding = 10;
+const updateYPositions = () => {
+  const profileHeight = spritesLineHeight * 2 + textPadding;
+  const profileImageHeight = profileHeight + imagePadding + imageHeight;
+  const scanningHeight = spritesLineHeight + textPadding;
+
+  const { height } = displayCanvasHelper;
+
+  yPositions.profile.start =
+    height + profileHeight - textPadding + imageHeight + imagePadding;
+  yPositions.profile.end = height - textPadding;
+
+  yPositions.profileImage.start = height + imageHeight + imagePadding;
+  yPositions.profileImage.end = height - profileHeight - imagePadding;
+
+  yPositions.scanning.start = height + scanningHeight - textPadding;
+  yPositions.scanning.end = height - textPadding;
+
+  startYPositons.profile = yPositions.profile.start;
+  startYPositons.profileImage = yPositions.profileImage.start;
+  startYPositons.scanning = yPositions.scanning.start;
+
+  latestYPositions.profile = startYPositons.profile;
+  latestYPositions.profileImage = startYPositons.profileImage;
+  latestYPositions.scanning = startYPositons.scanning;
+
+  console.log("yPositions", yPositions);
+  console.log("startYPositons", startYPositons);
+};
+displayCanvasHelper.addEventListener("resize", () => {
+  updateYPositions();
+});
+let paddingX = 10;
 const draw = async () => {
   if (isUploading) {
     return;
@@ -140,16 +260,131 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  // FILL
-  if (selectedProfile) {
-    await displayCanvasHelper.selectSpriteSheet(selectedProfile.id);
-    await displayCanvasHelper.selectSpriteSheetPalette(
-      selectedProfile.id,
+  let didFinishAnimating = false;
+  if (isAnimatingState) {
+    const now = Date.now();
+
+    const timeUntilAnimationEnds = stateAnimationEndTime - now;
+    let interpolation = THREE.MathUtils.inverseLerp(
+      animationDuration,
       0,
-      true
+      timeUntilAnimationEnds
     );
-    await displayCanvasHelper.drawSprite(100, 100, "image");
-    await displayCanvasHelper.selectSpriteSheetPalette(selectedProfile.id, 0);
+    interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
+    if (interpolation >= 1) {
+      isAnimatingState = false;
+      didFinishAnimating = true;
+    }
+
+    console.log({ interpolation });
+
+    await displayCanvasHelper.setVerticalAlignment("end");
+
+    const isDrawingProfile = [state, previousState].includes("profile");
+    if (isDrawingProfile) {
+      const isMovingIn = state == "profile";
+      const easedInterpolation = ease(
+        interpolation,
+        isMovingIn ? "easeOut" : "easeIn"
+      );
+
+      let profile = isMovingIn ? selectedProfile : previouslySelectedProfile;
+      profile = profile || selectedProfile || previouslySelectedProfile;
+      // console.log({
+      //   state,
+      //   isMovingIn,
+      //   profile,
+      //   selectedProfile,
+      //   previouslySelectedProfile,
+      // });
+
+      const endProfileY = isMovingIn
+        ? yPositions.profile.end
+        : yPositions.profile.start;
+      // console.log(
+      //   `moving profile from ${startYPositons.profile} to ${endProfileY}`
+      // );
+      const profileY = THREE.MathUtils.lerp(
+        startYPositons.profile,
+        endProfileY,
+        easedInterpolation
+      );
+
+      const endProfileImageY = isMovingIn
+        ? yPositions.profileImage.end
+        : yPositions.profileImage.start;
+      // console.log(
+      //   `moving profileImage from ${startYPositons.profileImage} to ${endProfileImageY}`
+      // );
+      const profileImageY = THREE.MathUtils.lerp(
+        startYPositons.profileImage,
+        endProfileImageY,
+        easedInterpolation
+      );
+
+      // console.log({ profileY, profileImageY });
+
+      await displayCanvasHelper.setHorizontalAlignment("start");
+
+      await displayCanvasHelper.selectSpriteSheet("english");
+      await displayCanvasHelper.selectSpriteColor(
+        1,
+        displayCanvasHelper.numberOfColors - 1
+      );
+      const string = [
+        `${profile.name} - ${profile.title}`,
+        `${profile.interests}`,
+      ].join("\n");
+      await displayCanvasHelper.drawSpritesString(paddingX, profileY, string);
+
+      await displayCanvasHelper.selectSpriteSheet(profile.id);
+      await displayCanvasHelper.selectSpriteSheetPalette(profile.id, 0, true);
+      await displayCanvasHelper.drawSprite(paddingX, profileImageY, "image");
+      await displayCanvasHelper.selectSpriteSheetPalette(profile.id, 0);
+
+      latestYPositions.profile = profileY;
+      latestYPositions.profileImage = profileImageY;
+    }
+    const isDrawingScanning = [state, previousState].includes("scanning");
+    if (isDrawingScanning) {
+      const isMovingIn = state == "scanning";
+      const easedInterpolation = ease(interpolation, "circle");
+
+      await displayCanvasHelper.setHorizontalAlignment("end");
+
+      const endScanningY = isMovingIn
+        ? yPositions.scanning.end
+        : yPositions.scanning.start;
+      // console.log(
+      //   `moving profile from ${startYPositons.scanning} to ${endScanningY}`
+      // );
+      const scanningY = THREE.MathUtils.lerp(
+        startYPositons.scanning,
+        endScanningY,
+        easedInterpolation
+      );
+
+      await displayCanvasHelper.selectSpriteSheet("english");
+      await displayCanvasHelper.selectSpriteColor(
+        1,
+        displayCanvasHelper.numberOfColors - 1
+      );
+      await displayCanvasHelper.drawSpritesString(
+        displayCanvasHelper.width - paddingX,
+        scanningY,
+        "scanning..."
+      );
+
+      latestYPositions.scanning = scanningY;
+    }
+  } else {
+    isDrawing = false;
+  }
+
+  if (didFinishAnimating && nextState) {
+    console.log({ nextState });
+    setState(nextState);
+    nextState = undefined;
   }
 
   await displayCanvasHelper.show();
@@ -157,7 +392,7 @@ const draw = async () => {
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
-  if (isWaitingToRedraw) {
+  if (isWaitingToRedraw || isAnimatingState) {
     isWaitingToRedraw = false;
     draw();
   }
@@ -503,6 +738,10 @@ const setTestImages = (newTestImages) => {
   console.log({ testImages });
   testImagesCheckbox.checked = testImages;
   updateProfileImageInput();
+
+  if (!testImages) {
+    setState(selectedProfile ? "profile" : "idle");
+  }
 };
 testImagesCheckbox.addEventListener("input", () => {
   setTestImages(testImagesCheckbox.checked);
@@ -649,9 +888,8 @@ device.addEventListener("connected", async () => {
 const takePictureButton = document.getElementById("takePicture");
 takePictureButton.addEventListener("click", () => {
   if (device.cameraStatus == "idle") {
+    setState("scanning");
     device.takePicture();
-  } else {
-    device.stopCamera();
   }
 });
 device.addEventListener("connected", () => {
@@ -796,6 +1034,8 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
 
 /** @type {Profile?} */
 let selectedProfile;
+/** @type {Profile?} */
+let previouslySelectedProfile;
 const selectProfile = async (selectedProfileId) => {
   const newSelectedProfile = profiles.find(
     (profile) => profile.id == selectedProfileId
@@ -804,6 +1044,7 @@ const selectProfile = async (selectedProfileId) => {
     //console.log("redundant profile selection", newSelectedProfile);
     return;
   }
+  previouslySelectedProfile = selectedProfile;
   selectedProfile = newSelectedProfile;
   console.log("selectedProfile", selectedProfile);
   updateDeleteProfileButton();
@@ -821,6 +1062,26 @@ const selectProfile = async (selectedProfileId) => {
     await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   } else {
   }
+
+  if (selectedProfile) {
+    switch (state) {
+      case "idle":
+      case "scanning":
+        setState("profile");
+        break;
+      case "profile":
+        setState("idle");
+        nextState = "profile";
+        break;
+    }
+  } else {
+    if (testImages) {
+      setState("scanning");
+    } else {
+      setState("idle");
+    }
+  }
+
   await draw();
 };
 
@@ -970,6 +1231,7 @@ const onImageBlob = async (imageBlob) => {
 };
 /** @param {Blob} imageBlob */
 const testImageBlob = async (imageBlob) => {
+  setState("scanning");
   const profile = await getClosestProfile(imageBlob);
   selectProfile(profile?.id);
   if (autoImage && !profile) {
@@ -1229,8 +1491,8 @@ const setFontScale = (newFontScale) => {
   console.log({ fontScale });
   fontScaleSpan.innerText = fontScale;
   fontScaleInput.value = fontScale;
+  updateYPositions();
 };
-setFontScale(fontScale);
 
 const loadFont = async (arrayBuffer) => {
   if (!arrayBuffer) {
@@ -1376,8 +1638,9 @@ selectFontSelect.addEventListener("input", async () => {
 
 /** @type {BS.Font?} */
 let selectedFont;
+let spritesLineHeight = 0;
 const selectFont = async (newFontName) => {
-  const newFont = fonts[newFontName];
+  const newFont = fonts[newFontName][0];
   selectedFont = newFont;
 
   if (didLoad) {
@@ -1387,7 +1650,10 @@ const selectFont = async (newFontName) => {
   selectFontSelect.value = newFontName;
   const spriteSheet = fontSpriteSheets[newFontName];
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
-  await displayCanvasHelper.selectSpriteSheet(spriteSheet.name, true);
+  await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+  spritesLineHeight = BS.getFontMaxHeight(selectedFont, fontSize);
+  console.log({ spritesLineHeight }, selectedFont, fontSize);
+  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await draw();
 };
 
@@ -1430,3 +1696,5 @@ const createProfileImageSpriteSheet = async (profile) => {
 };
 
 didLoad = true;
+updateYPositions();
+setFontScale(fontScale);
