@@ -121,6 +121,7 @@ export interface DisplayEventMessages {
         spriteSheetName: string;
         spriteSheet: DisplaySpriteSheet;
     };
+    displayContextCommands: {};
 }
 export type DisplayEventDispatcher = EventDispatcher<Device, DisplayEventType, DisplayEventMessages>;
 export type SendDisplayMessageCallback = SendMessageCallback<DisplayMessageType>;
@@ -308,7 +309,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     assertSpriteSheetPalette(paletteName: string): void;
     assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
     assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;
-    selectSpriteSheetPalette(paletteName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpriteSheetPalette(paletteName: string, offset?: number, indicesOnly?: boolean, sendImmediately?: boolean): Promise<void>;
     selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     reset(): void;

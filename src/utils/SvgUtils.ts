@@ -1021,12 +1021,34 @@ function scaleCanvasCommands(
   );
 }
 
+function getBoundingBox(path: Vector2[]) {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  for (const p of path) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { minX, minY, maxX, maxY };
+}
+
+function bboxContains(
+  a: ReturnType<typeof getBoundingBox>,
+  b: ReturnType<typeof getBoundingBox>
+) {
+  return (
+    a.minX <= b.minX && a.minY <= b.minY && a.maxX >= b.maxX && a.maxY >= b.maxY
+  );
+}
+
 export function classifySubpath(
   subpath: Vector2[],
   previous: { path: Vector2[]; isHole: boolean }[],
   fillRule: FillRule
 ): boolean {
-  // centroid as test point
   const centroid = subpath.reduce(
     (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
     { x: 0, y: 0 }
@@ -1034,23 +1056,39 @@ export function classifySubpath(
   centroid.x /= subpath.length;
   centroid.y /= subpath.length;
 
+  const subBBox = getBoundingBox(subpath);
+
+  let insideCount = 0;
+
+  for (const other of previous) {
+    const otherBBox = getBoundingBox(other.path);
+
+    // must be fully inside bbox
+    if (!bboxContains(otherBBox, subBBox)) continue;
+
+    // require *most* points to be inside
+    const insidePoints = subpath.filter((p) =>
+      pointInPolygon(p, other.path)
+    ).length;
+    const allInside = insidePoints > subpath.length * 0.8;
+    if (!allInside) continue;
+
+    insideCount++;
+  }
+
   if (fillRule === "evenodd") {
-    let crossings = 0;
-    for (const other of previous) {
-      if (pointInPolygon(centroid, other.path)) crossings++;
-    }
-    const filled = crossings % 2 === 0;
-    return !filled; // true = hole
+    return insideCount % 2 === 1; // odd count = hole
   } else {
-    // nonzero
+    // non-zero winding rule
     let winding = 0;
     for (const other of previous) {
+      const otherBBox = getBoundingBox(other.path);
+      if (!bboxContains(otherBBox, subBBox)) continue;
       if (pointInPolygon(centroid, other.path)) {
         winding += contourArea(other.path) > 0 ? 1 : -1;
       }
     }
-    const filled = winding === 0;
-    return !filled; // true = hole
+    return winding !== 0; // nonzero = inside → hole
   }
 }
 
@@ -1173,6 +1211,7 @@ export function svgToDisplayContextCommands(
       colorToIndex[color] = mapping[color] + 1;
     });
   } else {
+    // FIX - annoying when an svg has a black fill
     const { palette, mapping } = kMeansColors(svgColors, numberOfColors);
     _console.log("mapping", mapping);
     _console.log("palette", palette);

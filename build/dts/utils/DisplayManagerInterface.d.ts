@@ -167,7 +167,7 @@ export declare function getSpritePaletteSwap(displayManager: DisplayManagerInter
 export declare function assertSpriteSheetPalette(displayManagerInterface: DisplayManagerInterface, paletteName: string): void;
 export declare function assertSpriteSheetPaletteSwap(displayManagerInterface: DisplayManagerInterface, paletteSwapName: string): void;
 export declare function assertSpritePaletteSwap(displayManagerInterface: DisplayManagerInterface, spriteName: string, paletteSwapName: string): void;
-export declare function selectSpriteSheetPalette(displayManagerInterface: DisplayManagerInterface, paletteName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+export declare function selectSpriteSheetPalette(displayManagerInterface: DisplayManagerInterface, paletteName: string, offset?: number, indicesOnly?: boolean, sendImmediately?: boolean): Promise<void>;
 export declare function selectSpriteSheetPaletteSwap(displayManagerInterface: DisplayManagerInterface, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
 export declare function selectSpritePaletteSwap(displayManagerInterface: DisplayManagerInterface, spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
 export declare function drawSpriteFromSpriteSheet(displayManagerInterface: DisplayManagerInterface, offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;

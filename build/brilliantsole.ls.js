@@ -18361,6 +18361,27 @@
   createConsole("SvgUtils", {
     log: true
   });
+  function getBoundingBox(path) {
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    for (const p of path) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+    return {
+      minX,
+      minY,
+      maxX,
+      maxY
+    };
+  }
+  function bboxContains(a, b) {
+    return a.minX <= b.minX && a.minY <= b.minY && a.maxX >= b.maxX && a.maxY >= b.maxY;
+  }
   function classifySubpath(subpath, previous, fillRule) {
     const centroid = subpath.reduce((acc, p) => ({
       x: acc.x + p.x,
@@ -18371,15 +18392,24 @@
     });
     centroid.x /= subpath.length;
     centroid.y /= subpath.length;
+    const subBBox = getBoundingBox(subpath);
+    for (const other of previous) {
+      const otherBBox = getBoundingBox(other.path);
+      if (!bboxContains(otherBBox, subBBox)) continue;
+      const insidePoints = subpath.filter(p => pointInPolygon(p, other.path)).length;
+      const allInside = insidePoints > subpath.length * 0.8;
+      if (!allInside) continue;
+    }
     {
       let winding = 0;
       for (const other of previous) {
+        const otherBBox = getBoundingBox(other.path);
+        if (!bboxContains(otherBBox, subBBox)) continue;
         if (pointInPolygon(centroid, other.path)) {
           winding += contourArea(other.path) > 0 ? 1 : -1;
         }
       }
-      const filled = winding === 0;
-      return !filled;
+      return winding !== 0;
     }
   }
 
@@ -19755,21 +19785,23 @@
     const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
     _console$j.assertWithError(spritePaletteSwap, "no spritePaletteSwap found for sprite \"".concat(spriteName, "\" name \"").concat(paletteSwapName, "\""));
   }
-  async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, sendImmediately) {
+  async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, indicesOnly, sendImmediately) {
     offset = offset || 0;
     displayManagerInterface.assertAnySelectedSpriteSheet();
     displayManagerInterface.assertSpriteSheetPalette(paletteName);
     const palette = displayManagerInterface.getSpriteSheetPalette(paletteName);
     _console$j.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, "invalid offset ".concat(offset, " and palette.numberOfColors ").concat(palette.numberOfColors, " (max ").concat(displayManagerInterface.numberOfColors, ")"));
     for (let index = 0; index < palette.numberOfColors; index++) {
-      var _palette$opacities;
-      const color = palette.colors[index];
-      let opacity = (_palette$opacities = palette.opacities) === null || _palette$opacities === void 0 ? void 0 : _palette$opacities[index];
-      if (opacity == undefined) {
-        opacity = 1;
+      if (!indicesOnly) {
+        var _palette$opacities;
+        const color = palette.colors[index];
+        let opacity = (_palette$opacities = palette.opacities) === null || _palette$opacities === void 0 ? void 0 : _palette$opacities[index];
+        if (opacity == undefined) {
+          opacity = 1;
+        }
+        displayManagerInterface.setColor(index + offset, color, false);
+        displayManagerInterface.setColorOpacity(index + offset, opacity, false);
       }
-      displayManagerInterface.setColor(index + offset, color, false);
-      displayManagerInterface.setColorOpacity(index + offset, opacity, false);
       displayManagerInterface.selectSpriteColor(index, index + offset);
     }
     if (sendImmediately) {
@@ -19869,7 +19901,7 @@
   var _displayStatus = new WeakMap();
   var _displayInformation = new WeakMap();
   var _brightness = new WeakMap();
-  var _displayContextCommandBuffers = new WeakMap();
+  var _contextCommandBuffers = new WeakMap();
   var _colors = new WeakMap();
   var _opacities = new WeakMap();
   var _contextStack = new WeakMap();
@@ -19894,7 +19926,7 @@
       _classPrivateFieldInitSpec(this, _displayStatus, void 0);
       _classPrivateFieldInitSpec(this, _displayInformation, void 0);
       _classPrivateFieldInitSpec(this, _brightness, void 0);
-      _classPrivateFieldInitSpec(this, _displayContextCommandBuffers, []);
+      _classPrivateFieldInitSpec(this, _contextCommandBuffers, []);
       _classPrivateFieldInitSpec(this, _colors, []);
       _classPrivateFieldInitSpec(this, _opacities, []);
       _classPrivateFieldInitSpec(this, _contextStack, []);
@@ -20139,14 +20171,14 @@
       _console$i.log("showDisplay");
       _classPrivateFieldSet2(_isReady, this, false);
       _classPrivateFieldSet2(_lastShowRequestTime, this, Date.now());
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, "show", undefined, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, "show", undefined, sendImmediately);
     }
     async clear() {
       let sendImmediately = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
       _console$i.log("clearDisplay");
       _classPrivateFieldSet2(_isReady, this, false);
       _classPrivateFieldSet2(_lastShowRequestTime, this, Date.now());
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, "clear", undefined, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, "clear", undefined, sendImmediately);
     }
     assertValidColorIndex(colorIndex) {
       _console$i.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
@@ -20173,7 +20205,7 @@
       dataView.setUint8(1, colorRGB.r);
       dataView.setUint8(2, colorRGB.g);
       dataView.setUint8(3, colorRGB.b);
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, "setColor", dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, "setColor", dataView.buffer, sendImmediately);
       this.colors[colorIndex] = colorHex;
       _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayColor", {
         colorIndex,
@@ -20194,7 +20226,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _classPrivateFieldGet2(_opacities, this)[colorIndex] = opacity;
       _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayColorOpacity", {
         colorIndex,
@@ -20210,7 +20242,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _classPrivateFieldGet2(_opacities, this).fill(opacity);
       _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayOpacity", {
         opacity
@@ -20242,7 +20274,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
@@ -20261,7 +20293,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async selectLineColor(lineColorIndex, sendImmediately) {
@@ -20280,7 +20312,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setIgnoreFill(ignoreFill, sendImmediately) {
@@ -20298,7 +20330,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setIgnoreLine(ignoreLine, sendImmediately) {
@@ -20316,7 +20348,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setFillBackground(fillBackground, sendImmediately) {
@@ -20334,7 +20366,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     assertValidLineWidth(lineWidth) {
@@ -20356,7 +20388,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setAlignment(alignmentDirection, alignment, sendImmediately) {
@@ -20381,7 +20413,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, alignmentCommand, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, alignmentCommand, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setHorizontalAlignment(horizontalAlignment, sendImmediately) {
@@ -20405,7 +20437,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setRotation(rotation, isRadians, sendImmediately) {
@@ -20427,7 +20459,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async clearRotation(sendImmediately) {
@@ -20444,7 +20476,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSegmentStartCap(segmentStartCap, sendImmediately) {
@@ -20463,7 +20495,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSegmentEndCap(segmentEndCap, sendImmediately) {
@@ -20482,7 +20514,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSegmentCap(segmentCap, sendImmediately) {
@@ -20502,7 +20534,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSegmentStartRadius(segmentStartRadius, sendImmediately) {
@@ -20520,7 +20552,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSegmentEndRadius(segmentEndRadius, sendImmediately) {
@@ -20538,7 +20570,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSegmentRadius(segmentRadius, sendImmediately) {
@@ -20557,7 +20589,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setCrop(cropDirection, crop, sendImmediately) {
@@ -20578,7 +20610,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, cropCommand, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, cropCommand, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setCropTop(cropTop, sendImmediately) {
@@ -20607,7 +20639,7 @@
       const dataView = serializeContextCommand(this, {
         type: commandType
       });
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setRotationCrop(cropDirection, crop, sendImmediately) {
@@ -20627,7 +20659,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, cropCommand, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, cropCommand, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setRotationCropTop(rotationCropTop, sendImmediately) {
@@ -20656,7 +20688,7 @@
       const dataView = serializeContextCommand(this, {
         type: commandType
       });
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately) {
@@ -20679,7 +20711,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     get bitmapColorIndices() {
@@ -20714,7 +20746,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setBitmapColor(bitmapColorIndex, color, sendImmediately) {
@@ -20764,7 +20796,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setBitmapScaleX(bitmapScaleX, sendImmediately) {
@@ -20788,7 +20820,7 @@
       const dataView = serializeContextCommand(this, {
         type: commandType
       });
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately) {
@@ -20811,7 +20843,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     get spriteColorIndices() {
@@ -20846,7 +20878,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSpriteColor(spriteColorIndex, color, sendImmediately) {
@@ -20867,7 +20899,7 @@
       const dataView = serializeContextCommand(this, {
         type: commandType
       });
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
@@ -20911,7 +20943,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSpriteScaleX(spriteScaleX, sendImmediately) {
@@ -20935,7 +20967,7 @@
       const dataView = serializeContextCommand(this, {
         type: commandType
       });
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSpritesLineHeight(spritesLineHeight, sendImmediately) {
@@ -20954,7 +20986,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSpritesDirectionGeneric(direction, isOrthogonal, sendImmediately) {
@@ -20974,7 +21006,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSpritesDirection(spritesDirection, sendImmediately) {
@@ -20999,7 +21031,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSpritesSpacing(spritesSpacing, sendImmediately) {
@@ -21025,7 +21057,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSpritesAlignment(spritesAlignment, sendImmediately) {
@@ -21046,7 +21078,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawRect(offsetX, offsetY, width, height, sendImmediately) {
       const commandType = "drawRect";
@@ -21060,7 +21092,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately) {
       const commandType = "drawRoundRect";
@@ -21075,7 +21107,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawCircle(offsetX, offsetY, radius, sendImmediately) {
       const commandType = "drawCircle";
@@ -21088,7 +21120,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately) {
       const commandType = "drawEllipse";
@@ -21102,7 +21134,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately) {
       const commandType = "drawRegularPolygon";
@@ -21116,7 +21148,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawPolygon(points, sendImmediately) {
       _console$i.assertRangeWithError("numberOfPoints", points.length, 2, 255);
@@ -21128,7 +21160,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawWireframe(wireframe, sendImmediately) {
       wireframe = trimWireframe(wireframe);
@@ -21154,7 +21186,7 @@
         _console$i.error("wireframe data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawCurve(curveType, controlPoints, sendImmediately) {
       assertValidNumberOfControlPoints(curveType, controlPoints);
@@ -21166,7 +21198,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawCurves(curveType, controlPoints, sendImmediately) {
       assertValidPathNumberOfControlPoints(curveType, controlPoints);
@@ -21182,7 +21214,7 @@
         _console$i.error("curve data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawQuadraticBezierCurve(controlPoints, sendImmediately) {
       await this.drawCurve("quadratic", controlPoints, sendImmediately);
@@ -21210,7 +21242,7 @@
         _console$i.error("path data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawPath(curves, sendImmediately) {
       await this._drawPath(false, curves, sendImmediately);
@@ -21230,7 +21262,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawSegments(points, sendImmediately) {
       _console$i.assertRangeWithError("numberOfPoints", points.length, 2, 255);
@@ -21256,7 +21288,7 @@
         await this.drawSegments(secondHalf, sendImmediately);
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawArc(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
       const commandType = "drawArc";
@@ -21272,7 +21304,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
       const commandType = "drawArcEllipse";
@@ -21289,7 +21321,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     assertValidNumberOfColors(numberOfColors) {
       _console$i.assertRangeWithError("numberOfColors", numberOfColors, 2, this.numberOfColors);
@@ -21313,7 +21345,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async imageToBitmap(image, width, height, numberOfColors) {
       return imageToBitmap(image, width, height, this.colors, this.bitmapColorIndices, numberOfColors);
@@ -21412,7 +21444,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
@@ -21431,9 +21463,10 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
+      _console$i.assertWithError(this.contextState.spritesLineHeight > 0, "spritesLineHeight must be >0");
       const spriteSerializedLines = [];
       spriteLines.forEach(spriteLine => {
         const serializedLine = [];
@@ -21467,7 +21500,7 @@
       if (!dataView) {
         return;
       }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawSpritesString(offsetX, offsetY, string, requireAll, maxLineBreadth, separators, sendImmediately) {
       const spriteLines = this.stringToSpriteLines(string, requireAll, maxLineBreadth, separators);
@@ -21525,8 +21558,8 @@
     assertSpritePaletteSwap(spriteName, paletteSwapName) {
       assertSpritePaletteSwap(this, spriteName, paletteSwapName);
     }
-    async selectSpriteSheetPalette(paletteName, offset, sendImmediately) {
-      await selectSpriteSheetPalette(this, paletteName, offset, sendImmediately);
+    async selectSpriteSheetPalette(paletteName, offset, indicesOnly, sendImmediately) {
+      await selectSpriteSheetPalette(this, paletteName, offset, indicesOnly, sendImmediately);
     }
     async selectSpriteSheetPaletteSwap(paletteSwapName, offset, sendImmediately) {
       await selectSpriteSheetPaletteSwap(this, paletteSwapName, offset, sendImmediately);
@@ -21540,7 +21573,7 @@
       _classPrivateFieldSet2(_isAvailable, this, false);
       _classPrivateFieldSet2(_displayInformation, this, undefined);
       _classPrivateFieldSet2(_brightness, this, undefined);
-      _classPrivateFieldSet2(_displayContextCommandBuffers, this, []);
+      _classPrivateFieldSet2(_contextCommandBuffers, this, []);
       _classPrivateFieldSet2(_isAvailable, this, false);
       _classPrivateFieldGet2(_contextStateHelper, this).reset();
       _classPrivateFieldGet2(_colors, this).length = 0;
@@ -21688,41 +21721,42 @@
       displayBrightness: _classPrivateFieldGet2(_brightness, this)
     });
   }
-  function _assertValidDisplayContextCommand(displayContextCommand) {
+  function _assertValidDisplayContextCommandType(displayContextCommand) {
     _console$i.assertEnumWithError(displayContextCommand, DisplayContextCommandTypes);
   }
   function _get_maxCommandDataLength(_this2) {
     return _this2.mtu - 7;
   }
-  async function _sendDisplayContextCommand(displayContextCommand, arrayBuffer, sendImmediately) {
-    _assertClassBrand(_DisplayManager_brand, this, _assertValidDisplayContextCommand).call(this, displayContextCommand);
-    _console$i.log("sendDisplayContextCommand", {
-      displayContextCommand,
+  async function _sendContextCommand(contextCommandType, arrayBuffer, sendImmediately) {
+    _assertClassBrand(_DisplayManager_brand, this, _assertValidDisplayContextCommandType).call(this, contextCommandType);
+    _console$i.log("sendContextCommand", {
+      displayContextCommand: contextCommandType,
       sendImmediately
     }, arrayBuffer);
-    const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(displayContextCommand);
+    const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(contextCommandType);
     const _arrayBuffer = concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), arrayBuffer);
-    const newLength = _classPrivateFieldGet2(_displayContextCommandBuffers, this).reduce((sum, buffer) => sum + buffer.byteLength, _arrayBuffer.byteLength);
+    const newLength = _classPrivateFieldGet2(_contextCommandBuffers, this).reduce((sum, buffer) => sum + buffer.byteLength, _arrayBuffer.byteLength);
     if (newLength > _classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)) {
       _console$i.log("displayContextCommandBuffers too full - sending now");
       await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommands).call(this);
     }
-    _classPrivateFieldGet2(_displayContextCommandBuffers, this).push(_arrayBuffer);
+    _classPrivateFieldGet2(_contextCommandBuffers, this).push(_arrayBuffer);
     if (sendImmediately) {
       await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommands).call(this);
     }
   }
   async function _sendContextCommands() {
-    if (_classPrivateFieldGet2(_displayContextCommandBuffers, this).length == 0) {
+    if (_classPrivateFieldGet2(_contextCommandBuffers, this).length == 0) {
       return;
     }
-    const data = concatenateArrayBuffers(_classPrivateFieldGet2(_displayContextCommandBuffers, this));
-    _console$i.log("sending displayContextCommands", _classPrivateFieldGet2(_displayContextCommandBuffers, this).slice(), data);
-    _classPrivateFieldGet2(_displayContextCommandBuffers, this).length = 0;
+    const data = concatenateArrayBuffers(_classPrivateFieldGet2(_contextCommandBuffers, this));
+    _console$i.log("sending displayContextCommands", _classPrivateFieldGet2(_contextCommandBuffers, this).slice(), data);
+    _classPrivateFieldGet2(_contextCommandBuffers, this).length = 0;
     await this.sendMessage([{
       type: "displayContextCommands",
       data
     }], true);
+    _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayContextCommands", {});
   }
   function _saveContext(sendImmediately) {
     _classPrivateFieldGet2(_contextStack, this).push(structuredClone(this.contextState));
@@ -21754,6 +21788,9 @@
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayReady", {});
   }
   async function _setSpriteSheetName(spriteSheetName, sendImmediately) {
+    if (typeof spriteSheetName == "number") {
+      spriteSheetName = spriteSheetName.toString();
+    }
     _console$i.assertTypeWithError(spriteSheetName, "string");
     _console$i.assertRangeWithError("newName", spriteSheetName.length, MinSpriteSheetNameLength, MaxSpriteSheetNameLength);
     const setSpriteSheetNameData = textEncoder.encode(spriteSheetName);

@@ -19094,28 +19094,53 @@ function offsetCanvasCommands(canvasCommands, offsetX = 0, offsetY = 0) {
 function scaleCanvasCommands(canvasCommands, scaleX, scaleY) {
     return transformCanvasCommands(canvasCommands, (x) => x * scaleX, (y) => y * scaleY, "scale");
 }
+function getBoundingBox(path) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const p of path) {
+        if (p.x < minX)
+            minX = p.x;
+        if (p.y < minY)
+            minY = p.y;
+        if (p.x > maxX)
+            maxX = p.x;
+        if (p.y > maxY)
+            maxY = p.y;
+    }
+    return { minX, minY, maxX, maxY };
+}
+function bboxContains(a, b) {
+    return (a.minX <= b.minX && a.minY <= b.minY && a.maxX >= b.maxX && a.maxY >= b.maxY);
+}
 function classifySubpath(subpath, previous, fillRule) {
     const centroid = subpath.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
     centroid.x /= subpath.length;
     centroid.y /= subpath.length;
+    const subBBox = getBoundingBox(subpath);
+    let insideCount = 0;
+    for (const other of previous) {
+        const otherBBox = getBoundingBox(other.path);
+        if (!bboxContains(otherBBox, subBBox))
+            continue;
+        const insidePoints = subpath.filter((p) => pointInPolygon(p, other.path)).length;
+        const allInside = insidePoints > subpath.length * 0.8;
+        if (!allInside)
+            continue;
+        insideCount++;
+    }
     if (fillRule === "evenodd") {
-        let crossings = 0;
-        for (const other of previous) {
-            if (pointInPolygon(centroid, other.path))
-                crossings++;
-        }
-        const filled = crossings % 2 === 0;
-        return !filled;
+        return insideCount % 2 === 1;
     }
     else {
         let winding = 0;
         for (const other of previous) {
+            const otherBBox = getBoundingBox(other.path);
+            if (!bboxContains(otherBBox, subBBox))
+                continue;
             if (pointInPolygon(centroid, other.path)) {
                 winding += contourArea(other.path) > 0 ? 1 : -1;
             }
         }
-        const filled = winding === 0;
-        return !filled;
+        return winding !== 0;
     }
 }
 function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, colors, options) {
@@ -20987,20 +21012,22 @@ function assertSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwa
     const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
     _console$k.assertWithError(spritePaletteSwap, `no spritePaletteSwap found for sprite "${spriteName}" name "${paletteSwapName}"`);
 }
-async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, sendImmediately) {
+async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, indicesOnly, sendImmediately) {
     offset = offset || 0;
     displayManagerInterface.assertAnySelectedSpriteSheet();
     displayManagerInterface.assertSpriteSheetPalette(paletteName);
     const palette = displayManagerInterface.getSpriteSheetPalette(paletteName);
     _console$k.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`);
     for (let index = 0; index < palette.numberOfColors; index++) {
-        const color = palette.colors[index];
-        let opacity = palette.opacities?.[index];
-        if (opacity == undefined) {
-            opacity = 1;
+        if (!indicesOnly) {
+            const color = palette.colors[index];
+            let opacity = palette.opacities?.[index];
+            if (opacity == undefined) {
+                opacity = 1;
+            }
+            displayManagerInterface.setColor(index + offset, color, false);
+            displayManagerInterface.setColorOpacity(index + offset, opacity, false);
         }
-        displayManagerInterface.setColor(index + offset, color, false);
-        displayManagerInterface.setColorOpacity(index + offset, opacity, false);
         displayManagerInterface.selectSpriteColor(index, index + offset);
     }
     if (sendImmediately) {
@@ -21457,36 +21484,37 @@ class DisplayManager {
         this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
         await promise;
     }
-    #assertValidDisplayContextCommand(displayContextCommand) {
+    #assertValidDisplayContextCommandType(displayContextCommand) {
         _console$j.assertEnumWithError(displayContextCommand, DisplayContextCommandTypes);
     }
     get #maxCommandDataLength() {
         return this.mtu - 7;
     }
-    #displayContextCommandBuffers = [];
-    async #sendDisplayContextCommand(displayContextCommand, arrayBuffer, sendImmediately) {
-        this.#assertValidDisplayContextCommand(displayContextCommand);
-        _console$j.log("sendDisplayContextCommand", { displayContextCommand, sendImmediately }, arrayBuffer);
-        const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(displayContextCommand);
+    #contextCommandBuffers = [];
+    async #sendContextCommand(contextCommandType, arrayBuffer, sendImmediately) {
+        this.#assertValidDisplayContextCommandType(contextCommandType);
+        _console$j.log("sendContextCommand", { displayContextCommand: contextCommandType, sendImmediately }, arrayBuffer);
+        const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(contextCommandType);
         const _arrayBuffer = concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), arrayBuffer);
-        const newLength = this.#displayContextCommandBuffers.reduce((sum, buffer) => sum + buffer.byteLength, _arrayBuffer.byteLength);
+        const newLength = this.#contextCommandBuffers.reduce((sum, buffer) => sum + buffer.byteLength, _arrayBuffer.byteLength);
         if (newLength > this.#maxCommandDataLength) {
             _console$j.log("displayContextCommandBuffers too full - sending now");
             await this.#sendContextCommands();
         }
-        this.#displayContextCommandBuffers.push(_arrayBuffer);
+        this.#contextCommandBuffers.push(_arrayBuffer);
         if (sendImmediately) {
             await this.#sendContextCommands();
         }
     }
     async #sendContextCommands() {
-        if (this.#displayContextCommandBuffers.length == 0) {
+        if (this.#contextCommandBuffers.length == 0) {
             return;
         }
-        const data = concatenateArrayBuffers(this.#displayContextCommandBuffers);
-        _console$j.log(`sending displayContextCommands`, this.#displayContextCommandBuffers.slice(), data);
-        this.#displayContextCommandBuffers.length = 0;
+        const data = concatenateArrayBuffers(this.#contextCommandBuffers);
+        _console$j.log(`sending displayContextCommands`, this.#contextCommandBuffers.slice(), data);
+        this.#contextCommandBuffers.length = 0;
         await this.sendMessage([{ type: "displayContextCommands", data }], true);
+        this.#dispatchEvent("displayContextCommands", {});
     }
     async flushContextCommands() {
         await this.#sendContextCommands();
@@ -21495,13 +21523,13 @@ class DisplayManager {
         _console$j.log("showDisplay");
         this.#isReady = false;
         this.#lastShowRequestTime = Date.now();
-        await this.#sendDisplayContextCommand("show", undefined, sendImmediately);
+        await this.#sendContextCommand("show", undefined, sendImmediately);
     }
     async clear(sendImmediately = true) {
         _console$j.log("clearDisplay");
         this.#isReady = false;
         this.#lastShowRequestTime = Date.now();
-        await this.#sendDisplayContextCommand("clear", undefined, sendImmediately);
+        await this.#sendContextCommand("clear", undefined, sendImmediately);
     }
     assertValidColorIndex(colorIndex) {
         _console$j.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
@@ -21530,7 +21558,7 @@ class DisplayManager {
         dataView.setUint8(1, colorRGB.r);
         dataView.setUint8(2, colorRGB.g);
         dataView.setUint8(3, colorRGB.b);
-        await this.#sendDisplayContextCommand("setColor", dataView.buffer, sendImmediately);
+        await this.#sendContextCommand("setColor", dataView.buffer, sendImmediately);
         this.colors[colorIndex] = colorHex;
         this.#dispatchEvent("displayColor", {
             colorIndex,
@@ -21552,7 +21580,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#opacities[colorIndex] = opacity;
         this.#dispatchEvent("displayColorOpacity", { colorIndex, opacity });
     }
@@ -21565,7 +21593,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#opacities.fill(opacity);
         this.#dispatchEvent("displayOpacity", { opacity });
     }
@@ -21607,7 +21635,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
@@ -21626,7 +21654,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async selectLineColor(lineColorIndex, sendImmediately) {
@@ -21645,7 +21673,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setIgnoreFill(ignoreFill, sendImmediately) {
@@ -21663,7 +21691,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setIgnoreLine(ignoreLine, sendImmediately) {
@@ -21681,7 +21709,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setFillBackground(fillBackground, sendImmediately) {
@@ -21699,7 +21727,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     assertValidLineWidth(lineWidth) {
@@ -21721,7 +21749,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setAlignment(alignmentDirection, alignment, sendImmediately) {
@@ -21742,7 +21770,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(alignmentCommand, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(alignmentCommand, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setHorizontalAlignment(horizontalAlignment, sendImmediately) {
@@ -21766,7 +21794,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView?.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setRotation(rotation, isRadians, sendImmediately) {
@@ -21788,7 +21816,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async clearRotation(sendImmediately) {
@@ -21803,7 +21831,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSegmentStartCap(segmentStartCap, sendImmediately) {
@@ -21822,7 +21850,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSegmentEndCap(segmentEndCap, sendImmediately) {
@@ -21841,7 +21869,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSegmentCap(segmentCap, sendImmediately) {
@@ -21861,7 +21889,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSegmentStartRadius(segmentStartRadius, sendImmediately) {
@@ -21879,7 +21907,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSegmentEndRadius(segmentEndRadius, sendImmediately) {
@@ -21897,7 +21925,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSegmentRadius(segmentRadius, sendImmediately) {
@@ -21916,7 +21944,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setCrop(cropDirection, crop, sendImmediately) {
@@ -21937,7 +21965,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(cropCommand, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(cropCommand, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setCropTop(cropTop, sendImmediately) {
@@ -21964,7 +21992,7 @@ class DisplayManager {
         }
         const commandType = "clearCrop";
         const dataView = serializeContextCommand(this, { type: commandType });
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView?.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setRotationCrop(cropDirection, crop, sendImmediately) {
@@ -21984,7 +22012,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(cropCommand, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(cropCommand, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setRotationCropTop(rotationCropTop, sendImmediately) {
@@ -22013,7 +22041,7 @@ class DisplayManager {
         const dataView = serializeContextCommand(this, {
             type: commandType,
         });
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView?.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately) {
@@ -22036,7 +22064,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     get bitmapColorIndices() {
@@ -22067,7 +22095,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setBitmapColor(bitmapColorIndex, color, sendImmediately) {
@@ -22106,7 +22134,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setBitmapScaleX(bitmapScaleX, sendImmediately) {
@@ -22130,7 +22158,7 @@ class DisplayManager {
         const dataView = serializeContextCommand(this, {
             type: commandType,
         });
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView?.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately) {
@@ -22153,7 +22181,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     get spriteColorIndices() {
@@ -22184,7 +22212,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSpriteColor(spriteColorIndex, color, sendImmediately) {
@@ -22205,7 +22233,7 @@ class DisplayManager {
         const dataView = serializeContextCommand(this, {
             type: commandType,
         });
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView?.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
@@ -22238,7 +22266,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSpriteScaleX(spriteScaleX, sendImmediately) {
@@ -22262,7 +22290,7 @@ class DisplayManager {
         const dataView = serializeContextCommand(this, {
             type: commandType,
         });
-        await this.#sendDisplayContextCommand(commandType, dataView?.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView?.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSpritesLineHeight(spritesLineHeight, sendImmediately) {
@@ -22281,7 +22309,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSpritesDirectionGeneric(direction, isOrthogonal, sendImmediately) {
@@ -22305,7 +22333,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSpritesDirection(spritesDirection, sendImmediately) {
@@ -22334,7 +22362,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSpritesSpacing(spritesSpacing, sendImmediately) {
@@ -22364,7 +22392,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSpritesAlignment(spritesAlignment, sendImmediately) {
@@ -22385,7 +22413,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawRect(offsetX, offsetY, width, height, sendImmediately) {
         const commandType = "drawRect";
@@ -22399,7 +22427,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately) {
         const commandType = "drawRoundRect";
@@ -22414,7 +22442,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawCircle(offsetX, offsetY, radius, sendImmediately) {
         const commandType = "drawCircle";
@@ -22427,7 +22455,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately) {
         const commandType = "drawEllipse";
@@ -22441,7 +22469,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately) {
         const commandType = "drawRegularPolygon";
@@ -22455,7 +22483,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawPolygon(points, sendImmediately) {
         _console$j.assertRangeWithError("numberOfPoints", points.length, 2, 255);
@@ -22467,7 +22495,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawWireframe(wireframe, sendImmediately) {
         wireframe = trimWireframe(wireframe);
@@ -22493,7 +22521,7 @@ class DisplayManager {
             _console$j.error(`wireframe data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawCurve(curveType, controlPoints, sendImmediately) {
         assertValidNumberOfControlPoints(curveType, controlPoints);
@@ -22507,7 +22535,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawCurves(curveType, controlPoints, sendImmediately) {
         assertValidPathNumberOfControlPoints(curveType, controlPoints);
@@ -22525,7 +22553,7 @@ class DisplayManager {
             _console$j.error(`curve data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawQuadraticBezierCurve(controlPoints, sendImmediately) {
         await this.drawCurve("quadratic", controlPoints, sendImmediately);
@@ -22555,7 +22583,7 @@ class DisplayManager {
             _console$j.error(`path data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawPath(curves, sendImmediately) {
         await this._drawPath(false, curves, sendImmediately);
@@ -22575,7 +22603,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawSegments(points, sendImmediately) {
         _console$j.assertRangeWithError("numberOfPoints", points.length, 2, 255);
@@ -22598,7 +22626,7 @@ class DisplayManager {
             await this.drawSegments(secondHalf, sendImmediately);
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawArc(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
         const commandType = "drawArc";
@@ -22614,7 +22642,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
         const commandType = "drawArcEllipse";
@@ -22631,7 +22659,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     assertValidNumberOfColors(numberOfColors) {
         _console$j.assertRangeWithError("numberOfColors", numberOfColors, 2, this.numberOfColors);
@@ -22659,7 +22687,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async imageToBitmap(image, width, height, numberOfColors) {
         return imageToBitmap(image, width, height, this.colors, this.bitmapColorIndices, numberOfColors);
@@ -22707,6 +22735,9 @@ class DisplayManager {
         return this.#spriteSheetIndices;
     }
     async #setSpriteSheetName(spriteSheetName, sendImmediately) {
+        if (typeof spriteSheetName == "number") {
+            spriteSheetName = spriteSheetName.toString();
+        }
         _console$j.assertTypeWithError(spriteSheetName, "string");
         _console$j.assertRangeWithError("newName", spriteSheetName.length, MinSpriteSheetNameLength, MaxSpriteSheetNameLength);
         const setSpriteSheetNameData = textEncoder.encode(spriteSheetName);
@@ -22798,7 +22829,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
@@ -22817,9 +22848,10 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
+        _console$j.assertWithError(this.contextState.spritesLineHeight > 0, `spritesLineHeight must be >0`);
         const spriteSerializedLines = [];
         spriteLines.forEach((spriteLine) => {
             const serializedLine = [];
@@ -22853,7 +22885,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await this.#sendDisplayContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
     }
     async drawSpritesString(offsetX, offsetY, string, requireAll, maxLineBreadth, separators, sendImmediately) {
         const spriteLines = this.stringToSpriteLines(string, requireAll, maxLineBreadth, separators);
@@ -22927,8 +22959,8 @@ class DisplayManager {
     assertSpritePaletteSwap(spriteName, paletteSwapName) {
         assertSpritePaletteSwap(this, spriteName, paletteSwapName);
     }
-    async selectSpriteSheetPalette(paletteName, offset, sendImmediately) {
-        await selectSpriteSheetPalette(this, paletteName, offset, sendImmediately);
+    async selectSpriteSheetPalette(paletteName, offset, indicesOnly, sendImmediately) {
+        await selectSpriteSheetPalette(this, paletteName, offset, indicesOnly, sendImmediately);
     }
     async selectSpriteSheetPaletteSwap(paletteSwapName, offset, sendImmediately) {
         await selectSpriteSheetPaletteSwap(this, paletteSwapName, offset, sendImmediately);
@@ -22942,7 +22974,7 @@ class DisplayManager {
         this.#isAvailable = false;
         this.#displayInformation = undefined;
         this.#brightness = undefined;
-        this.#displayContextCommandBuffers = [];
+        this.#contextCommandBuffers = [];
         this.#isAvailable = false;
         this.#contextStateHelper.reset();
         this.#colors.length = 0;
@@ -26600,7 +26632,6 @@ const DisplayCanvasHelperEventTypes = [
     "brightness",
     "color",
     "colorOpacity",
-    "opacity",
     "resize",
     "update",
     "ready",
@@ -26618,6 +26649,7 @@ class DisplayCanvasHelper {
         this.#bitmapContext = this.#bitmapCanvas.getContext("2d");
         this.#bitmapContext.imageSmoothingEnabled = false;
         this.addEventListener("ready", () => {
+            this.#onSentContextCommands();
             this.#drawFrontDrawStack();
         });
     }
@@ -26778,6 +26810,7 @@ class DisplayCanvasHelper {
         if (this.#device?.isConnected) {
             await this.#device.flushDisplayContextCommands();
         }
+        this.#onSentContextCommands();
     }
     #boundDeviceEventListeners = {
         isConnected: this.#onDeviceIsConnected.bind(this),
@@ -26787,6 +26820,7 @@ class DisplayCanvasHelper {
         displaySpriteSheetUploadStart: this.#onDeviceDisplaySpriteSheetUploadStart.bind(this),
         displaySpriteSheetUploadProgress: this.#onDeviceDisplaySpriteSheetUploadProgress.bind(this),
         displaySpriteSheetUploadComplete: this.#onDeviceDisplaySpriteSheetUploadComplete.bind(this),
+        displayContextCommands: this.#onDeviceDisplayContextCommands.bind(this),
     };
     #onDeviceIsConnected(event) {
         const { isConnected } = event.message;
@@ -26835,6 +26869,17 @@ class DisplayCanvasHelper {
             spriteSheetName,
         });
     }
+    #onDeviceDisplayContextCommands(event) {
+        this.#onSentContextCommands();
+    }
+    #onSentContextCommands() {
+        let redraw = false;
+        redraw ||= this.#flushColors();
+        redraw ||= this.#flushOpacities();
+        if (redraw) {
+            this.#drawFrontDrawStack();
+        }
+    }
     async #updateDevice() {
         await this.#updateDeviceColors(true);
         await this.#updateDeviceOpacity(true);
@@ -26863,12 +26908,29 @@ class DisplayCanvasHelper {
     assertValidColorIndex(colorIndex) {
         _console$6.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
     }
+    #pendingColors = [];
+    #setColor(colorIndex, colorHex) {
+        this.#pendingColors[colorIndex] = colorHex;
+    }
     #colors = [];
     get colors() {
         return this.#colors;
     }
+    #flushColors() {
+        if (this.#pendingColors.length == 0) {
+            return false;
+        }
+        this.#pendingColors.forEach((colorHex, colorIndex) => {
+            this.#colors[colorIndex] = colorHex;
+            const colorRGB = hexToRGB(colorHex);
+            this.#dispatchEvent("color", { colorIndex, colorHex, colorRGB });
+        });
+        this.#pendingColors.length = 0;
+        return true;
+    }
     #resetColors() {
         this.#colors.length = 0;
+        this.#pendingColors.length = 0;
     }
     async #updateDeviceColors(sendImmediately) {
         if (!this.device?.isConnected) {
@@ -26878,15 +26940,31 @@ class DisplayCanvasHelper {
             await this.device?.setDisplayColor(index, color, false);
         }
         if (sendImmediately) {
-            await this.#device?.flushDisplayContextCommands();
+            await this.flushContextCommands();
         }
     }
     #opacities = [];
     get opacities() {
         return this.#opacities;
     }
+    #pendingOpacities = [];
+    #setColorOpacity(colorIndex, opacity) {
+        this.#pendingOpacities[colorIndex] = opacity;
+    }
+    #flushOpacities() {
+        if (this.#pendingOpacities.length == 0) {
+            return true;
+        }
+        this.#pendingOpacities.forEach((opacity, colorIndex) => {
+            this.#opacities[colorIndex] = opacity;
+            this.#dispatchEvent("colorOpacity", { colorIndex, opacity });
+        });
+        this.#pendingOpacities.length = 0;
+        return true;
+    }
     #resetOpacities() {
         this.#opacities.length = 0;
+        this.#pendingOpacities.length = 0;
     }
     async #updateDeviceOpacity(sendImmediately) {
         if (!this.device?.isConnected) {
@@ -26896,7 +26974,7 @@ class DisplayCanvasHelper {
             await this.device?.setDisplayColorOpacity(index, opacity, false);
         }
         if (sendImmediately) {
-            await this.#device?.flushDisplayContextCommands();
+            await this.flushContextCommands();
         }
     }
     #contextStateHelper = new DisplayContextStateHelper();
@@ -26929,7 +27007,11 @@ class DisplayCanvasHelper {
         }
         else {
             await wait(this.#interval);
+            if (this.device) {
+                return;
+            }
             this.#isReady = true;
+            this.#onSentContextCommands();
             this.#drawFrontDrawStack();
             this.#dispatchEvent("ready", {});
         }
@@ -26959,6 +27041,10 @@ class DisplayCanvasHelper {
         }
         else {
             await wait(this.#interval);
+            if (this.device) {
+                return;
+            }
+            this.#onSentContextCommands();
             this.#isReady = true;
             this.#dispatchEvent("ready", {});
         }
@@ -26977,12 +27063,15 @@ class DisplayCanvasHelper {
         }
         this.assertValidColorIndex(colorIndex);
         assertValidColor(colorRGB);
+        this.#setColor(colorIndex, colorHex);
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setColor(colorIndex, color, sendImmediately);
         }
-        this.colors[colorIndex] = colorHex;
-        this.#drawFrontDrawStack();
-        this.#dispatchEvent("color", { colorIndex, colorHex, colorRGB });
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
     }
     async setColorOpacity(colorIndex, opacity, sendImmediately) {
         this.assertValidColorIndex(colorIndex);
@@ -26990,21 +27079,24 @@ class DisplayCanvasHelper {
         if (Math.floor(255 * this.#opacities[colorIndex]) == Math.floor(255 * opacity)) {
             return;
         }
+        this.#setColorOpacity(colorIndex, opacity);
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setColorOpacity(colorIndex, opacity, sendImmediately);
         }
-        this.#opacities[colorIndex] = opacity;
-        this.#drawFrontDrawStack();
-        this.#dispatchEvent("colorOpacity", { colorIndex, opacity });
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
     }
     async setOpacity(opacity, sendImmediately) {
         assertValidOpacity(opacity);
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setOpacity(opacity, sendImmediately);
         }
-        this.#opacities.fill(opacity);
-        this.#drawFrontDrawStack();
-        this.#dispatchEvent("opacity", { opacity });
+        this.#opacities.forEach((_, colorIndex) => {
+            this.#setColorOpacity(colorIndex, opacity);
+        });
     }
     #contextStack = [];
     async #saveContext(sendImmediately) {
@@ -27035,6 +27127,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.selectBackgroundColor(backgroundColorIndex, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async selectFillColor(fillColorIndex, sendImmediately) {
@@ -27044,6 +27141,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.selectFillColor(fillColorIndex, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27055,6 +27157,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.selectLineColor(lineColorIndex, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setIgnoreFill(ignoreFill, sendImmediately) {
@@ -27063,6 +27170,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setIgnoreFill(ignoreFill, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27073,6 +27185,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setIgnoreLine(ignoreLine, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setFillBackground(fillBackground, sendImmediately) {
@@ -27081,6 +27198,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setFillBackground(fillBackground, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27095,6 +27217,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setLineWidth(lineWidth, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setAlignment(alignmentDirection, alignment, sendImmediately) {
@@ -27105,6 +27232,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setAlignment(alignmentDirection, alignment, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27122,6 +27254,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.resetAlignment(sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setRotation(rotation, isRadians, sendImmediately) {
@@ -27133,6 +27270,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setRotation(rotation, true, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async clearRotation(sendImmediately) {
@@ -27141,6 +27283,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.clearRotation(sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27152,6 +27299,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setSegmentStartCap(segmentStartCap, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setSegmentEndCap(segmentEndCap, sendImmediately) {
@@ -27161,6 +27313,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setSegmentEndCap(segmentEndCap, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27173,6 +27330,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setSegmentCap(segmentCap, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setSegmentStartRadius(segmentStartRadius, sendImmediately) {
@@ -27181,6 +27343,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setSegmentStartRadius(segmentStartRadius, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27191,6 +27358,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setSegmentEndRadius(segmentEndRadius, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setSegmentRadius(segmentRadius, sendImmediately) {
@@ -27200,6 +27372,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setSegmentRadius(segmentRadius, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27212,6 +27389,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setCrop(cropDirection, crop, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27237,6 +27419,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.clearCrop(sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setRotationCrop(cropDirection, crop, sendImmediately) {
@@ -27247,6 +27434,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setRotationCrop(cropDirection, crop, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27272,6 +27464,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.clearRotationCrop(sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     get bitmapColorIndices() {
@@ -27290,6 +27487,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async selectBitmapColors(bitmapColorPairs, sendImmediately) {
@@ -27305,6 +27507,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.selectBitmapColors(bitmapColorPairs, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27334,6 +27541,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setBitmapScaleDirection(direction, bitmapScale, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setBitmapScaleX(bitmapScaleX, sendImmediately) {
@@ -27352,6 +27564,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.resetBitmapScale(sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27377,6 +27594,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async selectSpriteColors(spriteColorPairs, sendImmediately) {
@@ -27393,6 +27615,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.selectSpriteColors(spriteColorPairs, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setSpriteColor(spriteColorIndex, color, sendImmediately) {
@@ -27408,6 +27635,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.resetSpriteColors(sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27431,6 +27663,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setSpriteScaleDirection(direction, spriteScale, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setSpriteScaleX(spriteScaleX, sendImmediately) {
@@ -27450,6 +27687,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.resetSpriteScale(sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setSpritesLineHeight(spritesLineHeight, sendImmediately) {
@@ -27459,6 +27701,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setSpritesLineHeight(spritesLineHeight, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27472,6 +27719,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             this.deviceDisplayManager.setSpritesDirectionGeneric(direction, isOrthogonal, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27491,6 +27743,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             this.deviceDisplayManager.setSpritesSpacingGeneric(spacing, isOrthogonal, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     async setSpritesSpacing(spritesSpacing, sendImmediately) {
@@ -27509,6 +27766,11 @@ class DisplayCanvasHelper {
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
             this.deviceDisplayManager.setSpritesAlignmentGeneric(alignment, isOrthogonal, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#onContextStateUpdate(differences);
     }
@@ -27532,6 +27794,11 @@ class DisplayCanvasHelper {
         this.#rearDrawStack.push(() => this.#clearRectToCanvas(x, y, width, height, contextState));
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.clearRect(x, y, width, height, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
     }
     #save() {
@@ -27731,6 +27998,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawRect(offsetX, offsetY, width, height, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
     }
     #drawRoundRectToCanvas(offsetX, offsetY, width, height, borderRadius, contextState) {
         this.#updateContext(contextState);
@@ -27763,6 +28035,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
     }
     #getCircleBoundingBox(radius, contextState) {
         const diameter = radius * 2;
@@ -27777,6 +28054,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawCircle(offsetX, offsetY, radius, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
     }
     #drawEllipseToCanvas(offsetX, offsetY, radiusX, radiusY, contextState) {
         this.#drawArcEllipseToCanvas(offsetX, offsetY, radiusX, radiusY, 0, 360, false, contextState);
@@ -27786,6 +28068,11 @@ class DisplayCanvasHelper {
         this.#rearDrawStack.push(() => this.#drawEllipseToCanvas(offsetX, offsetY, radiusX, radiusY, contextState));
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
     }
     #getRegularPolygonBoundingBox(radius, numberOfSides, { lineWidth }) {
@@ -27842,6 +28129,11 @@ class DisplayCanvasHelper {
         this.#rearDrawStack.push(() => this.#drawRegularPolygonToCanvas(offsetX, offsetY, radius, numberOfSides, contextState));
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
     }
     #getPointsBoundingBox(points, { lineWidth, verticalAlignment, horizontalAlignment }, applyLineWidth = true, applyAlignment = false) {
@@ -28002,6 +28294,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawWireframe(wireframe, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
     }
     #appendCurvePoint(curvePoints, curvePoint) {
         if (curvePoints.length >= maxNumberOfDisplayCurvePoints) {
@@ -28097,6 +28394,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawCurve(curveType, controlPoints, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
     }
     #drawCurvesToCanvas(curveType, controlPoints, contextState) {
         assertValidPathNumberOfControlPoints(curveType, controlPoints);
@@ -28118,6 +28420,11 @@ class DisplayCanvasHelper {
         this.#rearDrawStack.push(() => this.#drawCurvesToCanvas(curveType, controlPoints, contextState));
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawCurves(curveType, controlPoints, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
     }
     async drawQuadraticBezierCurve(controlPoints, sendImmediately) {
@@ -28161,6 +28468,11 @@ class DisplayCanvasHelper {
         this.#rearDrawStack.push(() => this.#drawPathToCanvas(isClosed, curves, contextState));
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager._drawPath(isClosed, curves, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
     }
     async drawPath(curves, sendImmediately) {
@@ -28290,6 +28602,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawSegment(startX, startY, endX, endY, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
     }
     #getSegmentsBoundingBox(points, contextState) {
         const segments = [];
@@ -28362,6 +28679,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawSegments(points, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
     }
     #drawArcToCanvas(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, contextState) {
         this.#drawArcEllipseToCanvas(offsetX, offsetY, radius, radius, startAngle, angleOffset, isRadians, contextState);
@@ -28373,6 +28695,11 @@ class DisplayCanvasHelper {
         this.#rearDrawStack.push(() => this.#drawArcToCanvas(offsetX, offsetY, radius, startAngle, angleOffset, true, contextState));
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawArc(offsetX, offsetY, radius, startAngle, angleOffset, true, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
     }
     #drawArcEllipseToCanvas(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, contextState) {
@@ -28539,6 +28866,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected && !this.#ignoreDevice) {
             this.deviceDisplayManager.selectSpriteSheet(spriteSheetName, sendImmediately);
         }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
+        }
         this.#onContextStateUpdate(differences);
     }
     #runSpriteCommand(command, contextState) {
@@ -28585,6 +28917,11 @@ class DisplayCanvasHelper {
         this.#drawSpriteToCanvas(offsetX, offsetY, sprite, contextState);
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
     }
     #drawSpritesToCanvas(offsetX, offsetY, spriteLines, contextState) {
@@ -28815,6 +29152,7 @@ class DisplayCanvasHelper {
         this.#setClearCanvasBoundingBoxOnDraw(true);
     }
     async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
+        _console$6.assertWithError(this.contextState.spritesLineHeight > 0, `spritesLineHeight must be >0`);
         spriteLines.forEach((spriteLine) => {
             spriteLine.forEach((spriteSubLine) => {
                 const { spriteSheetName, spriteNames } = spriteSubLine;
@@ -28830,6 +29168,11 @@ class DisplayCanvasHelper {
         this.#drawSpritesToCanvas(offsetX, offsetY, spriteLines, contextState);
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
     }
     async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
@@ -28863,6 +29206,11 @@ class DisplayCanvasHelper {
         this.#brightness = newBrightness;
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.setBrightness(newBrightness, sendImmediately);
+        }
+        else {
+            if (sendImmediately) {
+                this.#onSentContextCommands();
+            }
         }
         this.#drawFrontDrawStack();
         this.#dispatchEvent("brightness", { brightness: this.brightness });
@@ -29016,8 +29364,8 @@ class DisplayCanvasHelper {
     assertSpritePaletteSwap(spriteName, paletteSwapName) {
         assertSpritePaletteSwap(this, spriteName, paletteSwapName);
     }
-    async selectSpriteSheetPalette(paletteName, offset, sendImmediately) {
-        await selectSpriteSheetPalette(this, paletteName, offset, sendImmediately);
+    async selectSpriteSheetPalette(paletteName, offset, indicesOnly, sendImmediately) {
+        await selectSpriteSheetPalette(this, paletteName, offset, indicesOnly, sendImmediately);
     }
     async selectSpriteSheetPaletteSwap(paletteSwapName, offset, sendImmediately) {
         await selectSpriteSheetPaletteSwap(this, paletteSwapName, offset, sendImmediately);
