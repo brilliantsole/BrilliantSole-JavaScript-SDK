@@ -5320,7 +5320,7 @@
   const _console$m = createConsole("DisplayContextCommand", {
     log: false
   });
-  const DisplayContextCommandTypes = ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setIgnoreFill", "setIgnoreLine", "setFillBackground", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesLineHeight", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlignment", "setSpritesLineAlignment", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites"];
+  const DisplayContextCommandTypes = ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setIgnoreFill", "setIgnoreLine", "setFillBackground", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesLineHeight", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlignment", "setSpritesLineAlignment", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites", "startSprite", "endSprite"];
   const DisplaySpriteContextCommandTypes = ["selectFillColor", "selectLineColor",
   "setIgnoreFill", "setIgnoreLine",
   "setLineWidth", "setRotation", "clearRotation", "setVerticalAlignment", "setHorizontalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "drawSprite"];
@@ -5338,6 +5338,7 @@
       case "resetSpriteColors":
       case "resetSpriteScale":
       case "resetAlignment":
+      case "endSprite":
         break;
       case "setColor":
         {
@@ -6018,6 +6019,9 @@
             points,
             edges
           } = wireframe;
+          if (wireframe.points.length == 0) {
+            return;
+          }
           assertValidWireframe(wireframe);
           const pointsDataView = serializePoints(points);
           const edgesDataView = new DataView(new ArrayBuffer(1 + 2 * edges.length));
@@ -6270,6 +6274,21 @@
           offset += 2;
           const buffer = concatenateArrayBuffers(dataView, concatenatedLineArrayBuffers);
           dataView = new DataView(buffer);
+        }
+        break;
+      case "startSprite":
+        {
+          const {
+            offsetX,
+            offsetY,
+            width,
+            height
+          } = command;
+          dataView = new DataView(new ArrayBuffer(2 * 4));
+          dataView.setInt16(0, offsetX, true);
+          dataView.setInt16(2, offsetY, true);
+          dataView.setUint16(4, width, true);
+          dataView.setUint16(6, height, true);
         }
         break;
     }
@@ -16116,6 +16135,440 @@
         }`;D&&(Y+="var destructors = [];\n");var c=D?"destructors":"null",h=["throwBindingError","invoker","fn","runDestructors","retType","classParam"],F=[f,B,I,AD,g[0],g[1]];w&&(Y+="var thisWired = classParam.toWireType("+c+", this);\n");for(var G=0;G<E-2;++G)Y+="var arg"+G+"Wired = argType"+G+".toWireType("+c+", arg"+G+"); // "+g[G+2].name+"\n",h.push("argType"+G),F.push(g[G+2]);if(w&&(L="thisWired"+(L.length>0?", ":"")+L),Y+=(i||Q?"var rv = ":"")+"invoker(fn"+(L.length>0?", ":"")+L+");\n",D)Y+="runDestructors(destructors);\n";else for(var G=w?1:2;G<g.length;++G){var s=1===G?"thisWired":"arg"+(G-2)+"Wired";null!==g[G].destructorFunction&&(Y+=s+"_dtor("+s+"); // "+g[G].name+"\n",h.push(s+"_dtor"),F.push(g[G].destructorFunction));}return i&&(Y+="var ret = retType.fromWireType(rv);\nreturn ret;\n"),Y+="}\n",h.push(Y),(function(A,g){if(!(A instanceof Function))throw TypeError(`new_ called with constructor type ${typeof A} which is not a function`);var C=AG(A.name||"unknownFunctionName",function(){});C.prototype=A.prototype;var B=new C,I=A.apply(B,g);return I instanceof Object?I:B})(Function,h).apply(null,F)}(A,[C[0],null].concat(C.slice(1)),0,I,Q,E),g-1),[]});},b:(A,g,C,B,I)=>{g=P(g);var Q=A=>A;if(0===B){var E=32-8*C;Q=A=>A<<E>>>E;}var w=g.includes("unsigned"),D=(A,g)=>{};AA(A,{name:g,fromWireType:Q,toWireType:w?function(A,g){return D(g,this.name),g>>>0}:function(A,g){return D(g,this.name),g},argPackAdvance:8,readValueFromPointer:AH(g,C,0!==B),destructorFunction:null});},a:(A,g,C)=>{var B=[Int8Array,Uint8Array,Int16Array,Uint16Array,Int32Array,Uint32Array,Float32Array,Float64Array][g];function I(A){var g=L[A>>2],C=L[A+4>>2];return new B(w.buffer,C,g)}AA(A,{name:C=P(C),fromWireType:I,argPackAdvance:8,readValueFromPointer:I},{ignoreDuplicateRegistrations:true});},g:(A,g)=>{var C="std::string"===(g=P(g));AA(A,{name:g,fromWireType(A){var g,B=L[A>>2],I=A+4;if(C)for(var Q=I,E=0;E<=B;++E){var w=I+E;if(E==B||0==D[w]){var G=w-Q,i=Ay(Q,G);void 0===g?g=i:g+="\x00"+i,Q=w+1;}}else {for(var o=Array(B),E=0;E<B;++E)o[E]=String.fromCharCode(D[I+E]);g=o.join("");}return AO(A),g},toWireType(A,g){g instanceof ArrayBuffer&&(g=new Uint8Array(g));var B,I="string"==typeof g;I||g instanceof Uint8Array||g instanceof Uint8ClampedArray||g instanceof Int8Array||f("Cannot pass non-string to std::string"),B=C&&I?AM(g):g.length;var Q=Av(4+B+1),E=Q+4;if(L[Q>>2]=B,C&&I)AZ(g,E,B+1);else if(I)for(var w=0;w<B;++w){var G=g.charCodeAt(w);G>255&&(AO(E),f("String has UTF-16 code units that do not fit in 8 bits")),D[E+w]=G;}else for(var w=0;w<B;++w)D[E+w]=g[w];return null!==A&&A.push(AO,Q),Q},argPackAdvance:8,readValueFromPointer:Ak,destructorFunction(A){AO(A);}});},d:(A,g,C)=>{var B,I,Q,E,w;C=P(C),2===g?(B=Ap,I=Ab,E=Al,Q=()=>i,w=1):4===g&&(B=AS,I=Am,E=Aq,Q=()=>L,w=2),AA(A,{name:C,fromWireType:A=>{for(var C,I=L[A>>2],E=Q(),D=A+4,G=0;G<=I;++G){var i=A+4+G*g;if(G==I||0==E[i>>w]){var o=i-D,Y=B(D,o);void 0===C?C=Y:C+="\x00"+Y,D=i+g;}}return AO(A),C},toWireType:(A,B)=>{"string"!=typeof B&&f(`Cannot pass non-string to C++ string type ${C}`);var Q=E(B),D=Av(4+Q+g);return L[D>>2]=Q>>w,I(B,D+4,Q+g),null!==A&&A.push(AO,D),D},argPackAdvance:8,readValueFromPointer:AQ,destructorFunction(A){AO(A);}});},j:(A,g)=>{AA(A,{isVoid:true,name:g=P(g),argPackAdvance:0,fromWireType:()=>void 0,toWireType:(A,g)=>void 0});},l:AB,m:A=>{A>4&&(AC.get(A).refcount+=1);},h:(A,g)=>{var C=(A=At(A,"_emval_take_value")).readValueFromPointer(g);return AI.toHandle(C)},o:()=>{X("");},q:(A,g,C)=>D.copyWithin(A,g,g+C),p:A=>{var g=D.length;A>>>=0;var C=AV();if(A>C)return  false;for(var B=(A,g)=>A+(g-A%g)%g,I=1;I<=4;I*=2){var Q=g*(1+.2/I);if(Q=Math.min(Q,A+100663296),AX(Math.min(C,B(Math.max(A,Q),65536))))return  true}return  false},k:(A,g)=>{An(A);}},Aj=function(){var A,C={a:Ax};function w(A,C){var B;return E=(Aj=A.exports).s,b(),K=Aj.u,B=Aj.t,S.unshift(B),function(A){if(q--,g.monitorRunDependencies&&g.monitorRunDependencies(q),0==q&&(V)){var C=V;V=null,C();}}(),Aj}if(q++,g.monitorRunDependencies&&g.monitorRunDependencies(q),g.instantiateWasm)try{return g.instantiateWasm(C,w)}catch(A){y(`Module.instantiateWasm callback failed with error: ${A}`),B(A);}return (A=h,Promise.resolve().then(()=>(function(A){if(A==h&&Q)return new Uint8Array(Q);var g=function(A){if(n(A))return function(A){try{for(var g=atob(A),C=new Uint8Array(g.length),B=0;B<g.length;++B)C[B]=g.charCodeAt(B);return C}catch(A){throw Error("Converting base64 string to bytes failed.")}}(A.slice(u.length))}(A);if(g)return g;throw "both async and sync fetching of the wasm failed"})(A)).then(A=>WebAssembly.instantiate(A,C)).then(A=>A).then(function(A){w(A.instance);},A=>{y(`failed to asynchronously prepare wasm: ${A}`),X(A);})).catch(B),{}}(),Av=A=>(Av=Aj.v)(A),AO=A=>(AO=Aj.w)(A),Ar=A=>(Ar=Aj.x)(A),AP=(g.__embind_initialize_bindings=()=>(g.__embind_initialize_bindings=Aj.y)(),A=>(AP=Aj.z)(A));function Az(){!(q>0)&&(function(){if(g.preRun)for("function"==typeof g.preRun&&(g.preRun=[g.preRun]);g.preRun.length;){var A;A=g.preRun.shift(),l.unshift(A);}j(l);}(),q>0||(g.setStatus?(g.setStatus("Running..."),setTimeout(function(){setTimeout(function(){g.setStatus("");},1),A();},1)):A()));function A(){!R&&(R=true,g.calledRun=true,p||(j(S),C(g),g.onRuntimeInitialized&&g.onRuntimeInitialized(),function(){if(g.postRun)for("function"==typeof g.postRun&&(g.postRun=[g.postRun]);g.postRun.length;){var A;A=g.postRun.shift(),m.unshift(A);}j(m);}()));}}if(V=function A(){R||Az(),R||(V=A);},g.preInit)for("function"==typeof g.preInit&&(g.preInit=[g.preInit]);g.preInit.length>0;)g.preInit.pop()();return Az(),g.ready});let C=new Promise(A=>{g({onRuntimeInitialized(){A(this);}});});
   async function B(){let A=await C;return new Promise(g=>{setTimeout(()=>{g(A);},0);})}async function Q(A){let g=await B(),C=await g.decompress(A);if(!C)throw Error("Failed to decompress the font data.");return Uint8Array.from(C)}
 
+  var simplify$1 = {exports: {}};
+
+  (function (module) {
+  	(function () {	function getSqDist(p1, p2) {
+  	    var dx = p1.x - p2.x,
+  	        dy = p1.y - p2.y;
+  	    return dx * dx + dy * dy;
+  	}
+  	function getSqSegDist(p, p1, p2) {
+  	    var x = p1.x,
+  	        y = p1.y,
+  	        dx = p2.x - x,
+  	        dy = p2.y - y;
+  	    if (dx !== 0 || dy !== 0) {
+  	        var t = ((p.x - x) * dx + (p.y - y) * dy) / (dx * dx + dy * dy);
+  	        if (t > 1) {
+  	            x = p2.x;
+  	            y = p2.y;
+  	        } else if (t > 0) {
+  	            x += dx * t;
+  	            y += dy * t;
+  	        }
+  	    }
+  	    dx = p.x - x;
+  	    dy = p.y - y;
+  	    return dx * dx + dy * dy;
+  	}
+  	function simplifyRadialDist(points, sqTolerance) {
+  	    var prevPoint = points[0],
+  	        newPoints = [prevPoint],
+  	        point;
+  	    for (var i = 1, len = points.length; i < len; i++) {
+  	        point = points[i];
+  	        if (getSqDist(point, prevPoint) > sqTolerance) {
+  	            newPoints.push(point);
+  	            prevPoint = point;
+  	        }
+  	    }
+  	    if (prevPoint !== point) newPoints.push(point);
+  	    return newPoints;
+  	}
+  	function simplifyDPStep(points, first, last, sqTolerance, simplified) {
+  	    var maxSqDist = sqTolerance,
+  	        index;
+  	    for (var i = first + 1; i < last; i++) {
+  	        var sqDist = getSqSegDist(points[i], points[first], points[last]);
+  	        if (sqDist > maxSqDist) {
+  	            index = i;
+  	            maxSqDist = sqDist;
+  	        }
+  	    }
+  	    if (maxSqDist > sqTolerance) {
+  	        if (index - first > 1) simplifyDPStep(points, first, index, sqTolerance, simplified);
+  	        simplified.push(points[index]);
+  	        if (last - index > 1) simplifyDPStep(points, index, last, sqTolerance, simplified);
+  	    }
+  	}
+  	function simplifyDouglasPeucker(points, sqTolerance) {
+  	    var last = points.length - 1;
+  	    var simplified = [points[0]];
+  	    simplifyDPStep(points, 0, last, sqTolerance, simplified);
+  	    simplified.push(points[last]);
+  	    return simplified;
+  	}
+  	function simplify(points, tolerance, highestQuality) {
+  	    if (points.length <= 2) return points;
+  	    var sqTolerance = tolerance !== undefined ? tolerance * tolerance : 1;
+  	    points = highestQuality ? points : simplifyRadialDist(points, sqTolerance);
+  	    points = simplifyDouglasPeucker(points, sqTolerance);
+  	    return points;
+  	}
+  	{
+  	    module.exports = simplify;
+  	    module.exports.default = simplify;
+  	}
+  	})();
+  } (simplify$1));
+  var simplifyExports = simplify$1.exports;
+  var simplify = getDefaultExportFromCjs(simplifyExports);
+
+  var fitCurve$1 = {exports: {}};
+
+  (function (module, exports) {
+  	(function (global, factory) {
+  	    {
+  	        factory(module);
+  	    }
+  	})(commonjsGlobal, function (module) {
+  	    function _classCallCheck(instance, Constructor) {
+  	        if (!(instance instanceof Constructor)) {
+  	            throw new TypeError("Cannot call a class as a function");
+  	        }
+  	    }
+  	    function fitCurve(points, maxError, progressCallback) {
+  	        if (!Array.isArray(points)) {
+  	            throw new TypeError("First argument should be an array");
+  	        }
+  	        points.forEach(function (point) {
+  	            if (!Array.isArray(point) || point.some(function (item) {
+  	                return typeof item !== 'number';
+  	            }) || point.length !== points[0].length) {
+  	                throw Error("Each point should be an array of numbers. Each point should have the same amount of numbers.");
+  	            }
+  	        });
+  	        points = points.filter(function (point, i) {
+  	            return i === 0 || !point.every(function (val, j) {
+  	                return val === points[i - 1][j];
+  	            });
+  	        });
+  	        if (points.length < 2) {
+  	            return [];
+  	        }
+  	        var len = points.length;
+  	        var leftTangent = createTangent(points[1], points[0]);
+  	        var rightTangent = createTangent(points[len - 2], points[len - 1]);
+  	        return fitCubic(points, leftTangent, rightTangent, maxError, progressCallback);
+  	    }
+  	    function fitCubic(points, leftTangent, rightTangent, error, progressCallback) {
+  	        var MaxIterations = 20;
+  	        var bezCurve,
+  	        u,
+  	        uPrime,
+  	        maxError, prevErr,
+  	        splitPoint, prevSplit,
+  	        centerVector, toCenterTangent, fromCenterTangent,
+  	        beziers,
+  	        dist, i;
+  	        if (points.length === 2) {
+  	            dist = maths.vectorLen(maths.subtract(points[0], points[1])) / 3.0;
+  	            bezCurve = [points[0], maths.addArrays(points[0], maths.mulItems(leftTangent, dist)), maths.addArrays(points[1], maths.mulItems(rightTangent, dist)), points[1]];
+  	            return [bezCurve];
+  	        }
+  	        u = chordLengthParameterize(points);
+  	        var _generateAndReport = generateAndReport(points, u, u, leftTangent, rightTangent, progressCallback);
+  	        bezCurve = _generateAndReport[0];
+  	        maxError = _generateAndReport[1];
+  	        splitPoint = _generateAndReport[2];
+  	        if (maxError === 0 || maxError < error) {
+  	            return [bezCurve];
+  	        }
+  	        if (maxError < error * error) {
+  	            uPrime = u;
+  	            prevErr = maxError;
+  	            prevSplit = splitPoint;
+  	            for (i = 0; i < MaxIterations; i++) {
+  	                uPrime = reparameterize(bezCurve, points, uPrime);
+  	                var _generateAndReport2 = generateAndReport(points, u, uPrime, leftTangent, rightTangent, progressCallback);
+  	                bezCurve = _generateAndReport2[0];
+  	                maxError = _generateAndReport2[1];
+  	                splitPoint = _generateAndReport2[2];
+  	                if (maxError < error) {
+  	                    return [bezCurve];
+  	                }
+  	                else if (splitPoint === prevSplit) {
+  	                        var errChange = maxError / prevErr;
+  	                        if (errChange > .9999 && errChange < 1.0001) {
+  	                            break;
+  	                        }
+  	                    }
+  	                prevErr = maxError;
+  	                prevSplit = splitPoint;
+  	            }
+  	        }
+  	        beziers = [];
+  	        centerVector = maths.subtract(points[splitPoint - 1], points[splitPoint + 1]);
+  	        if (centerVector.every(function (val) {
+  	            return val === 0;
+  	        })) {
+  	            centerVector = maths.subtract(points[splitPoint - 1], points[splitPoint]);
+  	            var _ref = [-centerVector[1], centerVector[0]];
+  	            centerVector[0] = _ref[0];
+  	            centerVector[1] = _ref[1];
+  	        }
+  	        toCenterTangent = maths.normalize(centerVector);
+  	        fromCenterTangent = maths.mulItems(toCenterTangent, -1);
+  	        beziers = beziers.concat(fitCubic(points.slice(0, splitPoint + 1), leftTangent, toCenterTangent, error, progressCallback));
+  	        beziers = beziers.concat(fitCubic(points.slice(splitPoint), fromCenterTangent, rightTangent, error, progressCallback));
+  	        return beziers;
+  	    }	    function generateAndReport(points, paramsOrig, paramsPrime, leftTangent, rightTangent, progressCallback) {
+  	        var bezCurve, maxError, splitPoint;
+  	        bezCurve = generateBezier(points, paramsPrime, leftTangent, rightTangent);
+  	        var _computeMaxError = computeMaxError(points, bezCurve, paramsOrig);
+  	        maxError = _computeMaxError[0];
+  	        splitPoint = _computeMaxError[1];
+  	        if (progressCallback) {
+  	            progressCallback({
+  	                bez: bezCurve,
+  	                points: points,
+  	                params: paramsOrig,
+  	                maxErr: maxError,
+  	                maxPoint: splitPoint
+  	            });
+  	        }
+  	        return [bezCurve, maxError, splitPoint];
+  	    }
+  	    function generateBezier(points, parameters, leftTangent, rightTangent) {
+  	        var bezCurve,
+  	        A,
+  	            a,
+  	        C,
+  	            X,
+  	        det_C0_C1,
+  	            det_C0_X,
+  	            det_X_C1,
+  	        alpha_l,
+  	            alpha_r,
+  	        epsilon,
+  	            segLength,
+  	            i,
+  	            len,
+  	            tmp,
+  	            u,
+  	            ux,
+  	            firstPoint = points[0],
+  	            lastPoint = points[points.length - 1];
+  	        bezCurve = [firstPoint, null, null, lastPoint];
+  	        A = maths.zeros_Xx2x2(parameters.length);
+  	        for (i = 0, len = parameters.length; i < len; i++) {
+  	            u = parameters[i];
+  	            ux = 1 - u;
+  	            a = A[i];
+  	            a[0] = maths.mulItems(leftTangent, 3 * u * (ux * ux));
+  	            a[1] = maths.mulItems(rightTangent, 3 * ux * (u * u));
+  	        }
+  	        C = [[0, 0], [0, 0]];
+  	        X = [0, 0];
+  	        for (i = 0, len = points.length; i < len; i++) {
+  	            u = parameters[i];
+  	            a = A[i];
+  	            C[0][0] += maths.dot(a[0], a[0]);
+  	            C[0][1] += maths.dot(a[0], a[1]);
+  	            C[1][0] += maths.dot(a[0], a[1]);
+  	            C[1][1] += maths.dot(a[1], a[1]);
+  	            tmp = maths.subtract(points[i], bezier.q([firstPoint, firstPoint, lastPoint, lastPoint], u));
+  	            X[0] += maths.dot(a[0], tmp);
+  	            X[1] += maths.dot(a[1], tmp);
+  	        }
+  	        det_C0_C1 = C[0][0] * C[1][1] - C[1][0] * C[0][1];
+  	        det_C0_X = C[0][0] * X[1] - C[1][0] * X[0];
+  	        det_X_C1 = X[0] * C[1][1] - X[1] * C[0][1];
+  	        alpha_l = det_C0_C1 === 0 ? 0 : det_X_C1 / det_C0_C1;
+  	        alpha_r = det_C0_C1 === 0 ? 0 : det_C0_X / det_C0_C1;
+  	        segLength = maths.vectorLen(maths.subtract(firstPoint, lastPoint));
+  	        epsilon = 1.0e-6 * segLength;
+  	        if (alpha_l < epsilon || alpha_r < epsilon) {
+  	            bezCurve[1] = maths.addArrays(firstPoint, maths.mulItems(leftTangent, segLength / 3.0));
+  	            bezCurve[2] = maths.addArrays(lastPoint, maths.mulItems(rightTangent, segLength / 3.0));
+  	        } else {
+  	            bezCurve[1] = maths.addArrays(firstPoint, maths.mulItems(leftTangent, alpha_l));
+  	            bezCurve[2] = maths.addArrays(lastPoint, maths.mulItems(rightTangent, alpha_r));
+  	        }
+  	        return bezCurve;
+  	    }	    function reparameterize(bezier, points, parameters) {
+  	        return parameters.map(function (p, i) {
+  	            return newtonRaphsonRootFind(bezier, points[i], p);
+  	        });
+  	    }	    function newtonRaphsonRootFind(bez, point, u) {
+  	        var d = maths.subtract(bezier.q(bez, u), point),
+  	            qprime = bezier.qprime(bez, u),
+  	            numerator = maths.mulMatrix(d, qprime),
+  	            denominator = maths.sum(maths.squareItems(qprime)) + 2 * maths.mulMatrix(d, bezier.qprimeprime(bez, u));
+  	        if (denominator === 0) {
+  	            return u;
+  	        } else {
+  	            return u - numerator / denominator;
+  	        }
+  	    }	    function chordLengthParameterize(points) {
+  	        var u = [],
+  	            currU,
+  	            prevU,
+  	            prevP;
+  	        points.forEach(function (p, i) {
+  	            currU = i ? prevU + maths.vectorLen(maths.subtract(p, prevP)) : 0;
+  	            u.push(currU);
+  	            prevU = currU;
+  	            prevP = p;
+  	        });
+  	        u = u.map(function (x) {
+  	            return x / prevU;
+  	        });
+  	        return u;
+  	    }	    function computeMaxError(points, bez, parameters) {
+  	        var dist,
+  	        maxDist,
+  	        splitPoint,
+  	        v,
+  	        i, count, point, t;
+  	        maxDist = 0;
+  	        splitPoint = Math.floor(points.length / 2);
+  	        var t_distMap = mapTtoRelativeDistances(bez, 10);
+  	        for (i = 0, count = points.length; i < count; i++) {
+  	            point = points[i];
+  	            t = find_t(bez, parameters[i], t_distMap, 10);
+  	            v = maths.subtract(bezier.q(bez, t), point);
+  	            dist = v[0] * v[0] + v[1] * v[1];
+  	            if (dist > maxDist) {
+  	                maxDist = dist;
+  	                splitPoint = i;
+  	            }
+  	        }
+  	        return [maxDist, splitPoint];
+  	    }	    var mapTtoRelativeDistances = function mapTtoRelativeDistances(bez, B_parts) {
+  	        var B_t_curr;
+  	        var B_t_dist = [0];
+  	        var B_t_prev = bez[0];
+  	        var sumLen = 0;
+  	        for (var i = 1; i <= B_parts; i++) {
+  	            B_t_curr = bezier.q(bez, i / B_parts);
+  	            sumLen += maths.vectorLen(maths.subtract(B_t_curr, B_t_prev));
+  	            B_t_dist.push(sumLen);
+  	            B_t_prev = B_t_curr;
+  	        }
+  	        B_t_dist = B_t_dist.map(function (x) {
+  	            return x / sumLen;
+  	        });
+  	        return B_t_dist;
+  	    };
+  	    function find_t(bez, param, t_distMap, B_parts) {
+  	        if (param < 0) {
+  	            return 0;
+  	        }
+  	        if (param > 1) {
+  	            return 1;
+  	        }
+  	        var lenMax, lenMin, tMax, tMin, t;
+  	        for (var i = 1; i <= B_parts; i++) {
+  	            if (param <= t_distMap[i]) {
+  	                tMin = (i - 1) / B_parts;
+  	                tMax = i / B_parts;
+  	                lenMin = t_distMap[i - 1];
+  	                lenMax = t_distMap[i];
+  	                t = (param - lenMin) / (lenMax - lenMin) * (tMax - tMin) + tMin;
+  	                break;
+  	            }
+  	        }
+  	        return t;
+  	    }
+  	    function createTangent(pointA, pointB) {
+  	        return maths.normalize(maths.subtract(pointA, pointB));
+  	    }
+  	    var maths = function () {
+  	        function maths() {
+  	            _classCallCheck(this, maths);
+  	        }
+  	        maths.zeros_Xx2x2 = function zeros_Xx2x2(x) {
+  	            var zs = [];
+  	            while (x--) {
+  	                zs.push([0, 0]);
+  	            }
+  	            return zs;
+  	        };
+  	        maths.mulItems = function mulItems(items, multiplier) {
+  	            return items.map(function (x) {
+  	                return x * multiplier;
+  	            });
+  	        };
+  	        maths.mulMatrix = function mulMatrix(m1, m2) {
+  	            return m1.reduce(function (sum, x1, i) {
+  	                return sum + x1 * m2[i];
+  	            }, 0);
+  	        };
+  	        maths.subtract = function subtract(arr1, arr2) {
+  	            return arr1.map(function (x1, i) {
+  	                return x1 - arr2[i];
+  	            });
+  	        };
+  	        maths.addArrays = function addArrays(arr1, arr2) {
+  	            return arr1.map(function (x1, i) {
+  	                return x1 + arr2[i];
+  	            });
+  	        };
+  	        maths.addItems = function addItems(items, addition) {
+  	            return items.map(function (x) {
+  	                return x + addition;
+  	            });
+  	        };
+  	        maths.sum = function sum(items) {
+  	            return items.reduce(function (sum, x) {
+  	                return sum + x;
+  	            });
+  	        };
+  	        maths.dot = function dot(m1, m2) {
+  	            return maths.mulMatrix(m1, m2);
+  	        };
+  	        maths.vectorLen = function vectorLen(v) {
+  	            return Math.hypot.apply(Math, v);
+  	        };
+  	        maths.divItems = function divItems(items, divisor) {
+  	            return items.map(function (x) {
+  	                return x / divisor;
+  	            });
+  	        };
+  	        maths.squareItems = function squareItems(items) {
+  	            return items.map(function (x) {
+  	                return x * x;
+  	            });
+  	        };
+  	        maths.normalize = function normalize(v) {
+  	            return this.divItems(v, this.vectorLen(v));
+  	        };
+  	        return maths;
+  	    }();
+  	    var bezier = function () {
+  	        function bezier() {
+  	            _classCallCheck(this, bezier);
+  	        }
+  	        bezier.q = function q(ctrlPoly, t) {
+  	            var tx = 1.0 - t;
+  	            var pA = maths.mulItems(ctrlPoly[0], tx * tx * tx),
+  	                pB = maths.mulItems(ctrlPoly[1], 3 * tx * tx * t),
+  	                pC = maths.mulItems(ctrlPoly[2], 3 * tx * t * t),
+  	                pD = maths.mulItems(ctrlPoly[3], t * t * t);
+  	            return maths.addArrays(maths.addArrays(pA, pB), maths.addArrays(pC, pD));
+  	        };
+  	        bezier.qprime = function qprime(ctrlPoly, t) {
+  	            var tx = 1.0 - t;
+  	            var pA = maths.mulItems(maths.subtract(ctrlPoly[1], ctrlPoly[0]), 3 * tx * tx),
+  	                pB = maths.mulItems(maths.subtract(ctrlPoly[2], ctrlPoly[1]), 6 * tx * t),
+  	                pC = maths.mulItems(maths.subtract(ctrlPoly[3], ctrlPoly[2]), 3 * t * t);
+  	            return maths.addArrays(maths.addArrays(pA, pB), pC);
+  	        };
+  	        bezier.qprimeprime = function qprimeprime(ctrlPoly, t) {
+  	            return maths.addArrays(maths.mulItems(maths.addArrays(maths.subtract(ctrlPoly[2], maths.mulItems(ctrlPoly[1], 2)), ctrlPoly[0]), 6 * (1.0 - t)), maths.mulItems(maths.addArrays(maths.subtract(ctrlPoly[3], maths.mulItems(ctrlPoly[2], 2)), ctrlPoly[1]), 6 * t));
+  	        };
+  	        return bezier;
+  	    }();
+  	    module.exports = fitCurve;
+  	    module.exports.fitCubic = fitCubic;
+  	    module.exports.createTangent = createTangent;
+  	});
+  } (fitCurve$1));
+  var fitCurveExports = fitCurve$1.exports;
+  var fitCurve = getDefaultExportFromCjs(fitCurveExports);
+
   createConsole("PathUtils", {
     log: true
   });
@@ -16264,6 +16717,35 @@
       cursor = curve.controlPoints[curve.controlPoints.length - 1];
     });
     return simplified;
+  }
+  function simplifyPoints(points, tolerance) {
+    points = simplify(points, tolerance, false);
+    return points;
+  }
+  function simplifyPointsAsCubicCurveControlPoints(points, error) {
+    const flatPoints = points.map(_ref => {
+      let {
+        x,
+        y
+      } = _ref;
+      return [x, y];
+    });
+    const curves = fitCurve(flatPoints, error !== null && error !== void 0 ? error : 50);
+    const controlPoints = [];
+    curves.forEach((curve, index) => {
+      const points = curve.map(_ref2 => {
+        let [x, y] = _ref2;
+        return {
+          x,
+          y
+        };
+      });
+      if (index != 0) {
+        points.shift();
+      }
+      controlPoints.push(...points);
+    });
+    return controlPoints;
   }
 
   var isBuffer_1 = function (obj) {
@@ -19731,6 +20213,20 @@
           await displayManager.drawPath(curves, sendImmediately);
         }
         break;
+      case "startSprite":
+        {
+          const {
+            offsetX,
+            offsetY,
+            width,
+            height
+          } = command;
+          await displayManager.startSprite(offsetX, offsetY, width, height, sendImmediately);
+        }
+        break;
+      case "endSprite":
+        await displayManager.endSprite(sendImmediately);
+        break;
     }
   }
   async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
@@ -19914,6 +20410,7 @@
   var _spriteSheetIndices = new WeakMap();
   var _pendingSpriteSheet = new WeakMap();
   var _pendingSpriteSheetName = new WeakMap();
+  var _isDrawingBlankSprite = new WeakMap();
   var _mtu$1 = new WeakMap();
   var _isServerSide$1 = new WeakMap();
   class DisplayManager {
@@ -19940,6 +20437,7 @@
       _classPrivateFieldInitSpec(this, _pendingSpriteSheet, void 0);
       _classPrivateFieldInitSpec(this, _pendingSpriteSheetName, void 0);
       _defineProperty$1(this, "sendFile", void 0);
+      _classPrivateFieldInitSpec(this, _isDrawingBlankSprite, false);
       _classPrivateFieldInitSpec(this, _mtu$1, void 0);
       _classPrivateFieldInitSpec(this, _isServerSide$1, false);
       autoBind(this);
@@ -21449,8 +21947,9 @@
     }
     async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
       _console$i.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
+      _console$i.log("drawing sprite \"".concat(spriteName, "\" in selectedSpriteSheet"), this.selectedSpriteSheet);
       let spriteIndex = this.selectedSpriteSheet.sprites.findIndex(sprite => sprite.name == spriteName);
-      _console$i.assertWithError(spriteIndex != -1, "sprite \"".concat(spriteName, "\" not found"));
+      _console$i.assertWithError(spriteIndex != -1, "sprite \"".concat(spriteName, "\" not found in spriteSheet"));
       spriteIndex = spriteIndex;
       const commandType = "drawSprite";
       const dataView = serializeContextCommand(this, {
@@ -21567,6 +22066,29 @@
     async selectSpritePaletteSwap(spriteName, paletteSwapName, offset, sendImmediately) {
       await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
     }
+    async startSprite(offsetX, offsetY, width, height, sendImmediately) {
+      _console$i.assertWithError(!_classPrivateFieldGet2(_isDrawingBlankSprite, this), "already drawing blank sprite");
+      _classPrivateFieldSet2(_isDrawingBlankSprite, this, true);
+      _assertClassBrand(_DisplayManager_brand, this, _saveContext).call(this, sendImmediately);
+      const commandType = "startSprite";
+      const dataView = serializeContextCommand(this, {
+        type: commandType,
+        offsetX,
+        offsetY,
+        width,
+        height
+      });
+      if (!dataView) {
+        return;
+      }
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+    }
+    async endSprite(sendImmediately) {
+      _assertClassBrand(_DisplayManager_brand, this, _restoreContext).call(this, sendImmediately);
+      _console$i.assertWithError(_classPrivateFieldGet2(_isDrawingBlankSprite, this), "not drawing blank sprite");
+      _classPrivateFieldSet2(_isDrawingBlankSprite, this, false);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, "endSprite", undefined, sendImmediately);
+    }
     reset() {
       _console$i.log("clearing displayManager");
       _classPrivateFieldSet2(_displayStatus, this, undefined);
@@ -21582,6 +22104,7 @@
       _classPrivateFieldSet2(_pendingSpriteSheet, this, undefined);
       _classPrivateFieldSet2(_pendingSpriteSheetName, this, undefined);
       this.isServerSide = false;
+      _classPrivateFieldSet2(_isDrawingBlankSprite, this, false);
       Object.keys(_classPrivateFieldGet2(_spriteSheetIndices, this)).forEach(spriteSheetName => delete _classPrivateFieldGet2(_spriteSheetIndices, this)[spriteSheetName]);
       Object.keys(_classPrivateFieldGet2(_spriteSheets, this)).forEach(spriteSheetName => delete _classPrivateFieldGet2(_spriteSheets, this)[spriteSheetName]);
     }
@@ -25248,6 +25771,14 @@
       _assertClassBrand(_Device_brand, this, _assertDisplayIsAvailable).call(this);
       return _classPrivateFieldGet2(_displayManager, this).drawSprite;
     }
+    get startDisplaySprite() {
+      _assertClassBrand(_Device_brand, this, _assertDisplayIsAvailable).call(this);
+      return _classPrivateFieldGet2(_displayManager, this).startSprite;
+    }
+    get endDisplaySprite() {
+      _assertClassBrand(_Device_brand, this, _assertDisplayIsAvailable).call(this);
+      return _classPrivateFieldGet2(_displayManager, this).endSprite;
+    }
     get displaySpriteSheets() {
       return _classPrivateFieldGet2(_displayManager, this).spriteSheets;
     }
@@ -26735,6 +27266,7 @@
   exports.TfliteSensorTypes = TfliteSensorTypes;
   exports.TfliteTasks = TfliteTasks;
   exports.ThrottleUtils = ThrottleUtils;
+  exports.Timer = Timer;
   exports.VibrationLocations = VibrationLocations;
   exports.VibrationTypes = VibrationTypes;
   exports.VibrationWaveformEffects = VibrationWaveformEffects;
@@ -26754,6 +27286,9 @@
   exports.rgbToHex = rgbToHex;
   exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
   exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
+  exports.simplifyCurves = simplifyCurves;
+  exports.simplifyPoints = simplifyPoints;
+  exports.simplifyPointsAsCubicCurveControlPoints = simplifyPointsAsCubicCurveControlPoints;
   exports.stringToSprites = stringToSprites;
   exports.wait = wait;
 

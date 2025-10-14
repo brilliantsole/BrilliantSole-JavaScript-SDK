@@ -294,7 +294,6 @@ function isValidUrl(string) {
 }
 
 // GPS
-
 let mapData;
 const places = [];
 let placeDistanceThreshold = 300; // m
