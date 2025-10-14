@@ -177,7 +177,7 @@ const draw = async () => {
     //console.log({ x, y, width, height });
     await displayCanvasHelper.saveContext();
     await displayCanvasHelper.setIgnoreFill(true);
-    await displayCanvasHelper.setLineWidth(5);
+    await displayCanvasHelper.setLineWidth(3);
     await displayCanvasHelper.drawRoundRect(x, y, width + 10, height + 10, 10);
     await displayCanvasHelper.restoreContext();
 
@@ -226,7 +226,7 @@ const draw = async () => {
     await displayCanvasHelper.saveContext();
     await displayCanvasHelper.selectSpriteColor(1, 1);
     await displayCanvasHelper.selectSpriteSheet("english");
-    await displayCanvasHelper.setVerticalAlignment("start");
+    await displayCanvasHelper.setVerticalAlignment("center");
     await displayCanvasHelper.setHorizontalAlignment("center");
     const _heading = (heading + 45) % 360;
     const sign =
@@ -248,8 +248,8 @@ const draw = async () => {
       Math.sign(interpolation - 0.5) * (1 - sinInterpolation) * 20,
       false
     );
-    await displayCanvasHelper.setSpriteScale(0.5 + 0.5 * sinInterpolation); // FILL
-    await displayCanvasHelper.drawSprite(x, y + 70, sign);
+    await displayCanvasHelper.setSpriteScale(0.5 + 0.5 * sinInterpolation);
+    await displayCanvasHelper.drawSprite(x, y + 80, sign);
 
     await displayCanvasHelper.restoreContext();
   }
@@ -294,6 +294,119 @@ function isValidUrl(string) {
 }
 
 // GPS
+
+let mapData;
+const places = [];
+let placeDistanceThreshold = 300; // m
+let placeRelativeAngleThreshold = 10; // degrees
+let selectedPlace;
+let previouslySelectedPlace;
+const selectPlace = (newSelectedPlace) => {
+  if (selectedPlace == newSelectedPlace) {
+    return;
+  }
+  previouslySelectedPlace = selectedPlace;
+  selectedPlace = newSelectedPlace;
+  console.log("selectedPlace", selectedPlace);
+};
+const updateClosestPlace = () => {
+  let closestPlace;
+  let closestPlaceDistance = placeDistanceThreshold;
+  let closestPlaceAbsRelativeAngle = placeRelativeAngleThreshold;
+  if (mapData && places.length) {
+    const [cx, cy] = project(latitude, longitude);
+    places.forEach((place) => {
+      const { type, tags } = place;
+      const { name } = tags;
+      if (type == "node") {
+        const { lat, lon } = place;
+        const [x, y] = project(lat, lon);
+        const dx = x - cx;
+        const dy = y - cy;
+        const angle = radiansToDegrees(Math.atan2(-dy, dx) - Math.PI / 2);
+        let relativeAngle = normalizeDegrees(angle - heading);
+        if (relativeAngle > 180) {
+          relativeAngle -= 360;
+        }
+        const absRelativeAngle = Math.abs(relativeAngle);
+        const distance = Math.sqrt(dx ** 2 + dy ** 2);
+        //console.log(name, { dx, dy, angle, relativeAngle, distance });
+        if (
+          distance <= closestPlaceDistance &&
+          absRelativeAngle <= closestPlaceAbsRelativeAngle
+        ) {
+          //console.log("updated closest place", tags.name);
+          closestPlace = place;
+          closestPlaceDistance = distance;
+          closestPlaceAbsRelativeAngle = absRelativeAngle;
+        }
+      } else if (type == "way") {
+        const { nodes: nodeIndices } = place;
+        const nodes = nodeIndices.map((nodeIndex) => allNodes[nodeIndex]);
+        //console.log("nodes", nodes);
+        const nodePositions = nodes.map((node) => {
+          const [x, y] = project(node.lat, node.lon);
+          return { x, y };
+        });
+        //console.log("nodePositions", nodePositions);
+        let distance = Infinity;
+        const angleRange = new BS.RangeHelper();
+        nodePositions.forEach((position) => {
+          const { x, y } = position;
+          const dx = x - cx;
+          const dy = y - cy;
+          const angle = radiansToDegrees(Math.atan2(-dy, dx) - Math.PI / 2);
+          let relativeAngle = normalizeDegrees(angle - heading);
+          if (relativeAngle > 180) {
+            relativeAngle -= 360;
+          }
+          // console.log({ relativeAngle });
+          angleRange.update(relativeAngle);
+          const _distance = Math.sqrt(dx ** 2 + dy ** 2);
+          distance = Math.min(distance, _distance);
+        });
+        //console.log(name, { distance }, angleRange.min, angleRange.max);
+        let absRelativeAngle;
+        const minAbsRelativeAngle = Math.min(
+          Math.abs(angleRange.min),
+          Math.abs(angleRange.max)
+        );
+        if (
+          Math.sign(angleRange.min) != Math.sign(angleRange.max) &&
+          minAbsRelativeAngle < 120
+        ) {
+          absRelativeAngle = 0;
+        } else {
+          absRelativeAngle = minAbsRelativeAngle;
+        }
+
+        if (
+          distance <= closestPlaceDistance &&
+          absRelativeAngle <= closestPlaceAbsRelativeAngle
+        ) {
+          //console.log("updated closest place", tags.name);
+          closestPlace = place;
+          closestPlaceDistance = distance;
+          closestPlaceAbsRelativeAngle = absRelativeAngle;
+        }
+      }
+    });
+  }
+  // console.log(
+  //   "closestPlace",
+  //   closestPlace?.tags.name,
+  //   {
+  //     closestPlaceDistance,
+  //     closestPlaceAbsRelativeAngle,
+  //   },
+  //   closestPlace?.tags
+  // );
+
+  if (selectedPlace != closestPlace) {
+    selectPlace(closestPlace);
+  }
+};
+
 let longitude;
 const longitudeInput = document.getElementById("longitude");
 longitudeInput.addEventListener("input", async () => {
@@ -305,6 +418,7 @@ const setLongitude = async (newLongitude) => {
   longitude = newLongitude;
   //console.log({ longitude });
   longitudeInput.value = longitude;
+  updateClosestPlace();
 };
 
 let latitude;
@@ -318,6 +432,7 @@ const setLatitude = async (newLatitude) => {
   latitude = newLatitude;
   //console.log({ latitude });
   latitudeInput.value = latitude;
+  updateClosestPlace();
 };
 
 let radius;
@@ -330,10 +445,6 @@ const setRadius = async (newRadius) => {
   console.log({ radius });
   radiusInput.value = radius;
 };
-
-setLatitude(37.79735730522437);
-setLongitude(-122.39422864517492);
-setRadius(150);
 
 let heading;
 const headingSigns = ["N", "W", "S", "E"];
@@ -361,8 +472,13 @@ const setHeading = async (newHeading) => {
   //console.log({ heading });
   headingInput.value = heading;
   headingSpan.innerText = Math.round(heading);
+  updateClosestPlace();
   await draw();
 };
+
+setLatitude(37.79735730522437);
+setLongitude(-122.39422864517492);
+setRadius(500);
 setHeading(0);
 
 let scale;
@@ -460,10 +576,24 @@ device.addEventListener("orientation", (event) => {
 
 // OSM
 const degreesToRadians = (degrees) => {
-  return (degrees * Math.PI) / 180;
+  const radians = (degrees * Math.PI) / 180;
+  return normalizeRadians(radians);
 };
 const radiansToDegrees = (radians) => {
-  return (radians * 180) / Math.PI;
+  const degrees = (radians * 180) / Math.PI;
+  return normalizeDegrees(degrees);
+};
+const normalizeValue = (value, maxValue) => {
+  while (value < 0) {
+    value += maxValue;
+  }
+  return value;
+};
+const normalizeDegrees = (degrees) => {
+  return normalizeValue(degrees, 360);
+};
+const normalizeRadians = (radians) => {
+  return normalizeValue(radians, 2 * Math.PI);
 };
 function project(lat, lon, applyHeading = false, scale = 300000) {
   let x = (lon - longitude) * Math.cos((latitude * Math.PI) / 180);
@@ -478,32 +608,16 @@ function project(lat, lon, applyHeading = false, scale = 300000) {
   return [rx * scale, -ry * scale]; // flip y for canvas
 }
 
-function computeRelativeAngle(lat0, lon0, heading, lat1, lon1) {
-  const dx = (lon1 - lon0) * Math.cos((lat0 * Math.PI) / 180);
-  const dy = lat1 - lat0;
-  let angleToPlace = Math.atan2(dy, dx);
-  let relativeAngle = angleToPlace - heading;
-  relativeAngle = ((relativeAngle + Math.PI) % (2 * Math.PI)) - Math.PI; // normalize -π..π
-  return relativeAngle;
-}
-
 function distanceBetween(lat1, lon1, lat2, lon2) {
-  const R = 6371e3; // Earth's radius in meters
-  const φ1 = (lat1 * Math.PI) / 180;
-  const φ2 = (lat2 * Math.PI) / 180;
-  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
-  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c; // distance in meters
+  const [x, y] = project(lat1, lon1);
+  const [cx, cy] = project(lat2, lon2);
+  const dx = x - cx;
+  const dy = y - cy;
+  const distance = Math.sqrt(dx ** 2 + dy ** 2);
+  return distance;
 }
 
-let mapData;
-let mapDataDistanceThreshold = radius / 2;
+let mapDataDistanceThreshold = radius / 4;
 let latestMapDataLatitude;
 let latestMapDataLongitude;
 let latestRadius;
@@ -514,6 +628,9 @@ const fetchMapData = async () => {
     return;
   }
   if (isFetchingMapData) {
+    return;
+  }
+  if (isUploading) {
     return;
   }
   if (longitude == undefined || latitude == undefined) {
@@ -596,17 +713,35 @@ const setMapData = async (newMapData, lon, lat, rad, save = true) => {
     );
   }
   await createMapDataSprites();
+  updateClosestPlace();
+};
+
+const isRoad = (tags) => {
+  return (
+    tags.highway &&
+    [
+      "motorway",
+      "trunk",
+      "primary",
+      "secondary",
+      "tertiary",
+      "residential",
+      "unclassified",
+      // "service",
+    ].includes(tags.highway)
+  );
 };
 
 let useCurves = false;
+let allNodes = {};
 const createMapDataSprites = async () => {
   if (!mapData) {
     return;
   }
 
-  const nodes = {};
+  allNodes = {};
   mapData.elements.forEach((el) => {
-    if (el.type === "node") nodes[el.id] = el;
+    if (el.type === "node") allNodes[el.id] = el;
   });
   //console.log("nodes", nodes);
 
@@ -616,18 +751,7 @@ const createMapDataSprites = async () => {
   mapData.elements.forEach((el) => {
     if (el.type === "way" && el.nodes) {
       const tags = el.tags || {};
-      if (
-        tags.highway &&
-        [
-          "motorway",
-          "trunk",
-          "primary",
-          "secondary",
-          "tertiary",
-          "residential",
-          "unclassified",
-        ].includes(tags.highway)
-      ) {
+      if (isRoad(tags)) {
         allWays[tags.name] = allWays[tags.name] ?? [];
         allWays[tags.name].push(el);
       }
@@ -754,9 +878,9 @@ const createMapDataSprites = async () => {
   const drawRoadCommands = [];
   allMergedWays.forEach((mergedWay) => {
     const nodeIndices = mergedWay.flatMap((way) => way.nodes);
-    const _nodes = nodeIndices.map((nodeIndex) => nodes[nodeIndex]);
-    //console.log("_nodes", _nodes);
-    const points = _nodes.map((node) => {
+    const nodes = nodeIndices.map((nodeIndex) => allNodes[nodeIndex]);
+    //console.log("nodes", nodes);
+    const points = nodes.map((node) => {
       const [x, y] = project(node.lat, node.lon);
       return { x, y };
     });
@@ -783,12 +907,12 @@ const createMapDataSprites = async () => {
       const tags = el.tags || {};
 
       if (tags.building) {
-        const _nodes = el.nodes
-          .map((nodeIndex) => nodes[nodeIndex])
+        const nodes = el.nodes
+          .map((nodeIndex) => allNodes[nodeIndex])
           .filter(
             (nodeIndex, index, nodes) => nodes.indexOf(nodeIndex) == index
           );
-        const points = _nodes.map((node) => {
+        const points = nodes.map((node) => {
           const [x, y] = project(node.lat, node.lon);
           return { x, y };
         });
@@ -801,15 +925,17 @@ const createMapDataSprites = async () => {
   });
   console.log("drawBuildingCommands", drawBuildingCommands);
 
+  places.length = 0;
   mapData.elements.forEach((el) => {
     const tags = el.tags || {};
-    // FILL - named buildings (note area/location)
+    if (!isRoad(tags) && tags.name) {
+      //console.log(tags.name, el);
+      places.push(el);
+    }
   });
+  console.log("places", places);
 
-  const maxLength = Math.max(
-    displayCanvasHelper.width,
-    displayCanvasHelper.height
-  );
+  const maxLength = 1000;
   mapSpriteSheet.sprites[0] = {
     name: "map",
     width: maxLength,
@@ -1004,7 +1130,6 @@ const setFontScale = (newFontScale) => {
   console.log({ fontScale });
   fontScaleSpan.innerText = fontScale;
   fontScaleInput.value = fontScale;
-  updateYPositions();
 };
 
 const loadFont = async (arrayBuffer) => {
@@ -1173,3 +1298,30 @@ await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
 
 didLoad = true;
 draw();
+
+const mapDataLocationLocalStorageKey = "mapDataLocation";
+window.addEventListener("beforeunload", () => {
+  localStorage.setItem(
+    mapDataLocationLocalStorageKey,
+    JSON.stringify({ latitude, longitude, heading, scale })
+  );
+});
+let cachedMapDataLocationString = localStorage.getItem("mapDataLocation");
+if (cachedMapDataLocationString) {
+  try {
+    const {
+      longitude: lon,
+      latitude: lat,
+      heading: head,
+      scale: _scale,
+    } = JSON.parse(cachedMapDataLocationString);
+    console.log({ lon, lat });
+    setLongitude(lon);
+    setLatitude(lat);
+    setHeading(head);
+    setScale(_scale);
+    await draw();
+  } catch (error) {
+    console.error(error);
+  }
+}
