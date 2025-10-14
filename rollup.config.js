@@ -89,6 +89,8 @@ const nodeExternal = [
   "woff2-encoder",
   "svgson",
   "svg-pathdata",
+  "simplify-js",
+  "fit-curve",
 ];
 
 const lensStudioPlugins = [

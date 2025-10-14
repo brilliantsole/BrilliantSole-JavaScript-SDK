@@ -2704,6 +2704,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const spriteSheetIndex = this.spriteSheetIndices[spriteSheetName];
+    //_console.log("selecting", { spriteSheetIndex, spriteSheetName });
     const commandType: DisplayContextCommandType = "selectSpriteSheet";
     const dataView = serializeContextCommand(this, {
       type: commandType,
@@ -2729,12 +2730,16 @@ class DisplayManager implements DisplayManagerInterface {
       this.selectedSpriteSheet,
       "no spriteSheet selected"
     );
+    _console.log(
+      `drawing sprite "${spriteName}" in selectedSpriteSheet`,
+      this.selectedSpriteSheet
+    );
     let spriteIndex = this.selectedSpriteSheet!.sprites.findIndex(
       (sprite) => sprite.name == spriteName
     );
     _console.assertWithError(
       spriteIndex != -1,
-      `sprite "${spriteName}" not found`
+      `sprite "${spriteName}" not found in spriteSheet`
     );
     spriteIndex = spriteIndex!;
     const commandType: DisplayContextCommandType = "drawSprite";
@@ -2979,6 +2984,51 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
 
+  #isDrawingBlankSprite = false;
+  async startSprite(
+    offsetX: number,
+    offsetY: number,
+    width: number,
+    height: number,
+    sendImmediately?: boolean
+  ) {
+    _console.assertWithError(
+      !this.#isDrawingBlankSprite,
+      `already drawing blank sprite`
+    );
+    this.#isDrawingBlankSprite = true;
+    this.#saveContext(sendImmediately);
+
+    const commandType: DisplayContextCommandType = "startSprite";
+    const dataView = serializeContextCommand(this, {
+      type: commandType,
+      offsetX,
+      offsetY,
+      width,
+      height,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendContextCommand(
+      commandType,
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  async endSprite(sendImmediately?: boolean) {
+    this.#restoreContext(sendImmediately);
+
+    _console.assertWithError(
+      this.#isDrawingBlankSprite,
+      `not drawing blank sprite`
+    );
+    this.#isDrawingBlankSprite = false;
+
+    // _console.log("endSprite");
+    await this.#sendContextCommand("endSprite", undefined, sendImmediately);
+  }
+
   reset() {
     _console.log("clearing displayManager");
     // @ts-ignore
@@ -2999,6 +3049,8 @@ class DisplayManager implements DisplayManagerInterface {
     this.#pendingSpriteSheetName = undefined;
 
     this.isServerSide = false;
+
+    this.#isDrawingBlankSprite = false;
 
     Object.keys(this.#spriteSheetIndices).forEach(
       (spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]

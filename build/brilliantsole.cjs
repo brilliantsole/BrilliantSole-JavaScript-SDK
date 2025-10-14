@@ -8,6 +8,8 @@ var autoBind$1 = require('auto-bind');
 var RGBQuant = require('rgbquant');
 var opentype = require('opentype.js');
 var woff2Encoder = require('woff2-encoder');
+var simplify = require('simplify-js');
+var fitCurve = require('fit-curve');
 require('svgson');
 require('svg-pathdata');
 var webbluetooth = require('webbluetooth');
@@ -4448,6 +4450,8 @@ const DisplayContextCommandTypes = [
     "selectSpriteSheet",
     "drawSprite",
     "drawSprites",
+    "startSprite",
+    "endSprite",
 ];
 const DisplaySpriteContextCommandTypes = [
     "selectFillColor",
@@ -4524,6 +4528,7 @@ function serializeContextCommand(displayManager, command) {
         case "resetSpriteColors":
         case "resetSpriteScale":
         case "resetAlignment":
+        case "endSprite":
             break;
         case "setColor":
             {
@@ -5020,6 +5025,9 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { wireframe } = command;
                 const { points, edges } = wireframe;
+                if (wireframe.points.length == 0) {
+                    return;
+                }
                 assertValidWireframe(wireframe);
                 const pointsDataView = serializePoints(points);
                 const edgesDataView = new DataView(new ArrayBuffer(1 + 2 * edges.length));
@@ -5222,6 +5230,16 @@ function serializeContextCommand(displayManager, command) {
                 offset += 2;
                 const buffer = concatenateArrayBuffers(dataView, concatenatedLineArrayBuffers);
                 dataView = new DataView(buffer);
+            }
+            break;
+        case "startSprite":
+            {
+                const { offsetX, offsetY, width, height } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 4));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, width, true);
+                dataView.setUint16(6, height, true);
             }
             break;
     }
@@ -5507,6 +5525,23 @@ function simplifyCurves(curves, epsilon = 1) {
         cursor = curve.controlPoints[curve.controlPoints.length - 1];
     });
     return simplified;
+}
+function simplifyPoints(points, tolerance) {
+    points = simplify(points, tolerance, false);
+    return points;
+}
+function simplifyPointsAsCubicCurveControlPoints(points, error) {
+    const flatPoints = points.map(({ x, y }) => [x, y]);
+    const curves = fitCurve(flatPoints, error ?? 50);
+    const controlPoints = [];
+    curves.forEach((curve, index) => {
+        const points = curve.map(([x, y]) => ({ x, y }));
+        if (index != 0) {
+            points.shift();
+        }
+        controlPoints.push(...points);
+    });
+    return controlPoints;
 }
 
 createConsole("SvgUtils", { log: true });
@@ -6652,6 +6687,15 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 const { curves } = command;
                 await displayManager.drawPath(curves, sendImmediately);
             }
+            break;
+        case "startSprite":
+            {
+                const { offsetX, offsetY, width, height } = command;
+                await displayManager.startSprite(offsetX, offsetY, width, height, sendImmediately);
+            }
+            break;
+        case "endSprite":
+            await displayManager.endSprite(sendImmediately);
             break;
     }
 }
@@ -8530,8 +8574,9 @@ class DisplayManager {
     }
     async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
         _console$o.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
+        _console$o.log(`drawing sprite "${spriteName}" in selectedSpriteSheet`, this.selectedSpriteSheet);
         let spriteIndex = this.selectedSpriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
-        _console$o.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
+        _console$o.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found in spriteSheet`);
         spriteIndex = spriteIndex;
         const commandType = "drawSprite";
         const dataView = serializeContextCommand(this, {
@@ -8664,6 +8709,30 @@ class DisplayManager {
     async selectSpritePaletteSwap(spriteName, paletteSwapName, offset, sendImmediately) {
         await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
     }
+    #isDrawingBlankSprite = false;
+    async startSprite(offsetX, offsetY, width, height, sendImmediately) {
+        _console$o.assertWithError(!this.#isDrawingBlankSprite, `already drawing blank sprite`);
+        this.#isDrawingBlankSprite = true;
+        this.#saveContext(sendImmediately);
+        const commandType = "startSprite";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            width,
+            height,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async endSprite(sendImmediately) {
+        this.#restoreContext(sendImmediately);
+        _console$o.assertWithError(this.#isDrawingBlankSprite, `not drawing blank sprite`);
+        this.#isDrawingBlankSprite = false;
+        await this.#sendContextCommand("endSprite", undefined, sendImmediately);
+    }
     reset() {
         _console$o.log("clearing displayManager");
         this.#displayStatus = undefined;
@@ -8679,6 +8748,7 @@ class DisplayManager {
         this.#pendingSpriteSheet = undefined;
         this.#pendingSpriteSheetName = undefined;
         this.isServerSide = false;
+        this.#isDrawingBlankSprite = false;
         Object.keys(this.#spriteSheetIndices).forEach((spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]);
         Object.keys(this.#spriteSheets).forEach((spriteSheetName) => delete this.#spriteSheets[spriteSheetName]);
     }
@@ -12542,6 +12612,14 @@ class Device {
         this.#assertDisplayIsAvailable();
         return this.#displayManager.drawSprite;
     }
+    get startDisplaySprite() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.startSprite;
+    }
+    get endDisplaySprite() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.endSprite;
+    }
     get displaySpriteSheets() {
         return this.#displayManager.spriteSheets;
     }
@@ -13927,7 +14005,10 @@ class WebSocketServer extends BaseServer {
             case "serverMessage":
                 const responseMessage = this.parseClientMessage(dataView);
                 if (responseMessage) {
-                    responseMessages.push(createWebSocketMessage$1({ type: "serverMessage", data: responseMessage }));
+                    responseMessages.push(createWebSocketMessage$1({
+                        type: "serverMessage",
+                        data: responseMessage,
+                    }));
                 }
                 break;
             default:
@@ -14195,6 +14276,7 @@ exports.Sides = Sides;
 exports.TfliteSensorTypes = TfliteSensorTypes;
 exports.TfliteTasks = TfliteTasks;
 exports.ThrottleUtils = ThrottleUtils;
+exports.Timer = Timer;
 exports.UDPServer = UDPServer;
 exports.VibrationLocations = VibrationLocations;
 exports.VibrationTypes = VibrationTypes;
@@ -14215,6 +14297,9 @@ exports.pixelDepthToNumberOfColors = pixelDepthToNumberOfColors;
 exports.rgbToHex = rgbToHex;
 exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
 exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
+exports.simplifyCurves = simplifyCurves;
+exports.simplifyPoints = simplifyPoints;
+exports.simplifyPointsAsCubicCurveControlPoints = simplifyPointsAsCubicCurveControlPoints;
 exports.stringToSprites = stringToSprites;
 exports.wait = wait;
 //# sourceMappingURL=brilliantsole.cjs.map

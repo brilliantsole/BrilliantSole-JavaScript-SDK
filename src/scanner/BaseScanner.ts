@@ -5,7 +5,7 @@ import EventDispatcher, {
 } from "../utils/EventDispatcher.ts";
 import { addEventListeners } from "../utils/EventUtils.ts";
 import { createConsole } from "../utils/Console.ts";
-import Timer from "../utils/Timer.ts";
+import { Timer } from "../utils/Timer.ts";
 import { DeviceType } from "../InformationManager.ts";
 import { ConnectionType } from "../connection/BaseConnectionManager.ts";
 

@@ -118,7 +118,7 @@ export {
   DisplayBezierCurveTypes,
 } from "./DisplayManager.ts";
 
-export { wait } from "./utils/Timer.ts";
+export { wait, Timer } from "./utils/Timer.ts";
 
 export {
   DisplaySegmentCap,
@@ -156,6 +156,12 @@ export {
   DisplaySpriteContextCommandType,
   DisplaySpriteContextCommandTypes,
 } from "./utils/DisplayContextCommand.ts";
+
+export {
+  simplifyPoints,
+  simplifyCurves,
+  simplifyPointsAsCubicCurveControlPoints,
+} from "./utils/PathUtils.ts";
 
 export {
   DisplaySprite,

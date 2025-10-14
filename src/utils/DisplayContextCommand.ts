@@ -160,6 +160,9 @@ export const DisplayContextCommandTypes = [
   "selectSpriteSheet",
   "drawSprite",
   "drawSprites",
+
+  "startSprite",
+  "endSprite",
 ] as const;
 export type DisplayContextCommandType =
   (typeof DisplayContextCommandTypes)[number];
@@ -265,7 +268,8 @@ export interface SimpleDisplayCommand extends BaseDisplayContextCommand {
     | "resetBitmapScale"
     | "resetSpriteColors"
     | "resetSpriteScale"
-    | "resetAlignment";
+    | "resetAlignment"
+    | "endSprite";
 }
 
 export interface SetDisplayColorCommand extends BaseDisplayContextCommand {
@@ -633,6 +637,11 @@ export interface DrawDisplaySpritesCommand
   spriteSerializedLines: DisplaySpriteSerializedLines;
 }
 
+export interface StartDisplaySpriteCommand
+  extends BaseDisplayCenterRectCommand {
+  type: "startSprite";
+}
+
 export type DisplayContextCommand =
   | SimpleDisplayCommand
   | SetDisplayColorCommand
@@ -696,7 +705,8 @@ export type DisplayContextCommand =
   | DrawDisplayPathCommand
   | SelectDisplayIgnoreFillCommand
   | SelectDisplayIgnoreLineCommand
-  | SelectDisplayFillBackgroundCommand;
+  | SelectDisplayFillBackgroundCommand
+  | StartDisplaySpriteCommand;
 
 export function serializeContextCommand(
   displayManager: DisplayManagerInterface,
@@ -716,6 +726,7 @@ export function serializeContextCommand(
     case "resetSpriteColors":
     case "resetSpriteScale":
     case "resetAlignment":
+    case "endSprite":
       break;
     case "setColor":
       {
@@ -1236,6 +1247,9 @@ export function serializeContextCommand(
       {
         const { wireframe } = command;
         const { points, edges } = wireframe;
+        if (wireframe.points.length == 0) {
+          return;
+        }
         assertValidWireframe(wireframe);
         // [pointDataType, numberOfPoints, ...points, numberOfEdges, ...edges]
         const pointsDataView = serializePoints(points);
@@ -1527,6 +1541,16 @@ export function serializeContextCommand(
           concatenatedLineArrayBuffers
         );
         dataView = new DataView(buffer);
+      }
+      break;
+    case "startSprite":
+      {
+        const { offsetX, offsetY, width, height } = command;
+        dataView = new DataView(new ArrayBuffer(2 * 4));
+        dataView.setInt16(0, offsetX, true);
+        dataView.setInt16(2, offsetY, true);
+        dataView.setUint16(4, width, true);
+        dataView.setUint16(6, height, true);
       }
       break;
   }

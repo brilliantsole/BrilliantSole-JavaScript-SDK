@@ -1,0 +1,140 @@
+<html>
+  <head>
+    <title>Display Map | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+  </head>
+  <style>
+    #display {
+      background-color: black;
+    }
+
+    .verticalLabel {
+      display: inline-flex;
+      flex-direction: column;
+      max-width: fit-content;
+    }
+
+    #displayColors {
+      display: inline-block;
+    }
+    .displayColor {
+      display: inline-block;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Display Map | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+
+    <div id="displayColors">
+      <template id="displayColorTemplate">
+        <div class="displayColor">
+          <input class="color" type="color" value="#000000" />
+        </div>
+      </template>
+    </div>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>brightness</span>
+      <select id="setDisplayBrightnessSelect">
+        <optgroup label="select brightness"></optgroup>
+      </select>
+    </label>
+
+    <button id="toggleGeolocation">enable geolocation</button>
+
+    <label class="verticalLabel">
+      <span>latitude</span>
+      <input
+        type="number"
+        id="latitude"
+        step="0.000001"
+        min="-90"
+        max="90"
+        placeholder="e.g. 37.79735730522437"
+        required
+      />
+    </label>
+
+    <label class="verticalLabel">
+      <span>longitude</span>
+      <input
+        type="number"
+        id="longitude"
+        step="0.000001"
+        min="-180"
+        max="180"
+        placeholder="e.g. -122.39422864517492"
+        required
+      />
+    </label>
+
+    <label id="heading" class="verticalLabel">
+      <span>heading (<span class="value">0</span>deg)</span>
+      <input type="range" min="0" max="360" step="1" value="0" />
+    </label>
+
+    <label id="scale" class="verticalLabel">
+      <span>scale (<span class="value">1</span>x)</span>
+      <input type="range" min="0.5" max="2" step="0.1" value="1" />
+    </label>
+
+    <label id="radius" class="verticalLabel">
+      <span>radius (<span class="value">100</span>m)</span>
+      <input disabled type="range" min="10" max="200" step="10" value="100" />
+    </label>
+
+    <button disabled id="toggleDeviceHeading">enable device heading</button>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>select font</span>
+      <select id="selectFont">
+        <optgroup label="select font"></optgroup>
+      </select>
+    </label>
+
+    <label class="verticalLabel">
+      add font
+      <input
+        id="loadFont"
+        type="file"
+        accept=".ttf,.otf,.woff,.woff2"
+        multiple="true"
+        style="width: 6rem"
+      />
+    </label>
+
+    <!-- <label id="fontSize" class="verticalLabel">
+      <span>font size (<span class="value">48</span>px)</span>
+      <input type="range" value="48" min="8" max="72" step="1" />
+    </label> -->
+
+    <label id="fontScale" class="verticalLabel">
+      <span>font scale (<span class="value">1.0</span>x)</span>
+      <input type="range" value="1.0" min="0.5" max="5" step="0.1" />
+    </label>
+
+    <br />
+
+    <label>
+      file transfer progress: <span></span>
+      <progress value="0" id="fileTransferProgress"></progress>
+    </label>
+
+    <button id="checkSpriteSheetSize">check spritesheet size</button>
+
+    <br />
+
+    <canvas id="display" width="640" height="400"></canvas>
+  </body>
+</html>

@@ -11,7 +11,7 @@ import {
 import ClientConnectionManager from "../../connection/ClientConnectionManager.ts";
 import BaseClient, { ServerURL } from "../BaseClient.ts";
 import type * as ws from "ws";
-import Timer from "../../utils/Timer.ts";
+import { Timer } from "../../utils/Timer.ts";
 import {
   createWebSocketMessage,
   WebSocketMessageType,

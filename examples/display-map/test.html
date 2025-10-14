@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OSM HUD Map with Keyboard Navigation</title>
+    <style>
+      body {
+        margin: 0;
+        background: black;
+      }
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="map"></canvas>
+
+    <script>
+      /** @type {HTMLCanvasElement} */
+      const canvas = document.getElementById("map");
+      const ctx = canvas.getContext("2d");
+
+      // State
+      let mapData = null;
+      let centerLat = null;
+      let centerLon = null;
+      let heading = 0; // radians, 0 = north
+
+      const moveStep = 0.0005; // approx 50m
+      const rotateStep = Math.PI / 36; // 5 degrees
+
+      // Resize canvas and redraw
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        if (mapData && centerLat !== null && centerLon !== null) {
+          drawMap(mapData, centerLat, centerLon);
+        }
+      }
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      // Simple projection with rotation
+      function project(lat, lon, centerLat, centerLon, scale = 80000) {
+        let x = (lon - centerLon) * Math.cos((centerLat * Math.PI) / 180);
+        let y = lat - centerLat;
+        const cosH = Math.cos(heading);
+        const sinH = Math.sin(heading);
+        const rx = x * cosH - y * sinH;
+        const ry = x * sinH + y * cosH;
+        return [rx * scale, -ry * scale]; // flip y for canvas
+      }
+
+      // Overpass query
+      let radius = 800;
+      async function fetchMap(lat, lon) {
+        const query = `
+          [out:json];
+          (
+            way["highway"](around:${radius}, ${lat}, ${lon});
+            way["building"](around:${radius}, ${lat}, ${lon});
+            node["building"](around:${radius}, ${lat}, ${lon});
+            node["shop"](around:${radius}, ${lat}, ${lon});
+            way["shop"](around:${radius}, ${lat}, ${lon});
+            node["amenity"](around:${radius}, ${lat}, ${lon});
+            way["amenity"](around:${radius}, ${lat}, ${lon});
+          );
+          (._;>;);
+          out;
+        `;
+        const res = await fetch("https://overpass-api.de/api/interpreter", {
+          method: "POST",
+          body: query,
+        });
+        return res.json();
+      }
+
+      function drawPolygon(
+        el,
+        nodes,
+        centerLat,
+        centerLon,
+        color,
+        fill = true
+      ) {
+        ctx.beginPath();
+        el.nodes.forEach((nodeId, i) => {
+          const n = nodes[nodeId];
+          if (!n) return;
+          const [x, y] = project(n.lat, n.lon, centerLat, centerLon);
+          const cx = canvas.width / 2 + x,
+            cy = canvas.height / 2 + y;
+          if (i === 0) ctx.moveTo(cx, cy);
+          else ctx.lineTo(cx, cy);
+        });
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.strokeStyle = color;
+        if (fill) ctx.fill();
+        else ctx.stroke();
+      }
+
+      function getRoadStyle(highway) {
+        const hue = Math.floor(Math.random() * 360);
+        return { color: `hsl(${hue}, 100%, 50%)`, width: 3 };
+        switch (highway) {
+          case "motorway":
+            return { color: "white", width: 4 };
+          case "trunk":
+            return { color: "white", width: 3 };
+          case "primary":
+            return { color: "lightgray", width: 3 };
+          case "secondary":
+            return { color: "gray", width: 2 };
+          case "tertiary":
+            return { color: "darkgray", width: 2 };
+          case "residential":
+          case "unclassified":
+            return { color: "dimgray", width: 1 };
+          default:
+            return { color: "white", width: 2 };
+        }
+      }
+
+      function drawMap(data, centerLat, centerLon) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const nodes = {};
+        data.elements.forEach((el) => {
+          if (el.type === "node") nodes[el.id] = el;
+        });
+
+        let roadNames = [];
+        // Ways
+        /** @typedef {{nodes: number[]}} Way */
+        /** @type {Record<string, Way[]}} */
+        const allWays = {};
+        data.elements.forEach((el) => {
+          if (el.type === "way" && el.nodes) {
+            const tags = el.tags || {};
+            // Roads
+            if (
+              tags.highway &&
+              [
+                "motorway",
+                "trunk",
+                "primary",
+                "secondary",
+                "tertiary",
+                "residential",
+                "unclassified",
+              ].includes(tags.highway)
+            ) {
+              allWays[tags.name] = allWays[tags.name] ?? [];
+              allWays[tags.name].push(el);
+            }
+          }
+        });
+
+        /** @type {Way[][]} */
+        const allMergedWays = [];
+        for (const name in allWays) {
+          const ways = allWays[name];
+          if (ways.length == 1) {
+            allMergedWays.push(ways);
+          } else {
+            /** @type {Way[][]} */
+            const mergedWays = [];
+            ways.forEach((way) => {
+              if (mergedWays.length == 0) {
+                mergedWays.push([way]);
+              } else {
+                const isNewNode = !mergedWays.some((mergedWay) => {
+                  const addToBeginning =
+                    way.nodes.at(-1) == mergedWay[0].nodes[0];
+                  const addToEnd =
+                    way.nodes[0] == mergedWay.at(-1).nodes.at(-1);
+                  if (addToBeginning) {
+                    mergedWay.unshift(way);
+                  } else if (addToEnd) {
+                    mergedWay.push(way);
+                  }
+                  return addToBeginning || addToEnd;
+                });
+                if (isNewNode) {
+                  mergedWays.push([way]);
+                }
+              }
+            });
+            let didMergeWays = false;
+            do {
+              didMergeWays = mergedWays.some((mergedWay) => {
+                return mergedWays.some((_mergedWay) => {
+                  if (mergedWay == _mergedWay) {
+                    return;
+                  }
+                  let addToBeginning =
+                    mergedWay.at(-1).nodes.at(-1) == _mergedWay[0].nodes[0];
+                  let addToEnd =
+                    mergedWay[0].nodes[0] == _mergedWay.at(-1).nodes.at(-1);
+                  if (true && !addToBeginning && !addToEnd) {
+                    const addToBeginningReversed =
+                      mergedWay[0].nodes[0] == _mergedWay[0].nodes[0];
+                    const addToEndReversed =
+                      mergedWay.at(-1).nodes.at(-1) ==
+                      _mergedWay.at(-1).nodes.at(-1);
+
+                    if (addToBeginningReversed) {
+                      addToBeginning = true;
+                    } else if (addToEndReversed) {
+                      addToEnd = true;
+                    }
+                    if (addToBeginningReversed || addToEndReversed) {
+                      //console.log({ addToBeginningReversed, addToEndReversed });
+                      mergedWay.forEach((mergedWay) =>
+                        mergedWay.nodes.reverse()
+                      );
+                      mergedWay.reverse();
+                    }
+                  }
+                  if (addToBeginning) {
+                    _mergedWay.unshift(...mergedWay);
+                  } else if (addToEnd) {
+                    _mergedWay.push(...mergedWay);
+                  }
+                  if (addToBeginning || addToEnd) {
+                    mergedWays.splice(mergedWays.indexOf(mergedWay), 1);
+                    return true;
+                  }
+                });
+              });
+            } while (didMergeWays);
+
+            allMergedWays.push(...mergedWays);
+          }
+        }
+        let didMergeWays = false;
+        do {
+          didMergeWays = allMergedWays.some((mergedWay) => {
+            return allMergedWays.some((_mergedWay) => {
+              if (mergedWay == _mergedWay) {
+                return;
+              }
+              let addToBeginning =
+                mergedWay.at(-1).nodes.at(-1) == _mergedWay[0].nodes[0];
+              let addToEnd =
+                mergedWay[0].nodes[0] == _mergedWay.at(-1).nodes.at(-1);
+              if (true && !addToBeginning && !addToEnd) {
+                const addToBeginningReversed =
+                  mergedWay[0].nodes[0] == _mergedWay[0].nodes[0];
+                const addToEndReversed =
+                  mergedWay.at(-1).nodes.at(-1) ==
+                  _mergedWay.at(-1).nodes.at(-1);
+
+                if (addToBeginningReversed) {
+                  console.log(
+                    "addToBeginningReversed",
+                    mergedWay[0].tags.name,
+                    mergedWay[0].nodes[0],
+                    _mergedWay[0].nodes[0]
+                  );
+                  addToBeginning = true;
+                } else if (addToEndReversed) {
+                  //   console.log(
+                  //     "addToEndReversed",
+                  //     mergedWay[0].tags.name,
+                  //     mergedWay.at(-1).nodes.at(-1),
+                  //     _mergedWay.at(-1).nodes.at(-1)
+                  //   );
+                  addToEnd = true;
+                }
+                if (addToBeginningReversed || addToEndReversed) {
+                  mergedWay.forEach((mergedWay) => mergedWay.nodes.reverse());
+                  mergedWay.reverse();
+                }
+              }
+              if (addToBeginning) {
+                // console.log(
+                //   "addToBeginning",
+                //   mergedWay[0].tags.name,
+                //   mergedWay.at(-1).nodes.at(-1),
+                //   _mergedWay[0].nodes[0]
+                // );
+                _mergedWay.unshift(...mergedWay);
+              } else if (addToEnd) {
+                // console.log(
+                //   "addToEnd",
+                //   mergedWay[0].tags.name,
+                //   mergedWay[0].nodes[0],
+                //   _mergedWay.at(-1).nodes.at(-1)
+                // );
+                _mergedWay.push(...mergedWay);
+              }
+              if (addToBeginning || addToEnd) {
+                allMergedWays.splice(allMergedWays.indexOf(mergedWay), 1);
+                return true;
+              }
+            });
+          });
+        } while (didMergeWays);
+
+        //console.log("allMergedWays", allMergedWays, allMergedWays.length);
+        // allMergedWays.forEach((mergedWay) => {
+        //   if (mergedWay[0].tags.name == "Seminary Road") {
+        //     console.log(
+        //       mergedWay[0].tags.name,
+        //       mergedWay.map((way) => way.nodes)
+        //     );
+        //   }
+        // });
+
+        allMergedWays.forEach((mergedWay) => {
+          const style = getRoadStyle(mergedWay[0].tags.highway);
+
+          const wayNodes = mergedWay
+            .filter(
+              (nodeIndex, index, nodeIndices) =>
+                nodeIndices.indexOf(nodeIndex) == index
+            )
+            .flatMap((way) => way.nodes);
+
+          if (mergedWay[0].tags.name != "Seminary Road") {
+            //return;
+          }
+          //console.log("wayNodes", mergedWay[0].tags.name, wayNodes);
+
+          ctx.beginPath();
+          wayNodes.forEach((nodeId, i) => {
+            const n = nodes[nodeId];
+            if (!n) return;
+            const [x, y] = project(n.lat, n.lon, centerLat, centerLon);
+            const cx = canvas.width / 2 + x,
+              cy = canvas.height / 2 + y;
+            if (i === 0) ctx.moveTo(cx, cy);
+            else ctx.lineTo(cx, cy);
+          });
+          ctx.strokeStyle = style.color;
+          ctx.lineWidth = style.width;
+          ctx.stroke();
+
+          ctx.fillStyle = "white";
+          wayNodes.forEach((nodeId, i) => {
+            const n = nodes[nodeId];
+            if (!n) return;
+            const [x, y] = project(n.lat, n.lon, centerLat, centerLon);
+            const cx = canvas.width / 2 + x,
+              cy = canvas.height / 2 + y;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 2, 0, 360);
+            ctx.fill();
+          });
+        });
+
+        data.elements.forEach((el) => {
+          if (el.type === "way" && el.nodes) {
+            const tags = el.tags || {};
+            // Roads
+            if (
+              tags.highway &&
+              [
+                "motorway",
+                "trunk",
+                "primary",
+                "secondary",
+                "tertiary",
+                "residential",
+                "unclassified",
+              ].includes(tags.highway)
+            ) {
+              return;
+
+              const style = getRoadStyle(tags.highway);
+
+              if (!roadNames.includes(tags.name)) {
+                roadNames.push(tags.name);
+                //console.log(roadNames.length - 1, tags.name);
+              }
+              const roadIndex = roadNames.indexOf(tags.name);
+              if (tags.name != "North Lewis Road") {
+                //return;
+              }
+              if (roadIndex != window.roadIndex) {
+                //return;
+              }
+              //console.log("drawing", tags.name);
+
+              ctx.beginPath();
+              el.nodes
+                .filter(
+                  (nodeIndex, index, nodeIndices) =>
+                    nodeIndices.indexOf(nodeIndex) == index
+                )
+                .forEach((nodeId, i) => {
+                  const n = nodes[nodeId];
+                  if (!n) return;
+                  const [x, y] = project(n.lat, n.lon, centerLat, centerLon);
+                  const cx = canvas.width / 2 + x,
+                    cy = canvas.height / 2 + y;
+                  if (i === 0) ctx.moveTo(cx, cy);
+                  else ctx.lineTo(cx, cy);
+                });
+
+              ctx.strokeStyle = style.color;
+              ctx.lineWidth = style.width;
+              ctx.stroke();
+
+              ctx.fillStyle = "white";
+              el.nodes.forEach((nodeId, i) => {
+                const n = nodes[nodeId];
+                if (!n) return;
+                const [x, y] = project(n.lat, n.lon, centerLat, centerLon);
+                const cx = canvas.width / 2 + x,
+                  cy = canvas.height / 2 + y;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 2, 0, 360);
+                ctx.fill();
+              });
+
+              if (tags.maxspeed) {
+                const firstNode = nodes[el.nodes[0]];
+                if (firstNode) {
+                  const [x, y] = project(
+                    firstNode.lat,
+                    firstNode.lon,
+                    centerLat,
+                    centerLon
+                  );
+                  ctx.fillStyle = "orange";
+                  ctx.font = "12px sans-serif";
+                  ctx.fillText(
+                    tags.maxspeed,
+                    canvas.width / 2 + x + 4,
+                    canvas.height / 2 + y - 4
+                  );
+                }
+              }
+
+              // Sidewalks
+            } else if (tags.highway === "footway" || tags.sidewalk === "yes") {
+              //   ctx.beginPath();
+              //   el.nodes.forEach((nodeId, i) => {
+              //     const n = nodes[nodeId];
+              //     if (!n) return;
+              //     const [x, y] = project(n.lat, n.lon, centerLat, centerLon);
+              //     const cx = canvas.width / 2 + x,
+              //       cy = canvas.height / 2 + y;
+              //     if (i === 0) ctx.moveTo(cx, cy);
+              //     else ctx.lineTo(cx, cy);
+              //   });
+              //   ctx.strokeStyle = "yellow";
+              //   ctx.lineWidth = 2;
+              //   ctx.stroke();
+              // Buildings, water, parks
+            } else if (tags.building) {
+              drawPolygon(
+                el,
+                nodes,
+                centerLat,
+                centerLon,
+                "rgba(200,200,200,0.5)",
+                false
+              );
+            } else if (tags.natural === "water") {
+              drawPolygon(
+                el,
+                nodes,
+                centerLat,
+                centerLon,
+                "rgba(0,100,255,0.5)",
+                true
+              );
+            } else if (tags.landuse === "grass" || tags.leisure === "park") {
+              drawPolygon(
+                el,
+                nodes,
+                centerLat,
+                centerLon,
+                "rgba(0,200,0,0.5)",
+                true
+              );
+            }
+          }
+        });
+
+        // Public transport stops
+        ctx.fillStyle = "red";
+        data.elements.forEach((el) => {
+          if (el.type === "node") {
+            const stopTags = el.tags || {};
+            if (
+              stopTags.highway === "bus_stop" ||
+              stopTags.public_transport === "platform" ||
+              stopTags.railway === "tram_stop" ||
+              stopTags.railway === "station"
+            ) {
+              const [x, y] = project(el.lat, el.lon, centerLat, centerLon);
+              const cx = canvas.width / 2 + x,
+                cy = canvas.height / 2 + y;
+              ctx.beginPath();
+              ctx.arc(cx, cy, 4, 0, 2 * Math.PI);
+              ctx.fill();
+              if (stopTags.name) {
+                ctx.fillStyle = "white";
+                ctx.font = "12px sans-serif";
+                ctx.fillText(stopTags.name, cx + 6, cy - 6);
+                ctx.fillStyle = "red";
+              }
+            }
+          }
+        });
+
+        // Shops
+        ctx.fillStyle = "blue";
+        data.elements.forEach((el) => {
+          if (el.tags && el.tags.shop) {
+            let lat, lon;
+            if (el.type === "node") {
+              lat = el.lat;
+              lon = el.lon;
+            } else if (el.type === "way" && el.nodes.length > 0) {
+              const firstNode = nodes[el.nodes[0]];
+              if (!firstNode) return;
+              lat = firstNode.lat;
+              lon = firstNode.lon;
+            } else return;
+            const [x, y] = project(lat, lon, centerLat, centerLon);
+            const cx = canvas.width / 2 + x,
+              cy = canvas.height / 2 + y;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            if (el.tags.name) {
+              ctx.fillStyle = "white";
+              ctx.font = "12px sans-serif";
+              ctx.fillText(el.tags.name, cx + 6, cy - 6);
+              ctx.fillStyle = "blue";
+            }
+          }
+        });
+
+        // Named buildings
+        ctx.fillStyle = "purple";
+        data.elements.forEach((el) => {
+          if (el.tags && el.tags.name && el.tags.building) {
+            let lat, lon;
+            if (el.type === "node") {
+              lat = el.lat;
+              lon = el.lon;
+            } else if (el.type === "way" && el.nodes.length > 0) {
+              const firstNode = nodes[el.nodes[0]];
+              if (!firstNode) return;
+              lat = firstNode.lat;
+              lon = firstNode.lon;
+            } else return;
+            const [x, y] = project(lat, lon, centerLat, centerLon);
+            const cx = canvas.width / 2 + x,
+              cy = canvas.height / 2 + y;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.font = "12px sans-serif";
+            ctx.fillText(el.tags.name, cx + 6, cy - 6);
+            ctx.fillStyle = "purple";
+          }
+        });
+      }
+
+      // Keyboard navigation
+      window.addEventListener("keydown", (e) => {
+        if (centerLat === null || centerLon === null) return;
+
+        switch (e.key) {
+          case "ArrowLeft":
+            heading -= rotateStep;
+            break;
+          case "ArrowRight":
+            heading += rotateStep;
+            break;
+          case "ArrowUp":
+            centerLat += moveStep * Math.cos(heading);
+            centerLon +=
+              (moveStep * Math.sin(heading)) /
+              Math.cos((centerLat * Math.PI) / 180);
+            break;
+          case "ArrowDown":
+            centerLat -= moveStep * Math.cos(heading);
+            centerLon -=
+              (moveStep * Math.sin(heading)) /
+              Math.cos((centerLat * Math.PI) / 180);
+            break;
+        }
+
+        if (mapData) drawMap(mapData, centerLat, centerLon);
+      });
+
+      // Main
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          centerLat = pos.coords.latitude;
+          centerLon = pos.coords.longitude;
+          if (localStorage.mapDataTest) {
+            try {
+              mapData = JSON.parse(localStorage.getItem("mapDataTest"));
+              console.log("recycling mapData");
+            } catch (error) {
+              console.error(error);
+            }
+          } else {
+            mapData = await fetchMap(centerLat, centerLon);
+            if (mapData) {
+              localStorage.setItem("mapDataTest", JSON.stringify(mapData));
+            }
+          }
+          console.log("mapData", mapData);
+          window.mapData = mapData;
+          drawMap(mapData, centerLat, centerLon);
+        },
+        (err) => {
+          console.error("Geolocation error:", err);
+          alert("Failed to get location");
+        }
+      );
+    </script>
+  </body>
+</html>

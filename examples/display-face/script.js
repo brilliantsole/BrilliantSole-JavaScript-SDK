@@ -212,8 +212,10 @@ const yPositions = {
 };
 const imagePadding = 10;
 const textPadding = 10;
+const useInterests = false;
 const updateYPositions = () => {
-  const profileHeight = spritesLineHeight * 2 + textPadding;
+  const profileHeight =
+    spritesLineHeight * (useInterests ? 2 : 1) + textPadding;
   const profileImageHeight = profileHeight + imagePadding + imageHeight;
   const scanningHeight = spritesLineHeight + textPadding;
 
@@ -331,9 +333,13 @@ const draw = async () => {
       const string = [
         `${profile.name} - ${profile.title}`,
         `${profile.interests}`,
-      ].join("\n");
+      ]
+        .slice(0, useInterests ? 2 : 1)
+        .join("\n");
+      await displayCanvasHelper.setSpriteScale(fontScale);
       await displayCanvasHelper.drawSpritesString(paddingX, profileY, string);
 
+      await displayCanvasHelper.setSpriteScale(1);
       await displayCanvasHelper.selectSpriteSheet(profile.id);
       await displayCanvasHelper.selectSpriteSheetPalette(profile.id, 0, true);
       await displayCanvasHelper.drawSprite(paddingX, profileImageY, "image");
@@ -366,6 +372,7 @@ const draw = async () => {
         1,
         displayCanvasHelper.numberOfColors - 1
       );
+      await displayCanvasHelper.setSpriteScale(fontScale);
       await displayCanvasHelper.drawSpritesString(
         displayCanvasHelper.width - paddingX,
         scanningY,
@@ -1476,7 +1483,7 @@ loadFontInput.addEventListener("input", async () => {
   loadFontInput.value = "";
 });
 
-let fontScale = 1;
+let fontScale = 0.9;
 const fontScaleContainer = document.getElementById("fontScale");
 const fontScaleInput = fontScaleContainer.querySelector("input");
 const fontScaleSpan = fontScaleContainer.querySelector(".value");
@@ -1657,7 +1664,7 @@ const selectFont = async (newFontName) => {
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
 
 // IMAGES
-const imageHeight = 140;
+const imageHeight = 170;
 /** @type {Record<number, {spriteSheet: BS.DisplaySpriteSheet, profileImage: HTMLImageElement}>} */
 const profileImageSpriteSheets = {};
 /** @param {Profile} profile */

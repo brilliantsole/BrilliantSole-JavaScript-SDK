@@ -312,6 +312,8 @@ declare class DisplayManager implements DisplayManagerInterface {
     selectSpriteSheetPalette(paletteName: string, offset?: number, indicesOnly?: boolean, sendImmediately?: boolean): Promise<void>;
     selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    startSprite(offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
+    endSprite(sendImmediately?: boolean): Promise<void>;
     reset(): void;
     get mtu(): number;
     set mtu(newMtu: number);

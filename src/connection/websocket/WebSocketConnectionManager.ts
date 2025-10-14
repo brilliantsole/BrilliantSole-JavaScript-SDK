@@ -11,7 +11,7 @@ import {
   removeEventListeners,
 } from "../../utils/EventUtils.ts";
 import { parseMessage } from "../../utils/ParseUtils.ts";
-import Timer from "../../utils/Timer.ts";
+import { Timer } from "../../utils/Timer.ts";
 import BaseConnectionManager, {
   ConnectionType,
 } from "../BaseConnectionManager.ts";

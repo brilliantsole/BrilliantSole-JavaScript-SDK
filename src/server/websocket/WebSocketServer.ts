@@ -1,7 +1,13 @@
 import { createConsole } from "../../utils/Console.ts";
-import { addEventListeners, removeEventListeners } from "../../utils/EventUtils.ts";
-import { concatenateArrayBuffers, dataToArrayBuffer } from "../../utils/ArrayBufferUtils.ts";
-import Timer from "../../utils/Timer.ts";
+import {
+  addEventListeners,
+  removeEventListeners,
+} from "../../utils/EventUtils.ts";
+import {
+  concatenateArrayBuffers,
+  dataToArrayBuffer,
+} from "../../utils/ArrayBufferUtils.ts";
+import { Timer } from "../../utils/Timer.ts";
 import BaseServer from "../BaseServer.ts";
 import {
   webSocketPingMessage,
@@ -70,7 +76,10 @@ class WebSocketServer extends BaseServer {
   #onWebSocketServerConnection(client: WebSocketClient) {
     _console.log("server.connection");
     client.isAlive = true;
-    client.pingClientTimer = new Timer(() => this.#pingClient(client), webSocketPingTimeout);
+    client.pingClientTimer = new Timer(
+      () => this.#pingClient(client),
+      webSocketPingTimeout
+    );
     client.pingClientTimer.start();
     addEventListeners(client, this.#boundWebSocketClientListeners);
     this.dispatchEvent("clientConnected", { client });
@@ -120,7 +129,13 @@ class WebSocketServer extends BaseServer {
   #parseWebSocketClientMessage(client: WebSocketClient, dataView: DataView) {
     let responseMessages: ArrayBuffer[] = [];
 
-    parseMessage(dataView, WebSocketMessageTypes, this.#onClientMessage.bind(this), { responseMessages }, true);
+    parseMessage(
+      dataView,
+      WebSocketMessageTypes,
+      this.#onClientMessage.bind(this),
+      { responseMessages },
+      true
+    );
 
     responseMessages = responseMessages.filter(Boolean);
 
@@ -153,7 +168,12 @@ class WebSocketServer extends BaseServer {
       case "serverMessage":
         const responseMessage = this.parseClientMessage(dataView);
         if (responseMessage) {
-          responseMessages.push(createWebSocketMessage({ type: "serverMessage", data: responseMessage }));
+          responseMessages.push(
+            createWebSocketMessage({
+              type: "serverMessage",
+              data: responseMessage,
+            })
+          );
         }
         break;
       default:
@@ -166,7 +186,9 @@ class WebSocketServer extends BaseServer {
   broadcastMessage(message: ArrayBuffer) {
     super.broadcastMessage(message);
     this.server!.clients.forEach((client) => {
-      client.send(createWebSocketMessage({ type: "serverMessage", data: message }));
+      client.send(
+        createWebSocketMessage({ type: "serverMessage", data: message })
+      );
     });
   }
 

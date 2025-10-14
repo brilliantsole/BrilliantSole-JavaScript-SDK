@@ -153,6 +153,8 @@ export interface DisplayManagerInterface {
     selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
+    startSprite(offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
+    endSprite(sendImmediately?: boolean): Promise<void>;
 }
 export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
 export declare function runDisplayContextCommands(displayManager: DisplayManagerInterface, commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;

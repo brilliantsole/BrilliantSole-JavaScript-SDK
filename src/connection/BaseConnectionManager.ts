@@ -1,6 +1,5 @@
 import { createConsole } from "../utils/Console.ts";
-import Timer from "../utils/Timer.ts";
-
+import { Timer } from "../utils/Timer.ts";
 import { FileTransferMessageTypes } from "../FileTransferManager.ts";
 import { TfliteMessageTypes } from "../TfliteManager.ts";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";

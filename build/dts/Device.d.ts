@@ -294,6 +294,8 @@ declare class Device {
     get uploadDisplaySpriteSheets(): (spriteSheets: import("./BS.ts").DisplaySpriteSheet[]) => Promise<void>;
     get selectDisplaySpriteSheet(): (spriteSheetName: string, sendImmediately?: boolean) => Promise<void>;
     get drawDisplaySprite(): (offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean) => Promise<void>;
+    get startDisplaySprite(): (offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean) => Promise<void>;
+    get endDisplaySprite(): (sendImmediately?: boolean) => Promise<void>;
     get displaySpriteSheets(): Record<string, import("./BS.ts").DisplaySpriteSheet>;
     get serializeDisplaySpriteSheet(): (spriteSheet: import("./BS.ts").DisplaySpriteSheet) => ArrayBuffer;
     get setDisplayAlignment(): (alignmentDirection: import("./utils/DisplayContextState.ts").DisplayAlignmentDirection, alignment: import("./BS.ts").DisplayAlignment, sendImmediately?: boolean) => Promise<void>;
