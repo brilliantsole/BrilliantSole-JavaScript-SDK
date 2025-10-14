@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>HUD Map with Merged & Simplified Roads</title>
+    <style>
+      body {
+        margin: 0;
+        background: black;
+      }
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="map"></canvas>
+    <script>
+      const canvas = document.getElementById("map");
+      const ctx = canvas.getContext("2d");
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      // Simple lat/lon projection
+      let centerLat, centerLon;
+      function project(lat, lon) {
+        const scale = 80000;
+        const x = (lon - centerLon) * Math.cos((centerLat * Math.PI) / 180);
+        const y = lat - centerLat;
+        return [x * scale + canvas.width / 2, -y * scale + canvas.height / 2];
+      }
+
+      // --- Douglas-Peucker simplification ---
+      function simplify(points, tolerance = 0.0001) {
+        if (points.length <= 2) return points;
+
+        let maxDist = 0,
+          index = 0;
+        const [start, end] = [points[0], points[points.length - 1]];
+        for (let i = 1; i < points.length - 1; i++) {
+          const d = perpendicularDistance(points[i], start, end);
+          if (d > maxDist) {
+            maxDist = d;
+            index = i;
+          }
+        }
+        if (maxDist > tolerance) {
+          const left = simplify(points.slice(0, index + 1), tolerance);
+          const right = simplify(points.slice(index), tolerance);
+          return [...left.slice(0, -1), ...right];
+        } else return [start, end];
+      }
+
+      function perpendicularDistance(p, start, end) {
+        const [x0, y0] = p,
+          [x1, y1] = start,
+          [x2, y2] = end;
+        const num = Math.abs(
+          (y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1
+        );
+        const den = Math.hypot(y2 - y1, x2 - x1);
+        return num / den;
+      }
+
+      // --- Merge ways by name ---
+      function mergeWays(ways) {
+        const groups = new Map();
+        for (const w of ways) {
+          const key = `${w.tags?.name ?? "unnamed"}:${w.tags?.highway ?? ""}`;
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(w);
+        }
+
+        const merged = [];
+        for (const [key, group] of groups.entries()) {
+          const nodeAdj = new Map();
+          for (const w of group) {
+            const first = w.nodes[0],
+              last = w.nodes[w.nodes.length - 1];
+            if (!nodeAdj.has(first)) nodeAdj.set(first, []);
+            if (!nodeAdj.has(last)) nodeAdj.set(last, []);
+            nodeAdj.get(first).push({ way: w, reverse: false });
+            nodeAdj.get(last).push({ way: w, reverse: true });
+          }
+
+          const visited = new Set();
+          for (const w of group) {
+            if (visited.has(w)) continue;
+            let chain = [...w.nodes];
+            visited.add(w);
+            let extended = true;
+            while (extended) {
+              extended = false;
+              const start = chain[0],
+                end = chain[chain.length - 1];
+              // try extend start
+              for (const c of nodeAdj.get(start) || []) {
+                if (visited.has(c.way)) continue;
+                const nodes = c.reverse
+                  ? [...c.way.nodes].reverse()
+                  : c.way.nodes;
+                chain = [...nodes.slice(0, -1), ...chain];
+                visited.add(c.way);
+                extended = true;
+                break;
+              }
+              // try extend end
+              for (const c of nodeAdj.get(end) || []) {
+                if (visited.has(c.way)) continue;
+                const nodes = c.reverse
+                  ? [...c.way.nodes].reverse()
+                  : c.way.nodes;
+                chain = [...chain, ...nodes.slice(1)];
+                visited.add(c.way);
+                extended = true;
+                break;
+              }
+            }
+            merged.push({ nodes: chain, tags: w.tags });
+          }
+        }
+        return merged;
+      }
+
+      // --- Draw roads ---
+      function drawRoads(roads, nodes) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const road of roads) {
+          const pts = road.nodes.map((id) => [nodes[id].lat, nodes[id].lon]);
+          const simplified = simplify(pts, 0.00002);
+          ctx.beginPath();
+          simplified.forEach(([lat, lon], i) => {
+            const [x, y] = project(lat, lon);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          });
+          const hue = Math.floor(Math.random() * 360);
+          ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+
+      // --- Fetch OSM ---
+      async function fetchMap(lat, lon) {
+        const query = `
+  [out:json];
+  way["highway"](around:800,${lat},${lon});
+  (._;>;);
+  out;
+  `;
+        const res = await fetch("https://overpass-api.de/api/interpreter", {
+          method: "POST",
+          body: query,
+        });
+        return res.json();
+      }
+
+      // --- Main ---
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          centerLat = pos.coords.latitude;
+          centerLon = pos.coords.longitude;
+          const data = await fetchMap(centerLat, centerLon);
+
+          const nodes = {};
+          const ways = [];
+          for (const el of data.elements) {
+            if (el.type === "node") nodes[el.id] = el;
+            else if (el.type === "way") ways.push(el);
+          }
+
+          const merged = mergeWays(ways);
+          drawRoads(merged, nodes);
+        },
+        (err) => {
+          console.error(err);
+          alert("Failed to get location");
+        }
+      );
+    </script>
+  </body>
+</html>

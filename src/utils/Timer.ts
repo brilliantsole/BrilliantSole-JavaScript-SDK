@@ -9,7 +9,7 @@ export async function wait(delay: number) {
   });
 }
 
-class Timer {
+export class Timer {
   #callback!: Function;
   get callback() {
     return this.#callback;
@@ -72,4 +72,3 @@ class Timer {
     this.start(startImmediately);
   }
 }
-export default Timer;

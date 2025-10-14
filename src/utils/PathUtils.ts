@@ -1,11 +1,10 @@
 import { createConsole } from "./Console.ts";
-import opentype from "opentype.js";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayBezierCurve } from "../DisplayManager.ts";
+import simplify from "simplify-js";
+import fitCurve from "fit-curve";
 
 const _console = createConsole("PathUtils", { log: true });
-
-type PathCommand = opentype.PathCommand;
 
 function perpendicularDistance(p: Vector2, p1: Vector2, p2: Vector2): number {
   const dx = p2.x - p1.x;
@@ -196,4 +195,25 @@ export function simplifyCurves(curves: DisplayBezierCurve[], epsilon = 1) {
   });
   //_console.log("simplified", simplified);
   return simplified;
+}
+
+export function simplifyPoints(points: Vector2[], tolerance?: number) {
+  points = simplify(points, tolerance, false);
+  return points;
+}
+export function simplifyPointsAsCubicCurveControlPoints(
+  points: Vector2[],
+  error?: number
+) {
+  const flatPoints = points.map(({ x, y }) => [x, y]);
+  const curves = fitCurve(flatPoints, error ?? 50);
+  const controlPoints: Vector2[] = [];
+  curves.forEach((curve, index) => {
+    const points = curve.map(([x, y]) => ({ x, y }));
+    if (index != 0) {
+      points.shift();
+    }
+    controlPoints.push(...points);
+  });
+  return controlPoints;
 }

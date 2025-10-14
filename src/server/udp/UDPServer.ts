@@ -17,7 +17,7 @@ import {
   UDPServerMessageType,
   UDPServerMessageTypes,
 } from "./UDPUtils.ts";
-import Timer from "../../utils/Timer.ts";
+import { Timer } from "../../utils/Timer.ts";
 
 /** NODE_START */
 import type * as dgram from "dgram";

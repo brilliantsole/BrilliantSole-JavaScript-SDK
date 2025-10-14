@@ -1857,6 +1857,15 @@ class Device {
     return this.#displayManager.drawSprite;
   }
 
+  get startDisplaySprite() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.startSprite;
+  }
+  get endDisplaySprite() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.endSprite;
+  }
+
   get displaySpriteSheets() {
     return this.#displayManager.spriteSheets;
   }

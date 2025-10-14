@@ -11,6 +11,7 @@ import {
   DisplayBezierCurve,
   DisplayBezierCurveType,
   DisplayWireframe,
+  DisplaySize,
 } from "../DisplayManager.ts";
 import {
   assertValidBitmapPixels,
@@ -128,6 +129,7 @@ export const DisplayCanvasHelperEventTypes = [
   "deviceSpriteSheetUploadStart",
   "deviceSpriteSheetUploadProgress",
   "deviceSpriteSheetUploadComplete",
+  "deviceUpdated",
 ] as const;
 export type DisplayCanvasHelperEventType =
   (typeof DisplayCanvasHelperEventTypes)[number];
@@ -191,6 +193,10 @@ export interface DisplayCanvasHelperEventMessages {
     device: Device;
     spriteSheet: DisplaySpriteSheet;
     spriteSheetName: string;
+  };
+
+  deviceUpdated: {
+    device: Device;
   };
 }
 
@@ -549,6 +555,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     await this.#updateDeviceBrightness(true);
     await this.#updateDeviceSpriteSheets();
     await this.#updateDeviceSelectedSpriteSheet(true);
+    //_console.log("deviceUpdated");
+    this.#dispatchEvent("deviceUpdated", { device: this.device! });
   }
 
   // NUMBER OF COLORS
@@ -738,6 +746,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#context.clearRect(0, 0, this.width, this.height);
     this.#restore();
     this.#drawBackground();
+
+    this.#isDrawingBlankSprite = false;
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.clear(sendImmediately);
@@ -2621,7 +2631,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     wireframe: DisplayWireframe,
     contextState: DisplayContextState
   ) {
-    // _console.log("drawWireframeToCanvas", wireframe);
+    _console.log("drawWireframeToCanvas", wireframe);
     this.#updateContext(contextState);
 
     this.#save();
@@ -3253,6 +3263,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#clearBoundingBox(box, contextState);
     }
 
+    const clearBoundingBoxOnDraw = this.#clearBoundingBoxOnDraw;
     this.#clearBoundingBoxOnDraw = false;
     points.forEach((point, index) => {
       if (index > 0) {
@@ -3273,7 +3284,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         );
       }
     });
-    this.#clearBoundingBoxOnDraw = true;
+    this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
 
     this.#restore();
   }
@@ -4281,7 +4292,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
   }
 
-  #setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean) {
+  #setClearCanvasBoundingBoxOnDraw(
+    clearBoundingBoxOnDraw: boolean,
+    override = false
+  ) {
+    if (!override && this.#isDrawingBlankSprite) {
+      return;
+    }
+    this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
     this.#rearDrawStack.push(() => {
       //_console.log({ clearBoundingBoxOnDraw });
       this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
@@ -4297,7 +4315,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   #useSpriteColorIndices = false;
-  #setUseSpriteColorIndices(useSpriteColorIndices: boolean) {
+  #setUseSpriteColorIndices(useSpriteColorIndices: boolean, override = false) {
+    if (!override && this.#useSpriteColorIndices) {
+      return;
+    }
+    //this.#useSpriteColorIndices = useSpriteColorIndices;
     this.#rearDrawStack.push(() => {
       //_console.log({ useSpriteColorIndices });
       this.#useSpriteColorIndices = useSpriteColorIndices;
@@ -4308,7 +4330,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #saveContextForSprite(
     offsetX: number,
     offsetY: number,
-    sprite: DisplaySprite,
+    sprite: DisplaySprite | DisplaySize,
     contextState: DisplayContextState
   ) {
     this.#setCanvasContextTransform(
@@ -4319,10 +4341,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       contextState
     );
 
-    _console.assertWithError(
-      !this.#spriteStack.includes(sprite),
-      `cyclical sprite ${sprite.name} found in stack`
-    );
+    if ("name" in sprite) {
+      _console.assertWithError(
+        !this.#spriteStack.includes(sprite),
+        `cyclical sprite ${sprite.name} found in stack`
+      );
+    }
 
     const spriteColorIndices = contextState.spriteColorIndices.slice();
     this.#spriteContextStack.push(contextState);
@@ -4470,6 +4494,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     Object.keys(this.#spriteSheetIndices).forEach(
       (spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]
     );
+    this.#isDrawingBlankSprite = false;
   }
 
   async imageToBitmap(
@@ -4508,6 +4533,76 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer {
     return serializeSpriteSheet(this, spriteSheet);
+  }
+
+  #startSprite(
+    offsetX: number,
+    offsetY: number,
+    width: number,
+    height: number,
+    contextState: DisplayContextState
+  ) {
+    this.#saveContextForSprite(
+      offsetX,
+      offsetY,
+      { width, height },
+      contextState
+    );
+    this.#setUseSpriteColorIndices(true, true);
+    this.#setClearCanvasBoundingBoxOnDraw(false, true);
+  }
+  #isDrawingBlankSprite = false;
+  async startSprite(
+    offsetX: number,
+    offsetY: number,
+    width: number,
+    height: number,
+    sendImmediately?: boolean
+  ) {
+    _console.assertWithError(
+      !this.#isDrawingBlankSprite,
+      `already drawing blank sprite`
+    );
+    this.#isDrawingBlankSprite = true;
+
+    const contextState = structuredClone(this.contextState);
+    this.#startSprite(offsetX, offsetY, width, height, contextState);
+
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.startSprite(
+        offsetX,
+        offsetY,
+        width,
+        height,
+        sendImmediately
+      );
+    } else {
+      if (sendImmediately) {
+        this.#onSentContextCommands();
+      }
+    }
+  }
+  #endSprite() {
+    this.#restoreContextForSprite();
+    this.#setUseSpriteColorIndices(false, true);
+    this.#setClearCanvasBoundingBoxOnDraw(true, true);
+  }
+  async endSprite(sendImmediately?: boolean) {
+    _console.assertWithError(
+      this.#isDrawingBlankSprite,
+      `not drawing blank sprite`
+    );
+    this.#isDrawingBlankSprite = false;
+
+    this.#endSprite();
+
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.endSprite(sendImmediately);
+    } else {
+      if (sendImmediately) {
+        this.#onSentContextCommands();
+      }
+    }
   }
 }
 export default DisplayCanvasHelper;

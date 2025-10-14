@@ -22,7 +22,6 @@ device.addEventListener("connectionStatus", () => {
       innerText = "disconnect";
       break;
   }
-  updateMicrophoneSources();
   toggleConnectionButton.disabled = disabled;
   toggleConnectionButton.innerText = innerText;
 });
@@ -104,6 +103,8 @@ displayCanvasHelper.addEventListener("color", (event) => {
   displayColorInputs[colorIndex].value = colorHex;
 });
 setupColors();
+displayCanvasHelper.setColor(1, "white");
+displayCanvasHelper.flushContextCommands();
 
 // DRAW
 let isDrawing = false;
@@ -133,6 +134,8 @@ const draw = async () => {
     return;
   }
   isDrawing = true;
+
+  // FILL
 
   await displayCanvasHelper.show();
 };
@@ -198,3 +201,5 @@ window.addEventListener("drop", async (e) => {
     // FILL
   }
 });
+
+didLoad = true;

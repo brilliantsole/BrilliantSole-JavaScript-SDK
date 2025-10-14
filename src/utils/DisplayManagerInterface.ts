@@ -562,6 +562,15 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
+
+  startSprite(
+    offsetX: number,
+    offsetY: number,
+    width: number,
+    height: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  endSprite(sendImmediately?: boolean): Promise<void>;
 }
 
 export async function runDisplayContextCommand(
@@ -1108,6 +1117,21 @@ export async function runDisplayContextCommand(
         const { curves } = command;
         await displayManager.drawPath(curves, sendImmediately);
       }
+      break;
+    case "startSprite":
+      {
+        const { offsetX, offsetY, width, height } = command;
+        await displayManager.startSprite(
+          offsetX,
+          offsetY,
+          width,
+          height,
+          sendImmediately
+        );
+      }
+      break;
+    case "endSprite":
+      await displayManager.endSprite(sendImmediately);
       break;
   }
 }

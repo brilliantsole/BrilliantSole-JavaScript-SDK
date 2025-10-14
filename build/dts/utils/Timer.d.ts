@@ -1,5 +1,5 @@
 export declare function wait(delay: number): Promise<unknown>;
-declare class Timer {
+export declare class Timer {
     #private;
     get callback(): Function;
     set callback(newCallback: Function);
@@ -11,4 +11,3 @@ declare class Timer {
     stop(): void;
     restart(startImmediately?: boolean): void;
 }
-export default Timer;

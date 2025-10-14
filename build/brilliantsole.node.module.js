@@ -6,14 +6,17 @@ import autoBind$1 from 'auto-bind';
 import RGBQuant from 'rgbquant';
 import opentype from 'opentype.js';
 import { decompress } from 'woff2-encoder';
+import simplify from 'simplify-js';
+import fitCurve from 'fit-curve';
 import 'svgson';
 import 'svg-pathdata';
 import * as webbluetooth from 'webbluetooth';
 import * as dgram from 'dgram';
 import noble from '@abandonware/noble';
 
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -146,6 +149,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -4426,6 +4432,8 @@ const DisplayContextCommandTypes = [
     "selectSpriteSheet",
     "drawSprite",
     "drawSprites",
+    "startSprite",
+    "endSprite",
 ];
 const DisplaySpriteContextCommandTypes = [
     "selectFillColor",
@@ -4502,6 +4510,7 @@ function serializeContextCommand(displayManager, command) {
         case "resetSpriteColors":
         case "resetSpriteScale":
         case "resetAlignment":
+        case "endSprite":
             break;
         case "setColor":
             {
@@ -4998,6 +5007,9 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { wireframe } = command;
                 const { points, edges } = wireframe;
+                if (wireframe.points.length == 0) {
+                    return;
+                }
                 assertValidWireframe(wireframe);
                 const pointsDataView = serializePoints(points);
                 const edgesDataView = new DataView(new ArrayBuffer(1 + 2 * edges.length));
@@ -5200,6 +5212,16 @@ function serializeContextCommand(displayManager, command) {
                 offset += 2;
                 const buffer = concatenateArrayBuffers(dataView, concatenatedLineArrayBuffers);
                 dataView = new DataView(buffer);
+            }
+            break;
+        case "startSprite":
+            {
+                const { offsetX, offsetY, width, height } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 4));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, width, true);
+                dataView.setUint16(6, height, true);
             }
             break;
     }
@@ -5485,6 +5507,23 @@ function simplifyCurves(curves, epsilon = 1) {
         cursor = curve.controlPoints[curve.controlPoints.length - 1];
     });
     return simplified;
+}
+function simplifyPoints(points, tolerance) {
+    points = simplify(points, tolerance, false);
+    return points;
+}
+function simplifyPointsAsCubicCurveControlPoints(points, error) {
+    const flatPoints = points.map(({ x, y }) => [x, y]);
+    const curves = fitCurve(flatPoints, error ?? 50);
+    const controlPoints = [];
+    curves.forEach((curve, index) => {
+        const points = curve.map(([x, y]) => ({ x, y }));
+        if (index != 0) {
+            points.shift();
+        }
+        controlPoints.push(...points);
+    });
+    return controlPoints;
 }
 
 createConsole("SvgUtils", { log: true });
@@ -6630,6 +6669,15 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 const { curves } = command;
                 await displayManager.drawPath(curves, sendImmediately);
             }
+            break;
+        case "startSprite":
+            {
+                const { offsetX, offsetY, width, height } = command;
+                await displayManager.startSprite(offsetX, offsetY, width, height, sendImmediately);
+            }
+            break;
+        case "endSprite":
+            await displayManager.endSprite(sendImmediately);
             break;
     }
 }
@@ -8508,8 +8556,9 @@ class DisplayManager {
     }
     async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
         _console$o.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
+        _console$o.log(`drawing sprite "${spriteName}" in selectedSpriteSheet`, this.selectedSpriteSheet);
         let spriteIndex = this.selectedSpriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
-        _console$o.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
+        _console$o.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found in spriteSheet`);
         spriteIndex = spriteIndex;
         const commandType = "drawSprite";
         const dataView = serializeContextCommand(this, {
@@ -8642,6 +8691,30 @@ class DisplayManager {
     async selectSpritePaletteSwap(spriteName, paletteSwapName, offset, sendImmediately) {
         await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
     }
+    #isDrawingBlankSprite = false;
+    async startSprite(offsetX, offsetY, width, height, sendImmediately) {
+        _console$o.assertWithError(!this.#isDrawingBlankSprite, `already drawing blank sprite`);
+        this.#isDrawingBlankSprite = true;
+        this.#saveContext(sendImmediately);
+        const commandType = "startSprite";
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            offsetX,
+            offsetY,
+            width,
+            height,
+        });
+        if (!dataView) {
+            return;
+        }
+        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
+    }
+    async endSprite(sendImmediately) {
+        this.#restoreContext(sendImmediately);
+        _console$o.assertWithError(this.#isDrawingBlankSprite, `not drawing blank sprite`);
+        this.#isDrawingBlankSprite = false;
+        await this.#sendContextCommand("endSprite", undefined, sendImmediately);
+    }
     reset() {
         _console$o.log("clearing displayManager");
         this.#displayStatus = undefined;
@@ -8657,6 +8730,7 @@ class DisplayManager {
         this.#pendingSpriteSheet = undefined;
         this.#pendingSpriteSheetName = undefined;
         this.isServerSide = false;
+        this.#isDrawingBlankSprite = false;
         Object.keys(this.#spriteSheetIndices).forEach((spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]);
         Object.keys(this.#spriteSheets).forEach((spriteSheetName) => delete this.#spriteSheets[spriteSheetName]);
     }
@@ -12520,6 +12594,14 @@ class Device {
         this.#assertDisplayIsAvailable();
         return this.#displayManager.drawSprite;
     }
+    get startDisplaySprite() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.startSprite;
+    }
+    get endDisplaySprite() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.endSprite;
+    }
     get displaySpriteSheets() {
         return this.#displayManager.spriteSheets;
     }
@@ -13905,7 +13987,10 @@ class WebSocketServer extends BaseServer {
             case "serverMessage":
                 const responseMessage = this.parseClientMessage(dataView);
                 if (responseMessage) {
-                    responseMessages.push(createWebSocketMessage$1({ type: "serverMessage", data: responseMessage }));
+                    responseMessages.push(createWebSocketMessage$1({
+                        type: "serverMessage",
+                        data: responseMessage,
+                    }));
                 }
                 break;
             default:
@@ -14125,5 +14210,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontMaxHeight, getFontUnicodeRange, getMaxSpriteSheetSize, hexToRGB, intersectWireframes, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSprites, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontMaxHeight, getFontUnicodeRange, getMaxSpriteSheetSize, hexToRGB, intersectWireframes, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.node.module.js.map
