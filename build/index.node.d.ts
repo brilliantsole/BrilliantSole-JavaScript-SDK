@@ -1896,6 +1896,10 @@ interface ScannerEventMessages {
     isScanning: {
         isScanning: boolean;
     };
+    scanning: {};
+    notScanning: {};
+    scanningAvailable: {};
+    scanningNotAvailable: {};
 }
 type DiscoveredDevicesMap = {
     [deviceId: string]: DiscoveredDevice;
@@ -1906,20 +1910,20 @@ declare abstract class BaseScanner {
     static get isSupported(): boolean;
     get isSupported(): boolean;
     constructor();
-    get addEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
+    get addEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, listener: (event: {
         type: T;
         target: BaseScanner;
         message: ScannerEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    protected get dispatchEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, message: ScannerEventMessages[T]) => void;
-    get removeEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
+    protected get dispatchEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, message: ScannerEventMessages[T]) => void;
+    get removeEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, listener: (event: {
         type: T;
         target: BaseScanner;
         message: ScannerEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T) => Promise<{
         type: T;
         target: BaseScanner;
         message: ScannerEventMessages[T];

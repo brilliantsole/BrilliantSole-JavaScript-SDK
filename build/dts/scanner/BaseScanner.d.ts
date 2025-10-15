@@ -1,7 +1,7 @@
 import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
 import { DeviceType } from "../InformationManager.ts";
 import { ConnectionType } from "../connection/BaseConnectionManager.ts";
-export declare const ScannerEventTypes: readonly ["isScanningAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
+export declare const ScannerEventTypes: readonly ["isScanningAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice", "scanningAvailable", "scanningNotAvailable", "scanning", "notScanning"];
 export type ScannerEventType = (typeof ScannerEventTypes)[number];
 export interface DiscoveredDevice {
     bluetoothId: string;
@@ -23,6 +23,10 @@ export interface ScannerEventMessages {
     isScanning: {
         isScanning: boolean;
     };
+    scanning: {};
+    notScanning: {};
+    scanningAvailable: {};
+    scanningNotAvailable: {};
 }
 export type ScannerEventDispatcher = EventDispatcher<BaseScanner, ScannerEventType, ScannerEventMessages>;
 export type ScannerEventMap = EventMap<BaseScanner, ScannerEventType, ScannerEventMessages>;
@@ -37,20 +41,20 @@ declare abstract class BaseScanner {
     static get isSupported(): boolean;
     get isSupported(): boolean;
     constructor();
-    get addEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
+    get addEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, listener: (event: {
         type: T;
         target: BaseScanner;
         message: ScannerEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    protected get dispatchEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, message: ScannerEventMessages[T]) => void;
-    get removeEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
+    protected get dispatchEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, message: ScannerEventMessages[T]) => void;
+    get removeEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, listener: (event: {
         type: T;
         target: BaseScanner;
         message: ScannerEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T) => Promise<{
         type: T;
         target: BaseScanner;
         message: ScannerEventMessages[T];
