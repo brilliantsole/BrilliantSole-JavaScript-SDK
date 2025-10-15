@@ -2206,6 +2206,10 @@ interface ScannerEventMessages {
     isScanning: {
         isScanning: boolean;
     };
+    scanning: {};
+    notScanning: {};
+    scanningAvailable: {};
+    scanningNotAvailable: {};
 }
 type DiscoveredDevicesMap = {
     [deviceId: string]: DiscoveredDevice;

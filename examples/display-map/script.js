@@ -254,13 +254,68 @@ const draw = async () => {
     await displayCanvasHelper.restoreContext();
   }
 
+  if (selectedPlace || (previouslySelectedPlace && isAnimatingPlace)) {
+    const isAnimatingInward = Boolean(selectedPlace);
+    const place = selectedPlace || previouslySelectedPlace;
+    const { tags } = place;
+    const { name, opening_hours: openingHours } = tags;
+    // console.log("place", tags.name);
+    await displayCanvasHelper.saveContext();
+    await displayCanvasHelper.selectSpriteSheet("english");
+    await displayCanvasHelper.selectSpriteColor(1, 1);
+    await displayCanvasHelper.setVerticalAlignment("end");
+    await displayCanvasHelper.setHorizontalAlignment("center");
+    await displayCanvasHelper.setSpriteScale(1);
+    await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+    let text = name;
+    if (openingHours) {
+      const oh = new opening_hours(
+        "Mo-Th 10:00-20:00; Fr-Su 10:00-17:00; PH off",
+        {
+          lat: latitude,
+          lon: longitude,
+          address: {
+            country_code: "us",
+          },
+        }
+      );
+      text += ` (${oh.getState() ? "open" : "closed"})`;
+    }
+
+    let y = displayCanvasHelper.height - 20;
+    if (isAnimatingPlace) {
+      const now = Date.now();
+      const time = now - lastTimePlaceWasUpdated;
+      let interpolation = time / placeAnimationDuration;
+      interpolation = Math.max(0, Math.min(1, interpolation));
+      //console.log({ interpolation, isAnimatingInward });
+      if (interpolation >= 1) {
+        isAnimatingPlace = false;
+      }
+      // interpolation = 1 - (1 - interpolation) ** 2;
+      if (isAnimatingInward) {
+        interpolation = 1 - interpolation;
+      }
+      y += interpolation * (spritesLineHeight + 20);
+    }
+
+    if (selectedPlace || isAnimatingPlace) {
+      await displayCanvasHelper.drawSpritesString(
+        displayCanvasHelper.width / 2,
+        y,
+        text
+      );
+    }
+    await displayCanvasHelper.restoreContext();
+  }
+
   await displayCanvasHelper.show();
 };
 window.draw = draw;
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
-  if (isWaitingToRedraw) {
+  if (isWaitingToRedraw || isAnimatingPlace) {
     isWaitingToRedraw = false;
     draw();
   }
@@ -297,9 +352,13 @@ function isValidUrl(string) {
 let mapData;
 const places = [];
 let placeDistanceThreshold = 300; // m
-let placeRelativeAngleThreshold = 10; // degrees
+let placeRelativeAngleThreshold = 5; // degrees
 let selectedPlace;
 let previouslySelectedPlace;
+let selectedPlaceDistance;
+let lastTimePlaceWasUpdated;
+let placeAnimationDuration = 600;
+let isAnimatingPlace = false;
 const selectPlace = (newSelectedPlace) => {
   if (selectedPlace == newSelectedPlace) {
     return;
@@ -307,6 +366,8 @@ const selectPlace = (newSelectedPlace) => {
   previouslySelectedPlace = selectedPlace;
   selectedPlace = newSelectedPlace;
   console.log("selectedPlace", selectedPlace);
+  lastTimePlaceWasUpdated = Date.now();
+  isAnimatingPlace = true;
 };
 const updateClosestPlace = () => {
   let closestPlace;
@@ -332,7 +393,7 @@ const updateClosestPlace = () => {
         //console.log(name, { dx, dy, angle, relativeAngle, distance });
         if (
           distance <= closestPlaceDistance &&
-          absRelativeAngle <= closestPlaceAbsRelativeAngle
+          absRelativeAngle - 10 <= closestPlaceAbsRelativeAngle
         ) {
           //console.log("updated closest place", tags.name);
           closestPlace = place;
@@ -401,6 +462,7 @@ const updateClosestPlace = () => {
   //   closestPlace?.tags
   // );
 
+  selectedPlaceDistance = closestPlace ? closestPlaceDistance : undefined;
   if (selectedPlace != closestPlace) {
     selectPlace(closestPlace);
   }

@@ -13030,6 +13030,10 @@ const ScannerEventTypes = [
     "isScanning",
     "discoveredDevice",
     "expiredDiscoveredDevice",
+    "scanningAvailable",
+    "scanningNotAvailable",
+    "scanning",
+    "notScanning",
 ];
 class BaseScanner {
     get baseConstructor() {
@@ -13055,6 +13059,7 @@ class BaseScanner {
     #boundEventListeners = {
         discoveredDevice: this.#onDiscoveredDevice.bind(this),
         isScanning: this.#onIsScanning.bind(this),
+        isScanningAvailable: this.#onIsScanningAvailable.bind(this),
     };
     #eventDispatcher = new EventDispatcher(this, ScannerEventTypes);
     get addEventListener() {
@@ -13098,6 +13103,20 @@ class BaseScanner {
         }
         else {
             this.#checkDiscoveredDevicesExpirationTimer.stop();
+        }
+        if (this.isScanning) {
+            this.#eventDispatcher.dispatchEvent("scanning", {});
+        }
+        else {
+            this.#eventDispatcher.dispatchEvent("notScanning", {});
+        }
+    }
+    #onIsScanningAvailable(event) {
+        if (this.isScanningAvailable) {
+            this.#eventDispatcher.dispatchEvent("scanningAvailable", {});
+        }
+        else {
+            this.#eventDispatcher.dispatchEvent("scanningNotAvailable", {});
         }
     }
     #discoveredDevices = {};

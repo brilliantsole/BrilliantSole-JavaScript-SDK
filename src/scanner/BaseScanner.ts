@@ -16,6 +16,10 @@ export const ScannerEventTypes = [
   "isScanning",
   "discoveredDevice",
   "expiredDiscoveredDevice",
+  "scanningAvailable",
+  "scanningNotAvailable",
+  "scanning",
+  "notScanning",
 ] as const;
 export type ScannerEventType = (typeof ScannerEventTypes)[number];
 
@@ -37,6 +41,10 @@ export interface ScannerEventMessages {
   expiredDiscoveredDevice: ScannerDiscoveredDeviceEventMessage;
   isScanningAvailable: { isScanningAvailable: boolean };
   isScanning: { isScanning: boolean };
+  scanning: {};
+  notScanning: {};
+  scanningAvailable: {};
+  scanningNotAvailable: {};
 }
 
 export type ScannerEventDispatcher = EventDispatcher<
@@ -97,6 +105,7 @@ abstract class BaseScanner {
   #boundEventListeners: BoundScannerEventListeners = {
     discoveredDevice: this.#onDiscoveredDevice.bind(this),
     isScanning: this.#onIsScanning.bind(this),
+    isScanningAvailable: this.#onIsScanningAvailable.bind(this),
   };
 
   // EVENT DISPATCHER
@@ -149,6 +158,19 @@ abstract class BaseScanner {
       this.#discoveredDeviceTimestamps = {};
     } else {
       this.#checkDiscoveredDevicesExpirationTimer.stop();
+    }
+
+    if (this.isScanning) {
+      this.#eventDispatcher.dispatchEvent("scanning", {});
+    } else {
+      this.#eventDispatcher.dispatchEvent("notScanning", {});
+    }
+  }
+  #onIsScanningAvailable(event: ScannerEventMap["isScanningAvailable"]) {
+    if (this.isScanningAvailable) {
+      this.#eventDispatcher.dispatchEvent("scanningAvailable", {});
+    } else {
+      this.#eventDispatcher.dispatchEvent("scanningNotAvailable", {});
     }
   }
 
