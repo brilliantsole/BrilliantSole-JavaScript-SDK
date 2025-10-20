@@ -14,14 +14,14 @@ import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import opentype, { Glyph, Font } from "opentype.js";
 import { decompress } from "woff2-encoder";
 import RangeHelper from "./RangeHelper.ts";
-import { pointInPolygon, Vector2 } from "./MathUtils.ts";
+import { Vector2 } from "./MathUtils.ts";
 import { simplifyCurves } from "./PathUtils.ts";
-import { DisplayBoundingBox } from "./DisplayCanvasHelper.ts";
 import {
   DisplayContextState,
   isDirectionHorizontal,
 } from "./DisplayContextState.ts";
 import { classifySubpath } from "./SvgUtils.ts";
+import { removeRedundantCharacters, removeSubstrings } from "./stringUtils.ts";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: false });
 
@@ -143,6 +143,9 @@ export type FontToSpriteSheetOptions = {
   usePath?: boolean;
   script?: string;
   string?: string;
+  minSpriteY?: number;
+  maxSpriteY?: number;
+  maxSpriteheight?: number;
 };
 export const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
   stroke: false,
@@ -194,7 +197,7 @@ export function getFontUnicodeRange(font: Font) {
   return rangeHelper.span > 0 ? rangeHelper.range : undefined;
 }
 
-const englishRegex = /^[A-Za-z0-9 !"#$%&'()*+,\-./:;?@[\]^_`{|}~\\]+$/;
+export const englishRegex = /^[A-Za-z0-9 !"#$%&'()*+,\-./:;?@[\]^_`{|}~\\]+$/;
 
 export function contourArea(points: Vector2[]) {
   let area = 0;
@@ -204,10 +207,9 @@ export function contourArea(points: Vector2[]) {
   return area;
 }
 
-export async function fontToSpriteSheet(
+export function getFontMetrics(
   font: Font | Font[],
   fontSize: number,
-  spriteSheetName?: string,
   options?: FontToSpriteSheetOptions
 ) {
   _console.assertTypeWithError(fontSize, "number");
@@ -217,28 +219,33 @@ export async function fontToSpriteSheet(
     : defaultFontToSpriteSheetOptions;
 
   const fonts = Array.isArray(font) ? font : [font];
-  font = fonts[0];
-  spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
-  const spriteSheet: DisplaySpriteSheet = {
-    name: spriteSheetName,
-    sprites: [],
-  };
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d")!;
+
+  let minSpriteY = Infinity;
+  let maxSpriteY = -Infinity;
+
+  const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
+
+  let string = options.string;
+  if (string) {
+    string = removeRedundantCharacters(string);
+    console.log("filtered string", string);
+  }
 
   for (let font of fonts) {
     const fontScale = (1 / font.unitsPerEm) * fontSize;
 
-    let minSpriteY = Infinity;
-    let maxSpriteY = -Infinity;
-
     const glyphs: Glyph[] = [];
     let filteredGlyphs: Glyph[] | undefined;
-    if (options.string) {
+    if (string != undefined) {
       filteredGlyphs = font
-        .stringToGlyphs(options.string)
+        .stringToGlyphs(string)
         .filter((glyph) => glyph.unicode != undefined);
+      string = removeSubstrings(
+        string,
+        filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode!))
+      );
     }
+
     for (let index = 0; index < font.glyphs.length; index++) {
       const glyph = font.glyphs.get(index);
       const hasUnicode = glyph.unicode != undefined;
@@ -278,16 +285,107 @@ export async function fontToSpriteSheet(
       glyphs.push(glyph);
     }
 
-    const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
-
-    const maxSpriteHeight = maxSpriteY - minSpriteY + strokeWidth;
-
     // _console.log({
     //   fontName: font.getEnglishName("fullName"),
     //   minSpriteY,
     //   maxSpriteY,
-    //   maxSpriteHeight,
     // });
+  }
+
+  minSpriteY = options.minSpriteY ?? minSpriteY;
+  maxSpriteY = options.maxSpriteY ?? maxSpriteY;
+
+  const maxSpriteHeight =
+    options.maxSpriteheight ?? maxSpriteY - minSpriteY + strokeWidth;
+  return { maxSpriteHeight, maxSpriteY, minSpriteY };
+}
+
+export async function fontToSpriteSheet(
+  font: Font | Font[],
+  fontSize: number,
+  spriteSheetName?: string,
+  options?: FontToSpriteSheetOptions
+) {
+  _console.assertTypeWithError(fontSize, "number");
+
+  options = options
+    ? { ...defaultFontToSpriteSheetOptions, ...options }
+    : defaultFontToSpriteSheetOptions;
+
+  const fonts = Array.isArray(font) ? font : [font];
+  font = fonts[0];
+  spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
+  const spriteSheet: DisplaySpriteSheet = {
+    name: spriteSheetName,
+    sprites: [],
+  };
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d")!;
+
+  const { maxSpriteHeight, maxSpriteY, minSpriteY } = getFontMetrics(
+    fonts,
+    fontSize,
+    options
+  );
+  const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
+
+  let string = options.string;
+  if (string) {
+    string = removeRedundantCharacters(string);
+    _console.log("filtered string", string);
+  }
+
+  for (let font of fonts) {
+    const fontScale = (1 / font.unitsPerEm) * fontSize;
+
+    const glyphs: Glyph[] = [];
+    let filteredGlyphs: Glyph[] | undefined;
+    if (string != undefined) {
+      filteredGlyphs = font
+        .stringToGlyphs(string)
+        .filter((glyph) => glyph.unicode != undefined);
+      string = removeSubstrings(
+        string,
+        filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode!))
+      );
+      //_console.log("filteredString", string);
+      //_console.log("filteredGlyphs", filteredGlyphs);
+    }
+
+    for (let index = 0; index < font.glyphs.length; index++) {
+      const glyph = font.glyphs.get(index);
+      const hasUnicode = glyph.unicode != undefined;
+      if (hasUnicode) {
+        //_console.log(String.fromCharCode(glyph.unicode!), glyph);
+      } else {
+        //_console.log("no unicode", glyph);
+      }
+
+      if (filteredGlyphs) {
+        if (!filteredGlyphs.includes(glyph)) {
+          continue;
+        }
+      }
+
+      if (options.unicodeOnly || options.englishOnly) {
+        if (!hasUnicode) {
+          continue;
+        }
+      }
+      if (options.script && hasUnicode) {
+        const regex = new RegExp(`\\p{Script=${options.script}}`, "u");
+        if (!regex.test(String.fromCharCode(glyph.unicode!))) {
+          continue;
+        }
+      }
+      if (options.englishOnly) {
+        if (!englishRegex.test(String.fromCharCode(glyph.unicode!))) {
+          continue;
+        }
+      }
+
+      glyphs.push(glyph);
+    }
 
     for (let i = 0; i < glyphs.length; i++) {
       const glyph = glyphs[i];
@@ -304,13 +402,13 @@ export async function fontToSpriteSheet(
       const bbox = glyph.getBoundingBox();
 
       const spriteWidth =
-        Math.round(
-          Math.max(
-            Math.max(bbox.x2, bbox.x2 - bbox.x1),
-            glyph.advanceWidth || 0
-          ) * fontScale
-        ) + strokeWidth;
-      const spriteHeight = Math.round(maxSpriteHeight);
+        Math.max(
+          Math.max(bbox.x2, bbox.x2 - bbox.x1),
+          glyph.advanceWidth || 0
+        ) *
+          fontScale +
+        strokeWidth;
+      const spriteHeight = maxSpriteHeight;
 
       const commands: DisplayContextCommand[] = [];
 
@@ -328,16 +426,12 @@ export async function fontToSpriteSheet(
         path.fill = "white";
       }
 
-      const bitmapWidth =
-        Math.floor((bbox.x2 - bbox.x1) * fontScale) + strokeWidth;
-      const bitmapHeight =
-        Math.floor((bbox.y2 - bbox.y1) * fontScale) + strokeWidth;
+      const bitmapWidth = (bbox.x2 - bbox.x1) * fontScale + strokeWidth;
+      const bitmapHeight = (bbox.y2 - bbox.y1) * fontScale + strokeWidth;
 
-      const bitmapX = Math.floor((spriteWidth - bitmapWidth) / 2);
-      const bitmapY = Math.floor(
-        (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY)
-      );
-
+      const bitmapX = (spriteWidth - bitmapWidth) / 2;
+      const bitmapY =
+        (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY);
       if (options.usePath) {
         const pathOffset: Vector2 = {
           x: -bitmapWidth / 2 + bitmapX,
@@ -411,8 +505,8 @@ export async function fontToSpriteSheet(
 
                 // Apply path offset
                 controlPoints.forEach((pt) => {
-                  pt.x = Math.floor(pt.x + pathOffset.x);
-                  pt.y = Math.floor(pt.y + pathOffset.y);
+                  pt.x = pt.x + pathOffset.x;
+                  pt.y = pt.y + pathOffset.y;
                 });
 
                 allCurves.push(curves);
@@ -517,6 +611,10 @@ export async function fontToSpriteSheet(
       };
 
       spriteSheet.sprites.push(sprite);
+    }
+
+    if (string != undefined && string.length == 0) {
+      break;
     }
   }
 
@@ -775,34 +873,6 @@ export function stringToSpriteLines(
   return spriteLines;
 }
 
-export function getSpriteLinesBoundingBox(
-  spriteLines: DisplaySpriteLines,
-  spriteSheets: Record<string, DisplaySpriteSheet>,
-  contextState: DisplayContextState
-): DisplayBoundingBox {
-  const boundingBox: DisplayBoundingBox = { x: 0, y: 0, width: 0, height: 0 };
-  // FILL
-  return boundingBox;
-}
-export function getSpriteLinesOffset(
-  spriteLines: DisplaySpriteLines,
-  lineIndex: number,
-  subLineIndex: number,
-  contextState: DisplayContextState
-): Vector2 {
-  const offset: Vector2 = { x: 0, y: 0 };
-  // FILL
-  return offset;
-}
-export function splitStringInto(
-  string: string,
-  spriteSheets: Record<string, DisplaySpriteSheet>,
-  separators = [" ", "\n"],
-  requireAll = false
-) {
-  // FILL
-}
-
 export function getFontMaxHeight(font: Font, fontSize: number) {
   const scale = (1 / font.unitsPerEm) * fontSize;
   const maxHeight = (font.ascender - font.descender) * scale;
@@ -815,4 +885,187 @@ export function getMaxSpriteSheetSize(spriteSheet: DisplaySpriteSheet) {
     size.height = Math.max(size.height, sprite.height);
   });
   return size;
+}
+
+export function assertValidSpriteLines(
+  displayManager: DisplayManagerInterface,
+  spriteLines: DisplaySpriteLines
+) {
+  spriteLines.forEach((spriteLine) => {
+    spriteLine.forEach((spriteSubLine) => {
+      const { spriteSheetName, spriteNames } = spriteSubLine;
+      displayManager.assertLoadedSpriteSheet(spriteSheetName);
+      const spriteSheet = displayManager.spriteSheets[spriteSheetName];
+      spriteNames.forEach((spriteName) => {
+        const sprite = spriteSheet.sprites.find(
+          (sprite) => sprite.name == spriteName
+        );
+        _console.assertWithError(
+          sprite,
+          `no sprite with name "${spriteName}" found in spriteSheet "${spriteSheetName}"`
+        );
+      });
+    });
+  });
+}
+
+export function getExpandedSpriteLines(
+  spriteLines: DisplaySpriteLines,
+  spriteSheets: Record<string, DisplaySpriteSheet>
+) {
+  const expandedSpritesLines: DisplaySprite[][] = [];
+
+  spriteLines.forEach((spriteLine) => {
+    const _spritesLine: DisplaySprite[] = [];
+
+    spriteLine.forEach(({ spriteSheetName, spriteNames }) => {
+      const spriteSheet = spriteSheets[spriteSheetName];
+      _console.assertWithError(
+        spriteSheet,
+        `no spriteSheet found with name "${spriteSheetName}"`
+      );
+
+      spriteNames.forEach((spriteName) => {
+        const sprite = spriteSheet.sprites.find(
+          (sprite) => sprite.name == spriteName
+        )!;
+        _console.assertWithError(
+          sprite,
+          `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`
+        );
+        _spritesLine.push(sprite);
+      });
+    });
+    expandedSpritesLines.push(_spritesLine);
+  });
+  return expandedSpritesLines;
+}
+
+export function getExpandedSpriteLinesSize(
+  expandedSpritesLines: DisplaySprite[][],
+  contextState: DisplayContextState
+) {
+  const localSize = { width: 0, height: 0 };
+
+  const isSpritesDirectionHorizontal = isDirectionHorizontal(
+    contextState.spritesDirection
+  );
+  const isSpritesLineDirectionHorizontal = isDirectionHorizontal(
+    contextState.spritesLineDirection
+  );
+
+  const areSpritesDirectionsOrthogonal =
+    isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
+
+  const breadthSizeKey = isSpritesDirectionHorizontal ? "width" : "height";
+  const depthSizeKey = isSpritesLineDirectionHorizontal ? "width" : "height";
+
+  if (!areSpritesDirectionsOrthogonal) {
+    if (isSpritesDirectionHorizontal) {
+      localSize.height += contextState.spritesLineHeight;
+    } else {
+      localSize.width += contextState.spritesLineHeight;
+    }
+  }
+
+  const lineBreadths: number[] = [];
+
+  expandedSpritesLines.forEach((expandedSpriteLine, lineIndex) => {
+    let spritesLineBreadth = 0;
+
+    expandedSpriteLine.forEach((sprite) => {
+      spritesLineBreadth += isSpritesDirectionHorizontal
+        ? sprite.width
+        : sprite.height;
+      spritesLineBreadth += contextState.spritesSpacing;
+    });
+    spritesLineBreadth -= contextState.spritesSpacing;
+
+    if (areSpritesDirectionsOrthogonal) {
+      localSize[breadthSizeKey] = Math.max(
+        localSize[breadthSizeKey],
+        spritesLineBreadth
+      );
+
+      localSize[depthSizeKey] += contextState.spritesLineHeight;
+    } else {
+      localSize[breadthSizeKey] += spritesLineBreadth;
+    }
+
+    localSize[depthSizeKey] += contextState.spritesLineSpacing;
+
+    // _console.log({
+    //   lineIndex,
+    //   spritesBreadth: spritesSize[breadthSizeKey],
+    //   spritesDepth: spritesSize[depthSizeKey],
+    // });
+
+    lineBreadths.push(spritesLineBreadth);
+  });
+  localSize[depthSizeKey] -= contextState.spritesLineSpacing;
+
+  // _console.log({
+  //   spritesWidth: spritesSize.width,
+  //   spritesHeight: spritesSize.height,
+  // });
+
+  const spritesScaledWidth =
+    localSize.width * Math.abs(contextState.spriteScaleX);
+  const spritesScaledHeight =
+    localSize.height * Math.abs(contextState.spriteScaleY);
+
+  const size: DisplaySize = {
+    width: spritesScaledWidth,
+    height: spritesScaledHeight,
+  };
+
+  return { localSize, size, lineBreadths };
+}
+
+export function getSpriteLinesMetrics(
+  spriteLines: DisplaySpriteLines,
+  spriteSheets: Record<string, DisplaySpriteSheet>,
+  contextState: DisplayContextState
+) {
+  const expandedSpritesLines = getExpandedSpriteLines(
+    spriteLines,
+    spriteSheets
+  );
+  return {
+    expandedSpritesLines,
+    numberOfLines: expandedSpritesLines.length,
+    ...getExpandedSpriteLinesSize(expandedSpritesLines, contextState),
+  };
+}
+
+export type DisplaySpriteLinesMetrics = {
+  localSize: {
+    width: number;
+    height: number;
+  };
+  size: DisplaySize;
+  lineBreadths: number[];
+  expandedSpritesLines: DisplaySprite[][];
+  numberOfLines: number;
+};
+export function stringToSpriteLinesMetrics(
+  string: string,
+  spriteSheets: Record<string, DisplaySpriteSheet>,
+  contextState: DisplayContextState,
+  requireAll?: boolean,
+  maxLineBreadth?: number,
+  separators?: string[]
+): DisplaySpriteLinesMetrics {
+  return getSpriteLinesMetrics(
+    stringToSpriteLines(
+      string,
+      spriteSheets,
+      contextState,
+      requireAll,
+      maxLineBreadth,
+      separators
+    ),
+    spriteSheets,
+    contextState
+  );
 }

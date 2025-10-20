@@ -4080,6 +4080,9 @@
 	    }
 	    return true;
 	}
+	function removeRedundancies(array) {
+	    return Array.from(new Set(array));
+	}
 
 	const _console$q = createConsole("DisplayContextStateHelper", { log: false });
 	class DisplayContextStateHelper {
@@ -16467,7 +16470,7 @@
 	var fitCurveExports = fitCurve$1.exports;
 	var fitCurve = getDefaultExportFromCjs(fitCurveExports);
 
-	createConsole("PathUtils", { log: true });
+	createConsole("PathUtils", { log: false });
 	function perpendicularDistance(p, p1, p2) {
 	    const dx = p2.x - p1.x;
 	    const dy = p2.y - p1.y;
@@ -18813,7 +18816,7 @@
 	    [SVGPathData.ARC]: 7,
 	};
 
-	const _console$n = createConsole("SvgUtils", { log: true });
+	const _console$n = createConsole("SvgUtils", { log: false });
 	function decomposeTransform(t, tolerance = 1e-6) {
 	    const tx = t.e;
 	    const ty = t.f;
@@ -20128,6 +20131,20 @@
 	        root.namespaceURI === "http://www.w3.org/2000/svg");
 	}
 
+	function capitalizeFirstCharacter(string) {
+	    return string[0].toUpperCase() + string.slice(1);
+	}
+	function removeRedundantCharacters(string) {
+	    return removeRedundancies(Array.from(string)).join("");
+	}
+	function removeSubstrings(string, substrings) {
+	    let result = string;
+	    for (const sub of substrings) {
+	        result = result.split(sub).join("");
+	    }
+	    return result;
+	}
+
 	const _console$m = createConsole("DisplaySpriteSheetUtils", { log: false });
 	const spriteHeaderLength = 3 * 2;
 	function calculateSpriteSheetHeaderLength(numberOfSprites) {
@@ -20217,30 +20234,28 @@
 	    }
 	    return area;
 	}
-	async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
+	function getFontMetrics(font, fontSize, options) {
 	    _console$m.assertTypeWithError(fontSize, "number");
 	    options = options
 	        ? { ...defaultFontToSpriteSheetOptions, ...options }
 	        : defaultFontToSpriteSheetOptions;
 	    const fonts = Array.isArray(font) ? font : [font];
-	    font = fonts[0];
-	    spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
-	    const spriteSheet = {
-	        name: spriteSheetName,
-	        sprites: [],
-	    };
-	    const canvas = document.createElement("canvas");
-	    const ctx = canvas.getContext("2d");
+	    let minSpriteY = Infinity;
+	    let maxSpriteY = -Infinity;
+	    const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
+	    let string = options.string;
+	    if (string) {
+	        string = removeRedundantCharacters(string);
+	        console.log("filtered string", string);
+	    }
 	    for (let font of fonts) {
 	        const fontScale = (1 / font.unitsPerEm) * fontSize;
-	        let minSpriteY = Infinity;
-	        let maxSpriteY = -Infinity;
-	        const glyphs = [];
 	        let filteredGlyphs;
-	        if (options.string) {
+	        if (string != undefined) {
 	            filteredGlyphs = font
-	                .stringToGlyphs(options.string)
+	                .stringToGlyphs(string)
 	                .filter((glyph) => glyph.unicode != undefined);
+	            string = removeSubstrings(string, filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode)));
 	        }
 	        for (let index = 0; index < font.glyphs.length; index++) {
 	            const glyph = font.glyphs.get(index);
@@ -20269,10 +20284,70 @@
 	            const bbox = glyph.getBoundingBox();
 	            minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
 	            maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
+	        }
+	    }
+	    minSpriteY = options.minSpriteY ?? minSpriteY;
+	    maxSpriteY = options.maxSpriteY ?? maxSpriteY;
+	    const maxSpriteHeight = options.maxSpriteheight ?? maxSpriteY - minSpriteY + strokeWidth;
+	    return { maxSpriteHeight, maxSpriteY, minSpriteY };
+	}
+	async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
+	    _console$m.assertTypeWithError(fontSize, "number");
+	    options = options
+	        ? { ...defaultFontToSpriteSheetOptions, ...options }
+	        : defaultFontToSpriteSheetOptions;
+	    const fonts = Array.isArray(font) ? font : [font];
+	    font = fonts[0];
+	    spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
+	    const spriteSheet = {
+	        name: spriteSheetName,
+	        sprites: [],
+	    };
+	    const canvas = document.createElement("canvas");
+	    const ctx = canvas.getContext("2d");
+	    const { maxSpriteHeight, maxSpriteY, minSpriteY } = getFontMetrics(fonts, fontSize, options);
+	    const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
+	    let string = options.string;
+	    if (string) {
+	        string = removeRedundantCharacters(string);
+	        _console$m.log("filtered string", string);
+	    }
+	    for (let font of fonts) {
+	        const fontScale = (1 / font.unitsPerEm) * fontSize;
+	        const glyphs = [];
+	        let filteredGlyphs;
+	        if (string != undefined) {
+	            filteredGlyphs = font
+	                .stringToGlyphs(string)
+	                .filter((glyph) => glyph.unicode != undefined);
+	            string = removeSubstrings(string, filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode)));
+	        }
+	        for (let index = 0; index < font.glyphs.length; index++) {
+	            const glyph = font.glyphs.get(index);
+	            const hasUnicode = glyph.unicode != undefined;
+	            if (filteredGlyphs) {
+	                if (!filteredGlyphs.includes(glyph)) {
+	                    continue;
+	                }
+	            }
+	            if (options.unicodeOnly || options.englishOnly) {
+	                if (!hasUnicode) {
+	                    continue;
+	                }
+	            }
+	            if (options.script && hasUnicode) {
+	                const regex = new RegExp(`\\p{Script=${options.script}}`, "u");
+	                if (!regex.test(String.fromCharCode(glyph.unicode))) {
+	                    continue;
+	                }
+	            }
+	            if (options.englishOnly) {
+	                if (!englishRegex.test(String.fromCharCode(glyph.unicode))) {
+	                    continue;
+	                }
+	            }
 	            glyphs.push(glyph);
 	        }
-	        const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
-	        const maxSpriteHeight = maxSpriteY - minSpriteY + strokeWidth;
 	        for (let i = 0; i < glyphs.length; i++) {
 	            const glyph = glyphs[i];
 	            let name = glyph.name;
@@ -20283,8 +20358,10 @@
 	                continue;
 	            }
 	            const bbox = glyph.getBoundingBox();
-	            const spriteWidth = Math.round(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) * fontScale) + strokeWidth;
-	            const spriteHeight = Math.round(maxSpriteHeight);
+	            const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
+	                fontScale +
+	                strokeWidth;
+	            const spriteHeight = maxSpriteHeight;
 	            const commands = [];
 	            const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
 	            if (options.stroke) {
@@ -20296,10 +20373,10 @@
 	            else {
 	                path.fill = "white";
 	            }
-	            const bitmapWidth = Math.floor((bbox.x2 - bbox.x1) * fontScale) + strokeWidth;
-	            const bitmapHeight = Math.floor((bbox.y2 - bbox.y1) * fontScale) + strokeWidth;
-	            const bitmapX = Math.floor((spriteWidth - bitmapWidth) / 2);
-	            const bitmapY = Math.floor((spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY));
+	            const bitmapWidth = (bbox.x2 - bbox.x1) * fontScale + strokeWidth;
+	            const bitmapHeight = (bbox.y2 - bbox.y1) * fontScale + strokeWidth;
+	            const bitmapX = (spriteWidth - bitmapWidth) / 2;
+	            const bitmapY = (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY);
 	            if (options.usePath) {
 	                const pathOffset = {
 	                    x: -bitmapWidth / 2 + bitmapX,
@@ -20361,8 +20438,8 @@
 	                                curves = simplifyCurves(curves);
 	                                const controlPoints = curves.flatMap((c) => c.controlPoints);
 	                                controlPoints.forEach((pt) => {
-	                                    pt.x = Math.floor(pt.x + pathOffset.x);
-	                                    pt.y = Math.floor(pt.y + pathOffset.y);
+	                                    pt.x = pt.x + pathOffset.x;
+	                                    pt.y = pt.y + pathOffset.y;
 	                                });
 	                                allCurves.push(curves);
 	                                curves = [];
@@ -20444,6 +20521,9 @@
 	                height: spriteHeight,
 	            };
 	            spriteSheet.sprites.push(sprite);
+	        }
+	        if (string != undefined && string.length == 0) {
+	            break;
 	        }
 	    }
 	    return spriteSheet;
@@ -20644,8 +20724,93 @@
 	    });
 	    return size;
 	}
+	function assertValidSpriteLines(displayManager, spriteLines) {
+	    spriteLines.forEach((spriteLine) => {
+	        spriteLine.forEach((spriteSubLine) => {
+	            const { spriteSheetName, spriteNames } = spriteSubLine;
+	            displayManager.assertLoadedSpriteSheet(spriteSheetName);
+	            const spriteSheet = displayManager.spriteSheets[spriteSheetName];
+	            spriteNames.forEach((spriteName) => {
+	                const sprite = spriteSheet.sprites.find((sprite) => sprite.name == spriteName);
+	                _console$m.assertWithError(sprite, `no sprite with name "${spriteName}" found in spriteSheet "${spriteSheetName}"`);
+	            });
+	        });
+	    });
+	}
+	function getExpandedSpriteLines(spriteLines, spriteSheets) {
+	    const expandedSpritesLines = [];
+	    spriteLines.forEach((spriteLine) => {
+	        const _spritesLine = [];
+	        spriteLine.forEach(({ spriteSheetName, spriteNames }) => {
+	            const spriteSheet = spriteSheets[spriteSheetName];
+	            _console$m.assertWithError(spriteSheet, `no spriteSheet found with name "${spriteSheetName}"`);
+	            spriteNames.forEach((spriteName) => {
+	                const sprite = spriteSheet.sprites.find((sprite) => sprite.name == spriteName);
+	                _console$m.assertWithError(sprite, `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`);
+	                _spritesLine.push(sprite);
+	            });
+	        });
+	        expandedSpritesLines.push(_spritesLine);
+	    });
+	    return expandedSpritesLines;
+	}
+	function getExpandedSpriteLinesSize(expandedSpritesLines, contextState) {
+	    const localSize = { width: 0, height: 0 };
+	    const isSpritesDirectionHorizontal = isDirectionHorizontal(contextState.spritesDirection);
+	    const isSpritesLineDirectionHorizontal = isDirectionHorizontal(contextState.spritesLineDirection);
+	    const areSpritesDirectionsOrthogonal = isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
+	    const breadthSizeKey = isSpritesDirectionHorizontal ? "width" : "height";
+	    const depthSizeKey = isSpritesLineDirectionHorizontal ? "width" : "height";
+	    if (!areSpritesDirectionsOrthogonal) {
+	        if (isSpritesDirectionHorizontal) {
+	            localSize.height += contextState.spritesLineHeight;
+	        }
+	        else {
+	            localSize.width += contextState.spritesLineHeight;
+	        }
+	    }
+	    const lineBreadths = [];
+	    expandedSpritesLines.forEach((expandedSpriteLine, lineIndex) => {
+	        let spritesLineBreadth = 0;
+	        expandedSpriteLine.forEach((sprite) => {
+	            spritesLineBreadth += isSpritesDirectionHorizontal
+	                ? sprite.width
+	                : sprite.height;
+	            spritesLineBreadth += contextState.spritesSpacing;
+	        });
+	        spritesLineBreadth -= contextState.spritesSpacing;
+	        if (areSpritesDirectionsOrthogonal) {
+	            localSize[breadthSizeKey] = Math.max(localSize[breadthSizeKey], spritesLineBreadth);
+	            localSize[depthSizeKey] += contextState.spritesLineHeight;
+	        }
+	        else {
+	            localSize[breadthSizeKey] += spritesLineBreadth;
+	        }
+	        localSize[depthSizeKey] += contextState.spritesLineSpacing;
+	        lineBreadths.push(spritesLineBreadth);
+	    });
+	    localSize[depthSizeKey] -= contextState.spritesLineSpacing;
+	    const spritesScaledWidth = localSize.width * Math.abs(contextState.spriteScaleX);
+	    const spritesScaledHeight = localSize.height * Math.abs(contextState.spriteScaleY);
+	    const size = {
+	        width: spritesScaledWidth,
+	        height: spritesScaledHeight,
+	    };
+	    return { localSize, size, lineBreadths };
+	}
+	function getSpriteLinesMetrics(spriteLines, spriteSheets, contextState) {
+	    const expandedSpritesLines = getExpandedSpriteLines(spriteLines, spriteSheets);
+	    return {
+	        expandedSpritesLines,
+	        numberOfLines: expandedSpritesLines.length,
+	        ...getExpandedSpriteLinesSize(expandedSpritesLines, contextState),
+	    };
+	}
+	function stringToSpriteLinesMetrics(string, spriteSheets, contextState, requireAll, maxLineBreadth, separators) {
+	    return getSpriteLinesMetrics(stringToSpriteLines(string, spriteSheets, contextState, requireAll, maxLineBreadth, separators), spriteSheets, contextState);
+	}
 
-	const _console$l = createConsole("DisplayBitmapUtils", { log: true });
+	const _console$l = createConsole("DisplayBitmapUtils", { log: false });
 	const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
 	function getBitmapData(bitmap) {
 	    const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -21036,7 +21201,7 @@
 	    return canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength);
 	}
 
-	const _console$k = createConsole("DisplayManagerInterface", { log: true });
+	const _console$k = createConsole("DisplayManagerInterface", { log: false });
 	async function runDisplayContextCommand(displayManager, command, sendImmediately) {
 	    if (command.hide) {
 	        return;
@@ -23192,7 +23357,7 @@
 	    }
 	    #lastReadyTime = 0;
 	    #lastShowRequestTime = 0;
-	    #minReadyInterval = 65;
+	    #minReadyInterval = 60;
 	    #waitBeforeReady = true;
 	    async #parseDisplayReady(dataView) {
 	        const now = Date.now();
@@ -23249,6 +23414,15 @@
 	        return serializeSpriteSheet(this, spriteSheet);
 	    }
 	    async uploadSpriteSheet(spriteSheet) {
+	        if (spriteSheet.sprites.length == 0) {
+	            _console$j.log("no sprites in spriteSheet");
+	            return;
+	        }
+	        if (this.#pendingSpriteSheet) {
+	            await this.waitForEvent("displaySpriteSheetUploadComplete");
+	            await this.uploadSpriteSheet(spriteSheet);
+	            return;
+	        }
 	        spriteSheet = structuredClone(spriteSheet);
 	        this.#pendingSpriteSheet = spriteSheet;
 	        const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet);
@@ -23377,6 +23551,9 @@
 	    stringToSpriteLines(string, requireAll, maxLineBreadth, separators) {
 	        return stringToSpriteLines(string, this.spriteSheets, this.contextState, requireAll, maxLineBreadth, separators);
 	    }
+	    stringToSpriteLinesMetrics(string, requireAll, maxLineBreadth, separators) {
+	        return stringToSpriteLinesMetrics(string, this.spriteSheets, this.contextState, requireAll, maxLineBreadth, separators);
+	    }
 	    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
 	        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
 	    }
@@ -23395,6 +23572,7 @@
 	        this.#spriteSheets[this.#pendingSpriteSheetName] =
 	            this.#pendingSpriteSheet;
 	        this.#spriteSheetIndices[this.#pendingSpriteSheetName] = spriteSheetIndex;
+	        _console$j.log(`finished uploading "${this.#pendingSpriteSheetName}" spriteSheet`);
 	        this.#dispatchEvent("displaySpriteSheetUploadComplete", {
 	            spriteSheetName: this.#pendingSpriteSheetName,
 	            spriteSheet: this.#pendingSpriteSheet,
@@ -23456,6 +23634,9 @@
 	        _console$j.assertWithError(!this.#isDrawingBlankSprite, `already drawing blank sprite`);
 	        this.#isDrawingBlankSprite = true;
 	        this.#saveContext(sendImmediately);
+	        this.#contextStateHelper.reset();
+	        this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
+	        this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
 	        const commandType = "startSprite";
 	        const dataView = serializeContextCommand(this, {
 	            type: commandType,
@@ -23507,11 +23688,10 @@
 	    }
 	    set isServerSide(newIsServerSide) {
 	        if (this.#isServerSide == newIsServerSide) {
-	            _console$j.log("redundant isServerSide assignment");
 	            return;
 	        }
-	        _console$j.log({ newIsServerSide });
 	        this.#isServerSide = newIsServerSide;
+	        _console$j.log({ isServerSide: this.isServerSide });
 	    }
 	}
 
@@ -23748,10 +23928,6 @@
 	        this.onMessageReceived = undefined;
 	        this.onMessagesReceived = undefined;
 	    }
-	}
-
-	function capitalizeFirstCharacter(string) {
-	    return string[0].toUpperCase() + string.slice(1);
 	}
 
 	const _console$h = createConsole("EventUtils", { log: false });
@@ -27141,7 +27317,7 @@
 	}
 	_a$1 = Device;
 
-	const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
+	const _console$6 = createConsole("DisplayCanvasHelper", { log: false });
 	const DisplayCanvasHelperEventTypes = [
 	    "contextState",
 	    "numberOfColors",
@@ -27166,6 +27342,7 @@
 	        this.#bitmapContext = this.#bitmapCanvas.getContext("2d");
 	        this.#bitmapContext.imageSmoothingEnabled = false;
 	        this.addEventListener("ready", () => {
+	            this.#isReady = true;
 	            this.#onSentContextCommands();
 	            this.#drawFrontDrawStack();
 	        });
@@ -27355,7 +27532,6 @@
 	        this.#dispatchEvent("deviceNotConnected", { device: this.device });
 	    }
 	    async #onDeviceDisplayReady(event) {
-	        this.#isReady = true;
 	        this.#dispatchEvent("ready", {});
 	    }
 	    #onDeviceDisplaySpriteSheetUploadStart(event) {
@@ -27393,6 +27569,8 @@
 	        let redraw = false;
 	        redraw ||= this.#flushColors();
 	        redraw ||= this.#flushOpacities();
+	        redraw ||= this.#flushBrightness();
+	        _console$6.log("onSentContextCommands", { redraw });
 	        if (redraw) {
 	            this.#drawFrontDrawStack();
 	        }
@@ -27444,6 +27622,7 @@
 	            this.#dispatchEvent("color", { colorIndex, colorHex, colorRGB });
 	        });
 	        this.#pendingColors.length = 0;
+	        _console$6.log("flushColors");
 	        return true;
 	    }
 	    #resetColors() {
@@ -27471,13 +27650,14 @@
 	    }
 	    #flushOpacities() {
 	        if (this.#pendingOpacities.length == 0) {
-	            return true;
+	            return false;
 	        }
 	        this.#pendingOpacities.forEach((opacity, colorIndex) => {
 	            this.#opacities[colorIndex] = opacity;
 	            this.#dispatchEvent("colorOpacity", { colorIndex, opacity });
 	        });
 	        this.#pendingOpacities.length = 0;
+	        _console$6.log("flushOpacities");
 	        return true;
 	    }
 	    #resetOpacities() {
@@ -27528,9 +27708,6 @@
 	            if (this.device) {
 	                return;
 	            }
-	            this.#isReady = true;
-	            this.#onSentContextCommands();
-	            this.#drawFrontDrawStack();
 	            this.#dispatchEvent("ready", {});
 	        }
 	    }
@@ -27563,8 +27740,6 @@
 	            if (this.device) {
 	                return;
 	            }
-	            this.#onSentContextCommands();
-	            this.#isReady = true;
 	            this.#dispatchEvent("ready", {});
 	        }
 	    }
@@ -29446,60 +29621,17 @@
 	        }
 	    }
 	    #drawSpritesToCanvas(offsetX, offsetY, spriteLines, contextState) {
-	        const spritesSize = { width: 0, height: 0 };
+	        const { expandedSpritesLines, lineBreadths, localSize, size } = getSpriteLinesMetrics(spriteLines, this.#spriteSheets, contextState);
 	        const isSpritesDirectionPositive = isDirectionPositive(contextState.spritesDirection);
 	        const isSpritesLineDirectionPositive = isDirectionPositive(contextState.spritesLineDirection);
 	        const isSpritesDirectionHorizontal = isDirectionHorizontal(contextState.spritesDirection);
 	        const isSpritesLineDirectionHorizontal = isDirectionHorizontal(contextState.spritesLineDirection);
 	        const areSpritesDirectionsOrthogonal = isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
 	        const breadthSizeKey = isSpritesDirectionHorizontal ? "width" : "height";
-	        const depthSizeKey = isSpritesLineDirectionHorizontal ? "width" : "height";
-	        if (!areSpritesDirectionsOrthogonal) {
-	            if (isSpritesDirectionHorizontal) {
-	                spritesSize.height += contextState.spritesLineHeight;
-	            }
-	            else {
-	                spritesSize.width += contextState.spritesLineHeight;
-	            }
-	        }
 	        const spritesBreadthSign = isSpritesDirectionPositive ? 1 : -1;
 	        const spritesDepthSign = isSpritesLineDirectionPositive ? 1 : -1;
-	        const spritesLineBreadths = [];
-	        const _spritesLines = [];
-	        spriteLines.forEach((spriteLine, lineIndex) => {
-	            const _spritesLine = [];
-	            let spritesLineBreadth = 0;
-	            spriteLine.forEach(({ spriteSheetName, spriteNames }) => {
-	                const spriteSheet = this.spriteSheets[spriteSheetName];
-	                _console$6.assertWithError(spriteSheet, `no spriteSheet found with name "${spriteSheetName}"`);
-	                spriteNames.forEach((spriteName) => {
-	                    const sprite = spriteSheet.sprites.find((sprite) => sprite.name == spriteName);
-	                    _console$6.assertWithError(sprite, `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`);
-	                    _spritesLine.length;
-	                    _spritesLine.push(sprite);
-	                    spritesLineBreadth += isSpritesDirectionHorizontal
-	                        ? sprite.width
-	                        : sprite.height;
-	                    spritesLineBreadth += contextState.spritesSpacing;
-	                });
-	            });
-	            spritesLineBreadth -= contextState.spritesSpacing;
-	            if (areSpritesDirectionsOrthogonal) {
-	                spritesSize[breadthSizeKey] = Math.max(spritesSize[breadthSizeKey], spritesLineBreadth);
-	                spritesSize[depthSizeKey] += contextState.spritesLineHeight;
-	            }
-	            else {
-	                spritesSize[breadthSizeKey] += spritesLineBreadth;
-	            }
-	            spritesSize[depthSizeKey] += contextState.spritesLineSpacing;
-	            spritesLineBreadths.push(spritesLineBreadth);
-	            _spritesLines.push(_spritesLine);
-	        });
-	        spritesSize[depthSizeKey] -= contextState.spritesLineSpacing;
-	        spritesSize.width * Math.abs(contextState.spriteScaleX);
-	        spritesSize.height * Math.abs(contextState.spriteScaleY);
 	        this.#setIgnoreDevice(true);
-	        this.#setCanvasContextTransform(offsetX, offsetY, spritesSize.width, spritesSize.height, contextState);
+	        this.#setCanvasContextTransform(offsetX, offsetY, localSize.width, localSize.height, contextState);
 	        this.#setUseSpriteColorIndices(true);
 	        this.#setClearCanvasBoundingBoxOnDraw(false);
 	        this.#saveContext();
@@ -29552,16 +29684,16 @@
 	        let spritesBreadthStart = 0;
 	        switch (contextState.spritesDirection) {
 	            case "right":
-	                spritesBreadthStart = -spritesSize.width / 2;
+	                spritesBreadthStart = -localSize.width / 2;
 	                break;
 	            case "left":
-	                spritesBreadthStart = spritesSize.width / 2;
+	                spritesBreadthStart = localSize.width / 2;
 	                break;
 	            case "up":
-	                spritesBreadthStart = spritesSize.height / 2;
+	                spritesBreadthStart = localSize.height / 2;
 	                break;
 	            case "down":
-	                spritesBreadthStart = -spritesSize.height / 2;
+	                spritesBreadthStart = -localSize.height / 2;
 	                break;
 	        }
 	        const spriteOffset = {
@@ -29579,16 +29711,16 @@
 	        if (areSpritesDirectionsOrthogonal) {
 	            switch (contextState.spritesLineDirection) {
 	                case "right":
-	                    spriteOffset[depthOffsetKey] = -spritesSize.width / 2;
+	                    spriteOffset[depthOffsetKey] = -localSize.width / 2;
 	                    break;
 	                case "left":
-	                    spriteOffset[depthOffsetKey] = spritesSize.width / 2;
+	                    spriteOffset[depthOffsetKey] = localSize.width / 2;
 	                    break;
 	                case "up":
-	                    spriteOffset[depthOffsetKey] = spritesSize.height / 2;
+	                    spriteOffset[depthOffsetKey] = localSize.height / 2;
 	                    break;
 	                case "down":
-	                    spriteOffset[depthOffsetKey] = -spritesSize.height / 2;
+	                    spriteOffset[depthOffsetKey] = -localSize.height / 2;
 	                    break;
 	            }
 	        }
@@ -29596,16 +29728,16 @@
 	            switch (contextState.spritesDirection) {
 	                case "right":
 	                case "left":
-	                    spriteOffset.y = -spritesSize.height / 2;
+	                    spriteOffset.y = -localSize.height / 2;
 	                    break;
 	                case "up":
 	                case "down":
-	                    spriteOffset.x = -spritesSize.width / 2;
+	                    spriteOffset.x = -localSize.width / 2;
 	                    break;
 	            }
 	        }
-	        _spritesLines.forEach((_spritesLine, lineIndex) => {
-	            const spritesLineBreadth = spritesLineBreadths[lineIndex];
+	        expandedSpritesLines.forEach((_spritesLine, lineIndex) => {
+	            const spritesLineBreadth = lineBreadths[lineIndex];
 	            if (areSpritesDirectionsOrthogonal) {
 	                switch (contextState.spritesLineAlignment) {
 	                    case "start":
@@ -29615,13 +29747,13 @@
 	                        spriteOffset[breadthOffsetKey] =
 	                            spritesBreadthStart +
 	                                spritesBreadthSign *
-	                                    ((spritesSize[breadthSizeKey] - spritesLineBreadth) / 2);
+	                                    ((localSize[breadthSizeKey] - spritesLineBreadth) / 2);
 	                        break;
 	                    case "end":
 	                        spriteOffset[breadthOffsetKey] =
 	                            spritesBreadthStart +
 	                                spritesBreadthSign *
-	                                    (spritesSize[breadthSizeKey] - spritesLineBreadth);
+	                                    (localSize[breadthSizeKey] - spritesLineBreadth);
 	                        break;
 	                }
 	            }
@@ -29674,17 +29806,7 @@
 	    }
 	    async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
 	        _console$6.assertWithError(this.contextState.spritesLineHeight > 0, `spritesLineHeight must be >0`);
-	        spriteLines.forEach((spriteLine) => {
-	            spriteLine.forEach((spriteSubLine) => {
-	                const { spriteSheetName, spriteNames } = spriteSubLine;
-	                this.assertLoadedSpriteSheet(spriteSheetName);
-	                const spriteSheet = this.spriteSheets[spriteSheetName];
-	                spriteNames.forEach((spriteName) => {
-	                    const sprite = spriteSheet.sprites.find((sprite) => sprite.name == spriteName);
-	                    _console$6.assertWithError(sprite, `no sprite with name "${spriteName}" found in spriteSheet "${spriteSheetName}"`);
-	                });
-	            });
-	        });
+	        assertValidSpriteLines(this, spriteLines);
 	        const contextState = structuredClone(this.contextState);
 	        this.#drawSpritesToCanvas(offsetX, offsetY, spriteLines, contextState);
 	        if (this.device?.isConnected && !this.#ignoreDevice) {
@@ -29706,6 +29828,9 @@
 	    stringToSpriteLines(string, requireAll, maxLineBreadth, separators) {
 	        return stringToSpriteLines(string, this.spriteSheets, this.contextState, requireAll, maxLineBreadth, separators);
 	    }
+	    stringToSpriteLinesMetrics(string, requireAll, maxLineBreadth, separators) {
+	        return stringToSpriteLinesMetrics(string, this.spriteSheets, this.contextState, requireAll, maxLineBreadth, separators);
+	    }
 	    #brightness = "medium";
 	    get brightness() {
 	        return this.#brightness;
@@ -29720,6 +29845,15 @@
 	    get #brightnessOpacity() {
 	        return this.#brightnessOpacities[this.brightness];
 	    }
+	    #didSetBrightness = false;
+	    #flushBrightness() {
+	        if (!this.#didSetBrightness) {
+	            return false;
+	        }
+	        _console$6.log("flushBrightness");
+	        this.#didSetBrightness = false;
+	        return true;
+	    }
 	    async setBrightness(newBrightness, sendImmediately) {
 	        if (this.#brightness == newBrightness) {
 	            return;
@@ -29733,7 +29867,7 @@
 	                this.#onSentContextCommands();
 	            }
 	        }
-	        this.#drawFrontDrawStack();
+	        this.#didSetBrightness = true;
 	        this.#dispatchEvent("brightness", { brightness: this.brightness });
 	    }
 	    async #resetBrightness() {
@@ -29778,7 +29912,7 @@
 	            const scaledWidth = width * Math.abs(contextState.spriteScaleX);
 	            const scaledHeight = height * Math.abs(contextState.spriteScaleY);
 	            this.#save();
-	            const localBox = this.#getRectBoundingBox(scaledWidth, scaledHeight, contextState);
+	            const localBox = this.#getRectBoundingBox(scaledWidth, scaledHeight, contextState, false);
 	            const rotatedLocalBox = this.#rotateBoundingBox(localBox, contextState.rotation);
 	            const rotatedBox = this.#offsetBoundingBox(rotatedLocalBox, offsetX, offsetY);
 	            this.#applyClip(rotatedBox, contextState);
@@ -31021,8 +31155,10 @@
 	exports.canvasToSprite = canvasToSprite;
 	exports.canvasToSpriteSheet = canvasToSpriteSheet;
 	exports.displayCurveTypeToNumberOfControlPoints = displayCurveTypeToNumberOfControlPoints;
+	exports.englishRegex = englishRegex;
 	exports.fontToSpriteSheet = fontToSpriteSheet;
 	exports.getFontMaxHeight = getFontMaxHeight;
+	exports.getFontMetrics = getFontMetrics;
 	exports.getFontUnicodeRange = getFontUnicodeRange;
 	exports.getMaxSpriteSheetSize = getMaxSpriteSheetSize;
 	exports.getSvgStringFromDataUrl = getSvgStringFromDataUrl;

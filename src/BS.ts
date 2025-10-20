@@ -172,11 +172,14 @@ export {
   getFontUnicodeRange,
   stringToSprites,
   fontToSpriteSheet,
+  getFontMetrics,
   DisplaySpriteSubLine,
   DisplaySpriteLine,
   DisplaySpriteLines,
   getFontMaxHeight,
   getMaxSpriteSheetSize,
+  englishRegex,
+  FontToSpriteSheetOptions,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 
 /** BROWSER_START */

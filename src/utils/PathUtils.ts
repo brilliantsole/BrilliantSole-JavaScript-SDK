@@ -4,7 +4,7 @@ import { DisplayBezierCurve } from "../DisplayManager.ts";
 import simplify from "simplify-js";
 import fitCurve from "fit-curve";
 
-const _console = createConsole("PathUtils", { log: true });
+const _console = createConsole("PathUtils", { log: false });
 
 function perpendicularDistance(p: Vector2, p1: Vector2, p2: Vector2): number {
   const dx = p2.x - p1.x;

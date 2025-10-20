@@ -1,0 +1,189 @@
+<html>
+  <head>
+    <title>Display Spotify | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+    <script type="module" src="./script.js"></script>
+  </head>
+  <style>
+    #display {
+      background-color: black;
+    }
+
+    .verticalLabel {
+      display: inline-flex;
+      flex-direction: column;
+      max-width: fit-content;
+    }
+
+    #displayColors {
+      display: inline-block;
+    }
+    .displayColor {
+      display: inline-block;
+    }
+
+    #spotifyAlbumArt {
+      height: 400px;
+    }
+
+    #lyrics {
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      width: fit-content;
+    }
+    #lyrics > span {
+      width: fit-content;
+    }
+    #lyrics > span:hover {
+      text-decoration: underline;
+    }
+    #lyrics > span.current {
+      font-weight: bold;
+    }
+
+    /* Select all spans that come before (and including) the .current span */
+    #lyrics:has(.current) > span {
+      background-color: rgb(136, 255, 136);
+    }
+
+    /* But exclude spans that come after .current */
+    #lyrics > .current ~ span {
+      background-color: transparent;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Display Spotify | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+
+    <div id="displayColors">
+      <template id="displayColorTemplate">
+        <div class="displayColor">
+          <input class="color" type="color" value="#000000" />
+        </div>
+      </template>
+    </div>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>brightness</span>
+      <select id="setDisplayBrightnessSelect">
+        <optgroup label="select brightness"></optgroup>
+      </select>
+    </label>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>client id</span>
+      <input type="text" id="spotifyClientId" />
+    </label>
+
+    <label class="verticalLabel">
+      <span>client secret</span>
+      <input type="password" id="spotifyClientSecret" />
+    </label>
+
+    <button disabled id="spotifyToggleAuthorization">login to spotify</button>
+
+    <br />
+
+    <button id="previousSpotifyTrack" disabled>previous</button>
+    <button id="toggleSpotifyPlayback" disabled>play</button>
+    <button id="nextSpotifyTrack" disabled>next</button>
+
+    <br />
+
+    <span>track: <span id="spotifyTrackName"></span></span>
+    <br />
+    <span>artist: <span id="spotifyArtistName"></span></span>
+    <br />
+    <span>album: <span id="spotifyAlbumName"></span></span>
+
+    <br />
+
+    <label>
+      <span>time</span>
+      <input
+        id="spotifyTimeInput"
+        type="range"
+        step="1"
+        disabled
+        min="0"
+        value="0"
+        style="width: 200px"
+      />
+    </label>
+
+    <span id="spotifyTime">00:00/00:00</span>
+
+    <br />
+
+    <label>
+      <span>volume</span>
+      <input
+        id="spotifyVolume"
+        disabled
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+      />
+    </label>
+
+    <label>
+      <span>mute</span>
+      <input id="toggleSpotifyMute" disabled type="checkbox" />
+    </label>
+
+    <br />
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>select font</span>
+      <select id="selectFont">
+        <optgroup label="select font"></optgroup>
+      </select>
+    </label>
+
+    <label class="verticalLabel">
+      add font
+      <input
+        id="loadFont"
+        type="file"
+        accept=".ttf,.otf,.woff,.woff2"
+        multiple="true"
+        style="width: 6rem"
+      />
+    </label>
+
+    <label id="fontScale" class="verticalLabel">
+      <span>font scale (<span class="value">1.0</span>x)</span>
+      <input type="range" value="1.0" min="0.5" max="5" step="0.1" />
+    </label>
+
+    <br />
+
+    <label>
+      file transfer progress: <span></span>
+      <progress value="0" id="fileTransferProgress"></progress>
+    </label>
+
+    <br />
+
+    <canvas id="display" width="640" height="400"></canvas>
+
+    <img id="spotifyAlbumArt" />
+
+    <div id="lyrics"></div>
+  </body>
+</html>

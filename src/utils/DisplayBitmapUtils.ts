@@ -17,7 +17,7 @@ import {
   DisplaySpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 
-const _console = createConsole("DisplayBitmapUtils", { log: true });
+const _console = createConsole("DisplayBitmapUtils", { log: false });
 
 export const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2; // x, y, width, numberOfPixels, numberOfColors, dataLength
 

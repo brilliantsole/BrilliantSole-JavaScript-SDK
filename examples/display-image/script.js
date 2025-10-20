@@ -825,8 +825,7 @@ device.addEventListener("getSensorConfiguration", () => {
   updateTakePictureButton();
 });
 const updateTakePictureButton = () => {
-  takePictureButton.disabled =
-    !device.isConnected || device.cameraStatus != "idle";
+  takePictureButton.disabled = !device.isConnected;
 };
 device.addEventListener("cameraStatus", () => {
   updateTakePictureButton();

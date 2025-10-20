@@ -118,58 +118,6 @@ interface Euler {
     roll: number;
 }
 
-type EventMap<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
-    [T in keyof EventMessages]: {
-        type: T;
-        target: Target;
-        message: EventMessages[T];
-    };
-};
-type EventListenerMap<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
-    [T in keyof EventMessages]: (event: {
-        type: T;
-        target: Target;
-        message: EventMessages[T];
-    }) => void;
-};
-type Event<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = EventMap<Target, EventType, EventMessages>[keyof EventMessages];
-type SpecificEvent<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>, SpecificEventType extends EventType> = {
-    type: SpecificEventType;
-    target: Target;
-    message: EventMessages[SpecificEventType];
-};
-type BoundEventListeners<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
-    [SpecificEventType in keyof EventMessages]?: (event: SpecificEvent<Target, EventType, EventMessages, SpecificEventType>) => void;
-};
-declare class EventDispatcher<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> {
-    private target;
-    private validEventTypes;
-    private listeners;
-    constructor(target: Target, validEventTypes: readonly EventType[]);
-    private isValidEventType;
-    private updateEventListeners;
-    addEventListener<T extends EventType>(type: T, listener: (event: {
-        type: T;
-        target: Target;
-        message: EventMessages[T];
-    }) => void, options?: {
-        once?: boolean;
-    }): void;
-    removeEventListener<T extends EventType>(type: T, listener: (event: {
-        type: T;
-        target: Target;
-        message: EventMessages[T];
-    }) => void): void;
-    removeEventListeners<T extends EventType>(type: T): void;
-    removeAllEventListeners(): void;
-    dispatchEvent<T extends EventType>(type: T, message: EventMessages[T]): void;
-    waitForEvent<T extends EventType>(type: T): Promise<{
-        type: T;
-        target: Target;
-        message: EventMessages[T];
-    }>;
-}
-
 declare const DisplaySegmentCaps: readonly ["flat", "round"];
 type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
 declare const DisplayAlignments: readonly ["start", "center", "end"];
@@ -218,64 +166,6 @@ type DisplayContextState = {
 };
 type DisplayContextStateKey = keyof DisplayContextState;
 type PartialDisplayContextState = Partial<DisplayContextState>;
-
-type DisplaySpriteSubLine = {
-    spriteSheetName: string;
-    spriteNames: string[];
-};
-type DisplaySpriteLine = DisplaySpriteSubLine[];
-type DisplaySpriteLines = DisplaySpriteLine[];
-type DisplaySpriteSerializedSubLine = {
-    spriteSheetIndex: number;
-    spriteIndices: number[];
-    use2Bytes: boolean;
-};
-type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
-type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
-type DisplaySpritePaletteSwap = {
-    name: string;
-    numberOfColors: number;
-    spriteColorIndices: number[];
-};
-type DisplaySprite = {
-    name: string;
-    width: number;
-    height: number;
-    paletteSwaps?: DisplaySpritePaletteSwap[];
-    commands: DisplayContextCommand[];
-};
-type DisplaySpriteSheetPaletteSwap = {
-    name: string;
-    numberOfColors: number;
-    spriteColorIndices: number[];
-};
-type DisplaySpriteSheetPalette = {
-    name: string;
-    numberOfColors: number;
-    colors: string[];
-    opacities?: number[];
-};
-type DisplaySpriteSheet = {
-    name: string;
-    palettes?: DisplaySpriteSheetPalette[];
-    paletteSwaps?: DisplaySpriteSheetPaletteSwap[];
-    sprites: DisplaySprite[];
-};
-type FontToSpriteSheetOptions = {
-    stroke?: boolean;
-    strokeWidth?: number;
-    unicodeOnly?: boolean;
-    englishOnly?: boolean;
-    usePath?: boolean;
-    script?: string;
-    string?: string;
-};
-declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
-declare function getFontUnicodeRange(font: Font): Range | undefined;
-declare function fontToSpriteSheet(font: Font | Font[], fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
-declare function stringToSprites(string: string, spriteSheet: DisplaySpriteSheet, requireAll?: boolean): DisplaySprite[];
-declare function getFontMaxHeight(font: Font, fontSize: number): number;
-declare function getMaxSpriteSheetSize(spriteSheet: DisplaySpriteSheet): DisplaySize;
 
 interface DisplayManagerInterface {
     get isReady(): boolean;
@@ -404,6 +294,7 @@ interface DisplayManagerInterface {
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     stringToSpriteLines(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLines;
+    stringToSpriteLinesMetrics(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLinesMetrics;
     drawSprites(offsetX: number, offsetY: number, spriteLines: DisplaySpriteLines, sendImmediately?: boolean): Promise<void>;
     drawSpritesString(offsetX: number, offsetY: number, string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[], sendImmediately?: boolean): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
@@ -725,6 +616,135 @@ interface StartDisplaySpriteCommand extends BaseDisplayCenterRectCommand {
     type: "startSprite";
 }
 type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayBackgroundColorCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleXCommand | SetDisplaySpriteScaleYCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayRegularPolygonCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand | DrawDisplaySpritesCommand | SelectDisplaySpriteSheetCommand | SetDisplayHorizontalAlignmentCommand | SetDisplayVerticalAlignmentCommand | SetDisplaySpritesDirectionCommand | SetDisplaySpritesLineDirectionCommand | SetDisplaySpritesSpacingCommand | SetDisplaySpritesLineSpacingCommand | SetDisplaySpritesAlignmentCommand | SetDisplaySpritesLineAlignmentCommand | SetDisplaySpritesLineHeightCommand | DrawDisplayWireframeCommand | DrawDisplayBezierCurveCommand | DrawDisplayPathCommand | SelectDisplayIgnoreFillCommand | SelectDisplayIgnoreLineCommand | SelectDisplayFillBackgroundCommand | StartDisplaySpriteCommand;
+
+type DisplaySpriteSubLine = {
+    spriteSheetName: string;
+    spriteNames: string[];
+};
+type DisplaySpriteLine = DisplaySpriteSubLine[];
+type DisplaySpriteLines = DisplaySpriteLine[];
+type DisplaySpriteSerializedSubLine = {
+    spriteSheetIndex: number;
+    spriteIndices: number[];
+    use2Bytes: boolean;
+};
+type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
+type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
+type DisplaySpritePaletteSwap = {
+    name: string;
+    numberOfColors: number;
+    spriteColorIndices: number[];
+};
+type DisplaySprite = {
+    name: string;
+    width: number;
+    height: number;
+    paletteSwaps?: DisplaySpritePaletteSwap[];
+    commands: DisplayContextCommand[];
+};
+type DisplaySpriteSheetPaletteSwap = {
+    name: string;
+    numberOfColors: number;
+    spriteColorIndices: number[];
+};
+type DisplaySpriteSheetPalette = {
+    name: string;
+    numberOfColors: number;
+    colors: string[];
+    opacities?: number[];
+};
+type DisplaySpriteSheet = {
+    name: string;
+    palettes?: DisplaySpriteSheetPalette[];
+    paletteSwaps?: DisplaySpriteSheetPaletteSwap[];
+    sprites: DisplaySprite[];
+};
+type FontToSpriteSheetOptions = {
+    stroke?: boolean;
+    strokeWidth?: number;
+    unicodeOnly?: boolean;
+    englishOnly?: boolean;
+    usePath?: boolean;
+    script?: string;
+    string?: string;
+    minSpriteY?: number;
+    maxSpriteY?: number;
+    maxSpriteheight?: number;
+};
+declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
+declare function getFontUnicodeRange(font: Font): Range | undefined;
+declare const englishRegex: RegExp;
+declare function getFontMetrics(font: Font | Font[], fontSize: number, options?: FontToSpriteSheetOptions): {
+    maxSpriteHeight: number;
+    maxSpriteY: number;
+    minSpriteY: number;
+};
+declare function fontToSpriteSheet(font: Font | Font[], fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
+declare function stringToSprites(string: string, spriteSheet: DisplaySpriteSheet, requireAll?: boolean): DisplaySprite[];
+declare function getFontMaxHeight(font: Font, fontSize: number): number;
+declare function getMaxSpriteSheetSize(spriteSheet: DisplaySpriteSheet): DisplaySize;
+type DisplaySpriteLinesMetrics = {
+    localSize: {
+        width: number;
+        height: number;
+    };
+    size: DisplaySize;
+    lineBreadths: number[];
+    expandedSpritesLines: DisplaySprite[][];
+    numberOfLines: number;
+};
+
+type EventMap<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
+    [T in keyof EventMessages]: {
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+    };
+};
+type EventListenerMap<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
+    [T in keyof EventMessages]: (event: {
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+    }) => void;
+};
+type Event<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = EventMap<Target, EventType, EventMessages>[keyof EventMessages];
+type SpecificEvent<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>, SpecificEventType extends EventType> = {
+    type: SpecificEventType;
+    target: Target;
+    message: EventMessages[SpecificEventType];
+};
+type BoundEventListeners<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
+    [SpecificEventType in keyof EventMessages]?: (event: SpecificEvent<Target, EventType, EventMessages, SpecificEventType>) => void;
+};
+declare class EventDispatcher<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> {
+    private target;
+    private validEventTypes;
+    private listeners;
+    constructor(target: Target, validEventTypes: readonly EventType[]);
+    private isValidEventType;
+    private updateEventListeners;
+    addEventListener<T extends EventType>(type: T, listener: (event: {
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+    }) => void, options?: {
+        once?: boolean;
+    }): void;
+    removeEventListener<T extends EventType>(type: T, listener: (event: {
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+    }) => void): void;
+    removeEventListeners<T extends EventType>(type: T): void;
+    removeAllEventListeners(): void;
+    dispatchEvent<T extends EventType>(type: T, message: EventMessages[T]): void;
+    waitForEvent<T extends EventType>(type: T): Promise<{
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+    }>;
+}
 
 type FileLike = number[] | ArrayBuffer | DataView | URL | string | File;
 
@@ -2013,5 +2033,5 @@ declare const ThrottleUtils: {
     debounce: typeof debounce;
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, _default as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment_d as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, fontToSpriteSheet, getFontMaxHeight, getFontUnicodeRange, getMaxSpriteSheetSize, hexToRGB, intersectWireframes, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wait };
-export type { BoundDeviceEventListeners, BoundDeviceManagerEventListeners, BoundDevicePairEventListeners, CameraCommand, CameraConfiguration, CameraConfigurationType, CenterOfPressure, ContinuousSensorType, DeviceEvent, DeviceEventListenerMap, DeviceEventMap, DeviceInformation, DeviceManagerEvent, DeviceManagerEventListenerMap, DeviceManagerEventMap, DevicePairEvent, DevicePairEventListenerMap, DevicePairEventMap, DevicePairType, DeviceType, DiscoveredDevice, DisplayAlignment, DisplayBezierCurveType, DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayColorRGB, DisplayContextCommand, DisplayContextCommandType, DisplayDirection, DisplaySegmentCap, DisplaySize, DisplaySprite, DisplaySpriteColorPair, DisplaySpriteContextCommandType, DisplaySpriteLine, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSubLine, DisplayWireframe, DisplayWireframeEdge, Euler, FileTransferDirection, FileType, MicrophoneCommand, MicrophoneConfiguration, MicrophoneConfigurationType, PressureData, Quaternion, Range, SensorConfiguration, SensorType, Side, TfliteFileConfiguration, TfliteSensorType, TfliteTask, Vector2, Vector3, VibrationConfiguration, VibrationLocation, VibrationType, VibrationWaveformEffect };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, _default as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment_d as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, hexToRGB, intersectWireframes, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wait };
+export type { BoundDeviceEventListeners, BoundDeviceManagerEventListeners, BoundDevicePairEventListeners, CameraCommand, CameraConfiguration, CameraConfigurationType, CenterOfPressure, ContinuousSensorType, DeviceEvent, DeviceEventListenerMap, DeviceEventMap, DeviceInformation, DeviceManagerEvent, DeviceManagerEventListenerMap, DeviceManagerEventMap, DevicePairEvent, DevicePairEventListenerMap, DevicePairEventMap, DevicePairType, DeviceType, DiscoveredDevice, DisplayAlignment, DisplayBezierCurveType, DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayColorRGB, DisplayContextCommand, DisplayContextCommandType, DisplayDirection, DisplaySegmentCap, DisplaySize, DisplaySprite, DisplaySpriteColorPair, DisplaySpriteContextCommandType, DisplaySpriteLine, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSubLine, DisplayWireframe, DisplayWireframeEdge, Euler, FileTransferDirection, FileType, FontToSpriteSheetOptions, MicrophoneCommand, MicrophoneConfiguration, MicrophoneConfigurationType, PressureData, Quaternion, Range, SensorConfiguration, SensorType, Side, TfliteFileConfiguration, TfliteSensorType, TfliteTask, Vector2, Vector3, VibrationConfiguration, VibrationLocation, VibrationType, VibrationWaveformEffect };

@@ -25,3 +25,7 @@ export function deepEqual(obj1: any, obj2: any): boolean {
 
   return true;
 }
+
+export function removeRedundancies(array: any[]) {
+  return Array.from(new Set(array));
+}

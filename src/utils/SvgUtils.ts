@@ -17,7 +17,7 @@ import { DisplayBoundingBox } from "./DisplayCanvasHelper.ts";
 import RangeHelper from "./RangeHelper.ts";
 import { kMeansColors, mapToClosestPaletteIndex } from "./ColorUtils.ts";
 
-const _console = createConsole("SvgUtils", { log: true });
+const _console = createConsole("SvgUtils", { log: false });
 
 type FillRule = "nonzero" | "evenodd";
 type CanvasCommand =

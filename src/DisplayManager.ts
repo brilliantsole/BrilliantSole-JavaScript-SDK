@@ -101,6 +101,7 @@ import {
   DisplaySpriteSerializedSubLine,
   DisplaySpriteSerializedLine,
   DisplaySpriteSerializedLines,
+  stringToSpriteLinesMetrics,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { wait } from "./utils/Timer.ts";
 
@@ -2569,7 +2570,7 @@ class DisplayManager implements DisplayManagerInterface {
   }
   #lastReadyTime = 0;
   #lastShowRequestTime = 0;
-  #minReadyInterval = 65; // Forced delay due to Frame's fpga timing...
+  #minReadyInterval = 60; // Forced delay due to Frame's fpga timing...
   #waitBeforeReady = true;
   async #parseDisplayReady(dataView: DataView) {
     const now = Date.now();
@@ -2642,6 +2643,15 @@ class DisplayManager implements DisplayManagerInterface {
     return serializeSpriteSheet(this, spriteSheet);
   }
   async uploadSpriteSheet(spriteSheet: DisplaySpriteSheet) {
+    if (spriteSheet.sprites.length == 0) {
+      _console.log("no sprites in spriteSheet");
+      return;
+    }
+    if (this.#pendingSpriteSheet) {
+      await this.waitForEvent("displaySpriteSheetUploadComplete");
+      await this.uploadSpriteSheet(spriteSheet);
+      return;
+    }
     spriteSheet = structuredClone(spriteSheet);
     this.#pendingSpriteSheet = spriteSheet;
     const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet);
@@ -2847,6 +2857,21 @@ class DisplayManager implements DisplayManagerInterface {
       separators
     );
   }
+  stringToSpriteLinesMetrics(
+    string: string,
+    requireAll?: boolean,
+    maxLineBreadth?: number,
+    separators?: string[]
+  ) {
+    return stringToSpriteLinesMetrics(
+      string,
+      this.spriteSheets,
+      this.contextState,
+      requireAll,
+      maxLineBreadth,
+      separators
+    );
+  }
 
   async drawSpriteFromSpriteSheet(
     offsetX: number,
@@ -2888,6 +2913,9 @@ class DisplayManager implements DisplayManagerInterface {
     this.#spriteSheets[this.#pendingSpriteSheetName!] =
       this.#pendingSpriteSheet!;
     this.#spriteSheetIndices[this.#pendingSpriteSheetName!] = spriteSheetIndex;
+    _console.log(
+      `finished uploading "${this.#pendingSpriteSheetName!}" spriteSheet`
+    );
     this.#dispatchEvent("displaySpriteSheetUploadComplete", {
       spriteSheetName: this.#pendingSpriteSheetName!,
       spriteSheet: this.#pendingSpriteSheet!,
@@ -2998,6 +3026,13 @@ class DisplayManager implements DisplayManagerInterface {
     );
     this.#isDrawingBlankSprite = true;
     this.#saveContext(sendImmediately);
+    this.#contextStateHelper.reset();
+    this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(
+      0
+    );
+    this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(
+      0
+    );
 
     const commandType: DisplayContextCommandType = "startSprite";
     const dataView = serializeContextCommand(this, {
@@ -3076,11 +3111,11 @@ class DisplayManager implements DisplayManagerInterface {
   }
   set isServerSide(newIsServerSide) {
     if (this.#isServerSide == newIsServerSide) {
-      _console.log("redundant isServerSide assignment");
+      //_console.log("redundant isServerSide assignment");
       return;
     }
-    _console.log({ newIsServerSide });
     this.#isServerSide = newIsServerSide;
+    _console.log({ isServerSide: this.isServerSide });
   }
 }
 
