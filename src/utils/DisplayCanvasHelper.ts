@@ -101,17 +101,21 @@ import {
 import { wait } from "./Timer.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
+  assertValidSpriteLines,
   DisplaySprite,
   DisplaySpriteLines,
+  DisplaySpriteLinesMetrics,
   DisplaySpritePaletteSwap,
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
+  getSpriteLinesMetrics,
   serializeSpriteSheet,
   stringToSpriteLines,
+  stringToSpriteLinesMetrics,
 } from "./DisplaySpriteSheetUtils.ts";
 
-const _console = createConsole("DisplayCanvasHelper", { log: true });
+const _console = createConsole("DisplayCanvasHelper", { log: false });
 
 export const DisplayCanvasHelperEventTypes = [
   "contextState",
@@ -239,6 +243,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#bitmapContext = this.#bitmapCanvas.getContext("2d")!;
     this.#bitmapContext.imageSmoothingEnabled = false;
     this.addEventListener("ready", () => {
+      this.#isReady = true;
       this.#onSentContextCommands();
       this.#drawFrontDrawStack();
     });
@@ -335,6 +340,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (!this.context) {
       return;
     }
+    //_console.log("drawFrontDrawStack");
     this.#context.imageSmoothingEnabled = false;
 
     this.#save();
@@ -493,7 +499,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   async #onDeviceDisplayReady(event: DeviceEventMap["displayReady"]) {
     // _console.log("device display ready");
-    this.#isReady = true;
+    // this.#isReady = true;
     // await wait(5); // we need to wait for some reason
     this.#dispatchEvent("ready", {});
   }
@@ -542,7 +548,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     let redraw = false;
     redraw ||= this.#flushColors();
     redraw ||= this.#flushOpacities();
-
+    redraw ||= this.#flushBrightness();
+    _console.log("onSentContextCommands", { redraw });
     if (redraw) {
       this.#drawFrontDrawStack();
     }
@@ -613,6 +620,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#dispatchEvent("color", { colorIndex, colorHex, colorRGB });
     });
     this.#pendingColors.length = 0;
+    _console.log("flushColors");
     return true;
   }
   #resetColors() {
@@ -642,13 +650,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   #flushOpacities() {
     if (this.#pendingOpacities.length == 0) {
-      return true;
+      return false;
     }
     this.#pendingOpacities.forEach((opacity, colorIndex) => {
       this.#opacities[colorIndex] = opacity;
       this.#dispatchEvent("colorOpacity", { colorIndex, opacity });
     });
     this.#pendingOpacities.length = 0;
+    _console.log("flushOpacities");
     return true;
   }
   #resetOpacities() {
@@ -714,9 +723,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       if (this.device) {
         return;
       }
-      this.#isReady = true;
-      this.#onSentContextCommands();
-      this.#drawFrontDrawStack();
       this.#dispatchEvent("ready", {});
     }
   }
@@ -756,8 +762,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       if (this.device) {
         return;
       }
-      this.#onSentContextCommands();
-      this.#isReady = true;
       this.#dispatchEvent("ready", {});
     }
   }
@@ -1009,7 +1013,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       [alignmentKey]: alignment,
     });
-    // _console.log({
+    // console.log({
     //   alignmentKey,
     //   alignment,
     //   differences,
@@ -3766,7 +3770,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spriteLines: DisplaySpriteLines,
     contextState: DisplayContextState
   ) {
-    const spritesSize = { width: 0, height: 0 };
+    const { expandedSpritesLines, lineBreadths, localSize, size } =
+      getSpriteLinesMetrics(spriteLines, this.#spriteSheets, contextState);
 
     const isSpritesDirectionPositive = isDirectionPositive(
       contextState.spritesDirection
@@ -3786,97 +3791,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
 
     const breadthSizeKey = isSpritesDirectionHorizontal ? "width" : "height";
-    const depthSizeKey = isSpritesLineDirectionHorizontal ? "width" : "height";
-
-    if (!areSpritesDirectionsOrthogonal) {
-      if (isSpritesDirectionHorizontal) {
-        spritesSize.height += contextState.spritesLineHeight;
-      } else {
-        spritesSize.width += contextState.spritesLineHeight;
-      }
-    }
 
     const spritesBreadthSign = isSpritesDirectionPositive ? 1 : -1;
     const spritesDepthSign = isSpritesLineDirectionPositive ? 1 : -1;
-
-    const spritesLineBreadths: number[] = [];
-
-    const _spritesLines: DisplaySprite[][] = [];
-
-    spriteLines.forEach((spriteLine, lineIndex) => {
-      const _spritesLine: DisplaySprite[] = [];
-
-      let spritesLineBreadth = 0;
-
-      spriteLine.forEach(({ spriteSheetName, spriteNames }) => {
-        const spriteSheet = this.spriteSheets[spriteSheetName];
-        _console.assertWithError(
-          spriteSheet,
-          `no spriteSheet found with name "${spriteSheetName}"`
-        );
-        spriteNames.forEach((spriteName) => {
-          const sprite = spriteSheet.sprites.find(
-            (sprite) => sprite.name == spriteName
-          )!;
-          _console.assertWithError(
-            sprite,
-            `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`
-          );
-          const spriteIndex = _spritesLine.length;
-          _spritesLine.push(sprite);
-          spritesLineBreadth += isSpritesDirectionHorizontal
-            ? sprite.width
-            : sprite.height;
-          spritesLineBreadth += contextState.spritesSpacing;
-          //_console.log({ spriteIndex, spritesLineBreadth });
-        });
-      });
-      spritesLineBreadth -= contextState.spritesSpacing;
-
-      if (areSpritesDirectionsOrthogonal) {
-        spritesSize[breadthSizeKey] = Math.max(
-          spritesSize[breadthSizeKey],
-          spritesLineBreadth
-        );
-
-        spritesSize[depthSizeKey] += contextState.spritesLineHeight;
-      } else {
-        spritesSize[breadthSizeKey] += spritesLineBreadth;
-      }
-
-      spritesSize[depthSizeKey] += contextState.spritesLineSpacing;
-
-      // _console.log({
-      //   lineIndex,
-      //   spritesBreadth: spritesSize[breadthSizeKey],
-      //   spritesDepth: spritesSize[depthSizeKey],
-      // });
-
-      spritesLineBreadths.push(spritesLineBreadth);
-      _spritesLines.push(_spritesLine);
-    });
-    spritesSize[depthSizeKey] -= contextState.spritesLineSpacing;
-    const numberOfLines = _spritesLines.length;
-
-    // _console.log({
-    //   numberOfLines,
-    //   spritesWidth: spritesSize.width,
-    //   spritesHeight: spritesSize.height,
-    // });
-
-    const spritesScaledWidth =
-      spritesSize.width * Math.abs(contextState.spriteScaleX);
-    const spritesScaledHeight =
-      spritesSize.height * Math.abs(contextState.spriteScaleY);
-
-    //_console.log({ spritesScaledWidth, spritesScaledHeight });
 
     this.#setIgnoreDevice(true);
     this.#setCanvasContextTransform(
       offsetX,
       offsetY,
-      spritesSize.width,
-      spritesSize.height,
+      localSize.width,
+      localSize.height,
       contextState
     );
     this.#setUseSpriteColorIndices(true);
@@ -3927,16 +3851,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     let spritesBreadthStart = 0;
     switch (contextState.spritesDirection) {
       case "right":
-        spritesBreadthStart = -spritesSize.width / 2;
+        spritesBreadthStart = -localSize.width / 2;
         break;
       case "left":
-        spritesBreadthStart = spritesSize.width / 2;
+        spritesBreadthStart = localSize.width / 2;
         break;
       case "up":
-        spritesBreadthStart = spritesSize.height / 2;
+        spritesBreadthStart = localSize.height / 2;
         break;
       case "down":
-        spritesBreadthStart = -spritesSize.height / 2;
+        spritesBreadthStart = -localSize.height / 2;
         break;
     }
 
@@ -3962,33 +3886,33 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (areSpritesDirectionsOrthogonal) {
       switch (contextState.spritesLineDirection) {
         case "right":
-          spriteOffset[depthOffsetKey] = -spritesSize.width / 2;
+          spriteOffset[depthOffsetKey] = -localSize.width / 2;
           break;
         case "left":
-          spriteOffset[depthOffsetKey] = spritesSize.width / 2;
+          spriteOffset[depthOffsetKey] = localSize.width / 2;
           break;
         case "up":
-          spriteOffset[depthOffsetKey] = spritesSize.height / 2;
+          spriteOffset[depthOffsetKey] = localSize.height / 2;
           break;
         case "down":
-          spriteOffset[depthOffsetKey] = -spritesSize.height / 2;
+          spriteOffset[depthOffsetKey] = -localSize.height / 2;
           break;
       }
     } else {
       switch (contextState.spritesDirection) {
         case "right":
         case "left":
-          spriteOffset.y = -spritesSize.height / 2;
+          spriteOffset.y = -localSize.height / 2;
           break;
         case "up":
         case "down":
-          spriteOffset.x = -spritesSize.width / 2;
+          spriteOffset.x = -localSize.width / 2;
           break;
       }
     }
 
-    _spritesLines.forEach((_spritesLine, lineIndex) => {
-      const spritesLineBreadth = spritesLineBreadths[lineIndex];
+    expandedSpritesLines.forEach((_spritesLine, lineIndex) => {
+      const spritesLineBreadth = lineBreadths[lineIndex];
       if (areSpritesDirectionsOrthogonal) {
         switch (contextState.spritesLineAlignment) {
           case "start":
@@ -3998,13 +3922,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
             spriteOffset[breadthOffsetKey] =
               spritesBreadthStart +
               spritesBreadthSign *
-                ((spritesSize[breadthSizeKey] - spritesLineBreadth) / 2);
+                ((localSize[breadthSizeKey] - spritesLineBreadth) / 2);
             break;
           case "end":
             spriteOffset[breadthOffsetKey] =
               spritesBreadthStart +
               spritesBreadthSign *
-                (spritesSize[breadthSizeKey] - spritesLineBreadth);
+                (localSize[breadthSizeKey] - spritesLineBreadth);
             break;
         }
       }
@@ -4077,22 +4001,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.contextState.spritesLineHeight > 0,
       `spritesLineHeight must be >0`
     );
-    spriteLines.forEach((spriteLine) => {
-      spriteLine.forEach((spriteSubLine) => {
-        const { spriteSheetName, spriteNames } = spriteSubLine;
-        this.assertLoadedSpriteSheet(spriteSheetName);
-        const spriteSheet = this.spriteSheets[spriteSheetName];
-        spriteNames.forEach((spriteName) => {
-          const sprite = spriteSheet.sprites.find(
-            (sprite) => sprite.name == spriteName
-          );
-          _console.assertWithError(
-            sprite,
-            `no sprite with name "${spriteName}" found in spriteSheet "${spriteSheetName}"`
-          );
-        });
-      });
-    });
+    assertValidSpriteLines(this, spriteLines);
 
     const contextState = structuredClone(this.contextState);
     this.#drawSpritesToCanvas(offsetX, offsetY, spriteLines, contextState);
@@ -4160,6 +4069,21 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       separators
     );
   }
+  stringToSpriteLinesMetrics(
+    string: string,
+    requireAll?: boolean,
+    maxLineBreadth?: number,
+    separators?: string[]
+  ) {
+    return stringToSpriteLinesMetrics(
+      string,
+      this.spriteSheets,
+      this.contextState,
+      requireAll,
+      maxLineBreadth,
+      separators
+    );
+  }
 
   // BRIGHTNESS
   #brightness: DisplayBrightness = "medium";
@@ -4175,6 +4099,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   };
   get #brightnessOpacity() {
     return this.#brightnessOpacities[this.brightness];
+  }
+  #didSetBrightness = false;
+  #flushBrightness() {
+    if (!this.#didSetBrightness) {
+      return false;
+    }
+    _console.log("flushBrightness");
+    this.#didSetBrightness = false;
+    return true;
   }
   async setBrightness(
     newBrightness: DisplayBrightness,
@@ -4196,7 +4129,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         this.#onSentContextCommands();
       }
     }
-    this.#drawFrontDrawStack();
+    this.#didSetBrightness = true;
     this.#dispatchEvent("brightness", { brightness: this.brightness });
   }
   async #resetBrightness() {
@@ -4263,7 +4196,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       const localBox = this.#getRectBoundingBox(
         scaledWidth,
         scaledHeight,
-        contextState
+        contextState,
+        false
       );
       const rotatedLocalBox = this.#rotateBoundingBox(
         localBox,

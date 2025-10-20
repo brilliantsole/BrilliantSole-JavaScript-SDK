@@ -903,10 +903,9 @@ device.addEventListener("getSensorConfiguration", () => {
   updateTakePictureButton();
 });
 const updateTakePictureButton = () => {
-  takePictureButton.disabled =
-    !device.isConnected ||
-    device.sensorConfiguration.camera == 0 ||
-    device.cameraStatus != "idle";
+  takePictureButton.disabled = !device.isConnected;
+  // device.sensorConfiguration.camera == 0 ||
+  // device.cameraStatus != "idle";
 };
 device.addEventListener("cameraStatus", () => {
   updateTakePictureButton();
@@ -1664,7 +1663,7 @@ const selectFont = async (newFontName) => {
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
 
 // IMAGES
-const imageHeight = 170;
+const imageHeight = 150;
 /** @type {Record<number, {spriteSheet: BS.DisplaySpriteSheet, profileImage: HTMLImageElement}>} */
 const profileImageSpriteSheets = {};
 /** @param {Profile} profile */

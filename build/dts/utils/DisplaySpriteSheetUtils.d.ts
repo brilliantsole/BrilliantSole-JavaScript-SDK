@@ -3,7 +3,6 @@ import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import opentype, { Font } from "opentype.js";
 import { Vector2 } from "./MathUtils.ts";
-import { DisplayBoundingBox } from "./DisplayCanvasHelper.ts";
 import { DisplayContextState } from "./DisplayContextState.ts";
 export type DisplaySpriteSubLine = {
     spriteSheetName: string;
@@ -60,18 +59,55 @@ export type FontToSpriteSheetOptions = {
     usePath?: boolean;
     script?: string;
     string?: string;
+    minSpriteY?: number;
+    maxSpriteY?: number;
+    maxSpriteheight?: number;
 };
 export declare const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions;
 export declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
 export declare function getFontUnicodeRange(font: Font): import("./RangeHelper.ts").Range | undefined;
+export declare const englishRegex: RegExp;
 export declare function contourArea(points: Vector2[]): number;
+export declare function getFontMetrics(font: Font | Font[], fontSize: number, options?: FontToSpriteSheetOptions): {
+    maxSpriteHeight: number;
+    maxSpriteY: number;
+    minSpriteY: number;
+};
 export declare function fontToSpriteSheet(font: Font | Font[], fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
 export declare function stringToSprites(string: string, spriteSheet: DisplaySpriteSheet, requireAll?: boolean): DisplaySprite[];
 export declare function getReferencedSprites(sprite: DisplaySprite, spriteSheet: DisplaySpriteSheet): DisplaySprite[];
 export declare function reduceSpriteSheet(spriteSheet: DisplaySpriteSheet, spriteNames: string | string[], requireAll?: boolean): DisplaySpriteSheet;
 export declare function stringToSpriteLines(string: string, spriteSheets: Record<string, DisplaySpriteSheet>, contextState: DisplayContextState, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLines;
-export declare function getSpriteLinesBoundingBox(spriteLines: DisplaySpriteLines, spriteSheets: Record<string, DisplaySpriteSheet>, contextState: DisplayContextState): DisplayBoundingBox;
-export declare function getSpriteLinesOffset(spriteLines: DisplaySpriteLines, lineIndex: number, subLineIndex: number, contextState: DisplayContextState): Vector2;
-export declare function splitStringInto(string: string, spriteSheets: Record<string, DisplaySpriteSheet>, separators?: string[], requireAll?: boolean): void;
 export declare function getFontMaxHeight(font: Font, fontSize: number): number;
 export declare function getMaxSpriteSheetSize(spriteSheet: DisplaySpriteSheet): DisplaySize;
+export declare function assertValidSpriteLines(displayManager: DisplayManagerInterface, spriteLines: DisplaySpriteLines): void;
+export declare function getExpandedSpriteLines(spriteLines: DisplaySpriteLines, spriteSheets: Record<string, DisplaySpriteSheet>): DisplaySprite[][];
+export declare function getExpandedSpriteLinesSize(expandedSpritesLines: DisplaySprite[][], contextState: DisplayContextState): {
+    localSize: {
+        width: number;
+        height: number;
+    };
+    size: DisplaySize;
+    lineBreadths: number[];
+};
+export declare function getSpriteLinesMetrics(spriteLines: DisplaySpriteLines, spriteSheets: Record<string, DisplaySpriteSheet>, contextState: DisplayContextState): {
+    localSize: {
+        width: number;
+        height: number;
+    };
+    size: DisplaySize;
+    lineBreadths: number[];
+    expandedSpritesLines: DisplaySprite[][];
+    numberOfLines: number;
+};
+export type DisplaySpriteLinesMetrics = {
+    localSize: {
+        width: number;
+        height: number;
+    };
+    size: DisplaySize;
+    lineBreadths: number[];
+    expandedSpritesLines: DisplaySprite[][];
+    numberOfLines: number;
+};
+export declare function stringToSpriteLinesMetrics(string: string, spriteSheets: Record<string, DisplaySpriteSheet>, contextState: DisplayContextState, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLinesMetrics;

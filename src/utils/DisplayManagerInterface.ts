@@ -6,6 +6,7 @@ import {
   DisplayBezierCurve,
   DisplayBezierCurveType,
   DisplayWireframe,
+  DisplaySize,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
@@ -19,6 +20,7 @@ import {
 import {
   DisplaySprite,
   DisplaySpriteLines,
+  DisplaySpriteLinesMetrics,
   DisplaySpritePaletteSwap,
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
@@ -32,7 +34,7 @@ import {
 } from "./DisplayUtils.ts";
 import { degToRad, Vector2 } from "./MathUtils.ts";
 
-const _console = createConsole("DisplayManagerInterface", { log: true });
+const _console = createConsole("DisplayManagerInterface", { log: false });
 
 export interface DisplayManagerInterface {
   get isReady(): boolean;
@@ -495,6 +497,12 @@ export interface DisplayManagerInterface {
     maxLineBreadth?: number,
     separators?: string[]
   ): DisplaySpriteLines;
+  stringToSpriteLinesMetrics(
+    string: string,
+    requireAll?: boolean,
+    maxLineBreadth?: number,
+    separators?: string[]
+  ): DisplaySpriteLinesMetrics;
   drawSprites(
     offsetX: number,
     offsetY: number,
