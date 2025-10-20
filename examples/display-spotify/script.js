@@ -388,7 +388,7 @@ const draw = async () => {
 
         await displayCanvasHelper.restoreContext();
 
-        if (!isSpotifyTimeInputChanging) {
+        if (!isSpotifyTimeInputChanging && (!isMouseDown || !didMouseSeek)) {
           await displayCanvasHelper.selectLineColor(getTextColorIndex());
           await displayCanvasHelper.setLineWidth(8);
           await displayCanvasHelper.setIgnoreFill(true);
@@ -1763,8 +1763,21 @@ const setIsMouseDown = (newIsMouseDown) => {
   }
   isMouseDown = newIsMouseDown;
   console.log({ isMouseDown });
+  if (isMouseDown) {
+    didMouseSeek = false;
+  }
 };
 window.spotifyMouseMovementXScalar = 2000;
+let didMouseSeek = false;
+displayCanvas.addEventListener("click", () => {
+  if (!isLocked || !spotifyPlayer) {
+    return;
+  }
+  if (didMouseSeek) {
+    return;
+  }
+  toggleSpotifyPlayback();
+});
 displayCanvas.addEventListener("mousemove", (event) => {
   if (!isLocked || !spotifyState) {
     return;
@@ -1772,10 +1785,11 @@ displayCanvas.addEventListener("mousemove", (event) => {
   const { movementX, movementY } = event;
   //console.log({ movementX, movementY });
 
-  if (isMouseDown) {
+  if (movementX && isMouseDown) {
     seekSpotifyPlayer(
       spotifyState.position + movementX * spotifyMouseMovementXScalar
     );
+    didMouseSeek = true;
   }
 });
 document.addEventListener("pointerlockchange", () => {
