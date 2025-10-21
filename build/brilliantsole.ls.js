@@ -18916,9 +18916,6 @@
     log: false
   });
   const spriteHeaderLength = 3 * 2;
-  function calculateSpriteSheetHeaderLength(numberOfSprites) {
-    return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
-  }
   function getCurvesPoints(curves) {
     const curvePoints = [];
     curves.forEach((curve, index) => {
@@ -19749,17 +19746,6 @@
     ctx.drawImage(image, 0, 0, width, height);
     return canvas;
   }
-  function cropCanvas(canvas, x, y, width, height, targetCanvas) {
-    targetCanvas = targetCanvas || document.createElement("canvas");
-    const ctx = targetCanvas.getContext("2d", {
-      willReadFrequently: true
-    });
-    targetCanvas.width = width;
-    targetCanvas.height = height;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
-    return targetCanvas;
-  }
   function removeAlphaFromCanvas(canvas) {
     const ctx = canvas.getContext("2d", {
       willReadFrequently: true
@@ -19804,86 +19790,6 @@
       bitmap
     };
   }
-  const drawSpriteBitmapCommandHeaderLength = 1 + 2 + 2 + 2 + 2 + 1 + 2;
-  async function canvasToBitmaps(canvas, numberOfColors, mtu) {
-    const {
-      blob,
-      colors,
-      colorIndices
-    } = await quantizeCanvas(canvas, numberOfColors);
-    const bitmapRows = [];
-    const {
-      width,
-      height
-    } = canvas;
-    const numberOfPixels = width * height;
-    const pixelDepth = DisplayPixelDepths.find(pixelDepth => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors);
-    _console$k.assertWithError(pixelDepth, "no pixelDepth found that covers ".concat(numberOfColors, " colors"));
-    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
-    const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
-    _console$k.log({
-      width,
-      height,
-      numberOfPixels,
-      pixelDepth,
-      pixelsPerByte,
-      numberOfBytes,
-      mtu
-    });
-    const maxPixelDataLength = mtu - (drawSpriteBitmapCommandHeaderLength + 5);
-    const maxPixels = Math.floor(maxPixelDataLength / pixelsPerByte);
-    const maxBitmapWidth = Math.min(maxPixels, width);
-    let maxBitmapHeight = 1;
-    if (maxBitmapWidth == width) {
-      const bitmapRowPixelDataLength = Math.ceil(width / pixelsPerByte);
-      maxBitmapHeight = Math.floor(maxPixelDataLength / bitmapRowPixelDataLength);
-    }
-    _console$k.log({
-      maxPixelDataLength,
-      maxPixels,
-      maxBitmapHeight,
-      maxBitmapWidth
-    });
-    if (maxBitmapHeight >= height) {
-      _console$k.log("image is small enough for a single bitmap");
-      const bitmap = {
-        numberOfColors,
-        pixels: colorIndices,
-        width,
-        height
-      };
-      bitmapRows.push([bitmap]);
-    } else {
-      let offsetX = 0;
-      let offsetY = 0;
-      const bitmapCanvas = document.createElement("canvas");
-      const bitmapColorIndices = new Array(numberOfColors).fill(0).map((_, i) => i);
-      while (offsetY < height) {
-        const bitmapHeight = Math.min(maxBitmapHeight, height - offsetY);
-        offsetX = 0;
-        const bitmapRow = [];
-        bitmapRows.push(bitmapRow);
-        while (offsetX < width) {
-          const bitmapWidth = Math.min(maxBitmapWidth, width - offsetX);
-          cropCanvas(canvas, offsetX, offsetY, bitmapWidth, bitmapHeight, bitmapCanvas);
-          const {
-            bitmap
-          } = await imageToBitmap(bitmapCanvas, bitmapWidth, bitmapHeight, colors, bitmapColorIndices, numberOfColors);
-          bitmapRow.push(bitmap);
-          offsetX += bitmapWidth;
-        }
-        offsetY += bitmapHeight;
-      }
-    }
-    return {
-      bitmapRows,
-      colors
-    };
-  }
-  async function imageToBitmaps(image, width, height, numberOfColors, mtu) {
-    const canvas = resizeImage(image, width, height);
-    return canvasToBitmaps(canvas, numberOfColors, mtu);
-  }
   function getBitmapNumberOfBytes(bitmap) {
     const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
     const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
@@ -19902,147 +19808,6 @@
     bitmap.pixels.forEach((pixel, index) => {
       _console$k.assertRangeWithError("bitmap.pixels[".concat(index, "]"), pixel, 0, bitmap.numberOfColors - 1);
     });
-  }
-  async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet) {
-    var _spriteSheet$palettes;
-    let paletteOffset = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : 0;
-    const {
-      width,
-      height
-    } = canvas;
-    let palette = (_spriteSheet$palettes = spriteSheet.palettes) === null || _spriteSheet$palettes === void 0 ? void 0 : _spriteSheet$palettes.find(palette => palette.name == paletteName);
-    if (!palette) {
-      var _spriteSheet$palettes2;
-      palette = {
-        name: paletteName,
-        numberOfColors,
-        colors: new Array(numberOfColors).fill("#000000")
-      };
-      spriteSheet.palettes = spriteSheet.palettes || [];
-      (_spriteSheet$palettes2 = spriteSheet.palettes) === null || _spriteSheet$palettes2 === void 0 ? void 0 : _spriteSheet$palettes2.push(palette);
-    }
-    _console$k.log("pallete", palette);
-    const sprite = {
-      name: spriteName,
-      width,
-      height,
-      paletteSwaps: [],
-      commands: []
-    };
-    const results = await quantizeCanvas(canvas, numberOfColors, !overridePalette ? palette.colors : undefined);
-    const blob = results.blob;
-    const colorIndices = results.colorIndices;
-    if (overridePalette) {
-      results.colors.forEach((color, index) => {
-        palette.colors[index + paletteOffset] = color;
-      });
-    }
-    sprite.commands.push({
-      type: "selectBitmapColors",
-      bitmapColorPairs: new Array(numberOfColors).fill(0).map((_, index) => ({
-        bitmapColorIndex: index,
-        colorIndex: index + paletteOffset
-      }))
-    });
-    const bitmap = {
-      numberOfColors,
-      pixels: colorIndices,
-      width,
-      height
-    };
-    sprite.commands.push({
-      type: "drawBitmap",
-      offsetX: 0,
-      offsetY: 0,
-      bitmap
-    });
-    const spriteIndex = spriteSheet.sprites.findIndex(sprite => sprite.name == spriteName);
-    if (spriteIndex == -1) {
-      spriteSheet.sprites.push(sprite);
-    } else {
-      _console$k.log("overwriting spriteIndex ".concat(spriteIndex));
-      spriteSheet.sprites[spriteIndex] = sprite;
-    }
-    return {
-      sprite,
-      blob
-    };
-  }
-  async function imageToSprite(image, spriteName, width, height, numberOfColors, paletteName, overridePalette, spriteSheet) {
-    let paletteOffset = arguments.length > 8 && arguments[8] !== undefined ? arguments[8] : 0;
-    const canvas = resizeImage(image, width, height);
-    return canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset);
-  }
-  const spriteSheetWithSingleBitmapCommandLength = calculateSpriteSheetHeaderLength(1) + drawSpriteBitmapCommandHeaderLength;
-  function spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) {
-    return spriteSheetWithSingleBitmapCommandLength + (1 + 1 + numberOfColors * 2);
-  }
-  async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength) {
-    const spriteSheet = {
-      name: spriteSheetName,
-      palettes: [],
-      paletteSwaps: [],
-      sprites: []
-    };
-    if (maxFileLength == undefined) {
-      await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
-    } else {
-      const {
-        width,
-        height
-      } = canvas;
-      const numberOfPixels = width * height;
-      const pixelDepth = DisplayPixelDepths.find(pixelDepth => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors);
-      _console$k.assertWithError(pixelDepth, "no pixelDepth found that covers ".concat(numberOfColors, " colors"));
-      const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
-      const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
-      _console$k.log({
-        width,
-        height,
-        numberOfPixels,
-        pixelDepth,
-        pixelsPerByte,
-        numberOfBytes,
-        maxFileLength
-      });
-      const maxPixelDataLength = maxFileLength - (spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) + 5);
-      const imageRowPixelDataLength = Math.ceil(width / pixelsPerByte);
-      const maxSpriteHeight = Math.floor(maxPixelDataLength / imageRowPixelDataLength);
-      if (maxSpriteHeight >= height) {
-        _console$k.log("image is small enough for a single sprite");
-        await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
-      } else {
-        var _spriteSheet$palettes3;
-        const {
-          colors
-        } = await quantizeCanvas(canvas, numberOfColors);
-        (_spriteSheet$palettes3 = spriteSheet.palettes) === null || _spriteSheet$palettes3 === void 0 ? void 0 : _spriteSheet$palettes3.push({
-          name: paletteName,
-          numberOfColors,
-          colors
-        });
-        let offsetY = 0;
-        let imageIndex = 0;
-        const spriteCanvas = document.createElement("canvas");
-        while (offsetY < height) {
-          const spriteHeight = Math.min(maxSpriteHeight, height - offsetY);
-          cropCanvas(canvas, 0, offsetY, width, spriteHeight, spriteCanvas);
-          offsetY += spriteHeight;
-          _console$k.log("cropping sprite ".concat(imageIndex), {
-            offsetY,
-            width,
-            spriteHeight
-          });
-          await canvasToSprite(spriteCanvas, "image".concat(imageIndex), numberOfColors, paletteName, false, spriteSheet);
-          imageIndex++;
-        }
-      }
-    }
-    return spriteSheet;
-  }
-  async function imageToSpriteSheet(image, spriteSheetName, width, height, numberOfColors, paletteName, maxFileLength) {
-    const canvas = resizeImage(image, width, height);
-    return canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength);
   }
 
   const _console$j = createConsole("DisplayManagerInterface", {
@@ -27678,9 +27443,6 @@
   exports.VibrationTypes = VibrationTypes;
   exports.VibrationWaveformEffects = VibrationWaveformEffects;
   exports.WebSocketClient = WebSocketClient;
-  exports.canvasToBitmaps = canvasToBitmaps;
-  exports.canvasToSprite = canvasToSprite;
-  exports.canvasToSpriteSheet = canvasToSpriteSheet;
   exports.displayCurveTypeToNumberOfControlPoints = displayCurveTypeToNumberOfControlPoints;
   exports.englishRegex = englishRegex;
   exports.fontToSpriteSheet = fontToSpriteSheet;
@@ -27689,18 +27451,12 @@
   exports.getFontUnicodeRange = getFontUnicodeRange;
   exports.getMaxSpriteSheetSize = getMaxSpriteSheetSize;
   exports.hexToRGB = hexToRGB;
-  exports.imageToBitmaps = imageToBitmaps;
-  exports.imageToSprite = imageToSprite;
-  exports.imageToSpriteSheet = imageToSpriteSheet;
   exports.intersectWireframes = intersectWireframes;
   exports.isWireframePolygon = isWireframePolygon;
   exports.maxDisplayScale = maxDisplayScale;
   exports.mergeWireframes = mergeWireframes;
   exports.parseFont = parseFont;
   exports.pixelDepthToNumberOfColors = pixelDepthToNumberOfColors;
-  exports.quantizeImage = quantizeImage;
-  exports.resizeAndQuantizeImage = resizeAndQuantizeImage;
-  exports.resizeImage = resizeImage;
   exports.rgbToHex = rgbToHex;
   exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
   exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
