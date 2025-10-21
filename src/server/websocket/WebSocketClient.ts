@@ -58,7 +58,11 @@ class WebSocketClient extends BaseClient {
     return this.readyState == WebSocket.CLOSED;
   }
 
-  connect(url: string | URL = `wss://${location.host}`) {
+  connect(
+    url: string | URL = `${
+      location.protocol.includes("https") ? "wss" : "ws"
+    }://${location.host}`
+  ) {
     if (this.webSocket) {
       this.assertDisconnection();
     }

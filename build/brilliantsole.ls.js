@@ -22728,7 +22728,7 @@
     _console$h.assertEnumWithError(messageType, TxRxMessageTypes);
   }
   function _assertIsSupported() {
-    _console$h.assertWithError(this.isSupported, "".concat(this.constructor.name, " is not supported"));
+    _console$h.assertWithError(this.isSupported, "".concat(this.type, " is not supported"));
   }
   function _assertIsNotConnecting() {
     _console$h.assertWithError(this.status != "connecting", "device is already connecting");
@@ -27277,7 +27277,7 @@
       return this.readyState == WebSocket.CLOSED;
     }
     connect() {
-      let url = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "wss://".concat(location.host);
+      let url = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "".concat(location.protocol.includes("https") ? "wss" : "ws", "://").concat(location.host);
       if (this.webSocket) {
         this.assertDisconnection();
       }

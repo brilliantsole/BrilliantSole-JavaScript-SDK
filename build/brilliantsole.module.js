@@ -23754,7 +23754,7 @@ class BaseConnectionManager {
         return this.baseConstructor.type;
     }
     #assertIsSupported() {
-        _console$i.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+        _console$i.assertWithError(this.isSupported, `${this.type} is not supported`);
     }
     constructor() {
         this.#assertIsSupported();
@@ -30970,7 +30970,7 @@ class WebSocketClient extends BaseClient {
     get isDisconnected() {
         return this.readyState == WebSocket.CLOSED;
     }
-    connect(url = `wss://${location.host}`) {
+    connect(url = `${location.protocol.includes("https") ? "wss" : "ws"}://${location.host}`) {
         if (this.webSocket) {
             this.assertDisconnection();
         }
