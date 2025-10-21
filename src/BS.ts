@@ -195,7 +195,6 @@ export {
 export { Font, Glyph } from "opentype.js";
 /** BROWSER_END */
 
-/** BROWSER_START */
 export {
   resizeAndQuantizeImage,
   quantizeImage,
@@ -207,7 +206,6 @@ export {
   imageToBitmaps,
   canvasToBitmaps,
 } from "./utils/DisplayBitmapUtils.ts";
-/** BROWSER_END */
 
 export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
 
