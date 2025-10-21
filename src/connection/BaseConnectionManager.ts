@@ -158,10 +158,7 @@ abstract class BaseConnectionManager {
 
   /** @throws {Error} if not supported */
   #assertIsSupported() {
-    _console.assertWithError(
-      this.isSupported,
-      `${this.constructor.name} is not supported`
-    );
+    _console.assertWithError(this.isSupported, `${this.type} is not supported`);
   }
 
   constructor() {

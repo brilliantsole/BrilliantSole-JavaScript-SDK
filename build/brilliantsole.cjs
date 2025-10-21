@@ -9005,7 +9005,7 @@ class BaseConnectionManager {
         return this.baseConstructor.type;
     }
     #assertIsSupported() {
-        _console$n.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+        _console$n.assertWithError(this.isSupported, `${this.type} is not supported`);
     }
     constructor() {
         this.#assertIsSupported();
