@@ -25571,15 +25571,12 @@
       return _classPrivateFieldGet2(_microphoneManager, this).isRecording;
     }
     startRecordingMicrophone() {
-      _assertClassBrand(_Device_brand, this, _assertWebAudioSupport).call(this);
       _classPrivateFieldGet2(_microphoneManager, this).startRecording();
     }
     stopRecordingMicrophone() {
-      _assertClassBrand(_Device_brand, this, _assertWebAudioSupport).call(this);
       _classPrivateFieldGet2(_microphoneManager, this).stopRecording();
     }
     toggleMicrophoneRecording() {
-      _assertClassBrand(_Device_brand, this, _assertWebAudioSupport).call(this);
       _classPrivateFieldGet2(_microphoneManager, this).toggleRecording();
     }
     get isDisplayAvailable() {

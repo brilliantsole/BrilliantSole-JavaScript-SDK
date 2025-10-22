@@ -26873,15 +26873,12 @@ class Device {
         return this.#microphoneManager.isRecording;
     }
     startRecordingMicrophone() {
-        this.#assertWebAudioSupport();
         this.#microphoneManager.startRecording();
     }
     stopRecordingMicrophone() {
-        this.#assertWebAudioSupport();
         this.#microphoneManager.stopRecording();
     }
     toggleMicrophoneRecording() {
-        this.#assertWebAudioSupport();
         this.#microphoneManager.toggleRecording();
     }
     #displayManager = new DisplayManager();
