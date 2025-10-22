@@ -204,6 +204,7 @@ device.addEventListener("getSensorConfiguration", () => {
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)({
   sampleRate: 16_000,
+  latencyHint: "interactive",
 });
 window.audioContext = audioContext;
 const checkAudioContextState = () => {
