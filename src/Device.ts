@@ -1350,7 +1350,7 @@ class Device {
   async takePicture(sensorRate: number = 10) {
     this.#assertHasCamera();
     if (this.sensorConfiguration.camera == 0) {
-      this.setSensorConfiguration({ camera: sensorRate }, false, false);
+      await this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
     await this.#cameraManager.takePicture();
   }

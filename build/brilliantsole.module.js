@@ -1570,7 +1570,7 @@ class CameraManager {
                 });
                 if (this.#imageProgress == 1) {
                     _console$A.log("finished getting image data");
-                    if (this.#headerProgress == 1) {
+                    if (this.#headerProgress == 1 && this.#footerProgress == 1) {
                         this.#buildImage();
                     }
                 }
@@ -26774,7 +26774,7 @@ class Device {
     async takePicture(sensorRate = 10) {
         this.#assertHasCamera();
         if (this.sensorConfiguration.camera == 0) {
-            this.setSensorConfiguration({ camera: sensorRate }, false, false);
+            await this.setSensorConfiguration({ camera: sensorRate }, false, false);
         }
         await this.#cameraManager.takePicture();
     }

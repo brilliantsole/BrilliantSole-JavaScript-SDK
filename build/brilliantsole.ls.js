@@ -1785,7 +1785,7 @@
         });
         if (_classPrivateFieldGet2(_imageProgress, this) == 1) {
           _console$y.log("finished getting image data");
-          if (_classPrivateFieldGet2(_headerProgress, this) == 1) {
+          if (_classPrivateFieldGet2(_headerProgress, this) == 1 && _classPrivateFieldGet2(_footerProgress, this) == 1) {
             _assertClassBrand(_CameraManager_brand, this, _buildImage).call(this);
           }
         }
@@ -25468,7 +25468,7 @@
       let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
       _assertClassBrand(_Device_brand, this, _assertHasCamera).call(this);
       if (this.sensorConfiguration.camera == 0) {
-        this.setSensorConfiguration({
+        await this.setSensorConfiguration({
           camera: sensorRate
         }, false, false);
       }
