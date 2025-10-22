@@ -25468,7 +25468,7 @@
       let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
       _assertClassBrand(_Device_brand, this, _assertHasCamera).call(this);
       if (this.sensorConfiguration.camera == 0) {
-        await this.setSensorConfiguration({
+        this.setSensorConfiguration({
           camera: sensorRate
         }, false, false);
       }
