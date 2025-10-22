@@ -25274,6 +25274,9 @@
     cancelFileTransfer() {
       _classPrivateFieldGet2(_fileTransferManager, this).cancel();
     }
+    get isTfliteAvailable() {
+      return this.fileTypes.includes("tflite");
+    }
     get tfliteName() {
       return _classPrivateFieldGet2(_tfliteManager, this).name;
     }

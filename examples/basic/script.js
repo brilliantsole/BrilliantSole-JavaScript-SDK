@@ -3263,3 +3263,60 @@ toggleQuantizeOverrideDisplayColorsCheckbox.addEventListener("input", () => {
     toggleQuantizeOverrideDisplayColorsCheckbox.checked;
 });
 onBitmapCanvasSizeUpdate();
+
+const displayContainer = document.getElementById("display");
+device.addEventListener("connected", () => {
+  if (device.isDisplayAvailable) {
+    displayContainer.setAttribute("hidden", "");
+  } else {
+    displayContainer.removeAttribute("hidden");
+  }
+});
+const cameraContainer = document.getElementById("camera");
+device.addEventListener("connected", () => {
+  if (device.hasCamera) {
+    cameraContainer.setAttribute("hidden", "");
+  } else {
+    cameraContainer.removeAttribute("hidden");
+  }
+});
+const microphoneContainer = document.getElementById("microphone");
+device.addEventListener("connected", () => {
+  if (device.hasMicrophone) {
+    microphoneContainer.setAttribute("hidden", "");
+  } else {
+    microphoneContainer.removeAttribute("hidden");
+  }
+});
+const firmwareContainer = document.getElementById("firmware");
+device.addEventListener("connected", () => {
+  if (device.canUpdateFirmware) {
+    firmwareContainer.setAttribute("hidden", "");
+  } else {
+    firmwareContainer.removeAttribute("hidden");
+  }
+});
+const wifiContainer = document.getElementById("wifi");
+device.addEventListener("connected", () => {
+  if (device.isWifiAvailable) {
+    wifiContainer.removeAttribute("hidden");
+  } else {
+    wifiContainer.setAttribute("hidden", "");
+  }
+});
+const tfliteContainer = document.getElementById("tflite");
+device.addEventListener("connected", () => {
+  if (device.isTfliteAvailable) {
+    tfliteContainer.removeAttribute("hidden");
+  } else {
+    tfliteContainer.setAttribute("hidden", "");
+  }
+});
+const vibrationContainer = document.getElementById("vibration");
+device.addEventListener("connected", () => {
+  if (device.vibrationLocations.length > 0) {
+    vibrationContainer.removeAttribute("hidden");
+  } else {
+    vibrationContainer.setAttribute("hidden", "");
+  }
+});

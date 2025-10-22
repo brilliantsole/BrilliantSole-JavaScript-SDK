@@ -1,6 +1,6 @@
 {
   "name": "brilliantsole",
-  "version": "0.0.41",
+  "version": "0.0.42",
   "description": "JavaScript SDK for BrilliantSole Smart Insoles",
   "main": "./build/brilliantsole.module.js",
   "module": "./build/brilliantsole.module.js",
@@ -82,14 +82,15 @@
   "dependencies": {
     "@abandonware/noble": "^1.9.2-24",
     "auto-bind": "^5.0.1",
-    "webbluetooth": "^3.2.1",
+    "fit-curve": "^0.2.0",
     "opentype.js": "^1.3.4",
+    "os": "^0.1.2",
     "rgbquant": "^1.1.2",
-    "woff2-encoder": "^2.0.0",
     "simplify-js": "^1.2.4",
     "svg-pathdata": "^8.0.0",
     "svgson": "^5.3.1",
-    "fit-curve": "^0.2.0"
+    "webbluetooth": "^3.2.1",
+    "woff2-encoder": "^2.0.0"
   },
   "files": [
     "package.json",

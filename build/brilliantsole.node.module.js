@@ -13,6 +13,7 @@ import 'svg-pathdata';
 import * as webbluetooth from 'webbluetooth';
 import * as dgram from 'dgram';
 import noble from '@abandonware/noble';
+import os from 'os';
 
 const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
 const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
@@ -12073,6 +12074,9 @@ class Device {
         this.#fileTransferManager.cancel();
     }
     #tfliteManager = new TfliteManager();
+    get isTfliteAvailable() {
+        return this.fileTypes.includes("tflite");
+    }
     get tfliteName() {
         return this.#tfliteManager.name;
     }
@@ -13559,7 +13563,12 @@ class NobleConnectionManager extends BluetoothConnectionManager {
 
 const _console$5 = createConsole("NobleScanner", { log: false });
 let isSupported = false;
+let filterManually = true;
+const filterServiceUuid = serviceUUIDs[0].replaceAll("-", "");
 isSupported = true;
+const platform = os.platform();
+filterManually = platform == "linux";
+_console$5.log({ platform, filterManually, filterServiceUuid });
 class NobleScanner extends BaseScanner {
     static get isSupported() {
         return isSupported;
@@ -13615,6 +13624,13 @@ class NobleScanner extends BaseScanner {
         this.#nobleState = state;
     }
     #onNobleDiscover(noblePeripheral) {
+        if (filterManually) {
+            const serviceUuid = noblePeripheral.advertisement.serviceUuids?.[0];
+            _console$5.log("onNobleDiscover.filterManually", { serviceUuid });
+            if (serviceUuid != filterServiceUuid) {
+                return;
+            }
+        }
         _console$5.log("onNobleDiscover", noblePeripheral.id);
         if (!this.#noblePeripherals[noblePeripheral.id]) {
             noblePeripheral.scanner = this;
@@ -13675,7 +13691,7 @@ class NobleScanner extends BaseScanner {
     }
     startScan() {
         super.startScan();
-        noble.startScanningAsync(serviceUUIDs, true);
+        noble.startScanningAsync(filterManually ? [] : serviceUUIDs, true);
     }
     stopScan() {
         super.stopScan();

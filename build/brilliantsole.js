@@ -26575,6 +26575,9 @@
 	        this.#fileTransferManager.cancel();
 	    }
 	    #tfliteManager = new TfliteManager();
+	    get isTfliteAvailable() {
+	        return this.fileTypes.includes("tflite");
+	    }
 	    get tfliteName() {
 	        return this.#tfliteManager.name;
 	    }

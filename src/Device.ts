@@ -14,8 +14,6 @@ import BaseConnectionManager, {
   BatteryLevelMessageTypes,
   ConnectionEventTypes,
   ConnectionStatusEventMessages,
-  ConnectionTypes,
-  ConnectionType,
   ConnectOptions,
 } from "./connection/BaseConnectionManager.ts";
 import { isInBrowser, isInNode } from "./utils/environment.ts";
@@ -1105,6 +1103,9 @@ class Device {
   // TFLITE
   #tfliteManager = new TfliteManager();
 
+  get isTfliteAvailable() {
+    return this.fileTypes.includes("tflite");
+  }
   get tfliteName() {
     return this.#tfliteManager.name;
   }

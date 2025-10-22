@@ -16,16 +16,19 @@ import NobleConnectionManager, {
 const _console = createConsole("NobleScanner", { log: false });
 
 let isSupported = false;
+let filterManually = true;
+const filterServiceUuid = (serviceUUIDs[0] as string).replaceAll("-", "");
 
 /** NODE_START */
 import noble from "@abandonware/noble";
 import { DeviceTypes } from "../InformationManager.ts";
 import DeviceManager from "../DeviceManager.ts";
-import {
-  ClientConnectionType,
-  ConnectionType,
-} from "../connection/BaseConnectionManager.ts";
+import { ClientConnectionType } from "../connection/BaseConnectionManager.ts";
 isSupported = true;
+import os from "os";
+const platform = os.platform();
+filterManually = platform == "linux";
+_console.log({ platform, filterManually, filterServiceUuid });
 /** NODE_END */
 
 export const NobleStates = [
@@ -99,6 +102,13 @@ class NobleScanner extends BaseScanner {
     this.#nobleState = state;
   }
   #onNobleDiscover(noblePeripheral: NoblePeripheral) {
+    if (filterManually) {
+      const serviceUuid = noblePeripheral.advertisement.serviceUuids?.[0];
+      _console.log("onNobleDiscover.filterManually", { serviceUuid });
+      if (serviceUuid != filterServiceUuid) {
+        return;
+      }
+    }
     _console.log("onNobleDiscover", noblePeripheral.id);
     if (!this.#noblePeripherals[noblePeripheral.id]) {
       noblePeripheral.scanner = this;
@@ -171,7 +181,10 @@ class NobleScanner extends BaseScanner {
   // SCANNING
   startScan() {
     super.startScan();
-    noble.startScanningAsync(serviceUUIDs as string[], true);
+    noble.startScanningAsync(
+      filterManually ? [] : (serviceUUIDs as string[]),
+      true
+    );
   }
   stopScan() {
     super.stopScan();

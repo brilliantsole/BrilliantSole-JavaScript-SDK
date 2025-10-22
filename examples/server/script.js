@@ -3,6 +3,8 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
 
+// CLIENT
+
 const client = new BS.WebSocketClient();
 console.log({ client });
 window.client = client;
@@ -57,7 +59,7 @@ toggleConnectionButton.addEventListener("click", () => {
     if (webSocketUrlInput.value.length > 0) {
       webSocketUrl = webSocketUrlInput.value;
     }
-    client.connect(webSocketUrl);
+    webSocketUrl = client.connect(webSocketUrl);
   }
 });
 client.addEventListener("connectionStatus", () => {
@@ -132,38 +134,6 @@ client.addEventListener("discoveredDevice", (event) => {
       }
     });
 
-    /** @type {HTMLButtonElement} */
-    const connectViaWebSocketsButton = discoveredDeviceContainer.querySelector(
-      ".connectViaWebSockets"
-    );
-    connectViaWebSocketsButton.addEventListener("click", () => {
-      let device = client.devices[discoveredDevice.bluetoothId];
-      if (device) {
-        device.connect({ type: "client", subType: "webSocket" });
-      } else {
-        device = client.connectToDevice(
-          discoveredDevice.bluetoothId,
-          "webSocket"
-        );
-        onDevice(device);
-      }
-      connectViaWebSocketsButton.disabled = true;
-    });
-
-    /** @type {HTMLButtonElement} */
-    const connectViaUDPButton =
-      discoveredDeviceContainer.querySelector(".connectViaUDP");
-    connectViaUDPButton.addEventListener("click", () => {
-      let device = client.devices[discoveredDevice.bluetoothId];
-      if (device) {
-        device.connect({ type: "client", subType: "udp" });
-      } else {
-        device = client.connectToDevice(discoveredDevice.bluetoothId, "udp");
-        onDevice(device);
-      }
-      connectViaUDPButton.disabled = true;
-    });
-
     /** @param {BS.Device} device */
     const onDevice = (device) => {
       device.addEventListener("connectionStatus", () => {
@@ -192,8 +162,6 @@ client.addEventListener("discoveredDevice", (event) => {
           toggleConnectionButton.disabled = true;
           break;
       }
-      connectViaWebSocketsButton.disabled = device.isConnected;
-      connectViaUDPButton.disabled = device.isConnected;
     };
 
     discoveredDeviceContainers[discoveredDevice.bluetoothId] =
@@ -220,34 +188,6 @@ function updateDiscoveredDeviceContainer(discoveredDevice) {
     discoveredDevice.rssi;
   discoveredDeviceContainer.querySelector(".deviceType").innerText =
     discoveredDevice.deviceType;
-
-  const connectViaWebSocketsButton = discoveredDeviceContainer.querySelector(
-    ".connectViaWebSockets"
-  );
-  const connectViaUDPButton =
-    discoveredDeviceContainer.querySelector(".connectViaUDP");
-
-  const ipAddressSpan = discoveredDeviceContainer.querySelector(".ipAddress");
-  if (discoveredDevice.ipAddress) {
-    ipAddressSpan.closest("label").classList.remove("hidden");
-    ipAddressSpan.innerText = discoveredDevice.ipAddress;
-    connectViaWebSocketsButton.classList.remove("hidden");
-    connectViaUDPButton.classList.remove("hidden");
-  } else {
-    ipAddressSpan.closest("label").classList.add("hidden");
-    connectViaWebSocketsButton.classList.add("hidden");
-    connectViaUDPButton.classList.add("hidden");
-  }
-
-  const isWifiSecureSpan =
-    discoveredDeviceContainer.querySelector(".isWifiSecure");
-  discoveredDeviceContainer.querySelector(".isWifiSecure");
-  if (discoveredDevice.isWifiSecure) {
-    isWifiSecureSpan.closest("label").classList.remove("hidden");
-    ipAddressSpan.innerText = discoveredDevice.isWifiSecure;
-  } else {
-    isWifiSecureSpan.closest("label").classList.add("hidden");
-  }
 }
 
 /** @param {BS.DiscoveredDevice} discoveredDevice */
@@ -296,6 +236,27 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
   discoveredDeviceContainer._onDevice?.(device);
 });
 
+// WEB AUDIO
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+  sampleRate: 16_000,
+  latencyHint: "interactive",
+});
+window.audioContext = audioContext;
+const checkAudioContextState = () => {
+  const { state } = audioContext;
+  console.log({ audioContextState: state });
+  if (state != "running") {
+    document.addEventListener("click", () => audioContext.resume(), {
+      once: true,
+    });
+  }
+};
+audioContext.addEventListener("statechange", () => {
+  checkAudioContextState();
+});
+checkAudioContextState();
+
 // AVAILABLE DEVICES
 
 /** @type {HTMLTemplateElement} */
@@ -322,6 +283,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         .querySelector(".connectedDevice");
       connectedDeviceContainers[device.bluetoothId] = connectedDeviceContainer;
 
+      // DEVICE INFORMATION
       /** @type {HTMLPreElement} */
       const deviceInformationPre =
         connectedDeviceContainer.querySelector(".deviceInformation");
@@ -336,6 +298,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         setDeviceInformationPre()
       );
 
+      // DEVICE BATTERY
       /** @type {HTMLSpanElement} */
       const batteryLevelSpan =
         connectedDeviceContainer.querySelector(".batteryLevel");
@@ -344,43 +307,14 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       setBatteryLevelSpan();
       device.addEventListener("batteryLevel", () => setBatteryLevelSpan());
 
+      // DEVICE NAME
       /** @type {HTMLSpanElement} */
       const nameSpan = connectedDeviceContainer.querySelector(".name");
       const setNameSpan = () => (nameSpan.innerText = device.name);
       setNameSpan();
       device.addEventListener("getName", () => setNameSpan());
 
-      /** @type {HTMLInputElement} */
-      const setNameInput =
-        connectedDeviceContainer.querySelector(".setNameInput");
-      setNameInput.minLength = BS.MinNameLength;
-      setNameInput.maxLength = BS.MaxNameLength;
-      setNameInput.disabled = !device.isConnected;
-
-      /** @type {HTMLButtonElement} */
-      const setNameButton =
-        connectedDeviceContainer.querySelector(".setNameButton");
-      setNameButton.disabled = !device.isConnected;
-
-      device.addEventListener("isConnected", () => {
-        setNameInput.disabled = !device.isConnected;
-      });
-      device.addEventListener("notConnected", () => {
-        setNameInput.value = "";
-      });
-
-      setNameInput.addEventListener("input", () => {
-        setNameButton.disabled =
-          setNameInput.value.length < device.minNameLength;
-      });
-
-      setNameButton.addEventListener("click", () => {
-        console.log(`setting name to ${setNameInput.value}`);
-        device.setName(setNameInput.value);
-        setNameInput.value = "";
-        setNameButton.disabled = true;
-      });
-
+      // DEVICE TYPE
       /** @type {HTMLSpanElement} */
       const deviceTypeSpan =
         connectedDeviceContainer.querySelector(".deviceType");
@@ -388,38 +322,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       setDeviceTypeSpan();
       device.addEventListener("getType", () => setDeviceTypeSpan());
 
-      /** @type {HTMLButtonElement} */
-      const setTypeButton =
-        connectedDeviceContainer.querySelector(".setTypeButton");
-
-      /** @type {HTMLSelectElement} */
-      const setTypeSelect =
-        connectedDeviceContainer.querySelector(".setTypeSelect");
-      /** @type {HTMLOptGroupElement} */
-      const setTypeSelectOptgroup = setTypeSelect.querySelector("optgroup");
-      BS.DeviceTypes.forEach((type) => {
-        setTypeSelectOptgroup.appendChild(new Option(type));
-      });
-
-      device.addEventListener("isConnected", () => {
-        setTypeSelect.disabled = !device.isConnected;
-      });
-      setTypeSelect.disabled = !device.isConnected;
-
-      device.addEventListener("getType", () => {
-        setTypeSelect.value = device.type;
-      });
-
-      setTypeSelect.addEventListener("input", () => {
-        setTypeButton.disabled = setTypeSelect.value == device.type;
-      });
-      setTypeSelect.value = device.type;
-
-      setTypeButton.addEventListener("click", () => {
-        device.setType(setTypeSelect.value);
-        setTypeButton.disabled = true;
-      });
-
+      // DEVICE SENSOR CONFIGURATION
       /** @type {HTMLPreElement} */
       const sensorConfigurationPre = connectedDeviceContainer.querySelector(
         ".sensorConfiguration"
@@ -483,6 +386,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         }
       });
 
+      // DEVICE SENSOR DATA
       /** @type {HTMLPreElement} */
       const sensorDataPre =
         connectedDeviceContainer.querySelector(".sensorData");
@@ -490,22 +394,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         (sensorDataPre.textContent = JSON.stringify(event.message, null, 2));
       device.addEventListener("sensorData", (event) => setSensorDataPre(event));
 
-      /** @type {HTMLButtonElement} */
-      const triggerVibrationButton =
-        connectedDeviceContainer.querySelector(".triggerVibration");
-      triggerVibrationButton.addEventListener("click", () => {
-        device.triggerVibration([
-          {
-            type: "waveformEffect",
-            segments: [{ effect: "doubleClick100" }],
-          },
-        ]);
-      });
-      device.addEventListener("isConnected", () => {
-        triggerVibrationButton.disabled = !device.isConnected;
-      });
-      triggerVibrationButton.disabled = !device.isConnected;
-
+      // DEVICE CONNECTION
       /** @type {HTMLButtonElement} */
       const toggleConnectionButton =
         connectedDeviceContainer.querySelector(".toggleConnection");
@@ -533,592 +422,570 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         updateToggleConnectionButton()
       );
 
-      /** @type {File?} */
-      let file;
+      // DEVICE CAMERA
+      const deviceCameraContianer =
+        connectedDeviceContainer.querySelector(".camera");
 
-      /** @type {HTMLInputElement} */
-      const fileInput = connectedDeviceContainer.querySelector(".file");
-      fileInput.addEventListener("input", () => {
-        if (fileInput.files[0].size > device.maxFileLength) {
-          console.log("file size too large");
-          return;
-        }
-        file = fileInput.files[0];
-        console.log("file", file);
-        updateToggleFileTransferButton();
+      /** @type {HTMLImageElement} */
+      const deviceCameraImage =
+        deviceCameraContianer.querySelector(".cameraImage");
+      device.addEventListener("cameraImage", (event) => {
+        deviceCameraImage.src = event.message.url;
       });
 
-      const maxFileLengthSpan =
-        connectedDeviceContainer.querySelector(".maxFileLength");
-      const updateMaxFileLengthSpan = () => {
-        maxFileLengthSpan.innerText = (
-          device.maxFileLength / 1024
-        ).toLocaleString();
-      };
-      updateMaxFileLengthSpan();
-      device.addEventListener("isConnected", () => {
-        updateMaxFileLengthSpan();
+      /** @type {HTMLButtonElement} */
+      const takePictureButton =
+        deviceCameraContianer.querySelector(".takePicture");
+      takePictureButton.addEventListener("click", () => {
+        device.takePicture();
       });
-
-      /** @type {BS.FileType} */
-      let fileType;
-
-      /** @type {HTMLSelectElement} */
-      const fileTransferTypesSelect =
-        connectedDeviceContainer.querySelector(".fileTransferTypes");
-      fileTransferTypesSelect.addEventListener("input", () => {
-        fileType = fileTransferTypesSelect.value;
-        console.log({ fileType });
-        switch (fileType) {
-          case "tflite":
-            fileInput.accept = ".tflite";
+      const updateTakePictureButton = () => {
+        const { cameraStatus } = device;
+        let innerText = "take picture";
+        let enabled = false;
+        switch (cameraStatus) {
+          case "takingPicture":
+            innerText = "taking picture...";
+            enabled = true;
+            break;
+          case "idle":
+            enabled = true;
+            break;
+          case "focusing":
+            break;
+          case "asleep":
             break;
         }
+        takePictureButton.disabled = !enabled;
+        takePictureButton.innerText = innerText;
+      };
+      device.addEventListener("cameraStatus", () => {
+        updateTakePictureButton();
       });
-      /** @type {HTMLOptGroupElement} */
-      const fileTransferTypesOptgroup =
-        fileTransferTypesSelect.querySelector("optgroup");
-      BS.FileTypes.forEach((fileType) => {
-        fileTransferTypesOptgroup.appendChild(new Option(fileType));
+
+      /** @type {HTMLButtonElement} */
+      const focusCameraButton =
+        deviceCameraContianer.querySelector(".focusCamera");
+      focusCameraButton.addEventListener("click", () => {
+        device.focusCamera();
       });
-      fileTransferTypesSelect.dispatchEvent(new Event("input"));
+      const updateFocusCameraButton = () => {
+        const { cameraStatus } = device;
+        let innerText = "focus camera";
+        let enabled = false;
+        switch (cameraStatus) {
+          case "takingPicture":
+            break;
+          case "idle":
+            enabled = true;
+            break;
+          case "focusing":
+            innerText = "focusing...";
+            break;
+          case "asleep":
+            break;
+        }
+        focusCameraButton.disabled = !enabled;
+        focusCameraButton.innerText = innerText;
+      };
+      device.addEventListener("cameraStatus", () => {
+        updateFocusCameraButton();
+      });
+      device.addEventListener("cameraStatus", (event) => {
+        const { previousCameraStatus } = event.message;
+        if (previousCameraStatus == "focusing") {
+          device.takePicture();
+        }
+      });
 
       /** @type {HTMLProgressElement} */
-      const fileTransferProgress = connectedDeviceContainer.querySelector(
-        ".fileTransferProgress"
-      );
-      console.log("fileTransferProgress", fileTransferProgress);
-
-      device.addEventListener("fileTransferProgress", (event) => {
-        const progress = event.message.progress;
-        console.log("fileTransferProgress", progress, fileTransferProgress);
-        fileTransferProgress.value = progress == 1 ? 0 : progress;
-      });
-      device.addEventListener("fileTransferStatus", () => {
-        if (device.fileTransferStatus == "idle") {
-          fileTransferProgress.value = 0;
+      const cameraProgress =
+        deviceCameraContianer.querySelector(".cameraProgress");
+      device.addEventListener("cameraImageProgress", (event) => {
+        const { progress } = event.message;
+        cameraProgress.value = progress;
+        if (progress == 1) {
+          cameraProgress.value = 0;
         }
       });
 
+      let autoPicture = false;
       /** @type {HTMLButtonElement} */
-      const toggleFileTransferButton = connectedDeviceContainer.querySelector(
-        ".toggleFileTransfer"
-      );
-      toggleFileTransferButton.addEventListener("click", async () => {
-        if (device.fileTransferStatus == "idle") {
-          if (fileTransferDirection == "send") {
-            if (fileType == "tflite") {
-              await device.setTfliteName(file.name.replaceAll(".tflite", ""));
-            }
-            device.sendFile(fileType, file);
-          } else {
-            device.receiveFile(fileType);
-          }
-        } else {
-          device.cancelFileTransfer();
+      const autoPictureCheckbox =
+        deviceCameraContianer.querySelector(".autoPicture");
+      autoPictureCheckbox.addEventListener("input", () => {
+        autoPicture = autoPictureCheckbox.checked;
+        console.log({ autoPicture });
+      });
+      autoPictureCheckbox.checked = autoPicture;
+      device.addEventListener("cameraImage", () => {
+        if (autoPicture) {
+          device.takePicture();
         }
-      });
-      const updateToggleFileTransferButton = () => {
-        const enabled =
-          device.isConnected && (file || fileTransferDirection == "receive");
-        toggleFileTransferButton.disabled = !enabled;
-
-        /** @type {String} */
-        let innerText;
-        switch (device.fileTransferStatus) {
-          case "idle":
-            innerText = `${fileTransferDirection} file`;
-            break;
-          case "sending":
-            innerText = "stop sending file";
-            break;
-          case "receiving":
-            innerText = "stop receiving file";
-            break;
-        }
-        toggleFileTransferButton.innerText = innerText;
-      };
-      device.addEventListener("isConnected", () => {
-        updateToggleFileTransferButton();
-      });
-      device.addEventListener("fileTransferStatus", () => {
-        updateToggleFileTransferButton();
-      });
-
-      /** @type {BS.FileTransferDirection} */
-      let fileTransferDirection;
-      /** @type {HTMLSelectElement} */
-      const fileTransferDirectionSelect =
-        connectedDeviceContainer.querySelector(".fileTransferDirection");
-      fileTransferDirectionSelect.addEventListener("input", () => {
-        fileTransferDirection = fileTransferDirectionSelect.value;
-        console.log({ fileTransferDirection });
-        updateToggleFileTransferButton();
-      });
-      fileTransferDirectionSelect.dispatchEvent(new Event("input"));
-
-      /** @param {File} file */
-      function downloadFile(file) {
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.style = "display: none";
-        const url = window.URL.createObjectURL(file);
-        a.href = url;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      }
-
-      device.addEventListener("fileReceived", (event) => {
-        const file = event.message.file;
-        downloadFile(file);
-      });
-
-      // TFLITE
-
-      /** @type {HTMLSpanElement} */
-      const tfliteNameSpan =
-        connectedDeviceContainer.querySelector(".tfliteName");
-      /** @type {HTMLInputElement} */
-      const setTfliteNameInput = connectedDeviceContainer.querySelector(
-        ".setTfliteNameInput"
-      );
-      /** @type {HTMLButtonElement} */
-      const setTfliteNameButton = connectedDeviceContainer.querySelector(
-        ".setTfliteNameButton"
-      );
-
-      device.addEventListener("getTfliteName", () => {
-        tfliteNameSpan.innerText = device.tfliteName;
-
-        setTfliteNameButton.innerText = "set name";
-        setTfliteNameButton.disabled = !device.isConnected;
-
-        setTfliteNameInput.value = "";
-        setTfliteNameInput.disabled = !device.isConnected;
-      });
-      tfliteNameSpan.innerText = device.tfliteName;
-
-      setTfliteNameButton.addEventListener("click", () => {
-        device.setTfliteName(setTfliteNameInput.value);
-
-        setTfliteNameInput.disabled = true;
-
-        setTfliteNameButton.innerText = "setting name...";
-        setTfliteNameButton.disabled = true;
-      });
-
-      /** @type {HTMLSpanElement} */
-      const tfliteTaskSpan =
-        connectedDeviceContainer.querySelector(".tfliteTask");
-      /** @type {HTMLSelectElement} */
-      const setTfliteTaskSelect = connectedDeviceContainer.querySelector(
-        ".setTfliteTaskSelect"
-      );
-      /** @type {HTMLOptGroupElement} */
-      const setTfliteTaskOptgroup =
-        setTfliteTaskSelect.querySelector("optgroup");
-      /** @type {HTMLButtonElement} */
-      const setTfliteTaskButton = connectedDeviceContainer.querySelector(
-        ".setTfliteTaskButton"
-      );
-
-      BS.TfliteTasks.forEach((task) => {
-        setTfliteTaskOptgroup.appendChild(new Option(task));
-      });
-
-      device.addEventListener("getTfliteTask", () => {
-        const task = device.tfliteTask;
-        setTfliteTaskSelect.value = task;
-        tfliteTaskSpan.innerText = task;
-      });
-      setTfliteTaskSelect.value = device.tfliteTask;
-      tfliteTaskSpan.innerText = device.tfliteTask;
-
-      setTfliteTaskButton.addEventListener("click", () => {
-        device.setTfliteTask(setTfliteTaskSelect.value);
-      });
-      device.addEventListener("getTfliteInferencingEnabled", () => {
-        setTfliteTaskButton.disabled = device.tfliteInferencingEnabled;
-      });
-
-      /** @type {HTMLSpanElement} */
-      const tfliteSampleRateSpan =
-        connectedDeviceContainer.querySelector(".tfliteSampleRate");
-      /** @type {HTMLInputElement} */
-      const setTfliteSampleRateInput = connectedDeviceContainer.querySelector(
-        ".setTfliteSampleRateInput"
-      );
-      /** @type {HTMLButtonElement} */
-      const setTfliteSampleRateButton = connectedDeviceContainer.querySelector(
-        ".setTfliteSampleRateButton"
-      );
-
-      device.addEventListener("getTfliteSampleRate", () => {
-        tfliteSampleRateSpan.innerText = device.tfliteSampleRate;
-
-        setTfliteSampleRateInput.value = "";
-        setTfliteSampleRateInput.disabled = false;
-
-        setTfliteSampleRateButton.disabled = false;
-        setTfliteSampleRateButton.innerText = "set sample rate";
-      });
-      tfliteSampleRateSpan.innerText = device.tfliteSampleRate;
-
-      setTfliteSampleRateButton.addEventListener("click", () => {
-        device.setTfliteSampleRate(Number(setTfliteSampleRateInput.value));
-
-        setTfliteSampleRateInput.disabled = true;
-
-        setTfliteSampleRateButton.disabled = true;
-        setTfliteSampleRateButton.innerText = "setting sample rate...";
-      });
-      device.addEventListener("getTfliteInferencingEnabled", () => {
-        setTfliteSampleRateButton.disabled = device.tfliteInferencingEnabled;
-      });
-
-      const tfliteSensorTypesContainer =
-        connectedDeviceContainer.querySelector(".tfliteSensorTypes");
-      /** @type {HTMLTemplateElement} */
-      const tfliteSensorTypeTemplate = connectedDeviceContainer.querySelector(
-        ".tfliteSensorTypeTemplate"
-      );
-      /** @type {Object.<string, HTMLElement>} */
-      const tfliteSensorTypeContainers = {};
-      /** @type {BS.SensorType[]} */
-      let tfliteSensorTypes = [];
-      /** @type {HTMLButtonElement} */
-      const setTfliteSensorTypesButton = connectedDeviceContainer.querySelector(
-        ".setTfliteSensorTypes"
-      );
-
-      BS.TfliteSensorTypes.forEach((sensorType) => {
-        const sensorTypeContainer = tfliteSensorTypeTemplate.content
-          .cloneNode(true)
-          .querySelector(".sensorType");
-        sensorTypeContainer.querySelector(".name").innerText = sensorType;
-
-        /** @type {HTMLInputElement} */
-        const isSensorEnabledInput =
-          sensorTypeContainer.querySelector(".enabled");
-        isSensorEnabledInput.addEventListener("input", () => {
-          if (isSensorEnabledInput.checked) {
-            tfliteSensorTypes.push(sensorType);
-          } else {
-            tfliteSensorTypes.splice(tfliteSensorTypes.indexOf(sensorType), 1);
-          }
-          console.log("tfliteSensorTypes", tfliteSensorTypes);
-        });
-
-        device.addEventListener("getTfliteSensorTypes", () => {
-          isSensorEnabledInput.checked =
-            device.tfliteSensorTypes.includes(sensorType);
-        });
-        isSensorEnabledInput.checked =
-          device.tfliteSensorTypes.includes(sensorType);
-
-        tfliteSensorTypeContainers[sensorType] = sensorTypeContainer;
-
-        tfliteSensorTypesContainer.appendChild(sensorTypeContainer);
-      });
-
-      device.addEventListener("getTfliteSensorTypes", () => {
-        tfliteSensorTypes = device.tfliteSensorTypes;
-      });
-
-      setTfliteSensorTypesButton.addEventListener("click", () => {
-        setTfliteSensorTypesButton.disabled = true;
-        setTfliteSensorTypesButton.innerText = "setting sensor types...";
-        device.setTfliteSensorTypes(tfliteSensorTypes);
-      });
-      device.addEventListener("getTfliteSensorTypes", () => {
-        setTfliteSensorTypesButton.disabled = false;
-        setTfliteSensorTypesButton.innerText = "set sensor types";
-      });
-      device.addEventListener("getTfliteInferencingEnabled", () => {
-        setTfliteSensorTypesButton.disabled = device.tfliteInferencingEnabled;
-      });
-      setTfliteSensorTypesButton.disabled = false;
-
-      /** @type {HTMLInputElement} */
-      const setTfliteIsReadyInput =
-        connectedDeviceContainer.querySelector(".tfliteIsReady");
-      device.addEventListener("tfliteIsReady", () => {
-        setTfliteIsReadyInput.checked = device.tfliteIsReady;
-      });
-      setTfliteIsReadyInput.checked = device.tfliteIsReady;
-
-      /** @type {HTMLSpanElement} */
-      const tfliteThresholdSpan =
-        connectedDeviceContainer.querySelector(".tfliteThreshold");
-      /** @type {HTMLInputElement} */
-      const setTfliteThresholdInput = connectedDeviceContainer.querySelector(
-        ".setTfliteThresholdInput"
-      );
-      /** @type {HTMLButtonElement} */
-      const setTfliteThresholdButton = connectedDeviceContainer.querySelector(
-        ".setTfliteThresholdButton"
-      );
-
-      device.addEventListener("getTfliteThreshold", () => {
-        tfliteThresholdSpan.innerText = device.tfliteThreshold;
-
-        setTfliteThresholdInput.value = "";
-        setTfliteThresholdInput.disabled = false;
-
-        setTfliteThresholdButton.disabled = false;
-        setTfliteThresholdButton.innerText = "set threshold";
-      });
-      tfliteThresholdSpan.innerText = device.tfliteThreshold;
-
-      setTfliteThresholdButton.addEventListener("click", () => {
-        device.setTfliteThreshold(Number(setTfliteThresholdInput.value));
-
-        setTfliteThresholdInput.disabled = true;
-
-        setTfliteThresholdButton.disabled = true;
-        setTfliteThresholdButton.innerText = "setting threshold...";
-      });
-
-      /** @type {HTMLSpanElement} */
-      const tfliteCaptureDelaySpan = connectedDeviceContainer.querySelector(
-        ".tfliteCaptureDelay"
-      );
-      /** @type {HTMLInputElement} */
-      const setTfliteCaptureDelayInput = connectedDeviceContainer.querySelector(
-        ".setTfliteCaptureDelayInput"
-      );
-      /** @type {HTMLButtonElement} */
-      const setTfliteCaptureDelayButton =
-        connectedDeviceContainer.querySelector(".setTfliteCaptureDelayButton");
-
-      device.addEventListener("getTfliteCaptureDelay", () => {
-        tfliteCaptureDelaySpan.innerText = device.tfliteCaptureDelay;
-
-        setTfliteCaptureDelayInput.value = "";
-        setTfliteCaptureDelayInput.disabled = false;
-
-        setTfliteCaptureDelayButton.disabled = false;
-        setTfliteCaptureDelayButton.innerText = "set capture delay";
-      });
-      tfliteCaptureDelaySpan.innerText = device.tfliteCaptureDelay;
-
-      setTfliteCaptureDelayButton.addEventListener("click", () => {
-        device.setTfliteCaptureDelay(Number(setTfliteCaptureDelayInput.value));
-
-        setTfliteCaptureDelayInput.disabled = true;
-
-        setTfliteCaptureDelayButton.disabled = true;
-        setTfliteCaptureDelayButton.innerText = "setting capture delay...";
-      });
-
-      /** @type {HTMLInputElement} */
-      const tfliteInferencingEnabledInput =
-        connectedDeviceContainer.querySelector(".tfliteInferencingEnabled");
-      /** @type {HTMLButtonElement} */
-      const toggleTfliteInferencingEnabledButton =
-        connectedDeviceContainer.querySelector(
-          ".toggleTfliteInferencingEnabled"
-        );
-
-      const updateTfliteInferencingUI = () => {
-        toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
-
-        tfliteInferencingEnabledInput.checked = device.tfliteInferencingEnabled;
-        toggleTfliteInferencingEnabledButton.innerText =
-          device.tfliteInferencingEnabled
-            ? "disable inferencing"
-            : "enable inferencing";
-      };
-
-      device.addEventListener("tfliteIsReady", () => {
-        toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
-      });
-      device.addEventListener("getTfliteInferencingEnabled", () => {
-        tfliteInferencingEnabledInput.checked = device.tfliteInferencingEnabled;
-        toggleTfliteInferencingEnabledButton.innerText =
-          device.tfliteInferencingEnabled
-            ? "disable inferencing"
-            : "enable inferencing";
-      });
-      updateTfliteInferencingUI();
-
-      toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
-        device.toggleTfliteInferencing();
       });
 
       /** @type {HTMLPreElement} */
-      const tfliteInferencePre =
-        connectedDeviceContainer.querySelector(".tfliteInference");
-      device.addEventListener("tfliteInference", (event) => {
-        console.log("inference", event.message.tfliteInference);
-        tfliteInferencePre.textContent = JSON.stringify(
-          event.message.tfliteInference,
+      const cameraConfigurationPre = deviceCameraContianer.querySelector(
+        ".cameraConfigurationPre"
+      );
+      const updateCameraConfigurationPre = () => {
+        cameraConfigurationPre.textContent = JSON.stringify(
+          device.cameraConfiguration,
           null,
           2
         );
-      });
-
-      const updateTfliteUI = () => {
-        const disabled = !device.isConnected;
-        setTfliteCaptureDelayInput.disabled = disabled;
-        setTfliteCaptureDelayButton.disabled = disabled;
-
-        setTfliteTaskSelect.disabled = disabled;
-        setTfliteTaskButton.disabled = disabled;
-
-        setTfliteThresholdInput.disabled = disabled;
-        setTfliteThresholdButton.disabled = disabled;
-
-        setTfliteNameInput.disabled = disabled;
-        setTfliteNameButton.disabled = disabled;
-
-        setTfliteSampleRateInput.disabled = disabled;
-        setTfliteSampleRateButton.disabled = disabled;
       };
-      device.addEventListener("isConnected", () => {
-        updateTfliteUI();
+      device.addEventListener("getCameraConfiguration", () => {
+        updateCameraConfigurationPre();
+        updateCameraWhiteBalanceInput();
       });
-      updateTfliteUI();
-
-      // FIRMWARE
-
-      /** @type {File?} */
-      let firmware;
 
       /** @type {HTMLInputElement} */
-      const firmwareInput =
-        connectedDeviceContainer.querySelector(".firmwareInput");
-      firmwareInput.addEventListener("input", () => {
-        firmware = firmwareInput.files[0];
-        updateToggleFirmwareUploadButton();
-      });
-      /** @type {HTMLButtonElement} */
-      const toggleFirmwareUploadButton = connectedDeviceContainer.querySelector(
-        ".toggleFirmwareUpload"
-      );
-      toggleFirmwareUploadButton.addEventListener("click", () => {
-        device.uploadFirmware(firmware);
-      });
-      const updateToggleFirmwareUploadButton = () => {
-        const enabled = device.isConnected && Boolean(firmware);
-        toggleFirmwareUploadButton.disabled = !enabled;
-      };
-      device.addEventListener("isConnected", () => {
-        updateToggleFirmwareUploadButton();
+      const takePictureAfterUpdateCheckbox =
+        deviceCameraContianer.querySelector(".takePictureAfterUpdate");
+      let takePictureAfterUpdate = false;
+      takePictureAfterUpdateCheckbox.addEventListener("input", () => {
+        takePictureAfterUpdate = takePictureAfterUpdateCheckbox.checked;
+        console.log({ takePictureAfterUpdate });
       });
 
-      /** @type {HTMLProgressElement} */
-      const firmwareUploadProgress = connectedDeviceContainer.querySelector(
-        ".firmwareUploadProgress"
+      const cameraConfigurationContainer = deviceCameraContianer.querySelector(
+        ".cameraConfiguration"
       );
-      /** @type {HTMLSpanElement} */
-      const firmwareUploadProgressPercentageSpan =
-        connectedDeviceContainer.querySelector(
-          ".firmwareUploadProgressPercentage"
+      /** @type {HTMLTemplateElement} */
+      const cameraConfigurationTypeTemplate =
+        deviceCameraContianer.querySelector(".cameraConfigurationTypeTemplate");
+      BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
+        const cameraConfigurationTypeContainer =
+          cameraConfigurationTypeTemplate.content
+            .cloneNode(true)
+            .querySelector(".cameraConfigurationType");
+
+        cameraConfigurationContainer.appendChild(
+          cameraConfigurationTypeContainer
         );
-      device.addEventListener("firmwareUploadProgress", (event) => {
-        const progress = event.message.firmwareUploadProgress;
-        firmwareUploadProgress.value = progress;
-        firmwareUploadProgressPercentageSpan.innerText = `${Math.floor(
-          100 * progress
-        )}%`;
+
+        cameraConfigurationTypeContainer.querySelector(".type").innerText =
+          cameraConfigurationType;
+
+        /** @type {HTMLInputElement} */
+        const input = cameraConfigurationTypeContainer.querySelector("input");
+
+        /** @type {HTMLSpanElement} */
+        const span = cameraConfigurationTypeContainer.querySelector("span");
+
+        device.addEventListener("isConnected", () => {
+          updateisInputDisabled();
+        });
+        device.addEventListener("cameraStatus", () => {
+          updateisInputDisabled();
+        });
+        const updateisInputDisabled = () => {
+          input.disabled =
+            !device.isConnected ||
+            !device.hasCamera ||
+            device.cameraStatus != "idle";
+        };
+        updateisInputDisabled();
+
+        const updateInput = () => {
+          const value = device.cameraConfiguration[cameraConfigurationType];
+          span.innerText = value;
+          input.value = value;
+        };
+
+        const updateRange = () => {
+          if (!device.hasCamera) {
+            return;
+          }
+          const range =
+            device.cameraConfigurationRanges[cameraConfigurationType];
+          input.min = range.min;
+          input.max = range.max;
+        };
+        device.addEventListener("connected", () => {
+          updateRange();
+          updateInput();
+        });
+        updateRange();
+        updateInput();
+
+        device.addEventListener("getCameraConfiguration", () => {
+          updateInput();
+        });
+
+        input.addEventListener("change", () => {
+          const value = Number(input.value);
+          // console.log(`updating ${cameraConfigurationType} to ${value}`);
+          device.setCameraConfiguration({
+            [cameraConfigurationType]: value,
+          });
+          if (takePictureAfterUpdate) {
+            device.addEventListener(
+              "getCameraConfiguration",
+              () => {
+                setTimeout(() => device.takePicture()), 100;
+              },
+              { once: true }
+            );
+          }
+        });
       });
-      device.addEventListener("firmwareUploadComplete", () => {
-        firmwareUploadProgress.value = 0;
+
+      /** @type {HTMLInputElement} */
+      const cameraWhiteBalanceInput = deviceCameraContianer.querySelector(
+        ".cameraWhiteBalance"
+      );
+      const updateWhiteBalance = BS.ThrottleUtils.throttle(
+        (config) => {
+          if (device.cameraStatus != "idle") {
+            return;
+          }
+
+          device.setCameraConfiguration(config);
+
+          if (takePictureAfterUpdate) {
+            device.addEventListener(
+              "getCameraConfiguration",
+              () => {
+                setTimeout(() => device.takePicture()), 100;
+              },
+              { once: true }
+            );
+          }
+        },
+        200,
+        true
+      );
+      cameraWhiteBalanceInput.addEventListener("input", () => {
+        let [redGain, greenGain, blueGain] = cameraWhiteBalanceInput.value
+          .replace("#", "")
+          .match(/.{1,2}/g)
+          .map((value) => Number(`0x${value}`))
+          .map((value) => value / 255)
+          .map((value) => value * device.cameraConfigurationRanges.blueGain.max)
+          .map((value) => Math.round(value));
+
+        updateWhiteBalance({ redGain, greenGain, blueGain });
       });
-      device.addEventListener("firmwareStatus", () => {
-        const isUploading = device.firmwareStatus == "uploading";
-        firmwareUploadProgressPercentageSpan.style.display = isUploading
-          ? ""
-          : "none";
+      const updateCameraWhiteBalanceInput = () => {
+        if (!device.hasCamera) {
+          return;
+        }
+        cameraWhiteBalanceInput.disabled =
+          !device.isConnected ||
+          !device.hasCamera ||
+          device.cameraStatus != "idle";
+
+        const { redGain, blueGain, greenGain } = device.cameraConfiguration;
+
+        cameraWhiteBalanceInput.value = `#${[redGain, blueGain, greenGain]
+          .map((value) => value / device.cameraConfigurationRanges.redGain.max)
+          .map((value) => value * 255)
+          .map((value) => Math.round(value))
+          .map((value) => value.toString(16))
+          .join("")}`;
+      };
+
+      device.addEventListener("cameraStatus", () => {
+        updateCameraWhiteBalanceInput();
+      });
+
+      const updateDeviceCameraContainer = () => {
+        if (device.isConnected) {
+          deviceCameraContianer.removeAttribute("hidden");
+        } else {
+          deviceCameraContianer.setAttribute("hidden", "");
+        }
+        updateFocusCameraButton();
+        updateTakePictureButton();
+        updateCameraConfigurationPre();
+        updateCameraWhiteBalanceInput();
+      };
+      device.addEventListener("isConnected", () => {
+        updateDeviceCameraContainer();
+      });
+      updateDeviceCameraContainer();
+
+      // DEVICE MICROPHONE
+
+      const deviceMicrophoneContianer =
+        connectedDeviceContainer.querySelector(".microphone");
+
+      /** @type {HTMLSpanElement} */
+      const microphoneStatusSpan =
+        deviceMicrophoneContianer.querySelector(".microphoneStatus");
+      const updateMicrophoneStatus = () => {
+        microphoneStatusSpan.innerText = device.microphoneStatus;
+      };
+      device.addEventListener("microphoneStatus", () => {
+        updateMicrophoneStatus();
       });
 
       /** @type {HTMLPreElement} */
-      const firmwareImagesPre =
-        connectedDeviceContainer.querySelector(".firmwareImages");
-      device.addEventListener("firmwareImages", () => {
-        firmwareImagesPre.textContent = JSON.stringify(
-          device.firmwareImages,
-          (key, value) => (key == "hash" ? Array.from(value).join(",") : value),
+      const microphoneConfigurationPre =
+        deviceMicrophoneContianer.querySelector(".microphoneConfigurationPre");
+      device.addEventListener("getMicrophoneConfiguration", () => {
+        updateMicrophoneConfiguration();
+      });
+      const updateMicrophoneConfiguration = () => {
+        microphoneConfigurationPre.textContent = JSON.stringify(
+          device.microphoneConfiguration,
+          null,
           2
         );
+      };
+
+      const microphoneConfigurationContainer =
+        deviceMicrophoneContianer.querySelector(".microphoneConfiguration");
+      /** @type {HTMLTemplateElement} */
+      const microphoneConfigurationTypeTemplate =
+        deviceMicrophoneContianer.querySelector(
+          ".microphoneConfigurationTypeTemplate"
+        );
+      BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
+        const microphoneConfigurationTypeContainer =
+          microphoneConfigurationTypeTemplate.content
+            .cloneNode(true)
+            .querySelector(".microphoneConfigurationType");
+
+        microphoneConfigurationContainer.appendChild(
+          microphoneConfigurationTypeContainer
+        );
+
+        microphoneConfigurationTypeContainer.querySelector(".type").innerText =
+          microphoneConfigurationType;
+
+        /** @type {HTMLSelectElement} */
+        const select =
+          microphoneConfigurationTypeContainer.querySelector("select");
+        /** @type {HTMLOptGroupElement} */
+        const optgroup = select.querySelector("optgroup");
+        optgroup.label = microphoneConfigurationType;
+
+        BS.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
+          (value) => {
+            optgroup.appendChild(new Option(value));
+          }
+        );
+
+        /** @type {HTMLSpanElement} */
+        const span = microphoneConfigurationTypeContainer.querySelector("span");
+
+        device.addEventListener("isConnected", () => {
+          updateisInputDisabled();
+        });
+        device.addEventListener("microphoneStatus", () => {
+          updateisInputDisabled();
+        });
+        const updateisInputDisabled = () => {
+          select.disabled =
+            !device.isConnected ||
+            !device.hasMicrophone ||
+            device.microphoneStatus != "idle";
+        };
+
+        const updateSelect = () => {
+          const value =
+            device.microphoneConfiguration[microphoneConfigurationType];
+          span.innerText = value;
+          select.value = value;
+        };
+
+        device.addEventListener("connected", () => {
+          if (!device.hasMicrophone) {
+            return;
+          }
+          updateSelect();
+        });
+
+        updateSelect();
+        updateisInputDisabled();
+
+        device.addEventListener("getMicrophoneConfiguration", () => {
+          updateSelect();
+        });
+
+        select.addEventListener("input", () => {
+          const value = select.value;
+          // console.log(`updating ${microphoneConfigurationType} to ${value}`);
+          device.setMicrophoneConfiguration({
+            [microphoneConfigurationType]: value,
+          });
+        });
       });
 
-      device.addEventListener("isConnected", () => {
-        if (device.isConnected && device.canUpdateFirmware) {
-          device.getFirmwareImages();
+      /** @type {HTMLButtonElement} */
+      const toggleMicrophoneButton =
+        deviceMicrophoneContianer.querySelector(".toggleMicrophone");
+      toggleMicrophoneButton.addEventListener("click", () => {
+        device.toggleMicrophone();
+      });
+      device.addEventListener("connected", () => {
+        updateToggleMicrophoneButton();
+      });
+      device.addEventListener("getSensorConfiguration", () => {
+        updateToggleMicrophoneButton();
+      });
+      const updateToggleMicrophoneButton = () => {
+        let disabled =
+          !device.isConnected ||
+          device.sensorConfiguration.microphone == 0 ||
+          !device.hasMicrophone;
+
+        switch (device.microphoneStatus) {
+          case "streaming":
+            toggleMicrophoneButton.innerText = "stop microphone";
+            break;
+          case "idle":
+            toggleMicrophoneButton.innerText = "start microphone";
+            break;
+        }
+        toggleMicrophoneButton.disabled = disabled;
+      };
+      device.addEventListener("microphoneStatus", () => {
+        updateToggleMicrophoneButton();
+      });
+
+      /** @type {HTMLButtonElement} */
+      const startMicrophoneButton =
+        deviceMicrophoneContianer.querySelector(".startMicrophone");
+      startMicrophoneButton.addEventListener("click", () => {
+        device.startMicrophone();
+      });
+      /** @type {HTMLButtonElement} */
+      const stopMicrophoneButton =
+        deviceMicrophoneContianer.querySelector(".stopMicrophone");
+      stopMicrophoneButton.addEventListener("click", () => {
+        device.stopMicrophone();
+      });
+
+      /** @type {HTMLButtonElement} */
+      const toggleMicrophoneRecordingButton =
+        deviceMicrophoneContianer.querySelector(".toggleMicrophoneRecording");
+      toggleMicrophoneRecordingButton.addEventListener("click", () => {
+        device.toggleMicrophoneRecording();
+      });
+      device.addEventListener("connected", () => {
+        updateToggleMicrophoneRecordingButton();
+      });
+      device.addEventListener("getSensorConfiguration", () => {
+        updateToggleMicrophoneRecordingButton();
+      });
+      const updateToggleMicrophoneRecordingButton = () => {
+        let disabled =
+          !device.isConnected ||
+          !device.hasMicrophone ||
+          device.microphoneStatus != "streaming";
+
+        toggleMicrophoneRecordingButton.innerText = device.isRecordingMicrophone
+          ? "stop recording"
+          : "start recording";
+
+        toggleMicrophoneRecordingButton.disabled = disabled;
+      };
+      device.addEventListener("isRecordingMicrophone", () => {
+        updateToggleMicrophoneRecordingButton();
+        if (!device.isRecordingMicrophone) {
+          device.stopMicrophone();
+        }
+      });
+      device.addEventListener("microphoneStatus", () => {
+        updateToggleMicrophoneRecordingButton();
+      });
+
+      const updateMicrophoneButtons = () => {
+        let disabled = !device.isConnected || !device.hasMicrophone;
+
+        startMicrophoneButton.disabled =
+          disabled || device.microphoneStatus == "streaming";
+        stopMicrophoneButton.disabled =
+          disabled || device.microphoneStatus == "idle";
+      };
+      device.addEventListener("microphoneStatus", () => {
+        updateMicrophoneButtons();
+      });
+      device.addEventListener("connected", () => {
+        updateMicrophoneButtons();
+      });
+      device.addEventListener("getSensorConfiguration", () => {
+        updateMicrophoneButtons();
+      });
+
+      device.audioContext = audioContext;
+      device.microphoneGainNode.gain.value = 10;
+
+      /** @type {HTMLAudioElement} */
+      const microphoneStreamAudioElement =
+        deviceMicrophoneContianer.querySelector(".microphoneStream");
+      microphoneStreamAudioElement.srcObject =
+        device.microphoneMediaStreamDestination.stream;
+
+      /** @type {HTMLAudioElement} */
+      const microphoneRecordingAudioElement =
+        deviceMicrophoneContianer.querySelector(".microphoneRecording");
+      /** @type {HTMLInputElement} */
+      const autoPlayMicrphoneRecordingCheckbox =
+        deviceMicrophoneContianer.querySelector(".autoPlayMicrphoneRecording");
+      let autoPlayMicrphoneRecording =
+        autoPlayMicrphoneRecordingCheckbox.checked;
+      autoPlayMicrphoneRecordingCheckbox.addEventListener("input", () => {
+        autoPlayMicrphoneRecording = autoPlayMicrphoneRecordingCheckbox.checked;
+        console.log({ autoPlayMicrphoneRecording });
+      });
+      device.addEventListener("microphoneRecording", (event) => {
+        microphoneRecordingAudioElement.src = event.message.url;
+        if (autoPlayMicrphoneRecording) {
+          microphoneRecordingAudioElement.play();
         }
       });
 
-      /** @type {HTMLSpanElement} */
-      const firmwareStatusSpan =
-        connectedDeviceContainer.querySelector(".firmwareStatus");
-
-      /** @type {HTMLButtonElement} */
-      const resetButton = connectedDeviceContainer.querySelector(".reset");
-      resetButton.addEventListener("click", () => {
-        device.reset();
-        resetButton.disabled = true;
-      });
-      const updateResetButton = () => {
-        const status = device.firmwareStatus;
-        const enabled = status == "pending" || status == "testing";
-        resetButton.disabled = !enabled;
+      const peaksOptions = {
+        zoomview: {
+          container: deviceMicrophoneContianer.querySelector(
+            ".zoomview-container"
+          ),
+        },
+        overview: {
+          container: deviceMicrophoneContianer.querySelector(
+            ".overview-container"
+          ),
+        },
+        mediaElement: deviceMicrophoneContianer.querySelector(
+          ".microphoneRecording"
+        ),
+        webAudio: {
+          audioContext: audioContext,
+          scale: 128,
+          multiChannel: false,
+        },
       };
 
-      /** @type {HTMLButtonElement} */
-      const testFirmwareImageButton =
-        connectedDeviceContainer.querySelector(".testFirmwareImage");
-      testFirmwareImageButton.addEventListener("click", () => {
-        device.testFirmwareImage();
+      microphoneRecordingAudioElement.addEventListener("loadeddata", () => {
+        peaks.init(peaksOptions, (error, peaksInstance) => {
+          if (error) {
+            console.error("error initializing peaks", error);
+          }
+        });
       });
-      const updateTestFirmwareImageButton = () => {
-        const enabled = device.firmwareStatus == "uploaded";
-        testFirmwareImageButton.disabled = !enabled;
-      };
 
-      /** @type {HTMLButtonElement} */
-      const confirmFirmwareImageButton = connectedDeviceContainer.querySelector(
-        ".confirmFirmwareImage"
-      );
-      confirmFirmwareImageButton.addEventListener("click", () => {
-        device.confirmFirmwareImage();
+      const updateDeviceMicrophoneContainer = () => {
+        if (device.isConnected) {
+          deviceMicrophoneContianer.removeAttribute("hidden");
+        } else {
+          deviceMicrophoneContianer.setAttribute("hidden", "");
+        }
+        updateMicrophoneConfiguration();
+        updateMicrophoneStatus();
+        updateMicrophoneButtons();
+        updateToggleMicrophoneRecordingButton();
+      };
+      device.addEventListener("isConnected", () => {
+        updateDeviceMicrophoneContainer();
       });
-      const updateConfirmFirmwareImageButton = () => {
-        const enabled = device.firmwareStatus == "testing";
-        confirmFirmwareImageButton.disabled = !enabled;
-      };
-
-      /** @type {HTMLButtonElement} */
-      const eraseFirmwareImageButton = connectedDeviceContainer.querySelector(
-        ".eraseFirmwareImage"
-      );
-      eraseFirmwareImageButton.addEventListener("click", () => {
-        device.eraseFirmwareImage();
-      });
-      const updateEraseFirmwareImageButton = () => {
-        const enabled = device.firmwareStatus == "uploaded";
-        eraseFirmwareImageButton.disabled = !enabled;
-      };
-
-      const updateFirmwareUI = () => {
-        firmwareStatusSpan.innerText = device.firmwareStatus;
-
-        updateResetButton();
-        updateTestFirmwareImageButton();
-        updateConfirmFirmwareImageButton();
-        updateEraseFirmwareImageButton();
-      };
-      device.addEventListener("firmwareStatus", () => {
-        updateFirmwareUI();
-      });
-      updateFirmwareUI();
-
-      if (device.canUpdateFirmware) {
-        device.getFirmwareImages();
-      }
+      updateDeviceMicrophoneContainer();
     }
+
     connectedDevicesContainer.appendChild(connectedDeviceContainer);
   });
 

@@ -114,6 +114,7 @@ declare class Device {
     receiveFile(fileType: FileType): Promise<void>;
     get fileTransferStatus(): "idle" | "sending" | "receiving";
     cancelFileTransfer(): void;
+    get isTfliteAvailable(): boolean;
     get tfliteName(): string;
     get setTfliteName(): (newName: string, sendImmediately?: boolean) => Promise<void>;
     sendTfliteConfiguration(configuration: TfliteFileConfiguration): Promise<void>;
