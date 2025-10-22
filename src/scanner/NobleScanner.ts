@@ -102,6 +102,7 @@ class NobleScanner extends BaseScanner {
     this.#nobleState = state;
   }
   #onNobleDiscover(noblePeripheral: NoblePeripheral) {
+    _console.log("advertisement", noblePeripheral.advertisement);
     if (filterManually) {
       const serviceUuid = noblePeripheral.advertisement.serviceUuids?.[0];
       _console.log("onNobleDiscover.filterManually", { serviceUuid });
