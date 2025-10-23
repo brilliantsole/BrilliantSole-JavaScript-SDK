@@ -805,8 +805,18 @@
       this.sendMessage(messages, false);
     }
     clear() {
-      _classPrivateFieldSet2(_status$2, this, "idle");
+      _classPrivateFieldGet2(_receivedBlocks, this).length = 0;
+      _classPrivateFieldSet2(_isCancelling, this, false);
+      _classPrivateFieldSet2(_buffer, this, undefined);
+      _classPrivateFieldSet2(_bytesTransferred, this, 0);
       _classPrivateFieldSet2(_isServerSide$2, this, false);
+      _classPrivateFieldSet2(_checksum, this, 0);
+      _classPrivateFieldGet2(_fileTypes, this).length = 0;
+      _classPrivateFieldSet2(_type$2, this, undefined);
+      _classPrivateFieldSet2(_length, this, 0);
+      _classPrivateFieldSet2(_checksum, this, 0);
+      _classPrivateFieldSet2(_status$2, this, "idle");
+      this.mtu = undefined;
     }
   }
   function _get_dispatchEvent$c(_this) {
@@ -1058,6 +1068,11 @@
     }
     const buffer = _classPrivateFieldGet2(_buffer, this);
     let offset = _classPrivateFieldGet2(_bytesTransferred, this);
+    _console$E.log("sending block", {
+      buffer,
+      offset,
+      mtu: this.mtu
+    });
     const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
     _console$E.log("slicedBuffer", slicedBuffer);
     const bytesLeft = buffer.byteLength - offset;
@@ -2898,6 +2913,15 @@
       _classPrivateFieldSet2(_sensorTypes, this, []);
       _classPrivateFieldSet2(_sampleRate, this, 0);
       _classPrivateFieldSet2(_isReady$1, this, false);
+      _classPrivateFieldSet2(_name$2, this, undefined);
+      _classPrivateFieldSet2(_task, this, undefined);
+      _classPrivateFieldSet2(_sampleRate, this, undefined);
+      _classPrivateFieldGet2(_sensorTypes, this).length = 0;
+      _classPrivateFieldSet2(_isReady$1, this, undefined);
+      _classPrivateFieldSet2(_captureDelay, this, undefined);
+      _classPrivateFieldSet2(_threshold, this, undefined);
+      _classPrivateFieldSet2(_inferencingEnabled, this, undefined);
+      _classPrivateFieldSet2(_configuration, this, undefined);
     }
     requestRequiredInformation() {
       _console$u.log("requesting required tflite information");
@@ -3421,6 +3445,7 @@
     }
     clear() {
       _classPrivateFieldSet2(_isCurrentTimeSet, this, false);
+      _classPrivateFieldSet2(_mtu$2, this, 0);
     }
   }
   function _get_dispatchEvent$6(_this) {
@@ -24922,6 +24947,7 @@
       _classPrivateFieldGet2(_firmwareManager, this).sendMessage = this.sendSmpMessage;
       _classPrivateFieldGet2(_firmwareManager, this).eventDispatcher = _classPrivateFieldGet2(_eventDispatcher$2, this);
       this.addEventListener("getMtu", () => {
+        _console$6.log("updating mtu...");
         _classPrivateFieldGet2(_firmwareManager, this).mtu = this.mtu;
         _classPrivateFieldGet2(_fileTransferManager, this).mtu = this.mtu;
         this.connectionManager.mtu = this.mtu;
@@ -26199,6 +26225,7 @@
     _classPrivateFieldGet2(_microphoneManager, this).clear();
     _classPrivateFieldGet2(_sensorConfigurationManager, this).clear();
     _classPrivateFieldGet2(_displayManager, this).reset();
+    _classPrivateFieldSet2(_isServerSide, this, false);
   }
   function _clearConnection() {
     var _this$connectionManag5;

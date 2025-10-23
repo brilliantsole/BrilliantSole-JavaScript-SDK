@@ -1269,6 +1269,9 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
 
       const updateTfliteSensorTypes = () => {
         device.allowedTfliteSensorTypes.forEach((sensorType) => {
+          if (tfliteSensorTypeContainers[sensorType]) {
+            return;
+          }
           const sensorTypeContainer = tfliteSensorTypeTemplate.content
             .cloneNode(true)
             .querySelector(".sensorType");

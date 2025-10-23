@@ -927,6 +927,7 @@ class FileTransferManager {
         }
         const buffer = this.#buffer;
         let offset = this.#bytesTransferred;
+        _console$G.log("sending block", { buffer, offset, mtu: this.mtu });
         const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
         _console$G.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
@@ -996,8 +997,18 @@ class FileTransferManager {
         this.sendMessage(messages, false);
     }
     clear() {
-        this.#status = "idle";
+        this.#receivedBlocks.length = 0;
+        this.#isCancelling = false;
+        this.#buffer = undefined;
+        this.#bytesTransferred = 0;
         this.#isServerSide = false;
+        this.#checksum = 0;
+        this.#fileTypes.length = 0;
+        this.#type = undefined;
+        this.#length = 0;
+        this.#checksum = 0;
+        this.#status = "idle";
+        this.mtu = undefined;
     }
 }
 _a$5 = FileTransferManager;
@@ -2880,6 +2891,15 @@ class TfliteManager {
         this.#sensorTypes = [];
         this.#sampleRate = 0;
         this.#isReady = false;
+        this.#name = undefined;
+        this.#task = undefined;
+        this.#sampleRate = undefined;
+        this.#sensorTypes.length = 0;
+        this.#isReady = undefined;
+        this.#captureDelay = undefined;
+        this.#threshold = undefined;
+        this.#inferencingEnabled = undefined;
+        this.#configuration = undefined;
     }
     requestRequiredInformation() {
         _console$w.log("requesting required tflite information");
@@ -3228,6 +3248,7 @@ class InformationManager {
     }
     clear() {
         this.#isCurrentTimeSet = false;
+        this.#mtu = 0;
     }
     connectionType;
 }
@@ -25996,6 +26017,7 @@ class Device {
         this.#firmwareManager.eventDispatcher = this
             .#eventDispatcher;
         this.addEventListener("getMtu", () => {
+            _console$7.log("updating mtu...");
             this.#firmwareManager.mtu = this.mtu;
             this.#fileTransferManager.mtu = this.mtu;
             this.connectionManager.mtu = this.mtu;
@@ -26443,6 +26465,7 @@ class Device {
         this.#microphoneManager.clear();
         this.#sensorConfigurationManager.clear();
         this.#displayManager.reset();
+        this.#isServerSide = false;
     }
     #clearConnection() {
         this.connectionManager?.clear();

@@ -584,6 +584,22 @@ class TfliteManager {
     this.#sensorTypes = [];
     this.#sampleRate = 0;
     this.#isReady = false;
+    // @ts-expect-error
+    this.#name = undefined;
+    // @ts-expect-error
+    this.#task = undefined;
+    // @ts-expect-error
+    this.#sampleRate = undefined;
+    this.#sensorTypes.length = 0;
+    // @ts-expect-error
+    this.#isReady = undefined;
+    // @ts-expect-error
+    this.#captureDelay = undefined;
+    // @ts-expect-error
+    this.#threshold = undefined;
+    // @ts-expect-error
+    this.#inferencingEnabled = undefined;
+    this.#configuration = undefined;
   }
 
   requestRequiredInformation() {

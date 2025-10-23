@@ -294,6 +294,7 @@ class Device {
       .#eventDispatcher as FirmwareEventDispatcher;
 
     this.addEventListener("getMtu", () => {
+      _console.log("updating mtu...");
       this.#firmwareManager.mtu = this.mtu;
       this.#fileTransferManager.mtu = this.mtu;
       this.connectionManager!.mtu = this.mtu;
@@ -812,6 +813,7 @@ class Device {
     this.#microphoneManager.clear();
     this.#sensorConfigurationManager.clear();
     this.#displayManager.reset();
+    this.#isServerSide = false;
   }
   #clearConnection() {
     this.connectionManager?.clear();

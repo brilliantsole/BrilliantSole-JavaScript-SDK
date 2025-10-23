@@ -538,6 +538,8 @@ class FileTransferManager {
     const buffer = this.#buffer;
     let offset = this.#bytesTransferred;
 
+    _console.log("sending block", { buffer, offset, mtu: this.mtu });
+
     const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
     _console.log("slicedBuffer", slicedBuffer);
     const bytesLeft = buffer.byteLength - offset;
@@ -625,8 +627,19 @@ class FileTransferManager {
   }
 
   clear() {
-    this.#status = "idle";
+    this.#receivedBlocks.length = 0;
+    this.#isCancelling = false;
+    this.#buffer = undefined;
+    this.#bytesTransferred = 0;
     this.#isServerSide = false;
+    this.#checksum = 0;
+    this.#fileTypes.length = 0;
+    this.#type = undefined;
+    this.#length = 0;
+    this.#checksum = 0;
+    this.#status = "idle";
+    // @ts-expect-error
+    this.mtu = undefined;
   }
 }
 

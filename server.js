@@ -14,7 +14,7 @@ import bonjour from "bonjour";
 process.on("warning", (e) => console.warn(e.stack));
 
 // BS.setAllConsoleLevelFlags({ log: true });
-// BS.setConsoleLevelFlagsForType("UDPServer", { log: true });
+// BS.setConsoleLevelFlagsForType("EventDispatcher", { log: false });
 
 // HTTPS SERVER
 app.use(nocache());
