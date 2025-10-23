@@ -80,10 +80,10 @@ declare abstract class BaseConnectionManager {
     protected assertIsConnected(): void;
     /** @throws {Error} if not connected or is disconnecting */
     assertIsConnectedAndNotDisconnecting(): void;
-    connect(): Promise<void>;
+    connect(): Promise<boolean>;
     get canReconnect(): boolean;
-    reconnect(): Promise<void>;
-    disconnect(): Promise<void>;
+    reconnect(): Promise<boolean>;
+    disconnect(): Promise<boolean>;
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
     sendTxMessages(messages: TxMessage[] | undefined, sendImmediately?: boolean): Promise<void>;
     protected defaultMtu: number;

@@ -474,6 +474,15 @@ class Device {
   private sendTxMessages = this.#sendTxMessages.bind(this);
 
   async connect(options?: ConnectOptions) {
+    if (this.isConnected) {
+      _console.log("already connected");
+      return;
+    }
+    if (this.connectionStatus == "connecting") {
+      _console.log("already connecting");
+      return;
+    }
+
     _console.log("connect options", options);
     if (options) {
       switch (options.type) {
@@ -625,8 +634,22 @@ class Device {
     _console.assertWithError(this.canReconnect, "cannot reconnect to device");
   }
   async reconnect() {
-    this.#assertCanReconnect();
+    if (this.isConnected) {
+      _console.log("already connected");
+      return;
+    }
+    if (this.connectionStatus == "connecting") {
+      _console.log("already connecting");
+      return;
+    }
+    if (!this.canReconnect) {
+      _console.warn("cannot reconnect");
+      return false;
+    }
+    // this.#assertCanReconnect();
+    _console.log("attempting to reconnect...");
     this.#clear();
+    _console.log("reconnecting...");
     return this.connectionManager?.reconnect();
   }
 
@@ -659,7 +682,15 @@ class Device {
     return this.connectionManager?.type;
   }
   async disconnect() {
-    this.#assertIsConnected();
+    if (!this.isConnected) {
+      _console.log("already not connected");
+      return;
+    }
+    if (this.connectionStatus == "disconnecting") {
+      _console.log("already disconnecting");
+      return;
+    }
+    //this.#assertIsConnected();
     if (this.reconnectOnDisconnection) {
       this.reconnectOnDisconnection = false;
       this.addEventListener(

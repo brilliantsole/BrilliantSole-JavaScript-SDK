@@ -135,27 +135,40 @@ class WebSocketConnectionManager extends BaseConnectionManager {
 
   // CONNECTION
   async connect() {
-    await super.connect();
+    const canContinue = await super.connect();
+    if (!canContinue) {
+      return false;
+    }
     try {
       this.webSocket = new WebSocket(this.url);
+      return true;
     } catch (error) {
       _console.error("error connecting to webSocket", error);
       this.status = "notConnected";
+      return false;
     }
   }
   async disconnect() {
-    await super.disconnect();
+    const canContinue = await super.disconnect();
+    if (!canContinue) {
+      return false;
+    }
     _console.log("closing websocket");
     this.#pingTimer.stop();
     this.#webSocket?.close();
+    return true;
   }
 
   get canReconnect() {
     return Boolean(this.webSocket);
   }
   async reconnect() {
-    await super.reconnect();
+    const canContinue = await super.reconnect();
+    if (!canContinue) {
+      return false;
+    }
     this.webSocket = new WebSocket(this.url);
+    return true;
   }
 
   // BASE CONNECTION MANAGER

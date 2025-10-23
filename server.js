@@ -8,7 +8,6 @@ import * as BS from "./build/brilliantsole.node.module.js";
 import { WebSocketServer } from "ws";
 import * as dgram from "dgram";
 import nocache from "nocache";
-import cors from "cors";
 import axios from "axios";
 import bonjour from "bonjour";
 

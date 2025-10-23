@@ -23805,25 +23805,49 @@ class BaseConnectionManager {
         this.#assertIsNotDisconnecting();
     }
     async connect() {
-        this.assertIsNotConnected();
-        this.#assertIsNotConnecting();
+        if (this.isConnected) {
+            _console$i.log("already connected");
+            return false;
+        }
+        if (this.#status == "connecting") {
+            _console$i.log("already connecting");
+            return false;
+        }
         this.status = "connecting";
+        return true;
     }
     get canReconnect() {
         return false;
     }
     async reconnect() {
-        this.assertIsNotConnected();
-        this.#assertIsNotConnecting();
-        _console$i.assertWithError(this.canReconnect, "unable to reconnect");
+        if (this.isConnected) {
+            _console$i.log("already connected");
+            return false;
+        }
+        if (this.#status == "connecting") {
+            _console$i.log("already connecting");
+            return false;
+        }
+        if (!this.canReconnect) {
+            _console$i.warn("unable to reconnect");
+            return false;
+        }
         this.status = "connecting";
         _console$i.log("attempting to reconnect...");
+        return true;
     }
     async disconnect() {
-        this.assertIsConnected();
-        this.#assertIsNotDisconnecting();
+        if (!this.isConnected) {
+            _console$i.log("already not connected");
+            return false;
+        }
+        if (this.#status == "disconnecting") {
+            _console$i.log("already disconnecting");
+            return false;
+        }
         this.status = "disconnecting";
         _console$i.log("disconnecting from device...");
+        return true;
     }
     async sendSmpMessage(data) {
         this.assertIsConnectedAndNotDisconnecting();
@@ -24185,7 +24209,10 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     #services = new Map();
     #characteristics = new Map();
     async connect() {
-        await super.connect();
+        const canContinue = super.connect();
+        if (!canContinue) {
+            return false;
+        }
         try {
             const device = await bluetooth.requestDevice({
                 filters: [{ services: serviceUUIDs }],
@@ -24199,12 +24226,14 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             await this.#getServicesAndCharacteristics();
             _console$e.log("fully connected");
             this.status = "connected";
+            return true;
         }
         catch (error) {
             _console$e.error(error);
             this.status = "notConnected";
             this.server?.disconnect();
-            this.#removeEventListeners();
+            await this.#removeEventListeners();
+            return false;
         }
     }
     async #getServicesAndCharacteristics() {
@@ -24266,10 +24295,14 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         return Promise.allSettled(promises);
     }
     async disconnect() {
+        const canContinue = await super.disconnect();
+        if (!canContinue) {
+            return false;
+        }
         await this.#removeEventListeners();
-        await super.disconnect();
         this.server?.disconnect();
         this.status = "notConnected";
+        return true;
     }
     #onCharacteristicvaluechanged(event) {
         _console$e.log("oncharacteristicvaluechanged");
@@ -24323,22 +24356,28 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         return Boolean(this.server && !this.server.connected && this.isInRange);
     }
     async reconnect() {
-        await super.reconnect();
+        const canContinue = await super.reconnect();
+        if (!canContinue) {
+            return false;
+        }
         try {
             await this.server.connect();
         }
         catch (error) {
             _console$e.error(error);
             this.isInRange = false;
+            return false;
         }
         if (this.isConnected) {
             _console$e.log("successfully reconnected!");
             await this.#getServicesAndCharacteristics();
             this.status = "connected";
+            return true;
         }
         else {
             _console$e.log("unable to reconnect");
             this.status = "notConnected";
+            return false;
         }
     }
     remove() {
@@ -25742,27 +25781,40 @@ class WebSocketConnectionManager extends BaseConnectionManager {
         return `${this.isSecure ? "wss" : "ws"}://${this.ipAddress}/ws`;
     }
     async connect() {
-        await super.connect();
+        const canContinue = await super.connect();
+        if (!canContinue) {
+            return false;
+        }
         try {
             this.webSocket = new WebSocket(this.url);
+            return true;
         }
         catch (error) {
             _console$8.error("error connecting to webSocket", error);
             this.status = "notConnected";
+            return false;
         }
     }
     async disconnect() {
-        await super.disconnect();
+        const canContinue = await super.disconnect();
+        if (!canContinue) {
+            return false;
+        }
         _console$8.log("closing websocket");
         this.#pingTimer.stop();
         this.#webSocket?.close();
+        return true;
     }
     get canReconnect() {
         return Boolean(this.webSocket);
     }
     async reconnect() {
-        await super.reconnect();
+        const canContinue = await super.reconnect();
+        if (!canContinue) {
+            return false;
+        }
         this.webSocket = new WebSocket(this.url);
+        return true;
     }
     async sendSmpMessage(data) {
         super.sendSmpMessage(data);
@@ -26108,6 +26160,14 @@ class Device {
     }
     sendTxMessages = this.#sendTxMessages.bind(this);
     async connect(options) {
+        if (this.isConnected) {
+            _console$7.log("already connected");
+            return;
+        }
+        if (this.connectionStatus == "connecting") {
+            _console$7.log("already connecting");
+            return;
+        }
         _console$7.log("connect options", options);
         if (options) {
             switch (options.type) {
@@ -26225,8 +26285,21 @@ class Device {
         _console$7.assertWithError(this.canReconnect, "cannot reconnect to device");
     }
     async reconnect() {
-        this.#assertCanReconnect();
+        if (this.isConnected) {
+            _console$7.log("already connected");
+            return;
+        }
+        if (this.connectionStatus == "connecting") {
+            _console$7.log("already connecting");
+            return;
+        }
+        if (!this.canReconnect) {
+            _console$7.warn("cannot reconnect");
+            return false;
+        }
+        _console$7.log("attempting to reconnect...");
         this.#clear();
+        _console$7.log("reconnecting...");
         return this.connectionManager?.reconnect();
     }
     static async Connect() {
@@ -26255,7 +26328,14 @@ class Device {
         return this.connectionManager?.type;
     }
     async disconnect() {
-        this.#assertIsConnected();
+        if (!this.isConnected) {
+            _console$7.log("already not connected");
+            return;
+        }
+        if (this.connectionStatus == "disconnecting") {
+            _console$7.log("already disconnecting");
+            return;
+        }
         if (this.reconnectOnDisconnection) {
             this.reconnectOnDisconnection = false;
             this.addEventListener("isConnected", () => {
@@ -30516,19 +30596,31 @@ class ClientConnectionManager extends BaseConnectionManager {
         return this.client.isConnected;
     }
     async connect() {
-        await super.connect();
+        const canContinue = await super.connect();
+        if (!canContinue) {
+            return false;
+        }
         this.sendClientConnectMessage(this.subType);
+        return true;
     }
     async disconnect() {
-        await super.disconnect();
+        const canContinue = await super.disconnect();
+        if (!canContinue) {
+            return false;
+        }
         this.sendClientDisconnectMessage();
+        return true;
     }
     get canReconnect() {
         return true;
     }
     async reconnect() {
-        await super.reconnect();
+        const canContinue = await super.reconnect();
+        if (!canContinue) {
+            return false;
+        }
         this.sendClientConnectMessage();
+        return true;
     }
     sendClientMessage;
     sendClientConnectMessage;

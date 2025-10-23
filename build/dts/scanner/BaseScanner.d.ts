@@ -61,8 +61,8 @@ declare abstract class BaseScanner {
     }>;
     get isScanningAvailable(): boolean;
     get isScanning(): boolean;
-    startScan(): void;
-    stopScan(): void;
+    startScan(): boolean;
+    stopScan(): boolean;
     get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
     get discoveredDevicesArray(): DiscoveredDevice[];
     static get DiscoveredDeviceExpirationTimeout(): number;

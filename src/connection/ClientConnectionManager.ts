@@ -83,20 +83,32 @@ class ClientConnectionManager extends BaseConnectionManager {
   }
 
   async connect() {
-    await super.connect();
+    const canContinue = await super.connect();
+    if (!canContinue) {
+      return false;
+    }
     this.sendClientConnectMessage(this.subType);
+    return true;
   }
   async disconnect() {
-    await super.disconnect();
+    const canContinue = await super.disconnect();
+    if (!canContinue) {
+      return false;
+    }
     this.sendClientDisconnectMessage();
+    return true;
   }
 
   get canReconnect() {
     return true;
   }
   async reconnect() {
-    await super.reconnect();
+    const canContinue = await super.reconnect();
+    if (!canContinue) {
+      return false;
+    }
     this.sendClientConnectMessage();
+    return true;
   }
 
   sendClientMessage!: SendClientMessageCallback;

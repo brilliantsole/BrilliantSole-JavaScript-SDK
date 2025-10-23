@@ -18,10 +18,10 @@ declare class UDPConnectionManager extends BaseConnectionManager {
     set socket(newSocket: dgram.Socket | undefined);
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
     sendTxData(data: ArrayBuffer): Promise<void>;
-    connect(): Promise<void>;
-    disconnect(): Promise<void>;
+    connect(): Promise<boolean>;
+    disconnect(): Promise<boolean>;
     get canReconnect(): boolean;
-    reconnect(): Promise<void>;
+    reconnect(): Promise<boolean>;
     clear(): void;
     remove(): void;
 }

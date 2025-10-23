@@ -17,10 +17,10 @@ declare class ClientConnectionManager extends BaseConnectionManager {
     get isConnected(): boolean;
     set isConnected(newIsConnected: boolean);
     get isAvailable(): boolean;
-    connect(): Promise<void>;
-    disconnect(): Promise<void>;
+    connect(): Promise<boolean>;
+    disconnect(): Promise<boolean>;
     get canReconnect(): boolean;
-    reconnect(): Promise<void>;
+    reconnect(): Promise<boolean>;
     sendClientMessage: SendClientMessageCallback;
     sendClientConnectMessage: SendClientConnectMessageCallback;
     sendClientDisconnectMessage: Function;

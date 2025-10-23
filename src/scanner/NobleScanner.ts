@@ -181,15 +181,21 @@ class NobleScanner extends BaseScanner {
 
   // SCANNING
   startScan() {
-    super.startScan();
+    if (!super.startScan()) {
+      return false;
+    }
     noble.startScanningAsync(
       filterManually ? [] : (serviceUUIDs as string[]),
       true
     );
+    return true;
   }
   stopScan() {
-    super.stopScan();
+    if (!super.stopScan()) {
+      return false;
+    }
     noble.stopScanningAsync();
+    return true;
   }
 
   // RESET
@@ -229,6 +235,7 @@ class NobleScanner extends BaseScanner {
   }
 
   // DEVICES
+  #devices: { [bluetoothId: string]: Device } = {};
   async connectToDevice(
     deviceId: string,
     connectionType?: ClientConnectionType
@@ -241,8 +248,12 @@ class NobleScanner extends BaseScanner {
     let device = DeviceManager.AvailableDevices.filter(
       (device) => device.connectionType == "noble"
     ).find((device) => device.bluetoothId == deviceId);
+    device = device ?? this.#devices[deviceId];
+
     if (!device) {
+      _console.log("creating device for discoveredDevice...", deviceId);
       device = this.#createDevice(noblePeripheral);
+      this.#devices[deviceId] = device;
       const { ipAddress, isWifiSecure } =
         this.discoveredDevices[device.bluetoothId!];
       if (connectionType && connectionType != "noble" && ipAddress) {

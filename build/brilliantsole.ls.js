@@ -22617,25 +22617,49 @@
       _assertClassBrand(_BaseConnectionManager_brand, this, _assertIsNotDisconnecting).call(this);
     }
     async connect() {
-      this.assertIsNotConnected();
-      _assertClassBrand(_BaseConnectionManager_brand, this, _assertIsNotConnecting).call(this);
+      if (this.isConnected) {
+        _console$h.log("already connected");
+        return false;
+      }
+      if (_classPrivateFieldGet2(_status$1, this) == "connecting") {
+        _console$h.log("already connecting");
+        return false;
+      }
       this.status = "connecting";
+      return true;
     }
     get canReconnect() {
       return false;
     }
     async reconnect() {
-      this.assertIsNotConnected();
-      _assertClassBrand(_BaseConnectionManager_brand, this, _assertIsNotConnecting).call(this);
-      _console$h.assertWithError(this.canReconnect, "unable to reconnect");
+      if (this.isConnected) {
+        _console$h.log("already connected");
+        return false;
+      }
+      if (_classPrivateFieldGet2(_status$1, this) == "connecting") {
+        _console$h.log("already connecting");
+        return false;
+      }
+      if (!this.canReconnect) {
+        _console$h.warn("unable to reconnect");
+        return false;
+      }
       this.status = "connecting";
       _console$h.log("attempting to reconnect...");
+      return true;
     }
     async disconnect() {
-      this.assertIsConnected();
-      _assertClassBrand(_BaseConnectionManager_brand, this, _assertIsNotDisconnecting).call(this);
+      if (!this.isConnected) {
+        _console$h.log("already not connected");
+        return false;
+      }
+      if (_classPrivateFieldGet2(_status$1, this) == "disconnecting") {
+        _console$h.log("already disconnecting");
+        return false;
+      }
       this.status = "disconnecting";
       _console$h.log("disconnecting from device...");
+      return true;
     }
     async sendSmpMessage(data) {
       this.assertIsConnectedAndNotDisconnecting();
@@ -22729,9 +22753,6 @@
   }
   function _assertIsSupported() {
     _console$h.assertWithError(this.isSupported, "".concat(this.type, " is not supported"));
-  }
-  function _assertIsNotConnecting() {
-    _console$h.assertWithError(this.status != "connecting", "device is already connecting");
   }
   function _assertIsNotDisconnecting() {
     _console$h.assertWithError(this.status != "disconnecting", "device is already disconnecting");
@@ -23052,7 +23073,10 @@
       return ((_this$server = this.server) === null || _this$server === void 0 ? void 0 : _this$server.connected) || false;
     }
     async connect() {
-      await super.connect();
+      const canContinue = super.connect();
+      if (!canContinue) {
+        return false;
+      }
       try {
         const device = await bluetooth.requestDevice({
           filters: [{
@@ -23068,20 +23092,26 @@
         await _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _getServicesAndCharacteristics).call(this);
         _console$d.log("fully connected");
         this.status = "connected";
+        return true;
       } catch (error) {
         var _this$server2;
         _console$d.error(error);
         this.status = "notConnected";
         (_this$server2 = this.server) === null || _this$server2 === void 0 ? void 0 : _this$server2.disconnect();
-        _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _removeEventListeners).call(this);
+        await _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _removeEventListeners).call(this);
+        return false;
       }
     }
     async disconnect() {
       var _this$server3;
+      const canContinue = await super.disconnect();
+      if (!canContinue) {
+        return false;
+      }
       await _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _removeEventListeners).call(this);
-      await super.disconnect();
       (_this$server3 = this.server) === null || _this$server3 === void 0 ? void 0 : _this$server3.disconnect();
       this.status = "notConnected";
+      return true;
     }
     async writeCharacteristic(characteristicName, data) {
       super.writeCharacteristic(characteristicName, data);
@@ -23109,20 +23139,26 @@
       return Boolean(this.server && !this.server.connected && this.isInRange);
     }
     async reconnect() {
-      await super.reconnect();
+      const canContinue = await super.reconnect();
+      if (!canContinue) {
+        return false;
+      }
       try {
         await this.server.connect();
       } catch (error) {
         _console$d.error(error);
         this.isInRange = false;
+        return false;
       }
       if (this.isConnected) {
         _console$d.log("successfully reconnected!");
         await _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _getServicesAndCharacteristics).call(this);
         this.status = "connected";
+        return true;
       } else {
         _console$d.log("unable to reconnect");
         this.status = "notConnected";
+        return false;
       }
     }
     remove() {
@@ -24679,27 +24715,40 @@
       return "".concat(this.isSecure ? "wss" : "ws", "://").concat(this.ipAddress, "/ws");
     }
     async connect() {
-      await super.connect();
+      const canContinue = await super.connect();
+      if (!canContinue) {
+        return false;
+      }
       try {
         this.webSocket = new WebSocket(this.url);
+        return true;
       } catch (error) {
         _console$7.error("error connecting to webSocket", error);
         this.status = "notConnected";
+        return false;
       }
     }
     async disconnect() {
       var _classPrivateFieldGet3;
-      await super.disconnect();
+      const canContinue = await super.disconnect();
+      if (!canContinue) {
+        return false;
+      }
       _console$7.log("closing websocket");
       _classPrivateFieldGet2(_pingTimer$1, this).stop();
       (_classPrivateFieldGet3 = _classPrivateFieldGet2(_webSocket$1, this)) === null || _classPrivateFieldGet3 === void 0 ? void 0 : _classPrivateFieldGet3.close();
+      return true;
     }
     get canReconnect() {
       return Boolean(this.webSocket);
     }
     async reconnect() {
-      await super.reconnect();
+      const canContinue = await super.reconnect();
+      if (!canContinue) {
+        return false;
+      }
       this.webSocket = new WebSocket(this.url);
+      return true;
     }
     async sendSmpMessage(data) {
       super.sendSmpMessage(data);
@@ -25025,6 +25074,14 @@
       this._informationManager.connectionType = this.connectionType;
     }
     async connect(options) {
+      if (this.isConnected) {
+        _console$6.log("already connected");
+        return;
+      }
+      if (this.connectionStatus == "connecting") {
+        _console$6.log("already connecting");
+        return;
+      }
       _console$6.log("connect options", options);
       if (options) {
         switch (options.type) {
@@ -25091,8 +25148,21 @@
     }
     async reconnect() {
       var _this$connectionManag2;
-      _assertClassBrand(_Device_brand, this, _assertCanReconnect).call(this);
+      if (this.isConnected) {
+        _console$6.log("already connected");
+        return;
+      }
+      if (this.connectionStatus == "connecting") {
+        _console$6.log("already connecting");
+        return;
+      }
+      if (!this.canReconnect) {
+        _console$6.warn("cannot reconnect");
+        return false;
+      }
+      _console$6.log("attempting to reconnect...");
       _assertClassBrand(_Device_brand, this, _clear).call(this);
+      _console$6.log("reconnecting...");
       return (_this$connectionManag2 = this.connectionManager) === null || _this$connectionManag2 === void 0 ? void 0 : _this$connectionManag2.reconnect();
     }
     static async Connect() {
@@ -25119,7 +25189,14 @@
       return (_this$connectionManag3 = this.connectionManager) === null || _this$connectionManag3 === void 0 ? void 0 : _this$connectionManag3.type;
     }
     async disconnect() {
-      _assertClassBrand(_Device_brand, this, _assertIsConnected).call(this);
+      if (!this.isConnected) {
+        _console$6.log("already not connected");
+        return;
+      }
+      if (this.connectionStatus == "disconnecting") {
+        _console$6.log("already disconnecting");
+        return;
+      }
       if (this.reconnectOnDisconnection) {
         this.reconnectOnDisconnection = false;
         this.addEventListener("isConnected", () => {
@@ -26013,9 +26090,6 @@
     var _classPrivateFieldGet6;
     await ((_classPrivateFieldGet6 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet6 === void 0 ? void 0 : _classPrivateFieldGet6.sendTxMessages(messages, sendImmediately));
   }
-  function _assertIsConnected() {
-    _console$6.assertWithError(this.isConnected, "notConnected");
-  }
   function _didReceiveMessageTypes(messageTypes) {
     return messageTypes.every(messageType => {
       const hasConnectionMessage = this.latestConnectionMessages.has(messageType);
@@ -26056,9 +26130,6 @@
       type: messageType
     }));
     _assertClassBrand(_Device_brand, this, _sendTxMessages).call(this, messages);
-  }
-  function _assertCanReconnect() {
-    _console$6.assertWithError(this.canReconnect, "cannot reconnect to device");
   }
   function _onConnectionStatusUpdated(connectionStatus) {
     _console$6.log({
@@ -26746,19 +26817,31 @@
       return this.client.isConnected;
     }
     async connect() {
-      await super.connect();
+      const canContinue = await super.connect();
+      if (!canContinue) {
+        return false;
+      }
       this.sendClientConnectMessage(this.subType);
+      return true;
     }
     async disconnect() {
-      await super.disconnect();
+      const canContinue = await super.disconnect();
+      if (!canContinue) {
+        return false;
+      }
       this.sendClientDisconnectMessage();
+      return true;
     }
     get canReconnect() {
       return true;
     }
     async reconnect() {
-      await super.reconnect();
+      const canContinue = await super.reconnect();
+      if (!canContinue) {
+        return false;
+      }
       this.sendClientConnectMessage();
+      return true;
     }
     async sendSmpMessage(data) {
       super.sendSmpMessage(data);

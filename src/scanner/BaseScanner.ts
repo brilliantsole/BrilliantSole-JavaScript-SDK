@@ -9,7 +9,7 @@ import { Timer } from "../utils/Timer.ts";
 import { DeviceType } from "../InformationManager.ts";
 import { ConnectionType } from "../connection/BaseConnectionManager.ts";
 
-const _console = createConsole("BaseScanner");
+const _console = createConsole("BaseScanner", { log: false });
 
 export const ScannerEventTypes = [
   "isScanningAvailable",
@@ -146,11 +146,25 @@ abstract class BaseScanner {
   }
 
   startScan() {
-    this.#assertIsAvailable();
-    this.#assertIsNotScanning();
+    if (!this.isScanningAvailable) {
+      _console.warn("scanning is not available");
+      return false;
+    }
+    if (this.isScanning) {
+      _console.log("already scanning");
+      return false;
+    }
+    return true;
+    // this.#assertIsAvailable();
+    // this.#assertIsNotScanning();
   }
   stopScan() {
-    this.#assertIsScanning();
+    if (!this.isScanning) {
+      _console.log("already not scanning");
+      return false;
+    }
+    return true;
+    //this.#assertIsScanning();
   }
   #onIsScanning(event: ScannerEventMap["isScanning"]) {
     if (this.isScanning) {

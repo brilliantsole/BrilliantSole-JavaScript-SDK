@@ -229,25 +229,56 @@ abstract class BaseConnectionManager {
   }
 
   async connect() {
-    this.assertIsNotConnected();
-    this.#assertIsNotConnecting();
+    if (this.isConnected) {
+      _console.log("already connected");
+      return false;
+    }
+    if (this.#status == "connecting") {
+      _console.log("already connecting");
+      return false;
+    }
+    // this.assertIsNotConnected();
+    // this.#assertIsNotConnecting();
     this.status = "connecting";
+    return true;
   }
   get canReconnect() {
     return false;
   }
   async reconnect() {
-    this.assertIsNotConnected();
-    this.#assertIsNotConnecting();
-    _console.assertWithError(this.canReconnect, "unable to reconnect");
+    if (this.isConnected) {
+      _console.log("already connected");
+      return false;
+    }
+    if (this.#status == "connecting") {
+      _console.log("already connecting");
+      return false;
+    }
+    // this.assertIsNotConnected();
+    // this.#assertIsNotConnecting();
+    if (!this.canReconnect) {
+      _console.warn("unable to reconnect");
+      return false;
+    }
+    // _console.assertWithError(this.canReconnect, "unable to reconnect");
     this.status = "connecting";
     _console.log("attempting to reconnect...");
+    return true;
   }
   async disconnect() {
-    this.assertIsConnected();
-    this.#assertIsNotDisconnecting();
+    if (!this.isConnected) {
+      _console.log("already not connected");
+      return false;
+    }
+    if (this.#status == "disconnecting") {
+      _console.log("already disconnecting");
+      return false;
+    }
+    // this.assertIsConnected();
+    // this.#assertIsNotDisconnecting();
     this.status = "disconnecting";
     _console.log("disconnecting from device...");
+    return true;
   }
 
   async sendSmpMessage(data: ArrayBuffer) {

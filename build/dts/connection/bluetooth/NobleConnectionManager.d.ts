@@ -24,11 +24,11 @@ declare class NobleConnectionManager extends BluetoothConnectionManager {
     static get isSupported(): boolean;
     static get type(): ConnectionType;
     get isConnected(): boolean;
-    connect(): Promise<void>;
-    disconnect(): Promise<void>;
+    connect(): Promise<boolean>;
+    disconnect(): Promise<boolean>;
     writeCharacteristic(characteristicName: BluetoothCharacteristicName, data: ArrayBuffer): Promise<void>;
     get canReconnect(): boolean;
-    reconnect(): Promise<void>;
+    reconnect(): Promise<boolean>;
     get noblePeripheral(): NoblePeripheral | undefined;
     set noblePeripheral(newNoblePeripheral: NoblePeripheral | undefined);
     onNoblePeripheralConnect(noblePeripheral: NoblePeripheral): Promise<void>;

@@ -240,26 +240,39 @@ class UDPConnectionManager extends BaseConnectionManager {
 
   // CONNECTION
   async connect() {
-    await super.connect();
+    const canContinue = await super.connect();
+    if (!canContinue) {
+      return false;
+    }
     this.#setupSocket();
+    return true;
   }
   async disconnect() {
-    await super.disconnect();
+    const canContinue = await super.disconnect();
+    if (!canContinue) {
+      return false;
+    }
     _console.log("closing socket");
+    this.#pingTimer.stop();
     try {
       this.#socket?.close();
+      return true;
     } catch (error) {
       _console.error(error);
+      return false;
     }
-    this.#pingTimer.stop();
   }
 
   get canReconnect() {
     return Boolean(this.socket);
   }
   async reconnect() {
-    await super.reconnect();
+    const canContinue = await super.reconnect();
+    if (!canContinue) {
+      return false;
+    }
     this.#setupSocket();
+    return true;
   }
 
   // PARSING

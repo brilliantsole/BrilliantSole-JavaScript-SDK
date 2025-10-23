@@ -14,10 +14,10 @@ declare class WebSocketConnectionManager extends BaseConnectionManager {
     get isSecure(): boolean;
     set isSecure(newIsSecure: boolean);
     get url(): string;
-    connect(): Promise<void>;
-    disconnect(): Promise<void>;
+    connect(): Promise<boolean>;
+    disconnect(): Promise<boolean>;
     get canReconnect(): boolean;
-    reconnect(): Promise<void>;
+    reconnect(): Promise<boolean>;
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
     sendTxData(data: ArrayBuffer): Promise<void>;
     remove(): void;

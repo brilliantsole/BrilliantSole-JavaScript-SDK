@@ -107,7 +107,10 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     new Map();
 
   async connect() {
-    await super.connect();
+    const canContinue = super.connect();
+    if (!canContinue) {
+      return false;
+    }
 
     try {
       const device = await bluetooth!.requestDevice({
@@ -127,11 +130,13 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
       _console.log("fully connected");
 
       this.status = "connected";
+      return true;
     } catch (error) {
       _console.error(error);
       this.status = "notConnected";
       this.server?.disconnect();
-      this.#removeEventListeners();
+      await this.#removeEventListeners();
+      return false;
     }
   }
   async #getServicesAndCharacteristics() {
@@ -227,10 +232,14 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     return Promise.allSettled(promises);
   }
   async disconnect() {
+    const canContinue = await super.disconnect();
+    if (!canContinue) {
+      return false;
+    }
     await this.#removeEventListeners();
-    await super.disconnect();
     this.server?.disconnect();
     this.status = "notConnected";
+    return true;
   }
 
   #onCharacteristicvaluechanged(event: Event) {
@@ -311,21 +320,27 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     return Boolean(this.server && !this.server.connected && this.isInRange);
   }
   async reconnect() {
-    await super.reconnect();
+    const canContinue = await super.reconnect();
+    if (!canContinue) {
+      return false;
+    }
     try {
       await this.server!.connect();
     } catch (error) {
       _console.error(error);
       this.isInRange = false;
+      return false;
     }
 
     if (this.isConnected) {
       _console.log("successfully reconnected!");
       await this.#getServicesAndCharacteristics();
       this.status = "connected";
+      return true;
     } else {
       _console.log("unable to reconnect");
       this.status = "notConnected";
+      return false;
     }
   }
 
