@@ -12,11 +12,11 @@ declare class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     set device(newDevice: BluetoothDevice | undefined);
     get server(): BluetoothRemoteGATTServer | undefined;
     get isConnected(): boolean;
-    connect(): Promise<void>;
-    disconnect(): Promise<void>;
+    connect(): Promise<boolean>;
+    disconnect(): Promise<boolean>;
     writeCharacteristic(characteristicName: BluetoothCharacteristicName, data: ArrayBuffer): Promise<void>;
     get canReconnect(): boolean;
-    reconnect(): Promise<void>;
+    reconnect(): Promise<boolean>;
     remove(): void;
 }
 export default WebBluetoothConnectionManager;

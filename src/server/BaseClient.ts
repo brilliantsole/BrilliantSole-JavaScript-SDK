@@ -1,9 +1,7 @@
 import { createConsole } from "../utils/Console.ts";
 import {
   ServerMessageTypes,
-  discoveredDevicesMessage,
   ServerMessage,
-  MessageLike,
   ClientDeviceMessage,
   createClientDeviceMessage,
   ServerMessageType,
@@ -93,7 +91,7 @@ abstract class BaseClient {
       const connectionManager =
         device.connectionManager! as ClientConnectionManager;
       connectionManager.isConnected = false;
-      //device.removeAllEventListeners();
+      // device.removeAllEventListeners();
     }
     this.#receivedMessageTypes.length = 0;
     //this.#devices = {};

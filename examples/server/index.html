@@ -10,15 +10,23 @@
     .block {
       display: block;
     }
-    div {
-      margin-top: 1rem;
-    }
+
     ul,
     ol {
       margin-top: 0;
     }
     .hidden {
       display: none;
+    }
+
+    img {
+      max-width: 200px;
+    }
+
+    .zoomview-container,
+    .overview-container {
+      width: 1000px;
+      height: 100px;
     }
   </style>
 
@@ -51,21 +59,11 @@
         <template id="discoveredDeviceTemplate">
           <div class="discoveredDevice">
             <label class="block"><b>name:</b> <span class="name"></span></label>
-            <label class="block"
-              ><b>device type:</b> <span class="deviceType"></span
-            ></label>
+            <label class="block">
+              <b>device type:</b> <span class="deviceType"></span>
+            </label>
             <label class="block"><b>rssi:</b> <span class="rssi"></span></label>
-            <label class="block hidden"
-              ><b>ip address:</b> <span class="ipAddress"></span
-            ></label>
-            <label class="block hidden"
-              ><b>is wifi secure:</b> <span class="isWifiSecure"></span
-            ></label>
             <button class="toggleConnection">connect</button>
-            <button class="connectViaWebSockets hidden">
-              connect via webSockets
-            </button>
-            <button class="connectViaUDP hidden">connect via udp</button>
           </div>
         </template>
       </div>
@@ -85,31 +83,14 @@
               <pre class="deviceInformation"></pre>
             </label>
 
-            <label class="block"
-              ><b>battery level:</b> <span class="batteryLevel"></span>%</label
-            >
+            <label class="block">
+              <b>battery level:</b> <span class="batteryLevel"></span>%
+            </label>
 
             <label class="block"><b>name:</b> <span class="name"></span></label>
-            <label>
-              <b>new name: </b>
-              <input
-                class="setNameInput"
-                type="text"
-                placeholder="type in a name"
-                disabled
-              />
-            </label>
-            <button class="setNameButton" disabled>set name</button>
 
-            <label class="block"
-              ><b>device type:</b> <span class="deviceType"></span
-            ></label>
             <label class="block">
-              <b>new type: </b>
-              <select class="setTypeSelect" disabled>
-                <optgroup label="select type"></optgroup>
-              </select>
-              <button class="setTypeButton" disabled>set type</button>
+              <b>device type:</b> <span class="deviceType"></span>
             </label>
 
             <label class="block">
@@ -120,7 +101,6 @@
             <template class="sensorTypeConfigurationTemplate">
               <label class="sensorTypeConfiguration block">
                 <b class="sensorType"></b>
-                <!-- <input class="sensorRate" type="number" min="0" value="" disabled />ms -->
                 <select class="sensorRate input">
                   <optgroup label="sensor rate (ms)">
                     <option value="0">0ms</option>
@@ -139,14 +119,15 @@
               <pre class="sensorData"></pre>
             </label>
 
-            <div>
+            <div class="vibration">
+              <h3>Vibration</h3>
               <button class="triggerVibration" disabled>
                 triggerVibration
               </button>
             </div>
 
-            <div>
-              <h3>file transfer</h3>
+            <div class="fileTransfer" hidden>
+              <h3>File Transfer</h3>
               <label>
                 file transfer type
                 <select class="fileTransferTypes">
@@ -172,8 +153,8 @@
               <progress value="0" class="fileTransferProgress"></progress>
             </div>
 
-            <div>
-              <h3>tflite</h3>
+            <div class="tflite" hidden>
+              <h3>Tflite</h3>
 
               <div>
                 <label><b>name:</b> <span class="tfliteName"></span></label>
@@ -203,9 +184,9 @@
               </div>
 
               <div>
-                <label
-                  ><b>sample rate:</b> <span class="tfliteSampleRate"></span
-                ></label>
+                <label>
+                  <b>sample rate:</b> <span class="tfliteSampleRate"></span>
+                </label>
                 <br />
                 <label>
                   <b>new sample rate: </b>
@@ -312,37 +293,101 @@
               </div>
             </div>
 
-            <div>
-              <h3>firmware update</h3>
-
-              <label><b>status:</b> <span class="firmwareStatus"></span></label>
+            <div class="camera" hidden>
+              <h3>Camera</h3>
+              <button class="takePicture">take picture</button>
+              <button class="focusCamera">focus camera</button>
+              <progress
+                value="0"
+                min="0"
+                max="1"
+                class="cameraProgress"
+              ></progress>
               <br />
-              <label
-                >firmware
-                <input class="firmwareInput" type="file" accept=".bin"
-              /></label>
-              <br />
-              <button class="toggleFirmwareUpload" disabled>
-                upload firmware
-              </button>
-              <progress value="0" class="firmwareUploadProgress"></progress>
-              <span
-                class="firmwareUploadProgressPercentage"
-                style="display: none"
-              ></span>
-
-              <br />
-
               <label>
-                <b>firmware images: </b>
-                <pre class="firmwareImages"></pre>
+                auto picture <input type="checkbox" class="autoPicture" />
+              </label>
+              <br />
+              <label>
+                <b>camera configuration: </b>
+                <pre class="cameraConfigurationPre"></pre>
               </label>
 
-              <button class="reset" disabled>reset</button>
+              <label>
+                take picture after update?
+                <input type="checkbox" class="takePictureAfterUpdate" />
+              </label>
 
-              <button class="testFirmwareImage" disabled>test</button>
-              <button class="confirmFirmwareImage" disabled>confirm</button>
-              <button class="eraseFirmwareImage" disabled>erase</button>
+              <div class="cameraConfiguration">
+                <template class="cameraConfigurationTypeTemplate">
+                  <div class="cameraConfigurationType">
+                    <label>
+                      <input class="value" type="range" value="" disabled />
+                      <b class="type"></b> <span></span>
+                    </label>
+                  </div>
+                </template>
+              </div>
+              <label>
+                <b>white balance</b>
+                <input type="color" class="cameraWhiteBalance" disabled />
+              </label>
+              <br />
+              <img class="cameraImage" />
+            </div>
+
+            <div class="microphone" hidden>
+              <h3>Microphone</h3>
+              <label>
+                <b>status:</b> <span class="microphoneStatus"></span>
+              </label>
+
+              <button disabled hidden class="toggleMicrophone">
+                start microphone
+              </button>
+              <button disabled class="startMicrophone">start microphone</button>
+              <button disabled class="stopMicrophone">stop microphone</button>
+              <br />
+              <button disabled class="toggleMicrophoneRecording">
+                start recording
+              </button>
+
+              <br />
+              <label>
+                <b>microphone configuration: </b>
+                <pre class="microphoneConfigurationPre"></pre>
+              </label>
+              <br />
+
+              <div class="microphoneConfiguration">
+                <template class="microphoneConfigurationTypeTemplate">
+                  <label class="microphoneConfigurationType">
+                    <b class="type"></b> <span hidden></span>
+                    <select disabled>
+                      <optgroup></optgroup>
+                    </select>
+                  </label>
+                </template>
+              </div>
+
+              <div>
+                <b>stream</b>
+                <br />
+                <audio muted class="microphoneStream" controls autoplay></audio>
+              </div>
+
+              <div>
+                <b>recording</b>
+                <label>
+                  auto play
+                  <input type="checkbox" class="autoPlayMicrphoneRecording" />
+                </label>
+                <br />
+                <audio class="microphoneRecording" controls></audio>
+              </div>
+
+              <div class="zoomview-container"></div>
+              <div class="overview-container"></div>
             </div>
           </div>
         </template>

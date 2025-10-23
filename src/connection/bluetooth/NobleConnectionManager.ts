@@ -66,12 +66,21 @@ class NobleConnectionManager extends BluetoothConnectionManager {
   }
 
   async connect() {
-    await super.connect();
+    const canConnect = await super.connect();
+    _console.log({ canConnect });
+    if (!canConnect) {
+      return false;
+    }
     await this.#noblePeripheral!.connectAsync();
+    return true;
   }
   async disconnect() {
-    await super.disconnect();
+    const canContinue = await super.disconnect();
+    if (!canContinue) {
+      return false;
+    }
     await this.#noblePeripheral!.disconnectAsync();
+    return true;
   }
 
   async writeCharacteristic(
@@ -105,8 +114,12 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     return this.#noblePeripheral!.connectable;
   }
   async reconnect() {
-    await super.reconnect();
+    let canContinue = await super.reconnect();
+    if (!canContinue) {
+      return false;
+    }
     await this.#noblePeripheral!.connectAsync();
+    return true;
   }
 
   // NOBLE

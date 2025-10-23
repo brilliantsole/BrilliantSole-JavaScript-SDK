@@ -261,7 +261,7 @@ class CameraManager {
         });
         if (this.#imageProgress == 1) {
           _console.log("finished getting image data");
-          if (this.#headerProgress == 1) {
+          if (this.#headerProgress == 1 && this.#footerProgress == 1) {
             this.#buildImage();
           }
         }

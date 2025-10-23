@@ -9,8 +9,8 @@ declare class NobleScanner extends BaseScanner {
     get isScanning(): boolean;
     constructor();
     get isScanningAvailable(): boolean;
-    startScan(): void;
-    stopScan(): void;
+    startScan(): boolean;
+    stopScan(): boolean;
     get canReset(): boolean;
     reset(): void;
     connectToDevice(deviceId: string, connectionType?: ClientConnectionType): Promise<void>;

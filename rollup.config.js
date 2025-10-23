@@ -91,6 +91,7 @@ const nodeExternal = [
   "svg-pathdata",
   "simplify-js",
   "fit-curve",
+  "os",
 ];
 
 const lensStudioPlugins = [

@@ -16,16 +16,19 @@ import NobleConnectionManager, {
 const _console = createConsole("NobleScanner", { log: false });
 
 let isSupported = false;
+let filterManually = true;
+const filterServiceUuid = (serviceUUIDs[0] as string).replaceAll("-", "");
 
 /** NODE_START */
 import noble from "@abandonware/noble";
 import { DeviceTypes } from "../InformationManager.ts";
 import DeviceManager from "../DeviceManager.ts";
-import {
-  ClientConnectionType,
-  ConnectionType,
-} from "../connection/BaseConnectionManager.ts";
+import { ClientConnectionType } from "../connection/BaseConnectionManager.ts";
 isSupported = true;
+import os from "os";
+const platform = os.platform();
+filterManually = platform == "linux";
+_console.log({ platform, filterManually, filterServiceUuid });
 /** NODE_END */
 
 export const NobleStates = [
@@ -99,6 +102,14 @@ class NobleScanner extends BaseScanner {
     this.#nobleState = state;
   }
   #onNobleDiscover(noblePeripheral: NoblePeripheral) {
+    _console.log("advertisement", noblePeripheral.advertisement);
+    if (filterManually) {
+      const serviceUuid = noblePeripheral.advertisement.serviceUuids?.[0];
+      _console.log("onNobleDiscover.filterManually", { serviceUuid });
+      if (serviceUuid != filterServiceUuid) {
+        return;
+      }
+    }
     _console.log("onNobleDiscover", noblePeripheral.id);
     if (!this.#noblePeripherals[noblePeripheral.id]) {
       noblePeripheral.scanner = this;
@@ -170,12 +181,21 @@ class NobleScanner extends BaseScanner {
 
   // SCANNING
   startScan() {
-    super.startScan();
-    noble.startScanningAsync(serviceUUIDs as string[], true);
+    if (!super.startScan()) {
+      return false;
+    }
+    noble.startScanningAsync(
+      filterManually ? [] : (serviceUUIDs as string[]),
+      true
+    );
+    return true;
   }
   stopScan() {
-    super.stopScan();
+    if (!super.stopScan()) {
+      return false;
+    }
     noble.stopScanningAsync();
+    return true;
   }
 
   // RESET
@@ -215,6 +235,7 @@ class NobleScanner extends BaseScanner {
   }
 
   // DEVICES
+  #devices: { [bluetoothId: string]: Device } = {};
   async connectToDevice(
     deviceId: string,
     connectionType?: ClientConnectionType
@@ -227,8 +248,12 @@ class NobleScanner extends BaseScanner {
     let device = DeviceManager.AvailableDevices.filter(
       (device) => device.connectionType == "noble"
     ).find((device) => device.bluetoothId == deviceId);
+    device = device ?? this.#devices[deviceId];
+
     if (!device) {
+      _console.log("creating device for discoveredDevice...", deviceId);
       device = this.#createDevice(noblePeripheral);
+      this.#devices[deviceId] = device;
       const { ipAddress, isWifiSecure } =
         this.discoveredDevices[device.bluetoothId!];
       if (connectionType && connectionType != "noble" && ipAddress) {

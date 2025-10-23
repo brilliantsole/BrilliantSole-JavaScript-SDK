@@ -1273,10 +1273,10 @@ declare abstract class BaseConnectionManager {
     protected assertIsConnected(): void;
     /** @throws {Error} if not connected or is disconnecting */
     assertIsConnectedAndNotDisconnecting(): void;
-    connect(): Promise<void>;
+    connect(): Promise<boolean>;
     get canReconnect(): boolean;
-    reconnect(): Promise<void>;
-    disconnect(): Promise<void>;
+    reconnect(): Promise<boolean>;
+    disconnect(): Promise<boolean>;
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
     sendTxMessages(messages: TxMessage[] | undefined, sendImmediately?: boolean): Promise<void>;
     protected defaultMtu: number;
@@ -1472,17 +1472,17 @@ declare class Device {
     get connectionManager(): BaseConnectionManager | undefined;
     set connectionManager(newConnectionManager: BaseConnectionManager | undefined);
     private sendTxMessages;
-    connect(options?: ConnectOptions): Promise<void>;
+    connect(options?: ConnectOptions): Promise<boolean | undefined>;
     get isConnected(): boolean;
     get canReconnect(): boolean | undefined;
-    reconnect(): Promise<void | undefined>;
+    reconnect(): Promise<boolean | undefined>;
     static Connect(): Promise<Device>;
     static get ReconnectOnDisconnection(): boolean;
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get connectionType(): "webBluetooth" | "noble" | "client" | "webSocket" | "udp" | undefined;
-    disconnect(): Promise<void>;
+    disconnect(): Promise<boolean | undefined>;
     toggleConnection(): void;
     get connectionStatus(): ConnectionStatus;
     get isConnectionBusy(): boolean;
@@ -1523,6 +1523,7 @@ declare class Device {
     receiveFile(fileType: FileType): Promise<void>;
     get fileTransferStatus(): "idle" | "sending" | "receiving";
     cancelFileTransfer(): void;
+    get isTfliteAvailable(): boolean;
     get tfliteName(): string;
     get setTfliteName(): (newName: string, sendImmediately?: boolean) => Promise<void>;
     sendTfliteConfiguration(configuration: TfliteFileConfiguration): Promise<void>;
@@ -1547,7 +1548,7 @@ declare class Device {
     private sendSmpMessage;
     get uploadFirmware(): (file: FileLike) => Promise<void>;
     get canReset(): boolean | undefined;
-    reset(): Promise<void>;
+    reset(): Promise<boolean>;
     get firmwareStatus(): "idle" | "uploading" | "uploaded" | "pending" | "testing" | "erasing";
     get getFirmwareImages(): () => Promise<void>;
     get firmwareImages(): FirmwareImage[];
@@ -1950,8 +1951,8 @@ declare abstract class BaseScanner {
     }>;
     get isScanningAvailable(): boolean;
     get isScanning(): boolean;
-    startScan(): void;
-    stopScan(): void;
+    startScan(): boolean;
+    stopScan(): boolean;
     get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
     get discoveredDevicesArray(): DiscoveredDevice[];
     static get DiscoveredDeviceExpirationTimeout(): number;

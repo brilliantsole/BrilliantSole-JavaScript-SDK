@@ -14,8 +14,6 @@ import BaseConnectionManager, {
   BatteryLevelMessageTypes,
   ConnectionEventTypes,
   ConnectionStatusEventMessages,
-  ConnectionTypes,
-  ConnectionType,
   ConnectOptions,
 } from "./connection/BaseConnectionManager.ts";
 import { isInBrowser, isInNode } from "./utils/environment.ts";
@@ -296,6 +294,7 @@ class Device {
       .#eventDispatcher as FirmwareEventDispatcher;
 
     this.addEventListener("getMtu", () => {
+      _console.log("updating mtu...");
       this.#firmwareManager.mtu = this.mtu;
       this.#fileTransferManager.mtu = this.mtu;
       this.connectionManager!.mtu = this.mtu;
@@ -476,6 +475,15 @@ class Device {
   private sendTxMessages = this.#sendTxMessages.bind(this);
 
   async connect(options?: ConnectOptions) {
+    if (this.isConnected) {
+      _console.log("already connected");
+      return;
+    }
+    if (this.connectionStatus == "connecting") {
+      _console.log("already connecting");
+      return;
+    }
+
     _console.log("connect options", options);
     if (options) {
       switch (options.type) {
@@ -627,8 +635,22 @@ class Device {
     _console.assertWithError(this.canReconnect, "cannot reconnect to device");
   }
   async reconnect() {
-    this.#assertCanReconnect();
+    if (this.isConnected) {
+      _console.log("already connected");
+      return;
+    }
+    if (this.connectionStatus == "connecting") {
+      _console.log("already connecting");
+      return;
+    }
+    if (!this.canReconnect) {
+      _console.warn("cannot reconnect");
+      return false;
+    }
+    // this.#assertCanReconnect();
+    _console.log("attempting to reconnect...");
     this.#clear();
+    _console.log("reconnecting...");
     return this.connectionManager?.reconnect();
   }
 
@@ -661,7 +683,15 @@ class Device {
     return this.connectionManager?.type;
   }
   async disconnect() {
-    this.#assertIsConnected();
+    if (!this.isConnected) {
+      _console.log("already not connected");
+      return;
+    }
+    if (this.connectionStatus == "disconnecting") {
+      _console.log("already disconnecting");
+      return;
+    }
+    //this.#assertIsConnected();
     if (this.reconnectOnDisconnection) {
       this.reconnectOnDisconnection = false;
       this.addEventListener(
@@ -783,6 +813,7 @@ class Device {
     this.#microphoneManager.clear();
     this.#sensorConfigurationManager.clear();
     this.#displayManager.reset();
+    this.#isServerSide = false;
   }
   #clearConnection() {
     this.connectionManager?.clear();
@@ -1105,6 +1136,9 @@ class Device {
   // TFLITE
   #tfliteManager = new TfliteManager();
 
+  get isTfliteAvailable() {
+    return this.fileTypes.includes("tflite");
+  }
   get tfliteName() {
     return this.#tfliteManager.name;
   }
@@ -1458,15 +1492,12 @@ class Device {
     return this.#microphoneManager.isRecording;
   }
   startRecordingMicrophone() {
-    this.#assertWebAudioSupport();
     this.#microphoneManager.startRecording();
   }
   stopRecordingMicrophone() {
-    this.#assertWebAudioSupport();
     this.#microphoneManager.stopRecording();
   }
   toggleMicrophoneRecording() {
-    this.#assertWebAudioSupport();
     this.#microphoneManager.toggleRecording();
   }
 

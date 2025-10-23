@@ -318,6 +318,7 @@ class InformationManager {
 
   clear() {
     this.#isCurrentTimeSet = false;
+    this.#mtu = 0;
   }
 
   connectionType?: ConnectionType;

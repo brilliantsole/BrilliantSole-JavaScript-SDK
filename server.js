@@ -8,14 +8,13 @@ import * as BS from "./build/brilliantsole.node.module.js";
 import { WebSocketServer } from "ws";
 import * as dgram from "dgram";
 import nocache from "nocache";
-import cors from "cors";
 import axios from "axios";
 import bonjour from "bonjour";
 
 process.on("warning", (e) => console.warn(e.stack));
 
 // BS.setAllConsoleLevelFlags({ log: true });
-// BS.setConsoleLevelFlagsForType("UDPServer", { log: true });
+// BS.setConsoleLevelFlagsForType("EventDispatcher", { log: false });
 
 // HTTPS SERVER
 app.use(nocache());

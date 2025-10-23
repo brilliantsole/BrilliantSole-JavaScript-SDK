@@ -15,6 +15,7 @@ require('svg-pathdata');
 var webbluetooth = require('webbluetooth');
 var dgram = require('dgram');
 var noble = require('@abandonware/noble');
+var os = require('os');
 
 function _interopNamespaceDefault(e) {
     var n = Object.create(null);
@@ -932,6 +933,7 @@ class FileTransferManager {
         }
         const buffer = this.#buffer;
         let offset = this.#bytesTransferred;
+        _console$K.log("sending block", { buffer, offset, mtu: this.mtu });
         const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
         _console$K.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
@@ -1001,8 +1003,18 @@ class FileTransferManager {
         this.sendMessage(messages, false);
     }
     clear() {
-        this.#status = "idle";
+        this.#receivedBlocks.length = 0;
+        this.#isCancelling = false;
+        this.#buffer = undefined;
+        this.#bytesTransferred = 0;
         this.#isServerSide = false;
+        this.#checksum = 0;
+        this.#fileTypes.length = 0;
+        this.#type = undefined;
+        this.#length = 0;
+        this.#checksum = 0;
+        this.#status = "idle";
+        this.mtu = undefined;
     }
 }
 _a$6 = FileTransferManager;
@@ -1566,7 +1578,7 @@ class CameraManager {
                 });
                 if (this.#imageProgress == 1) {
                     _console$E.log("finished getting image data");
-                    if (this.#headerProgress == 1) {
+                    if (this.#headerProgress == 1 && this.#footerProgress == 1) {
                         this.#buildImage();
                     }
                 }
@@ -2908,6 +2920,15 @@ class TfliteManager {
         this.#sensorTypes = [];
         this.#sampleRate = 0;
         this.#isReady = false;
+        this.#name = undefined;
+        this.#task = undefined;
+        this.#sampleRate = undefined;
+        this.#sensorTypes.length = 0;
+        this.#isReady = undefined;
+        this.#captureDelay = undefined;
+        this.#threshold = undefined;
+        this.#inferencingEnabled = undefined;
+        this.#configuration = undefined;
     }
     requestRequiredInformation() {
         _console$A.log("requesting required tflite information");
@@ -3256,6 +3277,7 @@ class InformationManager {
     }
     clear() {
         this.#isCurrentTimeSet = false;
+        this.#mtu = 0;
     }
     connectionType;
 }
@@ -9056,25 +9078,49 @@ class BaseConnectionManager {
         this.#assertIsNotDisconnecting();
     }
     async connect() {
-        this.assertIsNotConnected();
-        this.#assertIsNotConnecting();
+        if (this.isConnected) {
+            _console$n.log("already connected");
+            return false;
+        }
+        if (this.#status == "connecting") {
+            _console$n.log("already connecting");
+            return false;
+        }
         this.status = "connecting";
+        return true;
     }
     get canReconnect() {
         return false;
     }
     async reconnect() {
-        this.assertIsNotConnected();
-        this.#assertIsNotConnecting();
-        _console$n.assertWithError(this.canReconnect, "unable to reconnect");
+        if (this.isConnected) {
+            _console$n.log("already connected");
+            return false;
+        }
+        if (this.#status == "connecting") {
+            _console$n.log("already connecting");
+            return false;
+        }
+        if (!this.canReconnect) {
+            _console$n.warn("unable to reconnect");
+            return false;
+        }
         this.status = "connecting";
         _console$n.log("attempting to reconnect...");
+        return true;
     }
     async disconnect() {
-        this.assertIsConnected();
-        this.#assertIsNotDisconnecting();
+        if (!this.isConnected) {
+            _console$n.log("already not connected");
+            return false;
+        }
+        if (this.#status == "disconnecting") {
+            _console$n.log("already disconnecting");
+            return false;
+        }
         this.status = "disconnecting";
         _console$n.log("disconnecting from device...");
+        return true;
     }
     async sendSmpMessage(data) {
         this.assertIsConnectedAndNotDisconnecting();
@@ -9437,7 +9483,10 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     #services = new Map();
     #characteristics = new Map();
     async connect() {
-        await super.connect();
+        const canContinue = super.connect();
+        if (!canContinue) {
+            return false;
+        }
         try {
             const device = await bluetooth.requestDevice({
                 filters: [{ services: serviceUUIDs }],
@@ -9451,12 +9500,14 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             await this.#getServicesAndCharacteristics();
             _console$j.log("fully connected");
             this.status = "connected";
+            return true;
         }
         catch (error) {
             _console$j.error(error);
             this.status = "notConnected";
             this.server?.disconnect();
-            this.#removeEventListeners();
+            await this.#removeEventListeners();
+            return false;
         }
     }
     async #getServicesAndCharacteristics() {
@@ -9518,10 +9569,14 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         return Promise.allSettled(promises);
     }
     async disconnect() {
+        const canContinue = await super.disconnect();
+        if (!canContinue) {
+            return false;
+        }
         await this.#removeEventListeners();
-        await super.disconnect();
         this.server?.disconnect();
         this.status = "notConnected";
+        return true;
     }
     #onCharacteristicvaluechanged(event) {
         _console$j.log("oncharacteristicvaluechanged");
@@ -9575,22 +9630,28 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         return Boolean(this.server && !this.server.connected && this.isInRange);
     }
     async reconnect() {
-        await super.reconnect();
+        const canContinue = await super.reconnect();
+        if (!canContinue) {
+            return false;
+        }
         try {
             await this.server.connect();
         }
         catch (error) {
             _console$j.error(error);
             this.isInRange = false;
+            return false;
         }
         if (this.isConnected) {
             _console$j.log("successfully reconnected!");
             await this.#getServicesAndCharacteristics();
             this.status = "connected";
+            return true;
         }
         else {
             _console$j.log("unable to reconnect");
             this.status = "notConnected";
+            return false;
         }
     }
     remove() {
@@ -10993,27 +11054,40 @@ class WebSocketConnectionManager extends BaseConnectionManager {
         return `${this.isSecure ? "wss" : "ws"}://${this.ipAddress}/ws`;
     }
     async connect() {
-        await super.connect();
+        const canContinue = await super.connect();
+        if (!canContinue) {
+            return false;
+        }
         try {
             this.webSocket = new WebSocket(this.url);
+            return true;
         }
         catch (error) {
             _console$d.error("error connecting to webSocket", error);
             this.status = "notConnected";
+            return false;
         }
     }
     async disconnect() {
-        await super.disconnect();
+        const canContinue = await super.disconnect();
+        if (!canContinue) {
+            return false;
+        }
         _console$d.log("closing websocket");
         this.#pingTimer.stop();
         this.#webSocket?.close();
+        return true;
     }
     get canReconnect() {
         return Boolean(this.webSocket);
     }
     async reconnect() {
-        await super.reconnect();
+        const canContinue = await super.reconnect();
+        if (!canContinue) {
+            return false;
+        }
         this.webSocket = new WebSocket(this.url);
+        return true;
     }
     async sendSmpMessage(data) {
         super.sendSmpMessage(data);
@@ -11289,26 +11363,39 @@ class UDPConnectionManager extends BaseConnectionManager {
         }
     }
     async connect() {
-        await super.connect();
+        const canContinue = await super.connect();
+        if (!canContinue) {
+            return false;
+        }
         this.#setupSocket();
+        return true;
     }
     async disconnect() {
-        await super.disconnect();
+        const canContinue = await super.disconnect();
+        if (!canContinue) {
+            return false;
+        }
         _console$c.log("closing socket");
+        this.#pingTimer.stop();
         try {
             this.#socket?.close();
+            return true;
         }
         catch (error) {
             _console$c.error(error);
+            return false;
         }
-        this.#pingTimer.stop();
     }
     get canReconnect() {
         return Boolean(this.socket);
     }
     async reconnect() {
-        await super.reconnect();
+        const canContinue = await super.reconnect();
+        if (!canContinue) {
+            return false;
+        }
         this.#setupSocket();
+        return true;
     }
     #parseSocketMessage(dataView) {
         parseMessage(dataView, SocketMessageTypes, this.#onMessage.bind(this), null, true);
@@ -11470,6 +11557,7 @@ class Device {
         this.#firmwareManager.eventDispatcher = this
             .#eventDispatcher;
         this.addEventListener("getMtu", () => {
+            _console$b.log("updating mtu...");
             this.#firmwareManager.mtu = this.mtu;
             this.#fileTransferManager.mtu = this.mtu;
             this.connectionManager.mtu = this.mtu;
@@ -11634,6 +11722,14 @@ class Device {
     }
     sendTxMessages = this.#sendTxMessages.bind(this);
     async connect(options) {
+        if (this.isConnected) {
+            _console$b.log("already connected");
+            return;
+        }
+        if (this.connectionStatus == "connecting") {
+            _console$b.log("already connecting");
+            return;
+        }
         _console$b.log("connect options", options);
         if (options) {
             switch (options.type) {
@@ -11751,8 +11847,21 @@ class Device {
         _console$b.assertWithError(this.canReconnect, "cannot reconnect to device");
     }
     async reconnect() {
-        this.#assertCanReconnect();
+        if (this.isConnected) {
+            _console$b.log("already connected");
+            return;
+        }
+        if (this.connectionStatus == "connecting") {
+            _console$b.log("already connecting");
+            return;
+        }
+        if (!this.canReconnect) {
+            _console$b.warn("cannot reconnect");
+            return false;
+        }
+        _console$b.log("attempting to reconnect...");
         this.#clear();
+        _console$b.log("reconnecting...");
         return this.connectionManager?.reconnect();
     }
     static async Connect() {
@@ -11781,7 +11890,14 @@ class Device {
         return this.connectionManager?.type;
     }
     async disconnect() {
-        this.#assertIsConnected();
+        if (!this.isConnected) {
+            _console$b.log("already not connected");
+            return;
+        }
+        if (this.connectionStatus == "disconnecting") {
+            _console$b.log("already disconnecting");
+            return;
+        }
         if (this.reconnectOnDisconnection) {
             this.reconnectOnDisconnection = false;
             this.addEventListener("isConnected", () => {
@@ -11889,6 +12005,7 @@ class Device {
         this.#microphoneManager.clear();
         this.#sensorConfigurationManager.clear();
         this.#displayManager.reset();
+        this.#isServerSide = false;
     }
     #clearConnection() {
         this.connectionManager?.clear();
@@ -12095,6 +12212,9 @@ class Device {
         this.#fileTransferManager.cancel();
     }
     #tfliteManager = new TfliteManager();
+    get isTfliteAvailable() {
+        return this.fileTypes.includes("tflite");
+    }
     get tfliteName() {
         return this.#tfliteManager.name;
     }
@@ -12399,15 +12519,12 @@ class Device {
         return this.#microphoneManager.isRecording;
     }
     startRecordingMicrophone() {
-        this.#assertWebAudioSupport();
         this.#microphoneManager.startRecording();
     }
     stopRecordingMicrophone() {
-        this.#assertWebAudioSupport();
         this.#microphoneManager.stopRecording();
     }
     toggleMicrophoneRecording() {
-        this.#assertWebAudioSupport();
         this.#microphoneManager.toggleRecording();
     }
     #displayManager = new DisplayManager();
@@ -13209,7 +13326,7 @@ function debounce(fn, interval, callImmediately = false) {
 }
 
 var _a$1;
-const _console$7 = createConsole("BaseScanner");
+const _console$7 = createConsole("BaseScanner", { log: false });
 const ScannerEventTypes = [
     "isScanningAvailable",
     "isScanning",
@@ -13275,11 +13392,22 @@ class BaseScanner {
         _console$7.assertWithError(!this.isScanning, "already scanning");
     }
     startScan() {
-        this.#assertIsAvailable();
-        this.#assertIsNotScanning();
+        if (!this.isScanningAvailable) {
+            _console$7.warn("scanning is not available");
+            return false;
+        }
+        if (this.isScanning) {
+            _console$7.log("already scanning");
+            return false;
+        }
+        return true;
     }
     stopScan() {
-        this.#assertIsScanning();
+        if (!this.isScanning) {
+            _console$7.log("already not scanning");
+            return false;
+        }
+        return true;
     }
     #onIsScanning(event) {
         if (this.isScanning) {
@@ -13379,12 +13507,21 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         return this.#noblePeripheral?.state == "connected";
     }
     async connect() {
-        await super.connect();
+        const canConnect = await super.connect();
+        _console$6.log({ canConnect });
+        if (!canConnect) {
+            return false;
+        }
         await this.#noblePeripheral.connectAsync();
+        return true;
     }
     async disconnect() {
-        await super.disconnect();
+        const canContinue = await super.disconnect();
+        if (!canContinue) {
+            return false;
+        }
         await this.#noblePeripheral.disconnectAsync();
+        return true;
     }
     async writeCharacteristic(characteristicName, data) {
         const characteristic = this.#characteristics.get(characteristicName);
@@ -13402,8 +13539,12 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         return this.#noblePeripheral.connectable;
     }
     async reconnect() {
-        await super.reconnect();
+        let canContinue = await super.reconnect();
+        if (!canContinue) {
+            return false;
+        }
         await this.#noblePeripheral.connectAsync();
+        return true;
     }
     #noblePeripheral;
     get noblePeripheral() {
@@ -13584,7 +13725,12 @@ class NobleConnectionManager extends BluetoothConnectionManager {
 
 const _console$5 = createConsole("NobleScanner", { log: false });
 let isSupported = false;
+let filterManually = true;
+const filterServiceUuid = serviceUUIDs[0].replaceAll("-", "");
 isSupported = true;
+const platform = os.platform();
+filterManually = platform == "linux";
+_console$5.log({ platform, filterManually, filterServiceUuid });
 class NobleScanner extends BaseScanner {
     static get isSupported() {
         return isSupported;
@@ -13640,6 +13786,14 @@ class NobleScanner extends BaseScanner {
         this.#nobleState = state;
     }
     #onNobleDiscover(noblePeripheral) {
+        _console$5.log("advertisement", noblePeripheral.advertisement);
+        if (filterManually) {
+            const serviceUuid = noblePeripheral.advertisement.serviceUuids?.[0];
+            _console$5.log("onNobleDiscover.filterManually", { serviceUuid });
+            if (serviceUuid != filterServiceUuid) {
+                return;
+            }
+        }
         _console$5.log("onNobleDiscover", noblePeripheral.id);
         if (!this.#noblePeripherals[noblePeripheral.id]) {
             noblePeripheral.scanner = this;
@@ -13699,12 +13853,18 @@ class NobleScanner extends BaseScanner {
         return this.#nobleState == "poweredOn";
     }
     startScan() {
-        super.startScan();
-        noble.startScanningAsync(serviceUUIDs, true);
+        if (!super.startScan()) {
+            return false;
+        }
+        noble.startScanningAsync(filterManually ? [] : serviceUUIDs, true);
+        return true;
     }
     stopScan() {
-        super.stopScan();
+        if (!super.stopScan()) {
+            return false;
+        }
         noble.stopScanningAsync();
+        return true;
     }
     get canReset() {
         return true;
@@ -13728,14 +13888,18 @@ class NobleScanner extends BaseScanner {
         _console$5.assertTypeWithError(noblePeripheralId, "string");
         _console$5.assertWithError(this.#noblePeripherals[noblePeripheralId], `no noblePeripheral found with id "${noblePeripheralId}"`);
     }
+    #devices = {};
     async connectToDevice(deviceId, connectionType) {
         super.connectToDevice(deviceId, connectionType);
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$5.log("connecting to discoveredDevice...", deviceId);
         let device = DeviceManager$1.AvailableDevices.filter((device) => device.connectionType == "noble").find((device) => device.bluetoothId == deviceId);
+        device = device ?? this.#devices[deviceId];
         if (!device) {
+            _console$5.log("creating device for discoveredDevice...", deviceId);
             device = this.#createDevice(noblePeripheral);
+            this.#devices[deviceId] = device;
             const { ipAddress, isWifiSecure } = this.discoveredDevices[device.bluetoothId];
             if (connectionType && connectionType != "noble" && ipAddress) {
                 await device.connect({ type: connectionType, ipAddress, isWifiSecure });
