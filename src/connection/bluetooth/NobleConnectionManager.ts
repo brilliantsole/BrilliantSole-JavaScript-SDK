@@ -17,8 +17,13 @@ import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 
 const _console = createConsole("NobleConnectionManager", { log: false });
 
+let filterUUIDs = true;
+
 /** NODE_START */
 import type * as noble from "@abandonware/noble";
+import os from "os";
+const isLinux = os.platform() == "linux";
+filterUUIDs = !isLinux;
 /** NODE_END */
 
 import {
@@ -71,7 +76,9 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     if (!canConnect) {
       return false;
     }
+    console.log("FUCK");
     await this.#noblePeripheral!.connectAsync();
+    console.log("YEA");
     return true;
   }
   async disconnect() {
@@ -166,6 +173,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
   };
 
   async #onNoblePeripheralConnect(this: NoblePeripheral) {
+    //_console.log("#onNoblePeripheralConnect",this.id);
     await this.connectionManager!.onNoblePeripheralConnect(this);
   }
   async onNoblePeripheralConnect(noblePeripheral: NoblePeripheral) {
@@ -175,15 +183,24 @@ class NobleConnectionManager extends BluetoothConnectionManager {
       noblePeripheral.state
     );
     if (noblePeripheral.state == "connected") {
-      await this.#noblePeripheral!.discoverServicesAsync(
-        allServiceUUIDs as string[]
-      );
+      _console.log("discoverServicesAsync", noblePeripheral.id, {
+        allServiceUUIDs,
+      });
+      // services don't show up if on ubuntu if serviceUUIDs are supplied
+      if (filterUUIDs) {
+        await this.#noblePeripheral!.discoverServicesAsync(
+          allServiceUUIDs as string[]
+        );
+      } else {
+        await this.#noblePeripheral!.discoverServicesAsync();
+      }
     }
     // this gets called when it connects and disconnects, so we use the noblePeripheral's "state" property instead
     await this.#onNoblePeripheralState();
   }
 
   async #onNoblePeripheralDisconnect(this: NoblePeripheral) {
+    //_console.log("#onNoblePeripheralDisconnect", this.id);
     await this.connectionManager!.onNoblePeripheralConnect(this);
   }
   async onNoblePeripheralDisconnect(noblePeripheral: NoblePeripheral) {
@@ -274,6 +291,14 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     for (const index in services) {
       const service = services[index];
       _console.log("service", service.uuid);
+      if (service.uuid == "1800") {
+        _console.log("skipping 1800");
+        continue;
+      }
+      if (service.uuid == "1801") {
+        _console.log("skipping 1801");
+        continue;
+      }
       const serviceName = getServiceNameFromUUID(service.uuid)!;
       _console.assertWithError(
         serviceName,

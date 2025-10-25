@@ -14,8 +14,8 @@ require('svgson');
 require('svg-pathdata');
 var webbluetooth = require('webbluetooth');
 var dgram = require('dgram');
-var noble = require('@abandonware/noble');
 var os = require('os');
+var noble = require('@abandonware/noble');
 
 function _interopNamespaceDefault(e) {
     var n = Object.create(null);
@@ -13490,6 +13490,9 @@ class BaseScanner {
 _a$1 = BaseScanner;
 
 const _console$6 = createConsole("NobleConnectionManager", { log: false });
+let filterUUIDs = true;
+const isLinux = os.platform() == "linux";
+filterUUIDs = !isLinux;
 class NobleConnectionManager extends BluetoothConnectionManager {
     get bluetoothId() {
         return this.#noblePeripheral.id;
@@ -13512,7 +13515,9 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         if (!canConnect) {
             return false;
         }
+        console.log("FUCK");
         await this.#noblePeripheral.connectAsync();
+        console.log("YEA");
         return true;
     }
     async disconnect() {
@@ -13581,7 +13586,15 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     async onNoblePeripheralConnect(noblePeripheral) {
         _console$6.log("onNoblePeripheralConnect", noblePeripheral.id, noblePeripheral.state);
         if (noblePeripheral.state == "connected") {
-            await this.#noblePeripheral.discoverServicesAsync(allServiceUUIDs);
+            _console$6.log("discoverServicesAsync", noblePeripheral.id, {
+                allServiceUUIDs,
+            });
+            if (filterUUIDs) {
+                await this.#noblePeripheral.discoverServicesAsync(allServiceUUIDs);
+            }
+            else {
+                await this.#noblePeripheral.discoverServicesAsync();
+            }
         }
         await this.#onNoblePeripheralState();
     }
@@ -13640,6 +13653,14 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         for (const index in services) {
             const service = services[index];
             _console$6.log("service", service.uuid);
+            if (service.uuid == "1800") {
+                _console$6.log("skipping 1800");
+                continue;
+            }
+            if (service.uuid == "1801") {
+                _console$6.log("skipping 1801");
+                continue;
+            }
             const serviceName = getServiceNameFromUUID(service.uuid);
             _console$6.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
             _console$6.log({ serviceName });
