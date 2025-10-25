@@ -210,3 +210,30 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
     BS.EventUtils.removeEventListeners(device, boundDeviceEventListeners);
   }
 });
+
+const autoScan = process.env.AUTO_SCAN == "true";
+if (autoScan) {
+  BS.Scanner.addEventListener("scanningAvailable", (event) => {
+    // automatically scan when available
+    BS.Scanner.startScan();
+  });
+  BS.Scanner.addEventListener("discoveredDevice", (event) => {
+    const { discoveredDevice } = event.message;
+    // connect to first available device
+    BS.Scanner.connectToDevice(discoveredDevice.bluetoothId);
+    console.log("connecting to discoveredDevice...", discoveredDevice);
+  });
+  BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+    console.log("device connected - stopping scan...");
+    BS.Scanner.stopScan();
+
+    const { device } = event.message;
+    console.log(`connected to "${device.name}"`);
+    console.log("setting configuration...");
+    device.setSensorConfiguration({ acceleration: 20 });
+  });
+  BS.DeviceManager.AddEventListener("deviceDisconnected", (event) => {
+    console.log("device disconnected - restarting scan...");
+    BS.Scanner.startScan();
+  });
+}
