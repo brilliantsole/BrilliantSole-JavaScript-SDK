@@ -13515,9 +13515,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         if (!canConnect) {
             return false;
         }
-        console.log("FUCK");
         await this.#noblePeripheral.connectAsync();
-        console.log("YEA");
         return true;
     }
     async disconnect() {
