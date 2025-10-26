@@ -13378,6 +13378,7 @@ class BaseScanner {
             _console$7.log("already scanning");
             return false;
         }
+        _console$7.log("startScan");
         return true;
     }
     stopScan() {
@@ -13385,6 +13386,7 @@ class BaseScanner {
             _console$7.log("already not scanning");
             return false;
         }
+        _console$7.log("stopScan");
         return true;
     }
     #onIsScanning(event) {
@@ -13469,8 +13471,8 @@ _a$1 = BaseScanner;
 
 const _console$6 = createConsole("NobleConnectionManager", { log: false });
 let filterUUIDs = true;
-const isLinux = os.platform() == "linux";
-filterUUIDs = !isLinux;
+const isLinux$1 = os.platform() == "linux";
+filterUUIDs = !isLinux$1;
 class NobleConnectionManager extends BluetoothConnectionManager {
     get bluetoothId() {
         return this.#noblePeripheral.id;
@@ -13493,7 +13495,15 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         if (!canConnect) {
             return false;
         }
-        await this.#noblePeripheral.connectAsync();
+        if (isLinux$1) {
+            _console$6.log("setting noblePeripheral.shouldConnect");
+            this.#noblePeripheral.shouldConnect = true;
+        }
+        else {
+            _console$6.log("noblePeripheral.connectAsync");
+            await this.#noblePeripheral.connectAsync();
+            _console$6.log("noblePeripheral.connectAsync done");
+        }
         return true;
     }
     async disconnect() {
@@ -13501,7 +13511,9 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         if (!canContinue) {
             return false;
         }
+        _console$6.log("noblePeripheral.disconnectAsync");
         await this.#noblePeripheral.disconnectAsync();
+        _console$6.log("noblePeripheral.disconnectAsync done");
         return true;
     }
     async writeCharacteristic(characteristicName, data) {
@@ -13724,9 +13736,11 @@ const _console$5 = createConsole("NobleScanner", { log: false });
 let isSupported = false;
 let filterManually = true;
 const filterServiceUuid = serviceUUIDs[0].replaceAll("-", "");
+let isLinux = false;
 isSupported = true;
 const platform = os.platform();
-filterManually = platform == "linux";
+isLinux = platform == "linux";
+filterManually = isLinux;
 _console$5.log({ platform, filterManually, filterServiceUuid });
 class NobleScanner extends BaseScanner {
     static get isSupported() {
@@ -13782,7 +13796,8 @@ class NobleScanner extends BaseScanner {
         _console$5.log("onNobleStateChange", state);
         this.#nobleState = state;
     }
-    #onNobleDiscover(noblePeripheral) {
+    #isBusy = false;
+    async #onNobleDiscover(noblePeripheral) {
         _console$5.log("advertisement", noblePeripheral.advertisement);
         if (filterManually) {
             const serviceUuid = noblePeripheral.advertisement.serviceUuids?.[0];
@@ -13795,6 +13810,20 @@ class NobleScanner extends BaseScanner {
         if (!this.#noblePeripherals[noblePeripheral.id]) {
             noblePeripheral.scanner = this;
             this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
+        }
+        else {
+            const _noblePeripheral = this.#noblePeripherals[noblePeripheral.id];
+            if (isLinux &&
+                _noblePeripheral.shouldConnect &&
+                !this.#isBusy &&
+                _noblePeripheral.state == "disconnected") {
+                this.#isBusy = true;
+                _noblePeripheral.shouldConnect = false;
+                _console$5.log("noblePeripheral.connectAsync");
+                await _noblePeripheral.connectAsync();
+                _console$5.log("noblePeripheral.connectAsync done");
+                this.#isBusy = false;
+            }
         }
         _console$5.log("advertisement", noblePeripheral.advertisement);
         let deviceType;
@@ -13853,6 +13882,7 @@ class NobleScanner extends BaseScanner {
         if (!super.startScan()) {
             return false;
         }
+        _console$5.log("noble.startScan");
         noble.startScanningAsync(filterManually ? [] : serviceUUIDs, true);
         return true;
     }
@@ -13860,6 +13890,7 @@ class NobleScanner extends BaseScanner {
         if (!super.stopScan()) {
             return false;
         }
+        _console$5.log("noble.stopScan");
         noble.stopScanningAsync();
         return true;
     }

@@ -16,6 +16,9 @@ process.on("warning", (e) => console.warn(e.stack));
 
 // BS.setAllConsoleLevelFlags({ log: true });
 // BS.setConsoleLevelFlagsForType("EventDispatcher", { log: false });
+// BS.setConsoleLevelFlagsForType("BaseScanner", { log: true });
+// BS.setConsoleLevelFlagsForType("NobleScanner", { log: true });
+// BS.setConsoleLevelFlagsForType("NobleConnectionManager", { log: true });
 
 // HTTPS SERVER
 app.use(function (req, res, next) {
