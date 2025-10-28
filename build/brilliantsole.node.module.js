@@ -15,8 +15,9 @@ import * as dgram from 'dgram';
 import os from 'os';
 import noble from '@abandonware/noble';
 
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -149,6 +150,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -9137,7 +9141,7 @@ class BaseConnectionManager {
         if (this.mtu) {
             while (arrayBuffers.length > 0) {
                 if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
-                    _console$n.log("every arrayBuffer is too big to send");
+                    _console$n.error("every arrayBuffer is too big to send");
                     break;
                 }
                 _console$n.log("remaining arrayBuffers.length", arrayBuffers.length);
@@ -12397,14 +12401,14 @@ class Device {
     }
     async takePicture(sensorRate = 10) {
         this.#assertHasCamera();
-        if (this.sensorConfiguration.camera == 0) {
+        if (this.sensorConfiguration.camera != sensorRate) {
             this.setSensorConfiguration({ camera: sensorRate }, false, false);
         }
         await this.#cameraManager.takePicture();
     }
     async focusCamera(sensorRate = 10) {
         this.#assertHasCamera();
-        if (this.sensorConfiguration.camera == 0) {
+        if (this.sensorConfiguration.camera != sensorRate) {
             this.setSensorConfiguration({ camera: sensorRate }, false, false);
         }
         await this.#cameraManager.focus();
@@ -12445,7 +12449,7 @@ class Device {
     }
     async startMicrophone(sensorRate = 10) {
         this.#assertHasMicrophone();
-        if (this.sensorConfiguration.microphone == 0) {
+        if (this.sensorConfiguration.microphone != sensorRate) {
             this.setSensorConfiguration({ microphone: sensorRate }, false, false);
         }
         await this.#microphoneManager.start();
@@ -14152,6 +14156,7 @@ class BaseServer {
         });
     }
     #createDeviceServerMessage(device, ...messages) {
+        _console$3.log("#createDeviceServerMessage", ...messages);
         return createServerMessage({
             type: "deviceMessage",
             data: [device.bluetoothId, createDeviceMessage(...messages)],

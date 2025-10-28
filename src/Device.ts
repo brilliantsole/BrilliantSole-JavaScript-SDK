@@ -1383,14 +1383,14 @@ class Device {
   }
   async takePicture(sensorRate: number = 10) {
     this.#assertHasCamera();
-    if (this.sensorConfiguration.camera == 0) {
+    if (this.sensorConfiguration.camera != sensorRate) {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
     await this.#cameraManager.takePicture();
   }
   async focusCamera(sensorRate: number = 10) {
     this.#assertHasCamera();
-    if (this.sensorConfiguration.camera == 0) {
+    if (this.sensorConfiguration.camera != sensorRate) {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
     await this.#cameraManager.focus();
@@ -1436,7 +1436,7 @@ class Device {
 
   async startMicrophone(sensorRate: number = 10) {
     this.#assertHasMicrophone();
-    if (this.sensorConfiguration.microphone == 0) {
+    if (this.sensorConfiguration.microphone != sensorRate) {
       this.setSensorConfiguration({ microphone: sensorRate }, false, false);
     }
     await this.#microphoneManager.start();

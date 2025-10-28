@@ -14174,6 +14174,7 @@ class BaseServer {
         });
     }
     #createDeviceServerMessage(device, ...messages) {
+        _console$3.log("#createDeviceServerMessage", ...messages);
         return createServerMessage({
             type: "deviceMessage",
             data: [device.bluetoothId, createDeviceMessage(...messages)],

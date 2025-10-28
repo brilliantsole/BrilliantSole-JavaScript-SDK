@@ -1123,7 +1123,14 @@ const startTranscribing = async () => {
   mediaRecorder.start(500);
 };
 const stopTranscribing = async () => {
-  mediaRecorder?.stop();
+  if (mediaRecorder) {
+    await new Promise((resolve) => {
+      mediaRecorder.onstop = resolve;
+      mediaRecorder.stop();
+    });
+  }
+  isRunning = false;
+  console.log({ isRunning });
   mediaRecorder = undefined;
 };
 

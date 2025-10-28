@@ -321,6 +321,7 @@ abstract class BaseServer {
   }
 
   #createDeviceServerMessage(device: Device, ...messages: DeviceMessage[]) {
+    _console.log("#createDeviceServerMessage", ...messages);
     return createServerMessage({
       type: "deviceMessage",
       data: [device.bluetoothId!, createDeviceMessage(...messages)],
