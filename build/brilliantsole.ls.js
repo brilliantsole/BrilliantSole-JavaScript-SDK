@@ -22723,7 +22723,7 @@
       if (this.mtu) {
         while (arrayBuffers.length > 0) {
           if (arrayBuffers.every(arrayBuffer => arrayBuffer.byteLength > this.mtu - 3)) {
-            _console$h.log("every arrayBuffer is too big to send");
+            _console$h.error("every arrayBuffer is too big to send");
             break;
           }
           _console$h.log("remaining arrayBuffers.length", arrayBuffers.length);
@@ -25573,7 +25573,7 @@
     async takePicture() {
       let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
       _assertClassBrand(_Device_brand, this, _assertHasCamera).call(this);
-      if (this.sensorConfiguration.camera == 0) {
+      if (this.sensorConfiguration.camera != sensorRate) {
         this.setSensorConfiguration({
           camera: sensorRate
         }, false, false);
@@ -25583,7 +25583,7 @@
     async focusCamera() {
       let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
       _assertClassBrand(_Device_brand, this, _assertHasCamera).call(this);
-      if (this.sensorConfiguration.camera == 0) {
+      if (this.sensorConfiguration.camera != sensorRate) {
         this.setSensorConfiguration({
           camera: sensorRate
         }, false, false);
@@ -25623,7 +25623,7 @@
     async startMicrophone() {
       let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
       _assertClassBrand(_Device_brand, this, _assertHasMicrophone).call(this);
-      if (this.sensorConfiguration.microphone == 0) {
+      if (this.sensorConfiguration.microphone != sensorRate) {
         this.setSensorConfiguration({
           microphone: sensorRate
         }, false, false);

@@ -23913,7 +23913,7 @@
 	        if (this.mtu) {
 	            while (arrayBuffers.length > 0) {
 	                if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
-	                    _console$i.log("every arrayBuffer is too big to send");
+	                    _console$i.error("every arrayBuffer is too big to send");
 	                    break;
 	                }
 	                _console$i.log("remaining arrayBuffers.length", arrayBuffers.length);
@@ -26885,14 +26885,14 @@
 	    }
 	    async takePicture(sensorRate = 10) {
 	        this.#assertHasCamera();
-	        if (this.sensorConfiguration.camera == 0) {
+	        if (this.sensorConfiguration.camera != sensorRate) {
 	            this.setSensorConfiguration({ camera: sensorRate }, false, false);
 	        }
 	        await this.#cameraManager.takePicture();
 	    }
 	    async focusCamera(sensorRate = 10) {
 	        this.#assertHasCamera();
-	        if (this.sensorConfiguration.camera == 0) {
+	        if (this.sensorConfiguration.camera != sensorRate) {
 	            this.setSensorConfiguration({ camera: sensorRate }, false, false);
 	        }
 	        await this.#cameraManager.focus();
@@ -26933,7 +26933,7 @@
 	    }
 	    async startMicrophone(sensorRate = 10) {
 	        this.#assertHasMicrophone();
-	        if (this.sensorConfiguration.microphone == 0) {
+	        if (this.sensorConfiguration.microphone != sensorRate) {
 	            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
 	        }
 	        await this.#microphoneManager.start();

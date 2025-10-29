@@ -1004,6 +1004,7 @@ const draw = async () => {
       spriteSheet = await BS.canvasToSpriteSheet(
         resizedCanvas,
         "model",
+        "model",
         skipVoidColor
           ? Math.min(
               BS.pixelDepthToNumberOfColors(pixelDepth),

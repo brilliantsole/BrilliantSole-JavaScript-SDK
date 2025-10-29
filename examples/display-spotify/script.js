@@ -515,7 +515,7 @@ const draw = async () => {
       await displayCanvasHelper.drawSprite(
         0,
         displayCanvasHelper.height,
-        "image"
+        "album"
       );
       await displayCanvasHelper.selectSpriteSheetPalette("album", 0);
       await displayCanvasHelper.restoreContext();
@@ -1381,12 +1381,14 @@ spotifyAlbumArt.addEventListener("load", async () => {
     spotifyAlbumArtSpriteSheet = await BS.canvasToSpriteSheet(
       roundProfileImage,
       "album",
+      "album",
       getImageNumberOfColors(),
       "album"
     );
   } else {
     spotifyAlbumArtSpriteSheet = await BS.imageToSpriteSheet(
       spotifyAlbumArt,
+      "album",
       "album",
       imageHeight * aspectRatio,
       imageHeight,

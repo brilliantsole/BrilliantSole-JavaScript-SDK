@@ -147,11 +147,12 @@ const uploadPictureSpriteSheet = async () => {
   const aspectRatio = cameraImage.naturalWidth / cameraImage.naturalHeight;
   cameraImageSpriteSheet = await BS.imageToSpriteSheet(
     cameraImage,
-    "cameraImage",
+    cameraImageName,
+    cameraImageName,
     drawnImageWidth,
     drawnImageWidth / aspectRatio,
     getImageNumberOfColors(),
-    "cameraImage"
+    cameraImageName
   );
   cameraImageSpriteSheet.palettes[0].colors[0] = "black";
   console.log("cameraImageSpriteSheet", cameraImageSpriteSheet);
@@ -160,6 +161,7 @@ const uploadPictureSpriteSheet = async () => {
   didUploadCameraImageSpriteSheet = true;
   await draw();
 };
+let cameraImageName = "*cameraImage*";
 const draw = async () => {
   if (isUploading) {
     console.log("still uploading");
@@ -184,17 +186,25 @@ const draw = async () => {
     includePicture &&
     didUploadCameraImageSpriteSheet &&
     !isUploadingPicture &&
-    displayCanvasHelper.spriteSheets["cameraImage"]
+    displayCanvasHelper.spriteSheets[cameraImageName]
   ) {
     console.log("drawing camera image...");
     await displayCanvasHelper.saveContext();
     await displayCanvasHelper.setHorizontalAlignment("end");
     await displayCanvasHelper.setVerticalAlignment("start");
-    await displayCanvasHelper.selectSpriteSheet("cameraImage");
-    await displayCanvasHelper.selectSpriteSheetPalette("cameraImage", 0, true);
+    await displayCanvasHelper.selectSpriteSheet(cameraImageName);
+    await displayCanvasHelper.selectSpriteSheetPalette(
+      cameraImageName,
+      0,
+      true
+    );
     await displayCanvasHelper.setSpriteScale(cameraImageScale);
-    await displayCanvasHelper.drawSprite(displayCanvasHelper.width, 0, "image");
-    await displayCanvasHelper.selectSpriteSheetPalette("cameraImage", 0);
+    await displayCanvasHelper.drawSprite(
+      displayCanvasHelper.width,
+      0,
+      cameraImageName
+    );
+    await displayCanvasHelper.selectSpriteSheetPalette(cameraImageName, 0);
     await displayCanvasHelper.restoreContext();
   }
 
@@ -235,7 +245,6 @@ const draw = async () => {
       displayCanvasHelper.width -
         (includePicture ? drawnImageWidth * cameraImageScale + imagePadding : 0)
     );
-
     await displayCanvasHelper.restoreContext();
   }
 
@@ -1264,6 +1273,8 @@ const loadModel = async () => {
 };
 
 let latestLowercaseString;
+let latestStringRepetition = 0;
+let latestStringRepetitionThreshold = 3;
 let transcription = "";
 let formattedTranscription = "";
 let ignoreString = true;
@@ -1348,15 +1359,29 @@ const startTranscribing = async () => {
             lowercaseTranscription.includes(string)
           );
           if (
-            !ignoreString &&
-            !isDrawing &&
-            latestLowercaseString != lowercaseTranscription
+            (!ignoreString &&
+              !isDrawing &&
+              latestLowercaseString != lowercaseTranscription) ||
+            isPrompting
           ) {
             textarea.value = formattedTranscription;
-            await draw();
-            latestLowercaseString = lowercaseTranscription;
+            if (isPrompting) {
+              if (latestLowercaseString == lowercaseTranscription) {
+                latestStringRepetition++;
+              } else {
+                latestStringRepetition = 0;
+              }
+              console.log({ latestStringRepetition });
+              if (latestStringRepetition == latestStringRepetitionThreshold) {
+                await stopPrompting();
+              } else {
+                await draw();
+              }
+            } else {
+              await draw();
+            }
           }
-
+          latestLowercaseString = lowercaseTranscription;
           isProcessing = false;
         };
         fileReader.readAsArrayBuffer(blob);

@@ -705,6 +705,7 @@ const draw = async () => {
     spriteSheet = await BS.canvasToSpriteSheet(
       canvas,
       "image",
+      "image",
       numberOfColors,
       "image",
       maxFileLength

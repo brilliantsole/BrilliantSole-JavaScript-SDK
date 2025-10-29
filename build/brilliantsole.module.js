@@ -21158,7 +21158,7 @@ const spriteSheetWithSingleBitmapCommandLength = calculateSpriteSheetHeaderLengt
 function spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) {
     return (spriteSheetWithSingleBitmapCommandLength + (1 + 1 + numberOfColors * 2));
 }
-async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength) {
+async function canvasToSpriteSheet(canvas, spriteSheetName, spriteName, numberOfColors, paletteName, maxFileLength) {
     const spriteSheet = {
         name: spriteSheetName,
         palettes: [],
@@ -21166,7 +21166,7 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
         sprites: [],
     };
     if (maxFileLength == undefined) {
-        await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
+        await canvasToSprite(canvas, spriteName, numberOfColors, paletteName, true, spriteSheet);
     }
     else {
         const { width, height } = canvas;
@@ -21191,7 +21191,7 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
         const maxSpriteHeight = Math.floor(maxPixelDataLength / imageRowPixelDataLength);
         if (maxSpriteHeight >= height) {
             _console$l.log("image is small enough for a single sprite");
-            await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
+            await canvasToSprite(canvas, spriteName, numberOfColors, paletteName, true, spriteSheet);
         }
         else {
             const { colors } = await quantizeCanvas(canvas, numberOfColors);
@@ -21215,9 +21215,9 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
     }
     return spriteSheet;
 }
-async function imageToSpriteSheet(image, spriteSheetName, width, height, numberOfColors, paletteName, maxFileLength) {
+async function imageToSpriteSheet(image, spriteSheetName, spriteName, width, height, numberOfColors, paletteName, maxFileLength) {
     const canvas = resizeImage(image, width, height);
-    return canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength);
+    return canvasToSpriteSheet(canvas, spriteSheetName, spriteName, numberOfColors, paletteName, maxFileLength);
 }
 
 const _console$k = createConsole("DisplayManagerInterface", { log: false });
@@ -23911,7 +23911,7 @@ class BaseConnectionManager {
         if (this.mtu) {
             while (arrayBuffers.length > 0) {
                 if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
-                    _console$i.log("every arrayBuffer is too big to send");
+                    _console$i.error("every arrayBuffer is too big to send");
                     break;
                 }
                 _console$i.log("remaining arrayBuffers.length", arrayBuffers.length);
