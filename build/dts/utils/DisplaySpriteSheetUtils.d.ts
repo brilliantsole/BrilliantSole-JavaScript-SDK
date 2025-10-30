@@ -101,13 +101,11 @@ export declare function getSpriteLinesMetrics(spriteLines: DisplaySpriteLines, s
     numberOfLines: number;
 };
 export type DisplaySpriteLinesMetrics = {
-    localSize: {
-        width: number;
-        height: number;
-    };
+    localSize: DisplaySize;
     size: DisplaySize;
     lineBreadths: number[];
     expandedSpritesLines: DisplaySprite[][];
     numberOfLines: number;
 };
 export declare function stringToSpriteLinesMetrics(string: string, spriteSheets: Record<string, DisplaySpriteSheet>, contextState: DisplayContextState, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLinesMetrics;
+export declare function spriteLinesToSerializedLines(displayManager: DisplayManagerInterface, spriteLines: DisplaySpriteLines): DisplaySpriteSerializedLines;

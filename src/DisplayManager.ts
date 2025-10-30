@@ -59,6 +59,8 @@ import {
   DisplayContextStateKey,
   DisplayDirection,
   DisplaySegmentCap,
+  isDirectionHorizontal,
+  isDirectionPositive,
   PartialDisplayContextState,
 } from "./utils/DisplayContextState.ts";
 import {
@@ -98,14 +100,13 @@ import {
   DisplaySpriteSheet,
   DisplaySpriteLines,
   stringToSpriteLines,
-  DisplaySpriteSerializedSubLine,
-  DisplaySpriteSerializedLine,
-  DisplaySpriteSerializedLines,
   stringToSpriteLinesMetrics,
+  spriteLinesToSerializedLines,
+  getSpriteLinesMetrics,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { wait } from "./utils/Timer.ts";
 
-const _console = createConsole("DisplayManager", { log: false });
+const _console = createConsole("DisplayManager", { log: true });
 
 export const DefaultNumberOfDisplayColors = 16;
 
@@ -2780,33 +2781,10 @@ class DisplayManager implements DisplayManagerInterface {
       this.contextState.spritesLineHeight > 0,
       `spritesLineHeight must be >0`
     );
-    const spriteSerializedLines: DisplaySpriteSerializedLines = [];
-    spriteLines.forEach((spriteLine) => {
-      const serializedLine: DisplaySpriteSerializedLine = [];
-      spriteLine.forEach((spriteSubLine) => {
-        this.assertLoadedSpriteSheet(spriteSubLine.spriteSheetName);
-        const spriteSheet = this.spriteSheets[spriteSubLine.spriteSheetName];
-        const spriteSheetIndex = this.spriteSheetIndices[spriteSheet.name];
-        const serializedSubLine: DisplaySpriteSerializedSubLine = {
-          spriteSheetIndex,
-          spriteIndices: [],
-          use2Bytes: spriteSheet.sprites.length > 255,
-        };
-        spriteSubLine.spriteNames.forEach((spriteName) => {
-          let spriteIndex = spriteSheet.sprites.findIndex(
-            (sprite) => sprite.name == spriteName
-          );
-          _console.assertWithError(
-            spriteIndex != -1,
-            `sprite "${spriteName}" not found`
-          );
-          spriteIndex = spriteIndex!;
-          serializedSubLine.spriteIndices.push(spriteIndex);
-        });
-        serializedLine.push(serializedSubLine);
-      });
-      spriteSerializedLines.push(serializedLine);
-    });
+    const spriteSerializedLines = spriteLinesToSerializedLines(
+      this,
+      spriteLines
+    );
     _console.log("spriteSerializedLines", spriteSerializedLines);
     const commandType: DisplayContextCommandType = "drawSprites";
     const dataView = serializeContextCommand(this, {
@@ -2816,6 +2794,127 @@ class DisplayManager implements DisplayManagerInterface {
       spriteSerializedLines: spriteSerializedLines,
     });
     if (!dataView) {
+      return;
+    }
+    if (dataView.byteLength > this.#maxCommandDataLength) {
+      _console.log("breaking up sprites...");
+      const mid = Math.floor(spriteLines.length / 2);
+      const firstHalf = spriteLines.slice(0, mid);
+      const secondHalf = spriteLines.slice(mid);
+      // _console.log({ firstHalf, secondHalf });
+
+      let firstHalfOffsetX = offsetX;
+      let firstHalfOffsetY = offsetY;
+      let secondHalfOffsetX = offsetX;
+      let secondHalfOffsetY = offsetY;
+
+      let didStartSprite = false;
+      if (!this.#isDrawingBlankSprite) {
+        didStartSprite = true;
+
+        const { localSize } = getSpriteLinesMetrics(
+          spriteLines,
+          this.spriteSheets,
+          this.contextState
+        );
+
+        const {
+          spritesLineHeight,
+          spritesDirection,
+          spritesLineDirection,
+          spritesAlignment,
+          spritesLineAlignment,
+          spritesLineSpacing,
+          spritesSpacing,
+          horizontalAlignment,
+          verticalAlignment,
+        } = this.contextState;
+        _console.log("starting sprites sprite...");
+        await this.startSprite(
+          offsetX,
+          offsetY,
+          localSize.width,
+          localSize.height,
+          false
+        );
+        await this.setSpritesLineHeight(spritesLineHeight, false);
+        await this.setSpritesDirection(spritesDirection, false);
+        await this.setSpritesLineDirection(spritesLineDirection, false);
+        await this.setSpritesAlignment(spritesAlignment, false);
+        await this.setSpritesLineAlignment(spritesLineAlignment, false);
+        await this.setSpritesSpacing(spritesSpacing, false);
+        await this.setSpritesLineSpacing(spritesLineSpacing, false);
+        await this.setHorizontalAlignment(horizontalAlignment, false);
+        await this.setVerticalAlignment(verticalAlignment, false);
+
+        switch (horizontalAlignment) {
+          case "start":
+            firstHalfOffsetX = -localSize.width / 2;
+            break;
+          case "center":
+            firstHalfOffsetX = -localSize.width / 4;
+            break;
+          case "end":
+            firstHalfOffsetX = 0;
+            break;
+        }
+
+        switch (verticalAlignment) {
+          case "start":
+            firstHalfOffsetY = -localSize.height / 2;
+            break;
+          case "center":
+            firstHalfOffsetY = -localSize.height / 4;
+            break;
+          case "end":
+            firstHalfOffsetY = 0;
+            break;
+        }
+
+        secondHalfOffsetX = firstHalfOffsetX;
+        secondHalfOffsetY = firstHalfOffsetY;
+      }
+
+      _console.log("sending first half sprites", firstHalf);
+      await this.drawSprites(
+        firstHalfOffsetX,
+        firstHalfOffsetY,
+        firstHalf,
+        false
+      );
+
+      const { localSize: firstHalfSize } = getSpriteLinesMetrics(
+        firstHalf,
+        this.#spriteSheets,
+        this.contextState
+      );
+
+      const isSpritesLineDirectionPositive = isDirectionPositive(
+        this.contextState.spritesLineDirection
+      );
+
+      const isSpritesLineDirectionHorizontal = isDirectionHorizontal(
+        this.contextState.spritesLineDirection
+      );
+
+      const sign = isSpritesLineDirectionPositive ? 1 : -1;
+      if (isSpritesLineDirectionHorizontal) {
+        secondHalfOffsetX += firstHalfSize.width * sign;
+      } else {
+        secondHalfOffsetY += firstHalfSize.height * sign;
+      }
+
+      _console.log("sending second half sprites", secondHalf);
+      await this.drawSprites(
+        secondHalfOffsetX,
+        secondHalfOffsetY,
+        secondHalf,
+        false
+      );
+      if (didStartSprite) {
+        _console.log("ending sprites sprite...");
+        await this.endSprite(sendImmediately);
+      }
       return;
     }
     await this.#sendContextCommand(

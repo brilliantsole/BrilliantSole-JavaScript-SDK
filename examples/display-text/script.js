@@ -256,6 +256,7 @@ const draw = async () => {
   }
   await displayCanvasHelper.show();
 };
+window.draw = draw;
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
@@ -273,7 +274,7 @@ const drawSpriteParams = {
 
   rotation: 0,
 
-  verticalAlignment: "end",
+  verticalAlignment: "start",
   horizontalAlignment: "start",
 
   scaleX: 1,
