@@ -211,7 +211,7 @@ const draw = async () => {
   {
     await displayCanvasHelper.saveContext();
 
-    // for text
+    await displayCanvasHelper.setSpriteScale(fontScale);
     await displayCanvasHelper.selectSpriteColor(
       0,
       getTextBackgroundColorIndex()
@@ -555,9 +555,7 @@ device.addEventListener("getSensorConfiguration", () => {
 });
 const updateFocusCameraButton = () => {
   focusCameraButton.disabled =
-    !device.isConnected ||
-    device.sensorConfiguration.camera == 0 ||
-    device.cameraStatus != "idle";
+    !device.isConnected || device.cameraStatus != "idle";
 };
 device.addEventListener("cameraStatus", (event) => {
   updateFocusCameraButton();
@@ -892,6 +890,7 @@ const setFontScale = (newFontScale) => {
   fontScaleInput.value = fontScale;
   draw();
 };
+setFontScale(1);
 
 const loadFont = async (arrayBuffer) => {
   if (!arrayBuffer) {
@@ -999,7 +998,7 @@ window.addEventListener("drop", async (e) => {
 /** @type {Record<string, BS.Font[]>} */
 const fonts = {};
 window.fonts = fonts;
-const fontSize = 32;
+const fontSize = 36;
 /** @type {Record<string, BS.DisplaySpriteSheet>} */
 const fontSpriteSheets = {};
 window.fonts = fonts;
@@ -1386,7 +1385,7 @@ const startTranscribing = async () => {
         };
         fileReader.readAsArrayBuffer(blob);
       } else {
-        mediaRecorder.requestData();
+        mediaRecorder?.requestData();
       }
     } else {
       // Empty chunk received, so we request new data after a short timeout
