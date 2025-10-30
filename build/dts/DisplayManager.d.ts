@@ -138,7 +138,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "spriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete">(type: T) => Promise<{
+    get waitForEvent(): <T extends "spriteSheetIndex" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
@@ -147,7 +147,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -161,7 +161,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushContextCommands(): Promise<void>;
