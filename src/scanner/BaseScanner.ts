@@ -154,6 +154,7 @@ abstract class BaseScanner {
       _console.log("already scanning");
       return false;
     }
+    _console.log("startScan");
     return true;
     // this.#assertIsAvailable();
     // this.#assertIsNotScanning();
@@ -163,6 +164,7 @@ abstract class BaseScanner {
       _console.log("already not scanning");
       return false;
     }
+    _console.log("stopScan");
     return true;
     //this.#assertIsScanning();
   }

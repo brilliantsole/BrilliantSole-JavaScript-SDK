@@ -43,5 +43,5 @@ export declare function imageToSprite(image: HTMLImageElement, spriteName: strin
     sprite: DisplaySprite;
     blob: Blob;
 }>;
-export declare function canvasToSpriteSheet(canvas: HTMLCanvasElement, spriteSheetName: string, numberOfColors: number, paletteName: string, maxFileLength?: number): Promise<DisplaySpriteSheet>;
-export declare function imageToSpriteSheet(image: HTMLImageElement, spriteSheetName: string, width: number, height: number, numberOfColors: number, paletteName: string, maxFileLength?: number): Promise<DisplaySpriteSheet>;
+export declare function canvasToSpriteSheet(canvas: HTMLCanvasElement, spriteSheetName: string, spriteName: string, numberOfColors: number, paletteName: string, maxFileLength?: number): Promise<DisplaySpriteSheet>;
+export declare function imageToSpriteSheet(image: HTMLImageElement, spriteSheetName: string, spriteName: string, width: number, height: number, numberOfColors: number, paletteName: string, maxFileLength?: number): Promise<DisplaySpriteSheet>;

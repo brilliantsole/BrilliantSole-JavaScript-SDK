@@ -3266,7 +3266,7 @@ onBitmapCanvasSizeUpdate();
 
 const displayContainer = document.getElementById("display");
 device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
+  if (!device.isDisplayAvailable) {
     displayContainer.setAttribute("hidden", "");
   } else {
     displayContainer.removeAttribute("hidden");
@@ -3274,7 +3274,7 @@ device.addEventListener("connected", () => {
 });
 const cameraContainer = document.getElementById("camera");
 device.addEventListener("connected", () => {
-  if (device.hasCamera) {
+  if (!device.hasCamera) {
     cameraContainer.setAttribute("hidden", "");
   } else {
     cameraContainer.removeAttribute("hidden");
@@ -3282,7 +3282,7 @@ device.addEventListener("connected", () => {
 });
 const microphoneContainer = document.getElementById("microphone");
 device.addEventListener("connected", () => {
-  if (device.hasMicrophone) {
+  if (!device.hasMicrophone) {
     microphoneContainer.setAttribute("hidden", "");
   } else {
     microphoneContainer.removeAttribute("hidden");

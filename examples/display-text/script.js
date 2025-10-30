@@ -256,6 +256,7 @@ const draw = async () => {
   }
   await displayCanvasHelper.show();
 };
+window.draw = draw;
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
@@ -273,7 +274,7 @@ const drawSpriteParams = {
 
   rotation: 0,
 
-  verticalAlignment: "end",
+  verticalAlignment: "start",
   horizontalAlignment: "start",
 
   scaleX: 1,
@@ -1123,7 +1124,14 @@ const startTranscribing = async () => {
   mediaRecorder.start(500);
 };
 const stopTranscribing = async () => {
-  mediaRecorder?.stop();
+  if (mediaRecorder) {
+    await new Promise((resolve) => {
+      mediaRecorder.onstop = resolve;
+      mediaRecorder.stop();
+    });
+  }
+  isRunning = false;
+  console.log({ isRunning });
   mediaRecorder = undefined;
 };
 

@@ -10,6 +10,7 @@ interface HasConnectionManager {
 }
 export interface NoblePeripheral extends noble.Peripheral, HasConnectionManager {
     scanner: NobleScanner;
+    shouldConnect?: boolean;
 }
 interface NobleService extends noble.Service, HasConnectionManager {
     name: BluetoothServiceName;

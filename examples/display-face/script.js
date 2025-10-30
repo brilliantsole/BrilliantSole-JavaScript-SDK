@@ -342,7 +342,7 @@ const draw = async () => {
       await displayCanvasHelper.setSpriteScale(1);
       await displayCanvasHelper.selectSpriteSheet(profile.id);
       await displayCanvasHelper.selectSpriteSheetPalette(profile.id, 0, true);
-      await displayCanvasHelper.drawSprite(paddingX, profileImageY, "image");
+      await displayCanvasHelper.drawSprite(paddingX, profileImageY, profile.id);
       await displayCanvasHelper.selectSpriteSheetPalette(profile.id, 0);
 
       latestYPositions.profile = profileY;
@@ -1697,6 +1697,7 @@ const createProfileImageSpriteSheet = async (profile) => {
     spriteSheet = await BS.canvasToSpriteSheet(
       roundProfileImage,
       profile.id,
+      profile.id,
       displayCanvasHelper.numberOfColors - 1,
       profile.id
     );
@@ -1704,6 +1705,7 @@ const createProfileImageSpriteSheet = async (profile) => {
   } else {
     spriteSheet = await BS.imageToSpriteSheet(
       profileImage,
+      profile.id,
       profile.id,
       imageHeight * aspectRatio,
       imageHeight,

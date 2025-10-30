@@ -724,7 +724,7 @@ export function stringToSpriteLines(
   const lineStrings = string.split("\n");
   let lineBreadth = 0;
 
-  if (isSpritesLineDirectionHorizontal) {
+  if (isSpritesDirectionHorizontal) {
     maxLineBreadth /= contextState.spriteScaleX;
   } else {
     maxLineBreadth /= contextState.spriteScaleY;
@@ -1019,6 +1019,10 @@ export function getExpandedSpriteLinesSize(
     height: spritesScaledHeight,
   };
 
+  // _console.log("localSize", localSize);
+  // _console.log("size", size);
+  // _console.log("lineBreadths", lineBreadths);
+
   return { localSize, size, lineBreadths };
 }
 
@@ -1039,10 +1043,7 @@ export function getSpriteLinesMetrics(
 }
 
 export type DisplaySpriteLinesMetrics = {
-  localSize: {
-    width: number;
-    height: number;
-  };
+  localSize: DisplaySize;
   size: DisplaySize;
   lineBreadths: number[];
   expandedSpritesLines: DisplaySprite[][];
@@ -1068,4 +1069,41 @@ export function stringToSpriteLinesMetrics(
     spriteSheets,
     contextState
   );
+}
+
+export function spriteLinesToSerializedLines(
+  displayManager: DisplayManagerInterface,
+  spriteLines: DisplaySpriteLines
+) {
+  const spriteSerializedLines: DisplaySpriteSerializedLines = [];
+  spriteLines.forEach((spriteLine) => {
+    const serializedLine: DisplaySpriteSerializedLine = [];
+    spriteLine.forEach((spriteSubLine) => {
+      displayManager.assertLoadedSpriteSheet(spriteSubLine.spriteSheetName);
+      const spriteSheet =
+        displayManager.spriteSheets[spriteSubLine.spriteSheetName];
+      const spriteSheetIndex =
+        displayManager.spriteSheetIndices[spriteSheet.name];
+      const serializedSubLine: DisplaySpriteSerializedSubLine = {
+        spriteSheetIndex,
+        spriteIndices: [],
+        use2Bytes: spriteSheet.sprites.length > 255,
+      };
+      spriteSubLine.spriteNames.forEach((spriteName) => {
+        let spriteIndex = spriteSheet.sprites.findIndex(
+          (sprite) => sprite.name == spriteName
+        );
+        _console.assertWithError(
+          spriteIndex != -1,
+          `sprite "${spriteName}" not found`
+        );
+        spriteIndex = spriteIndex!;
+        serializedSubLine.spriteIndices.push(spriteIndex);
+      });
+      serializedLine.push(serializedSubLine);
+    });
+    spriteSerializedLines.push(serializedLine);
+  });
+  _console.log("spriteSerializedLines", spriteSerializedLines);
+  return spriteSerializedLines;
 }

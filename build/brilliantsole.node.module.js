@@ -3953,6 +3953,16 @@ const DefaultDisplayContextState = {
     spritesAlignment: "end",
     spritesLineAlignment: "start",
 };
+function isDirectionPositive(direction) {
+    switch (direction) {
+        case "right":
+        case "down":
+            return true;
+        case "left":
+        case "up":
+            return false;
+    }
+}
 function isDirectionHorizontal(direction) {
     switch (direction) {
         case "right":
@@ -6050,7 +6060,7 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
     const areSpritesDirectionsOrthogonal = isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
     const lineStrings = string.split("\n");
     let lineBreadth = 0;
-    if (isSpritesLineDirectionHorizontal) {
+    if (isSpritesDirectionHorizontal) {
         maxLineBreadth /= contextState.spriteScaleX;
     }
     else {
@@ -6254,6 +6264,32 @@ function getSpriteLinesMetrics(spriteLines, spriteSheets, contextState) {
 }
 function stringToSpriteLinesMetrics(string, spriteSheets, contextState, requireAll, maxLineBreadth, separators) {
     return getSpriteLinesMetrics(stringToSpriteLines(string, spriteSheets, contextState, requireAll, maxLineBreadth, separators), spriteSheets, contextState);
+}
+function spriteLinesToSerializedLines(displayManager, spriteLines) {
+    const spriteSerializedLines = [];
+    spriteLines.forEach((spriteLine) => {
+        const serializedLine = [];
+        spriteLine.forEach((spriteSubLine) => {
+            displayManager.assertLoadedSpriteSheet(spriteSubLine.spriteSheetName);
+            const spriteSheet = displayManager.spriteSheets[spriteSubLine.spriteSheetName];
+            const spriteSheetIndex = displayManager.spriteSheetIndices[spriteSheet.name];
+            const serializedSubLine = {
+                spriteSheetIndex,
+                spriteIndices: [],
+                use2Bytes: spriteSheet.sprites.length > 255,
+            };
+            spriteSubLine.spriteNames.forEach((spriteName) => {
+                let spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
+                _console$r.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
+                spriteIndex = spriteIndex;
+                serializedSubLine.spriteIndices.push(spriteIndex);
+            });
+            serializedLine.push(serializedSubLine);
+        });
+        spriteSerializedLines.push(serializedLine);
+    });
+    _console$r.log("spriteSerializedLines", spriteSerializedLines);
+    return spriteSerializedLines;
 }
 
 const _console$q = createConsole("DisplayBitmapUtils", { log: false });
@@ -6971,7 +7007,7 @@ async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offse
     }
 }
 
-const _console$o = createConsole("DisplayManager", { log: false });
+const _console$o = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -8754,28 +8790,7 @@ class DisplayManager {
     }
     async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
         _console$o.assertWithError(this.contextState.spritesLineHeight > 0, `spritesLineHeight must be >0`);
-        const spriteSerializedLines = [];
-        spriteLines.forEach((spriteLine) => {
-            const serializedLine = [];
-            spriteLine.forEach((spriteSubLine) => {
-                this.assertLoadedSpriteSheet(spriteSubLine.spriteSheetName);
-                const spriteSheet = this.spriteSheets[spriteSubLine.spriteSheetName];
-                const spriteSheetIndex = this.spriteSheetIndices[spriteSheet.name];
-                const serializedSubLine = {
-                    spriteSheetIndex,
-                    spriteIndices: [],
-                    use2Bytes: spriteSheet.sprites.length > 255,
-                };
-                spriteSubLine.spriteNames.forEach((spriteName) => {
-                    let spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
-                    _console$o.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
-                    spriteIndex = spriteIndex;
-                    serializedSubLine.spriteIndices.push(spriteIndex);
-                });
-                serializedLine.push(serializedSubLine);
-            });
-            spriteSerializedLines.push(serializedLine);
-        });
+        const spriteSerializedLines = spriteLinesToSerializedLines(this, spriteLines);
         _console$o.log("spriteSerializedLines", spriteSerializedLines);
         const commandType = "drawSprites";
         const dataView = serializeContextCommand(this, {
@@ -8785,6 +8800,76 @@ class DisplayManager {
             spriteSerializedLines: spriteSerializedLines,
         });
         if (!dataView) {
+            return;
+        }
+        if (dataView.byteLength > this.#maxCommandDataLength) {
+            _console$o.log("breaking up sprites...");
+            const mid = Math.floor(spriteLines.length / 2);
+            const firstHalf = spriteLines.slice(0, mid);
+            const secondHalf = spriteLines.slice(mid);
+            let firstHalfOffsetX = offsetX;
+            let firstHalfOffsetY = offsetY;
+            let secondHalfOffsetX = offsetX;
+            let secondHalfOffsetY = offsetY;
+            let didStartSprite = false;
+            if (!this.#isDrawingBlankSprite) {
+                didStartSprite = true;
+                const { localSize } = getSpriteLinesMetrics(spriteLines, this.spriteSheets, this.contextState);
+                const { spritesLineHeight, spritesDirection, spritesLineDirection, spritesAlignment, spritesLineAlignment, spritesLineSpacing, spritesSpacing, horizontalAlignment, verticalAlignment, } = this.contextState;
+                _console$o.log("starting sprites sprite...");
+                await this.startSprite(offsetX, offsetY, localSize.width, localSize.height, false);
+                await this.setSpritesLineHeight(spritesLineHeight, false);
+                await this.setSpritesDirection(spritesDirection, false);
+                await this.setSpritesLineDirection(spritesLineDirection, false);
+                await this.setSpritesAlignment(spritesAlignment, false);
+                await this.setSpritesLineAlignment(spritesLineAlignment, false);
+                await this.setSpritesSpacing(spritesSpacing, false);
+                await this.setSpritesLineSpacing(spritesLineSpacing, false);
+                await this.setHorizontalAlignment(horizontalAlignment, false);
+                await this.setVerticalAlignment(verticalAlignment, false);
+                switch (horizontalAlignment) {
+                    case "start":
+                        firstHalfOffsetX = -localSize.width / 2;
+                        break;
+                    case "center":
+                        firstHalfOffsetX = -localSize.width / 4;
+                        break;
+                    case "end":
+                        firstHalfOffsetX = 0;
+                        break;
+                }
+                switch (verticalAlignment) {
+                    case "start":
+                        firstHalfOffsetY = -localSize.height / 2;
+                        break;
+                    case "center":
+                        firstHalfOffsetY = -localSize.height / 4;
+                        break;
+                    case "end":
+                        firstHalfOffsetY = 0;
+                        break;
+                }
+                secondHalfOffsetX = firstHalfOffsetX;
+                secondHalfOffsetY = firstHalfOffsetY;
+            }
+            _console$o.log("sending first half sprites", firstHalf);
+            await this.drawSprites(firstHalfOffsetX, firstHalfOffsetY, firstHalf, false);
+            const { localSize: firstHalfSize } = getSpriteLinesMetrics(firstHalf, this.#spriteSheets, this.contextState);
+            const isSpritesLineDirectionPositive = isDirectionPositive(this.contextState.spritesLineDirection);
+            const isSpritesLineDirectionHorizontal = isDirectionHorizontal(this.contextState.spritesLineDirection);
+            const sign = isSpritesLineDirectionPositive ? 1 : -1;
+            if (isSpritesLineDirectionHorizontal) {
+                secondHalfOffsetX += firstHalfSize.width * sign;
+            }
+            else {
+                secondHalfOffsetY += firstHalfSize.height * sign;
+            }
+            _console$o.log("sending second half sprites", secondHalf);
+            await this.drawSprites(secondHalfOffsetX, secondHalfOffsetY, secondHalf, false);
+            if (didStartSprite) {
+                _console$o.log("ending sprites sprite...");
+                await this.endSprite(sendImmediately);
+            }
             return;
         }
         await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
@@ -9137,7 +9222,7 @@ class BaseConnectionManager {
         if (this.mtu) {
             while (arrayBuffers.length > 0) {
                 if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
-                    _console$n.log("every arrayBuffer is too big to send");
+                    _console$n.error("every arrayBuffer is too big to send");
                     break;
                 }
                 _console$n.log("remaining arrayBuffers.length", arrayBuffers.length);
@@ -12397,14 +12482,14 @@ class Device {
     }
     async takePicture(sensorRate = 10) {
         this.#assertHasCamera();
-        if (this.sensorConfiguration.camera == 0) {
+        if (this.sensorConfiguration.camera != sensorRate) {
             this.setSensorConfiguration({ camera: sensorRate }, false, false);
         }
         await this.#cameraManager.takePicture();
     }
     async focusCamera(sensorRate = 10) {
         this.#assertHasCamera();
-        if (this.sensorConfiguration.camera == 0) {
+        if (this.sensorConfiguration.camera != sensorRate) {
             this.setSensorConfiguration({ camera: sensorRate }, false, false);
         }
         await this.#cameraManager.focus();
@@ -12445,7 +12530,7 @@ class Device {
     }
     async startMicrophone(sensorRate = 10) {
         this.#assertHasMicrophone();
-        if (this.sensorConfiguration.microphone == 0) {
+        if (this.sensorConfiguration.microphone != sensorRate) {
             this.setSensorConfiguration({ microphone: sensorRate }, false, false);
         }
         await this.#microphoneManager.start();
@@ -13378,6 +13463,7 @@ class BaseScanner {
             _console$7.log("already scanning");
             return false;
         }
+        _console$7.log("startScan");
         return true;
     }
     stopScan() {
@@ -13385,6 +13471,7 @@ class BaseScanner {
             _console$7.log("already not scanning");
             return false;
         }
+        _console$7.log("stopScan");
         return true;
     }
     #onIsScanning(event) {
@@ -13469,8 +13556,8 @@ _a$1 = BaseScanner;
 
 const _console$6 = createConsole("NobleConnectionManager", { log: false });
 let filterUUIDs = true;
-const isLinux = os.platform() == "linux";
-filterUUIDs = !isLinux;
+const isLinux$1 = os.platform() == "linux";
+filterUUIDs = !isLinux$1;
 class NobleConnectionManager extends BluetoothConnectionManager {
     get bluetoothId() {
         return this.#noblePeripheral.id;
@@ -13493,7 +13580,15 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         if (!canConnect) {
             return false;
         }
-        await this.#noblePeripheral.connectAsync();
+        if (isLinux$1) {
+            _console$6.log("setting noblePeripheral.shouldConnect");
+            this.#noblePeripheral.shouldConnect = true;
+        }
+        else {
+            _console$6.log("noblePeripheral.connectAsync");
+            await this.#noblePeripheral.connectAsync();
+            _console$6.log("noblePeripheral.connectAsync done");
+        }
         return true;
     }
     async disconnect() {
@@ -13501,7 +13596,9 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         if (!canContinue) {
             return false;
         }
+        _console$6.log("noblePeripheral.disconnectAsync");
         await this.#noblePeripheral.disconnectAsync();
+        _console$6.log("noblePeripheral.disconnectAsync done");
         return true;
     }
     async writeCharacteristic(characteristicName, data) {
@@ -13724,9 +13821,11 @@ const _console$5 = createConsole("NobleScanner", { log: false });
 let isSupported = false;
 let filterManually = true;
 const filterServiceUuid = serviceUUIDs[0].replaceAll("-", "");
+let isLinux = false;
 isSupported = true;
 const platform = os.platform();
-filterManually = platform == "linux";
+isLinux = platform == "linux";
+filterManually = isLinux;
 _console$5.log({ platform, filterManually, filterServiceUuid });
 class NobleScanner extends BaseScanner {
     static get isSupported() {
@@ -13782,7 +13881,8 @@ class NobleScanner extends BaseScanner {
         _console$5.log("onNobleStateChange", state);
         this.#nobleState = state;
     }
-    #onNobleDiscover(noblePeripheral) {
+    #isBusy = false;
+    async #onNobleDiscover(noblePeripheral) {
         _console$5.log("advertisement", noblePeripheral.advertisement);
         if (filterManually) {
             const serviceUuid = noblePeripheral.advertisement.serviceUuids?.[0];
@@ -13795,6 +13895,20 @@ class NobleScanner extends BaseScanner {
         if (!this.#noblePeripherals[noblePeripheral.id]) {
             noblePeripheral.scanner = this;
             this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
+        }
+        else {
+            const _noblePeripheral = this.#noblePeripherals[noblePeripheral.id];
+            if (isLinux &&
+                _noblePeripheral.shouldConnect &&
+                !this.#isBusy &&
+                _noblePeripheral.state == "disconnected") {
+                this.#isBusy = true;
+                _noblePeripheral.shouldConnect = false;
+                _console$5.log("noblePeripheral.connectAsync");
+                await _noblePeripheral.connectAsync();
+                _console$5.log("noblePeripheral.connectAsync done");
+                this.#isBusy = false;
+            }
         }
         _console$5.log("advertisement", noblePeripheral.advertisement);
         let deviceType;
@@ -13853,6 +13967,7 @@ class NobleScanner extends BaseScanner {
         if (!super.startScan()) {
             return false;
         }
+        _console$5.log("noble.startScan");
         noble.startScanningAsync(filterManually ? [] : serviceUUIDs, true);
         return true;
     }
@@ -13860,6 +13975,7 @@ class NobleScanner extends BaseScanner {
         if (!super.stopScan()) {
             return false;
         }
+        _console$5.log("noble.stopScan");
         noble.stopScanningAsync();
         return true;
     }
@@ -14121,6 +14237,7 @@ class BaseServer {
         });
     }
     #createDeviceServerMessage(device, ...messages) {
+        _console$3.log("#createDeviceServerMessage", ...messages);
         return createServerMessage({
             type: "deviceMessage",
             data: [device.bluetoothId, createDeviceMessage(...messages)],

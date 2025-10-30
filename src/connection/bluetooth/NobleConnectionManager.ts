@@ -40,6 +40,7 @@ export interface NoblePeripheral
   extends noble.Peripheral,
     HasConnectionManager {
   scanner: NobleScanner;
+  shouldConnect?: boolean;
 }
 interface NobleService extends noble.Service, HasConnectionManager {
   name: BluetoothServiceName;
@@ -76,7 +77,14 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     if (!canConnect) {
       return false;
     }
-    await this.#noblePeripheral!.connectAsync();
+    if (isLinux) {
+      _console.log("setting noblePeripheral.shouldConnect");
+      this.#noblePeripheral!.shouldConnect = true;
+    } else {
+      _console.log("noblePeripheral.connectAsync");
+      await this.#noblePeripheral!.connectAsync();
+      _console.log("noblePeripheral.connectAsync done");
+    }
     return true;
   }
   async disconnect() {
@@ -84,7 +92,9 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     if (!canContinue) {
       return false;
     }
+    _console.log("noblePeripheral.disconnectAsync");
     await this.#noblePeripheral!.disconnectAsync();
+    _console.log("noblePeripheral.disconnectAsync done");
     return true;
   }
 

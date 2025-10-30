@@ -576,6 +576,7 @@ function spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(
 export async function canvasToSpriteSheet(
   canvas: HTMLCanvasElement,
   spriteSheetName: string,
+  spriteName: string,
   numberOfColors: number,
   paletteName: string,
   maxFileLength?: number
@@ -590,7 +591,7 @@ export async function canvasToSpriteSheet(
   if (maxFileLength == undefined) {
     await canvasToSprite(
       canvas,
-      "image",
+      spriteName,
       numberOfColors,
       paletteName,
       true,
@@ -636,7 +637,7 @@ export async function canvasToSpriteSheet(
       _console.log("image is small enough for a single sprite");
       await canvasToSprite(
         canvas,
-        "image",
+        spriteName,
         numberOfColors,
         paletteName,
         true,
@@ -678,6 +679,7 @@ export async function canvasToSpriteSheet(
 export async function imageToSpriteSheet(
   image: HTMLImageElement,
   spriteSheetName: string,
+  spriteName: string,
   width: number,
   height: number,
   numberOfColors: number,
@@ -688,6 +690,7 @@ export async function imageToSpriteSheet(
   return canvasToSpriteSheet(
     canvas,
     spriteSheetName,
+    spriteName,
     numberOfColors,
     paletteName,
     maxFileLength

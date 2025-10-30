@@ -17,7 +17,8 @@ process.on("warning", (e) => console.warn(e.stack));
 // BS.setConsoleLevelFlagsForType("EventDispatcher", { log: false });
 // BS.setConsoleLevelFlagsForType("NobleScanner", { log: true });
 // BS.setConsoleLevelFlagsForType("SensorConfigurationManager", { log: true });
-BS.setConsoleLevelFlagsForType("FileTransferManager", { log: true });
+// BS.setConsoleLevelFlagsForType("FileTransferManager", { log: true });
+// BS.setConsoleLevelFlagsForType("BaseServer", { log: true });
 
 // HTTPS SERVER
 app.use(nocache());

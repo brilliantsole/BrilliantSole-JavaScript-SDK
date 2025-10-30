@@ -684,10 +684,7 @@ declare function stringToSprites(string: string, spriteSheet: DisplaySpriteSheet
 declare function getFontMaxHeight(font: Font, fontSize: number): number;
 declare function getMaxSpriteSheetSize(spriteSheet: DisplaySpriteSheet): DisplaySize;
 type DisplaySpriteLinesMetrics = {
-    localSize: {
-        width: number;
-        height: number;
-    };
+    localSize: DisplaySize;
     size: DisplaySize;
     lineBreadths: number[];
     expandedSpritesLines: DisplaySprite[][];

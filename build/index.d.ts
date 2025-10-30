@@ -683,10 +683,7 @@ declare function stringToSprites(string: string, spriteSheet: DisplaySpriteSheet
 declare function getFontMaxHeight(font: Font, fontSize: number): number;
 declare function getMaxSpriteSheetSize(spriteSheet: DisplaySpriteSheet): DisplaySize;
 type DisplaySpriteLinesMetrics = {
-    localSize: {
-        width: number;
-        height: number;
-    };
+    localSize: DisplaySize;
     size: DisplaySize;
     lineBreadths: number[];
     expandedSpritesLines: DisplaySprite[][];
@@ -2109,8 +2106,8 @@ declare function imageToSprite(image: HTMLImageElement, spriteName: string, widt
     sprite: DisplaySprite;
     blob: Blob;
 }>;
-declare function canvasToSpriteSheet(canvas: HTMLCanvasElement, spriteSheetName: string, numberOfColors: number, paletteName: string, maxFileLength?: number): Promise<DisplaySpriteSheet>;
-declare function imageToSpriteSheet(image: HTMLImageElement, spriteSheetName: string, width: number, height: number, numberOfColors: number, paletteName: string, maxFileLength?: number): Promise<DisplaySpriteSheet>;
+declare function canvasToSpriteSheet(canvas: HTMLCanvasElement, spriteSheetName: string, spriteName: string, numberOfColors: number, paletteName: string, maxFileLength?: number): Promise<DisplaySpriteSheet>;
+declare function imageToSpriteSheet(image: HTMLImageElement, spriteSheetName: string, spriteName: string, width: number, height: number, numberOfColors: number, paletteName: string, maxFileLength?: number): Promise<DisplaySpriteSheet>;
 
 declare function hexToRGB(hex: string): DisplayColorRGB;
 declare function rgbToHex({ r, g, b }: DisplayColorRGB): string;
