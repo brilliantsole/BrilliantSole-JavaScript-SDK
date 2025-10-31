@@ -683,7 +683,7 @@ class Device {
     return this.connectionManager?.type;
   }
   async disconnect() {
-    if (!this.isConnected) {
+    if (this.connectionStatus == "notConnected") {
       _console.log("already not connected");
       return;
     }

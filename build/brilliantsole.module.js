@@ -21767,7 +21767,7 @@ async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offse
     }
 }
 
-const _console$j = createConsole("DisplayManager", { log: true });
+const _console$j = createConsole("DisplayManager", { log: false });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -23933,7 +23933,7 @@ class BaseConnectionManager {
         return true;
     }
     async disconnect() {
-        if (!this.isConnected) {
+        if (this.#status == "notConnected") {
             _console$i.log("already not connected");
             return false;
         }
@@ -26425,7 +26425,7 @@ class Device {
         return this.connectionManager?.type;
     }
     async disconnect() {
-        if (!this.isConnected) {
+        if (this.connectionStatus == "notConnected") {
             _console$7.log("already not connected");
             return;
         }
@@ -30680,10 +30680,6 @@ class ClientConnectionManager extends BaseConnectionManager {
     }
     set isConnected(newIsConnected) {
         _console$2.assertTypeWithError(newIsConnected, "boolean");
-        if (this.#isConnected == newIsConnected) {
-            _console$2.log("redundant newIsConnected assignment", newIsConnected);
-            return;
-        }
         this.#isConnected = newIsConnected;
         this.status = this.#isConnected ? "connected" : "notConnected";
         if (this.isConnected) {

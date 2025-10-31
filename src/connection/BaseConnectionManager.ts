@@ -266,7 +266,7 @@ abstract class BaseConnectionManager {
     return true;
   }
   async disconnect() {
-    if (!this.isConnected) {
+    if (this.#status == "notConnected") {
       _console.log("already not connected");
       return false;
     }

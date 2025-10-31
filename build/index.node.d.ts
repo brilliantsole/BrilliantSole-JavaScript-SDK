@@ -1954,6 +1954,10 @@ declare abstract class BaseScanner {
     get discoveredDevicesArray(): DiscoveredDevice[];
     static get DiscoveredDeviceExpirationTimeout(): number;
     connectToDevice(deviceId: string, connectionType?: ConnectionType): Promise<void>;
+    disconnectFromDevice(deviceId: string): Promise<void>;
+    abstract devices: {
+        [bluetoothId: string]: Device;
+    };
     get canReset(): boolean;
     reset(): void;
 }

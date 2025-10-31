@@ -27,7 +27,6 @@ import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
 import {
   ConnectionMessageType,
   ConnectionMessageTypes,
-  ConnectionType,
   ConnectionTypes,
 } from "../connection/BaseConnectionManager.ts";
 import {
@@ -379,7 +378,9 @@ abstract class BaseServer {
           let connectionType = undefined;
           if (byteOffset < dataView.byteLength) {
             connectionType = ConnectionTypes[dataView.getUint8(byteOffset)];
-            _console.log(`connectToDevice via ${connectionType}`);
+            _console.log(`connectToDevice ${deviceId} via ${connectionType}`);
+          } else {
+            _console.log(`connecting to device with id ${deviceId}...`);
           }
           scanner!.connectToDevice(deviceId, connectionType);
         }
@@ -387,13 +388,24 @@ abstract class BaseServer {
       case "disconnectFromDevice":
         {
           const { string: deviceId } = parseStringFromDataView(dataView);
-          const device = DeviceManager.ConnectedDevices.find(
+          let device = DeviceManager.AvailableDevices.find(
             (device) => device.bluetoothId == deviceId
           );
+          device = device ?? scanner!.devices[deviceId];
           if (!device) {
             _console.error(`no device found with id ${deviceId}`);
             break;
           }
+          _console.log(`disconnecting from device with id ${deviceId}...`);
+          device.addEventListener(
+            "notConnected",
+            () => {
+              this.broadcastMessage(
+                this.#createDeviceIsConnectedMessage(device)
+              );
+            },
+            { once: true }
+          );
           device.disconnect();
         }
         break;
