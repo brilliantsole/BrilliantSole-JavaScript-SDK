@@ -1273,7 +1273,7 @@ const loadModel = async () => {
 
 let latestLowercaseString;
 let latestStringRepetition = 0;
-let latestStringRepetitionThreshold = 3;
+let latestStringRepetitionThreshold = 5;
 let transcription = "";
 let formattedTranscription = "";
 let ignoreString = true;
