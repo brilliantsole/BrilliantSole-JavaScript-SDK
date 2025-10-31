@@ -20572,7 +20572,7 @@
   }
 
   const _console$i = createConsole("DisplayManager", {
-    log: true
+    log: false
   });
   const DefaultNumberOfDisplayColors = 16;
   const DisplayCommands = ["sleep", "wake"];
@@ -22772,7 +22772,7 @@
       return true;
     }
     async disconnect() {
-      if (!this.isConnected) {
+      if (_classPrivateFieldGet2(_status$1, this) == "notConnected") {
         _console$h.log("already not connected");
         return false;
       }
@@ -25313,7 +25313,7 @@
       return (_this$connectionManag3 = this.connectionManager) === null || _this$connectionManag3 === void 0 ? void 0 : _this$connectionManag3.type;
     }
     async disconnect() {
-      if (!this.isConnected) {
+      if (this.connectionStatus == "notConnected") {
         _console$6.log("already not connected");
         return;
       }
@@ -26928,10 +26928,6 @@
     }
     set isConnected(newIsConnected) {
       _console$2.assertTypeWithError(newIsConnected, "boolean");
-      if (_classPrivateFieldGet2(_isConnected, this) == newIsConnected) {
-        _console$2.log("redundant newIsConnected assignment", newIsConnected);
-        return;
-      }
       _classPrivateFieldSet2(_isConnected, this, newIsConnected);
       this.status = _classPrivateFieldGet2(_isConnected, this) ? "connected" : "notConnected";
       if (this.isConnected) {

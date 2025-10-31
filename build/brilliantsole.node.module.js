@@ -7007,7 +7007,7 @@ async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offse
     }
 }
 
-const _console$o = createConsole("DisplayManager", { log: true });
+const _console$o = createConsole("DisplayManager", { log: false });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -9173,7 +9173,7 @@ class BaseConnectionManager {
         return true;
     }
     async disconnect() {
-        if (!this.isConnected) {
+        if (this.#status == "notConnected") {
             _console$n.log("already not connected");
             return false;
         }
@@ -11953,7 +11953,7 @@ class Device {
         return this.connectionManager?.type;
     }
     async disconnect() {
-        if (!this.isConnected) {
+        if (this.connectionStatus == "notConnected") {
             _console$b.log("already not connected");
             return;
         }
@@ -13545,6 +13545,9 @@ class BaseScanner {
     async connectToDevice(deviceId, connectionType) {
         this.#assertIsAvailable();
     }
+    async disconnectFromDevice(deviceId) {
+        this.#assertIsAvailable();
+    }
     get canReset() {
         return false;
     }
@@ -14002,6 +14005,9 @@ class NobleScanner extends BaseScanner {
         _console$5.assertWithError(this.#noblePeripherals[noblePeripheralId], `no noblePeripheral found with id "${noblePeripheralId}"`);
     }
     #devices = {};
+    get devices() {
+        return this.#devices;
+    }
     async connectToDevice(deviceId, connectionType) {
         super.connectToDevice(deviceId, connectionType);
         this.#assertValidNoblePeripheralId(deviceId);
@@ -14032,6 +14038,15 @@ class NobleScanner extends BaseScanner {
             else {
                 await device.reconnect();
             }
+        }
+    }
+    async disconnectFromDevice(deviceId) {
+        super.disconnectFromDevice(deviceId);
+        this.#assertValidNoblePeripheralId(deviceId);
+        let device = DeviceManager$1.AvailableDevices.filter((device) => device.connectionType == "noble").find((device) => device.bluetoothId == deviceId);
+        device = device ?? this.#devices[deviceId];
+        if (device) {
+            await device.disconnect();
         }
     }
     #createDevice(noblePeripheral) {
@@ -14276,7 +14291,10 @@ class BaseServer {
                     let connectionType = undefined;
                     if (byteOffset < dataView.byteLength) {
                         connectionType = ConnectionTypes[dataView.getUint8(byteOffset)];
-                        _console$3.log(`connectToDevice via ${connectionType}`);
+                        _console$3.log(`connectToDevice ${deviceId} via ${connectionType}`);
+                    }
+                    else {
+                        _console$3.log(`connecting to device with id ${deviceId}...`);
                     }
                     scanner$1.connectToDevice(deviceId, connectionType);
                 }
@@ -14284,11 +14302,16 @@ class BaseServer {
             case "disconnectFromDevice":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    const device = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+                    let device = DeviceManager$1.AvailableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner$1.devices[deviceId];
                     if (!device) {
                         _console$3.error(`no device found with id ${deviceId}`);
                         break;
                     }
+                    _console$3.log(`disconnecting from device with id ${deviceId}...`);
+                    device.addEventListener("notConnected", () => {
+                        this.broadcastMessage(this.#createDeviceIsConnectedMessage(device));
+                    }, { once: true });
                     device.disconnect();
                 }
                 break;

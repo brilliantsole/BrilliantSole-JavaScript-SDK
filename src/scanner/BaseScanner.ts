@@ -8,6 +8,7 @@ import { createConsole } from "../utils/Console.ts";
 import { Timer } from "../utils/Timer.ts";
 import { DeviceType } from "../InformationManager.ts";
 import { ConnectionType } from "../connection/BaseConnectionManager.ts";
+import Device from "../Device.ts";
 
 const _console = createConsole("BaseScanner", { log: false });
 
@@ -252,6 +253,12 @@ abstract class BaseScanner {
   async connectToDevice(deviceId: string, connectionType?: ConnectionType) {
     this.#assertIsAvailable();
   }
+  async disconnectFromDevice(deviceId: string) {
+    this.#assertIsAvailable();
+  }
+
+  // DEVICES
+  abstract devices: { [bluetoothId: string]: Device };
 
   // RESET
   get canReset() {
