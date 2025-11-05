@@ -3291,9 +3291,9 @@ device.addEventListener("connected", () => {
 const firmwareContainer = document.getElementById("firmware");
 device.addEventListener("connected", () => {
   if (device.canUpdateFirmware) {
-    firmwareContainer.setAttribute("hidden", "");
-  } else {
     firmwareContainer.removeAttribute("hidden");
+  } else {
+    firmwareContainer.setAttribute("hidden", "");
   }
 });
 const wifiContainer = document.getElementById("wifi");
