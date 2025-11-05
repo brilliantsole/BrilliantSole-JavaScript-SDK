@@ -18995,7 +18995,8 @@
     strokeWidth: 1,
     unicodeOnly: true,
     englishOnly: true,
-    usePath: false
+    usePath: false,
+    overrideMaxSpriteHeight: true
   };
   function isWoff2(arrayBuffer) {
     if (arrayBuffer.byteLength < 4) return false;
@@ -19035,7 +19036,7 @@
     return area;
   }
   function getFontMetrics(font, fontSize, options) {
-    var _options$minSpriteY, _options$maxSpriteY, _options$maxSpritehei;
+    var _options$minSpriteY, _options$maxSpriteY, _options$maxSpriteHei;
     _console$l.assertTypeWithError(fontSize, "number");
     options = options ? _objectSpread2(_objectSpread2({}, defaultFontToSpriteSheetOptions), options) : defaultFontToSpriteSheetOptions;
     const fonts = Array.isArray(font) ? font : [font];
@@ -19045,7 +19046,7 @@
     let string = options.string;
     if (string) {
       string = removeRedundantCharacters(string);
-      console.log("filtered string", string);
+      _console$l.log("filtered string", string);
     }
     for (let font of fonts) {
       const fontScale = 1 / font.unitsPerEm * fontSize;
@@ -19085,7 +19086,7 @@
     }
     minSpriteY = (_options$minSpriteY = options.minSpriteY) !== null && _options$minSpriteY !== void 0 ? _options$minSpriteY : minSpriteY;
     maxSpriteY = (_options$maxSpriteY = options.maxSpriteY) !== null && _options$maxSpriteY !== void 0 ? _options$maxSpriteY : maxSpriteY;
-    const maxSpriteHeight = (_options$maxSpritehei = options.maxSpriteheight) !== null && _options$maxSpritehei !== void 0 ? _options$maxSpritehei : maxSpriteY - minSpriteY + strokeWidth;
+    let maxSpriteHeight = (_options$maxSpriteHei = options.maxSpriteHeight) !== null && _options$maxSpriteHei !== void 0 ? _options$maxSpriteHei : maxSpriteY - minSpriteY + strokeWidth;
     return {
       maxSpriteHeight,
       maxSpriteY,

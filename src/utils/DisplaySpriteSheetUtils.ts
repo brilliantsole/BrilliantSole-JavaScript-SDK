@@ -145,7 +145,8 @@ export type FontToSpriteSheetOptions = {
   string?: string;
   minSpriteY?: number;
   maxSpriteY?: number;
-  maxSpriteheight?: number;
+  maxSpriteHeight?: number;
+  overrideMaxSpriteHeight?: boolean;
 };
 export const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
   stroke: false,
@@ -153,6 +154,7 @@ export const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
   unicodeOnly: true,
   englishOnly: true,
   usePath: false,
+  overrideMaxSpriteHeight: true,
 };
 
 function isWoff2(arrayBuffer: ArrayBuffer) {
@@ -228,7 +230,7 @@ export function getFontMetrics(
   let string = options.string;
   if (string) {
     string = removeRedundantCharacters(string);
-    console.log("filtered string", string);
+    _console.log("filtered string", string);
   }
 
   for (let font of fonts) {
@@ -295,8 +297,16 @@ export function getFontMetrics(
   minSpriteY = options.minSpriteY ?? minSpriteY;
   maxSpriteY = options.maxSpriteY ?? maxSpriteY;
 
-  const maxSpriteHeight =
-    options.maxSpriteheight ?? maxSpriteY - minSpriteY + strokeWidth;
+  let maxSpriteHeight =
+    options.maxSpriteHeight ?? maxSpriteY - minSpriteY + strokeWidth;
+
+  // if (options.maxSpriteHeight) {
+  //   if (options.overrideMaxSpriteHeight) {
+  //     maxSpriteHeight = options.maxSpriteHeight;
+  //   } else {
+  //     maxSpriteHeight = Math.max(options.maxSpriteHeight, maxSpriteHeight);
+  //   }
+  // }
   return { maxSpriteHeight, maxSpriteY, minSpriteY };
 }
 
