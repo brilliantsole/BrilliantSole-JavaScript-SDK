@@ -61,7 +61,8 @@ export type FontToSpriteSheetOptions = {
     string?: string;
     minSpriteY?: number;
     maxSpriteY?: number;
-    maxSpriteheight?: number;
+    maxSpriteHeight?: number;
+    overrideMaxSpriteHeight?: boolean;
 };
 export declare const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions;
 export declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;

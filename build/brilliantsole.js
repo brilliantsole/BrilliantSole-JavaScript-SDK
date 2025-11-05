@@ -20213,6 +20213,7 @@
 	    unicodeOnly: true,
 	    englishOnly: true,
 	    usePath: false,
+	    overrideMaxSpriteHeight: true,
 	};
 	function isWoff2(arrayBuffer) {
 	    if (arrayBuffer.byteLength < 4)
@@ -20267,7 +20268,7 @@
 	    let string = options.string;
 	    if (string) {
 	        string = removeRedundantCharacters(string);
-	        console.log("filtered string", string);
+	        _console$m.log("filtered string", string);
 	    }
 	    for (let font of fonts) {
 	        const fontScale = (1 / font.unitsPerEm) * fontSize;
@@ -20309,7 +20310,7 @@
 	    }
 	    minSpriteY = options.minSpriteY ?? minSpriteY;
 	    maxSpriteY = options.maxSpriteY ?? maxSpriteY;
-	    const maxSpriteHeight = options.maxSpriteheight ?? maxSpriteY - minSpriteY + strokeWidth;
+	    let maxSpriteHeight = options.maxSpriteHeight ?? maxSpriteY - minSpriteY + strokeWidth;
 	    return { maxSpriteHeight, maxSpriteY, minSpriteY };
 	}
 	async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {

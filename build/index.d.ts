@@ -668,7 +668,8 @@ type FontToSpriteSheetOptions = {
     string?: string;
     minSpriteY?: number;
     maxSpriteY?: number;
-    maxSpriteheight?: number;
+    maxSpriteHeight?: number;
+    overrideMaxSpriteHeight?: boolean;
 };
 declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
 declare function getFontUnicodeRange(font: Font): Range | undefined;

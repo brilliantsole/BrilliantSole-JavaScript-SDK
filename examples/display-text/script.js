@@ -177,9 +177,9 @@ const draw = async () => {
 
   const text = textarea.value;
   console.log(`drawing "${text}"`);
-
   const nonEnglishCharacters = Array.from(text)
-    .filter((char) => selectedFont.charToGlyph(char).unicode == undefined)
+    //.filter((char) => selectedFont.charToGlyph(char).unicode == undefined)
+    .filter((char) => !BS.englishRegex.test(char))
     .filter((char) => char != `\n`);
   console.log("nonEnglishGlyphCharacters", nonEnglishCharacters);
   if (nonEnglishCharacters.length > 0) {
@@ -200,6 +200,7 @@ const draw = async () => {
           englishOnly: false,
           string: newNonEnglishCharacters.join(""),
           usePath: true,
+          ...fontMetrics,
         }
       );
       console.log("nonEnglishSpriteSheet", nonEnglishSpriteSheet);
@@ -691,6 +692,13 @@ const englishFonts = {};
 const englishFontSpriteSheets = {};
 window.englishFontSpriteSheets = englishFontSpriteSheets;
 
+/** @type {BS.FontToSpriteSheetOptions} */
+const vietnameseFontOptions = {
+  englishOnly: false,
+  string: `ĂÂĐÊÔƠƯăâđêôơưÀÁẢÃẠẰẮẲẴẶẦẤẨẪẬÈÉẺẼẸỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌỒỐỔỖỘỜỚỞỠỢÙÚỦŨỤỪỨỬỮỰỲÝỶỸỴàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵ`,
+};
+let includeVietnameseMetrics = true;
+
 /** @type {Map.<BS.Font, {min: number, max: number}>} */
 const fontUnicodeRanges = new Map();
 const fontSize = 48;
@@ -717,10 +725,27 @@ const addFont = async (font) => {
     englishFonts[fullName].push(font);
     // console.log(`added english font "${fullName}"`);
 
-    const spriteSheet = await BS.fontToSpriteSheet(font, fontSize, "english", {
-      usePath: true,
-      englishOnly: true,
-    });
+    let spriteSheet;
+    if (includeVietnameseMetrics) {
+      const { maxSpriteHeight } = BS.getFontMetrics(
+        font,
+        fontSize,
+        vietnameseFontOptions
+      );
+      spriteSheet = await BS.fontToSpriteSheet(font, fontSize, "english", {
+        ...fontOptions,
+        maxSpriteHeight,
+        overrideMaxSpriteHeight: false,
+      });
+    } else {
+      spriteSheet = await BS.fontToSpriteSheet(
+        font,
+        fontSize,
+        "english",
+        fontOptions
+      );
+    }
+
     englishFontSpriteSheets[fullName] = spriteSheet;
     //console.log(`added english font spriteSheet "${fullName}"`, spriteSheet);
     await updateFontSelect();
@@ -747,9 +772,15 @@ selectFontSelect.addEventListener("input", async () => {
 
 /** @type {BS.Font?} */
 let selectedFont;
+let fontMetrics;
+/** @type {BS.FontToSpriteSheetOptions} */
+const fontOptions = {
+  usePath: true,
+  englishOnly: true,
+};
 /** @type {BS.Font[]?} */
 let selectedFonts;
-/** @type {"Korean" | "Chinese (Simplified)" | "Japanese" | undefined} */
+/** @type {"Korean" | "Chinese (Simplified)" | "Vietnamese" | "Japanese" | undefined} */
 let targetLanguage;
 /** @type {MediaRecorder} */
 let mediaRecorder;
@@ -760,6 +791,7 @@ const selectFont = async (newFontName) => {
   }
   const newFont = englishFonts[newFontName][0];
   selectedFont = newFont;
+  window.selectedFont = selectedFont;
   selectedFonts = Object.values(fonts).find((fonts) =>
     fonts.includes(selectedFont)
   );
@@ -771,7 +803,10 @@ const selectFont = async (newFontName) => {
       targetLanguage = "Korean";
     } else if (newFontName.includes("SC")) {
       targetLanguage = "Chinese (Simplified)";
+    } else {
+      targetLanguage = "Vietnamese";
     }
+    console.log({ targetLanguage });
   }
   if (didLoad) {
     console.log(`selected font "${newFontName}"`, selectedFont);
@@ -784,6 +819,21 @@ const selectFont = async (newFontName) => {
   spriteSheet.sprites.forEach((sprite) => {
     spriteSheetLineHeight = Math.max(spriteSheetLineHeight, sprite.height);
   });
+
+  if (includeVietnameseMetrics) {
+    const { maxSpriteHeight } = BS.getFontMetrics(
+      selectedFont,
+      fontSize,
+      vietnameseFontOptions
+    );
+    fontMetrics = BS.getFontMetrics(selectedFont, fontSize, {
+      ...fontOptions,
+      maxSpriteHeight,
+      overrideMaxSpriteHeight: false,
+    });
+  } else {
+    fontMetrics = BS.getFontMetrics(selectedFont, fontSize, fontOptions);
+  }
   drawSpriteParams.spritesLineHeight = spriteSheetLineHeight;
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await draw();
@@ -815,6 +865,7 @@ window.addEventListener("drop", async (e) => {
 
 // INITIAL FONTS
 
+await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Sans", false);
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Mozilla+Text");
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Inter");

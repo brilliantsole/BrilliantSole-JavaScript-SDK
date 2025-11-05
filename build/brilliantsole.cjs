@@ -5683,6 +5683,7 @@ const defaultFontToSpriteSheetOptions = {
     unicodeOnly: true,
     englishOnly: true,
     usePath: false,
+    overrideMaxSpriteHeight: true,
 };
 function isWoff2(arrayBuffer) {
     if (arrayBuffer.byteLength < 4)
@@ -5737,7 +5738,7 @@ function getFontMetrics(font, fontSize, options) {
     let string = options.string;
     if (string) {
         string = removeRedundantCharacters(string);
-        console.log("filtered string", string);
+        _console$r.log("filtered string", string);
     }
     for (let font of fonts) {
         const fontScale = (1 / font.unitsPerEm) * fontSize;
@@ -5779,7 +5780,7 @@ function getFontMetrics(font, fontSize, options) {
     }
     minSpriteY = options.minSpriteY ?? minSpriteY;
     maxSpriteY = options.maxSpriteY ?? maxSpriteY;
-    const maxSpriteHeight = options.maxSpriteheight ?? maxSpriteY - minSpriteY + strokeWidth;
+    let maxSpriteHeight = options.maxSpriteHeight ?? maxSpriteY - minSpriteY + strokeWidth;
     return { maxSpriteHeight, maxSpriteY, minSpriteY };
 }
 async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
