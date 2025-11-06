@@ -1016,10 +1016,18 @@ function parseTimestamp(dataView, byteOffset) {
     const nowWithoutLower2Bytes = removeLower2Bytes(now);
     const lower2Bytes = dataView.getUint16(byteOffset, true);
     let timestamp = nowWithoutLower2Bytes + lower2Bytes;
-    if (Math.abs(now - timestamp) > timestampThreshold) {
+    const timestampDifference = Math.abs(now - timestamp);
+    if (timestampDifference > timestampThreshold) {
         _console$J.log("correcting timestamp delta");
         timestamp += Uint16Max * Math.sign(now - timestamp);
     }
+    _console$J.log({
+        now,
+        nowWithoutLower2Bytes,
+        lower2Bytes,
+        timestamp,
+        timestampDifference,
+    });
     return timestamp;
 }
 function getVector2Distance(a, b) {
@@ -2408,6 +2416,7 @@ class SensorConfigurationManager {
         }
         _console$B.log({ parsedSensorConfiguration });
         this.#availableSensorTypes = Object.keys(parsedSensorConfiguration);
+        _console$B.log("availableSensorTypes", this.#availableSensorTypes);
         return parsedSensorConfiguration;
     }
     static #AssertValidSensorRate(sensorRate) {
@@ -3188,18 +3197,23 @@ class InformationManager {
     get isCurrentTimeSet() {
         return this.#isCurrentTimeSet;
     }
+    #currentTimeThreshold = 10_000;
     #onCurrentTime(currentTime) {
         _console$y.log({ currentTime });
-        this.#isCurrentTimeSet =
-            currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max;
+        const timeDifference = Date.now() - currentTime;
+        const absTimeDifference = Math.abs(timeDifference);
+        _console$y.log({ timeDifference, absTimeDifference });
+        this.#isCurrentTimeSet = currentTime != 0;
+        _console$y.log("isCurrentTimeSet", this.#isCurrentTimeSet);
         if (!this.#isCurrentTimeSet) {
             this.#setCurrentTime(false);
         }
     }
     async #setCurrentTime(sendImmediately) {
-        _console$y.log("setting current time...");
+        const now = Date.now();
+        _console$y.log("setting current time...", { now });
         const dataView = new DataView(new ArrayBuffer(8));
-        dataView.setBigUint64(0, BigInt(Date.now()), true);
+        dataView.setBigUint64(0, BigInt(now), true);
         const promise = this.waitForEvent("getCurrentTime");
         this.sendMessage([{ type: "setCurrentTime", data: dataView.buffer }], sendImmediately);
         await promise;
@@ -12208,9 +12222,11 @@ class Device {
         return this.#sensorConfigurationManager.configuration;
     }
     get setSensorConfiguration() {
+        this.#assertIsConnected();
         return this.#sensorConfigurationManager.setConfiguration;
     }
     async clearSensorConfiguration() {
+        this.#assertIsConnected();
         return this.#sensorConfigurationManager.clearSensorConfiguration();
     }
     static #ClearSensorConfigurationOnLeave = true;

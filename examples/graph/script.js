@@ -1,5 +1,9 @@
 import * as BS from "../../build/brilliantsole.module.js";
-import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.162.0/three.module.min.js";
+
+import * as three from "../utils/three/three.module.min.js";
+/** @type {import("../utils/three/three.module.min")} */
+const THREE = three;
+window.THREE = THREE;
 
 window.BS = BS;
 console.log({ BS });
@@ -106,7 +110,6 @@ function onConnectedDevice(connectedDevice) {
 }
 
 // SENSOR CONFIGURATION
-
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById(
   "sensorTypeConfigurationTemplate"
@@ -158,6 +161,46 @@ function onSensorConfiguration(device) {
           break;
         case "pressure":
           _chartContainers.push(chartContainers["pressureMetadata"]);
+          break;
+        case "linearAcceleration":
+          {
+            let isEnabled =
+              sensorRate != 0 &&
+              (device.sensorConfiguration.gameRotation ||
+                device.sensorConfiguration.rotation);
+            chartContainers[`${sensorType}.corrected`].style.display = isEnabled
+              ? ""
+              : "none";
+            chartContainers[`${sensorType}.velocity`].style.display = isEnabled
+              ? ""
+              : "none";
+            chartContainers[`${sensorType}.position`].style.display = isEnabled
+              ? ""
+              : "none";
+          }
+          break;
+
+        case "gyroscope":
+          {
+            let isEnabled =
+              sensorRate != 0 &&
+              (device.sensorConfiguration.gameRotation ||
+                device.sensorConfiguration.rotation);
+            chartContainers[`${sensorType}.corrected`].style.display = isEnabled
+              ? ""
+              : "none";
+          }
+          break;
+        case "magnetometer":
+          {
+            let isEnabled =
+              sensorRate != 0 &&
+              (device.sensorConfiguration.gameRotation ||
+                device.sensorConfiguration.rotation);
+            chartContainers[`${sensorType}.corrected`].style.display = isEnabled
+              ? ""
+              : "none";
+          }
           break;
       }
       _chartContainers.forEach((chartContainer) => {
@@ -260,7 +303,7 @@ function createChart(canvas, title, axesLabels, yRange) {
   charts[title] = chart;
 
   const appendData = (timestamp, data) => {
-    console.log({ timestamp, data });
+    //console.log({ timestamp, data });
     chart.data.labels.push(timestamp);
 
     if (chart.data.datasets.length == 0) {
@@ -385,6 +428,81 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
         );
       }
       break;
+    case "linearAcceleration":
+      {
+        const correctedChartContainer = chartTemplate.content
+          .cloneNode(true)
+          .querySelector(".chart");
+        chartsContainer.appendChild(correctedChartContainer);
+        chartContainers[`${sensorType}.corrected`] = correctedChartContainer;
+        createChart(
+          correctedChartContainer.querySelector("canvas"),
+          sensorType + "Corrected",
+          ["x", "y", "z"],
+          yRange
+        );
+
+        const velocityChartContainer = chartTemplate.content
+          .cloneNode(true)
+          .querySelector(".chart");
+        chartsContainer.appendChild(velocityChartContainer);
+        chartContainers[`${sensorType}.velocity`] = velocityChartContainer;
+        createChart(
+          velocityChartContainer.querySelector("canvas"),
+          sensorType + "Velocity",
+          ["x", "y", "z"],
+          {
+            min: -0.4,
+            max: 0.4,
+          }
+        );
+
+        const positionChartContainer = chartTemplate.content
+          .cloneNode(true)
+          .querySelector(".chart");
+        chartsContainer.appendChild(positionChartContainer);
+        chartContainers[`${sensorType}.position`] = positionChartContainer;
+        createChart(
+          positionChartContainer.querySelector("canvas"),
+          sensorType + "Position",
+          ["x", "y", "z"],
+          {
+            min: -0.1,
+            max: 0.1,
+          }
+        );
+      }
+      break;
+    case "gyroscope":
+      {
+        const correctedChartContainer = chartTemplate.content
+          .cloneNode(true)
+          .querySelector(".chart");
+        chartsContainer.appendChild(correctedChartContainer);
+        chartContainers[`${sensorType}.corrected`] = correctedChartContainer;
+        createChart(
+          correctedChartContainer.querySelector("canvas"),
+          sensorType + "Corrected",
+          ["x", "y", "z"],
+          yRange
+        );
+      }
+      break;
+    case "magnetometer":
+      {
+        const correctedChartContainer = chartTemplate.content
+          .cloneNode(true)
+          .querySelector(".chart");
+        chartsContainer.appendChild(correctedChartContainer);
+        chartContainers[`${sensorType}.corrected`] = correctedChartContainer;
+        createChart(
+          correctedChartContainer.querySelector("canvas"),
+          sensorType + "Corrected",
+          ["x", "y", "z"],
+          yRange
+        );
+      }
+      break;
     case "pressure":
       {
         const pressureMetadataChartContainer = chartTemplate.content
@@ -420,6 +538,28 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
 const quaternion = new THREE.Quaternion();
 const euler = new THREE.Euler();
 
+const latestQuaternion = new THREE.Quaternion();
+const latestQuaternionInverse = new THREE.Quaternion();
+let latestPositionTimestamp = 0;
+const linearAccelerationVector = new THREE.Vector3();
+const linearAccelerationVelocity = new THREE.Vector3();
+const linearAccelerationPosition = new THREE.Vector3();
+
+const gyroscopeVector = new THREE.Vector3();
+
+const magnetometerVector = new THREE.Vector3();
+
+let shouldResetLinearAccelerationPosition = false;
+window.resetLinearAccelerationPosition = () => {
+  console.log("resetLinearAccelerationPosition");
+  shouldResetLinearAccelerationPosition = true;
+};
+document.addEventListener("keypress", (event) => {
+  if (event.key == "c") {
+    resetLinearAccelerationPosition();
+  }
+});
+
 /** @param {BS.Device} device */
 function addSensorDataEventListeners(device) {
   BS.ContinuousSensorTypes.forEach((sensorType) => {
@@ -436,6 +576,7 @@ function addSensorDataEventListeners(device) {
         let pressure = data;
         data = pressure.sensors.map((sensor) => sensor.normalizedValue);
       }
+
       appendData(timestamp, data);
 
       switch (sensorType) {
@@ -448,6 +589,9 @@ function addSensorDataEventListeners(device) {
             yaw: euler.y,
             roll: euler.z,
           });
+
+          latestQuaternion.copy(quaternion);
+          latestQuaternionInverse.copy(latestQuaternion).invert();
           break;
         case "pressure":
           {
@@ -458,6 +602,98 @@ function addSensorDataEventListeners(device) {
               x: pressure.normalizedCenter?.x || 0,
               y: pressure.normalizedCenter?.y || 0,
             });
+          }
+          break;
+        case "linearAcceleration":
+          {
+            if (
+              device.sensorConfiguration.gameRotation ||
+              device.sensorConfiguration.rotation
+            ) {
+              if (shouldResetLinearAccelerationPosition) {
+                linearAccelerationVector.setScalar(0);
+                linearAccelerationVelocity.setScalar(0);
+                linearAccelerationPosition.setScalar(0);
+                shouldResetLinearAccelerationPosition = false;
+              }
+
+              linearAccelerationVector.copy(data);
+              linearAccelerationVector.applyQuaternion(latestQuaternion);
+
+              //console.log("linearAccelerationVector", linearAccelerationVector);
+
+              const timestampDifference =
+                latestPositionTimestamp == 0
+                  ? device.sensorConfiguration.linearAcceleration
+                  : timestamp - latestPositionTimestamp;
+              latestPositionTimestamp = timestamp;
+              const timestampDifferenceScalar = timestampDifference / 1000;
+
+              linearAccelerationVelocity.addScaledVector(
+                linearAccelerationVector,
+                timestampDifferenceScalar
+              );
+              linearAccelerationPosition.addScaledVector(
+                linearAccelerationVelocity,
+                timestampDifferenceScalar
+              );
+
+              charts[sensorType + "Corrected"]._appendData(timestamp, {
+                x: linearAccelerationVector.x,
+                y: linearAccelerationVector.y,
+                z: linearAccelerationVector.z,
+              });
+              charts[sensorType + "Velocity"]._appendData(timestamp, {
+                x: linearAccelerationVelocity.x,
+                y: linearAccelerationVelocity.y,
+                z: linearAccelerationVelocity.z,
+              });
+              charts[sensorType + "Position"]._appendData(timestamp, {
+                x: linearAccelerationPosition.x,
+                y: linearAccelerationPosition.y,
+                z: linearAccelerationPosition.z,
+              });
+
+              //console.log({ timestampDifference, timestampDifferenceScalar });
+            }
+          }
+          break;
+        case "gyroscope":
+          {
+            if (
+              device.sensorConfiguration.gameRotation ||
+              device.sensorConfiguration.rotation
+            ) {
+              gyroscopeVector.copy(data);
+              gyroscopeVector.applyQuaternion(latestQuaternion);
+
+              //console.log("gyroscopeVector", gyroscopeVector);
+
+              charts[sensorType + "Corrected"]._appendData(timestamp, {
+                x: gyroscopeVector.x,
+                y: gyroscopeVector.y,
+                z: gyroscopeVector.z,
+              });
+            }
+          }
+          break;
+        case "magnetometer":
+          {
+            if (
+              device.sensorConfiguration.gameRotation ||
+              device.sensorConfiguration.rotation
+            ) {
+              magnetometerVector.copy(data);
+              magnetometerVector.applyQuaternion(latestQuaternion);
+
+              //console.log("magnetometerVector", magnetometerVector);
+
+              charts[sensorType + "Corrected"]._appendData(timestamp, {
+                x: magnetometerVector.x,
+                y: magnetometerVector.y,
+                z: magnetometerVector.z,
+              });
+            }
           }
           break;
       }

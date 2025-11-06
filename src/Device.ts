@@ -1038,10 +1038,12 @@ class Device {
   }
 
   get setSensorConfiguration() {
+    this.#assertIsConnected();
     return this.#sensorConfigurationManager.setConfiguration;
   }
 
   async clearSensorConfiguration() {
+    this.#assertIsConnected();
     return this.#sensorConfigurationManager.clearSensorConfiguration();
   }
 

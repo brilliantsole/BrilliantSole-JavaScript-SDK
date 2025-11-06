@@ -1139,10 +1139,18 @@
     const nowWithoutLower2Bytes = removeLower2Bytes(now);
     const lower2Bytes = dataView.getUint16(byteOffset, true);
     let timestamp = nowWithoutLower2Bytes + lower2Bytes;
-    if (Math.abs(now - timestamp) > timestampThreshold) {
+    const timestampDifference = Math.abs(now - timestamp);
+    if (timestampDifference > timestampThreshold) {
       _console$D.log("correcting timestamp delta");
       timestamp += Uint16Max * Math.sign(now - timestamp);
     }
+    _console$D.log({
+      now,
+      nowWithoutLower2Bytes,
+      lower2Bytes,
+      timestamp,
+      timestampDifference
+    });
     return timestamp;
   }
   function getVector2Distance(a, b) {
@@ -2600,6 +2608,7 @@
       parsedSensorConfiguration
     });
     _classPrivateFieldSet2(_availableSensorTypes, this, Object.keys(parsedSensorConfiguration));
+    _console$v.log("availableSensorTypes", _classPrivateFieldGet2(_availableSensorTypes, this));
     return parsedSensorConfiguration;
   }
   function _AssertValidSensorRate(sensorRate) {
@@ -3261,6 +3270,7 @@
   var _type$1 = new WeakMap();
   var _mtu$2 = new WeakMap();
   var _isCurrentTimeSet = new WeakMap();
+  var _currentTimeThreshold = new WeakMap();
   class InformationManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _InformationManager_brand);
@@ -3273,6 +3283,7 @@
       _classPrivateFieldInitSpec(this, _type$1, void 0);
       _classPrivateFieldInitSpec(this, _mtu$2, 0);
       _classPrivateFieldInitSpec(this, _isCurrentTimeSet, false);
+      _classPrivateFieldInitSpec(this, _currentTimeThreshold, 10000);
       _defineProperty$1(this, "connectionType", void 0);
       autoBind(this);
     }
@@ -3516,15 +3527,25 @@
     _console$s.log({
       currentTime
     });
-    _classPrivateFieldSet2(_isCurrentTimeSet, this, currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max);
+    const timeDifference = Date.now() - currentTime;
+    const absTimeDifference = Math.abs(timeDifference);
+    _console$s.log({
+      timeDifference,
+      absTimeDifference
+    });
+    _classPrivateFieldSet2(_isCurrentTimeSet, this, currentTime != 0);
+    _console$s.log("isCurrentTimeSet", _classPrivateFieldGet2(_isCurrentTimeSet, this));
     if (!_classPrivateFieldGet2(_isCurrentTimeSet, this)) {
       _assertClassBrand(_InformationManager_brand, this, _setCurrentTime).call(this, false);
     }
   }
   async function _setCurrentTime(sendImmediately) {
-    _console$s.log("setting current time...");
+    const now = Date.now();
+    _console$s.log("setting current time...", {
+      now
+    });
     const dataView = new DataView(new ArrayBuffer(8));
-    dataView.setBigUint64(0, BigInt(Date.now()), true);
+    dataView.setBigUint64(0, BigInt(now), true);
     const promise = this.waitForEvent("getCurrentTime");
     this.sendMessage([{
       type: "setCurrentTime",
@@ -25414,9 +25435,11 @@
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).configuration;
     }
     get setSensorConfiguration() {
+      _assertClassBrand(_Device_brand, this, _assertIsConnected).call(this);
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).setConfiguration;
     }
     async clearSensorConfiguration() {
+      _assertClassBrand(_Device_brand, this, _assertIsConnected).call(this);
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).clearSensorConfiguration();
     }
     static get ClearSensorConfigurationOnLeave() {
@@ -26214,6 +26237,9 @@
   async function _sendTxMessages(messages, sendImmediately) {
     var _classPrivateFieldGet6;
     await ((_classPrivateFieldGet6 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet6 === void 0 ? void 0 : _classPrivateFieldGet6.sendTxMessages(messages, sendImmediately));
+  }
+  function _assertIsConnected() {
+    _console$6.assertWithError(this.isConnected, "notConnected");
   }
   function _didReceiveMessageTypes(messageTypes) {
     return messageTypes.every(messageType => {
