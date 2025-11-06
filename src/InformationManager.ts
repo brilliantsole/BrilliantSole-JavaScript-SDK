@@ -3,7 +3,6 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import { UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
 import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
-import { Uint16Max } from "./utils/MathUtils.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
 import autoBind from "auto-bind";
 
@@ -242,18 +241,26 @@ class InformationManager {
     return this.#isCurrentTimeSet;
   }
 
+  #currentTimeThreshold = 10_000;
   #onCurrentTime(currentTime: number) {
     _console.log({ currentTime });
-    this.#isCurrentTimeSet =
-      currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max;
+    const timeDifference = Date.now() - currentTime;
+    const absTimeDifference = Math.abs(timeDifference);
+    _console.log({ timeDifference, absTimeDifference });
+    this.#isCurrentTimeSet = currentTime != 0;
+    if (false) {
+      this.#isCurrentTimeSet &&= absTimeDifference < this.#currentTimeThreshold;
+    }
+    _console.log("isCurrentTimeSet", this.#isCurrentTimeSet);
     if (!this.#isCurrentTimeSet) {
       this.#setCurrentTime(false);
     }
   }
   async #setCurrentTime(sendImmediately?: boolean) {
-    _console.log("setting current time...");
+    const now = Date.now();
+    _console.log("setting current time...", { now });
     const dataView = new DataView(new ArrayBuffer(8));
-    dataView.setBigUint64(0, BigInt(Date.now()), true);
+    dataView.setBigUint64(0, BigInt(now), true);
     const promise = this.waitForEvent("getCurrentTime");
     this.sendMessage(
       [{ type: "setCurrentTime", data: dataView.buffer }],

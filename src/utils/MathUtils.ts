@@ -31,10 +31,18 @@ export function parseTimestamp(dataView: DataView, byteOffset: number) {
   const nowWithoutLower2Bytes = removeLower2Bytes(now);
   const lower2Bytes = dataView.getUint16(byteOffset, true);
   let timestamp = nowWithoutLower2Bytes + lower2Bytes;
-  if (Math.abs(now - timestamp) > timestampThreshold) {
+  const timestampDifference = Math.abs(now - timestamp);
+  if (timestampDifference > timestampThreshold) {
     _console.log("correcting timestamp delta");
     timestamp += Uint16Max * Math.sign(now - timestamp);
   }
+  _console.log({
+    now,
+    nowWithoutLower2Bytes,
+    lower2Bytes,
+    timestamp,
+    timestampDifference,
+  });
   return timestamp;
 }
 

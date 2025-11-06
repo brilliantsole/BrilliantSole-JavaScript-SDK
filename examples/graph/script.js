@@ -1,5 +1,9 @@
 import * as BS from "../../build/brilliantsole.module.js";
-import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.162.0/three.module.min.js";
+
+import * as three from "../utils/three/three.module.min.js";
+/** @type {import("../utils/three/three.module.min")} */
+const THREE = three;
+window.THREE = THREE;
 
 window.BS = BS;
 console.log({ BS });
@@ -106,7 +110,6 @@ function onConnectedDevice(connectedDevice) {
 }
 
 // SENSOR CONFIGURATION
-
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById(
   "sensorTypeConfigurationTemplate"
@@ -158,6 +161,15 @@ function onSensorConfiguration(device) {
           break;
         case "pressure":
           _chartContainers.push(chartContainers["pressureMetadata"]);
+          break;
+        case "linearAcceleration":
+          let isEnabled =
+            sensorRate != 0 &&
+            (device.sensorConfiguration.gameRotation ||
+              device.sensorConfiguration.rotation);
+          chartContainers[`${sensorType}.position`].style.display = isEnabled
+            ? ""
+            : "none";
           break;
       }
       _chartContainers.forEach((chartContainer) => {
@@ -260,7 +272,7 @@ function createChart(canvas, title, axesLabels, yRange) {
   charts[title] = chart;
 
   const appendData = (timestamp, data) => {
-    console.log({ timestamp, data });
+    //console.log({ timestamp, data });
     chart.data.labels.push(timestamp);
 
     if (chart.data.datasets.length == 0) {
@@ -385,6 +397,25 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
         );
       }
       break;
+    case "linearAcceleration":
+      {
+        const positionChartContainer = chartTemplate.content
+          .cloneNode(true)
+          .querySelector(".chart");
+        chartsContainer.appendChild(positionChartContainer);
+        chartContainers[`${sensorType}.position`] = positionChartContainer;
+        createChart(
+          positionChartContainer.querySelector("canvas"),
+          sensorType + "Position",
+          ["x", "y", "z"],
+          {
+            // FILL
+            min: -0.5,
+            max: 0.5,
+          }
+        );
+      }
+      break;
     case "pressure":
       {
         const pressureMetadataChartContainer = chartTemplate.content
@@ -420,6 +451,19 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
 const quaternion = new THREE.Quaternion();
 const euler = new THREE.Euler();
 
+const latestQuaternion = new THREE.Quaternion();
+let latestPositionTimestamp = 0;
+const linearAccelerationVector = new THREE.Vector3();
+const linearAccelerationVelocity = new THREE.Vector3();
+const linearAccelerationPosition = new THREE.Vector3();
+const linearAccelerationDamping = 0.98;
+
+window.resetLinearAccelerationPosition = () => {
+  linearAccelerationVector.setScalar(0);
+  linearAccelerationVelocity.setScalar(0);
+  linearAccelerationPosition.setScalar(0);
+};
+
 /** @param {BS.Device} device */
 function addSensorDataEventListeners(device) {
   BS.ContinuousSensorTypes.forEach((sensorType) => {
@@ -448,6 +492,10 @@ function addSensorDataEventListeners(device) {
             yaw: euler.y,
             roll: euler.z,
           });
+
+          if (device.sensorConfiguration.linearAcceleration) {
+            latestQuaternion.copy(quaternion);
+          }
           break;
         case "pressure":
           {
@@ -458,6 +506,53 @@ function addSensorDataEventListeners(device) {
               x: pressure.normalizedCenter?.x || 0,
               y: pressure.normalizedCenter?.y || 0,
             });
+          }
+          break;
+        case "linearAcceleration":
+          {
+            if (
+              device.sensorConfiguration.gameRotation ||
+              device.sensorConfiguration.rotation
+            ) {
+              linearAccelerationVector.copy(data);
+              linearAccelerationVector.applyQuaternion(latestQuaternion);
+              //console.log("linearAccelerationVector", linearAccelerationVector);
+
+              const timestampDifference =
+                latestPositionTimestamp == 0
+                  ? device.sensorConfiguration.linearAcceleration
+                  : timestamp - latestPositionTimestamp;
+              latestPositionTimestamp = timestamp;
+              const timestampDifferenceScalar = timestampDifference / 1000;
+
+              if (timestampDifference != 20) {
+                console.log({ timestampDifference });
+              }
+
+              linearAccelerationVelocity.addScaledVector(
+                linearAccelerationVector,
+                timestampDifferenceScalar
+              );
+              // < ~0.02 m/s²
+              if (linearAccelerationVector.lengthSq() < 0.0004) {
+                linearAccelerationVelocity.multiplyScalar(
+                  linearAccelerationDamping
+                );
+              }
+              linearAccelerationPosition.addScaledVector(
+                linearAccelerationVelocity,
+                timestampDifferenceScalar
+              );
+
+              // FILL
+              charts[sensorType + "Position"]._appendData(timestamp, {
+                x: linearAccelerationVelocity.x,
+                y: linearAccelerationVelocity.y,
+                z: linearAccelerationVelocity.z,
+              });
+
+              //console.log({ timestampDifference, timestampDifferenceScalar });
+            }
           }
           break;
       }

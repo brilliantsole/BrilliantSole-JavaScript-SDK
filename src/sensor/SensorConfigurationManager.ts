@@ -150,6 +150,7 @@ class SensorConfigurationManager {
     this.#availableSensorTypes = Object.keys(
       parsedSensorConfiguration
     ) as SensorType[];
+    _console.log("availableSensorTypes", this.#availableSensorTypes);
     return parsedSensorConfiguration;
   }
 
