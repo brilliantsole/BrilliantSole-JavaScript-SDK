@@ -537,9 +537,10 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
 
 const quaternion = new THREE.Quaternion();
 const euler = new THREE.Euler();
+euler.order = "YXZ";
 
 const latestQuaternion = new THREE.Quaternion();
-const latestQuaternionInverse = new THREE.Quaternion();
+const yawQuaternion = new THREE.Quaternion();
 let latestPositionTimestamp = 0;
 const linearAccelerationVector = new THREE.Vector3();
 const linearAccelerationVelocity = new THREE.Vector3();
@@ -549,14 +550,101 @@ const gyroscopeVector = new THREE.Vector3();
 
 const magnetometerVector = new THREE.Vector3();
 
+// thresholds for each state
+const linearAccelerationTrackingThresholds = {
+  idle: { min: 0.2, max: 6 },
+  tracking: { min: 0.4, max: 3 },
+  stopping: { min: 0.2, max: 3 },
+};
+window.linearAccelerationTrackingThresholds =
+  linearAccelerationTrackingThresholds;
+/** @typedef {"idle" | "tracking" | "stopping"} TrackingState */
+/** @type {TrackingState} */
+let trackingState = "idle";
+let trackingStateStartTime = 0;
+const getTrackingStateDuration = () => Date.now() - trackingStateStartTime;
+
+/** @param {TrackingState} newTrackingState */
+const setTrackingState = (newTrackingState) => {
+  if (newTrackingState == trackingState) {
+    return;
+  }
+  trackingStateStartTime = Date.now();
+
+  trackingState = newTrackingState;
+  console.log({ trackingState });
+
+  switch (trackingState) {
+    case "idle":
+      break;
+    case "tracking":
+      linearAccelerationVelocity.setScalar(0);
+      linearAccelerationPosition.setScalar(0);
+      break;
+    case "stopping":
+      break;
+  }
+};
+
+/** @typedef {"below" | "middle" | "above"} ThresholdState */
+/** @type {ThresholdState} */
+let thresholdState = "below";
+let thresholdStateStartTime = 0;
+const getThresholdStateDuration = () => Date.now() - thresholdStateStartTime;
+
+/** @param {ThresholdState} newThresholdState */
+const setThresholdState = (newThresholdState) => {
+  if (newThresholdState != thresholdState) {
+    thresholdStateStartTime = Date.now();
+    console.log({ thresholdState: newThresholdState });
+  }
+  thresholdState = newThresholdState;
+
+  const thresholdDuration = getThresholdStateDuration();
+  const stateDuration = getTrackingStateDuration();
+
+  switch (trackingState) {
+    case "idle":
+      if (thresholdState != "below") {
+        setTrackingState("tracking");
+      }
+      break;
+    case "tracking":
+      if (
+        (thresholdState == "below" && thresholdDuration > 200) ||
+        (thresholdState == "above" && stateDuration > 300)
+      ) {
+        setTrackingState("stopping");
+      }
+      break;
+    case "stopping":
+      if (thresholdState == "below" && thresholdDuration > 500) {
+        setTrackingState("idle");
+      }
+      break;
+  }
+};
+
 let shouldResetLinearAccelerationPosition = false;
 window.resetLinearAccelerationPosition = () => {
   console.log("resetLinearAccelerationPosition");
   shouldResetLinearAccelerationPosition = true;
 };
+
+let shouldResetQuaternionYaw = false;
+window.resetQuaternionYaw = () => {
+  console.log("shouldResetQuaternionYaw");
+  shouldResetQuaternionYaw = true;
+};
+
 document.addEventListener("keypress", (event) => {
-  if (event.key == "c") {
-    resetLinearAccelerationPosition();
+  switch (event.key) {
+    case "c":
+      resetLinearAccelerationPosition();
+      break;
+    case "y":
+      resetQuaternionYaw();
+      break;
   }
 });
 
@@ -590,8 +678,13 @@ function addSensorDataEventListeners(device) {
             roll: euler.z,
           });
 
-          latestQuaternion.copy(quaternion);
-          latestQuaternionInverse.copy(latestQuaternion).invert();
+          if (shouldResetQuaternionYaw) {
+            shouldResetQuaternionYaw = false;
+            euler.x = euler.z = 0;
+            yawQuaternion.setFromEuler(euler).invert();
+          }
+          latestQuaternion.copy(quaternion).multiply(yawQuaternion);
+
           break;
         case "pressure":
           {
@@ -611,10 +704,10 @@ function addSensorDataEventListeners(device) {
               device.sensorConfiguration.rotation
             ) {
               if (shouldResetLinearAccelerationPosition) {
+                shouldResetLinearAccelerationPosition = false;
                 linearAccelerationVector.setScalar(0);
                 linearAccelerationVelocity.setScalar(0);
                 linearAccelerationPosition.setScalar(0);
-                shouldResetLinearAccelerationPosition = false;
               }
 
               linearAccelerationVector.copy(data);
@@ -629,30 +722,44 @@ function addSensorDataEventListeners(device) {
               latestPositionTimestamp = timestamp;
               const timestampDifferenceScalar = timestampDifference / 1000;
 
-              linearAccelerationVelocity.addScaledVector(
-                linearAccelerationVector,
-                timestampDifferenceScalar
+              const linearAccelerationLength =
+                linearAccelerationVector.length();
+              const { min, max } =
+                linearAccelerationTrackingThresholds[trackingState];
+              const belowMin = linearAccelerationLength < min;
+              const aboveMax = linearAccelerationLength > max;
+              setThresholdState(
+                belowMin ? "below" : aboveMax ? "above" : "middle"
               );
-              linearAccelerationPosition.addScaledVector(
-                linearAccelerationVelocity,
-                timestampDifferenceScalar
-              );
+
+              if (trackingState == "tracking") {
+                linearAccelerationVelocity.addScaledVector(
+                  linearAccelerationVector,
+                  timestampDifferenceScalar
+                );
+                linearAccelerationPosition.addScaledVector(
+                  linearAccelerationVelocity,
+                  timestampDifferenceScalar
+                );
+              }
 
               charts[sensorType + "Corrected"]._appendData(timestamp, {
                 x: linearAccelerationVector.x,
                 y: linearAccelerationVector.y,
                 z: linearAccelerationVector.z,
               });
-              charts[sensorType + "Velocity"]._appendData(timestamp, {
-                x: linearAccelerationVelocity.x,
-                y: linearAccelerationVelocity.y,
-                z: linearAccelerationVelocity.z,
-              });
-              charts[sensorType + "Position"]._appendData(timestamp, {
-                x: linearAccelerationPosition.x,
-                y: linearAccelerationPosition.y,
-                z: linearAccelerationPosition.z,
-              });
+              if (trackingState == "tracking") {
+                charts[sensorType + "Velocity"]._appendData(timestamp, {
+                  x: linearAccelerationVelocity.x,
+                  y: linearAccelerationVelocity.y,
+                  z: linearAccelerationVelocity.z,
+                });
+                charts[sensorType + "Position"]._appendData(timestamp, {
+                  x: linearAccelerationPosition.x,
+                  y: linearAccelerationPosition.y,
+                  z: linearAccelerationPosition.z,
+                });
+              }
 
               //console.log({ timestampDifference, timestampDifferenceScalar });
             }
