@@ -467,8 +467,8 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
           sensorType + "Position",
           ["x", "y", "z"],
           {
-            min: -0.1,
-            max: 0.1,
+            min: -0.2,
+            max: 0.2,
           }
         );
       }
@@ -545,6 +545,8 @@ let latestPositionTimestamp = 0;
 const linearAccelerationVector = new THREE.Vector3();
 const linearAccelerationVelocity = new THREE.Vector3();
 const linearAccelerationPosition = new THREE.Vector3();
+const peakLinearAccelerationPosition = new THREE.Vector3();
+const finalLinearAccelerationPosition = new THREE.Vector3();
 
 const gyroscopeVector = new THREE.Vector3();
 
@@ -580,8 +582,21 @@ const setTrackingState = (newTrackingState) => {
     case "tracking":
       linearAccelerationVelocity.setScalar(0);
       linearAccelerationPosition.setScalar(0);
+      peakLinearAccelerationPosition.setScalar(0);
       break;
     case "stopping":
+      finalLinearAccelerationPosition
+        .copy(linearAccelerationPosition)
+        .multiplyScalar(9.8);
+      console.log(
+        "finalLinearAccelerationPosition",
+        finalLinearAccelerationPosition
+      );
+      peakLinearAccelerationPosition.multiplyScalar(9.8);
+      console.log(
+        "peakLinearAccelerationPosition",
+        peakLinearAccelerationPosition
+      );
       break;
   }
 };
@@ -708,6 +723,7 @@ function addSensorDataEventListeners(device) {
                 linearAccelerationVector.setScalar(0);
                 linearAccelerationVelocity.setScalar(0);
                 linearAccelerationPosition.setScalar(0);
+                peakLinearAccelerationPosition.setScalar(0);
               }
 
               linearAccelerationVector.copy(data);
@@ -740,6 +756,18 @@ function addSensorDataEventListeners(device) {
                 linearAccelerationPosition.addScaledVector(
                   linearAccelerationVelocity,
                   timestampDifferenceScalar
+                );
+                peakLinearAccelerationPosition.x = Math.max(
+                  peakLinearAccelerationPosition.x,
+                  linearAccelerationPosition.x
+                );
+                peakLinearAccelerationPosition.y = Math.max(
+                  peakLinearAccelerationPosition.y,
+                  linearAccelerationPosition.y
+                );
+                peakLinearAccelerationPosition.z = Math.max(
+                  peakLinearAccelerationPosition.z,
+                  linearAccelerationPosition.z
                 );
               }
 

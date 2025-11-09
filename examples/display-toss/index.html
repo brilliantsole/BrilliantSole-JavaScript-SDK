@@ -62,7 +62,65 @@
 
     <label>
       enable sensor data
-      <input type="checkbox" disabled id="toggleSenseSensorData" />
+      <input type="checkbox" id="toggleSenseSensorData" disabled />
+    </label>
+
+    <button id="resetYaw" disabled>reset yaw</button>
+
+    <label class="verticalLabel" id="graphRangeMin">
+      <span>min (<span class="value">0.0</span>)</span>
+      <input type="range" min="-1" max="1" value="0" step="0.01" />
+    </label>
+
+    <label class="verticalLabel" id="graphRangeMax">
+      <span>max (<span class="value">0.1</span>)</span>
+      <input type="range" min="-1" max="1" value="0.10" step="0.01" />
+    </label>
+
+    <label class="verticalLabel" id="maxPositionsLength">
+      <span>maxPositionsLength (<span class="value">100</span>)</span>
+      <input type="range" min="10" max="200" value="100" step="10" />
+    </label>
+
+    <label class="verticalLabel" id="axis">
+      <span>axis</span>
+      <select>
+        <optgroup label="axis">
+          <option>x</option>
+          <option>y</option>
+          <option>z</option>
+        </optgroup>
+      </select>
+    </label>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>select font</span>
+      <select id="selectFont">
+        <optgroup label="select font"></optgroup>
+      </select>
+    </label>
+
+    <label class="verticalLabel">
+      add font
+      <input
+        id="loadFont"
+        type="file"
+        accept=".ttf,.otf,.woff,.woff2"
+        multiple="true"
+        style="width: 6rem"
+      />
+    </label>
+
+    <!-- <label id="fontSize" class="verticalLabel">
+      <span>font size (<span class="value">48</span>px)</span>
+      <input type="range" value="48" min="8" max="72" step="1" />
+    </label> -->
+
+    <label id="fontScale" class="verticalLabel">
+      <span>font scale (<span class="value">1.0</span>x)</span>
+      <input type="range" value="1.0" min="0.5" max="5" step="0.1" />
     </label>
 
     <br />
