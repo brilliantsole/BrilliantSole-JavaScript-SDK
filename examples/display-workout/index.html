@@ -51,6 +51,99 @@
 
     <br />
 
+    <button id="toggleSenseConnection">connect sense</button>
+
+    <label>
+      sensor rate (ms)
+      <select id="senseSensorRate">
+        <optgroup label="sensor rate (ms)"></optgroup>
+      </select>
+    </label>
+
+    <label>
+      enable sensor data
+      <input type="checkbox" id="toggleSenseSensorData" disabled />
+    </label>
+
+    <br />
+
+    <label id="numberOfReps" class="verticalLabel">
+      <span>number of reps (<span class="value">12</span> reps)</span>
+      <input type="range" value="12" min="1" max="15" step="1" />
+    </label>
+
+    <label data-tempo="0" class="verticalLabel">
+      <span>tempo (eccentric) (<span class="value">1</span> seconds)</span>
+      <input type="range" value="1" min="0" max="4" step="1" />
+    </label>
+    <label data-tempo="1" class="verticalLabel">
+      <span>tempo (pause 1) (<span class="value">1</span> seconds)</span>
+      <input type="range" value="1" min="0" max="4" step="1" />
+    </label>
+    <label data-tempo="2" class="verticalLabel">
+      <span>tempo (concentric) (<span class="value">1</span> seconds)</span>
+      <input type="range" value="1" min="0" max="4" step="1" />
+    </label>
+    <label data-tempo="3" class="verticalLabel">
+      <span>tempo (pause 2) (<span class="value">1</span> seconds)</span>
+      <input type="range" value="1" min="0" max="4" step="1" />
+    </label>
+
+    <label class="verticalLabel">
+      tempo presets
+      <select id="tempoPresets">
+        <optgroup label="tempo presets">
+          <option value="">custom</option>
+          <option value="3-0-1-1">bicep curl</option>
+          <option value="2-1-1-1">leg extension</option>
+          <option value="3-0-1-0">chest press</option>
+        </optgroup>
+      </select>
+    </label>
+
+    <br />
+
+    <button id="toggleSet" disabled>start</button>
+
+    <button id="calibrateRep" disabled>calibrate rep</button>
+
+    <label id="minCalibrationAngleThreshold" class="verticalLabel">
+      <span>min calibration angle (<span class="value">30</span> degrees)</span>
+      <input type="range" min="30" max="120" value="30" step="5" />
+    </label>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>select font</span>
+      <select id="selectFont">
+        <optgroup label="select font"></optgroup>
+      </select>
+    </label>
+
+    <label class="verticalLabel">
+      add font
+      <input
+        id="loadFont"
+        type="file"
+        accept=".ttf,.otf,.woff,.woff2"
+        multiple="true"
+        style="width: 6rem"
+      />
+    </label>
+
+    <!-- <label id="fontSize" class="verticalLabel">
+      <span>font size (<span class="value">48</span>px)</span>
+      <input type="range" value="48" min="8" max="72" step="1" />
+    </label> -->
+
+    <label id="fontScale" class="verticalLabel">
+      <span>font scale (<span class="value">1.0</span>x)</span>
+      <input type="range" value="1.0" min="0.5" max="5" step="0.1" />
+    </label>
+
+    <br />
+
     <label>
       file transfer progress: <span></span>
       <progress value="0" id="fileTransferProgress"></progress>
