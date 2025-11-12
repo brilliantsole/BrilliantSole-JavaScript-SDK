@@ -483,7 +483,7 @@ const updateTempoPoints = () => {
 };
 window.updateTempoPoints = updateTempoPoints;
 
-setTempo([3, 1, 1, 1]);
+setTempo([2, 1, 2, 1]);
 
 // STATE
 
