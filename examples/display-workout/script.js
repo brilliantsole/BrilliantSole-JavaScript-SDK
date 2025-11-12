@@ -617,58 +617,51 @@ let quaternionAngleToStart = 0;
 let didCalibrate = false;
 
 function quaternionInterpolationParameter(qStart, qEnd, q) {
-  const qSE = qStart.clone().conjugate().multiply(qEnd); // rotation from start to end
-  const qSC = qStart.clone().conjugate().multiply(q); // rotation from start to current
+  const qS = qStart.clone().normalize();
+  const qE = alignHemisphere(qS, qEnd.clone().normalize());
+  const qC = alignHemisphere(qS, q.clone().normalize());
 
-  // Convert to "log" (axis-angle representation)
+  // Rotation from start to end and start to current
+  const qSE = qS.clone().conjugate().multiply(qE);
+  const qSC = qS.clone().conjugate().multiply(qC);
+
+  // Convert to log (axis-angle vector)
   const logSE = new THREE.Vector3();
   const logSC = new THREE.Vector3();
-
   qToLog(qSE, logSE);
   qToLog(qSC, logSC);
 
-  // Project SC onto SE to get t
-  const t = logSE.dot(logSC) / logSE.lengthSq();
+  const denom = logSE.lengthSq();
+  if (denom < 1e-12) return 0; // start≈end -> no progress definable
+
+  const t = logSE.dot(logSC) / denom;
   return THREE.MathUtils.clamp(t, 0, 1);
 }
 
+function alignHemisphere(qRef, q) {
+  // Ensure q lies on the same hemisphere as qRef
+  if (qRef.dot(q) < 0) {
+    q.x = -q.x;
+    q.y = -q.y;
+    q.z = -q.z;
+    q.w = -q.w;
+  }
+  return q;
+}
+
 function qToLog(q, outVec) {
-  const angle = 2 * Math.acos(q.w);
-  const s = Math.sqrt(1 - q.w * q.w);
-  if (s < 1e-6) {
+  // Map quaternion to axis*angle vector
+  const w = Math.max(-1, Math.min(1, q.w)); // clamp for safety
+  const angle = 2 * Math.acos(w);
+  const s2 = 1 - w * w;
+  const s = s2 > 0 ? Math.sqrt(s2) : 0;
+
+  if (s < 1e-8) {
+    // Small-angle approximation: axis ~ (x,y,z)/s -> use 2*(x,y,z)
     outVec.set(q.x, q.y, q.z).multiplyScalar(2);
   } else {
     outVec.set(q.x / s, q.y / s, q.z / s).multiplyScalar(angle);
   }
-}
-
-function removeTwist(q, twistAxis) {
-  const ra = new THREE.Vector3(q.x, q.y, q.z);
-  const proj = twistAxis.clone().multiplyScalar(ra.dot(twistAxis)); // projection onto twist axis
-  const twist = new THREE.Quaternion(proj.x, proj.y, proj.z, q.w).normalize();
-  const swing = q.clone().multiply(twist.clone().invert()).normalize();
-  return swing;
-}
-
-function curlProgress(
-  qStart,
-  qEnd,
-  qCurrent,
-  twistAxis = new THREE.Vector3(1, 0, 0)
-) {
-  const qs = removeTwist(qStart.clone().normalize(), twistAxis);
-  const qe = removeTwist(qEnd.clone().normalize(), twistAxis);
-  const qc = removeTwist(qCurrent.clone().normalize(), twistAxis);
-
-  // Now compute t using your earlier angular ratio method
-  const dotStartEnd = Math.abs(qs.dot(qe));
-  const dotStartCurr = Math.abs(qs.dot(qc));
-
-  const angleTotal = 2 * Math.acos(Math.min(1, Math.max(-1, dotStartEnd)));
-  const angleCurrent = 2 * Math.acos(Math.min(1, Math.max(-1, dotStartCurr)));
-
-  let t = angleTotal === 0 ? 0 : angleCurrent / angleTotal;
-  return THREE.MathUtils.clamp(t, 0, 1);
 }
 
 let quaternionInterpolation = 0;
