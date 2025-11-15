@@ -69,6 +69,7 @@ export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 
 interface BaseSensorDataEventMessage {
   timestamp: number;
+  isLast: boolean;
 }
 
 type BaseSensorDataEventMessages = BarometerSensorDataEventMessages &
@@ -81,6 +82,7 @@ type _SensorDataEventMessages = ExtendInterfaceValues<
 export type SensorDataEventMessage = ValueOf<_SensorDataEventMessages>;
 interface AnySensorDataEventMessages {
   sensorData: SensorDataEventMessage;
+  isLast: boolean;
 }
 export type SensorDataEventMessages = _SensorDataEventMessages &
   AnySensorDataEventMessages;
@@ -167,7 +169,8 @@ class SensorDataManager {
   private parseDataCallback(
     sensorType: SensorType,
     dataView: DataView,
-    { timestamp }: { timestamp: number }
+    { timestamp }: { timestamp: number },
+    isLast?: boolean
   ) {
     const scalar = this.#scalars.get(sensorType) || 1;
 
@@ -234,17 +237,20 @@ class SensorDataManager {
     );
 
     _console.log({ sensorType, sensorData });
+
     // @ts-expect-error
     this.dispatchEvent(sensorType, {
       sensorType,
       [sensorType]: sensorData,
       timestamp,
+      isLast: isLast!,
     });
     // @ts-expect-error
     this.dispatchEvent("sensorData", {
       sensorType,
       [sensorType]: sensorData,
       timestamp,
+      isLast: isLast!,
     });
   }
 }

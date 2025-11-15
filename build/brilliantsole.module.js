@@ -1377,7 +1377,8 @@ class BarometerSensorDataManager {
 const _console$B = createConsole("ParseUtils", { log: false });
 function parseStringFromDataView(dataView, byteOffset = 0) {
     const stringLength = dataView.getUint8(byteOffset++);
-    const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
+    const string = textDecoder.decode(
+    dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
     byteOffset += stringLength;
     return { string, byteOffset };
 }
@@ -1404,8 +1405,9 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
         });
         const _dataView = sliceDataView(dataView, byteOffset, messageLength);
         _console$B.log({ _dataView });
-        callback(messageType, _dataView, context);
         byteOffset += messageLength;
+        const isLast = byteOffset >= dataView.byteLength;
+        callback(messageType, _dataView, context, isLast);
     }
 }
 
@@ -2261,7 +2263,7 @@ class SensorDataManager {
             timestamp,
         });
     }
-    parseDataCallback(sensorType, dataView, { timestamp }) {
+    parseDataCallback(sensorType, dataView, { timestamp }, isLast) {
         const scalar = this.#scalars.get(sensorType) || 1;
         let sensorData = null;
         switch (sensorType) {
@@ -2314,11 +2316,13 @@ class SensorDataManager {
             sensorType,
             [sensorType]: sensorData,
             timestamp,
+            isLast: isLast,
         });
         this.dispatchEvent("sensorData", {
             sensorType,
             [sensorType]: sensorData,
             timestamp,
+            isLast: isLast,
         });
     }
 }

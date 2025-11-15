@@ -1496,7 +1496,8 @@
   function parseStringFromDataView(dataView) {
     let byteOffset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
     const stringLength = dataView.getUint8(byteOffset++);
-    const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
+    const string = textDecoder.decode(
+    dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
     byteOffset += stringLength;
     return {
       string,
@@ -1528,8 +1529,9 @@
       _console$z.log({
         _dataView
       });
-      callback(messageType, _dataView, context);
       byteOffset += messageLength;
+      const isLast = byteOffset >= dataView.byteLength;
+      callback(messageType, _dataView, context, isLast);
     }
   }
 
@@ -2412,7 +2414,7 @@
         timestamp
       });
     }
-    parseDataCallback(sensorType, dataView, _ref) {
+    parseDataCallback(sensorType, dataView, _ref, isLast) {
       let {
         timestamp
       } = _ref;
@@ -2469,12 +2471,14 @@
       this.dispatchEvent(sensorType, {
         sensorType,
         [sensorType]: sensorData,
-        timestamp
+        timestamp,
+        isLast: isLast
       });
       this.dispatchEvent("sensorData", {
         sensorType,
         [sensorType]: sensorData,
-        timestamp
+        timestamp,
+        isLast: isLast
       });
     }
   }

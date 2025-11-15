@@ -15,12 +15,14 @@ export declare const SensorDataEventTypes: readonly ["getPressurePositions", "ge
 export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 interface BaseSensorDataEventMessage {
     timestamp: number;
+    isLast: boolean;
 }
 type BaseSensorDataEventMessages = BarometerSensorDataEventMessages & MotionSensorDataEventMessages & PressureDataEventMessages;
 type _SensorDataEventMessages = ExtendInterfaceValues<AddKeysAsPropertyToInterface<BaseSensorDataEventMessages, "sensorType">, BaseSensorDataEventMessage>;
 export type SensorDataEventMessage = ValueOf<_SensorDataEventMessages>;
 interface AnySensorDataEventMessages {
     sensorData: SensorDataEventMessage;
+    isLast: boolean;
 }
 export type SensorDataEventMessages = _SensorDataEventMessages & AnySensorDataEventMessages;
 export type SensorDataEventDispatcher = EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;

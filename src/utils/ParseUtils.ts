@@ -10,6 +10,7 @@ export function parseStringFromDataView(
 ) {
   const stringLength = dataView.getUint8(byteOffset++);
   const string = textDecoder.decode(
+    // @ts-expect-error
     dataView.buffer.slice(
       dataView.byteOffset + byteOffset,
       dataView.byteOffset + byteOffset + stringLength
@@ -25,7 +26,8 @@ export function parseMessage<MessageType extends string>(
   callback: (
     messageType: MessageType,
     dataView: DataView,
-    context?: any
+    context?: any,
+    isLast?: boolean
   ) => void,
   context?: any,
   parseMessageLengthAsUint16: boolean = false
@@ -58,8 +60,8 @@ export function parseMessage<MessageType extends string>(
     const _dataView = sliceDataView(dataView, byteOffset, messageLength);
     _console.log({ _dataView });
 
-    callback(messageType, _dataView, context);
-
     byteOffset += messageLength;
+    const isLast = byteOffset >= dataView.byteLength;
+    callback(messageType, _dataView, context, isLast);
   }
 }

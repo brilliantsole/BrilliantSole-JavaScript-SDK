@@ -538,7 +538,7 @@ const onQuaternion = (_quaternion) => {
     euler.x = euler.z = 0;
     yawQuaternion.setFromEuler(euler).invert();
   }
-  quaternion.copy(quaternion).multiply(yawQuaternion);
+  quaternion.multiply(yawQuaternion);
 };
 senseDevice.addEventListener("gameRotation", (event) => {
   onQuaternion(event.message.gameRotation);
