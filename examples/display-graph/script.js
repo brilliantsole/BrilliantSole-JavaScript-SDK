@@ -300,6 +300,7 @@ const drawGraph = async (x, y, senseGraphData) => {
           continue;
         }
 
+        // console.log({ label, labelIndex, labelIndexPlus1: labelIndex + 1 });
         await displayCanvasHelper.selectFillColor(labelIndex + 1);
 
         /** @type {BS.Vector2} */
@@ -468,7 +469,7 @@ const setFontScale = (newFontScale) => {
   fontScaleInput.value = fontScale;
   draw();
 };
-setFontScale(0.7);
+setFontScale(1);
 
 const loadFont = async (arrayBuffer) => {
   if (!arrayBuffer) {

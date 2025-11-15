@@ -1529,7 +1529,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     this.assertValidColorIndex(spriteColorIndex);
     const spriteColorIndices = this.contextState.spriteColorIndices.slice();
-    spriteColorIndices[spriteColorIndex] = colorIndex;
+    // FIX
+    if (this.#isDrawingBlankSprite) {
+      spriteColorIndices[spriteColorIndex] = spriteColorIndices[colorIndex];
+    } else {
+      spriteColorIndices[spriteColorIndex] = colorIndex;
+    }
     const differences = this.#contextStateHelper.update({
       spriteColorIndices,
     });
@@ -1564,7 +1569,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
       this.assertValidColorIndex(spriteColorIndex);
       this.assertValidColorIndex(colorIndex);
-      spriteColorIndices[spriteColorIndex] = colorIndex;
+      // FIX
+      if (this.#isDrawingBlankSprite) {
+        spriteColorIndices[spriteColorIndex] = spriteColorIndices[colorIndex];
+      } else {
+        spriteColorIndices[spriteColorIndex] = colorIndex;
+      }
     });
 
     const differences = this.#contextStateHelper.update({

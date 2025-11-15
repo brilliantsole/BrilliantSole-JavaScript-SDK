@@ -20744,16 +20744,28 @@
             this.setRotation(newState.rotation, true);
             break;
           case "segmentStartCap":
-            this.setSegmentStartCap(newState.segmentStartCap);
+            if (differences.includes("segmentEndCap") && newState.segmentStartCap == newState.segmentEndCap) {
+              this.setSegmentCap(newState.segmentStartCap);
+            } else {
+              this.setSegmentStartCap(newState.segmentStartCap);
+            }
             break;
           case "segmentEndCap":
-            this.setSegmentEndCap(newState.segmentEndCap);
+            if (!differences.includes("segmentStartCap") || newState.segmentStartCap != newState.segmentEndCap) {
+              this.setSegmentEndCap(newState.segmentEndCap);
+            }
             break;
           case "segmentStartRadius":
-            this.setSegmentStartRadius(newState.segmentStartRadius);
+            if (differences.includes("segmentEndRadius") && newState.segmentStartRadius == newState.segmentEndRadius) {
+              this.setSegmentRadius(newState.segmentStartRadius);
+            } else {
+              this.setSegmentStartRadius(newState.segmentStartRadius);
+            }
             break;
           case "segmentEndRadius":
-            this.setSegmentEndRadius(newState.segmentEndRadius);
+            if (!differences.includes("segmentStartRadius") || newState.segmentStartRadius != newState.segmentEndRadius) {
+              this.setSegmentEndRadius(newState.segmentEndRadius);
+            }
             break;
           case "cropTop":
             this.setCropTop(newState.cropTop);
@@ -20790,10 +20802,16 @@
             this.selectBitmapColors(bitmapColors);
             break;
           case "bitmapScaleX":
-            this.setBitmapScaleX(newState.bitmapScaleX);
+            if (differences.includes("bitmapScaleY") && newState.bitmapScaleX == newState.bitmapScaleY) {
+              this.setBitmapScale(newState.bitmapScaleX);
+            } else {
+              this.setBitmapScaleX(newState.bitmapScaleX);
+            }
             break;
           case "bitmapScaleY":
-            this.setBitmapScaleY(newState.bitmapScaleY);
+            if (!differences.includes("bitmapScaleX") || newState.bitmapScaleX != newState.bitmapScaleY) {
+              this.setBitmapScaleY(newState.bitmapScaleY);
+            }
             break;
           case "spriteColorIndices":
             const spriteColors = [];
@@ -20806,10 +20824,16 @@
             this.selectSpriteColors(spriteColors);
             break;
           case "spriteScaleX":
-            this.setSpriteScaleX(newState.spriteScaleX);
+            if (differences.includes("spriteScaleY") && newState.spriteScaleX == newState.spriteScaleY) {
+              this.setSpriteScale(newState.spriteScaleX);
+            } else {
+              this.setSpriteScaleX(newState.spriteScaleX);
+            }
             break;
           case "spriteScaleY":
-            this.setSpriteScaleY(newState.spriteScaleY);
+            if (!differences.includes("spriteScaleX") || newState.spriteScaleX != newState.spriteScaleY) {
+              this.setSpriteScaleY(newState.spriteScaleY);
+            }
             break;
           case "spritesLineHeight":
             this.setSpritesLineHeight(newState.spritesLineHeight);
@@ -21653,7 +21677,8 @@
       spriteScale = roundScale(spriteScale);
       const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
       _console$i.log({
-        [commandType]: spriteScale
+        [commandType]: spriteScale,
+        direction
       });
       const newState = {};
       let command;
