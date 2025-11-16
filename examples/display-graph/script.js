@@ -132,11 +132,11 @@ displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
 
 /** @type {GraphType[]} */
 const graphTypes = [
+  "pressure",
   "linearAcceleration",
   "gyroscope",
-  "magnetometer",
   "orientation",
-  "pressure",
+  "magnetometer",
 ];
 
 /** @typedef {BS.ContinuousSensorType | "pressureMetadata" | "gameRotationEuler" | "rotationEuler" | "linearAccelerationCorrected" | "gyroscopeCorrected" | "magnetometerCorrected"} GraphType */
@@ -209,6 +209,7 @@ graphTypeSelect.addEventListener("input", () => {
 });
 const selectGraphType = (newGraphType) => {
   graphType = newGraphType;
+  graphTypeSelect.value = graphType;
   console.log({ graphType });
   let range = graphRanges[graphType];
   if (graphType == "orientation") {
@@ -236,7 +237,7 @@ window.drawGraphParams = drawGraphParams;
  * @param {SenseGraphData} senseGraphData
  */
 const drawGraph = async (x, y, senseGraphData) => {
-  console.log("drawGraph", { x, y }, senseGraphData);
+  //console.log("drawGraph", { x, y }, senseGraphData);
   const { graphData, sensorTypes, numberOfSamples } = senseGraphData;
 
   // await displayCanvasHelper.setFillBackground(true);
@@ -296,7 +297,7 @@ const drawGraph = async (x, y, senseGraphData) => {
         labelIndex = Number(labelIndex);
         const label = _sensorLabels[labelIndex];
 
-        if (graphType == "pressure" && label != "sum") {
+        if (graphType == "pressure") {
           continue;
         }
 
@@ -370,6 +371,8 @@ const drawGraph = async (x, y, senseGraphData) => {
   await displayCanvasHelper.endSprite();
 };
 
+let graphTypeScale = 1;
+
 let didLoad = false;
 const draw = async () => {
   if (isUploading) {
@@ -386,17 +389,33 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  console.log("drawing...");
+  //console.log("drawing...");
+
+  {
+    await displayCanvasHelper.setVerticalAlignment("start");
+    await displayCanvasHelper.setHorizontalAlignment("start");
+    await displayCanvasHelper.saveContext();
+    await displayCanvasHelper.setSpriteScale(graphTypeScale);
+    await displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
+    let string = graphType;
+    switch (graphType) {
+      case "linearAcceleration":
+        string = "acceleration";
+        break;
+    }
+    await displayCanvasHelper.drawSpritesString(0, 0, string);
+    await displayCanvasHelper.restoreContext();
+  }
 
   {
     const { size, offset } = drawGraphParams;
     let x = offset.x;
-    let y = offset.y;
+    let y = offset.y + spritesLineHeight * graphTypeScale;
     for (let deviceId in senseGraphData) {
       const { numberOfSamples, isSensorDataEnabled, graphData, device } =
         senseGraphData[deviceId];
 
-      console.log(`drawing "${device.name}" sensor data...`);
+      // console.log(`drawing "${device.name}" sensor data...`);
       await drawGraph(x, y, senseGraphData[deviceId]);
       y += size.height;
     }
@@ -723,7 +742,7 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
     senseContainer.querySelector(".name").innerText = device.name;
     senseContainer.querySelector(".type").innerText = device.type;
 
-    let numberOfSamples = 40;
+    let numberOfSamples = 30;
     const numberOfSamplesContainer =
       senseContainer.querySelector(".numberOfSamples");
     const numberOfSamplesSpan =
