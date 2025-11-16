@@ -1,3 +1,5 @@
+let didLoad = false;
+
 import * as BS from "../../build/brilliantsole.module.js";
 
 import * as three from "../utils/three/three.module.min.js";
@@ -133,11 +135,19 @@ displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
 /** @type {GraphType[]} */
 const graphTypes = [
   "pressure",
-  "linearAcceleration",
   "gyroscope",
+  "linearAcceleration",
   "orientation",
   "magnetometer",
 ];
+/** @type {Record<GraphType, BS.ContinuousSensorType[]>} */
+const graphSensorTypes = {
+  pressure: ["pressure"],
+  linearAcceleration: ["linearAcceleration", "gameRotation"],
+  gyroscope: ["gyroscope", "gameRotation"],
+  magnetometer: ["magnetometer", "gameRotation"],
+  orientation: ["gameRotation"],
+};
 
 /** @typedef {BS.ContinuousSensorType | "pressureMetadata" | "gameRotationEuler" | "rotationEuler" | "linearAccelerationCorrected" | "gyroscopeCorrected" | "magnetometerCorrected"} GraphType */
 /** @type {GraphType[]} */
@@ -155,7 +165,7 @@ const graphRanges = {
   pressure: { min: 0, max: 1 },
   acceleration: { min: -2, max: 2 },
   gravity: { min: -1, max: 1 },
-  linearAcceleration: { min: -1, max: 1 },
+  linearAcceleration: { min: -4, max: 4 },
   gyroscope: { min: -360, max: 360 },
   magnetometer: { min: -100, max: 100 },
   gameRotation: { min: -1, max: 1 },
@@ -165,7 +175,7 @@ const graphRanges = {
   gameRotationEuler: { min: -Math.PI, max: Math.PI },
   rotationEuler: { min: -Math.PI, max: Math.PI },
 
-  linearAccelerationCorrected: { min: -1, max: 1 },
+  linearAccelerationCorrected: { min: -2, max: 2 },
   gyroscopeCorrected: { min: -360, max: 360 },
   magnetometerCorrected: { min: -100, max: 100 },
 
@@ -207,7 +217,7 @@ graphTypes.forEach((graphType) => {
 graphTypeSelect.addEventListener("input", () => {
   selectGraphType(graphTypeSelect.value);
 });
-const selectGraphType = (newGraphType) => {
+const selectGraphType = async (newGraphType) => {
   graphType = newGraphType;
   graphTypeSelect.value = graphType;
   console.log({ graphType });
@@ -217,6 +227,25 @@ const selectGraphType = (newGraphType) => {
   }
   rangeHelper.min = range.min;
   rangeHelper.max = range.max;
+
+  if (!didLoad) {
+    return;
+  }
+
+  const newSensorTypes = graphSensorTypes[graphType];
+
+  /** @type {BS.SensorConfiguration} */
+  const newSensorConfiguration = {};
+  newSensorTypes.forEach((sensorType) => {
+    newSensorConfiguration[sensorType] = 40;
+  });
+  console.log("newSensorConfiguration", newSensorConfiguration);
+  for (let deviceId in senseGraphData) {
+    const { device, sensorTypes } = senseGraphData[deviceId];
+    sensorTypes.length = 0;
+    sensorTypes.push(...newSensorTypes);
+    await device.setSensorConfiguration(newSensorConfiguration, true);
+  }
 };
 selectGraphType(graphType);
 
@@ -290,6 +319,49 @@ const drawGraph = async (x, y, senseGraphData) => {
   //console.log("_graphData", _graphData);
   if (_graphData) {
     if (_graphData.length > 1) {
+      await displayCanvasHelper.setVerticalAlignment("end");
+      await displayCanvasHelper.setHorizontalAlignment("start");
+      await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+      await displayCanvasHelper.setSpriteScale(fontScale);
+
+      let labelOffset = { x: 0, y: size.height / 2 };
+
+      if (graphType != "pressure") {
+        const metrics = displayCanvasHelper.stringToSpriteLinesMetrics(
+          graphType == "pressure" ? "sum" : _sensorLabels.join("")
+        );
+        await displayCanvasHelper.selectFillColor(0);
+        await displayCanvasHelper.drawRect(
+          -size.width / 2,
+          labelOffset.y,
+          metrics.size.width,
+          metrics.size.height * 0.8
+        );
+      }
+
+      for (let labelIndex in _sensorLabels) {
+        labelIndex = Number(labelIndex);
+        const label = _sensorLabels[labelIndex];
+
+        if (graphType == "pressure") {
+          continue;
+        }
+
+        await displayCanvasHelper.selectSpriteColor(1, labelIndex + 1);
+        let x = 0;
+        let y = 0;
+
+        x -= size.width / 2;
+
+        x += labelOffset.x;
+        y += labelOffset.y;
+
+        const metrics = displayCanvasHelper.stringToSpriteLinesMetrics(label);
+        labelOffset.x += metrics.size.width;
+
+        await displayCanvasHelper.drawSpritesString(x, y, label);
+      }
+
       await displayCanvasHelper.setSegmentCap("round");
       await displayCanvasHelper.setSegmentRadius(2);
 
@@ -297,7 +369,7 @@ const drawGraph = async (x, y, senseGraphData) => {
         labelIndex = Number(labelIndex);
         const label = _sensorLabels[labelIndex];
 
-        if (graphType == "pressure") {
+        if (graphType == "pressure" && label != "sum") {
           continue;
         }
 
@@ -322,47 +394,6 @@ const drawGraph = async (x, y, senseGraphData) => {
         });
         await displayCanvasHelper.drawSegments(points);
       }
-
-      await displayCanvasHelper.setVerticalAlignment("end");
-      await displayCanvasHelper.setHorizontalAlignment("start");
-      await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
-      await displayCanvasHelper.setSpriteScale(fontScale);
-
-      let labelOffset = { x: 0, y: size.height / 2 };
-
-      const metrics = displayCanvasHelper.stringToSpriteLinesMetrics(
-        graphType == "pressure" ? "sum" : _sensorLabels.join("")
-      );
-      await displayCanvasHelper.selectFillColor(0);
-      await displayCanvasHelper.drawRect(
-        -size.width / 2,
-        labelOffset.y,
-        metrics.size.width,
-        metrics.size.height * 0.8
-      );
-
-      for (let labelIndex in _sensorLabels) {
-        labelIndex = Number(labelIndex);
-        const label = _sensorLabels[labelIndex];
-
-        if (graphType == "pressure" && label != "sum") {
-          continue;
-        }
-
-        await displayCanvasHelper.selectSpriteColor(1, labelIndex + 1);
-        let x = 0;
-        let y = 0;
-
-        x -= size.width / 2;
-
-        x += labelOffset.x;
-        y += labelOffset.y;
-
-        const metrics = displayCanvasHelper.stringToSpriteLinesMetrics(label);
-        labelOffset.x += metrics.size.width;
-
-        await displayCanvasHelper.drawSpritesString(x, y, label);
-      }
     }
   } else {
     console.error("no graph data found");
@@ -373,7 +404,6 @@ const drawGraph = async (x, y, senseGraphData) => {
 
 let graphTypeScale = 1;
 
-let didLoad = false;
 const draw = async () => {
   if (isUploading) {
     return;
@@ -1026,6 +1056,8 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
       const newIsSensorDataEnabled =
         device.sensorConfiguration[sensorTypes[0]] > 0;
       setIsSensorDataEnabled(newIsSensorDataEnabled);
+      // FILL - update sensorType checkboxes (disabled and checked)
+      // FILL - update toggleSenseSensorDataInput
     });
     const setIsSensorDataEnabled = (newIsSensorDataEnabled) => {
       isSensorDataEnabled = newIsSensorDataEnabled;
@@ -1050,4 +1082,36 @@ const addSense = () => {
   BS.Device.Connect();
 };
 
+document.addEventListener("keydown", (event) => {
+  let preventDefault = true;
+
+  switch (event.key) {
+    case "ArrowRight":
+      cycleGraphType(true);
+      break;
+    case "ArrowLeft":
+      cycleGraphType(false);
+      break;
+    default:
+      preventDefault = false;
+      break;
+  }
+
+  if (preventDefault) {
+    event.preventDefault();
+  }
+});
+
+let cycleGraphType = async (isPositive) => {
+  //console.log("cycleGraphType", { isPositive });
+
+  let graphTypeIndex = graphTypes.indexOf(graphType) + (isPositive ? 1 : -1);
+  if (graphTypeIndex < 0) {
+    graphTypeIndex += graphTypes.length;
+  }
+  graphTypeIndex %= graphTypes.length;
+  const newGraphType = graphTypes[graphTypeIndex];
+  await selectGraphType(newGraphType);
+};
+cycleGraphType = BS.ThrottleUtils.throttle(cycleGraphType, 400);
 didLoad = true;
