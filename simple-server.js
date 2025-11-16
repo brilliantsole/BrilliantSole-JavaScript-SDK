@@ -214,6 +214,26 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
   }
 });
 
+// TFLITE
+const sendTfliteModel = process.env.SEND_TFLITE_MODEL == "true";
+if (sendTfliteModel) {
+  /** @type {BS.TfliteFileConfiguration} */
+  const tfliteFileConfiguration = {
+    type: "tflite",
+    name: "trained",
+    sensorTypes: ["gyroscope", "linearAcceleration"],
+    task: "classification",
+    sampleRate: 20,
+    captureDelay: 500,
+    threshold: 0.5,
+    classes: ["idle"],
+  };
+  // FILL
+}
+// FILL - file/tflite listeners
+
+// AUTO SCAN
+
 const autoScan = process.env.AUTO_SCAN == "true";
 if (autoScan) {
   BS.Scanner.addEventListener("scanningAvailable", (event) => {

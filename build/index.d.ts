@@ -1528,6 +1528,8 @@ declare class Device {
     get tfliteName(): string;
     get setTfliteName(): (newName: string, sendImmediately?: boolean) => Promise<void>;
     sendTfliteConfiguration(configuration: TfliteFileConfiguration): Promise<void>;
+    get tfliteClasses(): string[] | undefined;
+    get setTfliteClasses(): (newClasses?: string[]) => void;
     get tfliteTask(): "classification" | "regression";
     get setTfliteTask(): (newTask: TfliteTask, sendImmediately?: boolean) => Promise<void>;
     get tfliteSampleRate(): number;

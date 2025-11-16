@@ -1160,6 +1160,13 @@ class Device {
     }
   }
 
+  get tfliteClasses() {
+    return this.#tfliteManager.classes;
+  }
+  get setTfliteClasses() {
+    return this.#tfliteManager.setClasses;
+  }
+
   // TFLITE MODEL CONFIG
   get tfliteTask() {
     return this.#tfliteManager.task;

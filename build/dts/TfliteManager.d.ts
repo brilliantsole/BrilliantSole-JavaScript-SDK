@@ -84,6 +84,8 @@ declare class TfliteManager {
         target: Device;
         message: TfliteEventMessages[T];
     }>;
+    get classes(): string[] | undefined;
+    setClasses(newClasses?: string[]): void;
     get name(): string;
     setName(newName: string, sendImmediately?: boolean): Promise<void>;
     get task(): "classification" | "regression";

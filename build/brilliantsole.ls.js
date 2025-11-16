@@ -2659,6 +2659,7 @@
   const TfliteTasks = ["classification", "regression"];
   const TfliteSensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
   var _TfliteManager_brand = new WeakSet();
+  var _classes = new WeakMap();
   var _name$2 = new WeakMap();
   var _task = new WeakMap();
   var _sampleRate = new WeakMap();
@@ -2673,6 +2674,7 @@
       _classPrivateMethodInitSpec(this, _TfliteManager_brand);
       _defineProperty$1(this, "sendMessage", void 0);
       _defineProperty$1(this, "eventDispatcher", void 0);
+      _classPrivateFieldInitSpec(this, _classes, void 0);
       _classPrivateFieldInitSpec(this, _name$2, void 0);
       _classPrivateFieldInitSpec(this, _task, void 0);
       _classPrivateFieldInitSpec(this, _sampleRate, void 0);
@@ -2692,6 +2694,13 @@
     }
     get waitForEvent() {
       return this.eventDispatcher.waitForEvent;
+    }
+    get classes() {
+      return _classPrivateFieldGet2(_classes, this);
+    }
+    setClasses(newClasses) {
+      _classPrivateFieldSet2(_classes, this, newClasses === null || newClasses === void 0 ? void 0 : newClasses.slice());
+      _console$u.log("classes", this.classes);
     }
     get name() {
       return _classPrivateFieldGet2(_name$2, this);
@@ -2907,8 +2916,10 @@
         captureDelay,
         sampleRate,
         threshold,
-        sensorTypes
+        sensorTypes,
+        classes
       } = this.configuration;
+      this.setClasses(classes);
       this.setName(name, false);
       this.setTask(task, false);
       if (captureDelay != undefined) {
@@ -2921,7 +2932,7 @@
       this.setSensorTypes(sensorTypes, sendImmediately);
     }
     clear() {
-      _classPrivateFieldSet2(_configuration, this, undefined);
+      _classPrivateFieldSet2(_classes, this, undefined);
       _classPrivateFieldSet2(_inferencingEnabled, this, false);
       _classPrivateFieldSet2(_sensorTypes, this, []);
       _classPrivateFieldSet2(_sampleRate, this, 0);
@@ -3100,7 +3111,6 @@
       values
     };
     if (this.task == "classification") {
-      var _classPrivateFieldGet2$1;
       let maxValue = 0;
       let maxIndex = 0;
       values.forEach((value, index) => {
@@ -3115,10 +3125,10 @@
       });
       inference.maxIndex = maxIndex;
       inference.maxValue = maxValue;
-      if ((_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_configuration, this)) !== null && _classPrivateFieldGet2$1 !== void 0 && _classPrivateFieldGet2$1.classes) {
+      if (this.classes) {
         const {
           classes
-        } = _classPrivateFieldGet2(_configuration, this);
+        } = this;
         inference.maxClass = classes[maxIndex];
         inference.classValues = {};
         values.forEach((value, index) => {
@@ -25544,6 +25554,12 @@
       if (!didSendFile) {
         _assertClassBrand(_Device_brand, this, _sendTxMessages).call(this);
       }
+    }
+    get tfliteClasses() {
+      return _classPrivateFieldGet2(_tfliteManager, this).classes;
+    }
+    get setTfliteClasses() {
+      return _classPrivateFieldGet2(_tfliteManager, this).setClasses;
     }
     get tfliteTask() {
       return _classPrivateFieldGet2(_tfliteManager, this).task;

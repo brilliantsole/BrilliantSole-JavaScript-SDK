@@ -2535,6 +2535,14 @@ class TfliteManager {
     get waitForEvent() {
         return this.eventDispatcher.waitForEvent;
     }
+    #classes;
+    get classes() {
+        return this.#classes;
+    }
+    setClasses(newClasses) {
+        this.#classes = newClasses?.slice();
+        _console$w.log("classes", this.classes);
+    }
     #name;
     get name() {
         return this.#name;
@@ -2819,8 +2827,8 @@ class TfliteManager {
             _console$w.log({ maxIndex, maxValue });
             inference.maxIndex = maxIndex;
             inference.maxValue = maxValue;
-            if (this.#configuration?.classes) {
-                const { classes } = this.#configuration;
+            if (this.classes) {
+                const { classes } = this;
                 inference.maxClass = classes[maxIndex];
                 inference.classValues = {};
                 values.forEach((value, index) => {
@@ -2886,7 +2894,8 @@ class TfliteManager {
         if (!this.configuration) {
             return;
         }
-        const { name, task, captureDelay, sampleRate, threshold, sensorTypes } = this.configuration;
+        const { name, task, captureDelay, sampleRate, threshold, sensorTypes, classes, } = this.configuration;
+        this.setClasses(classes);
         this.setName(name, false);
         this.setTask(task, false);
         if (captureDelay != undefined) {
@@ -2899,7 +2908,7 @@ class TfliteManager {
         this.setSensorTypes(sensorTypes, sendImmediately);
     }
     clear() {
-        this.#configuration = undefined;
+        this.#classes = undefined;
         this.#inferencingEnabled = false;
         this.#sensorTypes = [];
         this.#sampleRate = 0;
@@ -26820,6 +26829,12 @@ class Device {
         if (!didSendFile) {
             this.#sendTxMessages();
         }
+    }
+    get tfliteClasses() {
+        return this.#tfliteManager.classes;
+    }
+    get setTfliteClasses() {
+        return this.#tfliteManager.setClasses;
     }
     get tfliteTask() {
         return this.#tfliteManager.task;
