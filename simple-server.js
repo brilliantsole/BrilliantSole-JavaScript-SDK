@@ -194,10 +194,20 @@ function onMicrophoneData(event) {
 /** @type {BS.BoundDeviceEventListeners} */
 const boundDeviceEventListeners = {
   acceleration: onAcceleration,
+
   microphoneData: onMicrophoneData,
   microphoneRecording: onMicrophoneRecording,
   microphoneStatus: onMicrophoneStatus,
+
   cameraImage: onCameraImage,
+
+  fileTransferStatus: onFileTransferStatus,
+  fileTransferProgress: onFileTransferProgress,
+  fileTransferComplete: onFileTransferComplete,
+
+  tfliteIsReady: onTfliteIsReady,
+  getTfliteInferencingEnabled: onTfliteInferencingEnabled,
+  tfliteInference: onTfliteInference,
 };
 
 BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
@@ -214,11 +224,126 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
   }
 });
 
+// TFLITE
+const sendTfliteModel = process.env.SEND_TFLITE_MODEL == "true";
+if (sendTfliteModel) {
+  try {
+    const file = fs.readFileSync(process.env.TFLITE_MODEL_PATH);
+    const fileName =
+      process.env.TFLITE_MODEL_PATH.split("/").pop().split(".")[0] ?? "model";
+
+    /** @type {BS.TfliteFileConfiguration} */
+    const tfliteConfiguration = {
+      type: "tflite",
+      name: fileName,
+      sensorTypes: ["gyroscope", "linearAcceleration"],
+      task: "classification",
+      sampleRate: 20,
+      captureDelay: 500,
+      threshold: 0.7,
+      classes: ["idle", "kick", "stomp", "tap"],
+      file,
+    };
+
+    BS.DeviceManager.AddEventListener("deviceConnected", async (event) => {
+      const { device } = event.message;
+      if (
+        tfliteConfiguration.sensorTypes.every(
+          (sensorType) => sensorType in device.sensorConfiguration
+        )
+      ) {
+        console.log(
+          `sending tfliteConfiguration "${tfliteConfiguration.name}" to "${device.name}"...`
+        );
+        try {
+          await device.sendTfliteConfiguration(tfliteConfiguration);
+        } catch (error) {
+          console.error(
+            `error sending tfliteConfiguration "${tfliteConfiguration.name}" to "${device.name}"`,
+            error
+          );
+        }
+      } else {
+        console.log(
+          `device "${
+            device.name
+          }" doesn't contain all required sensorTypes ${tfliteConfiguration.sensorTypes.join(
+            ","
+          )} for tflite model "${tfliteConfiguration.name}"`
+        );
+      }
+    });
+  } catch (error) {
+    console.error(
+      `failed to get tflite model file at "${process.env.TFLITE_MODEL_PATH}"`
+    );
+  }
+}
+
+// FILE TRANSFER LISTENERS
+
+/** @param {BS.DeviceEventMap["fileTransferStatus"]} event */
+function onFileTransferStatus(event) {
+  const device = event.target;
+  const { fileTransferStatus } = event.message;
+  console.log(`fileTransferStatus for "${device.name}": ${fileTransferStatus}`);
+}
+
+/** @param {BS.DeviceEventMap["fileTransferProgress"]} event */
+function onFileTransferProgress(event) {
+  const device = event.target;
+  const { progress } = event.message;
+  console.log(`fileTransferProgress for "${device.name}": ${progress}%`);
+}
+
+/** @param {BS.DeviceEventMap["fileTransferComplete"]} event */
+function onFileTransferComplete(event) {
+  const device = event.target;
+  console.log(`fileTransferComplete for "${device.name}"`);
+}
+
+// TFLITE LISTENERS
+
+/** @param {BS.DeviceEventMap["tfliteIsReady"]} event */
+async function onTfliteIsReady(event) {
+  const device = event.target;
+  const { tfliteIsReady } = event.message;
+  console.log(`tfliteIsReady for "${device.name}"? ${tfliteIsReady}`);
+  if (tfliteIsReady) {
+    console.log(`enabling tfliteInferencing for "${device.name}"...`);
+    await device.enableTfliteInferencing();
+  }
+}
+
+/** @param {BS.DeviceEventMap["getTfliteInferencingEnabled"]} event */
+function onTfliteInferencingEnabled(event) {
+  const device = event.target;
+  const { tfliteInferencingEnabled } = event.message;
+  console.log(
+    `tfliteInferencingEnabled for "${device.name}"? ${tfliteInferencingEnabled}`
+  );
+}
+
+/** @param {BS.DeviceEventMap["tfliteInference"]} event */
+function onTfliteInference(event) {
+  const device = event.target;
+  const { tfliteInference } = event.message;
+  console.log(`tfliteInference for "${device.name}"`, tfliteInference);
+}
+
+// AUTO SCAN
+
 const autoScan = process.env.AUTO_SCAN == "true";
+const autoEnableSensorData = process.env.AUTO_ENABLE_SENSOR_DATA == "true";
 if (autoScan) {
   BS.Scanner.addEventListener("scanningAvailable", (event) => {
+    console.log("scanningAvailable");
     // automatically scan when available
     BS.Scanner.startScan();
+  });
+  BS.Scanner.addEventListener("isScanning", (event) => {
+    const { isScanning } = event.message;
+    console.log(`isScanning? ${isScanning}`);
   });
   BS.Scanner.addEventListener("discoveredDevice", (event) => {
     const { discoveredDevice } = event.message;
@@ -232,8 +357,10 @@ if (autoScan) {
 
     const { device } = event.message;
     console.log(`connected to "${device.name}"`);
-    console.log("setting configuration...");
-    device.setSensorConfiguration({ acceleration: 20 });
+    if (autoEnableSensorData) {
+      console.log("setting configuration...");
+      device.setSensorConfiguration({ acceleration: 20 });
+    }
   });
   BS.DeviceManager.AddEventListener("deviceDisconnected", (event) => {
     console.log("device disconnected - restarting scan...");

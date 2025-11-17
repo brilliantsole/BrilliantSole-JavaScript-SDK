@@ -1155,9 +1155,22 @@ class Device {
       configuration.type,
       configuration.file
     );
+    _console.log({ didSendFile });
     if (!didSendFile) {
       this.#sendTxMessages();
+      if (this.tfliteIsReady) {
+        this.#dispatchEvent("tfliteIsReady", {
+          tfliteIsReady: this.tfliteIsReady,
+        });
+      }
     }
+  }
+
+  get tfliteClasses() {
+    return this.#tfliteManager.classes;
+  }
+  get setTfliteClasses() {
+    return this.#tfliteManager.setClasses;
   }
 
   // TFLITE MODEL CONFIG

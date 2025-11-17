@@ -539,7 +539,6 @@ const quaternion = new THREE.Quaternion();
 const euler = new THREE.Euler();
 euler.order = "YXZ";
 
-const latestQuaternion = new THREE.Quaternion();
 const yawQuaternion = new THREE.Quaternion();
 let latestPositionTimestamp = 0;
 const linearAccelerationVector = new THREE.Vector3();
@@ -698,7 +697,8 @@ function addSensorDataEventListeners(device) {
             euler.x = euler.z = 0;
             yawQuaternion.setFromEuler(euler).invert();
           }
-          latestQuaternion.copy(quaternion).multiply(yawQuaternion);
+          quaternion.multiply(yawQuaternion);
+          euler.setFromQuaternion(quaternion);
 
           break;
         case "pressure":
@@ -727,7 +727,7 @@ function addSensorDataEventListeners(device) {
               }
 
               linearAccelerationVector.copy(data);
-              linearAccelerationVector.applyQuaternion(latestQuaternion);
+              linearAccelerationVector.applyQuaternion(quaternion);
 
               //console.log("linearAccelerationVector", linearAccelerationVector);
 
@@ -800,7 +800,7 @@ function addSensorDataEventListeners(device) {
               device.sensorConfiguration.rotation
             ) {
               gyroscopeVector.copy(data);
-              gyroscopeVector.applyQuaternion(latestQuaternion);
+              gyroscopeVector.applyQuaternion(quaternion);
 
               //console.log("gyroscopeVector", gyroscopeVector);
 
@@ -819,7 +819,7 @@ function addSensorDataEventListeners(device) {
               device.sensorConfiguration.rotation
             ) {
               magnetometerVector.copy(data);
-              magnetometerVector.applyQuaternion(latestQuaternion);
+              magnetometerVector.applyQuaternion(quaternion);
 
               //console.log("magnetometerVector", magnetometerVector);
 

@@ -1109,12 +1109,17 @@ const inferenceClassesTextArea = document.getElementById("inferenceClasses");
 inferenceClassesTextArea.addEventListener("input", () => {
   inferenceClasses = inferenceClassesTextArea.value.split("\n").filter(Boolean);
   console.log("inferenceClasses", inferenceClasses);
+  device.setTfliteClasses(inferenceClasses);
   localStorage.setItem("BS.inferenceClasses", JSON.stringify(inferenceClasses));
 });
 if (localStorage.getItem("BS.inferenceClasses")) {
   inferenceClasses = JSON.parse(localStorage.getItem("BS.inferenceClasses"));
+  device.setTfliteClasses(inferenceClasses);
   inferenceClassesTextArea.value = inferenceClasses.join("\n");
 }
+device.addEventListener("connected", () => {
+  device.setTfliteClasses(inferenceClasses);
+});
 
 /** @type {HTMLElement} */
 const topInferenceClassElement = document.getElementById("topInferenceClass");
@@ -1127,8 +1132,7 @@ device.addEventListener("tfliteInference", (event) => {
   tfliteInferencePre.textContent = JSON.stringify(tfliteInference, null, 2);
 
   if (device.tfliteTask == "classification") {
-    topInferenceClassElement.innerText =
-      inferenceClasses[tfliteInference.maxIndex - 1] ?? "";
+    topInferenceClassElement.innerText = tfliteInference.maxClass ?? "";
   }
 });
 

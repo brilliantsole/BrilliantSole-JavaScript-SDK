@@ -495,6 +495,9 @@ async function getFileBuffer(file) {
     else if (file instanceof ArrayBuffer) {
         fileBuffer = file;
     }
+    else if (file.buffer instanceof ArrayBuffer) {
+        fileBuffer = file.buffer;
+    }
     else {
         throw { error: "invalid file type", file };
     }
@@ -1377,7 +1380,8 @@ class BarometerSensorDataManager {
 const _console$B = createConsole("ParseUtils", { log: false });
 function parseStringFromDataView(dataView, byteOffset = 0) {
     const stringLength = dataView.getUint8(byteOffset++);
-    const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
+    const string = textDecoder.decode(
+    dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
     byteOffset += stringLength;
     return { string, byteOffset };
 }
@@ -1404,8 +1408,9 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
         });
         const _dataView = sliceDataView(dataView, byteOffset, messageLength);
         _console$B.log({ _dataView });
-        callback(messageType, _dataView, context);
         byteOffset += messageLength;
+        const isLast = byteOffset >= dataView.byteLength;
+        callback(messageType, _dataView, context, isLast);
     }
 }
 
@@ -2261,7 +2266,7 @@ class SensorDataManager {
             timestamp,
         });
     }
-    parseDataCallback(sensorType, dataView, { timestamp }) {
+    parseDataCallback(sensorType, dataView, { timestamp }, isLast) {
         const scalar = this.#scalars.get(sensorType) || 1;
         let sensorData = null;
         switch (sensorType) {
@@ -2314,11 +2319,13 @@ class SensorDataManager {
             sensorType,
             [sensorType]: sensorData,
             timestamp,
+            isLast: isLast,
         });
         this.dispatchEvent("sensorData", {
             sensorType,
             [sensorType]: sensorData,
             timestamp,
+            isLast: isLast,
         });
     }
 }
@@ -2530,6 +2537,14 @@ class TfliteManager {
     }
     get waitForEvent() {
         return this.eventDispatcher.waitForEvent;
+    }
+    #classes;
+    get classes() {
+        return this.#classes;
+    }
+    setClasses(newClasses) {
+        this.#classes = newClasses?.slice();
+        _console$w.log("classes", this.classes);
     }
     #name;
     get name() {
@@ -2815,8 +2830,8 @@ class TfliteManager {
             _console$w.log({ maxIndex, maxValue });
             inference.maxIndex = maxIndex;
             inference.maxValue = maxValue;
-            if (this.#configuration?.classes) {
-                const { classes } = this.#configuration;
+            if (this.classes) {
+                const { classes } = this;
                 inference.maxClass = classes[maxIndex];
                 inference.classValues = {};
                 values.forEach((value, index) => {
@@ -2882,7 +2897,8 @@ class TfliteManager {
         if (!this.configuration) {
             return;
         }
-        const { name, task, captureDelay, sampleRate, threshold, sensorTypes } = this.configuration;
+        const { name, task, captureDelay, sampleRate, threshold, sensorTypes, classes, } = this.configuration;
+        this.setClasses(classes);
         this.setName(name, false);
         this.setTask(task, false);
         if (captureDelay != undefined) {
@@ -2895,7 +2911,7 @@ class TfliteManager {
         this.setSensorTypes(sensorTypes, sendImmediately);
     }
     clear() {
-        this.#configuration = undefined;
+        this.#classes = undefined;
         this.#inferencingEnabled = false;
         this.#sensorTypes = [];
         this.#sampleRate = 0;
@@ -4139,6 +4155,9 @@ class DisplayContextStateHelper {
         let differences = this.diff(newState);
         if (differences.length == 0) {
             _console$q.log("redundant contextState", newState);
+        }
+        else {
+            _console$q.log("found contextState differences", newState);
         }
         differences.forEach((key) => {
             const value = newState[key];
@@ -21942,16 +21961,34 @@ class DisplayManager {
                     this.setRotation(newState.rotation, true);
                     break;
                 case "segmentStartCap":
-                    this.setSegmentStartCap(newState.segmentStartCap);
+                    if (differences.includes("segmentEndCap") &&
+                        newState.segmentStartCap == newState.segmentEndCap) {
+                        this.setSegmentCap(newState.segmentStartCap);
+                    }
+                    else {
+                        this.setSegmentStartCap(newState.segmentStartCap);
+                    }
                     break;
                 case "segmentEndCap":
-                    this.setSegmentEndCap(newState.segmentEndCap);
+                    if (!differences.includes("segmentStartCap") ||
+                        newState.segmentStartCap != newState.segmentEndCap) {
+                        this.setSegmentEndCap(newState.segmentEndCap);
+                    }
                     break;
                 case "segmentStartRadius":
-                    this.setSegmentStartRadius(newState.segmentStartRadius);
+                    if (differences.includes("segmentEndRadius") &&
+                        newState.segmentStartRadius == newState.segmentEndRadius) {
+                        this.setSegmentRadius(newState.segmentStartRadius);
+                    }
+                    else {
+                        this.setSegmentStartRadius(newState.segmentStartRadius);
+                    }
                     break;
                 case "segmentEndRadius":
-                    this.setSegmentEndRadius(newState.segmentEndRadius);
+                    if (!differences.includes("segmentStartRadius") ||
+                        newState.segmentStartRadius != newState.segmentEndRadius) {
+                        this.setSegmentEndRadius(newState.segmentEndRadius);
+                    }
                     break;
                 case "cropTop":
                     this.setCropTop(newState.cropTop);
@@ -21985,10 +22022,19 @@ class DisplayManager {
                     this.selectBitmapColors(bitmapColors);
                     break;
                 case "bitmapScaleX":
-                    this.setBitmapScaleX(newState.bitmapScaleX);
+                    if (differences.includes("bitmapScaleY") &&
+                        newState.bitmapScaleX == newState.bitmapScaleY) {
+                        this.setBitmapScale(newState.bitmapScaleX);
+                    }
+                    else {
+                        this.setBitmapScaleX(newState.bitmapScaleX);
+                    }
                     break;
                 case "bitmapScaleY":
-                    this.setBitmapScaleY(newState.bitmapScaleY);
+                    if (!differences.includes("bitmapScaleX") ||
+                        newState.bitmapScaleX != newState.bitmapScaleY) {
+                        this.setBitmapScaleY(newState.bitmapScaleY);
+                    }
                     break;
                 case "spriteColorIndices":
                     const spriteColors = [];
@@ -21998,10 +22044,19 @@ class DisplayManager {
                     this.selectSpriteColors(spriteColors);
                     break;
                 case "spriteScaleX":
-                    this.setSpriteScaleX(newState.spriteScaleX);
+                    if (differences.includes("spriteScaleY") &&
+                        newState.spriteScaleX == newState.spriteScaleY) {
+                        this.setSpriteScale(newState.spriteScaleX);
+                    }
+                    else {
+                        this.setSpriteScaleX(newState.spriteScaleX);
+                    }
                     break;
                 case "spriteScaleY":
-                    this.setSpriteScaleY(newState.spriteScaleY);
+                    if (!differences.includes("spriteScaleX") ||
+                        newState.spriteScaleX != newState.spriteScaleY) {
+                        this.setSpriteScaleY(newState.spriteScaleY);
+                    }
                     break;
                 case "spritesLineHeight":
                     this.setSpritesLineHeight(newState.spritesLineHeight);
@@ -22943,7 +22998,7 @@ class DisplayManager {
         spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
         spriteScale = roundScale(spriteScale);
         const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
-        _console$j.log({ [commandType]: spriteScale });
+        _console$j.log({ [commandType]: spriteScale, direction });
         const newState = {};
         let command;
         switch (direction) {
@@ -26777,9 +26832,21 @@ class Device {
         configuration.type = "tflite";
         this.#tfliteManager.sendConfiguration(configuration, false);
         const didSendFile = await this.#fileTransferManager.send(configuration.type, configuration.file);
+        _console$7.log({ didSendFile });
         if (!didSendFile) {
             this.#sendTxMessages();
+            if (this.tfliteIsReady) {
+                this.#dispatchEvent("tfliteIsReady", {
+                    tfliteIsReady: this.tfliteIsReady,
+                });
+            }
         }
+    }
+    get tfliteClasses() {
+        return this.#tfliteManager.classes;
+    }
+    get setTfliteClasses() {
+        return this.#tfliteManager.setClasses;
     }
     get tfliteTask() {
         return this.#tfliteManager.task;
@@ -28470,10 +28537,18 @@ class DisplayCanvasHelper {
     async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately) {
         this.assertValidColorIndex(spriteColorIndex);
         const spriteColorIndices = this.contextState.spriteColorIndices.slice();
-        spriteColorIndices[spriteColorIndex] = colorIndex;
+        if (this.#isDrawingBlankSprite) {
+            spriteColorIndices[spriteColorIndex] =
+                this.#blankSpriteColorIndices[colorIndex];
+        }
+        else {
+            spriteColorIndices[spriteColorIndex] = colorIndex;
+        }
         const differences = this.#contextStateHelper.update({
             spriteColorIndices,
         });
+        _console$6.log({ spriteColorIndex, colorIndex });
+        _console$6.log("spriteColorIndices", spriteColorIndices);
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately);
         }
@@ -28490,7 +28565,13 @@ class DisplayCanvasHelper {
         spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
             this.assertValidColorIndex(spriteColorIndex);
             this.assertValidColorIndex(colorIndex);
-            spriteColorIndices[spriteColorIndex] = colorIndex;
+            if (this.#isDrawingBlankSprite) {
+                spriteColorIndices[spriteColorIndex] =
+                    this.#blankSpriteColorIndices[colorIndex];
+            }
+            else {
+                spriteColorIndices[spriteColorIndex] = colorIndex;
+            }
         });
         const differences = this.#contextStateHelper.update({
             spriteColorIndices,
@@ -30140,6 +30221,7 @@ class DisplayCanvasHelper {
         if (!override && this.#useSpriteColorIndices) {
             return;
         }
+        this.#useSpriteColorIndices = useSpriteColorIndices;
         this.#rearDrawStack.push(() => {
             this.#useSpriteColorIndices = useSpriteColorIndices;
         });
@@ -30254,8 +30336,12 @@ class DisplayCanvasHelper {
         this.#saveContextForSprite(offsetX, offsetY, { width, height }, contextState);
         this.#setUseSpriteColorIndices(true, true);
         this.#setClearCanvasBoundingBoxOnDraw(false, true);
+        this.#blankSpriteColorIndices =
+            this.contextState.spriteColorIndices.slice();
+        _console$6.log("#blankSpriteColorIndices", this.#blankSpriteColorIndices);
     }
     #isDrawingBlankSprite = false;
+    #blankSpriteColorIndices;
     async startSprite(offsetX, offsetY, width, height, sendImmediately) {
         _console$6.assertWithError(!this.#isDrawingBlankSprite, `already drawing blank sprite`);
         this.#isDrawingBlankSprite = true;
@@ -30274,6 +30360,7 @@ class DisplayCanvasHelper {
         this.#restoreContextForSprite();
         this.#setUseSpriteColorIndices(false, true);
         this.#setClearCanvasBoundingBoxOnDraw(true, true);
+        this.#blankSpriteColorIndices = undefined;
     }
     async endSprite(sendImmediately) {
         _console$6.assertWithError(this.#isDrawingBlankSprite, `not drawing blank sprite`);

@@ -1,6 +1,6 @@
 <html>
   <head>
-    <title>Display Template | BrilliantSole JavaScript SDK</title>
+    <title>Display Graph | BrilliantSole JavaScript SDK</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
     <script type="module" src="./script.js"></script>
@@ -22,13 +22,18 @@
     .displayColor {
       display: inline-block;
     }
+
+    #senses {
+      display: flex;
+      flex-direction: column;
+    }
   </style>
   <body>
     <nav>
       <a href="../../">home</a>
     </nav>
 
-    <h1>Display Template | BrilliantSole JavaScript SDK</h1>
+    <h1>Display Graph | BrilliantSole JavaScript SDK</h1>
 
     <button id="toggleConnection">connect</button>
 
@@ -48,6 +53,60 @@
         <optgroup label="select brightness"></optgroup>
       </select>
     </label>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>graph type</span>
+      <select id="graphType">
+        <optgroup label="graph type"></optgroup>
+      </select>
+    </label>
+
+    <button id="addSense">add sense</button>
+
+    <br />
+
+    <div id="senses"></div>
+
+    <template id="senseTemplate">
+      <div class="sense">
+        <div class="verticalLabel">
+          <span>
+            <span class="name">name</span> (<span class="type">type</span>)
+          </span>
+          <button class="disconnect">disconnect</button>
+        </div>
+
+        <label class="verticalLabel">
+          sensor rate (ms)
+          <select class="sensorRate">
+            <optgroup label="sensor rate (ms)"></optgroup>
+          </select>
+        </label>
+
+        <label>
+          enable sensor data
+          <input type="checkbox" disabled class="toggleSenseSensorData" />
+        </label>
+
+        <label class="verticalLabel numberOfSamples">
+          <span>numberOfSamples (<span class="value">100</span>)</span>
+          <input type="range" min="10" max="200" value="100" step="10" />
+        </label>
+
+        <div class="verticalLabel">
+          <button class="resetYaw">reset yaw</button>
+        </div>
+
+        <template class="sensorTypeTemplate">
+          <label class="sensorType">
+            <span class="name"></span>
+            <input type="checkbox" />
+          </label>
+        </template>
+      </div>
+    </template>
 
     <br />
 

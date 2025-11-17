@@ -344,6 +344,7 @@ class FileTransferManager {
 
   async #parseBlock(dataView: DataView) {
     _console.log("parseFileBlock", dataView);
+    // @ts-expect-error
     this.#receivedBlocks.push(dataView.buffer);
 
     const bytesReceived = this.#receivedBlocks.reduce(
@@ -470,6 +471,7 @@ class FileTransferManager {
 
     const fileBuffer = await getFileBuffer(file);
     const fileLength = fileBuffer.byteLength;
+    // @ts-expect-error
     const checksum = crc32(fileBuffer);
     this.#assertValidLength(fileLength);
 
@@ -507,6 +509,7 @@ class FileTransferManager {
       return false;
     }
 
+    // @ts-expect-error
     await this.#send(fileBuffer);
 
     return true;

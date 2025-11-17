@@ -1013,7 +1013,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       [alignmentKey]: alignment,
     });
-    // console.log({
+    // _console.log({
     //   alignmentKey,
     //   alignment,
     //   differences,
@@ -1529,12 +1529,18 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     this.assertValidColorIndex(spriteColorIndex);
     const spriteColorIndices = this.contextState.spriteColorIndices.slice();
-    spriteColorIndices[spriteColorIndex] = colorIndex;
+    if (this.#isDrawingBlankSprite) {
+      spriteColorIndices[spriteColorIndex] =
+        this.#blankSpriteColorIndices![colorIndex];
+    } else {
+      spriteColorIndices[spriteColorIndex] = colorIndex;
+    }
     const differences = this.#contextStateHelper.update({
       spriteColorIndices,
     });
 
-    // _console.log({ spriteColorIndex, colorIndex });
+    _console.log({ spriteColorIndex, colorIndex });
+    _console.log("spriteColorIndices", spriteColorIndices);
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.selectSpriteColor(
@@ -1564,7 +1570,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
       this.assertValidColorIndex(spriteColorIndex);
       this.assertValidColorIndex(colorIndex);
-      spriteColorIndices[spriteColorIndex] = colorIndex;
+      // FIX
+      if (this.#isDrawingBlankSprite) {
+        spriteColorIndices[spriteColorIndex] =
+          this.#blankSpriteColorIndices![colorIndex];
+      } else {
+        spriteColorIndices[spriteColorIndex] = colorIndex;
+      }
     });
 
     const differences = this.#contextStateHelper.update({
@@ -2114,6 +2126,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     ignoreLine,
   }: DisplayContextState) {
     if (this.#useSpriteColorIndices) {
+      //_console.log("spriteColorIndices", spriteColorIndices);
       fillColorIndex = spriteColorIndices[fillColorIndex];
       lineColorIndex = spriteColorIndices[lineColorIndex];
     }
@@ -4253,7 +4266,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (!override && this.#useSpriteColorIndices) {
       return;
     }
-    //this.#useSpriteColorIndices = useSpriteColorIndices;
+    this.#useSpriteColorIndices = useSpriteColorIndices;
     this.#rearDrawStack.push(() => {
       //_console.log({ useSpriteColorIndices });
       this.#useSpriteColorIndices = useSpriteColorIndices;
@@ -4484,8 +4497,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     this.#setUseSpriteColorIndices(true, true);
     this.#setClearCanvasBoundingBoxOnDraw(false, true);
+
+    this.#blankSpriteColorIndices =
+      this.contextState.spriteColorIndices.slice();
+    _console.log("#blankSpriteColorIndices", this.#blankSpriteColorIndices);
   }
   #isDrawingBlankSprite = false;
+  #blankSpriteColorIndices?: number[];
   async startSprite(
     offsetX: number,
     offsetY: number,
@@ -4520,6 +4538,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restoreContextForSprite();
     this.#setUseSpriteColorIndices(false, true);
     this.#setClearCanvasBoundingBoxOnDraw(true, true);
+    this.#blankSpriteColorIndices = undefined;
   }
   async endSprite(sendImmediately?: boolean) {
     _console.assertWithError(

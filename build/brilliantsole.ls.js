@@ -580,6 +580,8 @@
       fileBuffer = await file.arrayBuffer();
     } else if (file instanceof ArrayBuffer) {
       fileBuffer = file;
+    } else if (file.buffer instanceof ArrayBuffer) {
+      fileBuffer = file.buffer;
     } else {
       throw {
         error: "invalid file type",
@@ -1496,7 +1498,8 @@
   function parseStringFromDataView(dataView) {
     let byteOffset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
     const stringLength = dataView.getUint8(byteOffset++);
-    const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
+    const string = textDecoder.decode(
+    dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
     byteOffset += stringLength;
     return {
       string,
@@ -1528,8 +1531,9 @@
       _console$z.log({
         _dataView
       });
-      callback(messageType, _dataView, context);
       byteOffset += messageLength;
+      const isLast = byteOffset >= dataView.byteLength;
+      callback(messageType, _dataView, context, isLast);
     }
   }
 
@@ -2412,7 +2416,7 @@
         timestamp
       });
     }
-    parseDataCallback(sensorType, dataView, _ref) {
+    parseDataCallback(sensorType, dataView, _ref, isLast) {
       let {
         timestamp
       } = _ref;
@@ -2469,12 +2473,14 @@
       this.dispatchEvent(sensorType, {
         sensorType,
         [sensorType]: sensorData,
-        timestamp
+        timestamp,
+        isLast: isLast
       });
       this.dispatchEvent("sensorData", {
         sensorType,
         [sensorType]: sensorData,
-        timestamp
+        timestamp,
+        isLast: isLast
       });
     }
   }
@@ -2655,6 +2661,7 @@
   const TfliteTasks = ["classification", "regression"];
   const TfliteSensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
   var _TfliteManager_brand = new WeakSet();
+  var _classes = new WeakMap();
   var _name$2 = new WeakMap();
   var _task = new WeakMap();
   var _sampleRate = new WeakMap();
@@ -2669,6 +2676,7 @@
       _classPrivateMethodInitSpec(this, _TfliteManager_brand);
       _defineProperty$1(this, "sendMessage", void 0);
       _defineProperty$1(this, "eventDispatcher", void 0);
+      _classPrivateFieldInitSpec(this, _classes, void 0);
       _classPrivateFieldInitSpec(this, _name$2, void 0);
       _classPrivateFieldInitSpec(this, _task, void 0);
       _classPrivateFieldInitSpec(this, _sampleRate, void 0);
@@ -2688,6 +2696,13 @@
     }
     get waitForEvent() {
       return this.eventDispatcher.waitForEvent;
+    }
+    get classes() {
+      return _classPrivateFieldGet2(_classes, this);
+    }
+    setClasses(newClasses) {
+      _classPrivateFieldSet2(_classes, this, newClasses === null || newClasses === void 0 ? void 0 : newClasses.slice());
+      _console$u.log("classes", this.classes);
     }
     get name() {
       return _classPrivateFieldGet2(_name$2, this);
@@ -2903,8 +2918,10 @@
         captureDelay,
         sampleRate,
         threshold,
-        sensorTypes
+        sensorTypes,
+        classes
       } = this.configuration;
+      this.setClasses(classes);
       this.setName(name, false);
       this.setTask(task, false);
       if (captureDelay != undefined) {
@@ -2917,7 +2934,7 @@
       this.setSensorTypes(sensorTypes, sendImmediately);
     }
     clear() {
-      _classPrivateFieldSet2(_configuration, this, undefined);
+      _classPrivateFieldSet2(_classes, this, undefined);
       _classPrivateFieldSet2(_inferencingEnabled, this, false);
       _classPrivateFieldSet2(_sensorTypes, this, []);
       _classPrivateFieldSet2(_sampleRate, this, 0);
@@ -3096,7 +3113,6 @@
       values
     };
     if (this.task == "classification") {
-      var _classPrivateFieldGet2$1;
       let maxValue = 0;
       let maxIndex = 0;
       values.forEach((value, index) => {
@@ -3111,10 +3127,10 @@
       });
       inference.maxIndex = maxIndex;
       inference.maxValue = maxValue;
-      if ((_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_configuration, this)) !== null && _classPrivateFieldGet2$1 !== void 0 && _classPrivateFieldGet2$1.classes) {
+      if (this.classes) {
         const {
           classes
-        } = _classPrivateFieldGet2(_configuration, this);
+        } = this;
         inference.maxClass = classes[maxIndex];
         inference.classValues = {};
         values.forEach((value, index) => {
@@ -4264,6 +4280,8 @@
       let differences = this.diff(newState);
       if (differences.length == 0) {
         _console$o.log("redundant contextState", newState);
+      } else {
+        _console$o.log("found contextState differences", newState);
       }
       differences.forEach(key => {
         const value = newState[key];
@@ -20740,16 +20758,28 @@
             this.setRotation(newState.rotation, true);
             break;
           case "segmentStartCap":
-            this.setSegmentStartCap(newState.segmentStartCap);
+            if (differences.includes("segmentEndCap") && newState.segmentStartCap == newState.segmentEndCap) {
+              this.setSegmentCap(newState.segmentStartCap);
+            } else {
+              this.setSegmentStartCap(newState.segmentStartCap);
+            }
             break;
           case "segmentEndCap":
-            this.setSegmentEndCap(newState.segmentEndCap);
+            if (!differences.includes("segmentStartCap") || newState.segmentStartCap != newState.segmentEndCap) {
+              this.setSegmentEndCap(newState.segmentEndCap);
+            }
             break;
           case "segmentStartRadius":
-            this.setSegmentStartRadius(newState.segmentStartRadius);
+            if (differences.includes("segmentEndRadius") && newState.segmentStartRadius == newState.segmentEndRadius) {
+              this.setSegmentRadius(newState.segmentStartRadius);
+            } else {
+              this.setSegmentStartRadius(newState.segmentStartRadius);
+            }
             break;
           case "segmentEndRadius":
-            this.setSegmentEndRadius(newState.segmentEndRadius);
+            if (!differences.includes("segmentStartRadius") || newState.segmentStartRadius != newState.segmentEndRadius) {
+              this.setSegmentEndRadius(newState.segmentEndRadius);
+            }
             break;
           case "cropTop":
             this.setCropTop(newState.cropTop);
@@ -20786,10 +20816,16 @@
             this.selectBitmapColors(bitmapColors);
             break;
           case "bitmapScaleX":
-            this.setBitmapScaleX(newState.bitmapScaleX);
+            if (differences.includes("bitmapScaleY") && newState.bitmapScaleX == newState.bitmapScaleY) {
+              this.setBitmapScale(newState.bitmapScaleX);
+            } else {
+              this.setBitmapScaleX(newState.bitmapScaleX);
+            }
             break;
           case "bitmapScaleY":
-            this.setBitmapScaleY(newState.bitmapScaleY);
+            if (!differences.includes("bitmapScaleX") || newState.bitmapScaleX != newState.bitmapScaleY) {
+              this.setBitmapScaleY(newState.bitmapScaleY);
+            }
             break;
           case "spriteColorIndices":
             const spriteColors = [];
@@ -20802,10 +20838,16 @@
             this.selectSpriteColors(spriteColors);
             break;
           case "spriteScaleX":
-            this.setSpriteScaleX(newState.spriteScaleX);
+            if (differences.includes("spriteScaleY") && newState.spriteScaleX == newState.spriteScaleY) {
+              this.setSpriteScale(newState.spriteScaleX);
+            } else {
+              this.setSpriteScaleX(newState.spriteScaleX);
+            }
             break;
           case "spriteScaleY":
-            this.setSpriteScaleY(newState.spriteScaleY);
+            if (!differences.includes("spriteScaleX") || newState.spriteScaleX != newState.spriteScaleY) {
+              this.setSpriteScaleY(newState.spriteScaleY);
+            }
             break;
           case "spritesLineHeight":
             this.setSpritesLineHeight(newState.spritesLineHeight);
@@ -21649,7 +21691,8 @@
       spriteScale = roundScale(spriteScale);
       const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
       _console$i.log({
-        [commandType]: spriteScale
+        [commandType]: spriteScale,
+        direction
       });
       const newState = {};
       let command;
@@ -25512,9 +25555,23 @@
       configuration.type = "tflite";
       _classPrivateFieldGet2(_tfliteManager, this).sendConfiguration(configuration, false);
       const didSendFile = await _classPrivateFieldGet2(_fileTransferManager, this).send(configuration.type, configuration.file);
+      _console$6.log({
+        didSendFile
+      });
       if (!didSendFile) {
         _assertClassBrand(_Device_brand, this, _sendTxMessages).call(this);
+        if (this.tfliteIsReady) {
+          _classPrivateGetter(_Device_brand, this, _get_dispatchEvent$1).call(this, "tfliteIsReady", {
+            tfliteIsReady: this.tfliteIsReady
+          });
+        }
       }
+    }
+    get tfliteClasses() {
+      return _classPrivateFieldGet2(_tfliteManager, this).classes;
+    }
+    get setTfliteClasses() {
+      return _classPrivateFieldGet2(_tfliteManager, this).setClasses;
     }
     get tfliteTask() {
       return _classPrivateFieldGet2(_tfliteManager, this).task;

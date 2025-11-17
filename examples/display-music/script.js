@@ -104,9 +104,7 @@ displayCanvasHelper.addEventListener("color", (event) => {
 });
 setupColors();
 const getTextColorIndex = () => 1;
-const getGraphIndex = () => 2;
 displayCanvasHelper.setColor(getTextColorIndex(), "white");
-displayCanvasHelper.setColor(getGraphIndex(), "red");
 displayCanvasHelper.flushContextCommands();
 
 // DRAW
@@ -178,15 +176,23 @@ function isValidUrl(string) {
 }
 
 window.addEventListener("paste", (event) => {
-  const string = event.clipboardData.getData("text");
-  // FILL
+  const text = event.clipboardData.getData("text");
+  if (!text || text.length == 0) {
+    return;
+  }
+  console.log("paste", { text });
+  // FILL - verify music file
 });
 window.addEventListener("paste", async (event) => {
   const items = event.clipboardData.items;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
-    console.log("item.type", item.type);
-    // FILL
+    console.log("item", item);
+    if (item.kind == "file") {
+      const file = item.getAsFile();
+      console.log("file:", file);
+      // FILL - verify music file
+    }
   }
 });
 
@@ -311,7 +317,7 @@ window.addEventListener("paste", async (event) => {
   const items = event.clipboardData.items;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
-    console.log("item.type", item.type);
+    //console.log("item.type", item.type);
     if (item.type.startsWith("font/")) {
       const file = item.getAsFile();
       const arrayBuffer = await file.arrayBuffer();
