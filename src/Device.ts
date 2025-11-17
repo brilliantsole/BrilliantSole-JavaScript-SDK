@@ -1158,7 +1158,6 @@ class Device {
     _console.log({ didSendFile });
     if (!didSendFile) {
       this.#sendTxMessages();
-    } else {
       if (this.tfliteIsReady) {
         this.#dispatchEvent("tfliteIsReady", {
           tfliteIsReady: this.tfliteIsReady,

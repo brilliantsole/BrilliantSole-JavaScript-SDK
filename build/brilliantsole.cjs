@@ -12385,8 +12385,6 @@ class Device {
         _console$b.log({ didSendFile });
         if (!didSendFile) {
             this.#sendTxMessages();
-        }
-        else {
             if (this.tfliteIsReady) {
                 this.#dispatchEvent("tfliteIsReady", {
                     tfliteIsReady: this.tfliteIsReady,

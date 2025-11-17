@@ -25560,7 +25560,6 @@
       });
       if (!didSendFile) {
         _assertClassBrand(_Device_brand, this, _sendTxMessages).call(this);
-      } else {
         if (this.tfliteIsReady) {
           _classPrivateGetter(_Device_brand, this, _get_dispatchEvent$1).call(this, "tfliteIsReady", {
             tfliteIsReady: this.tfliteIsReady

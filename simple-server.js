@@ -206,6 +206,7 @@ const boundDeviceEventListeners = {
   fileTransferComplete: onFileTransferComplete,
 
   tfliteIsReady: onTfliteIsReady,
+  getTfliteInferencingEnabled: onTfliteInferencingEnabled,
   tfliteInference: onTfliteInference,
 };
 
@@ -239,7 +240,7 @@ if (sendTfliteModel) {
       task: "classification",
       sampleRate: 20,
       captureDelay: 500,
-      threshold: 0.0,
+      threshold: 0.7,
       classes: ["idle", "kick", "stomp", "tap"],
       file,
     };
@@ -304,10 +305,23 @@ function onFileTransferComplete(event) {
 // TFLITE LISTENERS
 
 /** @param {BS.DeviceEventMap["tfliteIsReady"]} event */
-function onTfliteIsReady(event) {
+async function onTfliteIsReady(event) {
   const device = event.target;
   const { tfliteIsReady } = event.message;
   console.log(`tfliteIsReady for "${device.name}"? ${tfliteIsReady}`);
+  if (tfliteIsReady) {
+    console.log(`enabling tfliteInferencing for "${device.name}"...`);
+    await device.enableTfliteInferencing();
+  }
+}
+
+/** @param {BS.DeviceEventMap["getTfliteInferencingEnabled"]} event */
+function onTfliteInferencingEnabled(event) {
+  const device = event.target;
+  const { tfliteInferencingEnabled } = event.message;
+  console.log(
+    `tfliteInferencingEnabled for "${device.name}"? ${tfliteInferencingEnabled}`
+  );
 }
 
 /** @param {BS.DeviceEventMap["tfliteInference"]} event */
