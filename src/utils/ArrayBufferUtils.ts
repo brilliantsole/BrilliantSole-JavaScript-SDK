@@ -80,7 +80,14 @@ export function sliceDataView(
   return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
 }
 
-export type FileLike = number[] | ArrayBuffer | DataView | URL | string | File;
+export type FileLike =
+  | number[]
+  | ArrayBuffer
+  | DataView
+  | URL
+  | string
+  | File
+  | Buffer;
 
 export async function getFileBuffer(file: FileLike) {
   let fileBuffer;
@@ -95,6 +102,8 @@ export async function getFileBuffer(file: FileLike) {
     fileBuffer = await file.arrayBuffer();
   } else if (file instanceof ArrayBuffer) {
     fileBuffer = file;
+  } else if (file.buffer instanceof ArrayBuffer) {
+    fileBuffer = file.buffer;
   } else {
     throw { error: "invalid file type", file };
   }

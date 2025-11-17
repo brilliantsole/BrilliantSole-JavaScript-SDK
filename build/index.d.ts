@@ -743,7 +743,7 @@ declare class EventDispatcher<Target extends any, EventType extends string, Even
     }>;
 }
 
-type FileLike = number[] | ArrayBuffer | DataView | URL | string | File;
+type FileLike = number[] | ArrayBuffer | DataView | URL | string | File | Buffer;
 
 declare const FileTypes: readonly ["tflite", "wifiServerCert", "wifiServerKey", "spriteSheet"];
 type FileType = (typeof FileTypes)[number];

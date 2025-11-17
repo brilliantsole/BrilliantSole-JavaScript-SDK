@@ -501,6 +501,9 @@
 	    else if (file instanceof ArrayBuffer) {
 	        fileBuffer = file;
 	    }
+	    else if (file.buffer instanceof ArrayBuffer) {
+	        fileBuffer = file.buffer;
+	    }
 	    else {
 	        throw { error: "invalid file type", file };
 	    }
@@ -4158,6 +4161,9 @@
 	        let differences = this.diff(newState);
 	        if (differences.length == 0) {
 	            _console$q.log("redundant contextState", newState);
+	        }
+	        else {
+	            _console$q.log("found contextState differences", newState);
 	        }
 	        differences.forEach((key) => {
 	            const value = newState[key];
@@ -26832,8 +26838,16 @@
 	        configuration.type = "tflite";
 	        this.#tfliteManager.sendConfiguration(configuration, false);
 	        const didSendFile = await this.#fileTransferManager.send(configuration.type, configuration.file);
+	        _console$7.log({ didSendFile });
 	        if (!didSendFile) {
 	            this.#sendTxMessages();
+	        }
+	        else {
+	            if (this.tfliteIsReady) {
+	                this.#dispatchEvent("tfliteIsReady", {
+	                    tfliteIsReady: this.tfliteIsReady,
+	                });
+	            }
 	        }
 	    }
 	    get tfliteClasses() {
@@ -28532,7 +28546,8 @@
 	        this.assertValidColorIndex(spriteColorIndex);
 	        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
 	        if (this.#isDrawingBlankSprite) {
-	            spriteColorIndices[spriteColorIndex] = spriteColorIndices[colorIndex];
+	            spriteColorIndices[spriteColorIndex] =
+	                this.#blankSpriteColorIndices[colorIndex];
 	        }
 	        else {
 	            spriteColorIndices[spriteColorIndex] = colorIndex;
@@ -28540,6 +28555,8 @@
 	        const differences = this.#contextStateHelper.update({
 	            spriteColorIndices,
 	        });
+	        _console$6.log({ spriteColorIndex, colorIndex });
+	        _console$6.log("spriteColorIndices", spriteColorIndices);
 	        if (this.device?.isConnected && !this.#ignoreDevice) {
 	            await this.deviceDisplayManager.selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately);
 	        }
@@ -28557,7 +28574,8 @@
 	            this.assertValidColorIndex(spriteColorIndex);
 	            this.assertValidColorIndex(colorIndex);
 	            if (this.#isDrawingBlankSprite) {
-	                spriteColorIndices[spriteColorIndex] = spriteColorIndices[colorIndex];
+	                spriteColorIndices[spriteColorIndex] =
+	                    this.#blankSpriteColorIndices[colorIndex];
 	            }
 	            else {
 	                spriteColorIndices[spriteColorIndex] = colorIndex;
@@ -30211,6 +30229,7 @@
 	        if (!override && this.#useSpriteColorIndices) {
 	            return;
 	        }
+	        this.#useSpriteColorIndices = useSpriteColorIndices;
 	        this.#rearDrawStack.push(() => {
 	            this.#useSpriteColorIndices = useSpriteColorIndices;
 	        });
@@ -30325,8 +30344,12 @@
 	        this.#saveContextForSprite(offsetX, offsetY, { width, height }, contextState);
 	        this.#setUseSpriteColorIndices(true, true);
 	        this.#setClearCanvasBoundingBoxOnDraw(false, true);
+	        this.#blankSpriteColorIndices =
+	            this.contextState.spriteColorIndices.slice();
+	        _console$6.log("#blankSpriteColorIndices", this.#blankSpriteColorIndices);
 	    }
 	    #isDrawingBlankSprite = false;
+	    #blankSpriteColorIndices;
 	    async startSprite(offsetX, offsetY, width, height, sendImmediately) {
 	        _console$6.assertWithError(!this.#isDrawingBlankSprite, `already drawing blank sprite`);
 	        this.#isDrawingBlankSprite = true;
@@ -30345,6 +30368,7 @@
 	        this.#restoreContextForSprite();
 	        this.#setUseSpriteColorIndices(false, true);
 	        this.#setClearCanvasBoundingBoxOnDraw(true, true);
+	        this.#blankSpriteColorIndices = undefined;
 	    }
 	    async endSprite(sendImmediately) {
 	        _console$6.assertWithError(this.#isDrawingBlankSprite, `not drawing blank sprite`);

@@ -533,6 +533,9 @@ async function getFileBuffer(file) {
     else if (file instanceof ArrayBuffer) {
         fileBuffer = file;
     }
+    else if (file.buffer instanceof ArrayBuffer) {
+        fileBuffer = file.buffer;
+    }
     else {
         throw { error: "invalid file type", file };
     }
@@ -4074,6 +4077,9 @@ class DisplayContextStateHelper {
         let differences = this.diff(newState);
         if (differences.length == 0) {
             _console$u.log("redundant contextState", newState);
+        }
+        else {
+            _console$u.log("found contextState differences", newState);
         }
         differences.forEach((key) => {
             const value = newState[key];
@@ -12376,8 +12382,16 @@ class Device {
         configuration.type = "tflite";
         this.#tfliteManager.sendConfiguration(configuration, false);
         const didSendFile = await this.#fileTransferManager.send(configuration.type, configuration.file);
+        _console$b.log({ didSendFile });
         if (!didSendFile) {
             this.#sendTxMessages();
+        }
+        else {
+            if (this.tfliteIsReady) {
+                this.#dispatchEvent("tfliteIsReady", {
+                    tfliteIsReady: this.tfliteIsReady,
+                });
+            }
         }
     }
     get tfliteClasses() {

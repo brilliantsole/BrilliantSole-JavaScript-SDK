@@ -361,6 +361,7 @@ const drawGraph = async (x, y, senseGraphData) => {
 
         await displayCanvasHelper.drawSpritesString(x, y, label);
       }
+      await displayCanvasHelper.selectSpriteColor(1, 1); // reset
 
       await displayCanvasHelper.setSegmentCap("round");
       await displayCanvasHelper.setSegmentRadius(2);
@@ -373,7 +374,7 @@ const drawGraph = async (x, y, senseGraphData) => {
           continue;
         }
 
-        // console.log({ label, labelIndex, labelIndexPlus1: labelIndex + 1 });
+        //console.log({ label, labelIndex, labelIndexPlus1: labelIndex + 1 });
         await displayCanvasHelper.selectFillColor(labelIndex + 1);
 
         /** @type {BS.Vector2} */
@@ -453,6 +454,7 @@ const draw = async () => {
 
   await displayCanvasHelper.show();
 };
+window.draw = draw;
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;

@@ -580,6 +580,8 @@
       fileBuffer = await file.arrayBuffer();
     } else if (file instanceof ArrayBuffer) {
       fileBuffer = file;
+    } else if (file.buffer instanceof ArrayBuffer) {
+      fileBuffer = file.buffer;
     } else {
       throw {
         error: "invalid file type",
@@ -4278,6 +4280,8 @@
       let differences = this.diff(newState);
       if (differences.length == 0) {
         _console$o.log("redundant contextState", newState);
+      } else {
+        _console$o.log("found contextState differences", newState);
       }
       differences.forEach(key => {
         const value = newState[key];
@@ -25551,8 +25555,17 @@
       configuration.type = "tflite";
       _classPrivateFieldGet2(_tfliteManager, this).sendConfiguration(configuration, false);
       const didSendFile = await _classPrivateFieldGet2(_fileTransferManager, this).send(configuration.type, configuration.file);
+      _console$6.log({
+        didSendFile
+      });
       if (!didSendFile) {
         _assertClassBrand(_Device_brand, this, _sendTxMessages).call(this);
+      } else {
+        if (this.tfliteIsReady) {
+          _classPrivateGetter(_Device_brand, this, _get_dispatchEvent$1).call(this, "tfliteIsReady", {
+            tfliteIsReady: this.tfliteIsReady
+          });
+        }
       }
     }
     get tfliteClasses() {

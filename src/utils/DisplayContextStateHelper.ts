@@ -39,6 +39,8 @@ class DisplayContextStateHelper {
     let differences = this.diff(newState);
     if (differences.length == 0) {
       _console.log("redundant contextState", newState);
+    } else {
+      _console.log("found contextState differences", newState);
     }
     differences.forEach((key) => {
       const value = newState[key]!;
