@@ -294,7 +294,7 @@ const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 const sensorTypeContainers = {};
 
 const TfliteSensorTypes = BS.TfliteSensorTypes.slice();
-const includeAcceleration = false;
+const includeAcceleration = true;
 if (includeAcceleration) {
   // for testing with Frame
   TfliteSensorTypes.push("acceleration");
