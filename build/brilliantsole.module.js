@@ -30218,10 +30218,10 @@ class DisplayCanvasHelper {
     }
     #useSpriteColorIndices = false;
     #setUseSpriteColorIndices(useSpriteColorIndices, override = false) {
+        this.#useSpriteColorIndices = useSpriteColorIndices;
         if (!override && this.#useSpriteColorIndices) {
             return;
         }
-        this.#useSpriteColorIndices = useSpriteColorIndices;
         this.#rearDrawStack.push(() => {
             this.#useSpriteColorIndices = useSpriteColorIndices;
         });
