@@ -175,13 +175,47 @@ function isValidUrl(string) {
   }
 }
 
-window.addEventListener("paste", (event) => {
+/** @type {HTMLInputElement} */
+const loadMusicXMLInput = document.getElementById("loadMusicXML");
+loadMusicXMLInput.addEventListener("input", async () => {
+  const file = loadMusicXMLInput.files[0];
+  console.log("file", file);
+  if (file) {
+    await loadMusicXMLFile(file);
+  }
+  loadMusicXMLInput.value = "";
+});
+
+function isValidXml(xmlString) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlString, "application/xml");
+
+  // Parsing errors appear inside a <parsererror> element
+  const errorNode = doc.querySelector("parsererror");
+
+  return !errorNode;
+}
+
+const validMusicXMLExtensions = loadMusicXMLInput.accept.split(",");
+console.log("validMusicXMLExtensions", validMusicXMLExtensions);
+window.addEventListener("paste", async (event) => {
   const text = event.clipboardData.getData("text");
   if (!text || text.length == 0) {
     return;
   }
   console.log("paste", { text });
-  // FILL - verify music file
+
+  if (isValidXml(text)) {
+    await loadOsmd(text);
+    return;
+  }
+
+  if (isValidUrl(text)) {
+    if (validMusicXMLExtensions.some((extension) => text.endsWith(extension))) {
+      await loadOsmd(text);
+      return;
+    }
+  }
 });
 window.addEventListener("paste", async (event) => {
   const items = event.clipboardData.items;
@@ -191,10 +225,27 @@ window.addEventListener("paste", async (event) => {
     if (item.kind == "file") {
       const file = item.getAsFile();
       console.log("file:", file);
-      // FILL - verify music file
+      await loadMusicXMLFile(file);
     }
   }
 });
+
+const loadMusicXMLFile = async (file) => {
+  if (
+    validMusicXMLExtensions.some((extension) => file.name.endsWith(extension))
+  ) {
+    const reader = new FileReader();
+    reader.onload = async (response) => {
+      await loadOsmd(response.target.result);
+    };
+
+    if (file.name.endsWith(".mxl")) {
+      reader.readAsBinaryString(file);
+    } else {
+      reader.readAsText(file);
+    }
+  }
+};
 
 // DRAGOVER
 
@@ -207,7 +258,7 @@ window.addEventListener("drop", async (e) => {
   const file = e.dataTransfer.files[0];
   if (file) {
     console.log(file.type);
-    // FILL
+    loadMusicXMLFile(file);
   }
 });
 
@@ -433,6 +484,239 @@ const selectFont = async (newFontName) => {
   await draw();
 };
 
-await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Sans");
+await loadFontUrl("https://fonts.googleapis.com/css2?family=Tinos");
+
+// OPEN SHEET MUSIC DISPLAY
+
+const osmdContainer = document.getElementById("osmd");
+displayCanvasHelper.addEventListener("resize", () => {
+  const { width, height } = displayCanvasHelper;
+  osmdContainer.style.width = `${width}px`;
+  osmdContainer.style.height = `${height}px`;
+});
+/** @type {import("../utils/opensheetmusicdisplay/opensheetmusicdisplay.js")} */
+let OpenSheetMusicDisplay = opensheetmusicdisplay;
+const osmd = new OpenSheetMusicDisplay.OpenSheetMusicDisplay(osmdContainer, {
+  backend: "svg",
+  autoResize: false,
+  drawingParameters: "compacttight",
+
+  darkMode: true,
+  // defaultColorMusic: "white", // notes, stems, beams, slurs
+  // pageBackgroundColor: "black",
+
+  drawMeasureNumbers: false,
+  // drawLyrics: false,
+  // drawSlurs: false,
+  drawTimeSignatures: false,
+});
+window.osmd = osmd;
+
+// osmd.setOptions({ drawFromMeasureNumber: 1, drawUpToMeasureNumber: 4 });
+
+const loadOsmd = async (content) => {
+  console.log("loadOsmd");
+  await osmd.load(content);
+  updateOsmdTitle();
+
+  updateOsmdInstrument();
+  setOsmdInstrumentIndex(0);
+
+  setOsmdSystemIndex(0);
+
+  renderOsmd(true);
+};
+
+const renderOsmd = () => {
+  console.log("renderOsmd");
+
+  osmd.render();
+  updateOsmdSystem();
+  updateOsmdZoom();
+  createOsmdSystemSpriteSheet();
+  draw();
+};
+
+const osmdTitleContainer = document.getElementById("osmdTitle");
+const osmdTitleSpan = osmdTitleContainer.querySelector(".title");
+const updateOsmdTitle = () => {
+  osmdTitleContainer.classList.remove("hidden");
+  osmdTitleSpan.innerText = osmd.Sheet?.TitleString;
+};
+
+let numberOfSystems = 0;
+let currentSystemIndex = 0;
+const osmdSystemContainer = document.getElementById("osmdSystem");
+const osmdSystemValueSpan = osmdSystemContainer.querySelector(".value");
+const osmdSystemTotalSpan = osmdSystemContainer.querySelector(".total");
+const osmdSystemInput = osmdSystemContainer.querySelector("input");
+const updateOsmdSystem = () => {
+  numberOfSystems = osmd.GraphicSheet?.MusicPages[0].MusicSystems.length;
+  console.log({ numberOfSystems });
+  osmdSystemTotalSpan.innerText = numberOfSystems - 1;
+  osmdSystemInput.max = numberOfSystems - 1;
+
+  osmdSystemContainer.classList.remove("hidden");
+};
+const setOsmdSystemIndex = async (newIndex, render = false) => {
+  currentSystemIndex = newIndex;
+  currentSystemIndex = Math.max(
+    0,
+    Math.min(currentSystemIndex, numberOfSystems - 1)
+  );
+  console.log({ currentSystemIndex });
+  osmdSystemInput.value = currentSystemIndex;
+  osmdSystemValueSpan.innerText = currentSystemIndex;
+
+  if (render) {
+    renderOsmd();
+  }
+};
+osmdSystemInput.addEventListener("input", () => {
+  setOsmdSystemIndex(Number(osmdSystemInput.value), true);
+});
+
+let currentOsmdInstrumentIndex = 0;
+const osmdInstrumentContainer = document.getElementById("osmdInstrument");
+const osmdInstrumentSelect = osmdInstrumentContainer.querySelector("select");
+const osmdInstrumentOptgroup = osmdInstrumentSelect.querySelector("optgroup");
+const updateOsmdInstrument = () => {
+  osmdInstrumentOptgroup.innerHTML = "";
+  osmd.Sheet.Instruments.forEach((instrument, index) => {
+    const { Name, IdString } = instrument;
+    osmdInstrumentOptgroup.appendChild(
+      new Option(`${Name} (${IdString})`, index)
+    );
+  });
+
+  osmdInstrumentContainer.classList.remove("hidden");
+};
+const setOsmdInstrumentIndex = async (newInstrumentIndex, render = false) => {
+  currentOsmdInstrumentIndex = newInstrumentIndex;
+  console.log({ currentOsmdInstrumentIndex });
+  osmdInstrumentSelect.value = currentOsmdInstrumentIndex;
+  console.log("updated", osmdInstrumentSelect.value);
+
+  osmd.Sheet.Instruments.forEach((instrument, index) => {
+    instrument.Visible = index == currentOsmdInstrumentIndex;
+  });
+
+  if (render) {
+    renderOsmd();
+  }
+};
+osmdInstrumentSelect.addEventListener("input", () => {
+  setOsmdInstrumentIndex(Number(osmdInstrumentSelect.value), true);
+});
+
+const osmdZoomContainer = document.getElementById("osmdZoom");
+const osmdZoomValueSpan = osmdZoomContainer.querySelector(".value");
+const osmdZoomInput = osmdZoomContainer.querySelector("input");
+const updateOsmdZoom = () => {
+  osmdZoomInput.value = osmd.Zoom;
+  osmdZoomValueSpan.innerText = osmd.Zoom;
+  console.log({ zoom: osmd.Zoom });
+  osmdZoomContainer.classList.remove("hidden");
+};
+const setOsmdZoom = async (newZoom, render = false) => {
+  osmd.Zoom = newZoom;
+  console.log({ zoom: osmd.Zoom });
+  osmdZoomInput.value = osmd.Zoom;
+  osmdZoomValueSpan.innerText = osmd.Zoom;
+
+  if (render) {
+    renderOsmd();
+  }
+};
+osmdZoomInput.addEventListener("input", () => {
+  setOsmdZoom(Number(osmdZoomInput.value), true);
+});
+
+const createOsmdSystemSpriteSheet = () => {
+  getSystemMetrics(0, currentSystemIndex);
+  // FILL
+};
+
+const testDiv = document.getElementById("test");
+const getSystemMetrics = (pageIndex, systemIndex) => {
+  const system =
+    osmd.GraphicSheet.MusicPages[pageIndex].MusicSystems[systemIndex];
+
+  const yOffset = system.boundingBox.borderTop;
+
+  const { AbsolutePosition, Size } = system.PositionAndShape;
+
+  const { Zoom } = osmd;
+  const scalar = Zoom * 10;
+
+  let { x, y } = AbsolutePosition;
+  let { width, height } = Size;
+
+  y += yOffset;
+
+  x *= scalar;
+  y *= scalar;
+
+  width += 0.1;
+
+  width *= scalar;
+  height *= scalar;
+
+  console.log({ systemIndex, x, y, width, height });
+
+  if (false) {
+    const drawFromMeasureNumber = system.GraphicalMeasures[0][0].measureNumber;
+    const drawUpToMeasureNumber =
+      system.GraphicalMeasures.at(-1).at(-1).measureNumber;
+    osmd.setOptions({ drawFromMeasureNumber, drawUpToMeasureNumber });
+  }
+
+  console.log("system", system);
+  system.StaffLines.forEach((staffLine) => {
+    staffLine.AbstractExpressions.forEach((abstractExpression) => {
+      // console.log("abstractExpression", abstractExpression);
+    });
+  });
+  system.GraphicalMeasures.forEach((graphicalMeasures) => {
+    // console.log("graphicalMeasures", graphicalMeasures);
+    graphicalMeasures.forEach((graphicalMeasure) => {
+      // console.log("graphicalMeasure", graphicalMeasure);
+      // console.log(
+      //   "graphicalMeasure.MeasureNumber",
+      //   graphicalMeasure.MeasureNumber
+      // );
+      // console.log(
+      //   "graphicalMeasure.InitiallyActiveClef",
+      //   graphicalMeasure.InitiallyActiveClef
+      // );
+      graphicalMeasure.staffEntries.forEach((staffEntry) => {
+        // console.log("staffEntry", staffEntry);
+        staffEntry.FingeringEntries.forEach((fingeringEntry) => {
+          // console.log("fingeringEntry", fingeringEntry);
+        });
+        staffEntry.graphicalVoiceEntries.forEach((graphicalVoiceEntry) => {
+          // console.log("graphicalVoiceEntry", graphicalVoiceEntry);
+          graphicalVoiceEntry.notes.forEach((note) => {
+            // console.log("note", note);
+            //note.setVisible(false);
+          });
+        });
+        staffEntry.LyricsEntries.forEach((lyricEntry) => {
+          //console.log("lyricEntry", lyricEntry);
+        });
+      });
+    });
+  });
+
+  const box = osmd.container.getBoundingClientRect();
+  testDiv.style.width = `${width}px`;
+  testDiv.style.height = `${height}px`;
+  testDiv.style.left = `${x + box.left + window.scrollX}px`;
+  testDiv.style.top = `${y + box.top + window.scrollY}px`;
+};
 
 didLoad = true;
+
+await loadOsmd(
+  "https://raw.githubusercontent.com/opensheetmusicdisplay/opensheetmusicdisplay/refs/heads/develop/demo/BrahWiMeSample.musicxml"
+);

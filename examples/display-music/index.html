@@ -23,6 +23,17 @@
     .displayColor {
       display: inline-block;
     }
+
+    #osmd {
+      width: 640px;
+      height: 400px;
+      overflow-y: scroll;
+      display: inline-block;
+    }
+
+    .hidden {
+      display: none !important;
+    }
   </style>
   <body>
     <nav>
@@ -72,20 +83,44 @@
 
     <label id="fontScale" class="verticalLabel">
       <span>font scale (<span class="value">1.0</span>x)</span>
-      <input type="range" value="1.0" min="0.5" max="5" step="0.1" />
+      <input type="range" value="1.0" min="0.75" max="5" step="0.1" />
     </label>
 
     <br />
 
     <label class="verticalLabel">
-      add musicXML file
+      add musicXML
       <input
         id="loadMusicXML"
         type="file"
         accept=".xml,.mxl,.musicxml"
         multiple="false"
-        style="width: 6rem"
+        style="width: 8rem"
       />
+    </label>
+
+    <label id="osmdTitle" class="verticalLabel hidden">
+      <span>Title</span>
+      <span class="title"></span>
+    </label>
+
+    <label id="osmdSystem" class="verticalLabel hidden">
+      <span>
+        system <span class="value">0</span>/<span class="total">0</span>
+      </span>
+      <input type="number" min="0" step="1" value="0" />
+    </label>
+
+    <label id="osmdZoom" class="verticalLabel hidden">
+      <span>zoom (<span class="value">1</span>x)</span>
+      <input type="range" min="0.25" max="5" step="0.25" value="1" />
+    </label>
+
+    <label id="osmdInstrument" class="verticalLabel hidden">
+      <span>instrument</span>
+      <select>
+        <optgroup label="select instrument"></optgroup>
+      </select>
     </label>
 
     <br />
@@ -98,5 +133,15 @@
     <br />
 
     <canvas id="display" width="640" height="400"></canvas>
+
+    <div
+      id="test"
+      style="
+        background-color: rgba(255, 0, 0, 0.233);
+        position: absolute;
+        z-index: 1;
+      "
+    ></div>
+    <div id="osmd"></div>
   </body>
 </html>

@@ -172,6 +172,7 @@ function isValidUrl(string) {
 }
 window.addEventListener("paste", (event) => {
   const string = event.clipboardData.getData("text");
+  console.log("string", string);
   if (isValidUrl(string)) {
     image.src = string;
   } else if (BS.isValidSVG(string)) {

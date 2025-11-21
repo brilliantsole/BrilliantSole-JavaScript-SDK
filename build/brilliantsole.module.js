@@ -20174,9 +20174,7 @@ function isValidSVG(svgString) {
         return false;
     }
     const root = doc.documentElement;
-    return (!!root &&
-        root.nodeName.toLowerCase() === "svg" &&
-        root.namespaceURI === "http://www.w3.org/2000/svg");
+    return !!root && root.nodeName.toLowerCase() === "svg";
 }
 
 function capitalizeFirstCharacter(string) {
@@ -20407,7 +20405,7 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                 continue;
             }
             const bbox = glyph.getBoundingBox();
-            const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
+            const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth ?? 0) *
                 fontScale +
                 strokeWidth;
             const spriteHeight = maxSpriteHeight;
@@ -20431,6 +20429,7 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                     x: -bitmapWidth / 2 + bitmapX,
                     y: -bitmapHeight / 2 + bitmapY,
                 };
+                _console$m.log(`${name} path.commands`, path.commands);
                 let curves = [];
                 let startPoint = { x: 0, y: 0 };
                 const allCurves = [];
@@ -20501,8 +20500,8 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                     const bPoints = getCurvesPoints(b);
                     return contourArea(bPoints) - contourArea(aPoints);
                 });
-                allCurves.forEach((curve) => {
-                    const controlPoints = curve.flatMap((c) => c.controlPoints);
+                allCurves.forEach((curves) => {
+                    let controlPoints = curves.flatMap((c) => c.controlPoints);
                     const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
                     parsedPaths.push({ path: controlPoints, isHole });
                     if (isHole != wasHole) {
@@ -20521,6 +20520,10 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                         }
                     }
                     const isSegments = curves.every((c) => c.type === "segment");
+                    controlPoints = controlPoints.map(({ x, y }) => ({
+                        x: Math.round(x),
+                        y: Math.round(y),
+                    }));
                     if (isSegments) {
                         commands.push({
                             type: "drawPolygon",
@@ -20534,8 +20537,10 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
             }
             else {
                 if (bitmapWidth > 0 && bitmapHeight > 0) {
-                    canvas.width = bitmapWidth;
-                    canvas.height = bitmapHeight;
+                    const _bitmapWidth = Math.ceil(bitmapWidth);
+                    const _bitmapHeight = Math.ceil(bitmapHeight);
+                    canvas.width = _bitmapWidth;
+                    canvas.height = _bitmapHeight;
                     ctx.imageSmoothingEnabled = false;
                     ctx.fillStyle = "black";
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -20545,8 +20550,8 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                         "#ffffff",
                     ]);
                     const bitmap = {
-                        width: bitmapWidth,
-                        height: bitmapHeight,
+                        width: _bitmapWidth,
+                        height: _bitmapHeight,
                         numberOfColors: 2,
                         pixels: colorIndices,
                     };
@@ -20566,8 +20571,8 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
             const sprite = {
                 name,
                 commands,
-                width: spriteWidth,
-                height: spriteHeight,
+                width: Math.ceil(spriteWidth),
+                height: Math.ceil(spriteHeight),
             };
             spriteSheet.sprites.push(sprite);
         }

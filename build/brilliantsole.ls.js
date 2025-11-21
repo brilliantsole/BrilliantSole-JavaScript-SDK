@@ -19190,6 +19190,7 @@
         glyphs.push(glyph);
       }
       for (let i = 0; i < glyphs.length; i++) {
+        var _glyph$advanceWidth;
         const glyph = glyphs[i];
         let name = glyph.name;
         if (glyph.unicode != undefined) {
@@ -19199,7 +19200,7 @@
           continue;
         }
         const bbox = glyph.getBoundingBox();
-        const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) * fontScale + strokeWidth;
+        const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), (_glyph$advanceWidth = glyph.advanceWidth) !== null && _glyph$advanceWidth !== void 0 ? _glyph$advanceWidth : 0) * fontScale + strokeWidth;
         const spriteHeight = maxSpriteHeight;
         const commands = [];
         const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
@@ -19226,6 +19227,7 @@
             x: -bitmapWidth / 2 + bitmapX,
             y: -bitmapHeight / 2 + bitmapY
           };
+          _console$l.log("".concat(name, " path.commands"), path.commands);
           let curves = [];
           let startPoint = {
             x: 0,
@@ -19319,8 +19321,8 @@
             const bPoints = getCurvesPoints(b);
             return contourArea(bPoints) - contourArea(aPoints);
           });
-          allCurves.forEach(curve => {
-            const controlPoints = curve.flatMap(c => c.controlPoints);
+          allCurves.forEach(curves => {
+            let controlPoints = curves.flatMap(c => c.controlPoints);
             const isHole = classifySubpath(controlPoints, parsedPaths);
             parsedPaths.push({
               path: controlPoints,
@@ -19341,6 +19343,16 @@
               }
             }
             const isSegments = curves.every(c => c.type === "segment");
+            controlPoints = controlPoints.map(_ref => {
+              let {
+                x,
+                y
+              } = _ref;
+              return {
+                x: Math.round(x),
+                y: Math.round(y)
+              };
+            });
             if (isSegments) {
               commands.push({
                 type: "drawPolygon",
@@ -19355,8 +19367,10 @@
           });
         } else {
           if (bitmapWidth > 0 && bitmapHeight > 0) {
-            canvas.width = bitmapWidth;
-            canvas.height = bitmapHeight;
+            const _bitmapWidth = Math.ceil(bitmapWidth);
+            const _bitmapHeight = Math.ceil(bitmapHeight);
+            canvas.width = _bitmapWidth;
+            canvas.height = _bitmapHeight;
             ctx.imageSmoothingEnabled = false;
             ctx.fillStyle = "black";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -19365,8 +19379,8 @@
               colorIndices
             } = await quantizeCanvas(canvas, 2, ["#000000", "#ffffff"]);
             const bitmap = {
-              width: bitmapWidth,
-              height: bitmapHeight,
+              width: _bitmapWidth,
+              height: _bitmapHeight,
               numberOfColors: 2,
               pixels: colorIndices
             };
@@ -19386,8 +19400,8 @@
         const sprite = {
           name,
           commands,
-          width: spriteWidth,
-          height: spriteHeight
+          width: Math.ceil(spriteWidth),
+          height: Math.ceil(spriteHeight)
         };
         spriteSheet.sprites.push(sprite);
       }
@@ -19550,11 +19564,11 @@
       let spriteLine = [];
       spriteLines.push(spriteLine);
       let spriteSubLine;
-      _sprites.forEach((_ref, index) => {
+      _sprites.forEach((_ref2, index) => {
         let {
           sprite,
           spriteSheet
-        } = _ref;
+        } = _ref2;
         if (spritesLineIndices[i].includes(index)) {
           spriteLine = [];
           spriteLines.push(spriteLine);
@@ -19593,11 +19607,11 @@
     const expandedSpritesLines = [];
     spriteLines.forEach(spriteLine => {
       const _spritesLine = [];
-      spriteLine.forEach(_ref2 => {
+      spriteLine.forEach(_ref3 => {
         let {
           spriteSheetName,
           spriteNames
-        } = _ref2;
+        } = _ref3;
         const spriteSheet = spriteSheets[spriteSheetName];
         _console$l.assertWithError(spriteSheet, "no spriteSheet found with name \"".concat(spriteSheetName, "\""));
         spriteNames.forEach(spriteName => {

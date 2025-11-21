@@ -1700,9 +1700,5 @@ export function isValidSVG(svgString: string) {
   }
 
   const root = doc.documentElement;
-  return (
-    !!root &&
-    root.nodeName.toLowerCase() === "svg" &&
-    root.namespaceURI === "http://www.w3.org/2000/svg"
-  );
+  return !!root && root.nodeName.toLowerCase() === "svg";
 }
