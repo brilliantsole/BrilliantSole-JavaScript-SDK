@@ -1796,6 +1796,21 @@
 	    }
 	}
 
+	const decodeTable = [0,132,396,924,1980,4092,8316,16764];
+	function decodeSample(muLawSample) {
+	  let sign;
+	  let exponent;
+	  let mantissa;
+	  let sample;
+	  muLawSample = ~muLawSample;
+	  sign = (muLawSample & 0x80);
+	  exponent = (muLawSample >> 4) & 0x07;
+	  mantissa = muLawSample & 0x0F;
+	  sample = decodeTable[exponent] + (mantissa << (exponent+3));
+	  if (sign != 0) sample = -sample;
+	  return sample;
+	}
+
 	var _a$3;
 	const _console$z = createConsole("MicrophoneManager", { log: false });
 	const MicrophoneSensorTypes = ["microphone"];
@@ -1915,7 +1930,7 @@
 	    #assertValidBitDepth() {
 	        _console$z.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
 	    }
-	    #fadeDuration = 0.001;
+	    #fadeDuration = 0.01;
 	    #playbackTime = 0;
 	    #parseMicrophoneData(dataView) {
 	        this.#assertValidBitDepth();
@@ -1930,8 +1945,12 @@
 	                    samples[i] = sample / 2 ** 15;
 	                    break;
 	                case "8":
-	                    sample = dataView.getInt8(i);
-	                    samples[i] = sample / 2 ** 7;
+	                    {
+	                        sample = dataView.getUint8(i);
+	                        sample = decodeSample(sample);
+	                        sample = sample / 2 ** 15;
+	                    }
+	                    samples[i] = sample;
 	                    break;
 	            }
 	        }
@@ -2364,7 +2383,7 @@
 	    #assertAvailableSensorType(sensorType) {
 	        _console$x.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
 	        const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-	        _console$x.log(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+	        _console$x.log({ sensorType, isSensorTypeAvailable });
 	        return isSensorTypeAvailable;
 	    }
 	    #configuration = {};
@@ -4304,7 +4323,7 @@
 	};
 	const displayCurveTolerance = 2.0;
 	const displayCurveToleranceSquared = displayCurveTolerance ** 2;
-	const maxNumberOfDisplayCurvePoints = 150;
+	const maxNumberOfDisplayCurvePoints = 200;
 	function assertValidNumberOfControlPoints(curveType, controlPoints, isPath = false) {
 	    let numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
 	    if (isPath) {
@@ -26622,6 +26641,7 @@
 	        this.#sensorConfigurationManager.clear();
 	        this.#displayManager.reset();
 	        this.#isServerSide = false;
+	        this.#batteryLevel = undefined;
 	    }
 	    #clearConnection() {
 	        this.connectionManager?.clear();
@@ -26698,9 +26718,9 @@
 	    get deviceInformation() {
 	        return this.#deviceInformationManager.information;
 	    }
-	    #batteryLevel = 0;
+	    #batteryLevel = undefined;
 	    get batteryLevel() {
-	        return this.#batteryLevel;
+	        return this.#batteryLevel ?? 0;
 	    }
 	    #updateBatteryLevel(updatedBatteryLevel) {
 	        _console$7.assertTypeWithError(updatedBatteryLevel, "number");
@@ -31393,6 +31413,8 @@
 
 	exports.CameraCommands = CameraCommands;
 	exports.CameraConfigurationTypes = CameraConfigurationTypes;
+	exports.ConnectionEventTypes = ConnectionEventTypes;
+	exports.ConnectionMessageTypes = ConnectionMessageTypes;
 	exports.ContinuousSensorTypes = ContinuousSensorTypes;
 	exports.DefaultNumberOfDisplayColors = DefaultNumberOfDisplayColors;
 	exports.DefaultNumberOfPressureSensors = DefaultNumberOfPressureSensors;
@@ -31442,6 +31464,7 @@
 	exports.TfliteTasks = TfliteTasks;
 	exports.ThrottleUtils = ThrottleUtils;
 	exports.Timer = Timer;
+	exports.TxRxMessageTypes = TxRxMessageTypes;
 	exports.VibrationLocations = VibrationLocations;
 	exports.VibrationTypes = VibrationTypes;
 	exports.VibrationWaveformEffects = VibrationWaveformEffects;

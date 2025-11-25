@@ -1951,6 +1951,21 @@
     }
   }
 
+  const decodeTable = [0,132,396,924,1980,4092,8316,16764];
+  function decodeSample(muLawSample) {
+    let sign;
+    let exponent;
+    let mantissa;
+    let sample;
+    muLawSample = ~muLawSample;
+    sign = (muLawSample & 0x80);
+    exponent = (muLawSample >> 4) & 0x07;
+    mantissa = muLawSample & 0x0F;
+    sample = decodeTable[exponent] + (mantissa << (exponent+3));
+    if (sign != 0) sample = -sample;
+    return sample;
+  }
+
   var _a$3;
   const _console$x = createConsole("MicrophoneManager", {
     log: false
@@ -1985,7 +2000,7 @@
       _defineProperty$1(this, "sendMessage", void 0);
       _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _microphoneStatus, void 0);
-      _classPrivateFieldInitSpec(this, _fadeDuration, 0.001);
+      _classPrivateFieldInitSpec(this, _fadeDuration, 0.01);
       _classPrivateFieldInitSpec(this, _playbackTime, 0);
       _classPrivateFieldInitSpec(this, _microphoneConfiguration, {});
       _classPrivateFieldInitSpec(this, _availableMicrophoneConfigurationTypes, void 0);
@@ -2237,8 +2252,12 @@
           samples[i] = sample / 2 ** 15;
           break;
         case "8":
-          sample = dataView.getInt8(i);
-          samples[i] = sample / 2 ** 7;
+          {
+            sample = dataView.getUint8(i);
+            sample = decodeSample(sample);
+            sample = sample / 2 ** 15;
+          }
+          samples[i] = sample;
           break;
       }
     }
@@ -2576,7 +2595,10 @@
     var _classPrivateFieldGet2$1;
     _console$v.assertWithError(_classPrivateFieldGet2(_availableSensorTypes, this), "must get initial sensorConfiguration");
     const isSensorTypeAvailable = (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_availableSensorTypes, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.includes(sensorType);
-    _console$v.log(isSensorTypeAvailable, "unavailable sensor type \"".concat(sensorType, "\""));
+    _console$v.log({
+      sensorType,
+      isSensorTypeAvailable
+    });
     return isSensorTypeAvailable;
   }
   function _updateConfiguration(updatedConfiguration) {
@@ -25085,7 +25107,7 @@
       _classPrivateFieldInitSpec(this, _reconnectIntervalId, void 0);
       _defineProperty$1(this, "latestConnectionMessages", new Map());
       _classPrivateFieldInitSpec(this, _deviceInformationManager, new DeviceInformationManager());
-      _classPrivateFieldInitSpec(this, _batteryLevel, 0);
+      _classPrivateFieldInitSpec(this, _batteryLevel, undefined);
       _defineProperty$1(this, "_informationManager", new InformationManager());
       _classPrivateFieldInitSpec(this, _sensorConfigurationManager, new SensorConfigurationManager());
       _classPrivateFieldInitSpec(this, _clearSensorConfigurationOnLeave, _a$1.ClearSensorConfigurationOnLeave);
@@ -25444,7 +25466,8 @@
       return _classPrivateFieldGet2(_deviceInformationManager, this).information;
     }
     get batteryLevel() {
-      return _classPrivateFieldGet2(_batteryLevel, this);
+      var _classPrivateFieldGet5;
+      return (_classPrivateFieldGet5 = _classPrivateFieldGet2(_batteryLevel, this)) !== null && _classPrivateFieldGet5 !== void 0 ? _classPrivateFieldGet5 : 0;
     }
     get id() {
       return this._informationManager.id;
@@ -25639,8 +25662,8 @@
       return _classPrivateFieldGet2(_tfliteManager, this).setThreshold;
     }
     get canUpdateFirmware() {
-      var _classPrivateFieldGet5;
-      return (_classPrivateFieldGet5 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet5 === void 0 ? void 0 : _classPrivateFieldGet5.canUpdateFirmware;
+      var _classPrivateFieldGet6;
+      return (_classPrivateFieldGet6 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet6 === void 0 ? void 0 : _classPrivateFieldGet6.canUpdateFirmware;
     }
     get uploadFirmware() {
       _assertClassBrand(_Device_brand, this, _assertCanUpdateFirmware).call(this);
@@ -26306,8 +26329,8 @@
     return _classPrivateFieldGet2(_eventDispatcher$2, _this).dispatchEvent;
   }
   async function _sendTxMessages(messages, sendImmediately) {
-    var _classPrivateFieldGet6;
-    await ((_classPrivateFieldGet6 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet6 === void 0 ? void 0 : _classPrivateFieldGet6.sendTxMessages(messages, sendImmediately));
+    var _classPrivateFieldGet7;
+    await ((_classPrivateFieldGet7 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet7 === void 0 ? void 0 : _classPrivateFieldGet7.sendTxMessages(messages, sendImmediately));
   }
   function _assertIsConnected() {
     _console$6.assertWithError(this.isConnected, "notConnected");
@@ -26422,6 +26445,7 @@
     _classPrivateFieldGet2(_sensorConfigurationManager, this).clear();
     _classPrivateFieldGet2(_displayManager, this).reset();
     _classPrivateFieldSet2(_isServerSide, this, false);
+    _classPrivateFieldSet2(_batteryLevel, this, undefined);
   }
   function _clearConnection() {
     var _this$connectionManag5;
@@ -27695,6 +27719,8 @@
 
   exports.CameraCommands = CameraCommands;
   exports.CameraConfigurationTypes = CameraConfigurationTypes;
+  exports.ConnectionEventTypes = ConnectionEventTypes;
+  exports.ConnectionMessageTypes = ConnectionMessageTypes;
   exports.ContinuousSensorTypes = ContinuousSensorTypes;
   exports.DefaultNumberOfDisplayColors = DefaultNumberOfDisplayColors;
   exports.DefaultNumberOfPressureSensors = DefaultNumberOfPressureSensors;
@@ -27741,6 +27767,7 @@
   exports.TfliteTasks = TfliteTasks;
   exports.ThrottleUtils = ThrottleUtils;
   exports.Timer = Timer;
+  exports.TxRxMessageTypes = TxRxMessageTypes;
   exports.VibrationLocations = VibrationLocations;
   exports.VibrationTypes = VibrationTypes;
   exports.VibrationWaveformEffects = VibrationWaveformEffects;

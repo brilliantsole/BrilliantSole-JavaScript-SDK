@@ -64,10 +64,7 @@ class SensorConfigurationManager {
     );
     const isSensorTypeAvailable =
       this.#availableSensorTypes?.includes(sensorType);
-    _console.log(
-      isSensorTypeAvailable,
-      `unavailable sensor type "${sensorType}"`
-    );
+    _console.log({ sensorType, isSensorTypeAvailable });
     return isSensorTypeAvailable;
   }
 

@@ -5,6 +5,7 @@
 'use strict';
 
 var autoBind$1 = require('auto-bind');
+var alawmulaw = require('alawmulaw');
 var RGBQuant = require('rgbquant');
 var opentype = require('opentype.js');
 var woff2Encoder = require('woff2-encoder');
@@ -1906,7 +1907,7 @@ class MicrophoneManager {
     #assertValidBitDepth() {
         _console$D.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
     }
-    #fadeDuration = 0.001;
+    #fadeDuration = 0.01;
     #playbackTime = 0;
     #parseMicrophoneData(dataView) {
         this.#assertValidBitDepth();
@@ -1921,8 +1922,12 @@ class MicrophoneManager {
                     samples[i] = sample / 2 ** 15;
                     break;
                 case "8":
-                    sample = dataView.getInt8(i);
-                    samples[i] = sample / 2 ** 7;
+                    {
+                        sample = dataView.getUint8(i);
+                        sample = alawmulaw.mulaw.decodeSample(sample);
+                        sample = sample / 2 ** 15;
+                    }
+                    samples[i] = sample;
                     break;
             }
         }
@@ -2387,7 +2392,7 @@ class SensorConfigurationManager {
     #assertAvailableSensorType(sensorType) {
         _console$B.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
         const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-        _console$B.log(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+        _console$B.log({ sensorType, isSensorTypeAvailable });
         return isSensorTypeAvailable;
     }
     #configuration = {};
@@ -12168,6 +12173,7 @@ class Device {
         this.#sensorConfigurationManager.clear();
         this.#displayManager.reset();
         this.#isServerSide = false;
+        this.#batteryLevel = undefined;
     }
     #clearConnection() {
         this.connectionManager?.clear();
@@ -12244,9 +12250,9 @@ class Device {
     get deviceInformation() {
         return this.#deviceInformationManager.information;
     }
-    #batteryLevel = 0;
+    #batteryLevel = undefined;
     get batteryLevel() {
-        return this.#batteryLevel;
+        return this.#batteryLevel ?? 0;
     }
     #updateBatteryLevel(updatedBatteryLevel) {
         _console$b.assertTypeWithError(updatedBatteryLevel, "number");
@@ -14826,6 +14832,8 @@ const ThrottleUtils = {
 
 exports.CameraCommands = CameraCommands;
 exports.CameraConfigurationTypes = CameraConfigurationTypes;
+exports.ConnectionEventTypes = ConnectionEventTypes;
+exports.ConnectionMessageTypes = ConnectionMessageTypes;
 exports.ContinuousSensorTypes = ContinuousSensorTypes;
 exports.DefaultNumberOfDisplayColors = DefaultNumberOfDisplayColors;
 exports.DefaultNumberOfPressureSensors = DefaultNumberOfPressureSensors;
@@ -14873,6 +14881,7 @@ exports.TfliteSensorTypes = TfliteSensorTypes;
 exports.TfliteTasks = TfliteTasks;
 exports.ThrottleUtils = ThrottleUtils;
 exports.Timer = Timer;
+exports.TxRxMessageTypes = TxRxMessageTypes;
 exports.UDPServer = UDPServer;
 exports.VibrationLocations = VibrationLocations;
 exports.VibrationTypes = VibrationTypes;

@@ -285,12 +285,14 @@ class InformationManager {
         this.#updateBatteryCurrent(batteryCurrent);
         break;
       case "getId":
+        // @ts-expect-error
         const id = textDecoder.decode(dataView.buffer);
         _console.log({ id });
         this.#updateId(id);
         break;
       case "getName":
       case "setName":
+        // @ts-expect-error
         const name = textDecoder.decode(dataView.buffer);
         _console.log({ name });
         this.updateName(name);

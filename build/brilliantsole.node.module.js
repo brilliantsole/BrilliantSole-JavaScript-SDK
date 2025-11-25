@@ -3,6 +3,7 @@
  * @license MIT
  */
 import autoBind$1 from 'auto-bind';
+import { mulaw } from 'alawmulaw';
 import RGBQuant from 'rgbquant';
 import opentype from 'opentype.js';
 import { decompress } from 'woff2-encoder';
@@ -1884,7 +1885,7 @@ class MicrophoneManager {
     #assertValidBitDepth() {
         _console$D.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
     }
-    #fadeDuration = 0.001;
+    #fadeDuration = 0.01;
     #playbackTime = 0;
     #parseMicrophoneData(dataView) {
         this.#assertValidBitDepth();
@@ -1899,8 +1900,12 @@ class MicrophoneManager {
                     samples[i] = sample / 2 ** 15;
                     break;
                 case "8":
-                    sample = dataView.getInt8(i);
-                    samples[i] = sample / 2 ** 7;
+                    {
+                        sample = dataView.getUint8(i);
+                        sample = mulaw.decodeSample(sample);
+                        sample = sample / 2 ** 15;
+                    }
+                    samples[i] = sample;
                     break;
             }
         }
@@ -2365,7 +2370,7 @@ class SensorConfigurationManager {
     #assertAvailableSensorType(sensorType) {
         _console$B.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
         const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-        _console$B.log(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+        _console$B.log({ sensorType, isSensorTypeAvailable });
         return isSensorTypeAvailable;
     }
     #configuration = {};
@@ -12146,6 +12151,7 @@ class Device {
         this.#sensorConfigurationManager.clear();
         this.#displayManager.reset();
         this.#isServerSide = false;
+        this.#batteryLevel = undefined;
     }
     #clearConnection() {
         this.connectionManager?.clear();
@@ -12222,9 +12228,9 @@ class Device {
     get deviceInformation() {
         return this.#deviceInformationManager.information;
     }
-    #batteryLevel = 0;
+    #batteryLevel = undefined;
     get batteryLevel() {
-        return this.#batteryLevel;
+        return this.#batteryLevel ?? 0;
     }
     #updateBatteryLevel(updatedBatteryLevel) {
         _console$b.assertTypeWithError(updatedBatteryLevel, "number");
@@ -14802,5 +14808,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, hexToRGB, intersectWireframes, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wait };
+export { CameraCommands, CameraConfigurationTypes, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, hexToRGB, intersectWireframes, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.node.module.js.map

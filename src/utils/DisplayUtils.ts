@@ -287,7 +287,7 @@ export const displayCurveTypeToNumberOfControlPoints: Record<
 export const displayCurveTolerance = 2.0;
 export const displayCurveToleranceSquared = displayCurveTolerance ** 2;
 
-export const maxNumberOfDisplayCurvePoints = 150;
+export const maxNumberOfDisplayCurvePoints = 200;
 export function assertValidNumberOfControlPoints(
   curveType: DisplayBezierCurveType,
   controlPoints: Vector2[],
