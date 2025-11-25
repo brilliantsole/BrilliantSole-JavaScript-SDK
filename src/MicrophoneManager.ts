@@ -7,7 +7,8 @@ import {
   UInt8ByteBuffer,
 } from "./utils/ArrayBufferUtils.ts";
 import { float32ArrayToWav } from "./utils/AudioUtils.ts";
-import { mulaw } from "alawmulaw";
+import * as alawmulaw from "alawmulaw";
+const { mulaw } = alawmulaw;
 
 const _console = createConsole("MicrophoneManager", { log: false });
 

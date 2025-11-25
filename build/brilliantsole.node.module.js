@@ -3,7 +3,7 @@
  * @license MIT
  */
 import autoBind$1 from 'auto-bind';
-import { mulaw } from 'alawmulaw';
+import * as alawmulaw from 'alawmulaw';
 import RGBQuant from 'rgbquant';
 import opentype from 'opentype.js';
 import { decompress } from 'woff2-encoder';
@@ -1767,6 +1767,7 @@ function writeString(view, offset, string) {
 }
 
 var _a$4;
+const { mulaw } = alawmulaw;
 const _console$D = createConsole("MicrophoneManager", { log: false });
 const MicrophoneSensorTypes = ["microphone"];
 const MicrophoneCommands = ["start", "stop", "vad"];

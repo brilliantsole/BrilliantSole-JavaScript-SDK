@@ -1790,7 +1790,107 @@ function writeString(view, offset, string) {
     }
 }
 
+const LOG_TABLE = [
+  1,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+  6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7
+];
+function encodeSample$1(sample) {
+  let compandedValue;
+  sample = (sample ==-32768) ? -32767 : sample;
+  let sign = ((~sample) >> 8) & 0x80;
+  if (!sign) {
+    sample = sample * -1;
+  }
+  if (sample > 32635) {
+    sample = 32635;
+  }
+  if (sample >= 256)  {
+    let exponent = LOG_TABLE[(sample >> 8) & 0x7F];
+    let mantissa = (sample >> (exponent + 3) ) & 0x0F;
+    compandedValue = ((exponent << 4) | mantissa);
+  } else {
+    compandedValue = sample >> 4;
+  }
+  return compandedValue ^ (sign ^ 0x55);
+}
+function decodeSample$1(aLawSample) {
+  let sign = 0;
+  aLawSample ^= 0x55;
+  if (aLawSample & 0x80) {
+    aLawSample &= -129;
+    sign = -1;
+  }
+  let position = ((aLawSample & 0xF0) >> 4) + 4;
+  let decoded = 0;
+  if (position != 4) {
+    decoded = ((1 << position) |
+      ((aLawSample & 0x0F) << (position - 4)) |
+      (1 << (position - 5)));
+  } else {
+    decoded = (aLawSample << 1)|1;
+  }
+  decoded = (sign === 0) ? (decoded) : (-decoded);
+  return (decoded * 8) * -1;
+}
+function encode$3(samples) {
+  let aLawSamples = new Uint8Array(samples.length);
+  for (let i=0; i<samples.length; i++) {
+    aLawSamples[i] = encodeSample$1(samples[i]);
+  }
+  return aLawSamples;
+}
+function decode$3(samples) {
+  let pcmSamples = new Int16Array(samples.length);
+  for (let i=0; i<samples.length; i++) {
+    pcmSamples[i] = decodeSample$1(samples[i]);
+  }
+  return pcmSamples;
+}
+
+var alaw = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    decode: decode$3,
+    decodeSample: decodeSample$1,
+    encode: encode$3,
+    encodeSample: encodeSample$1
+});
+
+const BIAS = 0x84;
+const CLIP = 32635;
+const encodeTable = [
+    0,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,
+    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+    5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+    5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7];
 const decodeTable = [0,132,396,924,1980,4092,8316,16764];
+function encodeSample(sample) {
+  let sign;
+  let exponent;
+  let mantissa;
+  let muLawSample;
+  sign = (sample >> 8) & 0x80;
+  if (sign != 0) sample = -sample;
+  sample = sample + BIAS;
+  if (sample > CLIP) sample = CLIP;
+  exponent = encodeTable[(sample>>7) & 0xFF];
+  mantissa = (sample >> (exponent+3)) & 0x0F;
+  muLawSample = ~(sign | (exponent << 4) | mantissa);
+  return muLawSample;
+}
 function decodeSample(muLawSample) {
   let sign;
   let exponent;
@@ -1804,8 +1904,37 @@ function decodeSample(muLawSample) {
   if (sign != 0) sample = -sample;
   return sample;
 }
+function encode$2(samples) {
+  let muLawSamples = new Uint8Array(samples.length);
+  for (let i=0; i<samples.length; i++) {
+    muLawSamples[i] = encodeSample(samples[i]);
+  }
+  return muLawSamples;
+}
+function decode$2(samples) {
+  let pcmSamples = new Int16Array(samples.length);
+  for (let i=0; i<samples.length; i++) {
+    pcmSamples[i] = decodeSample(samples[i]);
+  }
+  return pcmSamples;
+}
+
+var mulaw$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    decode: decode$2,
+    decodeSample: decodeSample,
+    encode: encode$2,
+    encodeSample: encodeSample
+});
+
+var alawmulaw = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    alaw: alaw,
+    mulaw: mulaw$1
+});
 
 var _a$3;
+const { mulaw } = alawmulaw;
 const _console$z = createConsole("MicrophoneManager", { log: false });
 const MicrophoneSensorTypes = ["microphone"];
 const MicrophoneCommands = ["start", "stop", "vad"];
@@ -1941,7 +2070,7 @@ class MicrophoneManager {
                 case "8":
                     {
                         sample = dataView.getUint8(i);
-                        sample = decodeSample(sample);
+                        sample = mulaw.decodeSample(sample);
                         sample = sample / 2 ** 15;
                     }
                     samples[i] = sample;

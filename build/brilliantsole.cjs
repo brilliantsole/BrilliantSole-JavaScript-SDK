@@ -35,6 +35,7 @@ function _interopNamespaceDefault(e) {
     return Object.freeze(n);
 }
 
+var alawmulaw__namespace = /*#__PURE__*/_interopNamespaceDefault(alawmulaw);
 var webbluetooth__namespace = /*#__PURE__*/_interopNamespaceDefault(webbluetooth);
 var dgram__namespace = /*#__PURE__*/_interopNamespaceDefault(dgram);
 
@@ -1789,6 +1790,7 @@ function writeString(view, offset, string) {
 }
 
 var _a$4;
+const { mulaw } = alawmulaw__namespace;
 const _console$D = createConsole("MicrophoneManager", { log: false });
 const MicrophoneSensorTypes = ["microphone"];
 const MicrophoneCommands = ["start", "stop", "vad"];
@@ -1924,7 +1926,7 @@ class MicrophoneManager {
                 case "8":
                     {
                         sample = dataView.getUint8(i);
-                        sample = alawmulaw.mulaw.decodeSample(sample);
+                        sample = mulaw.decodeSample(sample);
                         sample = sample / 2 ** 15;
                     }
                     samples[i] = sample;
