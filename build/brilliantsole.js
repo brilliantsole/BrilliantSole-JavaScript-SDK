@@ -1796,7 +1796,151 @@
 	    }
 	}
 
+	const LOG_TABLE = [
+	  1,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+	  6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+	  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7
+	];
+	function encodeSample$1(sample) {
+	  let compandedValue;
+	  sample = (sample ==-32768) ? -32767 : sample;
+	  let sign = ((~sample) >> 8) & 0x80;
+	  if (!sign) {
+	    sample = sample * -1;
+	  }
+	  if (sample > 32635) {
+	    sample = 32635;
+	  }
+	  if (sample >= 256)  {
+	    let exponent = LOG_TABLE[(sample >> 8) & 0x7F];
+	    let mantissa = (sample >> (exponent + 3) ) & 0x0F;
+	    compandedValue = ((exponent << 4) | mantissa);
+	  } else {
+	    compandedValue = sample >> 4;
+	  }
+	  return compandedValue ^ (sign ^ 0x55);
+	}
+	function decodeSample$1(aLawSample) {
+	  let sign = 0;
+	  aLawSample ^= 0x55;
+	  if (aLawSample & 0x80) {
+	    aLawSample &= -129;
+	    sign = -1;
+	  }
+	  let position = ((aLawSample & 0xF0) >> 4) + 4;
+	  let decoded = 0;
+	  if (position != 4) {
+	    decoded = ((1 << position) |
+	      ((aLawSample & 0x0F) << (position - 4)) |
+	      (1 << (position - 5)));
+	  } else {
+	    decoded = (aLawSample << 1)|1;
+	  }
+	  decoded = (sign === 0) ? (decoded) : (-decoded);
+	  return (decoded * 8) * -1;
+	}
+	function encode$3(samples) {
+	  let aLawSamples = new Uint8Array(samples.length);
+	  for (let i=0; i<samples.length; i++) {
+	    aLawSamples[i] = encodeSample$1(samples[i]);
+	  }
+	  return aLawSamples;
+	}
+	function decode$3(samples) {
+	  let pcmSamples = new Int16Array(samples.length);
+	  for (let i=0; i<samples.length; i++) {
+	    pcmSamples[i] = decodeSample$1(samples[i]);
+	  }
+	  return pcmSamples;
+	}
+
+	var alaw = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		decode: decode$3,
+		decodeSample: decodeSample$1,
+		encode: encode$3,
+		encodeSample: encodeSample$1
+	});
+
+	const BIAS = 0x84;
+	const CLIP = 32635;
+	const encodeTable = [
+	    0,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,
+	    4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+	    5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+	    5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+	    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+	    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+	    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+	    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+	    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+	    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7];
+	const decodeTable = [0,132,396,924,1980,4092,8316,16764];
+	function encodeSample(sample) {
+	  let sign;
+	  let exponent;
+	  let mantissa;
+	  let muLawSample;
+	  sign = (sample >> 8) & 0x80;
+	  if (sign != 0) sample = -sample;
+	  sample = sample + BIAS;
+	  if (sample > CLIP) sample = CLIP;
+	  exponent = encodeTable[(sample>>7) & 0xFF];
+	  mantissa = (sample >> (exponent+3)) & 0x0F;
+	  muLawSample = ~(sign | (exponent << 4) | mantissa);
+	  return muLawSample;
+	}
+	function decodeSample(muLawSample) {
+	  let sign;
+	  let exponent;
+	  let mantissa;
+	  let sample;
+	  muLawSample = ~muLawSample;
+	  sign = (muLawSample & 0x80);
+	  exponent = (muLawSample >> 4) & 0x07;
+	  mantissa = muLawSample & 0x0F;
+	  sample = decodeTable[exponent] + (mantissa << (exponent+3));
+	  if (sign != 0) sample = -sample;
+	  return sample;
+	}
+	function encode$2(samples) {
+	  let muLawSamples = new Uint8Array(samples.length);
+	  for (let i=0; i<samples.length; i++) {
+	    muLawSamples[i] = encodeSample(samples[i]);
+	  }
+	  return muLawSamples;
+	}
+	function decode$2(samples) {
+	  let pcmSamples = new Int16Array(samples.length);
+	  for (let i=0; i<samples.length; i++) {
+	    pcmSamples[i] = decodeSample(samples[i]);
+	  }
+	  return pcmSamples;
+	}
+
+	var mulaw$1 = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		decode: decode$2,
+		decodeSample: decodeSample,
+		encode: encode$2,
+		encodeSample: encodeSample
+	});
+
+	var alawmulaw = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		alaw: alaw,
+		mulaw: mulaw$1
+	});
+
 	var _a$3;
+	const { mulaw } = alawmulaw;
 	const _console$z = createConsole("MicrophoneManager", { log: false });
 	const MicrophoneSensorTypes = ["microphone"];
 	const MicrophoneCommands = ["start", "stop", "vad"];
@@ -1915,7 +2059,7 @@
 	    #assertValidBitDepth() {
 	        _console$z.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
 	    }
-	    #fadeDuration = 0.001;
+	    #fadeDuration = 0.01;
 	    #playbackTime = 0;
 	    #parseMicrophoneData(dataView) {
 	        this.#assertValidBitDepth();
@@ -1930,8 +2074,12 @@
 	                    samples[i] = sample / 2 ** 15;
 	                    break;
 	                case "8":
-	                    sample = dataView.getInt8(i);
-	                    samples[i] = sample / 2 ** 7;
+	                    {
+	                        sample = dataView.getUint8(i);
+	                        sample = mulaw.decodeSample(sample);
+	                        sample = sample / 2 ** 15;
+	                    }
+	                    samples[i] = sample;
 	                    break;
 	            }
 	        }
@@ -2364,7 +2512,7 @@
 	    #assertAvailableSensorType(sensorType) {
 	        _console$x.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
 	        const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-	        _console$x.log(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+	        _console$x.log({ sensorType, isSensorTypeAvailable });
 	        return isSensorTypeAvailable;
 	    }
 	    #configuration = {};
@@ -4304,7 +4452,7 @@
 	};
 	const displayCurveTolerance = 2.0;
 	const displayCurveToleranceSquared = displayCurveTolerance ** 2;
-	const maxNumberOfDisplayCurvePoints = 150;
+	const maxNumberOfDisplayCurvePoints = 200;
 	function assertValidNumberOfControlPoints(curveType, controlPoints, isPath = false) {
 	    let numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
 	    if (isPath) {
@@ -20180,9 +20328,7 @@
 	        return false;
 	    }
 	    const root = doc.documentElement;
-	    return (!!root &&
-	        root.nodeName.toLowerCase() === "svg" &&
-	        root.namespaceURI === "http://www.w3.org/2000/svg");
+	    return !!root && root.nodeName.toLowerCase() === "svg";
 	}
 
 	function capitalizeFirstCharacter(string) {
@@ -20413,7 +20559,7 @@
 	                continue;
 	            }
 	            const bbox = glyph.getBoundingBox();
-	            const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
+	            const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth ?? 0) *
 	                fontScale +
 	                strokeWidth;
 	            const spriteHeight = maxSpriteHeight;
@@ -20437,6 +20583,7 @@
 	                    x: -bitmapWidth / 2 + bitmapX,
 	                    y: -bitmapHeight / 2 + bitmapY,
 	                };
+	                _console$m.log(`${name} path.commands`, path.commands);
 	                let curves = [];
 	                let startPoint = { x: 0, y: 0 };
 	                const allCurves = [];
@@ -20507,8 +20654,8 @@
 	                    const bPoints = getCurvesPoints(b);
 	                    return contourArea(bPoints) - contourArea(aPoints);
 	                });
-	                allCurves.forEach((curve) => {
-	                    const controlPoints = curve.flatMap((c) => c.controlPoints);
+	                allCurves.forEach((curves) => {
+	                    let controlPoints = curves.flatMap((c) => c.controlPoints);
 	                    const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
 	                    parsedPaths.push({ path: controlPoints, isHole });
 	                    if (isHole != wasHole) {
@@ -20527,6 +20674,10 @@
 	                        }
 	                    }
 	                    const isSegments = curves.every((c) => c.type === "segment");
+	                    controlPoints = controlPoints.map(({ x, y }) => ({
+	                        x: Math.round(x),
+	                        y: Math.round(y),
+	                    }));
 	                    if (isSegments) {
 	                        commands.push({
 	                            type: "drawPolygon",
@@ -20540,8 +20691,10 @@
 	            }
 	            else {
 	                if (bitmapWidth > 0 && bitmapHeight > 0) {
-	                    canvas.width = bitmapWidth;
-	                    canvas.height = bitmapHeight;
+	                    const _bitmapWidth = Math.ceil(bitmapWidth);
+	                    const _bitmapHeight = Math.ceil(bitmapHeight);
+	                    canvas.width = _bitmapWidth;
+	                    canvas.height = _bitmapHeight;
 	                    ctx.imageSmoothingEnabled = false;
 	                    ctx.fillStyle = "black";
 	                    ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -20551,8 +20704,8 @@
 	                        "#ffffff",
 	                    ]);
 	                    const bitmap = {
-	                        width: bitmapWidth,
-	                        height: bitmapHeight,
+	                        width: _bitmapWidth,
+	                        height: _bitmapHeight,
 	                        numberOfColors: 2,
 	                        pixels: colorIndices,
 	                    };
@@ -20572,8 +20725,8 @@
 	            const sprite = {
 	                name,
 	                commands,
-	                width: spriteWidth,
-	                height: spriteHeight,
+	                width: Math.ceil(spriteWidth),
+	                height: Math.ceil(spriteHeight),
 	            };
 	            spriteSheet.sprites.push(sprite);
 	        }
@@ -26617,6 +26770,7 @@
 	        this.#sensorConfigurationManager.clear();
 	        this.#displayManager.reset();
 	        this.#isServerSide = false;
+	        this.#batteryLevel = undefined;
 	    }
 	    #clearConnection() {
 	        this.connectionManager?.clear();
@@ -26693,9 +26847,9 @@
 	    get deviceInformation() {
 	        return this.#deviceInformationManager.information;
 	    }
-	    #batteryLevel = 0;
+	    #batteryLevel = undefined;
 	    get batteryLevel() {
-	        return this.#batteryLevel;
+	        return this.#batteryLevel ?? 0;
 	    }
 	    #updateBatteryLevel(updatedBatteryLevel) {
 	        _console$7.assertTypeWithError(updatedBatteryLevel, "number");
@@ -31388,6 +31542,8 @@
 
 	exports.CameraCommands = CameraCommands;
 	exports.CameraConfigurationTypes = CameraConfigurationTypes;
+	exports.ConnectionEventTypes = ConnectionEventTypes;
+	exports.ConnectionMessageTypes = ConnectionMessageTypes;
 	exports.ContinuousSensorTypes = ContinuousSensorTypes;
 	exports.DefaultNumberOfDisplayColors = DefaultNumberOfDisplayColors;
 	exports.DefaultNumberOfPressureSensors = DefaultNumberOfPressureSensors;
@@ -31437,6 +31593,7 @@
 	exports.TfliteTasks = TfliteTasks;
 	exports.ThrottleUtils = ThrottleUtils;
 	exports.Timer = Timer;
+	exports.TxRxMessageTypes = TxRxMessageTypes;
 	exports.VibrationLocations = VibrationLocations;
 	exports.VibrationTypes = VibrationTypes;
 	exports.VibrationWaveformEffects = VibrationWaveformEffects;

@@ -92,6 +92,7 @@ const nodeExternal = [
   "simplify-js",
   "fit-curve",
   "os",
+  "alawmulaw",
 ];
 
 const lensStudioPlugins = [

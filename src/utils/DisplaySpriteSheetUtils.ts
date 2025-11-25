@@ -404,7 +404,7 @@ export async function fontToSpriteSheet(
       if (glyph.unicode != undefined) {
         name = String.fromCharCode(glyph.unicode);
       }
-      //_console.log(name, glyph);
+      // _console.log(name, glyph);
       if (typeof name != "string") {
         continue;
       }
@@ -414,7 +414,7 @@ export async function fontToSpriteSheet(
       const spriteWidth =
         Math.max(
           Math.max(bbox.x2, bbox.x2 - bbox.x1),
-          glyph.advanceWidth || 0
+          glyph.advanceWidth ?? 0
         ) *
           fontScale +
         strokeWidth;
@@ -447,7 +447,7 @@ export async function fontToSpriteSheet(
           x: -bitmapWidth / 2 + bitmapX,
           y: -bitmapHeight / 2 + bitmapY,
         };
-        //_console.log(`${name} path.commands`, path.commands);
+        _console.log(`${name} path.commands`, path.commands);
         let curves: DisplayBezierCurve[] = [];
         let startPoint: Vector2 = { x: 0, y: 0 };
 
@@ -534,8 +534,8 @@ export async function fontToSpriteSheet(
           return contourArea(bPoints) - contourArea(aPoints);
         });
 
-        allCurves.forEach((curve) => {
-          const controlPoints = curve.flatMap((c) => c.controlPoints);
+        allCurves.forEach((curves) => {
+          let controlPoints = curves.flatMap((c) => c.controlPoints);
           const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
           parsedPaths.push({ path: controlPoints, isHole });
           if (isHole != wasHole) {
@@ -554,6 +554,10 @@ export async function fontToSpriteSheet(
           }
 
           const isSegments = curves.every((c) => c.type === "segment");
+          controlPoints = controlPoints.map(({ x, y }) => ({
+            x: Math.round(x),
+            y: Math.round(y),
+          }));
           if (isSegments) {
             commands.push({
               type: "drawPolygon",
@@ -565,8 +569,12 @@ export async function fontToSpriteSheet(
         });
       } else {
         if (bitmapWidth > 0 && bitmapHeight > 0) {
-          canvas.width = bitmapWidth;
-          canvas.height = bitmapHeight;
+          const _bitmapWidth = Math.ceil(bitmapWidth);
+          const _bitmapHeight = Math.ceil(bitmapHeight);
+
+          canvas.width = _bitmapWidth;
+          canvas.height = _bitmapHeight;
+
           ctx.imageSmoothingEnabled = false;
 
           ctx.fillStyle = "black";
@@ -578,8 +586,8 @@ export async function fontToSpriteSheet(
             "#ffffff",
           ]);
           const bitmap: DisplayBitmap = {
-            width: bitmapWidth,
-            height: bitmapHeight,
+            width: _bitmapWidth,
+            height: _bitmapHeight,
             numberOfColors: 2,
             pixels: colorIndices,
           };
@@ -616,8 +624,8 @@ export async function fontToSpriteSheet(
       const sprite: DisplaySprite = {
         name,
         commands,
-        width: spriteWidth,
-        height: spriteHeight,
+        width: Math.ceil(spriteWidth),
+        height: Math.ceil(spriteHeight),
       };
 
       spriteSheet.sprites.push(sprite);

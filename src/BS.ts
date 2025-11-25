@@ -233,6 +233,15 @@ export const ThrottleUtils = {
   debounce,
 };
 
+export {
+  ConnectionMessageType,
+  ConnectionMessageTypes,
+  ConnectionEventType,
+  ConnectionEventTypes,
+  TxRxMessageType,
+  TxRxMessageTypes,
+} from "./connection/BaseConnectionManager.ts";
+
 export { DiscoveredDevice } from "./scanner/BaseScanner.ts";
 /** NODE_START */
 export { default as Scanner } from "./scanner/Scanner.ts";

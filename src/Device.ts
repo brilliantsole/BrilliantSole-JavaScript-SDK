@@ -814,6 +814,7 @@ class Device {
     this.#sensorConfigurationManager.clear();
     this.#displayManager.reset();
     this.#isServerSide = false;
+    this.#batteryLevel = undefined;
   }
   #clearConnection() {
     this.connectionManager?.clear();
@@ -958,9 +959,9 @@ class Device {
   }
 
   // BATTERY LEVEL
-  #batteryLevel = 0;
+  #batteryLevel?: number = undefined;
   get batteryLevel() {
-    return this.#batteryLevel;
+    return this.#batteryLevel ?? 0;
   }
   #updateBatteryLevel(updatedBatteryLevel: number) {
     _console.assertTypeWithError(updatedBatteryLevel, "number");

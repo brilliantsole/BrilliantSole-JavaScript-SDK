@@ -3,6 +3,7 @@
  * @license MIT
  */
 import autoBind$1 from 'auto-bind';
+import * as alawmulaw from 'alawmulaw';
 import RGBQuant from 'rgbquant';
 import opentype from 'opentype.js';
 import { decompress } from 'woff2-encoder';
@@ -1766,6 +1767,7 @@ function writeString(view, offset, string) {
 }
 
 var _a$4;
+const { mulaw } = alawmulaw;
 const _console$D = createConsole("MicrophoneManager", { log: false });
 const MicrophoneSensorTypes = ["microphone"];
 const MicrophoneCommands = ["start", "stop", "vad"];
@@ -1884,7 +1886,7 @@ class MicrophoneManager {
     #assertValidBitDepth() {
         _console$D.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
     }
-    #fadeDuration = 0.001;
+    #fadeDuration = 0.01;
     #playbackTime = 0;
     #parseMicrophoneData(dataView) {
         this.#assertValidBitDepth();
@@ -1899,8 +1901,12 @@ class MicrophoneManager {
                     samples[i] = sample / 2 ** 15;
                     break;
                 case "8":
-                    sample = dataView.getInt8(i);
-                    samples[i] = sample / 2 ** 7;
+                    {
+                        sample = dataView.getUint8(i);
+                        sample = mulaw.decodeSample(sample);
+                        sample = sample / 2 ** 15;
+                    }
+                    samples[i] = sample;
                     break;
             }
         }
@@ -2365,7 +2371,7 @@ class SensorConfigurationManager {
     #assertAvailableSensorType(sensorType) {
         _console$B.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
         const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-        _console$B.log(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+        _console$B.log({ sensorType, isSensorTypeAvailable });
         return isSensorTypeAvailable;
     }
     #configuration = {};
@@ -5861,7 +5867,7 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                 continue;
             }
             const bbox = glyph.getBoundingBox();
-            const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
+            const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth ?? 0) *
                 fontScale +
                 strokeWidth;
             const spriteHeight = maxSpriteHeight;
@@ -5885,6 +5891,7 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                     x: -bitmapWidth / 2 + bitmapX,
                     y: -bitmapHeight / 2 + bitmapY,
                 };
+                _console$r.log(`${name} path.commands`, path.commands);
                 let curves = [];
                 let startPoint = { x: 0, y: 0 };
                 const allCurves = [];
@@ -5955,8 +5962,8 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                     const bPoints = getCurvesPoints(b);
                     return contourArea(bPoints) - contourArea(aPoints);
                 });
-                allCurves.forEach((curve) => {
-                    const controlPoints = curve.flatMap((c) => c.controlPoints);
+                allCurves.forEach((curves) => {
+                    let controlPoints = curves.flatMap((c) => c.controlPoints);
                     const isHole = classifySubpath(controlPoints, parsedPaths);
                     parsedPaths.push({ path: controlPoints, isHole });
                     if (isHole != wasHole) {
@@ -5975,6 +5982,10 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                         }
                     }
                     const isSegments = curves.every((c) => c.type === "segment");
+                    controlPoints = controlPoints.map(({ x, y }) => ({
+                        x: Math.round(x),
+                        y: Math.round(y),
+                    }));
                     if (isSegments) {
                         commands.push({
                             type: "drawPolygon",
@@ -5988,8 +5999,10 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
             }
             else {
                 if (bitmapWidth > 0 && bitmapHeight > 0) {
-                    canvas.width = bitmapWidth;
-                    canvas.height = bitmapHeight;
+                    const _bitmapWidth = Math.ceil(bitmapWidth);
+                    const _bitmapHeight = Math.ceil(bitmapHeight);
+                    canvas.width = _bitmapWidth;
+                    canvas.height = _bitmapHeight;
                     ctx.imageSmoothingEnabled = false;
                     ctx.fillStyle = "black";
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -5999,8 +6012,8 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                         "#ffffff",
                     ]);
                     const bitmap = {
-                        width: bitmapWidth,
-                        height: bitmapHeight,
+                        width: _bitmapWidth,
+                        height: _bitmapHeight,
                         numberOfColors: 2,
                         pixels: colorIndices,
                     };
@@ -6020,8 +6033,8 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
             const sprite = {
                 name,
                 commands,
-                width: spriteWidth,
-                height: spriteHeight,
+                width: Math.ceil(spriteWidth),
+                height: Math.ceil(spriteHeight),
             };
             spriteSheet.sprites.push(sprite);
         }
@@ -12139,6 +12152,7 @@ class Device {
         this.#sensorConfigurationManager.clear();
         this.#displayManager.reset();
         this.#isServerSide = false;
+        this.#batteryLevel = undefined;
     }
     #clearConnection() {
         this.connectionManager?.clear();
@@ -12215,9 +12229,9 @@ class Device {
     get deviceInformation() {
         return this.#deviceInformationManager.information;
     }
-    #batteryLevel = 0;
+    #batteryLevel = undefined;
     get batteryLevel() {
-        return this.#batteryLevel;
+        return this.#batteryLevel ?? 0;
     }
     #updateBatteryLevel(updatedBatteryLevel) {
         _console$b.assertTypeWithError(updatedBatteryLevel, "number");
@@ -14795,5 +14809,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, hexToRGB, intersectWireframes, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wait };
+export { CameraCommands, CameraConfigurationTypes, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, hexToRGB, intersectWireframes, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.node.module.js.map

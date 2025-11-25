@@ -1951,7 +1951,153 @@
     }
   }
 
+  const LOG_TABLE = [
+    1,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+    7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7
+  ];
+  function encodeSample$1(sample) {
+    let compandedValue;
+    sample = (sample ==-32768) ? -32767 : sample;
+    let sign = ((~sample) >> 8) & 0x80;
+    if (!sign) {
+      sample = sample * -1;
+    }
+    if (sample > 32635) {
+      sample = 32635;
+    }
+    if (sample >= 256)  {
+      let exponent = LOG_TABLE[(sample >> 8) & 0x7F];
+      let mantissa = (sample >> (exponent + 3) ) & 0x0F;
+      compandedValue = ((exponent << 4) | mantissa);
+    } else {
+      compandedValue = sample >> 4;
+    }
+    return compandedValue ^ (sign ^ 0x55);
+  }
+  function decodeSample$1(aLawSample) {
+    let sign = 0;
+    aLawSample ^= 0x55;
+    if (aLawSample & 0x80) {
+      aLawSample &= -129;
+      sign = -1;
+    }
+    let position = ((aLawSample & 0xF0) >> 4) + 4;
+    let decoded = 0;
+    if (position != 4) {
+      decoded = ((1 << position) |
+        ((aLawSample & 0x0F) << (position - 4)) |
+        (1 << (position - 5)));
+    } else {
+      decoded = (aLawSample << 1)|1;
+    }
+    decoded = (sign === 0) ? (decoded) : (-decoded);
+    return (decoded * 8) * -1;
+  }
+  function encode$3(samples) {
+    let aLawSamples = new Uint8Array(samples.length);
+    for (let i=0; i<samples.length; i++) {
+      aLawSamples[i] = encodeSample$1(samples[i]);
+    }
+    return aLawSamples;
+  }
+  function decode$3(samples) {
+    let pcmSamples = new Int16Array(samples.length);
+    for (let i=0; i<samples.length; i++) {
+      pcmSamples[i] = decodeSample$1(samples[i]);
+    }
+    return pcmSamples;
+  }
+
+  var alaw = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    decode: decode$3,
+    decodeSample: decodeSample$1,
+    encode: encode$3,
+    encodeSample: encodeSample$1
+  });
+
+  const BIAS = 0x84;
+  const CLIP = 32635;
+  const encodeTable = [
+      0,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,
+      4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
+      5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+      5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+      6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+      6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+      6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+      6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+      7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+      7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+      7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+      7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+      7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+      7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+      7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+      7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7];
+  const decodeTable = [0,132,396,924,1980,4092,8316,16764];
+  function encodeSample(sample) {
+    let sign;
+    let exponent;
+    let mantissa;
+    let muLawSample;
+    sign = (sample >> 8) & 0x80;
+    if (sign != 0) sample = -sample;
+    sample = sample + BIAS;
+    if (sample > CLIP) sample = CLIP;
+    exponent = encodeTable[(sample>>7) & 0xFF];
+    mantissa = (sample >> (exponent+3)) & 0x0F;
+    muLawSample = ~(sign | (exponent << 4) | mantissa);
+    return muLawSample;
+  }
+  function decodeSample(muLawSample) {
+    let sign;
+    let exponent;
+    let mantissa;
+    let sample;
+    muLawSample = ~muLawSample;
+    sign = (muLawSample & 0x80);
+    exponent = (muLawSample >> 4) & 0x07;
+    mantissa = muLawSample & 0x0F;
+    sample = decodeTable[exponent] + (mantissa << (exponent+3));
+    if (sign != 0) sample = -sample;
+    return sample;
+  }
+  function encode$2(samples) {
+    let muLawSamples = new Uint8Array(samples.length);
+    for (let i=0; i<samples.length; i++) {
+      muLawSamples[i] = encodeSample(samples[i]);
+    }
+    return muLawSamples;
+  }
+  function decode$2(samples) {
+    let pcmSamples = new Int16Array(samples.length);
+    for (let i=0; i<samples.length; i++) {
+      pcmSamples[i] = decodeSample(samples[i]);
+    }
+    return pcmSamples;
+  }
+
+  var mulaw$1 = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    decode: decode$2,
+    decodeSample: decodeSample,
+    encode: encode$2,
+    encodeSample: encodeSample
+  });
+
+  var alawmulaw = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    alaw: alaw,
+    mulaw: mulaw$1
+  });
+
   var _a$3;
+  const {
+    mulaw
+  } = alawmulaw;
   const _console$x = createConsole("MicrophoneManager", {
     log: false
   });
@@ -1985,7 +2131,7 @@
       _defineProperty$1(this, "sendMessage", void 0);
       _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _microphoneStatus, void 0);
-      _classPrivateFieldInitSpec(this, _fadeDuration, 0.001);
+      _classPrivateFieldInitSpec(this, _fadeDuration, 0.01);
       _classPrivateFieldInitSpec(this, _playbackTime, 0);
       _classPrivateFieldInitSpec(this, _microphoneConfiguration, {});
       _classPrivateFieldInitSpec(this, _availableMicrophoneConfigurationTypes, void 0);
@@ -2237,8 +2383,12 @@
           samples[i] = sample / 2 ** 15;
           break;
         case "8":
-          sample = dataView.getInt8(i);
-          samples[i] = sample / 2 ** 7;
+          {
+            sample = dataView.getUint8(i);
+            sample = mulaw.decodeSample(sample);
+            sample = sample / 2 ** 15;
+          }
+          samples[i] = sample;
           break;
       }
     }
@@ -2576,7 +2726,10 @@
     var _classPrivateFieldGet2$1;
     _console$v.assertWithError(_classPrivateFieldGet2(_availableSensorTypes, this), "must get initial sensorConfiguration");
     const isSensorTypeAvailable = (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_availableSensorTypes, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.includes(sensorType);
-    _console$v.log(isSensorTypeAvailable, "unavailable sensor type \"".concat(sensorType, "\""));
+    _console$v.log({
+      sensorType,
+      isSensorTypeAvailable
+    });
     return isSensorTypeAvailable;
   }
   function _updateConfiguration(updatedConfiguration) {
@@ -19190,6 +19343,7 @@
         glyphs.push(glyph);
       }
       for (let i = 0; i < glyphs.length; i++) {
+        var _glyph$advanceWidth;
         const glyph = glyphs[i];
         let name = glyph.name;
         if (glyph.unicode != undefined) {
@@ -19199,7 +19353,7 @@
           continue;
         }
         const bbox = glyph.getBoundingBox();
-        const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) * fontScale + strokeWidth;
+        const spriteWidth = Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), (_glyph$advanceWidth = glyph.advanceWidth) !== null && _glyph$advanceWidth !== void 0 ? _glyph$advanceWidth : 0) * fontScale + strokeWidth;
         const spriteHeight = maxSpriteHeight;
         const commands = [];
         const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
@@ -19226,6 +19380,7 @@
             x: -bitmapWidth / 2 + bitmapX,
             y: -bitmapHeight / 2 + bitmapY
           };
+          _console$l.log("".concat(name, " path.commands"), path.commands);
           let curves = [];
           let startPoint = {
             x: 0,
@@ -19319,8 +19474,8 @@
             const bPoints = getCurvesPoints(b);
             return contourArea(bPoints) - contourArea(aPoints);
           });
-          allCurves.forEach(curve => {
-            const controlPoints = curve.flatMap(c => c.controlPoints);
+          allCurves.forEach(curves => {
+            let controlPoints = curves.flatMap(c => c.controlPoints);
             const isHole = classifySubpath(controlPoints, parsedPaths);
             parsedPaths.push({
               path: controlPoints,
@@ -19341,6 +19496,16 @@
               }
             }
             const isSegments = curves.every(c => c.type === "segment");
+            controlPoints = controlPoints.map(_ref => {
+              let {
+                x,
+                y
+              } = _ref;
+              return {
+                x: Math.round(x),
+                y: Math.round(y)
+              };
+            });
             if (isSegments) {
               commands.push({
                 type: "drawPolygon",
@@ -19355,8 +19520,10 @@
           });
         } else {
           if (bitmapWidth > 0 && bitmapHeight > 0) {
-            canvas.width = bitmapWidth;
-            canvas.height = bitmapHeight;
+            const _bitmapWidth = Math.ceil(bitmapWidth);
+            const _bitmapHeight = Math.ceil(bitmapHeight);
+            canvas.width = _bitmapWidth;
+            canvas.height = _bitmapHeight;
             ctx.imageSmoothingEnabled = false;
             ctx.fillStyle = "black";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -19365,8 +19532,8 @@
               colorIndices
             } = await quantizeCanvas(canvas, 2, ["#000000", "#ffffff"]);
             const bitmap = {
-              width: bitmapWidth,
-              height: bitmapHeight,
+              width: _bitmapWidth,
+              height: _bitmapHeight,
               numberOfColors: 2,
               pixels: colorIndices
             };
@@ -19386,8 +19553,8 @@
         const sprite = {
           name,
           commands,
-          width: spriteWidth,
-          height: spriteHeight
+          width: Math.ceil(spriteWidth),
+          height: Math.ceil(spriteHeight)
         };
         spriteSheet.sprites.push(sprite);
       }
@@ -19550,11 +19717,11 @@
       let spriteLine = [];
       spriteLines.push(spriteLine);
       let spriteSubLine;
-      _sprites.forEach((_ref, index) => {
+      _sprites.forEach((_ref2, index) => {
         let {
           sprite,
           spriteSheet
-        } = _ref;
+        } = _ref2;
         if (spritesLineIndices[i].includes(index)) {
           spriteLine = [];
           spriteLines.push(spriteLine);
@@ -19593,11 +19760,11 @@
     const expandedSpritesLines = [];
     spriteLines.forEach(spriteLine => {
       const _spritesLine = [];
-      spriteLine.forEach(_ref2 => {
+      spriteLine.forEach(_ref3 => {
         let {
           spriteSheetName,
           spriteNames
-        } = _ref2;
+        } = _ref3;
         const spriteSheet = spriteSheets[spriteSheetName];
         _console$l.assertWithError(spriteSheet, "no spriteSheet found with name \"".concat(spriteSheetName, "\""));
         spriteNames.forEach(spriteName => {
@@ -25071,7 +25238,7 @@
       _classPrivateFieldInitSpec(this, _reconnectIntervalId, void 0);
       _defineProperty$1(this, "latestConnectionMessages", new Map());
       _classPrivateFieldInitSpec(this, _deviceInformationManager, new DeviceInformationManager());
-      _classPrivateFieldInitSpec(this, _batteryLevel, 0);
+      _classPrivateFieldInitSpec(this, _batteryLevel, undefined);
       _defineProperty$1(this, "_informationManager", new InformationManager());
       _classPrivateFieldInitSpec(this, _sensorConfigurationManager, new SensorConfigurationManager());
       _classPrivateFieldInitSpec(this, _clearSensorConfigurationOnLeave, _a$1.ClearSensorConfigurationOnLeave);
@@ -25430,7 +25597,8 @@
       return _classPrivateFieldGet2(_deviceInformationManager, this).information;
     }
     get batteryLevel() {
-      return _classPrivateFieldGet2(_batteryLevel, this);
+      var _classPrivateFieldGet5;
+      return (_classPrivateFieldGet5 = _classPrivateFieldGet2(_batteryLevel, this)) !== null && _classPrivateFieldGet5 !== void 0 ? _classPrivateFieldGet5 : 0;
     }
     get id() {
       return this._informationManager.id;
@@ -25625,8 +25793,8 @@
       return _classPrivateFieldGet2(_tfliteManager, this).setThreshold;
     }
     get canUpdateFirmware() {
-      var _classPrivateFieldGet5;
-      return (_classPrivateFieldGet5 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet5 === void 0 ? void 0 : _classPrivateFieldGet5.canUpdateFirmware;
+      var _classPrivateFieldGet6;
+      return (_classPrivateFieldGet6 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet6 === void 0 ? void 0 : _classPrivateFieldGet6.canUpdateFirmware;
     }
     get uploadFirmware() {
       _assertClassBrand(_Device_brand, this, _assertCanUpdateFirmware).call(this);
@@ -26292,8 +26460,8 @@
     return _classPrivateFieldGet2(_eventDispatcher$2, _this).dispatchEvent;
   }
   async function _sendTxMessages(messages, sendImmediately) {
-    var _classPrivateFieldGet6;
-    await ((_classPrivateFieldGet6 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet6 === void 0 ? void 0 : _classPrivateFieldGet6.sendTxMessages(messages, sendImmediately));
+    var _classPrivateFieldGet7;
+    await ((_classPrivateFieldGet7 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet7 === void 0 ? void 0 : _classPrivateFieldGet7.sendTxMessages(messages, sendImmediately));
   }
   function _assertIsConnected() {
     _console$6.assertWithError(this.isConnected, "notConnected");
@@ -26408,6 +26576,7 @@
     _classPrivateFieldGet2(_sensorConfigurationManager, this).clear();
     _classPrivateFieldGet2(_displayManager, this).reset();
     _classPrivateFieldSet2(_isServerSide, this, false);
+    _classPrivateFieldSet2(_batteryLevel, this, undefined);
   }
   function _clearConnection() {
     var _this$connectionManag5;
@@ -27681,6 +27850,8 @@
 
   exports.CameraCommands = CameraCommands;
   exports.CameraConfigurationTypes = CameraConfigurationTypes;
+  exports.ConnectionEventTypes = ConnectionEventTypes;
+  exports.ConnectionMessageTypes = ConnectionMessageTypes;
   exports.ContinuousSensorTypes = ContinuousSensorTypes;
   exports.DefaultNumberOfDisplayColors = DefaultNumberOfDisplayColors;
   exports.DefaultNumberOfPressureSensors = DefaultNumberOfPressureSensors;
@@ -27727,6 +27898,7 @@
   exports.TfliteTasks = TfliteTasks;
   exports.ThrottleUtils = ThrottleUtils;
   exports.Timer = Timer;
+  exports.TxRxMessageTypes = TxRxMessageTypes;
   exports.VibrationLocations = VibrationLocations;
   exports.VibrationTypes = VibrationTypes;
   exports.VibrationWaveformEffects = VibrationWaveformEffects;

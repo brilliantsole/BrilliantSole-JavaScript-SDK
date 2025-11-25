@@ -7,6 +7,8 @@ import {
   UInt8ByteBuffer,
 } from "./utils/ArrayBufferUtils.ts";
 import { float32ArrayToWav } from "./utils/AudioUtils.ts";
+import * as alawmulaw from "alawmulaw";
+const { mulaw } = alawmulaw;
 
 const _console = createConsole("MicrophoneManager", { log: false });
 
@@ -212,7 +214,7 @@ class MicrophoneManager {
   #assertValidBitDepth() {
     _console.assertEnumWithError(this.bitDepth!, MicrophoneBitDepths);
   }
-  #fadeDuration = 0.001;
+  #fadeDuration = 0.01;
   #playbackTime = 0;
   #parseMicrophoneData(dataView: DataView) {
     this.#assertValidBitDepth();
@@ -230,8 +232,16 @@ class MicrophoneManager {
           samples[i] = sample / 2 ** 15; // Normalize to [-1, 1]
           break;
         case "8":
-          sample = dataView.getInt8(i);
-          samples[i] = sample / 2 ** 7; // Normalize to [-1, 1]
+          if (true) {
+            // mu-law compression
+            sample = dataView.getUint8(i);
+            sample = mulaw.decodeSample(sample);
+            sample = sample / 2 ** 15; // Normalize to [-1, 1]
+          } else {
+            sample = dataView.getInt8(i);
+            sample = sample / 2 ** 7; // Normalize to [-1, 1]
+          }
+          samples[i] = sample;
           break;
       }
     }

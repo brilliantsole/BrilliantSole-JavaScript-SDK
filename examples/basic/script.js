@@ -971,6 +971,15 @@ BS.TfliteSensorTypes.forEach((sensorType) => {
     console.log("tfliteSensorTypes", tfliteSensorTypes);
   });
 
+  device.addEventListener("connected", () => {
+    const isIncluded = device.allowedTfliteSensorTypes.includes(sensorType);
+    // console.log({ sensorType, isIncluded });
+    if (isIncluded) {
+      sensorTypeContainer.classList.remove("hidden");
+    } else {
+      sensorTypeContainer.classList.add("hidden");
+    }
+  });
   device.addEventListener("getTfliteSensorTypes", () => {
     isSensorEnabledInput.checked =
       device.tfliteSensorTypes.includes(sensorType);
@@ -1870,10 +1879,7 @@ enableMicrophoneVadButton.addEventListener("click", () => {
 });
 
 const updateMicrophoneButtons = () => {
-  let disabled =
-    !device.isConnected ||
-    device.sensorConfiguration.microphone == 0 ||
-    !device.hasMicrophone;
+  let disabled = !device.isConnected || !device.hasMicrophone;
 
   startMicrophoneButton.disabled =
     disabled || device.microphoneStatus == "streaming";
@@ -1891,7 +1897,10 @@ device.addEventListener("getSensorConfiguration", () => {
   updateMicrophoneButtons();
 });
 
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+  sampleRate: 16_000,
+  latencyHint: "interactive",
+});
 const checkAudioContextState = () => {
   const { state } = audioContext;
   console.log({ audioContextState: state });
