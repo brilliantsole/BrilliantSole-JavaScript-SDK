@@ -1071,7 +1071,7 @@ const drawFace = async () => {
       y *= displayCanvasHelper.height;
       wireframe.points.push({ x, y });
     });
-    addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, 7);
+    addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, 6); // fix issue when 7
     addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_LIPS, 3);
     addEdgesToWireframe(
       wireframe,
