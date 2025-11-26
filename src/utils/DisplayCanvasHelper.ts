@@ -4263,10 +4263,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   #useSpriteColorIndices = false;
   #setUseSpriteColorIndices(useSpriteColorIndices: boolean, override = false) {
-    this.#useSpriteColorIndices = useSpriteColorIndices;
     if (!override && this.#useSpriteColorIndices) {
       return;
     }
+    this.#useSpriteColorIndices = useSpriteColorIndices;
     this.#rearDrawStack.push(() => {
       //_console.log({ useSpriteColorIndices });
       this.#useSpriteColorIndices = useSpriteColorIndices;
