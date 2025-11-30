@@ -33,7 +33,6 @@ device.addEventListener("connectionStatus", () => {
 
 device.addEventListener("connected", () => {
   if (device.hasCamera) {
-    device.setSensorConfiguration({ camera: 5 });
   } else {
     console.error("device doesn't have camera");
     device.disconnect();

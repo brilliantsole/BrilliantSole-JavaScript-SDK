@@ -25918,9 +25918,9 @@
       return _classPrivateFieldGet2(_cameraManager, this).cameraStatus;
     }
     async takePicture() {
-      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
+      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 20;
       _assertClassBrand(_Device_brand, this, _assertHasCamera).call(this);
-      if (this.sensorConfiguration.camera != sensorRate) {
+      if (this.sensorConfiguration.camera == 0 && this.sensorConfiguration.camera != sensorRate) {
         this.setSensorConfiguration({
           camera: sensorRate
         }, false, false);
@@ -25928,9 +25928,9 @@
       await _classPrivateFieldGet2(_cameraManager, this).takePicture();
     }
     async focusCamera() {
-      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
+      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 20;
       _assertClassBrand(_Device_brand, this, _assertHasCamera).call(this);
-      if (this.sensorConfiguration.camera != sensorRate) {
+      if (this.sensorConfiguration.camera == 0 && this.sensorConfiguration.camera != sensorRate) {
         this.setSensorConfiguration({
           camera: sensorRate
         }, false, false);
@@ -25968,9 +25968,9 @@
       return _classPrivateFieldGet2(_microphoneManager, this).microphoneStatus;
     }
     async startMicrophone() {
-      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
+      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 20;
       _assertClassBrand(_Device_brand, this, _assertHasMicrophone).call(this);
-      if (this.sensorConfiguration.microphone != sensorRate) {
+      if (this.sensorConfiguration.microphone == 0 && this.sensorConfiguration.microphone != sensorRate) {
         this.setSensorConfiguration({
           microphone: sensorRate
         }, false, false);
@@ -25986,9 +25986,9 @@
       await _classPrivateFieldGet2(_microphoneManager, this).vad();
     }
     async toggleMicrophone() {
-      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 10;
+      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 20;
       _assertClassBrand(_Device_brand, this, _assertHasMicrophone).call(this);
-      if (this.sensorConfiguration.microphone == 0) {
+      if (this.sensorConfiguration.microphone == 0 && this.sensorConfiguration.microphone != sensorRate) {
         this.setSensorConfiguration({
           microphone: sensorRate
         }, false, false);

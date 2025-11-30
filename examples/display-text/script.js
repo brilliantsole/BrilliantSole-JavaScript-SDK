@@ -938,7 +938,7 @@ const selectMicrophone = async (deviceId) => {
     if (deviceId == "device") {
       microphoneStream = device.microphoneMediaStreamDestination.stream;
       console.log("starting microphone");
-      await device.startMicrophone(5);
+      await device.startMicrophone();
     } else {
       microphoneStream = await navigator.mediaDevices.getUserMedia({
         audio: {

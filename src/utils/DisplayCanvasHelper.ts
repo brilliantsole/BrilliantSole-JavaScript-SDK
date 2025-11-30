@@ -4266,7 +4266,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (!override && this.#useSpriteColorIndices) {
       return;
     }
-    this.#useSpriteColorIndices = useSpriteColorIndices;
+    if (override) {
+      this.#useSpriteColorIndices = useSpriteColorIndices;
+    }
     this.#rearDrawStack.push(() => {
       //_console.log({ useSpriteColorIndices });
       this.#useSpriteColorIndices = useSpriteColorIndices;

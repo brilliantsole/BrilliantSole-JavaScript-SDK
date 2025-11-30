@@ -814,7 +814,7 @@ device.addEventListener("fileTransferProgress", (event) => {
 const takePictureButton = document.getElementById("takePicture");
 takePictureButton.addEventListener("click", () => {
   if (device.cameraStatus == "idle") {
-    device.takePicture(10);
+    device.takePicture();
   } else {
     device.stopCamera();
   }

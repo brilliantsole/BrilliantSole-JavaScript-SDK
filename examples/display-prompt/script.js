@@ -505,7 +505,7 @@ const takePicture = async () => {
     cameraImage.addEventListener("load", () => resolve());
   });
   if (device.isConnected && device.cameraStatus == "idle") {
-    device.takePicture(5);
+    device.takePicture();
   } else if (cameraStream) {
     const imageBlob = await getMediaElementBlob(cameraVideo);
     setShowCameraVideo(false);
@@ -1141,7 +1141,7 @@ const selectMicrophone = async (deviceId) => {
     if (deviceId == "device") {
       microphoneStream = device.microphoneMediaStreamDestination.stream;
       console.log("starting microphone");
-      await device.startMicrophone(5);
+      await device.startMicrophone();
     } else {
       microphoneStream = await navigator.mediaDevices.getUserMedia({
         audio: {

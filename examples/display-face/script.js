@@ -45,7 +45,6 @@ window.displayCanvasHelper = displayCanvasHelper;
 device.addEventListener("connected", async () => {
   if (device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-    await device.setSensorConfiguration({ camera: 5 });
   } else {
     console.error("device doesn't have a display");
     device.disconnect();
