@@ -1091,11 +1091,11 @@
         fileType: this.type
       });
     } else {
+      _classPrivateFieldSet2(_bytesTransferred, this, offset + slicedBuffer.byteLength);
       await this.sendMessage([{
         type: "setFileBlock",
         data: slicedBuffer
       }]);
-      _classPrivateFieldSet2(_bytesTransferred, this, offset + slicedBuffer.byteLength);
     }
   }
   async function _parseBytesTransferred(dataView) {

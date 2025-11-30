@@ -956,8 +956,8 @@ class FileTransferManager {
             });
         }
         else {
-            await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
             this.#bytesTransferred = offset + slicedBuffer.byteLength;
+            await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
         }
     }
     async #parseBytesTransferred(dataView) {

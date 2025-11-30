@@ -564,8 +564,8 @@ class FileTransferManager {
         fileType: this.type!,
       });
     } else {
-      await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
       this.#bytesTransferred = offset + slicedBuffer.byteLength;
+      await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
       //return this.#sendBlock(buffer, offset + slicedBuffer.byteLength);
     }
   }
