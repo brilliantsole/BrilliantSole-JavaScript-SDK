@@ -1397,16 +1397,22 @@ class Device {
   #assertHasCamera() {
     _console.assertWithError(this.hasCamera, "camera not available");
   }
-  async takePicture(sensorRate: number = 10) {
+  async takePicture(sensorRate: number = 20) {
     this.#assertHasCamera();
-    if (this.sensorConfiguration.camera != sensorRate) {
+    if (
+      this.sensorConfiguration.camera == 0 &&
+      this.sensorConfiguration.camera != sensorRate
+    ) {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
     await this.#cameraManager.takePicture();
   }
-  async focusCamera(sensorRate: number = 10) {
+  async focusCamera(sensorRate: number = 20) {
     this.#assertHasCamera();
-    if (this.sensorConfiguration.camera != sensorRate) {
+    if (
+      this.sensorConfiguration.camera == 0 &&
+      this.sensorConfiguration.camera != sensorRate
+    ) {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
     await this.#cameraManager.focus();
@@ -1450,9 +1456,12 @@ class Device {
     _console.assertWithError(this.hasMicrophone, "microphone not available");
   }
 
-  async startMicrophone(sensorRate: number = 10) {
+  async startMicrophone(sensorRate: number = 20) {
     this.#assertHasMicrophone();
-    if (this.sensorConfiguration.microphone != sensorRate) {
+    if (
+      this.sensorConfiguration.microphone == 0 &&
+      this.sensorConfiguration.microphone != sensorRate
+    ) {
       this.setSensorConfiguration({ microphone: sensorRate }, false, false);
     }
     await this.#microphoneManager.start();
@@ -1465,9 +1474,12 @@ class Device {
     this.#assertHasMicrophone();
     await this.#microphoneManager.vad();
   }
-  async toggleMicrophone(sensorRate: number = 10) {
+  async toggleMicrophone(sensorRate: number = 20) {
     this.#assertHasMicrophone();
-    if (this.sensorConfiguration.microphone == 0) {
+    if (
+      this.sensorConfiguration.microphone == 0 &&
+      this.sensorConfiguration.microphone != sensorRate
+    ) {
       this.setSensorConfiguration({ microphone: sensorRate }, false, false);
     }
     await this.#microphoneManager.toggle();

@@ -129,7 +129,6 @@ const onDevice = () => {
   if (client.isScanning) {
     client.stopScan();
   }
-  device.setSensorConfiguration({ camera: 5 });
 
   // CAMERA
 

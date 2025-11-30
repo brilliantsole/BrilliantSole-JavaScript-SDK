@@ -27190,16 +27190,18 @@ class Device {
     #assertHasCamera() {
         _console$7.assertWithError(this.hasCamera, "camera not available");
     }
-    async takePicture(sensorRate = 10) {
+    async takePicture(sensorRate = 20) {
         this.#assertHasCamera();
-        if (this.sensorConfiguration.camera != sensorRate) {
+        if (this.sensorConfiguration.camera == 0 &&
+            this.sensorConfiguration.camera != sensorRate) {
             this.setSensorConfiguration({ camera: sensorRate }, false, false);
         }
         await this.#cameraManager.takePicture();
     }
-    async focusCamera(sensorRate = 10) {
+    async focusCamera(sensorRate = 20) {
         this.#assertHasCamera();
-        if (this.sensorConfiguration.camera != sensorRate) {
+        if (this.sensorConfiguration.camera == 0 &&
+            this.sensorConfiguration.camera != sensorRate) {
             this.setSensorConfiguration({ camera: sensorRate }, false, false);
         }
         await this.#cameraManager.focus();
@@ -27238,9 +27240,10 @@ class Device {
     #assertHasMicrophone() {
         _console$7.assertWithError(this.hasMicrophone, "microphone not available");
     }
-    async startMicrophone(sensorRate = 10) {
+    async startMicrophone(sensorRate = 20) {
         this.#assertHasMicrophone();
-        if (this.sensorConfiguration.microphone != sensorRate) {
+        if (this.sensorConfiguration.microphone == 0 &&
+            this.sensorConfiguration.microphone != sensorRate) {
             this.setSensorConfiguration({ microphone: sensorRate }, false, false);
         }
         await this.#microphoneManager.start();
@@ -27253,9 +27256,10 @@ class Device {
         this.#assertHasMicrophone();
         await this.#microphoneManager.vad();
     }
-    async toggleMicrophone(sensorRate = 10) {
+    async toggleMicrophone(sensorRate = 20) {
         this.#assertHasMicrophone();
-        if (this.sensorConfiguration.microphone == 0) {
+        if (this.sensorConfiguration.microphone == 0 &&
+            this.sensorConfiguration.microphone != sensorRate) {
             this.setSensorConfiguration({ microphone: sensorRate }, false, false);
         }
         await this.#microphoneManager.toggle();
@@ -30375,7 +30379,9 @@ class DisplayCanvasHelper {
         if (!override && this.#useSpriteColorIndices) {
             return;
         }
-        this.#useSpriteColorIndices = useSpriteColorIndices;
+        if (override) {
+            this.#useSpriteColorIndices = useSpriteColorIndices;
+        }
         this.#rearDrawStack.push(() => {
             this.#useSpriteColorIndices = useSpriteColorIndices;
         });
