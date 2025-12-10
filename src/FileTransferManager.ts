@@ -30,6 +30,7 @@ export const FileTypes = [
   "wifiServerCert",
   "wifiServerKey",
   "spriteSheet",
+  "cameraImage",
 ] as const;
 export type FileType = (typeof FileTypes)[number];
 
@@ -231,7 +232,7 @@ class FileTransferManager {
     this.#updateLength(length);
   }
   #updateLength(length: number) {
-    _console.log(`length: ${length / 1024}kB`);
+    _console.log(`length: ${length / 1024}kB (${length} bytes)`);
     this.#length = length;
     this.#dispatchEvent("getFileLength", { fileLength: length });
   }
@@ -354,7 +355,9 @@ class FileTransferManager {
     const progress = bytesReceived / this.#length;
 
     _console.log(
-      `received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`
+      `received ${bytesReceived}/${this.#length} bytes (${progress * 100}%) - ${
+        this.#length - bytesReceived
+      } bytes remaining`
     );
 
     this.#dispatchEvent("fileTransferProgress", {

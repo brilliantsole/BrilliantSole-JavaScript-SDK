@@ -376,6 +376,12 @@ class Device {
             progress,
           });
           break;
+        case "cameraImage":
+          this.#dispatchEvent("cameraImageProgress", {
+            progress,
+            type: "image",
+          });
+          break;
         default:
           break;
       }
@@ -389,6 +395,20 @@ class Device {
               spriteSheet: this.#displayManager.pendingSpriteSheet!,
               spriteSheetName: this.#displayManager.pendingSpriteSheetName!,
             });
+          }
+          break;
+        default:
+          break;
+      }
+    });
+    this.addEventListener("fileReceived", async (event) => {
+      const { fileType, file } = event.message;
+      switch (fileType) {
+        case "cameraImage":
+          {
+            const arrayBuffer = await file.arrayBuffer();
+            const dataView = new DataView(arrayBuffer);
+            this.#cameraManager.parseMessage("cameraData", dataView);
           }
           break;
         default:
@@ -1397,22 +1417,25 @@ class Device {
   #assertHasCamera() {
     _console.assertWithError(this.hasCamera, "camera not available");
   }
-  async takePicture(sensorRate: number = 20) {
+  async takePicture(sensorRate?: number) {
     this.#assertHasCamera();
+    if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
+      sensorRate = 20;
+    }
     if (
-      this.sensorConfiguration.camera == 0 &&
+      sensorRate != undefined &&
       this.sensorConfiguration.camera != sensorRate
     ) {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
     await this.#cameraManager.takePicture();
   }
-  async focusCamera(sensorRate: number = 20) {
+  async focusCamera(sensorRate?: number) {
     this.#assertHasCamera();
-    if (
-      this.sensorConfiguration.camera == 0 &&
-      this.sensorConfiguration.camera != sensorRate
-    ) {
+    if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
+      sensorRate = 20;
+    }
+    if (this.sensorConfiguration.camera != sensorRate) {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
     await this.#cameraManager.focus();
@@ -1456,12 +1479,12 @@ class Device {
     _console.assertWithError(this.hasMicrophone, "microphone not available");
   }
 
-  async startMicrophone(sensorRate: number = 20) {
+  async startMicrophone(sensorRate?: number) {
     this.#assertHasMicrophone();
-    if (
-      this.sensorConfiguration.microphone == 0 &&
-      this.sensorConfiguration.microphone != sensorRate
-    ) {
+    if (sensorRate == undefined && this.sensorConfiguration.microphone == 0) {
+      sensorRate = 20;
+    }
+    if (this.sensorConfiguration.microphone != sensorRate) {
       this.setSensorConfiguration({ microphone: sensorRate }, false, false);
     }
     await this.#microphoneManager.start();

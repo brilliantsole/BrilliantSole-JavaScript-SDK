@@ -197,14 +197,22 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   const span = cameraConfigurationTypeContainer.querySelector("span");
 
   device.addEventListener("isConnected", () => {
-    updateisInputDisabled();
+    updateIsInputDisabled();
+  });
+  device.addEventListener("connected", () => {
+    updateContainerVisibility();
   });
   device.addEventListener("cameraStatus", () => {
-    updateisInputDisabled();
+    updateIsInputDisabled();
   });
-  const updateisInputDisabled = () => {
+  const updateIsInputDisabled = () => {
     input.disabled =
       !device.isConnected || !device.hasCamera || device.cameraStatus != "idle";
+  };
+
+  const updateContainerVisibility = () => {
+    const isVisible = cameraConfigurationType in device.cameraConfiguration;
+    cameraConfigurationTypeContainer.style.display = isVisible ? "" : "none";
   };
 
   const updateInput = () => {
@@ -311,4 +319,53 @@ device.addEventListener("connected", () => {
 });
 device.addEventListener("getCameraConfiguration", () => {
   updateCameraWhiteBalanceInput();
+});
+
+// ROTATE PICTURE
+
+import * as three from "../utils/three/three.module.min.js";
+
+/** @type {import("../utils/three/three.module.min")} */
+const THREE = three;
+window.THREE = THREE;
+
+const euler = new THREE.Euler();
+euler.order = "YXZ";
+const quaternion = new THREE.Quaternion();
+let cameraRoll = 0;
+
+let rotatePicture = false;
+const rotatePictureCheckbox = document.getElementById("rotatePicture");
+rotatePictureCheckbox.addEventListener("input", () => {
+  rotatePicture = rotatePictureCheckbox.checked;
+  console.log({ rotatePicture });
+  updateRotation();
+});
+device.addEventListener("isConnected", () => {
+  rotatePictureCheckbox.disabled =
+    !device.isConnected || !("gameRotation" in device.sensorConfiguration);
+});
+device.addEventListener("connected", () => {
+  updateRotation();
+});
+const updateRotation = () => {
+  if (!device.isConnected) {
+    return;
+  }
+  device.setSensorConfiguration({ gameRotation: rotatePicture ? 100 : 0 });
+};
+device.addEventListener("gameRotation", (event) => {
+  quaternion.copy(event.message.gameRotation);
+  euler.setFromQuaternion(quaternion);
+  console.log({ cameraRoll: euler.z });
+});
+
+device.addEventListener("cameraStatus", () => {
+  if (rotatePicture && device.cameraStatus == "takingPicture") {
+    cameraRoll = euler.z;
+    console.log({ cameraRoll });
+  }
+});
+cameraImage.addEventListener("load", () => {
+  cameraImage.style.transform = `rotate(${cameraRoll}rad)`;
 });

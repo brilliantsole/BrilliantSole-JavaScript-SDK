@@ -49,6 +49,15 @@ export const CameraConfigurationTypes = [
   "redGain",
   "greenGain",
   "blueGain",
+  "autoWhiteBalanceEnabled",
+  "autoGainEnabled",
+  "exposure",
+  "autoExposureEnabled",
+  "autoExposureLevel",
+  "brightness",
+  "saturation",
+  "contrast",
+  "sharpness",
 ] as const;
 export type CameraConfigurationType = (typeof CameraConfigurationTypes)[number];
 
@@ -335,13 +344,28 @@ class CameraManager {
   }
 
   #cameraConfigurationRanges: CameraConfigurationRanges = {
-    resolution: { min: 100, max: 720 },
-    qualityFactor: { min: 15, max: 60 },
+    resolution: { min: 96, max: 1600 },
+    qualityFactor: { min: 0, max: 100 },
+
     shutter: { min: 4, max: 16383 },
-    gain: { min: 1, max: 248 },
-    redGain: { min: 0, max: 1023 },
-    greenGain: { min: 0, max: 1023 },
-    blueGain: { min: 0, max: 1023 },
+    gain: { min: 0, max: 248 },
+    redGain: { min: 0, max: 2047 },
+    greenGain: { min: 0, max: 2047 },
+    blueGain: { min: 0, max: 2047 },
+
+    autoWhiteBalanceEnabled: { min: 0, max: 1 },
+    autoGainEnabled: { min: 0, max: 1 },
+
+    exposure: { min: 0, max: 1200 },
+    autoExposureEnabled: { min: 0, max: 1 },
+    autoExposureLevel: { min: -4, max: 4 },
+
+    brightness: { min: -3, max: 3 },
+    saturation: { min: -4, max: 4 },
+    contrast: { min: -3, max: 3 },
+    sharpness: { min: -3, max: 3 },
+
+    // FILL - focus
   };
   get cameraConfigurationRanges() {
     return this.#cameraConfigurationRanges;
@@ -351,6 +375,7 @@ class CameraManager {
     const parsedCameraConfiguration: CameraConfiguration = {};
 
     let byteOffset = 0;
+    const size = 2;
     while (byteOffset < dataView.byteLength) {
       const cameraConfigurationTypeIndex = dataView.getUint8(byteOffset++);
       const cameraConfigurationType =
@@ -359,11 +384,28 @@ class CameraManager {
         cameraConfigurationType,
         `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`
       );
-      parsedCameraConfiguration[cameraConfigurationType] = dataView.getUint16(
-        byteOffset,
-        true
-      );
-      byteOffset += 2;
+
+      _console.log({ cameraConfigurationType });
+
+      let value: number | undefined;
+      switch (cameraConfigurationType) {
+        // FILL
+        case "autoExposureLevel":
+        case "brightness":
+        case "saturation":
+        case "contrast":
+        case "sharpness":
+          value = dataView.getInt16(byteOffset, true);
+          break;
+        default:
+          value = dataView.getUint16(byteOffset, true);
+          break;
+      }
+
+      _console.log({ [cameraConfigurationType]: value });
+      _console.assertTypeWithError(value, "number");
+      parsedCameraConfiguration[cameraConfigurationType] = value;
+      byteOffset += size;
     }
 
     _console.log({ parsedCameraConfiguration });
@@ -463,7 +505,16 @@ class CameraManager {
 
       const value = cameraConfiguration[cameraConfigurationType]!;
       //this.#assertValidCameraConfigurationValue(cameraConfigurationType, value);
-      dataView.setUint16(index * 3 + 1, value, true);
+      const offset = index * 3 + 1;
+      switch (cameraConfigurationType) {
+        // FILL
+        case "autoExposureLevel":
+          dataView.setInt16(offset, value, true);
+          break;
+        default:
+          dataView.setUint16(offset, value, true);
+          break;
+      }
     });
     _console.log({ sensorConfigurationData: dataView });
     return dataView;
