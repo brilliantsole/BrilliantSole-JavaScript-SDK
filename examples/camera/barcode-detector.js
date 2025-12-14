@@ -29,7 +29,8 @@ registerModel(
 
     const barcode = barcodes[0];
     if (barcode) {
-      const { boundingBox, cornerPoints, rawValue, format } = sampleBarcodes[0];
+      //const { boundingBox, cornerPoints, rawValue, format } = sampleBarcodes[0];
+      const { boundingBox, cornerPoints, rawValue, format } = barcode;
 
       modelResultsElement.innerText = `${format}: ${rawValue}`;
 

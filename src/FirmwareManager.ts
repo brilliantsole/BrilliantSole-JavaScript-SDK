@@ -20,7 +20,14 @@ export const FirmwareEventTypes = [
 ] as const;
 export type FirmwareEventType = (typeof FirmwareEventTypes)[number];
 
-export const FirmwareStatuses = ["idle", "uploading", "uploaded", "pending", "testing", "erasing"] as const;
+export const FirmwareStatuses = [
+  "idle",
+  "uploading",
+  "uploaded",
+  "pending",
+  "testing",
+  "erasing",
+] as const;
 export type FirmwareStatus = (typeof FirmwareStatuses)[number];
 
 export interface FirmwareImage {
@@ -36,14 +43,18 @@ export interface FirmwareImage {
 }
 
 export interface FirmwareEventMessages {
-  smp: { dataView: DataView };
+  smp: { dataView: DataView<ArrayBuffer> };
   firmwareImages: { firmwareImages: FirmwareImage[] };
   firmwareUploadProgress: { progress: number };
   firmwareStatus: { firmwareStatus: FirmwareStatus };
   //firmwareUploadComplete: {};
 }
 
-export type FirmwareEventDispatcher = EventDispatcher<Device, FirmwareEventType, FirmwareEventMessages>;
+export type FirmwareEventDispatcher = EventDispatcher<
+  Device,
+  FirmwareEventType,
+  FirmwareEventMessages
+>;
 
 class FirmwareManager {
   sendMessage!: SendSmpMessageCallback;
@@ -67,12 +78,17 @@ class FirmwareManager {
     return this.eventDispatcher.waitForEvent;
   }
 
-  parseMessage(messageType: FirmwareMessageType, dataView: DataView) {
+  parseMessage(
+    messageType: FirmwareMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ messageType });
 
     switch (messageType) {
       case "smp":
-        this.#mcuManager._notification(Array.from(new Uint8Array(dataView.buffer)));
+        this.#mcuManager._notification(
+          Array.from(new Uint8Array(dataView.buffer))
+        );
         this.#dispatchEvent("smp", { dataView });
         break;
       default:
@@ -125,7 +141,10 @@ class FirmwareManager {
   }
   #assertValidImageIndex(imageIndex: number) {
     _console.assertTypeWithError(imageIndex, "number");
-    _console.assertWithError(imageIndex == 0 || imageIndex == 1, "imageIndex must be 0 or 1");
+    _console.assertWithError(
+      imageIndex == 0 || imageIndex == 1,
+      "imageIndex must be 0 or 1"
+    );
   }
   async getImages() {
     const promise = this.waitForEvent("firmwareImages");
@@ -155,7 +174,11 @@ class FirmwareManager {
     const promise = this.waitForEvent("smp");
 
     _console.log("testing firmware image...");
-    this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageTest(this.#images[imageIndex].hash)).buffer);
+    this.sendMessage(
+      Uint8Array.from(
+        this.#mcuManager.cmdImageTest(this.#images[imageIndex].hash)
+      ).buffer
+    );
 
     await promise;
   }
@@ -184,7 +207,11 @@ class FirmwareManager {
     const promise = this.waitForEvent("smp");
 
     _console.log("confirming image...");
-    this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[imageIndex].hash)).buffer);
+    this.sendMessage(
+      Uint8Array.from(
+        this.#mcuManager.cmdImageConfirm(this.#images[imageIndex].hash)
+      ).buffer
+    );
 
     await promise;
   }
@@ -226,19 +253,43 @@ class FirmwareManager {
     this.#mcuManager.onMessage(this.#onMcuMessage.bind(this));
 
     this.#mcuManager.onFileDownloadNext(this.#onMcuFileDownloadNext);
-    this.#mcuManager.onFileDownloadProgress(this.#onMcuFileDownloadProgress.bind(this));
-    this.#mcuManager.onFileDownloadFinished(this.#onMcuFileDownloadFinished.bind(this));
+    this.#mcuManager.onFileDownloadProgress(
+      this.#onMcuFileDownloadProgress.bind(this)
+    );
+    this.#mcuManager.onFileDownloadFinished(
+      this.#onMcuFileDownloadFinished.bind(this)
+    );
 
     this.#mcuManager.onFileUploadNext(this.#onMcuFileUploadNext.bind(this));
-    this.#mcuManager.onFileUploadProgress(this.#onMcuFileUploadProgress.bind(this));
-    this.#mcuManager.onFileUploadFinished(this.#onMcuFileUploadFinished.bind(this));
+    this.#mcuManager.onFileUploadProgress(
+      this.#onMcuFileUploadProgress.bind(this)
+    );
+    this.#mcuManager.onFileUploadFinished(
+      this.#onMcuFileUploadFinished.bind(this)
+    );
 
     this.#mcuManager.onImageUploadNext(this.#onMcuImageUploadNext.bind(this));
-    this.#mcuManager.onImageUploadProgress(this.#onMcuImageUploadProgress.bind(this));
-    this.#mcuManager.onImageUploadFinished(this.#onMcuImageUploadFinished.bind(this));
+    this.#mcuManager.onImageUploadProgress(
+      this.#onMcuImageUploadProgress.bind(this)
+    );
+    this.#mcuManager.onImageUploadFinished(
+      this.#onMcuImageUploadFinished.bind(this)
+    );
   }
 
-  #onMcuMessage({ op, group, id, data, length }: { op: number; group: number; id: number; data: any; length: number }) {
+  #onMcuMessage({
+    op,
+    group,
+    id,
+    data,
+    length,
+  }: {
+    op: number;
+    group: number;
+    id: number;
+    data: any;
+    length: number;
+  }) {
     _console.log("onMcuMessage", ...arguments);
 
     switch (group) {
@@ -317,7 +368,9 @@ class FirmwareManager {
 
     if (this.#images.length == 2) {
       if (!this.#images[1].bootable) {
-        _console.warn('Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image');
+        _console.warn(
+          'Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image'
+        );
       } else if (!this.#images[0].confirmed) {
         _console.log(
           'Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.'
@@ -328,7 +381,9 @@ class FirmwareManager {
           _console.log("reset to upload to the new firmware image");
           newStatus = "pending";
         } else {
-          _console.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
+          _console.log(
+            "Slot 1 has a valid image. run testImage() to test it or upload a different image."
+          );
           newStatus = "uploaded";
         }
       }

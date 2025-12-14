@@ -264,7 +264,7 @@ class WifiManager {
   }
 
   // MESSAGE
-  parseMessage(messageType: WifiMessageType, dataView: DataView) {
+  parseMessage(messageType: WifiMessageType, dataView: DataView<ArrayBuffer>) {
     _console.log({ messageType });
 
     switch (messageType) {

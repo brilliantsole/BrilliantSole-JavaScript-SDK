@@ -41,7 +41,7 @@ declare class InformationManager {
     constructor();
     sendMessage: SendInformationMessageCallback;
     eventDispatcher: InformationEventDispatcher;
-    get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "setName" | "setType" | "setCurrentTime">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime">(type: T) => Promise<{
         type: T;
         target: Device;
         message: InformationEventMessages[T];
@@ -62,7 +62,7 @@ declare class InformationManager {
     get side(): Side;
     get mtu(): number;
     get isCurrentTimeSet(): boolean;
-    parseMessage(messageType: InformationMessageType, dataView: DataView): void;
+    parseMessage(messageType: InformationMessageType, dataView: DataView<ArrayBuffer>): void;
     clear(): void;
     connectionType?: ConnectionType;
 }

@@ -691,7 +691,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
           .map((value) => value / device.cameraConfigurationRanges.redGain.max)
           .map((value) => value * 255)
           .map((value) => Math.round(value))
-          .map((value) => value.toString(16))
+          .map((value) => value.toString(16).padStart(2, "0"))
           .join("")}`;
       };
 

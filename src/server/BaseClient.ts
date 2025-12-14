@@ -223,7 +223,7 @@ abstract class BaseClient {
     this._connectionStatus = "connected";
   }
 
-  protected parseMessage(dataView: DataView) {
+  protected parseMessage(dataView: DataView<ArrayBuffer>) {
     _console.log("parseMessage", { dataView });
     parseMessage(
       dataView,
@@ -235,7 +235,10 @@ abstract class BaseClient {
     this.#checkIfFullyConnected();
   }
 
-  #parseMessageCallback(messageType: ServerMessageType, dataView: DataView) {
+  #parseMessageCallback(
+    messageType: ServerMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     let byteOffset = 0;
 
     _console.log({ messageType }, dataView);

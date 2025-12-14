@@ -110,7 +110,9 @@ class WebSocketServer extends BaseServer {
     const client = event.target as WebSocketClient;
     client.isAlive = true;
     client.pingClientTimer!.restart();
-    const dataView = new DataView(dataToArrayBuffer(event.data as Buffer));
+    const dataView = new DataView(
+      dataToArrayBuffer(event.data as Buffer)
+    ) as DataView<ArrayBuffer>;
     _console.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
     this.#parseWebSocketClientMessage(client, dataView);
   }
@@ -126,7 +128,10 @@ class WebSocketServer extends BaseServer {
   }
 
   // PARSING
-  #parseWebSocketClientMessage(client: WebSocketClient, dataView: DataView) {
+  #parseWebSocketClientMessage(
+    client: WebSocketClient,
+    dataView: DataView<ArrayBuffer>
+  ) {
     let responseMessages: ArrayBuffer[] = [];
 
     parseMessage(
@@ -155,7 +160,7 @@ class WebSocketServer extends BaseServer {
 
   #onClientMessage(
     messageType: WebSocketMessageType,
-    dataView: DataView,
+    dataView: DataView<ArrayBuffer>,
     context: { responseMessages: (ArrayBuffer | undefined)[] }
   ) {
     const { responseMessages } = context;

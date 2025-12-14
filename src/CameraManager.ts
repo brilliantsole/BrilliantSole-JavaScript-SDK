@@ -137,7 +137,7 @@ class CameraManager {
   get cameraStatus() {
     return this.#cameraStatus;
   }
-  #parseCameraStatus(dataView: DataView) {
+  #parseCameraStatus(dataView: DataView<ArrayBuffer>) {
     const cameraStatusIndex = dataView.getUint8(0);
     const newCameraStatus = CameraStatuses[cameraStatusIndex];
     this.#updateCameraStatus(newCameraStatus);
@@ -220,7 +220,7 @@ class CameraManager {
   }
 
   // CAMERA DATA
-  #parseCameraData(dataView: DataView) {
+  #parseCameraData(dataView: DataView<ArrayBuffer>) {
     _console.log("parsing camera data", dataView);
     parseMessage(
       dataView,
@@ -230,7 +230,10 @@ class CameraManager {
       true
     );
   }
-  #onCameraData(cameraDataType: CameraDataType, dataView: DataView) {
+  #onCameraData(
+    cameraDataType: CameraDataType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ cameraDataType, dataView });
     switch (cameraDataType) {
       case "headerSize":
@@ -253,7 +256,7 @@ class CameraManager {
         }
         break;
       case "imageSize":
-        this.#imageSize = dataView.getUint16(0, true);
+        this.#imageSize = dataView.getUint32(0, true);
         _console.log({ imageSize: this.#imageSize });
         this.#imageData = undefined;
         this.#imageProgress == 0;
@@ -344,7 +347,7 @@ class CameraManager {
   }
 
   #cameraConfigurationRanges: CameraConfigurationRanges = {
-    resolution: { min: 96, max: 1600 },
+    resolution: { min: 96, max: 2560 },
     qualityFactor: { min: 0, max: 100 },
 
     shutter: { min: 4, max: 16383 },
@@ -364,14 +367,12 @@ class CameraManager {
     saturation: { min: -4, max: 4 },
     contrast: { min: -3, max: 3 },
     sharpness: { min: -3, max: 3 },
-
-    // FILL - focus
   };
   get cameraConfigurationRanges() {
     return this.#cameraConfigurationRanges;
   }
 
-  #parseCameraConfiguration(dataView: DataView) {
+  #parseCameraConfiguration(dataView: DataView<ArrayBuffer>) {
     const parsedCameraConfiguration: CameraConfiguration = {};
 
     let byteOffset = 0;
@@ -521,7 +522,10 @@ class CameraManager {
   }
 
   // MESSAGE
-  parseMessage(messageType: CameraMessageType, dataView: DataView) {
+  parseMessage(
+    messageType: CameraMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ messageType, dataView });
 
     switch (messageType) {

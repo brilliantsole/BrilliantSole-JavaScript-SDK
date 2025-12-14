@@ -49,7 +49,7 @@ class PressureSensorDataManager {
     return this.positions.length;
   }
 
-  parsePositions(dataView: DataView) {
+  parsePositions(dataView: DataView<ArrayBuffer>) {
     const positions: PressureSensorPosition[] = [];
 
     for (
@@ -86,7 +86,7 @@ class PressureSensorDataManager {
     this.#normalizedSumRangeHelper.reset();
   }
 
-  parseData(dataView: DataView, scalar: number) {
+  parseData(dataView: DataView<ArrayBuffer>, scalar: number) {
     const pressure: PressureData = {
       sensors: [],
       scaledSum: 0,

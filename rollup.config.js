@@ -11,6 +11,9 @@ import cleanup from "rollup-plugin-cleanup";
 
 const production = !process.env.ROLLUP_WATCH;
 
+const name = "BS";
+const input = "src/BS.ts";
+
 function header() {
   return {
     renderChunk(code) {
@@ -39,12 +42,12 @@ function removeLines(context) {
     preventAssignment: true,
     delimiters: ["", ""],
     values: {
-      "/** BROWSER_START */": isInBrowser ? "" : "/*",
-      "/** BROWSER_END */": isInBrowser ? "" : "*/",
-      "/** NODE_START */": isInNode ? "" : "/*",
-      "/** NODE_END */": isInNode ? "" : "*/",
-      "/** LS_START */": isInLensStudio ? "" : "/*",
-      "/** LS_END */": isInLensStudio ? "" : "*/",
+      "/** BROWSER_START */": isInBrowser ? "" : "/** BROWSER_START",
+      "/** BROWSER_END */": isInBrowser ? "" : "BROWSER_END */",
+      "/** NODE_START */": isInNode ? "" : "/** NODE_START",
+      "/** NODE_END */": isInNode ? "" : "NODE_END */",
+      "/** LS_START */": isInLensStudio ? "" : "/** LS_START",
+      "/** LS_END */": isInLensStudio ? "" : "LS_END */",
     },
   });
 }
@@ -119,9 +122,6 @@ const lensStudioPlugins = [
   }),
 ];
 
-const name = "BS";
-const input = "src/BS.ts";
-
 const defaultOutput = {
   sourcemap: true,
   sourcemapPathTransform: (relativeSourcePath, sourcemapPath) => {
@@ -129,7 +129,11 @@ const defaultOutput = {
   },
 };
 
-const warningsToIgnore = ["PLUGIN_WARNING", "CIRCULAR_DEPENDENCY"];
+const warningsToIgnore = [
+  "PLUGIN_WARNING",
+  "CIRCULAR_DEPENDENCY",
+  "MISSING_EXPORT",
+];
 const onwarn = (warning) => {
   if (warningsToIgnore.includes(warning.code)) {
     return;

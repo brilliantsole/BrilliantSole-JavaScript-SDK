@@ -712,7 +712,7 @@ export function serializeContextCommand(
   displayManager: DisplayManagerInterface,
   command: DisplayContextCommand
 ) {
-  let dataView: DataView | undefined;
+  let dataView: DataView<ArrayBuffer> | undefined;
 
   switch (command.type) {
     case "show":

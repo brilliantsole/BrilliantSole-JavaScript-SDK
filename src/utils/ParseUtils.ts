@@ -5,12 +5,11 @@ import { textDecoder } from "./Text.ts";
 const _console = createConsole("ParseUtils", { log: false });
 
 export function parseStringFromDataView(
-  dataView: DataView,
+  dataView: DataView<ArrayBuffer>,
   byteOffset: number = 0
 ) {
   const stringLength = dataView.getUint8(byteOffset++);
   const string = textDecoder.decode(
-    // @ts-expect-error
     dataView.buffer.slice(
       dataView.byteOffset + byteOffset,
       dataView.byteOffset + byteOffset + stringLength
@@ -21,11 +20,11 @@ export function parseStringFromDataView(
 }
 
 export function parseMessage<MessageType extends string>(
-  dataView: DataView,
+  dataView: DataView<ArrayBuffer>,
   messageTypes: readonly MessageType[],
   callback: (
     messageType: MessageType,
-    dataView: DataView,
+    dataView: DataView<ArrayBuffer>,
     context?: any,
     isLast?: boolean
   ) => void,

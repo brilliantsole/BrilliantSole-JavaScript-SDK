@@ -68,7 +68,7 @@ export function objectToArrayBuffer(object: object) {
 }
 
 export function sliceDataView(
-  dataView: DataView,
+  dataView: DataView<ArrayBuffer>,
   begin: number,
   length?: number
 ) {

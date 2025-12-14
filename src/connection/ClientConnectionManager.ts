@@ -134,7 +134,7 @@ class ClientConnectionManager extends BaseConnectionManager {
     this.sendRequiredDeviceInformationMessage();
   }
 
-  onClientMessage(dataView: DataView) {
+  onClientMessage(dataView: DataView<ArrayBuffer>) {
     _console.log({ dataView });
     parseMessage(
       dataView,
@@ -146,7 +146,10 @@ class ClientConnectionManager extends BaseConnectionManager {
     this.onMessagesReceived!();
   }
 
-  #onClientMessageCallback(messageType: DeviceEventType, dataView: DataView) {
+  #onClientMessageCallback(
+    messageType: DeviceEventType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     let byteOffset = 0;
 
     _console.log({ messageType }, dataView);

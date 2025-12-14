@@ -138,7 +138,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "getSpriteSheetName" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "displayContextCommands" | "displayCommand" | "setDisplayBrightness" | "setSpriteSheetName" | "spriteSheetIndex">(type: T) => Promise<{
+    get waitForEvent(): <T extends "spriteSheetIndex" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
@@ -306,7 +306,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     stringToSpriteLines(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLines;
     stringToSpriteLinesMetrics(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): import("./utils/DisplaySpriteSheetUtils.ts").DisplaySpriteLinesMetrics;
     drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
-    parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
+    parseMessage(messageType: DisplayMessageType, dataView: DataView<ArrayBuffer>): void;
     assertSpriteSheetPalette(paletteName: string): void;
     assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
     assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;

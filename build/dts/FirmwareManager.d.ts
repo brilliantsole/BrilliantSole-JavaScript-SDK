@@ -20,7 +20,7 @@ export interface FirmwareImage {
 }
 export interface FirmwareEventMessages {
     smp: {
-        dataView: DataView;
+        dataView: DataView<ArrayBuffer>;
     };
     firmwareImages: {
         firmwareImages: FirmwareImage[];
@@ -55,7 +55,7 @@ declare class FirmwareManager {
         target: Device;
         message: FirmwareEventMessages[T];
     }>;
-    parseMessage(messageType: FirmwareMessageType, dataView: DataView): void;
+    parseMessage(messageType: FirmwareMessageType, dataView: DataView<ArrayBuffer>): void;
     uploadFirmware(file: FileLike): Promise<void>;
     get status(): "idle" | "uploading" | "uploaded" | "pending" | "testing" | "erasing";
     get images(): FirmwareImage[];

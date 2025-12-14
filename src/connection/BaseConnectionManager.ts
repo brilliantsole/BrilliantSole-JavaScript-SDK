@@ -121,7 +121,7 @@ export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
 export type MessageReceivedCallback = (
   messageType: ConnectionMessageType,
-  dataView: DataView
+  dataView: DataView<ArrayBuffer>
 ) => void;
 export type MessagesReceivedCallback = () => void;
 
@@ -377,7 +377,7 @@ abstract class BaseConnectionManager {
     _console.log("sendTxData", data);
   }
 
-  parseRxMessage(dataView: DataView) {
+  parseRxMessage(dataView: DataView<ArrayBuffer>) {
     parseMessage(
       dataView,
       TxRxMessageTypes,
@@ -388,7 +388,7 @@ abstract class BaseConnectionManager {
     this.onMessagesReceived!();
   }
 
-  #onRxMessage(messageType: TxRxMessageType, dataView: DataView) {
+  #onRxMessage(messageType: TxRxMessageType, dataView: DataView<ArrayBuffer>) {
     _console.log({ messageType, dataView });
     this.onMessageReceived!(messageType, dataView);
   }

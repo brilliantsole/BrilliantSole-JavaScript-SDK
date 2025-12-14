@@ -4,7 +4,7 @@ export declare const ServerMessageTypes: readonly ["isScanningAvailable", "isSca
 export type ServerMessageType = (typeof ServerMessageTypes)[number];
 export declare const DeviceMessageTypes: readonly ["connectionStatus", "batteryLevel", "deviceInformation", "rx", "smp"];
 export type DeviceMessageType = (typeof DeviceMessageTypes)[number];
-export type MessageLike = number | number[] | ArrayBufferLike | DataView | boolean | string | any;
+export type MessageLike = number | number[] | ArrayBufferLike | DataView<ArrayBuffer> | boolean | string | any;
 export interface Message<MessageType extends string> {
     type: MessageType;
     data?: MessageLike | MessageLike[];

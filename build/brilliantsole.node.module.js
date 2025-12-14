@@ -3,7 +3,7 @@
  * @license MIT
  */
 import autoBind$1 from 'auto-bind';
-import * as alawmulaw from 'alawmulaw';
+import * as _alawmulaw from 'alawmulaw';
 import RGBQuant from 'rgbquant';
 import opentype from 'opentype.js';
 import { decompress } from 'woff2-encoder';
@@ -16,9 +16,9 @@ import * as dgram from 'dgram';
 import os from 'os';
 import noble from '@abandonware/noble';
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction =
+"__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -151,9 +151,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -1361,8 +1358,7 @@ class BarometerSensorDataManager {
 const _console$F = createConsole("ParseUtils", { log: false });
 function parseStringFromDataView(dataView, byteOffset = 0) {
     const stringLength = dataView.getUint8(byteOffset++);
-    const string = textDecoder.decode(
-    dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
+    const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
     byteOffset += stringLength;
     return { string, byteOffset };
 }
@@ -1567,7 +1563,7 @@ class CameraManager {
                 }
                 break;
             case "imageSize":
-                this.#imageSize = dataView.getUint16(0, true);
+                this.#imageSize = dataView.getUint32(0, true);
                 _console$E.log({ imageSize: this.#imageSize });
                 this.#imageData = undefined;
                 this.#imageProgress == 0;
@@ -1643,7 +1639,7 @@ class CameraManager {
         return this.#availableCameraConfigurationTypes;
     }
     #cameraConfigurationRanges = {
-        resolution: { min: 96, max: 1600 },
+        resolution: { min: 96, max: 2560 },
         qualityFactor: { min: 0, max: 100 },
         shutter: { min: 4, max: 16383 },
         gain: { min: 0, max: 248 },
@@ -1815,6 +1811,7 @@ function writeString(view, offset, string) {
 }
 
 var _a$4;
+const alawmulaw = _alawmulaw.default ?? _alawmulaw;
 const { mulaw } = alawmulaw;
 const _console$D = createConsole("MicrophoneManager", { log: false });
 const MicrophoneSensorTypes = ["microphone"];
@@ -1951,7 +1948,12 @@ class MicrophoneManager {
                 case "8":
                     {
                         sample = dataView.getUint8(i);
-                        sample = mulaw.decodeSample(sample);
+                        try {
+                            sample = mulaw.decodeSample(sample);
+                        }
+                        catch (error) {
+                            console.log("fuck", error);
+                        }
                         sample = sample / 2 ** 15;
                     }
                     samples[i] = sample;
@@ -2416,11 +2418,17 @@ class SensorConfigurationManager {
         return this.eventDispatcher.waitForEvent;
     }
     #availableSensorTypes;
+    get availableSensorTypes() {
+        return this.#availableSensorTypes || [];
+    }
     #assertAvailableSensorType(sensorType) {
         _console$B.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
-        const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
+        const isSensorTypeAvailable = this.hasSensorType(sensorType);
         _console$B.log({ sensorType, isSensorTypeAvailable });
         return isSensorTypeAvailable;
+    }
+    hasSensorType(sensorType) {
+        return this.availableSensorTypes.includes(sensorType);
     }
     #configuration = {};
     get configuration() {
@@ -10559,7 +10567,14 @@ const FirmwareEventTypes = [
     "firmwareStatus",
     "firmwareUploadComplete",
 ];
-const FirmwareStatuses = ["idle", "uploading", "uploaded", "pending", "testing", "erasing"];
+const FirmwareStatuses = [
+    "idle",
+    "uploading",
+    "uploaded",
+    "pending",
+    "testing",
+    "erasing",
+];
 class FirmwareManager {
     sendMessage;
     constructor() {
@@ -10707,7 +10722,7 @@ class FirmwareManager {
         this.#mcuManager.onImageUploadProgress(this.#onMcuImageUploadProgress.bind(this));
         this.#mcuManager.onImageUploadFinished(this.#onMcuImageUploadFinished.bind(this));
     }
-    #onMcuMessage({ op, group, id, data, length }) {
+    #onMcuMessage({ op, group, id, data, length, }) {
         _console$h.log("onMcuMessage", ...arguments);
         switch (group) {
             case constants.MGMT_GROUP_ID_OS:
@@ -12360,6 +12375,12 @@ class Device {
         this.#assertIsConnected();
         return this.#sensorConfigurationManager.setConfiguration;
     }
+    get availableSensorTypes() {
+        return this.#sensorConfigurationManager.availableSensorTypes;
+    }
+    get hasSensorType() {
+        return this.#sensorConfigurationManager.hasSensorType;
+    }
     async clearSensorConfiguration() {
         this.#assertIsConnected();
         return this.#sensorConfigurationManager.clearSensorConfiguration();
@@ -12660,7 +12681,8 @@ class Device {
         if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
             sensorRate = 20;
         }
-        if (this.sensorConfiguration.camera != sensorRate) {
+        if (sensorRate != undefined &&
+            this.sensorConfiguration.camera != sensorRate) {
             this.setSensorConfiguration({ camera: sensorRate }, false, false);
         }
         await this.#cameraManager.focus();
@@ -12702,9 +12724,10 @@ class Device {
     async startMicrophone(sensorRate) {
         this.#assertHasMicrophone();
         if (sensorRate == undefined && this.sensorConfiguration.microphone == 0) {
-            sensorRate = 20;
+            sensorRate = 5;
         }
-        if (this.sensorConfiguration.microphone != sensorRate) {
+        if (sensorRate != undefined &&
+            this.sensorConfiguration.microphone != sensorRate) {
             this.setSensorConfiguration({ microphone: sensorRate }, false, false);
         }
         await this.#microphoneManager.start();

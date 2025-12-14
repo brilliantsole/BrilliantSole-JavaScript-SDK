@@ -248,11 +248,11 @@ export { default as Scanner } from "./scanner/Scanner.ts";
 export { default as WebSocketServer } from "./server/websocket/WebSocketServer.ts";
 export { default as UDPServer } from "./server/udp/UDPServer.ts";
 /** NODE_END */
-/** BROWSER_START */
-export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
-/** BROWSER_END */
 /** LS_START */
 export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
 /** LS_END */
+/** BROWSER_START */
+export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
+/** BROWSER_END */
 
 export { default as RangeHelper, Range } from "./utils/RangeHelper.ts";

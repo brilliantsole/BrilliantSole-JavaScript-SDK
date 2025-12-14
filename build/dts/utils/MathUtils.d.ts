@@ -3,7 +3,7 @@ export declare function getInterpolation(value: number, min: number, max: number
 export declare const Uint16Max: number;
 export declare const Int16Max: number;
 export declare const Int16Min: number;
-export declare function parseTimestamp(dataView: DataView, byteOffset: number): number;
+export declare function parseTimestamp(dataView: DataView<ArrayBuffer>, byteOffset: number): number;
 export interface Vector2 {
     x: number;
     y: number;

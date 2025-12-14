@@ -7,7 +7,9 @@ import {
   UInt8ByteBuffer,
 } from "./utils/ArrayBufferUtils.ts";
 import { float32ArrayToWav } from "./utils/AudioUtils.ts";
-import * as alawmulaw from "alawmulaw";
+
+import * as _alawmulaw from "alawmulaw";
+const alawmulaw = (_alawmulaw as any).default ?? _alawmulaw;
 const { mulaw } = alawmulaw;
 
 const _console = createConsole("MicrophoneManager", { log: false });
@@ -123,7 +125,7 @@ class MicrophoneManager {
   get microphoneStatus() {
     return this.#microphoneStatus;
   }
-  #parseMicrophoneStatus(dataView: DataView) {
+  #parseMicrophoneStatus(dataView: DataView<ArrayBuffer>) {
     const microphoneStatusIndex = dataView.getUint8(0);
     const newMicrophoneStatus = MicrophoneStatuses[microphoneStatusIndex];
     this.#updateMicrophoneStatus(newMicrophoneStatus);
@@ -216,7 +218,7 @@ class MicrophoneManager {
   }
   #fadeDuration = 0.01;
   #playbackTime = 0;
-  #parseMicrophoneData(dataView: DataView) {
+  #parseMicrophoneData(dataView: DataView<ArrayBuffer>) {
     this.#assertValidBitDepth();
 
     _console.log("parsing microphone data", dataView);
@@ -235,7 +237,11 @@ class MicrophoneManager {
           if (true) {
             // mu-law compression
             sample = dataView.getUint8(i);
-            sample = mulaw.decodeSample(sample);
+            try {
+              sample = mulaw.decodeSample(sample);
+            } catch (error) {
+              console.log("fuck", error);
+            }
             sample = sample / 2 ** 15; // Normalize to [-1, 1]
           } else {
             sample = dataView.getInt8(i);
@@ -322,7 +328,7 @@ class MicrophoneManager {
     return this.#microphoneConfiguration.sampleRate;
   }
 
-  #parseMicrophoneConfiguration(dataView: DataView) {
+  #parseMicrophoneConfiguration(dataView: DataView<ArrayBuffer>) {
     const parsedMicrophoneConfiguration: MicrophoneConfiguration = {};
 
     let byteOffset = 0;
@@ -466,7 +472,10 @@ class MicrophoneManager {
   }
 
   // MESSAGE
-  parseMessage(messageType: MicrophoneMessageType, dataView: DataView) {
+  parseMessage(
+    messageType: MicrophoneMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ messageType, dataView });
 
     switch (messageType) {

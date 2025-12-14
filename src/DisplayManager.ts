@@ -349,7 +349,7 @@ class DisplayManager implements DisplayManagerInterface {
     _console.assertWithError(this.#isAvailable, "display is not available");
   }
 
-  #parseIsDisplayAvailable(dataView: DataView) {
+  #parseIsDisplayAvailable(dataView: DataView<ArrayBuffer>) {
     const newIsDisplayAvailable = dataView.getUint8(0) == 1;
     this.#isAvailable = newIsDisplayAvailable;
     _console.log({ isDisplayAvailable: this.#isAvailable });
@@ -559,7 +559,7 @@ class DisplayManager implements DisplayManagerInterface {
   get isDisplayAwake() {
     return this.#displayStatus == "awake";
   }
-  #parseDisplayStatus(dataView: DataView) {
+  #parseDisplayStatus(dataView: DataView<ArrayBuffer>) {
     const displayStatusIndex = dataView.getUint8(0);
     const newDisplayStatus = DisplayStatuses[displayStatusIndex];
     this.#updateDisplayStatus(newDisplayStatus);
@@ -664,7 +664,7 @@ class DisplayManager implements DisplayManagerInterface {
     return this.#displayInformation?.type!;
   }
 
-  #parseDisplayInformation(dataView: DataView) {
+  #parseDisplayInformation(dataView: DataView<ArrayBuffer>) {
     // @ts-expect-error
     const parsedDisplayInformation: DisplayInformation = {};
 
@@ -730,7 +730,7 @@ class DisplayManager implements DisplayManagerInterface {
     return this.#brightness;
   }
 
-  #parseDisplayBrightness(dataView: DataView) {
+  #parseDisplayBrightness(dataView: DataView<ArrayBuffer>) {
     const newDisplayBrightnessEnum = dataView.getUint8(0);
     const newDisplayBrightness = DisplayBrightnesses[newDisplayBrightnessEnum];
     assertValidDisplayBrightness(newDisplayBrightness);
@@ -2621,7 +2621,7 @@ class DisplayManager implements DisplayManagerInterface {
   #lastShowRequestTime = 0;
   #minReadyInterval = 60; // Forced delay due to Frame's fpga timing...
   #waitBeforeReady = true;
-  async #parseDisplayReady(dataView: DataView) {
+  async #parseDisplayReady(dataView: DataView<ArrayBuffer>) {
     const now = Date.now();
     const timeSinceLastDraw = now - this.#lastShowRequestTime;
     const timeSinceLastReady = now - this.#lastReadyTime;
@@ -3039,7 +3039,7 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
 
-  #parseSpriteSheetIndex(dataView: DataView) {
+  #parseSpriteSheetIndex(dataView: DataView<ArrayBuffer>) {
     const spriteSheetIndex = dataView.getUint8(0);
     _console.log({
       pendingSpriteSheet: this.#pendingSpriteSheet,
@@ -3071,7 +3071,10 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   // MESSAGE
-  parseMessage(messageType: DisplayMessageType, dataView: DataView) {
+  parseMessage(
+    messageType: DisplayMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ messageType, dataView });
 
     switch (messageType) {

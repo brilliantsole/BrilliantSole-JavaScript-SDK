@@ -139,12 +139,14 @@ class UDPServer extends BaseServer {
       return;
     }
     client.removeSelfTimer.restart();
-    const dataView = new DataView(dataToArrayBuffer(message));
+    const dataView = new DataView(
+      dataToArrayBuffer(message)
+    ) as DataView<ArrayBuffer>;
     this.#onClientData(client, dataView);
   }
 
   // PARSING
-  #onClientData(client: UDPClient, dataView: DataView) {
+  #onClientData(client: UDPClient, dataView: DataView<ArrayBuffer>) {
     _console.log(
       `parsing ${dataView.byteLength} bytes from ${this.#clientToString(
         client
@@ -178,7 +180,7 @@ class UDPServer extends BaseServer {
   }
   #onClientUDPMessage(
     messageType: UDPServerMessageType,
-    dataView: DataView,
+    dataView: DataView<ArrayBuffer>,
     context: UDPClientContext
   ) {
     const { client, responseMessages } = context;
@@ -218,7 +220,7 @@ class UDPServer extends BaseServer {
     return udpPongMessage;
   }
 
-  #parseRemoteReceivePort(dataView: DataView, client: UDPClient) {
+  #parseRemoteReceivePort(dataView: DataView<ArrayBuffer>, client: UDPClient) {
     const receivePort = dataView.getUint16(0);
     client.receivePort = receivePort;
     _console.log(

@@ -9,7 +9,7 @@ export interface BarometerSensorDataEventMessages {
 }
 declare class BarometerSensorDataManager {
     #private;
-    parseData(dataView: DataView, scalar: number): {
+    parseData(dataView: DataView<ArrayBuffer>, scalar: number): {
         pressure: number;
     };
 }

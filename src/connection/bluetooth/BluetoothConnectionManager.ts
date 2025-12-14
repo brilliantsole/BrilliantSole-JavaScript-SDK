@@ -15,7 +15,7 @@ abstract class BluetoothConnectionManager extends BaseConnectionManager {
 
   protected onCharacteristicValueChanged(
     characteristicName: BluetoothCharacteristicName,
-    dataView: DataView
+    dataView: DataView<ArrayBuffer>
   ) {
     if (characteristicName == "rx") {
       this.parseRxMessage(dataView);

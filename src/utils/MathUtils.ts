@@ -26,7 +26,10 @@ function removeLower2Bytes(number: number) {
 
 const timestampThreshold = 60_000;
 
-export function parseTimestamp(dataView: DataView, byteOffset: number) {
+export function parseTimestamp(
+  dataView: DataView<ArrayBuffer>,
+  byteOffset: number
+) {
   const now = Date.now();
   const nowWithoutLower2Bytes = removeLower2Bytes(now);
   const lower2Bytes = dataView.getUint16(byteOffset, true);

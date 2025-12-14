@@ -55,7 +55,7 @@ export type MetaConnectionMessageType = (typeof MetaConnectionMessageTypes)[numb
 export declare const ConnectionMessageTypes: readonly ["batteryLevel", "manufacturerName", "modelNumber", "hardwareRevision", "firmwareRevision", "softwareRevision", "pnpId", "serialNumber", "rx", "tx", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "getVibrationLocations", "triggerVibration", "getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getWifiConnectionEnabled", "setWifiConnectionEnabled", "isWifiConnected", "ipAddress", "isWifiSecure", "cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "microphoneStatus", "microphoneCommand", "getMicrophoneConfiguration", "setMicrophoneConfiguration", "microphoneData", "isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "getSpriteSheetName", "setSpriteSheetName", "spriteSheetIndex", "smp"];
 export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
-export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView) => void;
+export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView<ArrayBuffer>) => void;
 export type MessagesReceivedCallback = () => void;
 declare abstract class BaseConnectionManager {
     #private;
@@ -89,7 +89,7 @@ declare abstract class BaseConnectionManager {
     protected defaultMtu: number;
     mtu?: number;
     sendTxData(data: ArrayBuffer): Promise<void>;
-    parseRxMessage(dataView: DataView): void;
+    parseRxMessage(dataView: DataView<ArrayBuffer>): void;
     clear(): void;
     remove(): void;
 }

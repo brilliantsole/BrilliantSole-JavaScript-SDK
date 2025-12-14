@@ -143,9 +143,8 @@ class TfliteManager {
   get name() {
     return this.#name;
   }
-  #parseName(dataView: DataView) {
+  #parseName(dataView: DataView<ArrayBuffer>) {
     _console.log("parseName", dataView);
-    //@ts-expect-error
     const name = textDecoder.decode(dataView.buffer);
     this.#updateName(name);
   }
@@ -176,7 +175,7 @@ class TfliteManager {
   get task() {
     return this.#task;
   }
-  #parseTask(dataView: DataView) {
+  #parseTask(dataView: DataView<ArrayBuffer>) {
     _console.log("parseTask", dataView);
     const taskEnum = dataView.getUint8(0);
     this.#assertValidTaskEnum(taskEnum);
@@ -210,7 +209,7 @@ class TfliteManager {
   get sampleRate() {
     return this.#sampleRate;
   }
-  #parseSampleRate(dataView: DataView) {
+  #parseSampleRate(dataView: DataView<ArrayBuffer>) {
     _console.log("parseSampleRate", dataView);
     const sampleRate = dataView.getUint16(0, true);
     this.#updateSampleRate(sampleRate);
@@ -259,7 +258,7 @@ class TfliteManager {
   get sensorTypes() {
     return this.#sensorTypes.slice();
   }
-  #parseSensorTypes(dataView: DataView) {
+  #parseSensorTypes(dataView: DataView<ArrayBuffer>) {
     _console.log("parseSensorTypes", dataView);
     const sensorTypes: TfliteSensorType[] = [];
     for (let index = 0; index < dataView.byteLength; index++) {
@@ -316,7 +315,7 @@ class TfliteManager {
   get isReady() {
     return this.#isReady;
   }
-  #parseIsReady(dataView: DataView) {
+  #parseIsReady(dataView: DataView<ArrayBuffer>) {
     _console.log("parseIsReady", dataView);
     const isReady = Boolean(dataView.getUint8(0));
     this.#updateIsReady(isReady);
@@ -334,7 +333,7 @@ class TfliteManager {
   get captureDelay() {
     return this.#captureDelay;
   }
-  #parseCaptureDelay(dataView: DataView) {
+  #parseCaptureDelay(dataView: DataView<ArrayBuffer>) {
     _console.log("parseCaptureDelay", dataView);
     const captureDelay = dataView.getUint16(0, true);
     this.#updateCaptueDelay(captureDelay);
@@ -369,7 +368,7 @@ class TfliteManager {
   get threshold() {
     return this.#threshold;
   }
-  #parseThreshold(dataView: DataView) {
+  #parseThreshold(dataView: DataView<ArrayBuffer>) {
     _console.log("parseThreshold", dataView);
     const threshold = dataView.getFloat32(0, true);
     this.#updateThreshold(threshold);
@@ -406,7 +405,7 @@ class TfliteManager {
   get inferencingEnabled() {
     return this.#inferencingEnabled;
   }
-  #parseInferencingEnabled(dataView: DataView) {
+  #parseInferencingEnabled(dataView: DataView<ArrayBuffer>) {
     _console.log("parseInferencingEnabled", dataView);
     const inferencingEnabled = Boolean(dataView.getUint8(0));
     this.#updateInferencingEnabled(inferencingEnabled);
@@ -466,7 +465,7 @@ class TfliteManager {
     this.setInferencingEnabled(false);
   }
 
-  #parseInference(dataView: DataView) {
+  #parseInference(dataView: DataView<ArrayBuffer>) {
     _console.log("parseInference", dataView);
 
     const timestamp = parseTimestamp(dataView, 0);
@@ -514,7 +513,10 @@ class TfliteManager {
     this.#dispatchEvent("tfliteInference", { tfliteInference: inference });
   }
 
-  parseMessage(messageType: TfliteMessageType, dataView: DataView) {
+  parseMessage(
+    messageType: TfliteMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ messageType });
 
     switch (messageType) {

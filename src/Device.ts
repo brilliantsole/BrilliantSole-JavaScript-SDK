@@ -174,7 +174,10 @@ export interface DeviceEventMessages
     DisplayEventMessages,
     FirmwareEventMessages {
   batteryLevel: { batteryLevel: number };
-  connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };
+  connectionMessage: {
+    messageType: ConnectionMessageType;
+    dataView: DataView<ArrayBuffer>;
+  };
 }
 
 export type SendMessageCallback<MessageType extends string> = (
@@ -843,7 +846,7 @@ class Device {
 
   #onConnectionMessageReceived(
     messageType: ConnectionMessageType,
-    dataView: DataView
+    dataView: DataView<ArrayBuffer>
   ) {
     _console.log({ messageType, dataView });
     switch (messageType) {
@@ -1061,6 +1064,12 @@ class Device {
   get setSensorConfiguration() {
     this.#assertIsConnected();
     return this.#sensorConfigurationManager.setConfiguration;
+  }
+  get availableSensorTypes() {
+    return this.#sensorConfigurationManager.availableSensorTypes;
+  }
+  get hasSensorType() {
+    return this.#sensorConfigurationManager.hasSensorType;
   }
 
   async clearSensorConfiguration() {
@@ -1435,7 +1444,10 @@ class Device {
     if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
       sensorRate = 20;
     }
-    if (this.sensorConfiguration.camera != sensorRate) {
+    if (
+      sensorRate != undefined &&
+      this.sensorConfiguration.camera != sensorRate
+    ) {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
     await this.#cameraManager.focus();
@@ -1482,9 +1494,12 @@ class Device {
   async startMicrophone(sensorRate?: number) {
     this.#assertHasMicrophone();
     if (sensorRate == undefined && this.sensorConfiguration.microphone == 0) {
-      sensorRate = 20;
+      sensorRate = 5;
     }
-    if (this.sensorConfiguration.microphone != sensorRate) {
+    if (
+      sensorRate != undefined &&
+      this.sensorConfiguration.microphone != sensorRate
+    ) {
       this.setSensorConfiguration({ microphone: sensorRate }, false, false);
     }
     await this.#microphoneManager.start();

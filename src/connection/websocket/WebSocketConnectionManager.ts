@@ -229,7 +229,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   }
 
   // PARSING
-  #parseWebSocketMessage(dataView: DataView) {
+  #parseWebSocketMessage(dataView: DataView<ArrayBuffer>) {
     parseMessage(
       dataView,
       WebSocketMessageTypes,
@@ -239,7 +239,10 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     );
   }
 
-  #onMessage(messageType: WebSocketMessageType, dataView: DataView) {
+  #onMessage(
+    messageType: WebSocketMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log(
       `received "${messageType}" message (${dataView.byteLength} bytes)`
     );

@@ -328,7 +328,7 @@ abstract class BaseServer {
   }
 
   // PARSING
-  protected parseClientMessage(dataView: DataView) {
+  protected parseClientMessage(dataView: DataView<ArrayBuffer>) {
     let responseMessages: ArrayBuffer[] = [];
 
     parseMessage(
@@ -348,7 +348,7 @@ abstract class BaseServer {
 
   #onClientMessage(
     messageType: ServerMessageType,
-    dataView: DataView,
+    dataView: DataView<ArrayBuffer>,
     context: { responseMessages: ArrayBuffer[] }
   ) {
     _console.log(
@@ -470,7 +470,10 @@ abstract class BaseServer {
     }
   }
 
-  protected parseClientDeviceMessage(device: Device, dataView: DataView) {
+  protected parseClientDeviceMessage(
+    device: Device,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log("onDeviceMessage", device.bluetoothId, dataView);
 
     let responseMessages: DeviceMessage[] = [];
@@ -490,7 +493,7 @@ abstract class BaseServer {
 
   #parseClientDeviceMessageCallback(
     messageType: ConnectionMessageType,
-    dataView: DataView,
+    dataView: DataView<ArrayBuffer>,
     context: { responseMessages: DeviceMessage[]; device: Device }
   ) {
     _console.log(

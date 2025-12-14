@@ -41,27 +41,6 @@
       writable: true
     }) : e[r] = t, e;
   }
-  function ownKeys(e, r) {
-    var t = Object.keys(e);
-    if (Object.getOwnPropertySymbols) {
-      var o = Object.getOwnPropertySymbols(e);
-      r && (o = o.filter(function (r) {
-        return Object.getOwnPropertyDescriptor(e, r).enumerable;
-      })), t.push.apply(t, o);
-    }
-    return t;
-  }
-  function _objectSpread2(e) {
-    for (var r = 1; r < arguments.length; r++) {
-      var t = null != arguments[r] ? arguments[r] : {};
-      r % 2 ? ownKeys(Object(t), true).forEach(function (r) {
-        _defineProperty$1(e, r, t[r]);
-      }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) {
-        Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r));
-      });
-    }
-    return e;
-  }
   function _toPrimitive(t, r) {
     if ("object" != typeof t || !t) return t;
     var e = t[Symbol.toPrimitive];
@@ -78,7 +57,8 @@
   }
 
   var _window, _process, _process$versions;
-  const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+  const isInProduction =
+  "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
   const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
   const isInBrowser = typeof window !== "undefined" && typeof ((_window = window) === null || _window === void 0 ? void 0 : _window.document) !== "undefined";
   const isInNode = typeof process !== "undefined" && ((_process = process) === null || _process === void 0 ? void 0 : (_process$versions = _process.versions) === null || _process$versions === void 0 ? void 0 : _process$versions.node) != null;
@@ -95,7 +75,8 @@
   const isSafari = isInBrowser && /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
   const isIOS = isInBrowser && /iPad|iPhone|iPod/i.test(userAgent);
   const isMac = isInBrowser && /Macintosh/i.test(userAgent);
-  const isInLensStudio = !isInBrowser && !isInNode && typeof global !== "undefined" && typeof Studio !== "undefined";
+  const isInLensStudio = !isInBrowser && !isInNode && typeof global !== "undefined" &&
+  typeof Studio !== "undefined";
 
   var environment = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -136,7 +117,7 @@
     const match = callerLine.match(/at (.*?) \(/) || callerLine.match(/at (.*)/);
     if (!match) return "";
     const fullFn = match[1].trim();
-    return "[".concat(fullFn, "]");
+    return `[${fullFn}]`;
   }
   function wrapWithLocation(fn) {
     return function () {
@@ -185,7 +166,7 @@
         table: true
       });
       if (_consoles._[type]) {
-        throw new Error("\"".concat(type, "\" console already exists"));
+        throw new Error(`"${type}" console already exists`);
       }
       _consoles._[type] = this;
     }
@@ -194,7 +175,7 @@
     }
     static setLevelFlagsForType(type, levelFlags) {
       if (!_assertClassBrand(Console, this, _consoles)._[type]) {
-        throw new Error("no console found with type \"".concat(type, "\""));
+        throw new Error(`no console found with type "${type}"`);
       }
       _assertClassBrand(Console, this, _consoles)._[type].setLevelFlags(levelFlags);
     }
@@ -228,13 +209,13 @@
       }
     }
     assertTypeWithError(value, type) {
-      this.assertWithError(typeof value == type, "value ".concat(value, " of type \"").concat(typeof value, "\" not of type \"").concat(type, "\""));
+      this.assertWithError(typeof value == type, `value ${value} of type "${typeof value}" not of type "${type}"`);
     }
     assertEnumWithError(value, enumeration) {
-      this.assertWithError(enumeration.includes(value), "invalid enum \"".concat(value, "\""));
+      this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
     }
     assertRangeWithError(name, value, min, max) {
-      this.assertWithError(value >= min && value <= max, "".concat(name, " ").concat(value, " must be within ").concat(min, "-").concat(max));
+      this.assertWithError(value >= min && value <= max, `${name} ${value} must be within ${min}-${max}`);
     }
   }
   var _consoles = {
@@ -274,7 +255,7 @@
       if (!this.listeners[type]) return;
       this.listeners[type] = this.listeners[type].filter(listenerObj => {
         if (listenerObj.shouldRemove) {
-          _console$H.log("removing \"".concat(type, "\" eventListener"), listenerObj);
+          _console$H.log(`removing "${type}" eventListener`, listenerObj);
         }
         return !listenerObj.shouldRemove;
       });
@@ -284,11 +265,11 @@
         once: false
       };
       if (!this.isValidEventType(type)) {
-        throw new Error("Invalid event type: ".concat(type));
+        throw new Error(`Invalid event type: ${type}`);
       }
       if (!this.listeners[type]) {
         this.listeners[type] = [];
-        _console$H.log("creating \"".concat(type, "\" listeners array"), this.listeners[type]);
+        _console$H.log(`creating "${type}" listeners array`, this.listeners[type]);
       }
       const alreadyAdded = this.listeners[type].find(listenerObject => {
         return listenerObject.listener == listener && listenerObject.once == options.once;
@@ -297,23 +278,23 @@
         _console$H.log("already added listener");
         return;
       }
-      _console$H.log("adding \"".concat(type, "\" listener"), listener, options);
+      _console$H.log(`adding "${type}" listener`, listener, options);
       this.listeners[type].push({
         listener,
         once: options.once
       });
-      _console$H.log("currently have ".concat(this.listeners[type].length, " \"").concat(type, "\" listeners"));
+      _console$H.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
     }
     removeEventListener(type, listener) {
       if (!this.isValidEventType(type)) {
-        throw new Error("Invalid event type: ".concat(type));
+        throw new Error(`Invalid event type: ${type}`);
       }
       if (!this.listeners[type]) return;
-      _console$H.log("removing \"".concat(type, "\" listener..."), listener);
+      _console$H.log(`removing "${type}" listener...`, listener);
       this.listeners[type].forEach(listenerObj => {
         const isListenerToRemove = listenerObj.listener === listener;
         if (isListenerToRemove) {
-          _console$H.log("flagging \"".concat(type, "\" listener"), listener);
+          _console$H.log(`flagging "${type}" listener`, listener);
           listenerObj.shouldRemove = true;
         }
       });
@@ -321,19 +302,19 @@
     }
     removeEventListeners(type) {
       if (!this.isValidEventType(type)) {
-        throw new Error("Invalid event type: ".concat(type));
+        throw new Error(`Invalid event type: ${type}`);
       }
       if (!this.listeners[type]) return;
-      _console$H.log("removing \"".concat(type, "\" listeners..."));
+      _console$H.log(`removing "${type}" listeners...`);
       this.listeners[type] = [];
     }
     removeAllEventListeners() {
-      _console$H.log("removing listeners...");
+      _console$H.log(`removing listeners...`);
       this.listeners = {};
     }
     dispatchEvent(type, message) {
       if (!this.isValidEventType(type)) {
-        throw new Error("Invalid event type: ".concat(type));
+        throw new Error(`Invalid event type: ${type}`);
       }
       if (!this.listeners[type]) return;
       const listenersSnapshot = [...this.listeners[type]];
@@ -341,7 +322,7 @@
         if (listenerObj.shouldRemove) {
           return;
         }
-        _console$H.log("dispatching \"".concat(type, "\" listener"), listenerObj);
+        _console$H.log(`dispatching "${type}" listener`, listenerObj);
         try {
           listenerObj.listener({
             type,
@@ -352,7 +333,7 @@
           console.error(error);
         }
         if (listenerObj.once) {
-          _console$H.log("flagging \"".concat(type, "\" listener"), listenerObj);
+          _console$H.log(`flagging "${type}" listener`, listenerObj);
           listenerObj.shouldRemove = true;
         }
       });
@@ -374,7 +355,7 @@
     log: false
   });
   async function wait(delay) {
-    _console$G.log("waiting for ".concat(delay, "ms"));
+    _console$G.log(`waiting for ${delay}ms`);
     return new Promise(resolve => {
       setTimeout(() => resolve(), delay);
     });
@@ -426,7 +407,7 @@
         _console$G.log("interval already running");
         return;
       }
-      _console$G.log("starting interval every ".concat(_classPrivateFieldGet2(_interval, this), "ms"));
+      _console$G.log(`starting interval every ${_classPrivateFieldGet2(_interval, this)}ms`);
       _classPrivateFieldSet2(_intervalId, this, setInterval(_classPrivateFieldGet2(_callback, this), _classPrivateFieldGet2(_interval, this)));
       if (immediately) {
         _classPrivateFieldGet2(_callback, this).call(this);
@@ -631,7 +612,7 @@
     log: false
   });
   const FileTransferMessageTypes = ["getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred"];
-  const FileTypes = ["tflite", "wifiServerCert", "wifiServerKey", "spriteSheet"];
+  const FileTypes = ["tflite", "wifiServerCert", "wifiServerKey", "spriteSheet", "cameraImage"];
   const FileTransferStatuses = ["idle", "sending", "receiving"];
   const FileTransferCommands = ["startSend", "startReceive", "cancel"];
   const FileTransferDirections = ["sending", "receiving"];
@@ -731,7 +712,7 @@
           _assertClassBrand(_FileTransferManager_brand, this, _parseBytesTransferred).call(this, dataView);
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
     async send(type, file, override) {
@@ -828,10 +809,10 @@
     _console$E.assertEnumWithError(type, FileTypes);
   }
   function _assertValidTypeEnum(typeEnum) {
-    _console$E.assertWithError(typeEnum in FileTypes, "invalid typeEnum ".concat(typeEnum));
+    _console$E.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
   }
   function _assertValidStatusEnum(statusEnum) {
-    _console$E.assertWithError(statusEnum in FileTransferStatuses, "invalid statusEnum ".concat(statusEnum));
+    _console$E.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
   }
   function _assertValidCommand(command) {
     _console$E.assertEnumWithError(command, FileTransferCommands);
@@ -847,7 +828,7 @@
   function _parseMaxLength(dataView) {
     _console$E.log("parseFileMaxLength", dataView);
     const maxLength = dataView.getUint32(0, true);
-    _console$E.log("maxLength: ".concat(maxLength / 1024, "kB"));
+    _console$E.log(`maxLength: ${maxLength / 1024}kB`);
     _assertClassBrand(_FileTransferManager_brand, this, _updateMaxLength).call(this, maxLength);
   }
   function _updateMaxLength(maxLength) {
@@ -860,7 +841,7 @@
     });
   }
   function _assertValidLength(length) {
-    _console$E.assertWithError(length <= this.maxLength, "file length ".concat(length, "kB too large - must be ").concat(this.maxLength, "kB or less"));
+    _console$E.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
   }
   function _parseType(dataView) {
     _console$E.log("parseFileType", dataView);
@@ -881,7 +862,7 @@
   async function _setType(newType, sendImmediately) {
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidType).call(this, newType);
     if (this.type == newType) {
-      _console$E.log("redundant type assignment ".concat(newType));
+      _console$E.log(`redundant type assignment ${newType}`);
       return;
     }
     const promise = this.waitForEvent("getFileType");
@@ -898,7 +879,7 @@
     _assertClassBrand(_FileTransferManager_brand, this, _updateLength).call(this, length);
   }
   function _updateLength(length) {
-    _console$E.log("length: ".concat(length / 1024, "kB"));
+    _console$E.log(`length: ${length / 1024}kB (${length} bytes)`);
     _classPrivateFieldSet2(_length, this, length);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "getFileLength", {
       fileLength: length
@@ -908,7 +889,7 @@
     _console$E.assertTypeWithError(newLength, "number");
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidLength).call(this, newLength);
     if (this.length == newLength) {
-      _console$E.log("redundant length assignment ".concat(newLength));
+      _console$E.log(`redundant length assignment ${newLength}`);
       return;
     }
     const promise = this.waitForEvent("getFileLength");
@@ -937,7 +918,7 @@
   async function _setChecksum(newChecksum, sendImmediately) {
     _console$E.assertTypeWithError(newChecksum, "number");
     if (this.checksum == newChecksum) {
-      _console$E.log("redundant checksum assignment ".concat(newChecksum));
+      _console$E.log(`redundant checksum assignment ${newChecksum}`);
       return;
     }
     const promise = this.waitForEvent("getFileChecksum");
@@ -952,7 +933,7 @@
   async function _setCommand(command, sendImmediately) {
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidCommand).call(this, command);
     const promise = this.waitForEvent("fileTransferStatus");
-    _console$E.log("setting command ".concat(command));
+    _console$E.log(`setting command ${command}`);
     const commandEnum = FileTransferCommands.indexOf(command);
     this.sendMessage([{
       type: "setFileTransferCommand",
@@ -992,7 +973,7 @@
     _classPrivateFieldGet2(_receivedBlocks, this).push(dataView.buffer);
     const bytesReceived = _classPrivateFieldGet2(_receivedBlocks, this).reduce((sum, arrayBuffer) => sum += arrayBuffer.byteLength, 0);
     const progress = bytesReceived / _classPrivateFieldGet2(_length, this);
-    _console$E.log("received ".concat(bytesReceived, " of ").concat(_classPrivateFieldGet2(_length, this), " bytes (").concat(progress * 100, "%)"));
+    _console$E.log(`received ${bytesReceived}/${_classPrivateFieldGet2(_length, this)} bytes (${progress * 100}%) - ${_classPrivateFieldGet2(_length, this) - bytesReceived} bytes remaining`);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "fileTransferProgress", {
       progress,
       fileType: this.type
@@ -1034,7 +1015,7 @@
       checksum
     });
     if (checksum != _classPrivateFieldGet2(_checksum, this)) {
-      _console$E.error("wrong checksum - expected ".concat(_classPrivateFieldGet2(_checksum, this), ", got ").concat(checksum));
+      _console$E.error(`wrong checksum - expected ${_classPrivateFieldGet2(_checksum, this)}, got ${checksum}`);
       return;
     }
     _console$E.log("received file", file);
@@ -1079,7 +1060,7 @@
     _console$E.log("slicedBuffer", slicedBuffer);
     const bytesLeft = buffer.byteLength - offset;
     const progress = 1 - bytesLeft / buffer.byteLength;
-    _console$E.log("sending bytes ".concat(offset, "-").concat(offset + slicedBuffer.byteLength, " of ").concat(buffer.byteLength, " bytes (").concat(progress * 100, "%)"));
+    _console$E.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "fileTransferProgress", {
       progress,
       fileType: this.type
@@ -1105,11 +1086,11 @@
       bytesTransferred
     });
     if (this.status != "sending") {
-      _console$E.error("not currently sending file");
+      _console$E.error(`not currently sending file`);
       return;
     }
     if (!this.isServerSide && _classPrivateFieldGet2(_bytesTransferred, this) != bytesTransferred) {
-      _console$E.error("bytesTransferred are not equal - got ".concat(bytesTransferred, ", expected ").concat(_classPrivateFieldGet2(_bytesTransferred, this)));
+      _console$E.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${_classPrivateFieldGet2(_bytesTransferred, this)}`);
       this.cancel();
       return;
     }
@@ -1498,8 +1479,7 @@
   function parseStringFromDataView(dataView) {
     let byteOffset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
     const stringLength = dataView.getUint8(byteOffset++);
-    const string = textDecoder.decode(
-    dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
+    const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
     byteOffset += stringLength;
     return {
       string,
@@ -1511,7 +1491,7 @@
     let byteOffset = 0;
     while (byteOffset < dataView.byteLength) {
       const messageTypeEnum = dataView.getUint8(byteOffset++);
-      _console$z.assertWithError(messageTypeEnum in messageTypes, "invalid messageTypeEnum ".concat(messageTypeEnum));
+      _console$z.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
       const messageType = messageTypes[messageTypeEnum];
       let messageLength;
       if (parseMessageLengthAsUint16) {
@@ -1545,7 +1525,7 @@
   const CameraCommands = ["focus", "takePicture", "stop", "sleep", "wake"];
   const CameraStatuses = ["idle", "focusing", "takingPicture", "asleep"];
   const CameraDataTypes = ["headerSize", "header", "imageSize", "image", "footerSize", "footer"];
-  const CameraConfigurationTypes = ["resolution", "qualityFactor", "shutter", "gain", "redGain", "greenGain", "blueGain"];
+  const CameraConfigurationTypes = ["resolution", "qualityFactor", "shutter", "gain", "redGain", "greenGain", "blueGain", "autoWhiteBalanceEnabled", "autoGainEnabled", "exposure", "autoExposureEnabled", "autoExposureLevel", "brightness", "saturation", "contrast", "sharpness"];
   const CameraMessageTypes = ["cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData"];
   const RequiredCameraMessageTypes = ["getCameraConfiguration", "cameraStatus"];
   const CameraEventTypes = [...CameraMessageTypes, "cameraImageProgress", "cameraImage"];
@@ -1584,32 +1564,68 @@
       _classPrivateFieldInitSpec(this, _availableCameraConfigurationTypes, void 0);
       _classPrivateFieldInitSpec(this, _cameraConfigurationRanges, {
         resolution: {
-          min: 100,
-          max: 720
+          min: 96,
+          max: 2560
         },
         qualityFactor: {
-          min: 15,
-          max: 60
+          min: 0,
+          max: 100
         },
         shutter: {
           min: 4,
           max: 16383
         },
         gain: {
-          min: 1,
+          min: 0,
           max: 248
         },
         redGain: {
           min: 0,
-          max: 1023
+          max: 2047
         },
         greenGain: {
           min: 0,
-          max: 1023
+          max: 2047
         },
         blueGain: {
           min: 0,
-          max: 1023
+          max: 2047
+        },
+        autoWhiteBalanceEnabled: {
+          min: 0,
+          max: 1
+        },
+        autoGainEnabled: {
+          min: 0,
+          max: 1
+        },
+        exposure: {
+          min: 0,
+          max: 1200
+        },
+        autoExposureEnabled: {
+          min: 0,
+          max: 1
+        },
+        autoExposureLevel: {
+          min: -4,
+          max: 4
+        },
+        brightness: {
+          min: -3,
+          max: 3
+        },
+        saturation: {
+          min: -4,
+          max: 4
+        },
+        contrast: {
+          min: -3,
+          max: 3
+        },
+        sharpness: {
+          min: -3,
+          max: 3
         }
       });
       autoBind(this);
@@ -1680,7 +1696,7 @@
     }
     static AssertValidCameraConfigurationTypeEnum(cameraConfigurationTypeEnum) {
       _console$y.assertTypeWithError(cameraConfigurationTypeEnum, "number");
-      _console$y.assertWithError(cameraConfigurationTypeEnum in CameraConfigurationTypes, "invalid cameraConfigurationTypeEnum ".concat(cameraConfigurationTypeEnum));
+      _console$y.assertWithError(cameraConfigurationTypeEnum in CameraConfigurationTypes, `invalid cameraConfigurationTypeEnum ${cameraConfigurationTypeEnum}`);
     }
     parseMessage(messageType, dataView) {
       _console$y.log({
@@ -1699,7 +1715,7 @@
           _assertClassBrand(_CameraManager_brand, this, _parseCameraData).call(this, dataView);
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
     clear() {
@@ -1720,12 +1736,12 @@
   function _updateCameraStatus(newCameraStatus) {
     _console$y.assertEnumWithError(newCameraStatus, CameraStatuses);
     if (newCameraStatus == _classPrivateFieldGet2(_cameraStatus, this)) {
-      _console$y.log("redundant cameraStatus ".concat(newCameraStatus));
+      _console$y.log(`redundant cameraStatus ${newCameraStatus}`);
       return;
     }
     const previousCameraStatus = _classPrivateFieldGet2(_cameraStatus, this);
     _classPrivateFieldSet2(_cameraStatus, this, newCameraStatus);
-    _console$y.log("updated cameraStatus to \"".concat(this.cameraStatus, "\""));
+    _console$y.log(`updated cameraStatus to "${this.cameraStatus}"`);
     _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraStatus", {
       cameraStatus: this.cameraStatus,
       previousCameraStatus
@@ -1736,9 +1752,9 @@
   }
   async function _sendCameraCommand(command, sendImmediately) {
     _console$y.assertEnumWithError(command, CameraCommands);
-    _console$y.log("sending camera command \"".concat(command, "\""));
+    _console$y.log(`sending camera command "${command}"`);
     const promise = this.waitForEvent("cameraStatus");
-    _console$y.log("setting command \"".concat(command, "\""));
+    _console$y.log(`setting command "${command}"`);
     const commandEnum = CameraCommands.indexOf(command);
     this.sendMessage([{
       type: "cameraCommand",
@@ -1747,10 +1763,10 @@
     await promise;
   }
   function _assertIsAsleep() {
-    _console$y.assertWithError(_classPrivateFieldGet2(_cameraStatus, this) == "asleep", "camera is not asleep - currently ".concat(_classPrivateFieldGet2(_cameraStatus, this)));
+    _console$y.assertWithError(_classPrivateFieldGet2(_cameraStatus, this) == "asleep", `camera is not asleep - currently ${_classPrivateFieldGet2(_cameraStatus, this)}`);
   }
   function _assertIsAwake$1() {
-    _console$y.assertWithError(_classPrivateFieldGet2(_cameraStatus, this) != "asleep", "camera is not awake - currently ".concat(_classPrivateFieldGet2(_cameraStatus, this)));
+    _console$y.assertWithError(_classPrivateFieldGet2(_cameraStatus, this) != "asleep", `camera is not awake - currently ${_classPrivateFieldGet2(_cameraStatus, this)}`);
   }
   function _parseCameraData(dataView) {
     _console$y.log("parsing camera data", dataView);
@@ -1789,7 +1805,7 @@
         }
         break;
       case "imageSize":
-        _classPrivateFieldSet2(_imageSize, this, dataView.getUint16(0, true));
+        _classPrivateFieldSet2(_imageSize, this, dataView.getUint32(0, true));
         _console$y.log({
           imageSize: _classPrivateFieldGet2(_imageSize, this)
         });
@@ -1868,12 +1884,33 @@
   function _parseCameraConfiguration(dataView) {
     const parsedCameraConfiguration = {};
     let byteOffset = 0;
+    const size = 2;
     while (byteOffset < dataView.byteLength) {
       const cameraConfigurationTypeIndex = dataView.getUint8(byteOffset++);
       const cameraConfigurationType = CameraConfigurationTypes[cameraConfigurationTypeIndex];
-      _console$y.assertWithError(cameraConfigurationType, "invalid cameraConfigurationTypeIndex ".concat(cameraConfigurationTypeIndex));
-      parsedCameraConfiguration[cameraConfigurationType] = dataView.getUint16(byteOffset, true);
-      byteOffset += 2;
+      _console$y.assertWithError(cameraConfigurationType, `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`);
+      _console$y.log({
+        cameraConfigurationType
+      });
+      let value;
+      switch (cameraConfigurationType) {
+        case "autoExposureLevel":
+        case "brightness":
+        case "saturation":
+        case "contrast":
+        case "sharpness":
+          value = dataView.getInt16(byteOffset, true);
+          break;
+        default:
+          value = dataView.getUint16(byteOffset, true);
+          break;
+      }
+      _console$y.log({
+        [cameraConfigurationType]: value
+      });
+      _console$y.assertTypeWithError(value, "number");
+      parsedCameraConfiguration[cameraConfigurationType] = value;
+      byteOffset += size;
     }
     _console$y.log({
       parsedCameraConfiguration
@@ -1894,7 +1931,7 @@
     var _classPrivateFieldGet5;
     _console$y.assertWithError(_classPrivateFieldGet2(_availableCameraConfigurationTypes, this), "must get initial cameraConfiguration");
     const isCameraConfigurationTypeAvailable = (_classPrivateFieldGet5 = _classPrivateFieldGet2(_availableCameraConfigurationTypes, this)) === null || _classPrivateFieldGet5 === void 0 ? void 0 : _classPrivateFieldGet5.includes(cameraConfigurationType);
-    _console$y.assertWithError(isCameraConfigurationTypeAvailable, "unavailable camera configuration type \"".concat(cameraConfigurationType, "\""));
+    _console$y.assertWithError(isCameraConfigurationTypeAvailable, `unavailable camera configuration type "${cameraConfigurationType}"`);
     return isCameraConfigurationTypeAvailable;
   }
   function _createData$3(cameraConfiguration) {
@@ -1906,7 +1943,15 @@
       const cameraConfigurationTypeEnum = CameraConfigurationTypes.indexOf(cameraConfigurationType);
       dataView.setUint8(index * 3, cameraConfigurationTypeEnum);
       const value = cameraConfiguration[cameraConfigurationType];
-      dataView.setUint16(index * 3 + 1, value, true);
+      const offset = index * 3 + 1;
+      switch (cameraConfigurationType) {
+        case "autoExposureLevel":
+          dataView.setInt16(offset, value, true);
+          break;
+        default:
+          dataView.setUint16(offset, value, true);
+          break;
+      }
     });
     _console$y.log({
       sensorConfigurationData: dataView
@@ -2088,13 +2133,15 @@
     encodeSample: encodeSample
   });
 
-  var alawmulaw = /*#__PURE__*/Object.freeze({
+  var _alawmulaw = /*#__PURE__*/Object.freeze({
     __proto__: null,
     alaw: alaw,
     mulaw: mulaw$1
   });
 
+  var _alawmulaw$default;
   var _a$3;
+  const alawmulaw = (_alawmulaw$default = undefined) !== null && _alawmulaw$default !== void 0 ? _alawmulaw$default : _alawmulaw;
   const {
     mulaw
   } = alawmulaw;
@@ -2214,7 +2261,7 @@
     }
     static AssertValidMicrophoneConfigurationTypeEnum(microphoneConfigurationTypeEnum) {
       _console$x.assertTypeWithError(microphoneConfigurationTypeEnum, "number");
-      _console$x.assertWithError(microphoneConfigurationTypeEnum in MicrophoneConfigurationTypes, "invalid microphoneConfigurationTypeEnum ".concat(microphoneConfigurationTypeEnum));
+      _console$x.assertWithError(microphoneConfigurationTypeEnum in MicrophoneConfigurationTypes, `invalid microphoneConfigurationTypeEnum ${microphoneConfigurationTypeEnum}`);
     }
     parseMessage(messageType, dataView) {
       _console$x.log({
@@ -2233,7 +2280,7 @@
           _assertClassBrand(_MicrophoneManager_brand, this, _parseMicrophoneData).call(this, dataView);
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
     get audioContext() {
@@ -2344,12 +2391,12 @@
   function _updateMicrophoneStatus(newMicrophoneStatus) {
     _console$x.assertEnumWithError(newMicrophoneStatus, MicrophoneStatuses);
     if (newMicrophoneStatus == _classPrivateFieldGet2(_microphoneStatus, this)) {
-      _console$x.log("redundant microphoneStatus ".concat(newMicrophoneStatus));
+      _console$x.log(`redundant microphoneStatus ${newMicrophoneStatus}`);
       return;
     }
     const previousMicrophoneStatus = _classPrivateFieldGet2(_microphoneStatus, this);
     _classPrivateFieldSet2(_microphoneStatus, this, newMicrophoneStatus);
-    _console$x.log("updated microphoneStatus to \"".concat(this.microphoneStatus, "\""));
+    _console$x.log(`updated microphoneStatus to "${this.microphoneStatus}"`);
     _classPrivateGetter(_MicrophoneManager_brand, this, _get_dispatchEvent$a).call(this, "microphoneStatus", {
       microphoneStatus: this.microphoneStatus,
       previousMicrophoneStatus
@@ -2357,9 +2404,9 @@
   }
   async function _sendMicrophoneCommand(command, sendImmediately) {
     _console$x.assertEnumWithError(command, MicrophoneCommands);
-    _console$x.log("sending microphone command \"".concat(command, "\""));
+    _console$x.log(`sending microphone command "${command}"`);
     const promise = this.waitForEvent("microphoneStatus");
-    _console$x.log("setting command \"".concat(command, "\""));
+    _console$x.log(`setting command "${command}"`);
     const commandEnum = MicrophoneCommands.indexOf(command);
     this.sendMessage([{
       type: "microphoneCommand",
@@ -2385,7 +2432,11 @@
         case "8":
           {
             sample = dataView.getUint8(i);
-            sample = mulaw.decodeSample(sample);
+            try {
+              sample = mulaw.decodeSample(sample);
+            } catch (error) {
+              console.log("fuck", error);
+            }
             sample = sample / 2 ** 15;
           }
           samples[i] = sample;
@@ -2438,7 +2489,7 @@
     while (byteOffset < dataView.byteLength) {
       const microphoneConfigurationTypeIndex = dataView.getUint8(byteOffset++);
       const microphoneConfigurationType = MicrophoneConfigurationTypes[microphoneConfigurationTypeIndex];
-      _console$x.assertWithError(microphoneConfigurationType, "invalid microphoneConfigurationTypeIndex ".concat(microphoneConfigurationTypeIndex));
+      _console$x.assertWithError(microphoneConfigurationType, `invalid microphoneConfigurationTypeIndex ${microphoneConfigurationTypeIndex}`);
       let rawValue = dataView.getUint8(byteOffset++);
       const values = MicrophoneConfigurationValues[microphoneConfigurationType];
       const value = values[rawValue];
@@ -2468,7 +2519,7 @@
     var _classPrivateFieldGet2$1;
     _console$x.assertWithError(_classPrivateFieldGet2(_availableMicrophoneConfigurationTypes, this), "must get initial microphoneConfiguration");
     const isMicrophoneConfigurationTypeAvailable = (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_availableMicrophoneConfigurationTypes, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.includes(microphoneConfigurationType);
-    _console$x.assertWithError(isMicrophoneConfigurationTypeAvailable, "unavailable microphone configuration type \"".concat(microphoneConfigurationType, "\""));
+    _console$x.assertWithError(isMicrophoneConfigurationTypeAvailable, `unavailable microphone configuration type "${microphoneConfigurationType}"`);
     return isMicrophoneConfigurationTypeAvailable;
   }
   function _createData$2(microphoneConfiguration) {
@@ -2517,7 +2568,7 @@
     }
     static AssertValidSensorTypeEnum(sensorTypeEnum) {
       _console$w.assertTypeWithError(sensorTypeEnum, "number");
-      _console$w.assertWithError(sensorTypeEnum in SensorTypes, "invalid sensorTypeEnum ".concat(sensorTypeEnum));
+      _console$w.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
     get dispatchEvent() {
       return this.eventDispatcher.dispatchEvent;
@@ -2537,7 +2588,7 @@
           this.parseData(dataView);
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
     parseScalars(dataView) {
@@ -2545,7 +2596,7 @@
         const sensorTypeIndex = dataView.getUint8(byteOffset);
         const sensorType = SensorTypes[sensorTypeIndex];
         if (!sensorType) {
-          _console$w.warn("unknown sensorType index ".concat(sensorTypeIndex));
+          _console$w.warn(`unknown sensorType index ${sensorTypeIndex}`);
           continue;
         }
         const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
@@ -2613,9 +2664,9 @@
         case "microphone":
           return;
         default:
-          _console$w.error("uncaught sensorType \"".concat(sensorType, "\""));
+          _console$w.error(`uncaught sensorType "${sensorType}"`);
       }
-      _console$w.assertWithError(sensorData != null, "no sensorData defined for sensorType \"".concat(sensorType, "\""));
+      _console$w.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
       _console$w.log({
         sensorType,
         sensorData
@@ -2661,6 +2712,12 @@
     }
     get waitForEvent() {
       return this.eventDispatcher.waitForEvent;
+    }
+    get availableSensorTypes() {
+      return _classPrivateFieldGet2(_availableSensorTypes, this) || [];
+    }
+    hasSensorType(sensorType) {
+      return this.availableSensorTypes.includes(sensorType);
     }
     get configuration() {
       return _classPrivateFieldGet2(_configuration$1, this);
@@ -2714,7 +2771,7 @@
           _assertClassBrand(_SensorConfigurationManager_brand, this, _updateConfiguration).call(this, newSensorConfiguration);
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
   }
@@ -2723,9 +2780,8 @@
     return _this.eventDispatcher.dispatchEvent;
   }
   function _assertAvailableSensorType(sensorType) {
-    var _classPrivateFieldGet2$1;
     _console$v.assertWithError(_classPrivateFieldGet2(_availableSensorTypes, this), "must get initial sensorConfiguration");
-    const isSensorTypeAvailable = (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_availableSensorTypes, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.includes(sensorType);
+    const isSensorTypeAvailable = this.hasSensorType(sensorType);
     _console$v.log({
       sensorType,
       isSensorTypeAvailable
@@ -2758,7 +2814,7 @@
         sensorRate
       });
       if (!sensorType) {
-        _console$v.warn("unknown sensorType index ".concat(sensorTypeIndex));
+        _console$v.warn(`unknown sensorType index ${sensorTypeIndex}`);
         continue;
       }
       parsedSensorConfiguration[sensorType] = sensorRate;
@@ -2772,9 +2828,9 @@
   }
   function _AssertValidSensorRate(sensorRate) {
     _console$v.assertTypeWithError(sensorRate, "number");
-    _console$v.assertWithError(sensorRate >= 0, "sensorRate must be 0 or greater (got ".concat(sensorRate, ")"));
-    _console$v.assertWithError(sensorRate < MaxSensorRate, "sensorRate must be 0 or greater (got ".concat(sensorRate, ")"));
-    _console$v.assertWithError(sensorRate % SensorRateStep == 0, "sensorRate must be multiple of ".concat(SensorRateStep));
+    _console$v.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
+    _console$v.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
+    _console$v.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
   }
   function _assertValidSensorRate(sensorRate) {
     var _a2;
@@ -2863,7 +2919,7 @@
     async setName(newName, sendImmediately) {
       _console$u.assertTypeWithError(newName, "string");
       if (this.name == newName) {
-        _console$u.log("redundant name assignment ".concat(newName));
+        _console$u.log(`redundant name assignment ${newName}`);
         return;
       }
       const promise = this.waitForEvent("getTfliteName");
@@ -2880,7 +2936,7 @@
     async setTask(newTask, sendImmediately) {
       _assertClassBrand(_TfliteManager_brand, this, _assertValidTask).call(this, newTask);
       if (this.task == newTask) {
-        _console$u.log("redundant task assignment ".concat(newTask));
+        _console$u.log(`redundant task assignment ${newTask}`);
         return;
       }
       const promise = this.waitForEvent("getTfliteTask");
@@ -2897,9 +2953,9 @@
     async setSampleRate(newSampleRate, sendImmediately) {
       _console$u.assertTypeWithError(newSampleRate, "number");
       newSampleRate -= newSampleRate % SensorRateStep;
-      _console$u.assertWithError(newSampleRate >= SensorRateStep, "sampleRate must be multiple of ".concat(SensorRateStep, " greater than 0 (got ").concat(newSampleRate, ")"));
+      _console$u.assertWithError(newSampleRate >= SensorRateStep, `sampleRate must be multiple of ${SensorRateStep} greater than 0 (got ${newSampleRate})`);
       if (_classPrivateFieldGet2(_sampleRate, this) == newSampleRate) {
-        _console$u.log("redundant sampleRate assignment ".concat(newSampleRate));
+        _console$u.log(`redundant sampleRate assignment ${newSampleRate}`);
         return;
       }
       const promise = this.waitForEvent("getTfliteSampleRate");
@@ -2914,7 +2970,7 @@
     static AssertValidSensorType(sensorType) {
       SensorDataManager.AssertValidSensorType(sensorType);
       const tfliteSensorType = sensorType;
-      _console$u.assertWithError(TfliteSensorTypes.includes(tfliteSensorType), "invalid tflite sensorType \"".concat(sensorType, "\""));
+      _console$u.assertWithError(TfliteSensorTypes.includes(tfliteSensorType), `invalid tflite sensorType "${sensorType}"`);
     }
     get sensorTypes() {
       return _classPrivateFieldGet2(_sensorTypes, this).slice();
@@ -2942,7 +2998,7 @@
     async setCaptureDelay(newCaptureDelay, sendImmediately) {
       _console$u.assertTypeWithError(newCaptureDelay, "number");
       if (_classPrivateFieldGet2(_captureDelay, this) == newCaptureDelay) {
-        _console$u.log("redundant captureDelay assignment ".concat(newCaptureDelay));
+        _console$u.log(`redundant captureDelay assignment ${newCaptureDelay}`);
         return;
       }
       const promise = this.waitForEvent("getTfliteCaptureDelay");
@@ -2959,9 +3015,9 @@
     }
     async setThreshold(newThreshold, sendImmediately) {
       _console$u.assertTypeWithError(newThreshold, "number");
-      _console$u.assertWithError(newThreshold >= 0, "threshold must be positive (got ".concat(newThreshold, ")"));
+      _console$u.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
       if (_classPrivateFieldGet2(_threshold, this) == newThreshold) {
-        _console$u.log("redundant threshold assignment ".concat(newThreshold));
+        _console$u.log(`redundant threshold assignment ${newThreshold}`);
         return;
       }
       const promise = this.waitForEvent("getTfliteThreshold");
@@ -2984,7 +3040,7 @@
       }
       _assertClassBrand(_TfliteManager_brand, this, _assertIsReady).call(this);
       if (_classPrivateFieldGet2(_inferencingEnabled, this) == newInferencingEnabled) {
-        _console$u.log("redundant inferencingEnabled assignment ".concat(newInferencingEnabled));
+        _console$u.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
         return;
       }
       const promise = this.waitForEvent("getTfliteInferencingEnabled");
@@ -3049,7 +3105,7 @@
           _assertClassBrand(_TfliteManager_brand, this, _parseInference).call(this, dataView);
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
     get configuration() {
@@ -3114,7 +3170,7 @@
     _console$u.assertEnumWithError(task, TfliteTasks);
   }
   function _assertValidTaskEnum(taskEnum) {
-    _console$u.assertWithError(taskEnum in TfliteTasks, "invalid taskEnum ".concat(taskEnum));
+    _console$u.assertWithError(taskEnum in TfliteTasks, `invalid taskEnum ${taskEnum}`);
   }
   function _get_dispatchEvent$8(_this) {
     return _this.eventDispatcher.dispatchEvent;
@@ -3173,10 +3229,10 @@
         if (TfliteSensorTypes.includes(sensorType)) {
           sensorTypes.push(sensorType);
         } else {
-          _console$u.error("invalid tfliteSensorType ".concat(sensorType));
+          _console$u.error(`invalid tfliteSensorType ${sensorType}`);
         }
       } else {
-        _console$u.error("invalid sensorTypeEnum ".concat(sensorTypeEnum));
+        _console$u.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
       }
     }
     _assertClassBrand(_TfliteManager_brand, this, _updateSensorTypes).call(this, sensorTypes);
@@ -3205,7 +3261,7 @@
     });
   }
   function _assertIsReady() {
-    _console$u.assertWithError(this.isReady, "tflite is not ready");
+    _console$u.assertWithError(this.isReady, `tflite is not ready`);
   }
   function _parseCaptureDelay(dataView) {
     _console$u.log("parseCaptureDelay", dataView);
@@ -3390,7 +3446,7 @@
           });
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
   }
@@ -3620,7 +3676,7 @@
           _assertClassBrand(_InformationManager_brand, this, _onCurrentTime).call(this, currentTime);
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
     clear() {
@@ -3666,7 +3722,7 @@
   }
   function _assertValidDeviceTypeEnum(typeEnum) {
     _console$s.assertTypeWithError(typeEnum, "number");
-    _console$s.assertWithError(typeEnum in DeviceTypes, "invalid typeEnum ".concat(typeEnum));
+    _console$s.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
   }
   async function _setTypeEnum(newTypeEnum) {
     _assertClassBrand(_InformationManager_brand, this, _assertValidDeviceTypeEnum).call(this, newTypeEnum);
@@ -3783,7 +3839,7 @@
             }
             break;
           default:
-            throw Error("invalid vibration type \"".concat(type, "\""));
+            throw Error(`invalid vibration type "${type}"`);
         }
         _console$r.log({
           type,
@@ -3809,7 +3865,7 @@
           _assertClassBrand(_VibrationManager_brand, this, _onVibrationLocations).call(this, vibrationLocations);
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
   }
@@ -3818,7 +3874,7 @@
   }
   function _verifyLocation(location) {
     _console$r.assertTypeWithError(location, "string");
-    _console$r.assertWithError(VibrationLocations.includes(location), "invalid location \"".concat(location, "\""));
+    _console$r.assertWithError(VibrationLocations.includes(location), `invalid location "${location}"`);
   }
   function _verifyLocations(locations) {
     _assertClassBrand(_VibrationManager_brand, this, _assertNonEmptyArray).call(this, locations);
@@ -3836,7 +3892,7 @@
     _console$r.log({
       locationsBitmask
     });
-    _console$r.assertWithError(locationsBitmask > 0, "locationsBitmask must not be zero");
+    _console$r.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
     return locationsBitmask;
   }
   function _assertNonEmptyArray(array) {
@@ -3844,7 +3900,7 @@
     _console$r.assertWithError(array.length > 0, "passed empty array");
   }
   function _verifyWaveformEffect(waveformEffect) {
-    _console$r.assertWithError(VibrationWaveformEffects.includes(waveformEffect), "invalid waveformEffect \"".concat(waveformEffect, "\""));
+    _console$r.assertWithError(VibrationWaveformEffects.includes(waveformEffect), `invalid waveformEffect "${waveformEffect}"`);
   }
   function _verifyWaveformEffectSegment(waveformEffectSegment) {
     if (waveformEffectSegment.effect != undefined) {
@@ -3854,8 +3910,8 @@
       const {
         delay
       } = waveformEffectSegment;
-      _console$r.assertWithError(delay >= 0, "delay must be 0ms or greater (got ".concat(delay, ")"));
-      _console$r.assertWithError(delay <= MaxVibrationWaveformEffectSegmentDelay, "delay must be ".concat(MaxVibrationWaveformEffectSegmentDelay, "ms or less (got ").concat(delay, ")"));
+      _console$r.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
+      _console$r.assertWithError(delay <= MaxVibrationWaveformEffectSegmentDelay, `delay must be ${MaxVibrationWaveformEffectSegmentDelay}ms or less (got ${delay})`);
     } else {
       throw Error("no effect or delay found in waveformEffectSegment");
     }
@@ -3868,32 +3924,32 @@
   }
   function _verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
     _console$r.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
-    _console$r.assertWithError(waveformEffectSegmentLoopCount >= 0, "waveformEffectSegmentLoopCount must be 0 or greater (got ".concat(waveformEffectSegmentLoopCount, ")"));
-    _console$r.assertWithError(waveformEffectSegmentLoopCount <= MaxVibrationWaveformEffectSegmentLoopCount, "waveformEffectSegmentLoopCount must be ".concat(MaxVibrationWaveformEffectSegmentLoopCount, " or fewer (got ").concat(waveformEffectSegmentLoopCount, ")"));
+    _console$r.assertWithError(waveformEffectSegmentLoopCount >= 0, `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`);
+    _console$r.assertWithError(waveformEffectSegmentLoopCount <= MaxVibrationWaveformEffectSegmentLoopCount, `waveformEffectSegmentLoopCount must be ${MaxVibrationWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`);
   }
   function _verifyWaveformEffectSegments(waveformEffectSegments) {
     _assertClassBrand(_VibrationManager_brand, this, _assertNonEmptyArray).call(this, waveformEffectSegments);
-    _console$r.assertWithError(waveformEffectSegments.length <= MaxNumberOfVibrationWaveformEffectSegments, "must have ".concat(MaxNumberOfVibrationWaveformEffectSegments, " waveformEffectSegments or fewer (got ").concat(waveformEffectSegments.length, ")"));
+    _console$r.assertWithError(waveformEffectSegments.length <= MaxNumberOfVibrationWaveformEffectSegments, `must have ${MaxNumberOfVibrationWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`);
     waveformEffectSegments.forEach(waveformEffectSegment => {
       _assertClassBrand(_VibrationManager_brand, this, _verifyWaveformEffectSegment).call(this, waveformEffectSegment);
     });
   }
   function _verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
     _console$r.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
-    _console$r.assertWithError(waveformEffectSequenceLoopCount >= 0, "waveformEffectSequenceLoopCount must be 0 or greater (got ".concat(waveformEffectSequenceLoopCount, ")"));
-    _console$r.assertWithError(waveformEffectSequenceLoopCount <= MaxVibrationWaveformEffectSequenceLoopCount, "waveformEffectSequenceLoopCount must be ".concat(MaxVibrationWaveformEffectSequenceLoopCount, " or fewer (got ").concat(waveformEffectSequenceLoopCount, ")"));
+    _console$r.assertWithError(waveformEffectSequenceLoopCount >= 0, `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`);
+    _console$r.assertWithError(waveformEffectSequenceLoopCount <= MaxVibrationWaveformEffectSequenceLoopCount, `waveformEffectSequenceLoopCount must be ${MaxVibrationWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`);
   }
   function _verifyWaveformSegment(waveformSegment) {
     _console$r.assertTypeWithError(waveformSegment.amplitude, "number");
-    _console$r.assertWithError(waveformSegment.amplitude >= 0, "amplitude must be 0 or greater (got ".concat(waveformSegment.amplitude, ")"));
-    _console$r.assertWithError(waveformSegment.amplitude <= 1, "amplitude must be 1 or less (got ".concat(waveformSegment.amplitude, ")"));
+    _console$r.assertWithError(waveformSegment.amplitude >= 0, `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`);
+    _console$r.assertWithError(waveformSegment.amplitude <= 1, `amplitude must be 1 or less (got ${waveformSegment.amplitude})`);
     _console$r.assertTypeWithError(waveformSegment.duration, "number");
-    _console$r.assertWithError(waveformSegment.duration > 0, "duration must be greater than 0ms (got ".concat(waveformSegment.duration, "ms)"));
-    _console$r.assertWithError(waveformSegment.duration <= MaxVibrationWaveformSegmentDuration, "duration must be ".concat(MaxVibrationWaveformSegmentDuration, "ms or less (got ").concat(waveformSegment.duration, "ms)"));
+    _console$r.assertWithError(waveformSegment.duration > 0, `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`);
+    _console$r.assertWithError(waveformSegment.duration <= MaxVibrationWaveformSegmentDuration, `duration must be ${MaxVibrationWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`);
   }
   function _verifyWaveformSegments(waveformSegments) {
     _assertClassBrand(_VibrationManager_brand, this, _assertNonEmptyArray).call(this, waveformSegments);
-    _console$r.assertWithError(waveformSegments.length <= MaxNumberOfVibrationWaveformSegments, "must have ".concat(MaxNumberOfVibrationWaveformSegments, " waveformSegments or fewer (got ").concat(waveformSegments.length, ")"));
+    _console$r.assertWithError(waveformSegments.length <= MaxNumberOfVibrationWaveformSegments, `must have ${MaxNumberOfVibrationWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`);
     waveformSegments.forEach(waveformSegment => {
       _assertClassBrand(_VibrationManager_brand, this, _verifyWaveformSegment).call(this, waveformSegment);
     });
@@ -3964,7 +4020,7 @@
   }
   function _verifyVibrationType(vibrationType) {
     _console$r.assertTypeWithError(vibrationType, "string");
-    _console$r.assertWithError(VibrationTypes.includes(vibrationType), "invalid vibrationType \"".concat(vibrationType, "\""));
+    _console$r.assertWithError(VibrationTypes.includes(vibrationType), `invalid vibrationType "${vibrationType}"`);
   }
   function _createData(locations, vibrationType, dataView) {
     _console$r.assertWithError((dataView === null || dataView === void 0 ? void 0 : dataView.byteLength) > 0, "no data received");
@@ -4089,7 +4145,7 @@
       _assertClassBrand(_WifiManager_brand, this, _assertWifiIsAvailable).call(this);
       _console$q.assertTypeWithError(newWifiConnectionEnabled, "boolean");
       if (_classPrivateFieldGet2(_wifiConnectionEnabled, this) == newWifiConnectionEnabled) {
-        _console$q.log("redundant wifiConnectionEnabled assignment ".concat(newWifiConnectionEnabled));
+        _console$q.log(`redundant wifiConnectionEnabled assignment ${newWifiConnectionEnabled}`);
         return;
       }
       const promise = this.waitForEvent("getWifiConnectionEnabled");
@@ -4178,7 +4234,7 @@
           _assertClassBrand(_WifiManager_brand, this, _updateIsWifiSecure).call(this, isWifiSecure);
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
     clear() {
@@ -4272,7 +4328,7 @@
     if (hex.length == 3) {
       hex = hex.split("").map(char => char + char).join("");
     }
-    _console$p.assertWithError(hex.length == 6, "hex length must be 6 (got ".concat(hex.length, ")"));
+    _console$p.assertWithError(hex.length == 6, `hex length must be 6 (got ${hex.length})`);
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
@@ -4315,8 +4371,8 @@
       b
     } = _ref;
     const toHex = value => value.toString(16).padStart(2, "0").toLowerCase();
-    _console$p.assertWithError([r, g, b].every(v => v >= 0 && v <= 255), "RGB values must be between 0 and 255 (got r=".concat(r, ", g=").concat(g, ", b=").concat(b, ")"));
-    return "#".concat(toHex(r)).concat(toHex(g)).concat(toHex(b));
+    _console$p.assertWithError([r, g, b].every(v => v >= 0 && v <= 255), `RGB values must be between 0 and 255 (got r=${r}, g=${g}, b=${b})`);
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }
 
   const DisplaySegmentCaps = ["flat", "round"];
@@ -4581,11 +4637,11 @@
     if (isPath) {
       numberOfControlPoints -= 1;
     }
-    _console$n.assertWithError(controlPoints.length == numberOfControlPoints, "invalid number of control points ".concat(controlPoints.length, ", expected ").concat(numberOfControlPoints));
+    _console$n.assertWithError(controlPoints.length == numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`);
   }
   function assertValidPathNumberOfControlPoints(curveType, controlPoints) {
     const numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
-    _console$n.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, "invalid number of path control points ".concat(controlPoints.length, " for path \"").concat(curveType, "\""));
+    _console$n.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, `invalid number of path control points ${controlPoints.length} for path "${curveType}"`);
   }
   function assertValidPath(curves) {
     curves.forEach((curve, index) => {
@@ -4604,8 +4660,8 @@
     _console$n.assertRangeWithError("numberOfPoints", points.length, 2, 255);
     _console$n.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
     edges.forEach((edge, index) => {
-      _console$n.assertRangeWithError("edgeStartIndex.".concat(index), edge.startIndex, 0, points.length);
-      _console$n.assertRangeWithError("edgeEndIndex.".concat(index), edge.endIndex, 0, points.length);
+      _console$n.assertRangeWithError(`edgeStartIndex.${index}`, edge.startIndex, 0, points.length);
+      _console$n.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
     });
   }
   function isWireframePolygon(_ref2) {
@@ -4814,7 +4870,7 @@
       dataViewLength += 2;
     }
     const dataView = new DataView(new ArrayBuffer(dataViewLength));
-    _console$n.log("serializing ".concat(points.length, " ").concat(pointDataType, " points (").concat(dataView.byteLength, " bytes)..."));
+    _console$n.log(`serializing ${points.length} ${pointDataType} points (${dataView.byteLength} bytes)...`);
     let offset = 0;
     if (!isPath) {
       dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
@@ -5584,7 +5640,7 @@
           }
           const colorHex = rgbToHex(colorRGB);
           if (displayManager.colors[colorIndex] == colorHex) {
-            _console$m.log("redundant color #".concat(colorIndex, " ").concat(colorHex));
+            _console$m.log(`redundant color #${colorIndex} ${colorHex}`);
             return;
           }
           displayManager.assertValidColorIndex(colorIndex);
@@ -5605,7 +5661,7 @@
           displayManager.assertValidColorIndex(colorIndex);
           assertValidOpacity(opacity);
           if (Math.floor(255 * displayManager.opacities[colorIndex]) == Math.floor(255 * opacity)) {
-            _console$m.log("redundant opacity #".concat(colorIndex, " ").concat(opacity));
+            _console$m.log(`redundant opacity #${colorIndex} ${opacity}`);
             return;
           }
           dataView = new DataView(new ArrayBuffer(2));
@@ -16447,7 +16503,7 @@
 
   var fitCurve$1 = {exports: {}};
 
-  (function (module, exports) {
+  (function (module, exports$1) {
   	(function (global, factory) {
   	    {
   	        factory(module);
@@ -16890,7 +16946,9 @@
                 simplified.pop();
               }
             }
-            simplified.push(_objectSpread2({}, curve));
+            simplified.push({
+              ...curve
+            });
             cursor = lastPoint;
           }
           break;
@@ -16910,10 +16968,14 @@
                 }]
               });
               if (isFirst) {
-                simplified.at(-1).controlPoints.unshift(_objectSpread2({}, p0));
+                simplified.at(-1).controlPoints.unshift({
+                  ...p0
+                });
               }
             } else {
-              simplified.push(_objectSpread2({}, curve));
+              simplified.push({
+                ...curve
+              });
             }
             cursor = p2;
           }
@@ -16935,10 +16997,14 @@
                 }]
               });
               if (isFirst) {
-                simplified.at(-1).controlPoints.unshift(_objectSpread2({}, p0));
+                simplified.at(-1).controlPoints.unshift({
+                  ...p0
+                });
               }
             } else {
-              simplified.push(_objectSpread2({}, curve));
+              simplified.push({
+                ...curve
+              });
             }
             cursor = p3;
           }
@@ -19158,7 +19224,7 @@
       name,
       sprites
     } = spriteSheet;
-    _console$l.log("serializing ".concat(name, " spriteSheet"), spriteSheet);
+    _console$l.log(`serializing ${name} spriteSheet`, spriteSheet);
     const numberOfSprites = sprites.length;
     const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
     numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
@@ -19214,7 +19280,7 @@
       if (!glyph.unicodes || glyph.unicodes.length === 0) continue;
       glyph.unicodes.filter(unicode => {
         const char = String.fromCodePoint(unicode);
-        return /(?:[A-Za-z\xAA\xB5\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u037F\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u052F\u0531-\u0556\u0559\u0560-\u0588\u05D0-\u05EA\u05EF-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u0860-\u086A\u0870-\u0887\u0889-\u088F\u08A0-\u08C9\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0980\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u09FC\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0AF9\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D\u0C58-\u0C5A\u0C5C\u0C5D\u0C60\u0C61\u0C80\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDC-\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D04-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D54-\u0D56\u0D5F-\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E86-\u0E8A\u0E8C-\u0EA3\u0EA5\u0EA7-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F5\u13F8-\u13FD\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u16F1-\u16F8\u1700-\u1711\u171F-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1878\u1880-\u1884\u1887-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191E\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19B0-\u19C9\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4C\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1C80-\u1C8A\u1C90-\u1CBA\u1CBD-\u1CBF\u1CE9-\u1CEC\u1CEE-\u1CF3\u1CF5\u1CF6\u1CFA\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2183\u2184\u2C00-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2E2F\u3005\u3006\u3031-\u3035\u303B\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312F\u3131-\u318E\u31A0-\u31BF\u31F0-\u31FF\u3400-\u4DBF\u4E00-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA69D\uA6A0-\uA6E5\uA717-\uA71F\uA722-\uA788\uA78B-\uA7DC\uA7F1-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA8FD\uA8FE\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uA9E0-\uA9E4\uA9E6-\uA9EF\uA9FA-\uA9FE\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA7E-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB5A\uAB5C-\uAB69\uAB70-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC]|\uD800[\uDC00-\uDC0B\uDC0D-\uDC26\uDC28-\uDC3A\uDC3C\uDC3D\uDC3F-\uDC4D\uDC50-\uDC5D\uDC80-\uDCFA\uDE80-\uDE9C\uDEA0-\uDED0\uDF00-\uDF1F\uDF2D-\uDF40\uDF42-\uDF49\uDF50-\uDF75\uDF80-\uDF9D\uDFA0-\uDFC3\uDFC8-\uDFCF]|\uD801[\uDC00-\uDC9D\uDCB0-\uDCD3\uDCD8-\uDCFB\uDD00-\uDD27\uDD30-\uDD63\uDD70-\uDD7A\uDD7C-\uDD8A\uDD8C-\uDD92\uDD94\uDD95\uDD97-\uDDA1\uDDA3-\uDDB1\uDDB3-\uDDB9\uDDBB\uDDBC\uDDC0-\uDDF3\uDE00-\uDF36\uDF40-\uDF55\uDF60-\uDF67\uDF80-\uDF85\uDF87-\uDFB0\uDFB2-\uDFBA]|\uD802[\uDC00-\uDC05\uDC08\uDC0A-\uDC35\uDC37\uDC38\uDC3C\uDC3F-\uDC55\uDC60-\uDC76\uDC80-\uDC9E\uDCE0-\uDCF2\uDCF4\uDCF5\uDD00-\uDD15\uDD20-\uDD39\uDD40-\uDD59\uDD80-\uDDB7\uDDBE\uDDBF\uDE00\uDE10-\uDE13\uDE15-\uDE17\uDE19-\uDE35\uDE60-\uDE7C\uDE80-\uDE9C\uDEC0-\uDEC7\uDEC9-\uDEE4\uDF00-\uDF35\uDF40-\uDF55\uDF60-\uDF72\uDF80-\uDF91]|\uD803[\uDC00-\uDC48\uDC80-\uDCB2\uDCC0-\uDCF2\uDD00-\uDD23\uDD4A-\uDD65\uDD6F-\uDD85\uDE80-\uDEA9\uDEB0\uDEB1\uDEC2-\uDEC7\uDF00-\uDF1C\uDF27\uDF30-\uDF45\uDF70-\uDF81\uDFB0-\uDFC4\uDFE0-\uDFF6]|\uD804[\uDC03-\uDC37\uDC71\uDC72\uDC75\uDC83-\uDCAF\uDCD0-\uDCE8\uDD03-\uDD26\uDD44\uDD47\uDD50-\uDD72\uDD76\uDD83-\uDDB2\uDDC1-\uDDC4\uDDDA\uDDDC\uDE00-\uDE11\uDE13-\uDE2B\uDE3F\uDE40\uDE80-\uDE86\uDE88\uDE8A-\uDE8D\uDE8F-\uDE9D\uDE9F-\uDEA8\uDEB0-\uDEDE\uDF05-\uDF0C\uDF0F\uDF10\uDF13-\uDF28\uDF2A-\uDF30\uDF32\uDF33\uDF35-\uDF39\uDF3D\uDF50\uDF5D-\uDF61\uDF80-\uDF89\uDF8B\uDF8E\uDF90-\uDFB5\uDFB7\uDFD1\uDFD3]|\uD805[\uDC00-\uDC34\uDC47-\uDC4A\uDC5F-\uDC61\uDC80-\uDCAF\uDCC4\uDCC5\uDCC7\uDD80-\uDDAE\uDDD8-\uDDDB\uDE00-\uDE2F\uDE44\uDE80-\uDEAA\uDEB8\uDF00-\uDF1A\uDF40-\uDF46]|\uD806[\uDC00-\uDC2B\uDCA0-\uDCDF\uDCFF-\uDD06\uDD09\uDD0C-\uDD13\uDD15\uDD16\uDD18-\uDD2F\uDD3F\uDD41\uDDA0-\uDDA7\uDDAA-\uDDD0\uDDE1\uDDE3\uDE00\uDE0B-\uDE32\uDE3A\uDE50\uDE5C-\uDE89\uDE9D\uDEB0-\uDEF8\uDFC0-\uDFE0]|\uD807[\uDC00-\uDC08\uDC0A-\uDC2E\uDC40\uDC72-\uDC8F\uDD00-\uDD06\uDD08\uDD09\uDD0B-\uDD30\uDD46\uDD60-\uDD65\uDD67\uDD68\uDD6A-\uDD89\uDD98\uDDB0-\uDDDB\uDEE0-\uDEF2\uDF02\uDF04-\uDF10\uDF12-\uDF33\uDFB0]|\uD808[\uDC00-\uDF99]|\uD809[\uDC80-\uDD43]|\uD80B[\uDF90-\uDFF0]|[\uD80C\uD80E\uD80F\uD81C-\uD822\uD840-\uD868\uD86A-\uD86D\uD86F-\uD872\uD874-\uD879\uD880-\uD883\uD885-\uD88C][\uDC00-\uDFFF]|\uD80D[\uDC00-\uDC2F\uDC41-\uDC46\uDC60-\uDFFF]|\uD810[\uDC00-\uDFFA]|\uD811[\uDC00-\uDE46]|\uD818[\uDD00-\uDD1D]|\uD81A[\uDC00-\uDE38\uDE40-\uDE5E\uDE70-\uDEBE\uDED0-\uDEED\uDF00-\uDF2F\uDF40-\uDF43\uDF63-\uDF77\uDF7D-\uDF8F]|\uD81B[\uDD40-\uDD6C\uDE40-\uDE7F\uDEA0-\uDEB8\uDEBB-\uDED3\uDF00-\uDF4A\uDF50\uDF93-\uDF9F\uDFE0\uDFE1\uDFE3\uDFF2\uDFF3]|\uD823[\uDC00-\uDCD5\uDCFF-\uDD1E\uDD80-\uDDF2]|\uD82B[\uDFF0-\uDFF3\uDFF5-\uDFFB\uDFFD\uDFFE]|\uD82C[\uDC00-\uDD22\uDD32\uDD50-\uDD52\uDD55\uDD64-\uDD67\uDD70-\uDEFB]|\uD82F[\uDC00-\uDC6A\uDC70-\uDC7C\uDC80-\uDC88\uDC90-\uDC99]|\uD835[\uDC00-\uDC54\uDC56-\uDC9C\uDC9E\uDC9F\uDCA2\uDCA5\uDCA6\uDCA9-\uDCAC\uDCAE-\uDCB9\uDCBB\uDCBD-\uDCC3\uDCC5-\uDD05\uDD07-\uDD0A\uDD0D-\uDD14\uDD16-\uDD1C\uDD1E-\uDD39\uDD3B-\uDD3E\uDD40-\uDD44\uDD46\uDD4A-\uDD50\uDD52-\uDEA5\uDEA8-\uDEC0\uDEC2-\uDEDA\uDEDC-\uDEFA\uDEFC-\uDF14\uDF16-\uDF34\uDF36-\uDF4E\uDF50-\uDF6E\uDF70-\uDF88\uDF8A-\uDFA8\uDFAA-\uDFC2\uDFC4-\uDFCB]|\uD837[\uDF00-\uDF1E\uDF25-\uDF2A]|\uD838[\uDC30-\uDC6D\uDD00-\uDD2C\uDD37-\uDD3D\uDD4E\uDE90-\uDEAD\uDEC0-\uDEEB]|\uD839[\uDCD0-\uDCEB\uDDD0-\uDDED\uDDF0\uDEC0-\uDEDE\uDEE0-\uDEE2\uDEE4\uDEE5\uDEE7-\uDEED\uDEF0-\uDEF4\uDEFE\uDEFF\uDFE0-\uDFE6\uDFE8-\uDFEB\uDFED\uDFEE\uDFF0-\uDFFE]|\uD83A[\uDC00-\uDCC4\uDD00-\uDD43\uDD4B]|\uD83B[\uDE00-\uDE03\uDE05-\uDE1F\uDE21\uDE22\uDE24\uDE27\uDE29-\uDE32\uDE34-\uDE37\uDE39\uDE3B\uDE42\uDE47\uDE49\uDE4B\uDE4D-\uDE4F\uDE51\uDE52\uDE54\uDE57\uDE59\uDE5B\uDE5D\uDE5F\uDE61\uDE62\uDE64\uDE67-\uDE6A\uDE6C-\uDE72\uDE74-\uDE77\uDE79-\uDE7C\uDE7E\uDE80-\uDE89\uDE8B-\uDE9B\uDEA1-\uDEA3\uDEA5-\uDEA9\uDEAB-\uDEBB]|\uD869[\uDC00-\uDEDF\uDF00-\uDFFF]|\uD86E[\uDC00-\uDC1D\uDC20-\uDFFF]|\uD873[\uDC00-\uDEAD\uDEB0-\uDFFF]|\uD87A[\uDC00-\uDFE0\uDFF0-\uDFFF]|\uD87B[\uDC00-\uDE5D]|\uD87E[\uDC00-\uDE1D]|\uD884[\uDC00-\uDF4A\uDF50-\uDFFF]|\uD88D[\uDC00-\uDC79])/.test(char);
+        return /\p{Letter}/u.test(char);
       }).forEach(unicode => rangeHelper.update(unicode));
     }
     return rangeHelper.span > 0 ? rangeHelper.range : undefined;
@@ -19230,7 +19296,10 @@
   function getFontMetrics(font, fontSize, options) {
     var _options$minSpriteY, _options$maxSpriteY, _options$maxSpriteHei;
     _console$l.assertTypeWithError(fontSize, "number");
-    options = options ? _objectSpread2(_objectSpread2({}, defaultFontToSpriteSheetOptions), options) : defaultFontToSpriteSheetOptions;
+    options = options ? {
+      ...defaultFontToSpriteSheetOptions,
+      ...options
+    } : defaultFontToSpriteSheetOptions;
     const fonts = Array.isArray(font) ? font : [font];
     let minSpriteY = Infinity;
     let maxSpriteY = -Infinity;
@@ -19261,7 +19330,7 @@
           }
         }
         if (options.script && hasUnicode) {
-          const regex = new RegExp("\\p{Script=".concat(options.script, "}"), "u");
+          const regex = new RegExp(`\\p{Script=${options.script}}`, "u");
           if (!regex.test(String.fromCharCode(glyph.unicode))) {
             continue;
           }
@@ -19287,7 +19356,10 @@
   }
   async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
     _console$l.assertTypeWithError(fontSize, "number");
-    options = options ? _objectSpread2(_objectSpread2({}, defaultFontToSpriteSheetOptions), options) : defaultFontToSpriteSheetOptions;
+    options = options ? {
+      ...defaultFontToSpriteSheetOptions,
+      ...options
+    } : defaultFontToSpriteSheetOptions;
     const fonts = Array.isArray(font) ? font : [font];
     font = fonts[0];
     spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
@@ -19330,7 +19402,7 @@
           }
         }
         if (options.script && hasUnicode) {
-          const regex = new RegExp("\\p{Script=".concat(options.script, "}"), "u");
+          const regex = new RegExp(`\\p{Script=${options.script}}`, "u");
           if (!regex.test(String.fromCharCode(glyph.unicode))) {
             continue;
           }
@@ -19380,7 +19452,7 @@
             x: -bitmapWidth / 2 + bitmapX,
             y: -bitmapHeight / 2 + bitmapY
           };
-          _console$l.log("".concat(name, " path.commands"), path.commands);
+          _console$l.log(`${name} path.commands`, path.commands);
           let curves = [];
           let startPoint = {
             x: 0,
@@ -19405,7 +19477,9 @@
                     y: cmd.y
                   }];
                   if (curves.length === 0) {
-                    controlPoints.unshift(_objectSpread2({}, startPoint));
+                    controlPoints.unshift({
+                      ...startPoint
+                    });
                   }
                   curves.push({
                     type: "segment",
@@ -19423,7 +19497,9 @@
                     y: cmd.y
                   }];
                   if (curves.length === 0) {
-                    controlPoints.unshift(_objectSpread2({}, startPoint));
+                    controlPoints.unshift({
+                      ...startPoint
+                    });
                   }
                   curves.push({
                     type: "quadratic",
@@ -19444,7 +19520,9 @@
                     y: cmd.y
                   }];
                   if (curves.length === 0) {
-                    controlPoints.unshift(_objectSpread2({}, startPoint));
+                    controlPoints.unshift({
+                      ...startPoint
+                    });
                   }
                   curves.push({
                     type: "cubic",
@@ -19578,7 +19656,7 @@
         }
       });
       if (requireAll) {
-        _console$l.assertWithError(longestSprite, "couldn't find sprite with name prefixing \"".concat(substring, "\""));
+        _console$l.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${substring}"`);
       }
       if (longestSprite) {
         sprites.push(longestSprite);
@@ -19663,7 +19741,7 @@
           });
         }
         if (requireAll) {
-          _console$l.assertWithError(longestSprite, "couldn't find sprite with name prefixing \"".concat(lineSubstring, "\""));
+          _console$l.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${lineSubstring}"`);
         }
         if (longestSprite && longestSpriteSheet) {
           const isSeparator = separators.length > 0 ? separators.includes(longestSprite.name) : true;
@@ -19737,7 +19815,7 @@
         spriteSubLine.spriteNames.push(sprite.name);
       });
     });
-    _console$l.log("spriteLines for \"".concat(string, "\""), spriteLines);
+    _console$l.log(`spriteLines for "${string}"`, spriteLines);
     return spriteLines;
   }
   function getFontMaxHeight(font, fontSize) {
@@ -19766,10 +19844,10 @@
           spriteNames
         } = _ref3;
         const spriteSheet = spriteSheets[spriteSheetName];
-        _console$l.assertWithError(spriteSheet, "no spriteSheet found with name \"".concat(spriteSheetName, "\""));
+        _console$l.assertWithError(spriteSheet, `no spriteSheet found with name "${spriteSheetName}"`);
         spriteNames.forEach(spriteName => {
           const sprite = spriteSheet.sprites.find(sprite => sprite.name == spriteName);
-          _console$l.assertWithError(sprite, "no sprite found with name \"".concat(spriteName, " in \"").concat(spriteSheetName, "\" spriteSheet"));
+          _console$l.assertWithError(sprite, `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`);
           _spritesLine.push(sprite);
         });
       });
@@ -19826,10 +19904,11 @@
   }
   function getSpriteLinesMetrics(spriteLines, spriteSheets, contextState) {
     const expandedSpritesLines = getExpandedSpriteLines(spriteLines, spriteSheets);
-    return _objectSpread2({
+    return {
       expandedSpritesLines,
-      numberOfLines: expandedSpritesLines.length
-    }, getExpandedSpriteLinesSize(expandedSpritesLines, contextState));
+      numberOfLines: expandedSpritesLines.length,
+      ...getExpandedSpriteLinesSize(expandedSpritesLines, contextState)
+    };
   }
   function stringToSpriteLinesMetrics(string, spriteSheets, contextState, requireAll, maxLineBreadth, separators) {
     return getSpriteLinesMetrics(stringToSpriteLines(string, spriteSheets, contextState, requireAll, maxLineBreadth, separators), spriteSheets, contextState);
@@ -19849,7 +19928,7 @@
         };
         spriteSubLine.spriteNames.forEach(spriteName => {
           let spriteIndex = spriteSheet.sprites.findIndex(sprite => sprite.name == spriteName);
-          _console$l.assertWithError(spriteIndex != -1, "sprite \"".concat(spriteName, "\" not found"));
+          _console$l.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
           spriteIndex = spriteIndex;
           serializedSubLine.spriteIndices.push(spriteIndex);
         });
@@ -19909,7 +19988,7 @@
           } = rgb;
           return [r, g, b];
         } else {
-          _console$k.error("invalid rgb hex \"".concat(color, "\""));
+          _console$k.error(`invalid rgb hex "${color}"`);
         }
       });
     }
@@ -20074,7 +20153,7 @@
   function assertValidBitmapPixels(bitmap) {
     _console$k.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, bitmap.width * (bitmap.height - 1) + 1, bitmap.width * bitmap.height);
     bitmap.pixels.forEach((pixel, index) => {
-      _console$k.assertRangeWithError("bitmap.pixels[".concat(index, "]"), pixel, 0, bitmap.numberOfColors - 1);
+      _console$k.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
     });
   }
 
@@ -20668,11 +20747,11 @@
     }
   }
   function assertLoadedSpriteSheet(displayManager, spriteSheetName) {
-    _console$j.assertWithError(displayManager.spriteSheets[spriteSheetName], "spriteSheet \"".concat(spriteSheetName, "\" not loaded"));
+    _console$j.assertWithError(displayManager.spriteSheets[spriteSheetName], `spriteSheet "${spriteSheetName}" not loaded`);
   }
   function assertSelectedSpriteSheet(displayManager, spriteSheetName) {
     displayManager.assertLoadedSpriteSheet(spriteSheetName);
-    _console$j.assertWithError(displayManager.selectedSpriteSheetName == spriteSheetName, "spriteSheet \"".concat(spriteSheetName, "\" not selected"));
+    _console$j.assertWithError(displayManager.selectedSpriteSheetName == spriteSheetName, `spriteSheet "${spriteSheetName}" not selected`);
   }
   function assertAnySelectedSpriteSheet(displayManager) {
     _console$j.assertWithError(displayManager.selectedSpriteSheet, "no spriteSheet selected");
@@ -20684,7 +20763,7 @@
   function assertSprite(displayManager, spriteName) {
     displayManager.assertAnySelectedSpriteSheet();
     const sprite = displayManager.getSprite(spriteName);
-    _console$j.assertWithError(sprite, "no sprite found with name \"".concat(spriteName, "\""));
+    _console$j.assertWithError(sprite, `no sprite found with name "${spriteName}"`);
   }
   function getSpriteSheetPalette(displayManager, paletteName) {
     var _displayManager$selec2, _displayManager$selec3;
@@ -20700,22 +20779,22 @@
   }
   function assertSpriteSheetPalette(displayManagerInterface, paletteName) {
     const spriteSheetPalette = displayManagerInterface.getSpriteSheetPalette(paletteName);
-    _console$j.assertWithError(spriteSheetPalette, "no spriteSheetPalette found with name \"".concat(paletteName, "\""));
+    _console$j.assertWithError(spriteSheetPalette, `no spriteSheetPalette found with name "${paletteName}"`);
   }
   function assertSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName) {
     const spriteSheetPaletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
-    _console$j.assertWithError(spriteSheetPaletteSwap, "no paletteSwapName found with name \"".concat(paletteSwapName, "\""));
+    _console$j.assertWithError(spriteSheetPaletteSwap, `no paletteSwapName found with name "${paletteSwapName}"`);
   }
   function assertSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName) {
     const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
-    _console$j.assertWithError(spritePaletteSwap, "no spritePaletteSwap found for sprite \"".concat(spriteName, "\" name \"").concat(paletteSwapName, "\""));
+    _console$j.assertWithError(spritePaletteSwap, `no spritePaletteSwap found for sprite "${spriteName}" name "${paletteSwapName}"`);
   }
   async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, indicesOnly, sendImmediately) {
     offset = offset || 0;
     displayManagerInterface.assertAnySelectedSpriteSheet();
     displayManagerInterface.assertSpriteSheetPalette(paletteName);
     const palette = displayManagerInterface.getSpriteSheetPalette(paletteName);
-    _console$j.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, "invalid offset ".concat(offset, " and palette.numberOfColors ").concat(palette.numberOfColors, " (max ").concat(displayManagerInterface.numberOfColors, ")"));
+    _console$j.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`);
     for (let index = 0; index < palette.numberOfColors; index++) {
       if (!indicesOnly) {
         var _palette$opacities;
@@ -21102,7 +21181,7 @@
       _assertClassBrand(_DisplayManager_brand, this, _assertDisplayIsAvailable$1).call(this);
       assertValidDisplayBrightness(newDisplayBrightness);
       if (this.brightness == newDisplayBrightness) {
-        _console$i.log("redundant displayBrightness ".concat(newDisplayBrightness));
+        _console$i.log(`redundant displayBrightness ${newDisplayBrightness}`);
         return;
       }
       const newDisplayBrightnessEnum = DisplayBrightnesses.indexOf(newDisplayBrightness);
@@ -21146,7 +21225,7 @@
       }
       const colorHex = rgbToHex(colorRGB);
       if (this.colors[colorIndex] == colorHex) {
-        _console$i.log("redundant color #".concat(colorIndex, " ").concat(colorHex));
+        _console$i.log(`redundant color #${colorIndex} ${colorHex}`);
         return;
       }
       this.assertValidColorIndex(colorIndex);
@@ -22135,7 +22214,7 @@
         return;
       }
       if (dataView.byteLength > _classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)) {
-        _console$i.error("wireframe data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
+        _console$i.error(`wireframe data ${dataView.byteLength} too large (max ${_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)})`);
         return;
       }
       await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
@@ -22163,7 +22242,7 @@
         return;
       }
       if (dataView.byteLength > _classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)) {
-        _console$i.error("curve data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
+        _console$i.error(`curve data ${dataView.byteLength} too large (max ${_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)})`);
         return;
       }
       await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
@@ -22191,7 +22270,7 @@
         return;
       }
       if (dataView.byteLength > _classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)) {
-        _console$i.error("path data ".concat(dataView.byteLength, " too large (max ").concat(_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength), ")"));
+        _console$i.error(`path data ${dataView.byteLength} too large (max ${_classPrivateGetter(_DisplayManager_brand, this, _get_maxCommandDataLength)})`);
         return;
       }
       await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
@@ -22410,9 +22489,9 @@
     }
     async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
       _console$i.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
-      _console$i.log("drawing sprite \"".concat(spriteName, "\" in selectedSpriteSheet"), this.selectedSpriteSheet);
+      _console$i.log(`drawing sprite "${spriteName}" in selectedSpriteSheet`, this.selectedSpriteSheet);
       let spriteIndex = this.selectedSpriteSheet.sprites.findIndex(sprite => sprite.name == spriteName);
-      _console$i.assertWithError(spriteIndex != -1, "sprite \"".concat(spriteName, "\" not found in spriteSheet"));
+      _console$i.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found in spriteSheet`);
       spriteIndex = spriteIndex;
       const commandType = "drawSprite";
       const dataView = serializeContextCommand(this, {
@@ -22428,7 +22507,7 @@
       await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
     }
     async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
-      _console$i.assertWithError(this.contextState.spritesLineHeight > 0, "spritesLineHeight must be >0");
+      _console$i.assertWithError(this.contextState.spritesLineHeight > 0, `spritesLineHeight must be >0`);
       const spriteSerializedLines = spriteLinesToSerializedLines(this, spriteLines);
       _console$i.log("spriteSerializedLines", spriteSerializedLines);
       const commandType = "drawSprites";
@@ -22573,7 +22652,7 @@
           _assertClassBrand(_DisplayManager_brand, this, _parseSpriteSheetIndex).call(this, dataView);
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
     assertSpriteSheetPalette(paletteName) {
@@ -22595,7 +22674,7 @@
       await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
     }
     async startSprite(offsetX, offsetY, width, height, sendImmediately) {
-      _console$i.assertWithError(!_classPrivateFieldGet2(_isDrawingBlankSprite, this), "already drawing blank sprite");
+      _console$i.assertWithError(!_classPrivateFieldGet2(_isDrawingBlankSprite, this), `already drawing blank sprite`);
       _classPrivateFieldSet2(_isDrawingBlankSprite, this, true);
       _assertClassBrand(_DisplayManager_brand, this, _saveContext).call(this, sendImmediately);
       _classPrivateFieldGet2(_contextStateHelper, this).reset();
@@ -22616,7 +22695,7 @@
     }
     async endSprite(sendImmediately) {
       _assertClassBrand(_DisplayManager_brand, this, _restoreContext).call(this, sendImmediately);
-      _console$i.assertWithError(_classPrivateFieldGet2(_isDrawingBlankSprite, this), "not drawing blank sprite");
+      _console$i.assertWithError(_classPrivateFieldGet2(_isDrawingBlankSprite, this), `not drawing blank sprite`);
       _classPrivateFieldSet2(_isDrawingBlankSprite, this, false);
       await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, "endSprite", undefined, sendImmediately);
     }
@@ -22688,12 +22767,12 @@
   function _updateDisplayStatus(newDisplayStatus) {
     _console$i.assertEnumWithError(newDisplayStatus, DisplayStatuses);
     if (newDisplayStatus == _classPrivateFieldGet2(_displayStatus, this)) {
-      _console$i.log("redundant displayStatus ".concat(newDisplayStatus));
+      _console$i.log(`redundant displayStatus ${newDisplayStatus}`);
       return;
     }
     const previousDisplayStatus = _classPrivateFieldGet2(_displayStatus, this);
     _classPrivateFieldSet2(_displayStatus, this, newDisplayStatus);
-    _console$i.log("updated displayStatus to \"".concat(this.displayStatus, "\""));
+    _console$i.log(`updated displayStatus to "${this.displayStatus}"`);
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayStatus", {
       displayStatus: this.displayStatus,
       previousDisplayStatus
@@ -22701,9 +22780,9 @@
   }
   async function _sendDisplayCommand(command, sendImmediately) {
     _console$i.assertEnumWithError(command, DisplayCommands);
-    _console$i.log("sending display command \"".concat(command, "\""));
+    _console$i.log(`sending display command "${command}"`);
     const promise = this.waitForEvent("displayStatus");
-    _console$i.log("setting command \"".concat(command, "\""));
+    _console$i.log(`setting command "${command}"`);
     const commandEnum = DisplayCommands.indexOf(command);
     this.sendMessage([{
       type: "displayCommand",
@@ -22712,10 +22791,10 @@
     await promise;
   }
   function _assertIsAwake() {
-    _console$i.assertWithError(_classPrivateFieldGet2(_displayStatus, this) == "awake", "display is not awake - currently ".concat(_classPrivateFieldGet2(_displayStatus, this)));
+    _console$i.assertWithError(_classPrivateFieldGet2(_displayStatus, this) == "awake", `display is not awake - currently ${_classPrivateFieldGet2(_displayStatus, this)}`);
   }
   function _assertIsNotAwake() {
-    _console$i.assertWithError(_classPrivateFieldGet2(_displayStatus, this) != "awake", "display is awake");
+    _console$i.assertWithError(_classPrivateFieldGet2(_displayStatus, this) != "awake", `display is awake`);
   }
   function _parseDisplayInformation(dataView) {
     const parsedDisplayInformation = {};
@@ -22723,7 +22802,7 @@
     while (byteOffset < dataView.byteLength) {
       const displayInformationTypeIndex = dataView.getUint8(byteOffset++);
       const displayInformationType = DisplayInformationTypes[displayInformationTypeIndex];
-      _console$i.assertWithError(displayInformationType, "invalid displayInformationTypeIndex ".concat(displayInformationType));
+      _console$i.assertWithError(displayInformationType, `invalid displayInformationTypeIndex ${displayInformationType}`);
       _console$i.log({
         displayInformationType
       });
@@ -22752,7 +22831,7 @@
       parsedDisplayInformation
     });
     const missingDisplayInformationType = DisplayInformationTypes.find(type => !(type in parsedDisplayInformation));
-    _console$i.assertWithError(!missingDisplayInformationType, "missingDisplayInformationType ".concat(missingDisplayInformationType));
+    _console$i.assertWithError(!missingDisplayInformationType, `missingDisplayInformationType ${missingDisplayInformationType}`);
     _classPrivateFieldSet2(_displayInformation, this, parsedDisplayInformation);
     _classPrivateFieldSet2(_colors, this, new Array(this.numberOfColors).fill("#000000"));
     _classPrivateFieldSet2(_opacities, this, new Array(this.numberOfColors).fill(1));
@@ -22803,7 +22882,7 @@
       return;
     }
     const data = concatenateArrayBuffers(_classPrivateFieldGet2(_contextCommandBuffers, this));
-    _console$i.log("sending displayContextCommands", _classPrivateFieldGet2(_contextCommandBuffers, this).slice(), data);
+    _console$i.log(`sending displayContextCommands`, _classPrivateFieldGet2(_contextCommandBuffers, this).slice(), data);
     _classPrivateFieldGet2(_contextCommandBuffers, this).length = 0;
     await this.sendMessage([{
       type: "displayContextCommands",
@@ -22830,10 +22909,10 @@
     const now = Date.now();
     const timeSinceLastDraw = now - _classPrivateFieldGet2(_lastShowRequestTime, this);
     const timeSinceLastReady = now - _classPrivateFieldGet2(_lastReadyTime, this);
-    _console$i.log("".concat(timeSinceLastDraw, "ms draw time"));
+    _console$i.log(`${timeSinceLastDraw}ms draw time`);
     if (_classPrivateFieldGet2(_waitBeforeReady, this) && timeSinceLastReady < _classPrivateFieldGet2(_minReadyInterval, this)) {
       const timeToWait = _classPrivateFieldGet2(_minReadyInterval, this) - timeSinceLastReady;
-      _console$i.log("waiting ".concat(timeToWait, "ms"));
+      _console$i.log(`waiting ${timeToWait}ms`);
       await wait(timeToWait);
     }
     _classPrivateFieldSet2(_isReady, this, true);
@@ -22881,7 +22960,7 @@
     _console$i.assertWithError(_classPrivateFieldGet2(_pendingSpriteSheet, this) != undefined, "expected pendingSpriteSheet when receiving spriteSheetIndex");
     _classPrivateFieldGet2(_spriteSheets, this)[_classPrivateFieldGet2(_pendingSpriteSheetName, this)] = _classPrivateFieldGet2(_pendingSpriteSheet, this);
     _classPrivateFieldGet2(_spriteSheetIndices, this)[_classPrivateFieldGet2(_pendingSpriteSheetName, this)] = spriteSheetIndex;
-    _console$i.log("finished uploading \"".concat(_classPrivateFieldGet2(_pendingSpriteSheetName, this), "\" spriteSheet"));
+    _console$i.log(`finished uploading "${_classPrivateFieldGet2(_pendingSpriteSheetName, this)}" spriteSheet`);
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displaySpriteSheetUploadComplete", {
       spriteSheetName: _classPrivateFieldGet2(_pendingSpriteSheetName, this),
       spriteSheet: _classPrivateFieldGet2(_pendingSpriteSheet, this)
@@ -22940,10 +23019,10 @@
     set status(newConnectionStatus) {
       _console$h.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
       if (_classPrivateFieldGet2(_status$1, this) == newConnectionStatus) {
-        _console$h.log("tried to assign same connection status \"".concat(newConnectionStatus, "\""));
+        _console$h.log(`tried to assign same connection status "${newConnectionStatus}"`);
         return;
       }
-      _console$h.log("new connection status \"".concat(newConnectionStatus, "\""));
+      _console$h.log(`new connection status "${newConnectionStatus}"`);
       _classPrivateFieldSet2(_status$1, this, newConnectionStatus);
       this.onStatusUpdated(this.status);
       if (this.isConnected) {
@@ -23025,7 +23104,7 @@
       this.assertIsConnectedAndNotDisconnecting();
       if (messages) {
         _classPrivateFieldGet2(_pendingMessages, this).push(...messages);
-        _console$h.log("appended ".concat(messages.length, " messages"));
+        _console$h.log(`appended ${messages.length} messages`);
       }
       if (!sendImmediately) {
         _console$h.log("not sending immediately - waiting until later");
@@ -23061,10 +23140,10 @@
           let arrayBufferCount = 0;
           arrayBuffers.some(arrayBuffer => {
             if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu - 3) {
-              _console$h.log("stopping appending arrayBuffers ( length ".concat(arrayBuffer.byteLength, " too much)"));
+              _console$h.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
               return true;
             }
-            _console$h.log("allowing arrayBuffer with length ".concat(arrayBuffer.byteLength));
+            _console$h.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
             arrayBufferCount++;
             arrayBufferByteLength += arrayBuffer.byteLength;
           });
@@ -23107,7 +23186,7 @@
     _console$h.assertEnumWithError(messageType, TxRxMessageTypes);
   }
   function _assertIsSupported() {
-    _console$h.assertWithError(this.isSupported, "".concat(this.type, " is not supported"));
+    _console$h.assertWithError(this.isSupported, `${this.type} is not supported`);
   }
   function _assertIsNotDisconnecting() {
     _console$h.assertWithError(this.status != "disconnecting", "device is already disconnecting");
@@ -23165,14 +23244,14 @@
       uuid = uuid.toString(16).padStart(4, "0");
     }
     if (/^[0-9a-fA-F]{4,8}$/.test(uuid)) {
-      return "0000".concat(uuid.padStart(8, "0"), "-0000-1000-8000-00805f9b34fb");
+      return `0000${uuid.padStart(8, "0")}-0000-1000-8000-00805f9b34fb`;
     }
     return uuid.toLowerCase();
   }
   function generateBluetoothUUID(value) {
     _console$f.assertTypeWithError(value, "string");
     _console$f.assertWithError(value.length == 4, "value must be 4 characters long");
-    return "ea6d".concat(value, "-a725-4f9b-893d-c3913e33b39f");
+    return `ea6d${value}-a725-4f9b-893d-c3913e33b39f`;
   }
   function stringToCharacteristicUUID(identifier) {
     var _BluetoothUUID$getCha;
@@ -23443,7 +23522,7 @@
         this.device = device;
         _console$d.log("connecting to device...");
         const server = await this.server.connect();
-        _console$d.log("connected to device? ".concat(server.connected));
+        _console$d.log(`connected to device? ${server.connected}`);
         await _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _getServicesAndCharacteristics).call(this);
         _console$d.log("fully connected");
         this.status = "connected";
@@ -23471,7 +23550,7 @@
     async writeCharacteristic(characteristicName, data) {
       super.writeCharacteristic(characteristicName, data);
       const characteristic = _classPrivateFieldGet2(_characteristics, this).get(characteristicName);
-      _console$d.assertWithError(characteristic, "".concat(characteristicName, " characteristic not found"));
+      _console$d.assertWithError(characteristic, `${characteristicName} characteristic not found`);
       _console$d.log("writing characteristic", characteristic, data);
       const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
       if (characteristicProperties.writeWithoutResponse) {
@@ -23533,31 +23612,31 @@
         service
       });
       const serviceName = getServiceNameFromUUID(service.uuid);
-      _console$d.assertWithError(serviceName, "no name found for service uuid \"".concat(service.uuid, "\""));
-      _console$d.log("got \"".concat(serviceName, "\" service"));
+      _console$d.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+      _console$d.log(`got "${serviceName}" service`);
       service.name = serviceName;
       _classPrivateFieldGet2(_services, this).set(serviceName, service);
-      _console$d.log("getting characteristics for \"".concat(serviceName, "\" service"));
+      _console$d.log(`getting characteristics for "${serviceName}" service`);
       const characteristics = await service.getCharacteristics();
-      _console$d.log("got characteristics for \"".concat(serviceName, "\" service"));
+      _console$d.log(`got characteristics for "${serviceName}" service`);
       for (const characteristicIndex in characteristics) {
         const characteristic = characteristics[characteristicIndex];
         _console$d.log({
           characteristic
         });
         const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-        _console$d.assertWithError(Boolean(characteristicName), "no name found for characteristic uuid \"".concat(characteristic.uuid, "\" in \"").concat(serviceName, "\" service"));
-        _console$d.log("got \"".concat(characteristicName, "\" characteristic in \"").concat(serviceName, "\" service"));
+        _console$d.assertWithError(Boolean(characteristicName), `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`);
+        _console$d.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
         characteristic.name = characteristicName;
         _classPrivateFieldGet2(_characteristics, this).set(characteristicName, characteristic);
         addEventListeners(characteristic, _classPrivateFieldGet2(_boundBluetoothCharacteristicEventListeners, this));
         const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
         if (characteristicProperties.notify) {
-          _console$d.log("starting notifications for \"".concat(characteristicName, "\" characteristic"));
+          _console$d.log(`starting notifications for "${characteristicName}" characteristic`);
           await characteristic.startNotifications();
         }
         if (characteristicProperties.read) {
-          _console$d.log("reading \"".concat(characteristicName, "\" characteristic..."));
+          _console$d.log(`reading "${characteristicName}" characteristic...`);
           await characteristic.readValue();
           if (isInBluefy || isInWebBLE) {
             _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _onCharacteristicValueChanged).call(this, characteristic);
@@ -23575,7 +23654,7 @@
       removeEventListeners(characteristic, _classPrivateFieldGet2(_boundBluetoothCharacteristicEventListeners, this));
       const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
       if (characteristicProperties.notify) {
-        _console$d.log("stopping notifications for \"".concat(characteristicName, "\" characteristic"));
+        _console$d.log(`stopping notifications for "${characteristicName}" characteristic`);
         return characteristic.stopNotifications();
       }
     });
@@ -23589,11 +23668,11 @@
   function _onCharacteristicValueChanged(characteristic) {
     _console$d.log("onCharacteristicValue");
     const characteristicName = characteristic.name;
-    _console$d.assertWithError(Boolean(characteristicName), "no name found for characteristic with uuid \"".concat(characteristic.uuid, "\""));
-    _console$d.log("oncharacteristicvaluechanged for \"".concat(characteristicName, "\" characteristic"));
+    _console$d.assertWithError(Boolean(characteristicName), `no name found for characteristic with uuid "${characteristic.uuid}"`);
+    _console$d.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
     const dataView = characteristic.value;
-    _console$d.assertWithError(dataView, "no data found for \"".concat(characteristicName, "\" characteristic"));
-    _console$d.log("data for \"".concat(characteristicName, "\" characteristic"), Array.from(new Uint8Array(dataView.buffer)));
+    _console$d.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+    _console$d.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
     try {
       this.onCharacteristicValueChanged(characteristicName, dataView);
     } catch (error) {
@@ -24300,7 +24379,7 @@
       if (view[16] !== 0x00 || view[17] !== 0x00 || view[18] !== 0x00 || view[19] !== 0x00) {
         throw new Error("Invalid image (wrong flags)");
       }
-      const version = "".concat(view[20], ".").concat(view[21], ".").concat(view[22] + view[23] * 2 ** 8);
+      const version = `${view[20]}.${view[21]}.${view[22] + view[23] * 2 ** 8}`;
       info.version = version;
       info.hash = [...new Uint8Array(await this._hash(image.slice(0, imageSize + 32)))].map(b => b.toString(16).padStart(2, "0")).join("");
       return info;
@@ -24351,7 +24430,7 @@
           });
           break;
         default:
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
       }
     }
     async uploadFirmware(file) {
@@ -24384,15 +24463,15 @@
       _assertClassBrand(_FirmwareManager_brand, this, _assertValidImageIndex).call(this, imageIndex);
       _assertClassBrand(_FirmwareManager_brand, this, _assertImages).call(this);
       if (!_classPrivateFieldGet2(_images, this)[imageIndex]) {
-        _console$b.log("image ".concat(imageIndex, " not found"));
+        _console$b.log(`image ${imageIndex} not found`);
         return;
       }
       if (_classPrivateFieldGet2(_images, this)[imageIndex].pending == true) {
-        _console$b.log("image ".concat(imageIndex, " is already pending"));
+        _console$b.log(`image ${imageIndex} is already pending`);
         return;
       }
       if (_classPrivateFieldGet2(_images, this)[imageIndex].empty) {
-        _console$b.log("image ".concat(imageIndex, " is empty"));
+        _console$b.log(`image ${imageIndex} is empty`);
         return;
       }
       const promise = this.waitForEvent("smp");
@@ -24414,7 +24493,7 @@
       _assertClassBrand(_FirmwareManager_brand, this, _assertValidImageIndex).call(this, imageIndex);
       _assertClassBrand(_FirmwareManager_brand, this, _assertImages).call(this);
       if (_classPrivateFieldGet2(_images, this)[imageIndex].confirmed === true) {
-        _console$b.log("image ".concat(imageIndex, " is already confirmed"));
+        _console$b.log(`image ${imageIndex} is already confirmed`);
         return;
       }
       const promise = this.waitForEvent("smp");
@@ -24449,7 +24528,7 @@
   function _updateStatus(newStatus) {
     _console$b.assertEnumWithError(newStatus, FirmwareStatuses);
     if (_classPrivateFieldGet2(_status, this) == newStatus) {
-      _console$b.log("redundant firmwareStatus assignment \"".concat(newStatus, "\""));
+      _console$b.log(`redundant firmwareStatus assignment "${newStatus}"`);
       return;
     }
     _classPrivateFieldSet2(_status, this, newStatus);
@@ -24492,7 +24571,7 @@
       case constants.MGMT_GROUP_ID_OS:
         switch (id) {
           case constants.OS_MGMT_ID_ECHO:
-            _console$b.log("echo \"".concat(data.r, "\""));
+            _console$b.log(`echo "${data.r}"`);
             break;
           case constants.OS_MGMT_ID_TASKSTAT:
             _console$b.table(data.tasks);
@@ -24509,7 +24588,7 @@
         }
         break;
       default:
-        throw Error("uncaught mcuMessage group ".concat(group));
+        throw Error(`uncaught mcuMessage group ${group}`);
     }
   }
   function _onMcuFileDownloadNext() {
@@ -25048,11 +25127,11 @@
     set ipAddress(newIpAddress) {
       this.assertIsNotConnected();
       if (_classPrivateFieldGet2(_ipAddress, this) == newIpAddress) {
-        _console$7.log("redundnant ipAddress assignment \"".concat(newIpAddress, "\""));
+        _console$7.log(`redundnant ipAddress assignment "${newIpAddress}"`);
         return;
       }
       _classPrivateFieldSet2(_ipAddress, this, newIpAddress);
-      _console$7.log("updated ipAddress to \"".concat(this.ipAddress, "\""));
+      _console$7.log(`updated ipAddress to "${this.ipAddress}"`);
     }
     get isSecure() {
       return _classPrivateFieldGet2(_isSecure, this);
@@ -25060,14 +25139,14 @@
     set isSecure(newIsSecure) {
       this.assertIsNotConnected();
       if (_classPrivateFieldGet2(_isSecure, this) == newIsSecure) {
-        _console$7.log("redundant isSecure assignment ".concat(newIsSecure));
+        _console$7.log(`redundant isSecure assignment ${newIsSecure}`);
         return;
       }
       _classPrivateFieldSet2(_isSecure, this, newIsSecure);
-      _console$7.log("updated isSecure to \"".concat(this.isSecure, "\""));
+      _console$7.log(`updated isSecure to "${this.isSecure}"`);
     }
     get url() {
-      return "".concat(this.isSecure ? "wss" : "ws", "://").concat(this.ipAddress, "/ws");
+      return `${this.isSecure ? "wss" : "ws"}://${this.ipAddress}/ws`;
     }
     async connect() {
       const canContinue = await super.connect();
@@ -25142,7 +25221,7 @@
   async function _onWebSocketMessage$1(event) {
     const arrayBuffer = await event.data.arrayBuffer();
     const dataView = new DataView(arrayBuffer);
-    _console$7.log("webSocket.message (".concat(dataView.byteLength, " bytes)"));
+    _console$7.log(`webSocket.message (${dataView.byteLength} bytes)`);
     _assertClassBrand(_WebSocketConnectionManager_brand, this, _parseWebSocketMessage$1).call(this, dataView);
   }
   function _onWebSocketClose$1(event) {
@@ -25158,7 +25237,7 @@
   }
   function _onMessage(messageType, dataView) {
     var _this$onMessageReceiv;
-    _console$7.log("received \"".concat(messageType, "\" message (").concat(dataView.byteLength, " bytes)"));
+    _console$7.log(`received "${messageType}" message (${dataView.byteLength} bytes)`);
     switch (messageType) {
       case "ping":
         _assertClassBrand(_WebSocketConnectionManager_brand, this, _pong$1).call(this);
@@ -25177,7 +25256,7 @@
         this.parseRxMessage(dataView);
         break;
       default:
-        _console$7.error("uncaught messageType \"".concat(messageType, "\""));
+        _console$7.error(`uncaught messageType "${messageType}"`);
         break;
     }
   }
@@ -25360,6 +25439,12 @@
               progress
             });
             break;
+          case "cameraImage":
+            _classPrivateGetter(_Device_brand, this, _get_dispatchEvent$1).call(this, "cameraImageProgress", {
+              progress,
+              type: "image"
+            });
+            break;
         }
       });
       this.addEventListener("fileTransferStatus", event => {
@@ -25374,6 +25459,21 @@
                 spriteSheet: _classPrivateFieldGet2(_displayManager, this).pendingSpriteSheet,
                 spriteSheetName: _classPrivateFieldGet2(_displayManager, this).pendingSpriteSheetName
               });
+            }
+            break;
+        }
+      });
+      this.addEventListener("fileReceived", async event => {
+        const {
+          fileType,
+          file
+        } = event.message;
+        switch (fileType) {
+          case "cameraImage":
+            {
+              const arrayBuffer = await file.arrayBuffer();
+              const dataView = new DataView(arrayBuffer);
+              _classPrivateFieldGet2(_cameraManager, this).parseMessage("cameraData", dataView);
             }
             break;
         }
@@ -25649,6 +25749,12 @@
       _assertClassBrand(_Device_brand, this, _assertIsConnected).call(this);
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).setConfiguration;
     }
+    get availableSensorTypes() {
+      return _classPrivateFieldGet2(_sensorConfigurationManager, this).availableSensorTypes;
+    }
+    get hasSensorType() {
+      return _classPrivateFieldGet2(_sensorConfigurationManager, this).hasSensorType;
+    }
     async clearSensorConfiguration() {
       _assertClassBrand(_Device_brand, this, _assertIsConnected).call(this);
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).clearSensorConfiguration();
@@ -25694,7 +25800,7 @@
       });
     }
     async sendFile(fileType, file) {
-      _console$6.assertWithError(this.validFileTypes.includes(fileType), "invalid fileType ".concat(fileType));
+      _console$6.assertWithError(this.validFileTypes.includes(fileType), `invalid fileType ${fileType}`);
       const promise = this.waitForEvent("fileTransferComplete");
       _classPrivateFieldGet2(_fileTransferManager, this).send(fileType, file);
       await promise;
@@ -25917,20 +26023,24 @@
     get cameraStatus() {
       return _classPrivateFieldGet2(_cameraManager, this).cameraStatus;
     }
-    async takePicture() {
-      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 20;
+    async takePicture(sensorRate) {
       _assertClassBrand(_Device_brand, this, _assertHasCamera).call(this);
-      if (this.sensorConfiguration.camera == 0 && this.sensorConfiguration.camera != sensorRate) {
+      if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
+        sensorRate = 20;
+      }
+      if (sensorRate != undefined && this.sensorConfiguration.camera != sensorRate) {
         this.setSensorConfiguration({
           camera: sensorRate
         }, false, false);
       }
       await _classPrivateFieldGet2(_cameraManager, this).takePicture();
     }
-    async focusCamera() {
-      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 20;
+    async focusCamera(sensorRate) {
       _assertClassBrand(_Device_brand, this, _assertHasCamera).call(this);
-      if (this.sensorConfiguration.camera == 0 && this.sensorConfiguration.camera != sensorRate) {
+      if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
+        sensorRate = 20;
+      }
+      if (sensorRate != undefined && this.sensorConfiguration.camera != sensorRate) {
         this.setSensorConfiguration({
           camera: sensorRate
         }, false, false);
@@ -25967,10 +26077,12 @@
     get microphoneStatus() {
       return _classPrivateFieldGet2(_microphoneManager, this).microphoneStatus;
     }
-    async startMicrophone() {
-      let sensorRate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 20;
+    async startMicrophone(sensorRate) {
       _assertClassBrand(_Device_brand, this, _assertHasMicrophone).call(this);
-      if (this.sensorConfiguration.microphone == 0 && this.sensorConfiguration.microphone != sensorRate) {
+      if (sensorRate == undefined && this.sensorConfiguration.microphone == 0) {
+        sensorRate = 5;
+      }
+      if (sensorRate != undefined && this.sensorConfiguration.microphone != sensorRate) {
         this.setSensorConfiguration({
           microphone: sensorRate
         }, false, false);
@@ -26470,7 +26582,7 @@
     return messageTypes.every(messageType => {
       const hasConnectionMessage = this.latestConnectionMessages.has(messageType);
       if (!hasConnectionMessage) {
-        _console$6.log("didn't receive \"".concat(messageType, "\" message"));
+        _console$6.log(`didn't receive "${messageType}" message`);
       }
       return hasConnectionMessage;
     });
@@ -26622,7 +26734,7 @@
         } else if (DisplayMessageTypes.includes(messageType)) {
           _classPrivateFieldGet2(_displayManager, this).parseMessage(messageType, dataView);
         } else {
-          throw Error("uncaught messageType ".concat(messageType));
+          throw Error(`uncaught messageType ${messageType}`);
         }
     }
     this.latestConnectionMessages.set(messageType, dataView);
@@ -26647,7 +26759,7 @@
   function _updateBatteryLevel(updatedBatteryLevel) {
     _console$6.assertTypeWithError(updatedBatteryLevel, "number");
     if (_classPrivateFieldGet2(_batteryLevel, this) == updatedBatteryLevel) {
-      _console$6.log("duplicate batteryLevel assignment ".concat(updatedBatteryLevel));
+      _console$6.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
       return;
     }
     _classPrivateFieldSet2(_batteryLevel, this, updatedBatteryLevel);
@@ -26815,7 +26927,7 @@
           value = this.pressureSensorDataManager.onDevicePressureData(event);
           break;
         default:
-          _console$4.log("uncaught sensorType \"".concat(sensorType, "\""));
+          _console$4.log(`uncaught sensorType "${sensorType}"`);
           break;
       }
       if (value) {
@@ -26841,7 +26953,7 @@
     log: false
   });
   function getDevicePairDeviceEventType(deviceEventType) {
-    return "device".concat(capitalizeFirstCharacter(deviceEventType));
+    return `device${capitalizeFirstCharacter(deviceEventType)}`;
   }
   const DevicePairDeviceEventTypes = DeviceEventTypes.map(eventType => getDevicePairDeviceEventType(eventType));
   const DevicePairConnectionEventTypes = ["isConnected"];
@@ -26914,7 +27026,7 @@
     }
     assignDevice(device) {
       if (!_assertClassBrand(_DevicePair_brand, this, _isDeviceCorrectType).call(this, device)) {
-        _console$3.log("device is incorrect type ".concat(device.type, " for ").concat(this.type, " devicePair"));
+        _console$3.log(`device is incorrect type ${device.type} for ${this.type} devicePair`);
         return;
       }
       const side = device.side;
@@ -26935,7 +27047,7 @@
           _classPrivateFieldSet2(_right, this, device);
           break;
       }
-      _console$3.log("assigned ".concat(side, " ").concat(this.type, " device"), device);
+      _console$3.log(`assigned ${side} ${this.type} device`, device);
       this.resetPressureRange();
       _classPrivateGetter(_DevicePair_brand, this, _get_dispatchEvent).call(this, "isConnected", {
         isConnected: this.isConnected
@@ -27008,7 +27120,7 @@
       if (this[side] != device) {
         return false;
       }
-      _console$3.log("removing ".concat(side, " ").concat(this.type, " device"), device);
+      _console$3.log(`removing ${side} ${this.type} device`, device);
       removeEventListeners(device, _classPrivateFieldGet2(_boundDeviceEventListeners, this));
       switch (side) {
         case "left":
@@ -27033,10 +27145,11 @@
       target: device,
       message
     } = deviceEvent;
-    _classPrivateGetter(_DevicePair_brand, this, _get_dispatchEvent).call(this, getDevicePairDeviceEventType(type), _objectSpread2(_objectSpread2({}, message), {}, {
+    _classPrivateGetter(_DevicePair_brand, this, _get_dispatchEvent).call(this, getDevicePairDeviceEventType(type), {
+      ...message,
       device,
       side: device.side
-    }));
+    });
   }
   function _onDeviceIsConnected(deviceEvent) {
     _classPrivateGetter(_DevicePair_brand, this, _get_dispatchEvent).call(this, "isConnected", {
@@ -27475,7 +27588,7 @@
       this.assertConnection();
       _console$1.assertTypeWithError(bluetoothId, "string");
       const device = this.devices[bluetoothId];
-      _console$1.assertWithError(device, "no device found with id ".concat(bluetoothId));
+      _console$1.assertWithError(device, `no device found with id ${bluetoothId}`);
       device.disconnect();
       return device;
     }
@@ -27606,14 +27719,14 @@
           } = parseStringFromDataView(dataView, byteOffset);
           byteOffset = _byteOffset;
           const device = _classPrivateFieldGet2(_devices, this)[bluetoothId];
-          _console$1.assertWithError(device, "no device found for id ".concat(bluetoothId));
+          _console$1.assertWithError(device, `no device found for id ${bluetoothId}`);
           const connectionManager = device.connectionManager;
           const _dataView = sliceDataView(dataView, byteOffset);
           connectionManager.onClientMessage(_dataView);
         }
         break;
       default:
-        _console$1.error("uncaught messageType \"".concat(messageType, "\""));
+        _console$1.error(`uncaught messageType "${messageType}"`);
         break;
     }
     if (this.connectionStatus == "connecting") {
@@ -27662,7 +27775,7 @@
     });
     const discoveredDevice = _classPrivateFieldGet2(_discoveredDevices, this)[bluetoothId];
     if (!discoveredDevice) {
-      _console$1.warn("no discoveredDevice found with id \"".concat(bluetoothId, "\""));
+      _console$1.warn(`no discoveredDevice found with id "${bluetoothId}"`);
       return;
     }
     _console$1.log({
@@ -27734,7 +27847,7 @@
       return this.readyState == WebSocket.CLOSED;
     }
     connect() {
-      let url = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "".concat(location.protocol.includes("https") ? "wss" : "ws", "://").concat(location.host);
+      let url = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : `${location.protocol.includes("https") ? "wss" : "ws"}://${location.host}`;
       if (this.webSocket) {
         this.assertDisconnection();
       }
@@ -27828,7 +27941,7 @@
         this.parseMessage(dataView);
         break;
       default:
-        _console.error("uncaught messageType \"".concat(messageType, "\""));
+        _console.error(`uncaught messageType "${messageType}"`);
         break;
     }
   }

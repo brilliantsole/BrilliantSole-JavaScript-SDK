@@ -422,7 +422,9 @@ class NobleConnectionManager extends BluetoothConnectionManager {
       data,
       isNotification
     );
-    const dataView = new DataView(dataToArrayBuffer(data));
+    const dataView = new DataView(
+      dataToArrayBuffer(data)
+    ) as DataView<ArrayBuffer>;
 
     const characteristicName: BluetoothCharacteristicName = characteristic.name;
     _console.assertWithError(

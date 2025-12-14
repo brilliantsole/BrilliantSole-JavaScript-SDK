@@ -40,7 +40,7 @@ export type MessageLike =
   | number
   | number[]
   | ArrayBufferLike
-  | DataView
+  | DataView<ArrayBuffer>
   | boolean
   | string
   | any;

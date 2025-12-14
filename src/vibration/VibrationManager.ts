@@ -415,7 +415,10 @@ class VibrationManager {
   }
 
   // MESSAGE
-  parseMessage(messageType: VibrationMessageType, dataView: DataView) {
+  parseMessage(
+    messageType: VibrationMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ messageType });
 
     switch (messageType) {

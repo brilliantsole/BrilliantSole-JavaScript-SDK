@@ -48,7 +48,7 @@ declare class CameraManager {
     constructor();
     sendMessage: SendCameraMessageCallback;
     eventDispatcher: CameraEventDispatcher;
-    get waitForEvent(): <T extends "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage">(type: T) => Promise<{
+    get waitForEvent(): <T extends "cameraImage" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress">(type: T) => Promise<{
         type: T;
         target: Device;
         message: CameraEventMessages[T];
@@ -66,7 +66,7 @@ declare class CameraManager {
     setCameraConfiguration(newCameraConfiguration: CameraConfiguration): Promise<void>;
     static AssertValidCameraConfigurationType(cameraConfigurationType: CameraConfigurationType): void;
     static AssertValidCameraConfigurationTypeEnum(cameraConfigurationTypeEnum: number): void;
-    parseMessage(messageType: CameraMessageType, dataView: DataView): void;
+    parseMessage(messageType: CameraMessageType, dataView: DataView<ArrayBuffer>): void;
     clear(): void;
 }
 export default CameraManager;
