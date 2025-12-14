@@ -133,3 +133,6 @@ TODO.txt
 
 tflite-converter/uploads
 /tflite
+
+/cameraImages
+/microphoneRecordings
