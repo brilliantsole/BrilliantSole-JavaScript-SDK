@@ -2,10 +2,9 @@
  * @copyright Zack Qattan 2024
  * @license MIT
  */
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 const isInProduction =
-__BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+"__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -138,9 +137,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -1657,6 +1653,35 @@ class CameraManager {
         _console$A.log("created url", url);
         this.#dispatchEvent("cameraImage", { url, blob });
         this.#didBuildImage = true;
+    }
+    #buildHeaderCameraData() {
+        if (this.#headerSize && this.#headerProgress == 1 && this.#headerData) {
+            const headerDataView = new DataView(new ArrayBuffer(8));
+            headerDataView.setUint8(0, CameraDataTypes.indexOf("headerSize"));
+            headerDataView.setUint16(1, 2, true);
+            headerDataView.setUint16(3, this.#headerSize, true);
+            headerDataView.setUint8(5, CameraDataTypes.indexOf("header"));
+            headerDataView.setUint16(6, this.#headerSize, true);
+            return concatenateArrayBuffers(headerDataView, this.#headerData);
+        }
+    }
+    #buildFooterCameraData() {
+        if (this.#footerSize && this.#footerProgress == 1 && this.#footerData) {
+            const footerDataView = new DataView(new ArrayBuffer(8));
+            footerDataView.setUint8(0, CameraDataTypes.indexOf("footerSize"));
+            footerDataView.setUint16(1, 2, true);
+            footerDataView.setUint16(3, this.#footerSize, true);
+            footerDataView.setUint8(5, CameraDataTypes.indexOf("footer"));
+            footerDataView.setUint16(6, this.#footerSize, true);
+            return concatenateArrayBuffers(footerDataView, this.#footerData);
+        }
+    }
+    buildCameraData() {
+        const cameraData = [
+            this.#buildHeaderCameraData(),
+            this.#buildFooterCameraData(),
+        ];
+        return concatenateArrayBuffers(cameraData);
     }
     #cameraConfiguration = {};
     get cameraConfiguration() {
@@ -27267,6 +27292,9 @@ class Device {
         });
     }
     #cameraManager = new CameraManager();
+    get _buildCameraData() {
+        return this.#cameraManager.buildCameraData;
+    }
     get hasCamera() {
         return this.sensorTypes.includes("camera");
     }

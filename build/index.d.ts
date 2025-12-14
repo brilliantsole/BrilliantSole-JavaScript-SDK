@@ -1580,6 +1580,7 @@ declare class Device {
     get isWifiSecure(): boolean;
     reconnectViaWebSockets(): Promise<void>;
     reconnectViaUDP(): Promise<void>;
+    private get _buildCameraData();
     get hasCamera(): boolean;
     get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
     takePicture(sensorRate?: number): Promise<void>;

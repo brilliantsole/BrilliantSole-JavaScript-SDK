@@ -41,6 +41,7 @@ import DeviceManager, {
 } from "../DeviceManager.ts";
 import { RequiredWifiMessageTypes } from "../WifiManager.ts";
 import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
+import { RequiredCameraMessageTypes } from "../CameraManager.ts";
 
 const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...DeviceInformationTypes,
@@ -247,7 +248,6 @@ abstract class BaseServer {
   }
 
   // DEVICE LISTENERS
-
   #boundDeviceListeners: BoundDeviceEventListeners = {
     connectionMessage: this.#onDeviceConnectionMessage.bind(this),
   };
@@ -257,10 +257,19 @@ abstract class BaseServer {
     messageType: ConnectionMessageType,
     dataView?: DataView
   ): DeviceMessage {
-    return {
-      type: messageType as DeviceEventType,
-      data: dataView || device.latestConnectionMessages.get(messageType),
-    };
+    switch (messageType) {
+      case "cameraData":
+        return {
+          type: "cameraData",
+          // @ts-expect-error
+          data: dataView || device._buildCameraData(),
+        };
+      default:
+        return {
+          type: messageType as DeviceEventType,
+          data: dataView || device.latestConnectionMessages.get(messageType),
+        };
+    }
   }
 
   #onDeviceConnectionMessage(deviceEvent: DeviceEventMap["connectionMessage"]) {
@@ -454,6 +463,9 @@ abstract class BaseServer {
             RequiredWifiMessageTypes.forEach((messageType) => {
               messages.push(this.#createDeviceMessage(device, messageType));
             });
+          }
+          if (device.hasCamera) {
+            messages.push(this.#createDeviceMessage(device, "cameraData"));
           }
           const responseMessage = this.#createDeviceServerMessage(
             device,

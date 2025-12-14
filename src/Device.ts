@@ -1417,6 +1417,10 @@ class Device {
 
   // CAMERA MANAGER
   #cameraManager = new CameraManager();
+
+  private get _buildCameraData() {
+    return this.#cameraManager.buildCameraData;
+  }
   get hasCamera() {
     return this.sensorTypes.includes("camera");
   }

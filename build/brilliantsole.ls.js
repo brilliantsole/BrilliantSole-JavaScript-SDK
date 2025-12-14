@@ -1663,6 +1663,10 @@
       _assertClassBrand(_CameraManager_brand, this, _assertIsAsleep).call(this);
       await _assertClassBrand(_CameraManager_brand, this, _sendCameraCommand).call(this, "wake");
     }
+    buildCameraData() {
+      const cameraData = [_assertClassBrand(_CameraManager_brand, this, _buildHeaderCameraData).call(this), _assertClassBrand(_CameraManager_brand, this, _buildFooterCameraData).call(this)];
+      return concatenateArrayBuffers(cameraData);
+    }
     get cameraConfiguration() {
       return _classPrivateFieldGet2(_cameraConfiguration, this);
     }
@@ -1880,6 +1884,28 @@
       blob
     });
     _classPrivateFieldSet2(_didBuildImage, this, true);
+  }
+  function _buildHeaderCameraData() {
+    if (_classPrivateFieldGet2(_headerSize, this) && _classPrivateFieldGet2(_headerProgress, this) == 1 && _classPrivateFieldGet2(_headerData, this)) {
+      const headerDataView = new DataView(new ArrayBuffer(8));
+      headerDataView.setUint8(0, CameraDataTypes.indexOf("headerSize"));
+      headerDataView.setUint16(1, 2, true);
+      headerDataView.setUint16(3, _classPrivateFieldGet2(_headerSize, this), true);
+      headerDataView.setUint8(5, CameraDataTypes.indexOf("header"));
+      headerDataView.setUint16(6, _classPrivateFieldGet2(_headerSize, this), true);
+      return concatenateArrayBuffers(headerDataView, _classPrivateFieldGet2(_headerData, this));
+    }
+  }
+  function _buildFooterCameraData() {
+    if (_classPrivateFieldGet2(_footerSize, this) && _classPrivateFieldGet2(_footerProgress, this) == 1 && _classPrivateFieldGet2(_footerData, this)) {
+      const footerDataView = new DataView(new ArrayBuffer(8));
+      footerDataView.setUint8(0, CameraDataTypes.indexOf("footerSize"));
+      footerDataView.setUint16(1, 2, true);
+      footerDataView.setUint16(3, _classPrivateFieldGet2(_footerSize, this), true);
+      footerDataView.setUint8(5, CameraDataTypes.indexOf("footer"));
+      footerDataView.setUint16(6, _classPrivateFieldGet2(_footerSize, this), true);
+      return concatenateArrayBuffers(footerDataView, _classPrivateFieldGet2(_footerData, this));
+    }
   }
   function _parseCameraConfiguration(dataView) {
     const parsedCameraConfiguration = {};
@@ -26012,6 +26038,9 @@
         type: "udp",
         ipAddress: this.ipAddress
       });
+    }
+    get _buildCameraData() {
+      return _classPrivateFieldGet2(_cameraManager, this).buildCameraData;
     }
     get hasCamera() {
       return this.sensorTypes.includes("camera");

@@ -60,6 +60,7 @@ declare class CameraManager {
     stop(): Promise<void>;
     sleep(): Promise<void>;
     wake(): Promise<void>;
+    buildCameraData(): ArrayBuffer;
     get cameraConfiguration(): CameraConfiguration;
     get availableCameraConfigurationTypes(): ("resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "brightness" | "saturation" | "contrast" | "sharpness")[];
     get cameraConfigurationRanges(): CameraConfigurationRanges;

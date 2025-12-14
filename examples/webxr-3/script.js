@@ -282,6 +282,7 @@ const onDevice = () => {
   device.addEventListener("getCameraConfiguration", () => {
     updateCameraConfigurationPre();
   });
+  updateCameraConfigurationPre();
 
   const cameraConfigurationContainer = document.getElementById(
     "cameraConfiguration"
