@@ -1948,12 +1948,7 @@ class MicrophoneManager {
                 case "8":
                     {
                         sample = dataView.getUint8(i);
-                        try {
-                            sample = mulaw.decodeSample(sample);
-                        }
-                        catch (error) {
-                            console.log("fuck", error);
-                        }
+                        sample = mulaw.decodeSample(sample);
                         sample = sample / 2 ** 15;
                     }
                     samples[i] = sample;

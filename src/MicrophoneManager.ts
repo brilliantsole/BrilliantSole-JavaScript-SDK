@@ -237,11 +237,7 @@ class MicrophoneManager {
           if (true) {
             // mu-law compression
             sample = dataView.getUint8(i);
-            try {
-              sample = mulaw.decodeSample(sample);
-            } catch (error) {
-              console.log("fuck", error);
-            }
+            sample = mulaw.decodeSample(sample);
             sample = sample / 2 ** 15; // Normalize to [-1, 1]
           } else {
             sample = dataView.getInt8(i);
