@@ -49,6 +49,15 @@ export const CameraConfigurationTypes = [
   "redGain",
   "greenGain",
   "blueGain",
+  "autoWhiteBalanceEnabled",
+  "autoGainEnabled",
+  "exposure",
+  "autoExposureEnabled",
+  "autoExposureLevel",
+  "brightness",
+  "saturation",
+  "contrast",
+  "sharpness",
 ] as const;
 export type CameraConfigurationType = (typeof CameraConfigurationTypes)[number];
 
@@ -128,7 +137,7 @@ class CameraManager {
   get cameraStatus() {
     return this.#cameraStatus;
   }
-  #parseCameraStatus(dataView: DataView) {
+  #parseCameraStatus(dataView: DataView<ArrayBuffer>) {
     const cameraStatusIndex = dataView.getUint8(0);
     const newCameraStatus = CameraStatuses[cameraStatusIndex];
     this.#updateCameraStatus(newCameraStatus);
@@ -211,7 +220,7 @@ class CameraManager {
   }
 
   // CAMERA DATA
-  #parseCameraData(dataView: DataView) {
+  #parseCameraData(dataView: DataView<ArrayBuffer>) {
     _console.log("parsing camera data", dataView);
     parseMessage(
       dataView,
@@ -221,7 +230,10 @@ class CameraManager {
       true
     );
   }
-  #onCameraData(cameraDataType: CameraDataType, dataView: DataView) {
+  #onCameraData(
+    cameraDataType: CameraDataType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ cameraDataType, dataView });
     switch (cameraDataType) {
       case "headerSize":
@@ -244,7 +256,7 @@ class CameraManager {
         }
         break;
       case "imageSize":
-        this.#imageSize = dataView.getUint16(0, true);
+        this.#imageSize = dataView.getUint32(0, true);
         _console.log({ imageSize: this.#imageSize });
         this.#imageData = undefined;
         this.#imageProgress == 0;
@@ -324,6 +336,36 @@ class CameraManager {
     this.#didBuildImage = true;
   }
 
+  #buildHeaderCameraData() {
+    if (this.#headerSize && this.#headerProgress == 1 && this.#headerData) {
+      const headerDataView = new DataView(new ArrayBuffer(8));
+      headerDataView.setUint8(0, CameraDataTypes.indexOf("headerSize"));
+      headerDataView.setUint16(1, 2, true);
+      headerDataView.setUint16(3, this.#headerSize, true);
+      headerDataView.setUint8(5, CameraDataTypes.indexOf("header"));
+      headerDataView.setUint16(6, this.#headerSize, true);
+      return concatenateArrayBuffers(headerDataView, this.#headerData);
+    }
+  }
+  #buildFooterCameraData() {
+    if (this.#footerSize && this.#footerProgress == 1 && this.#footerData) {
+      const footerDataView = new DataView(new ArrayBuffer(8));
+      footerDataView.setUint8(0, CameraDataTypes.indexOf("footerSize"));
+      footerDataView.setUint16(1, 2, true);
+      footerDataView.setUint16(3, this.#footerSize, true);
+      footerDataView.setUint8(5, CameraDataTypes.indexOf("footer"));
+      footerDataView.setUint16(6, this.#footerSize, true);
+      return concatenateArrayBuffers(footerDataView, this.#footerData);
+    }
+  }
+  buildCameraData() {
+    const cameraData = [
+      this.#buildHeaderCameraData(),
+      this.#buildFooterCameraData(),
+    ];
+    return concatenateArrayBuffers(cameraData);
+  }
+
   // CONFIG
   #cameraConfiguration: CameraConfiguration = {};
   get cameraConfiguration() {
@@ -335,22 +377,36 @@ class CameraManager {
   }
 
   #cameraConfigurationRanges: CameraConfigurationRanges = {
-    resolution: { min: 100, max: 720 },
-    qualityFactor: { min: 15, max: 60 },
+    resolution: { min: 96, max: 2560 },
+    qualityFactor: { min: 0, max: 100 },
+
     shutter: { min: 4, max: 16383 },
-    gain: { min: 1, max: 248 },
-    redGain: { min: 0, max: 1023 },
-    greenGain: { min: 0, max: 1023 },
-    blueGain: { min: 0, max: 1023 },
+    gain: { min: 0, max: 248 },
+    redGain: { min: 0, max: 2047 },
+    greenGain: { min: 0, max: 2047 },
+    blueGain: { min: 0, max: 2047 },
+
+    autoWhiteBalanceEnabled: { min: 0, max: 1 },
+    autoGainEnabled: { min: 0, max: 1 },
+
+    exposure: { min: 0, max: 1200 },
+    autoExposureEnabled: { min: 0, max: 1 },
+    autoExposureLevel: { min: -4, max: 4 },
+
+    brightness: { min: -3, max: 3 },
+    saturation: { min: -4, max: 4 },
+    contrast: { min: -3, max: 3 },
+    sharpness: { min: -3, max: 3 },
   };
   get cameraConfigurationRanges() {
     return this.#cameraConfigurationRanges;
   }
 
-  #parseCameraConfiguration(dataView: DataView) {
+  #parseCameraConfiguration(dataView: DataView<ArrayBuffer>) {
     const parsedCameraConfiguration: CameraConfiguration = {};
 
     let byteOffset = 0;
+    const size = 2;
     while (byteOffset < dataView.byteLength) {
       const cameraConfigurationTypeIndex = dataView.getUint8(byteOffset++);
       const cameraConfigurationType =
@@ -359,11 +415,28 @@ class CameraManager {
         cameraConfigurationType,
         `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`
       );
-      parsedCameraConfiguration[cameraConfigurationType] = dataView.getUint16(
-        byteOffset,
-        true
-      );
-      byteOffset += 2;
+
+      _console.log({ cameraConfigurationType });
+
+      let value: number | undefined;
+      switch (cameraConfigurationType) {
+        // FILL
+        case "autoExposureLevel":
+        case "brightness":
+        case "saturation":
+        case "contrast":
+        case "sharpness":
+          value = dataView.getInt16(byteOffset, true);
+          break;
+        default:
+          value = dataView.getUint16(byteOffset, true);
+          break;
+      }
+
+      _console.log({ [cameraConfigurationType]: value });
+      _console.assertTypeWithError(value, "number");
+      parsedCameraConfiguration[cameraConfigurationType] = value;
+      byteOffset += size;
     }
 
     _console.log({ parsedCameraConfiguration });
@@ -463,14 +536,26 @@ class CameraManager {
 
       const value = cameraConfiguration[cameraConfigurationType]!;
       //this.#assertValidCameraConfigurationValue(cameraConfigurationType, value);
-      dataView.setUint16(index * 3 + 1, value, true);
+      const offset = index * 3 + 1;
+      switch (cameraConfigurationType) {
+        // FILL
+        case "autoExposureLevel":
+          dataView.setInt16(offset, value, true);
+          break;
+        default:
+          dataView.setUint16(offset, value, true);
+          break;
+      }
     });
     _console.log({ sensorConfigurationData: dataView });
     return dataView;
   }
 
   // MESSAGE
-  parseMessage(messageType: CameraMessageType, dataView: DataView) {
+  parseMessage(
+    messageType: CameraMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ messageType, dataView });
 
     switch (messageType) {

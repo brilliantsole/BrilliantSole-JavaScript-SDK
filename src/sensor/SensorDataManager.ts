@@ -116,7 +116,10 @@ class SensorDataManager {
     return this.eventDispatcher.dispatchEvent;
   }
 
-  parseMessage(messageType: SensorDataMessageType, dataView: DataView) {
+  parseMessage(
+    messageType: SensorDataMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ messageType });
 
     switch (messageType) {
@@ -134,7 +137,7 @@ class SensorDataManager {
     }
   }
 
-  parseScalars(dataView: DataView) {
+  parseScalars(dataView: DataView<ArrayBuffer>) {
     for (
       let byteOffset = 0;
       byteOffset < dataView.byteLength;
@@ -152,7 +155,7 @@ class SensorDataManager {
     }
   }
 
-  private parseData(dataView: DataView) {
+  private parseData(dataView: DataView<ArrayBuffer>) {
     _console.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
     let byteOffset = 0;
@@ -168,7 +171,7 @@ class SensorDataManager {
 
   private parseDataCallback(
     sensorType: SensorType,
-    dataView: DataView,
+    dataView: DataView<ArrayBuffer>,
     { timestamp }: { timestamp: number },
     isLast?: boolean
   ) {

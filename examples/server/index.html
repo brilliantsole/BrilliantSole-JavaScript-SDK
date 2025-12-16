@@ -3,6 +3,7 @@
     <title>Server | BrilliantSole JavaScript SDK</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="https://unpkg.com/peaks.js/dist/peaks.js"></script>
     <script type="module" src="./script.js"></script>
   </head>
 
@@ -20,7 +21,7 @@
     }
 
     img {
-      max-width: 200px;
+      max-height: 300px;
     }
 
     .zoomview-container,
@@ -304,6 +305,8 @@
                 class="cameraProgress"
               ></progress>
               <br />
+              <img class="cameraImage" />
+              <br />
               <label>
                 auto picture <input type="checkbox" class="autoPicture" />
               </label>
@@ -332,8 +335,6 @@
                 <b>white balance</b>
                 <input type="color" class="cameraWhiteBalance" disabled />
               </label>
-              <br />
-              <img class="cameraImage" />
             </div>
 
             <div class="microphone" hidden>

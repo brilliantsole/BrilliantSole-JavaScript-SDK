@@ -611,12 +611,20 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   device.addEventListener("isConnected", () => {
     updateisInputDisabled();
   });
+  device.addEventListener("connected", () => {
+    updateContainerVisibility();
+  });
   device.addEventListener("cameraStatus", () => {
     updateisInputDisabled();
   });
   const updateisInputDisabled = () => {
     input.disabled =
       !device.isConnected || !device.hasCamera || device.cameraStatus != "idle";
+  };
+
+  const updateContainerVisibility = () => {
+    const isVisible = cameraConfigurationType in device.cameraConfiguration;
+    cameraConfigurationTypeContainer.style.display = isVisible ? "" : "none";
   };
 
   const updateInput = () => {

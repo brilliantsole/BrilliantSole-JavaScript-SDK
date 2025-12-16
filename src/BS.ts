@@ -1,11 +1,16 @@
-export {
+import {
   setAllConsoleLevelFlags,
   setConsoleLevelFlagsForType,
 } from "./utils/Console.ts";
-export * as Environment from "./utils/environment.ts";
-export { Vector2, Vector3, Quaternion, Euler } from "./utils/MathUtils.ts";
+export { setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 
-export {
+import * as Environment from "./utils/environment.ts";
+export { Environment };
+
+import { Vector2, Vector3, Quaternion, Euler } from "./utils/MathUtils.ts";
+export { Vector2, Vector3, Quaternion, Euler };
+
+import {
   default as Device,
   DeviceEvent,
   DeviceEventMap,
@@ -13,15 +18,32 @@ export {
   BoundDeviceEventListeners,
 } from "./Device.ts";
 export {
+  Device,
+  DeviceEvent,
+  DeviceEventMap,
+  DeviceEventListenerMap,
+  BoundDeviceEventListeners,
+};
+
+import {
   default as DeviceManager,
   DeviceManagerEvent,
   DeviceManagerEventMap,
   DeviceManagerEventListenerMap,
   BoundDeviceManagerEventListeners,
 } from "./DeviceManager.ts";
-
-export { DeviceInformation } from "./DeviceInformationManager.ts";
 export {
+  DeviceManager,
+  DeviceManagerEvent,
+  DeviceManagerEventMap,
+  DeviceManagerEventListenerMap,
+  BoundDeviceManagerEventListeners,
+};
+
+import { DeviceInformation } from "./DeviceInformationManager.ts";
+export { DeviceInformation };
+
+import {
   DeviceType,
   DeviceTypes,
   MinNameLength,
@@ -29,30 +51,46 @@ export {
   Sides,
   Side,
 } from "./InformationManager.ts";
-export {
+export { DeviceType, DeviceTypes, MinNameLength, MaxNameLength, Sides, Side };
+
+import {
   MinWifiSSIDLength,
   MaxWifiSSIDLength,
   MinWifiPasswordLength,
   MaxWifiPasswordLength,
 } from "./WifiManager.ts";
 export {
+  MinWifiSSIDLength,
+  MaxWifiSSIDLength,
+  MinWifiPasswordLength,
+  MaxWifiPasswordLength,
+};
+
+import {
   SensorType,
   SensorTypes,
   ContinuousSensorType,
   ContinuousSensorTypes,
 } from "./sensor/SensorDataManager.ts";
-export {
+export { SensorType, SensorTypes, ContinuousSensorType, ContinuousSensorTypes };
+
+import {
   MaxSensorRate,
   SensorRateStep,
   SensorConfiguration,
 } from "./sensor/SensorConfigurationManager.ts";
+export { MaxSensorRate, SensorRateStep, SensorConfiguration };
 
-export {
+import {
   DefaultNumberOfPressureSensors,
   PressureData,
 } from "./sensor/PressureSensorDataManager.ts";
-export { CenterOfPressure } from "./utils/CenterOfPressureHelper.ts";
-export {
+export { DefaultNumberOfPressureSensors, PressureData };
+
+import { CenterOfPressure } from "./utils/CenterOfPressureHelper.ts";
+export { CenterOfPressure };
+
+import {
   VibrationConfiguration,
   VibrationLocation,
   VibrationLocations,
@@ -66,33 +104,64 @@ export {
   MaxVibrationWaveformEffectSequenceLoopCount,
 } from "./vibration/VibrationManager.ts";
 export {
+  VibrationConfiguration,
+  VibrationLocation,
+  VibrationLocations,
+  VibrationType,
+  VibrationTypes,
+  MaxNumberOfVibrationWaveformEffectSegments,
+  MaxVibrationWaveformSegmentDuration,
+  MaxVibrationWaveformEffectSegmentDelay,
+  MaxVibrationWaveformEffectSegmentLoopCount,
+  MaxNumberOfVibrationWaveformSegments,
+  MaxVibrationWaveformEffectSequenceLoopCount,
+};
+
+import {
   VibrationWaveformEffect,
   VibrationWaveformEffects,
 } from "./vibration/VibrationWaveformEffects.ts";
+export { VibrationWaveformEffect, VibrationWaveformEffects };
 
-export {
+import {
   FileType,
   FileTypes,
   FileTransferDirection,
   FileTransferDirections,
 } from "./FileTransferManager.ts";
+export { FileType, FileTypes, FileTransferDirection, FileTransferDirections };
+
+import {
+  TfliteSensorType,
+  TfliteSensorTypes,
+  TfliteTask,
+  TfliteTasks,
+  TfliteFileConfiguration,
+} from "./TfliteManager.ts";
 export {
   TfliteSensorType,
   TfliteSensorTypes,
   TfliteTask,
   TfliteTasks,
-  TfliteFileConfiguration as TfliteFileConfiguration,
-} from "./TfliteManager.ts";
+  TfliteFileConfiguration,
+};
 
-export {
+import {
   CameraConfiguration,
   CameraCommand,
   CameraCommands,
   CameraConfigurationType,
   CameraConfigurationTypes,
 } from "./CameraManager.ts";
-
 export {
+  CameraConfiguration,
+  CameraCommand,
+  CameraCommands,
+  CameraConfigurationType,
+  CameraConfigurationTypes,
+};
+
+import {
   MicrophoneConfiguration,
   MicrophoneCommand,
   MicrophoneCommands,
@@ -100,8 +169,16 @@ export {
   MicrophoneConfigurationTypes,
   MicrophoneConfigurationValues,
 } from "./MicrophoneManager.ts";
-
 export {
+  MicrophoneConfiguration,
+  MicrophoneCommand,
+  MicrophoneCommands,
+  MicrophoneConfigurationType,
+  MicrophoneConfigurationTypes,
+  MicrophoneConfigurationValues,
+};
+
+import {
   DisplayBrightness,
   DisplayBrightnesses,
   DisplaySize,
@@ -117,10 +194,27 @@ export {
   DisplayBezierCurveType,
   DisplayBezierCurveTypes,
 } from "./DisplayManager.ts";
-
-export { wait, Timer } from "./utils/Timer.ts";
-
 export {
+  DisplayBrightness,
+  DisplayBrightnesses,
+  DisplaySize,
+  DisplayBitmapColorPair,
+  DisplayPixelDepths,
+  DefaultNumberOfDisplayColors,
+  MinSpriteSheetNameLength,
+  MaxSpriteSheetNameLength,
+  DisplayBitmap,
+  DisplaySpriteColorPair,
+  DisplayWireframeEdge,
+  DisplayWireframe,
+  DisplayBezierCurveType,
+  DisplayBezierCurveTypes,
+};
+
+import { wait, Timer } from "./utils/Timer.ts";
+export { wait, Timer };
+
+import {
   DisplaySegmentCap,
   DisplaySegmentCaps,
   DisplayAlignment,
@@ -128,8 +222,16 @@ export {
   DisplayDirection,
   DisplayDirections,
 } from "./utils/DisplayContextState.ts";
-
 export {
+  DisplaySegmentCap,
+  DisplaySegmentCaps,
+  DisplayAlignment,
+  DisplayAlignments,
+  DisplayDirection,
+  DisplayDirections,
+};
+
+import {
   maxDisplayScale,
   DisplayColorRGB,
   pixelDepthToNumberOfColors,
@@ -138,32 +240,60 @@ export {
   intersectWireframes,
   isWireframePolygon,
 } from "./utils/DisplayUtils.ts";
+export {
+  maxDisplayScale,
+  DisplayColorRGB,
+  pixelDepthToNumberOfColors,
+  displayCurveTypeToNumberOfControlPoints,
+  mergeWireframes,
+  intersectWireframes,
+  isWireframePolygon,
+};
 
 /** BROWSER_START */
-export {
+import {
   svgToDisplayContextCommands,
   svgToSprite,
   svgToSpriteSheet,
   isValidSVG,
   getSvgStringFromDataUrl,
 } from "./utils/SvgUtils.ts";
+export {
+  svgToDisplayContextCommands,
+  svgToSprite,
+  svgToSpriteSheet,
+  isValidSVG,
+  getSvgStringFromDataUrl,
+};
 /** BROWSER_END */
 
-export {
+import {
   DisplayContextCommand,
   DisplayContextCommandType,
   DisplayContextCommandTypes,
   DisplaySpriteContextCommandType,
   DisplaySpriteContextCommandTypes,
 } from "./utils/DisplayContextCommand.ts";
-
 export {
+  DisplayContextCommand,
+  DisplayContextCommandType,
+  DisplayContextCommandTypes,
+  DisplaySpriteContextCommandType,
+  DisplaySpriteContextCommandTypes,
+};
+
+import {
   simplifyPoints,
   simplifyCurves,
   simplifyPointsAsCubicCurveControlPoints,
 } from "./utils/PathUtils.ts";
-
 export {
+  simplifyPoints,
+  simplifyCurves,
+  simplifyPointsAsCubicCurveControlPoints,
+};
+
+import {
   DisplaySprite,
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
@@ -181,22 +311,47 @@ export {
   englishRegex,
   FontToSpriteSheetOptions,
 } from "./utils/DisplaySpriteSheetUtils.ts";
+export {
+  DisplaySprite,
+  DisplaySpriteSheet,
+  DisplaySpriteSheetPalette,
+  DisplaySpritePaletteSwap,
+  parseFont,
+  getFontUnicodeRange,
+  stringToSprites,
+  fontToSpriteSheet,
+  getFontMetrics,
+  DisplaySpriteSubLine,
+  DisplaySpriteLine,
+  DisplaySpriteLines,
+  getFontMaxHeight,
+  getMaxSpriteSheetSize,
+  englishRegex,
+  FontToSpriteSheetOptions,
+};
 
 /** BROWSER_START */
-export {
+import {
   default as DisplayCanvasHelper,
   DisplayCanvasHelperEvent,
   DisplayCanvasHelperEventMap,
   DisplayCanvasHelperEventListenerMap,
 } from "./utils/DisplayCanvasHelper.ts";
-/** BROWSER_END */
-
-/** BROWSER_START */
-export { Font, Glyph } from "opentype.js";
-/** BROWSER_END */
-
-/** BROWSER_START */
 export {
+  DisplayCanvasHelper,
+  DisplayCanvasHelperEvent,
+  DisplayCanvasHelperEventMap,
+  DisplayCanvasHelperEventListenerMap,
+};
+/** BROWSER_END */
+
+/** BROWSER_START */
+import { Font, Glyph } from "opentype.js";
+export { Font, Glyph };
+/** BROWSER_END */
+
+/** BROWSER_START */
+import {
   resizeAndQuantizeImage,
   quantizeImage,
   imageToSprite,
@@ -207,11 +362,23 @@ export {
   imageToBitmaps,
   canvasToBitmaps,
 } from "./utils/DisplayBitmapUtils.ts";
+export {
+  resizeAndQuantizeImage,
+  quantizeImage,
+  imageToSprite,
+  imageToSpriteSheet,
+  canvasToSprite,
+  canvasToSpriteSheet,
+  resizeImage,
+  imageToBitmaps,
+  canvasToBitmaps,
+};
 /** BROWSER_END */
 
-export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
+import { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
+export { rgbToHex, hexToRGB };
 
-export {
+import {
   default as DevicePair,
   DevicePairEvent,
   DevicePairEventMap,
@@ -220,6 +387,15 @@ export {
   DevicePairType,
   DevicePairTypes,
 } from "./devicePair/DevicePair.ts";
+export {
+  DevicePair,
+  DevicePairEvent,
+  DevicePairEventMap,
+  DevicePairEventListenerMap,
+  BoundDevicePairEventListeners,
+  DevicePairType,
+  DevicePairTypes,
+};
 
 import { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";
 export const EventUtils = {
@@ -233,7 +409,7 @@ export const ThrottleUtils = {
   debounce,
 };
 
-export {
+import {
   ConnectionMessageType,
   ConnectionMessageTypes,
   ConnectionEventType,
@@ -241,18 +417,35 @@ export {
   TxRxMessageType,
   TxRxMessageTypes,
 } from "./connection/BaseConnectionManager.ts";
+export {
+  ConnectionMessageType,
+  ConnectionMessageTypes,
+  ConnectionEventType,
+  ConnectionEventTypes,
+  TxRxMessageType,
+  TxRxMessageTypes,
+};
 
-export { DiscoveredDevice } from "./scanner/BaseScanner.ts";
+import { DiscoveredDevice } from "./scanner/BaseScanner.ts";
+export { DiscoveredDevice };
+
 /** NODE_START */
-export { default as Scanner } from "./scanner/Scanner.ts";
-export { default as WebSocketServer } from "./server/websocket/WebSocketServer.ts";
-export { default as UDPServer } from "./server/udp/UDPServer.ts";
-/** NODE_END */
-/** BROWSER_START */
-export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
-/** BROWSER_END */
-/** LS_START */
-export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
-/** LS_END */
+import { default as Scanner } from "./scanner/Scanner.ts";
+import { default as WebSocketServer } from "./server/websocket/WebSocketServer.ts";
+import { default as UDPServer } from "./server/udp/UDPServer.ts";
 
-export { default as RangeHelper, Range } from "./utils/RangeHelper.ts";
+export { Scanner };
+export { WebSocketServer };
+export { UDPServer };
+/** NODE_END */
+
+/** LS_START */
+// export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
+/** LS_END */
+/** BROWSER_START */
+import { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
+export { WebSocketClient };
+/** BROWSER_END */
+
+import { default as RangeHelper, Range } from "./utils/RangeHelper.ts";
+export { RangeHelper, Range };

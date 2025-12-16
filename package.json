@@ -1,6 +1,6 @@
 {
   "name": "brilliantsole",
-  "version": "0.0.60",
+  "version": "0.0.61",
   "description": "JavaScript SDK for BrilliantSole Smart Insoles",
   "main": "./build/brilliantsole.module.js",
   "module": "./build/brilliantsole.module.js",
@@ -29,7 +29,8 @@
     "build": "rollup -c",
     "dev": "rollup -c -w",
     "server": "node server.js",
-    "simple-server": "node simple-server.js"
+    "simple-server": "node simple-server.js",
+    "docs": "npx typedoc"
   },
   "repository": {
     "type": "git",
@@ -54,8 +55,9 @@
     "@rollup/plugin-replace": "^5.0.5",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^11.1.6",
+    "@types/node": "^25.0.0",
     "@types/opentype.js": "^1.3.8",
-    "@types/web-bluetooth": "^0.0.20",
+    "@types/web-bluetooth": "^0.0.21",
     "@types/ws": "^8.5.10",
     "axios": "^1.7.7",
     "bonjour": "^3.5.0",
@@ -78,6 +80,7 @@
     "rollup-plugin-progress": "^1.1.2",
     "rollup-plugin-uglify": "^6.0.4",
     "tslib": "^2.6.3",
+    "typedoc": "^0.28.15",
     "typescript": "^5.5.3",
     "ws": "^8.16.0"
   },
@@ -92,6 +95,7 @@
     "simplify-js": "^1.2.4",
     "svg-pathdata": "^8.0.0",
     "svgson": "^5.3.1",
+    "update": "^0.7.4",
     "webbluetooth": "^3.2.1",
     "woff2-encoder": "^2.0.0"
   },

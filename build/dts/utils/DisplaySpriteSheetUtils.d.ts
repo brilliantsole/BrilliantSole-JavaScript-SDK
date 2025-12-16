@@ -50,7 +50,7 @@ export declare const spriteHeaderLength: number;
 export declare function calculateSpriteSheetHeaderLength(numberOfSprites: number): number;
 export declare function getCurvesPoints(curves: DisplayBezierCurve[]): Vector2[];
 export declare function serializeSpriteSheet(displayManager: DisplayManagerInterface, spriteSheet: DisplaySpriteSheet): ArrayBuffer;
-export declare function parseSpriteSheet(dataView: DataView): void;
+export declare function parseSpriteSheet(dataView: DataView<ArrayBuffer>): void;
 export type FontToSpriteSheetOptions = {
     stroke?: boolean;
     strokeWidth?: number;

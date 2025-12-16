@@ -131,7 +131,7 @@ export function serializeSpriteSheet(
   return serializedSpriteSheet;
 }
 
-export function parseSpriteSheet(dataView: DataView) {
+export function parseSpriteSheet(dataView: DataView<ArrayBuffer>) {
   // FILL
 }
 

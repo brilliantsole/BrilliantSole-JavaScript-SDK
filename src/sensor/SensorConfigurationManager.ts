@@ -57,15 +57,21 @@ class SensorConfigurationManager {
   }
 
   #availableSensorTypes!: SensorType[];
+  get availableSensorTypes() {
+    return this.#availableSensorTypes || [];
+  }
   #assertAvailableSensorType(sensorType: SensorType) {
     _console.assertWithError(
       this.#availableSensorTypes,
       "must get initial sensorConfiguration"
     );
-    const isSensorTypeAvailable =
-      this.#availableSensorTypes?.includes(sensorType);
+    const isSensorTypeAvailable = this.hasSensorType(sensorType);
     _console.log({ sensorType, isSensorTypeAvailable });
     return isSensorTypeAvailable;
+  }
+
+  hasSensorType(sensorType: SensorType) {
+    return this.availableSensorTypes.includes(sensorType);
   }
 
   #configuration: SensorConfiguration = {};
@@ -124,7 +130,7 @@ class SensorConfigurationManager {
     await promise;
   }
 
-  #parse(dataView: DataView) {
+  #parse(dataView: DataView<ArrayBuffer>) {
     const parsedSensorConfiguration: SensorConfiguration = {};
     for (
       let byteOffset = 0;
@@ -215,7 +221,7 @@ class SensorConfigurationManager {
   // MESSAGE
   parseMessage(
     messageType: SensorConfigurationMessageType,
-    dataView: DataView
+    dataView: DataView<ArrayBuffer>
   ) {
     _console.log({ messageType });
 

@@ -2,7 +2,7 @@ import { createConsole } from "./Console.ts";
 
 const _console = createConsole("Timer", { log: false });
 
-export async function wait(delay: number) {
+export async function wait(delay: number): Promise<void> {
   _console.log(`waiting for ${delay}ms`);
   return new Promise((resolve: Function) => {
     setTimeout(() => resolve(), delay);

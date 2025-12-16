@@ -99,7 +99,10 @@ class DeviceInformationManager {
     }
   }
 
-  parseMessage(messageType: DeviceInformationType, dataView: DataView) {
+  parseMessage(
+    messageType: DeviceInformationType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ messageType });
 
     switch (messageType) {

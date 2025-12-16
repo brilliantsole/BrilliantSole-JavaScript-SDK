@@ -62,7 +62,7 @@ declare class InformationManager {
     get side(): Side;
     get mtu(): number;
     get isCurrentTimeSet(): boolean;
-    parseMessage(messageType: InformationMessageType, dataView: DataView): void;
+    parseMessage(messageType: InformationMessageType, dataView: DataView<ArrayBuffer>): void;
     clear(): void;
     connectionType?: ConnectionType;
 }

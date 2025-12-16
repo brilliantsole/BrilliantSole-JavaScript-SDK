@@ -1,0 +1,9 @@
+{
+    "entryPoints": ["src/BS.ts"],
+    "out": "docs",
+    "tsconfig": "tsconfig.json",
+    "compilerOptions": {
+       "skipLibCheck": true,
+    "skipDefaultLibCheck": true
+    },
+}

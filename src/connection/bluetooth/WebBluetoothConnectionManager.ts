@@ -261,7 +261,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     _console.log(
       `oncharacteristicvaluechanged for "${characteristicName}" characteristic`
     );
-    const dataView = characteristic.value!;
+    const dataView = characteristic.value! as DataView<ArrayBuffer>;
     _console.assertWithError(
       dataView,
       `no data found for "${characteristicName}" characteristic`

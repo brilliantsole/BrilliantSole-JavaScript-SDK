@@ -197,14 +197,22 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   const span = cameraConfigurationTypeContainer.querySelector("span");
 
   device.addEventListener("isConnected", () => {
-    updateisInputDisabled();
+    updateIsInputDisabled();
+  });
+  device.addEventListener("connected", () => {
+    updateContainerVisibility();
   });
   device.addEventListener("cameraStatus", () => {
-    updateisInputDisabled();
+    updateIsInputDisabled();
   });
-  const updateisInputDisabled = () => {
+  const updateIsInputDisabled = () => {
     input.disabled =
       !device.isConnected || !device.hasCamera || device.cameraStatus != "idle";
+  };
+
+  const updateContainerVisibility = () => {
+    const isVisible = cameraConfigurationType in device.cameraConfiguration;
+    cameraConfigurationTypeContainer.style.display = isVisible ? "" : "none";
   };
 
   const updateInput = () => {
@@ -311,4 +319,75 @@ device.addEventListener("connected", () => {
 });
 device.addEventListener("getCameraConfiguration", () => {
   updateCameraWhiteBalanceInput();
+});
+
+// ROTATE PICTURE
+
+import * as three from "../utils/three/three.module.min.js";
+
+/** @type {import("../utils/three/three.module.min")} */
+const THREE = three;
+window.THREE = THREE;
+
+const orientationVector3 = new THREE.Vector3();
+
+const euler = new THREE.Euler();
+euler.order = "YXZ";
+const quaternion = new THREE.Quaternion();
+let cameraRoll = 0;
+
+let rotatePicture = false;
+const rotatePictureCheckbox = document.getElementById("rotatePicture");
+rotatePictureCheckbox.addEventListener("input", () => {
+  rotatePicture = rotatePictureCheckbox.checked;
+  console.log({ rotatePicture });
+  updateRotation();
+});
+device.addEventListener("isConnected", () => {
+  const enabled =
+    device.isConnected &&
+    (device.hasSensorType("gameRotation") ||
+      device.hasSensorType("orientation"));
+  rotatePictureCheckbox.disabled = !enabled;
+});
+device.addEventListener("connected", () => {
+  updateRotation();
+});
+const updateRotation = () => {
+  if (!rotatePicture) {
+    cameraImage.style.transform = `rotate(${0}rad)`;
+  }
+  if (!device.isConnected) {
+    return;
+  }
+  /** @type {BS.SensorType} */
+  const sensorType = device.hasSensorType("gameRotation")
+    ? "gameRotation"
+    : "orientation";
+  device.setSensorConfiguration({ [sensorType]: rotatePicture ? 40 : 0 });
+};
+device.addEventListener("gameRotation", (event) => {
+  quaternion.copy(event.message.gameRotation);
+  euler.setFromQuaternion(quaternion);
+  console.log({ cameraRoll: euler.z });
+});
+device.addEventListener("orientation", (event) => {
+  const { heading, pitch, roll } = event.message.orientation;
+  orientationVector3.set(pitch, heading, roll).multiplyScalar(Math.PI / 180);
+  euler.setFromVector3(orientationVector3);
+  console.log({ cameraRoll: euler.z });
+});
+
+device.addEventListener("cameraStatus", () => {
+  if (rotatePicture && device.cameraStatus == "takingPicture") {
+    cameraRoll = euler.z;
+    console.log({ cameraRoll });
+  }
+});
+cameraImage.addEventListener("load", () => {
+  if (rotatePicture) {
+    cameraImage.style.transform = `rotate(${-cameraRoll}rad)`;
+  } else {
+    cameraImage.style.transform = `rotate(${0}rad)`;
+  }
 });

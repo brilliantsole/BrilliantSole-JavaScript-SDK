@@ -583,18 +583,28 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         const span = cameraConfigurationTypeContainer.querySelector("span");
 
         device.addEventListener("isConnected", () => {
-          updateisInputDisabled();
+          updateIsInputDisabled();
+        });
+        device.addEventListener("connected", () => {
+          updateContainerVisibility();
         });
         device.addEventListener("cameraStatus", () => {
-          updateisInputDisabled();
+          updateIsInputDisabled();
         });
-        const updateisInputDisabled = () => {
+        const updateIsInputDisabled = () => {
           input.disabled =
             !device.isConnected ||
             !device.hasCamera ||
             device.cameraStatus != "idle";
         };
-        updateisInputDisabled();
+
+        const updateContainerVisibility = () => {
+          const isVisible =
+            cameraConfigurationType in device.cameraConfiguration;
+          cameraConfigurationTypeContainer.style.display = isVisible
+            ? ""
+            : "none";
+        };
 
         const updateInput = () => {
           const value = device.cameraConfiguration[cameraConfigurationType];
@@ -617,6 +627,8 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         });
         updateRange();
         updateInput();
+        updateIsInputDisabled();
+        updateContainerVisibility();
 
         device.addEventListener("getCameraConfiguration", () => {
           updateInput();
@@ -691,7 +703,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
           .map((value) => value / device.cameraConfigurationRanges.redGain.max)
           .map((value) => value * 255)
           .map((value) => Math.round(value))
-          .map((value) => value.toString(16))
+          .map((value) => value.toString(16).padStart(2, "0"))
           .join("")}`;
       };
 

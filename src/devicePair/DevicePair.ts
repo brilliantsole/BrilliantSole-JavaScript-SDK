@@ -274,6 +274,7 @@ class DevicePair {
 
   #redispatchDeviceEvent(deviceEvent: DeviceEvent) {
     const { type, target: device, message } = deviceEvent;
+    // @ts-ignore
     this.#dispatchEvent(getDevicePairDeviceEventType(type), {
       ...message,
       device,

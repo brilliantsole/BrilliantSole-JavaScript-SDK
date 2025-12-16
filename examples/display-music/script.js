@@ -512,7 +512,7 @@ const osmd = new OpenSheetMusicDisplay.OpenSheetMusicDisplay(osmdContainer, {
 });
 window.osmd = osmd;
 
-// osmd.setOptions({ drawFromMeasureNumber: 1, drawUpToMeasureNumber: 4 });
+//osmd.setOptions({ drawFromMeasureNumber: 1, drawUpToMeasureNumber: 3 });
 
 const loadOsmd = async (content) => {
   console.log("loadOsmd");
@@ -698,7 +698,7 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
           // console.log("graphicalVoiceEntry", graphicalVoiceEntry);
           graphicalVoiceEntry.notes.forEach((note) => {
             // console.log("note", note);
-            //note.setVisible(false);
+            // note.setVisible(false);
           });
         });
         staffEntry.LyricsEntries.forEach((lyricEntry) => {

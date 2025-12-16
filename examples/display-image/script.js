@@ -919,14 +919,22 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   const span = cameraConfigurationTypeContainer.querySelector("span");
 
   device.addEventListener("isConnected", () => {
-    updateisInputDisabled();
+    updateIsInputDisabled();
+  });
+  device.addEventListener("connected", () => {
+    updateContainerVisibility();
   });
   device.addEventListener("cameraStatus", () => {
-    updateisInputDisabled();
+    updateIsInputDisabled();
   });
-  const updateisInputDisabled = () => {
+  const updateIsInputDisabled = () => {
     input.disabled =
       !device.isConnected || !device.hasCamera || device.cameraStatus != "idle";
+  };
+
+  const updateContainerVisibility = () => {
+    const isVisible = cameraConfigurationType in device.cameraConfiguration;
+    cameraConfigurationTypeContainer.style.display = isVisible ? "" : "none";
   };
 
   const updateInput = () => {

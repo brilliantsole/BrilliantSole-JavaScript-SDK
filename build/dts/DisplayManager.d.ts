@@ -306,7 +306,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     stringToSpriteLines(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLines;
     stringToSpriteLinesMetrics(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): import("./utils/DisplaySpriteSheetUtils.ts").DisplaySpriteLinesMetrics;
     drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
-    parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
+    parseMessage(messageType: DisplayMessageType, dataView: DataView<ArrayBuffer>): void;
     assertSpriteSheetPalette(paletteName: string): void;
     assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
     assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;

@@ -29,8 +29,8 @@ declare class PressureSensorDataManager {
     #private;
     get positions(): Vector2[];
     get numberOfSensors(): number;
-    parsePositions(dataView: DataView): void;
+    parsePositions(dataView: DataView<ArrayBuffer>): void;
     resetRange(): void;
-    parseData(dataView: DataView, scalar: number): PressureData;
+    parseData(dataView: DataView<ArrayBuffer>, scalar: number): PressureData;
 }
 export default PressureSensorDataManager;

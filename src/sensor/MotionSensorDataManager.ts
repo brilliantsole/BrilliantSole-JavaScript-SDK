@@ -86,7 +86,7 @@ export type MotionSensorDataEventMessage =
   ValueOf<MotionSensorDataEventMessages>;
 
 class MotionSensorDataManager {
-  parseVector3(dataView: DataView, scalar: number): Vector3 {
+  parseVector3(dataView: DataView<ArrayBuffer>, scalar: number): Vector3 {
     let [x, y, z] = [
       dataView.getInt16(0, true),
       dataView.getInt16(2, true),
@@ -99,7 +99,7 @@ class MotionSensorDataManager {
     return vector;
   }
 
-  parseQuaternion(dataView: DataView, scalar: number): Quaternion {
+  parseQuaternion(dataView: DataView<ArrayBuffer>, scalar: number): Quaternion {
     let [x, y, z, w] = [
       dataView.getInt16(0, true),
       dataView.getInt16(2, true),
@@ -113,7 +113,7 @@ class MotionSensorDataManager {
     return quaternion;
   }
 
-  parseEuler(dataView: DataView, scalar: number): Euler {
+  parseEuler(dataView: DataView<ArrayBuffer>, scalar: number): Euler {
     let [heading, pitch, roll] = [
       dataView.getInt16(0, true),
       dataView.getInt16(2, true),
@@ -132,14 +132,14 @@ class MotionSensorDataManager {
     return euler;
   }
 
-  parseStepCounter(dataView: DataView) {
+  parseStepCounter(dataView: DataView<ArrayBuffer>) {
     _console.log("parseStepCounter", dataView);
     const stepCount = dataView.getUint32(0, true);
     _console.log({ stepCount });
     return stepCount;
   }
 
-  parseActivity(dataView: DataView) {
+  parseActivity(dataView: DataView<ArrayBuffer>) {
     _console.log("parseActivity", dataView);
     const activity: Partial<Activity> = {};
 
@@ -154,7 +154,7 @@ class MotionSensorDataManager {
     return activity as Activity;
   }
 
-  parseDeviceOrientation(dataView: DataView) {
+  parseDeviceOrientation(dataView: DataView<ArrayBuffer>) {
     _console.log("parseDeviceOrientation", dataView);
     const index = dataView.getUint8(0);
     const deviceOrientation = DeviceOrientations[index];

@@ -42,7 +42,7 @@ declare abstract class BaseServer {
     get clearSensorConfigurationsWhenNoClients(): boolean;
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
     broadcastMessage(message: ArrayBuffer): void;
-    protected parseClientMessage(dataView: DataView): ArrayBuffer | undefined;
-    protected parseClientDeviceMessage(device: Device, dataView: DataView): ArrayBuffer | undefined;
+    protected parseClientMessage(dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
+    protected parseClientDeviceMessage(device: Device, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
 }
 export default BaseServer;

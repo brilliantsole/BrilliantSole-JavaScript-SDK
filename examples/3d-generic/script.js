@@ -227,6 +227,7 @@ const updateQuaternion = (quaternion, applyOffset = false) => {
     window.interpolationSmoothing
   );
 };
+
 device.addEventListener("gameRotation", (event) => {
   let gameRotation = event.message.gameRotation;
   updateQuaternion(gameRotation, true);

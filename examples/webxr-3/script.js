@@ -282,6 +282,7 @@ const onDevice = () => {
   device.addEventListener("getCameraConfiguration", () => {
     updateCameraConfigurationPre();
   });
+  updateCameraConfigurationPre();
 
   const cameraConfigurationContainer = document.getElementById(
     "cameraConfiguration"
@@ -308,16 +309,24 @@ const onDevice = () => {
     const span = cameraConfigurationTypeContainer.querySelector("span");
 
     device.addEventListener("isConnected", () => {
-      updateisInputDisabled();
+      updateIsInputDisabled();
+    });
+    device.addEventListener("connected", () => {
+      updateContainerVisibility();
     });
     device.addEventListener("cameraStatus", () => {
-      updateisInputDisabled();
+      updateIsInputDisabled();
     });
-    const updateisInputDisabled = () => {
+    const updateIsInputDisabled = () => {
       input.disabled =
         !device.isConnected ||
         !device.hasCamera ||
         device.cameraStatus != "idle";
+    };
+
+    const updateContainerVisibility = () => {
+      const isVisible = cameraConfigurationType in device.cameraConfiguration;
+      cameraConfigurationTypeContainer.style.display = isVisible ? "" : "none";
     };
 
     const updateInput = () => {
@@ -325,10 +334,23 @@ const onDevice = () => {
       span.innerText = value;
       input.value = value;
     };
-    const range = device.cameraConfigurationRanges[cameraConfigurationType];
-    input.min = range.min;
-    input.max = range.max;
+
+    const updateRange = () => {
+      if (!device.hasCamera) {
+        return;
+      }
+      const range = device.cameraConfigurationRanges[cameraConfigurationType];
+      input.min = range.min;
+      input.max = range.max;
+    };
+    device.addEventListener("connected", () => {
+      updateRange();
+      updateInput();
+    });
+    updateRange();
     updateInput();
+    updateIsInputDisabled();
+    updateContainerVisibility();
 
     device.addEventListener("connected", () => {
       if (!device.hasCamera) {

@@ -8,7 +8,7 @@ export declare const CameraStatuses: readonly ["idle", "focusing", "takingPictur
 export type CameraStatus = (typeof CameraStatuses)[number];
 export declare const CameraDataTypes: readonly ["headerSize", "header", "imageSize", "image", "footerSize", "footer"];
 export type CameraDataType = (typeof CameraDataTypes)[number];
-export declare const CameraConfigurationTypes: readonly ["resolution", "qualityFactor", "shutter", "gain", "redGain", "greenGain", "blueGain"];
+export declare const CameraConfigurationTypes: readonly ["resolution", "qualityFactor", "shutter", "gain", "redGain", "greenGain", "blueGain", "autoWhiteBalanceEnabled", "autoGainEnabled", "exposure", "autoExposureEnabled", "autoExposureLevel", "brightness", "saturation", "contrast", "sharpness"];
 export type CameraConfigurationType = (typeof CameraConfigurationTypes)[number];
 export declare const CameraMessageTypes: readonly ["cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData"];
 export type CameraMessageType = (typeof CameraMessageTypes)[number];
@@ -48,7 +48,7 @@ declare class CameraManager {
     constructor();
     sendMessage: SendCameraMessageCallback;
     eventDispatcher: CameraEventDispatcher;
-    get waitForEvent(): <T extends "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage">(type: T) => Promise<{
+    get waitForEvent(): <T extends "cameraImage" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress">(type: T) => Promise<{
         type: T;
         target: Device;
         message: CameraEventMessages[T];
@@ -60,13 +60,14 @@ declare class CameraManager {
     stop(): Promise<void>;
     sleep(): Promise<void>;
     wake(): Promise<void>;
+    buildCameraData(): ArrayBuffer;
     get cameraConfiguration(): CameraConfiguration;
-    get availableCameraConfigurationTypes(): ("resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain")[];
+    get availableCameraConfigurationTypes(): ("resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "brightness" | "saturation" | "contrast" | "sharpness")[];
     get cameraConfigurationRanges(): CameraConfigurationRanges;
     setCameraConfiguration(newCameraConfiguration: CameraConfiguration): Promise<void>;
     static AssertValidCameraConfigurationType(cameraConfigurationType: CameraConfigurationType): void;
     static AssertValidCameraConfigurationTypeEnum(cameraConfigurationTypeEnum: number): void;
-    parseMessage(messageType: CameraMessageType, dataView: DataView): void;
+    parseMessage(messageType: CameraMessageType, dataView: DataView<ArrayBuffer>): void;
     clear(): void;
 }
 export default CameraManager;

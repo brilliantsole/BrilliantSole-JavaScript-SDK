@@ -7,32 +7,29 @@ import { createConsole } from "../../utils/Console.ts";
 
 const _console = createConsole("bluetoothUUIDs", { log: false });
 
+import { BluetoothUUID as _BluetoothUUID } from "webbluetooth";
+var BluetoothUUID: typeof _BluetoothUUID;
+
 /** NODE_START */
 import * as webbluetooth from "webbluetooth";
-var BluetoothUUID = webbluetooth.BluetoothUUID;
+BluetoothUUID = webbluetooth.BluetoothUUID;
 /** NODE_END */
 
 /** BROWSER_START */
 if (isInBrowser) {
-  var BluetoothUUID = window.BluetoothUUID;
+  BluetoothUUID = window.BluetoothUUID;
 }
 /** BROWSER_END */
 
 /** LS_START */
-
-var BluetoothUUID = {
-  getService: (uuid: number | string): string => toUUID(uuid),
-
-  getCharacteristic: (uuid: number | string): string => toUUID(uuid),
-
-  getDescriptor: (uuid: number | string): string => toUUID(uuid),
-
-  getCharacteristicName: (uuid: number | string): string | null => null,
-
-  getServiceName: (uuid: number | string): string | null => null,
-
-  getDescriptorName: (uuid: number | string): string | null => null,
-};
+if (typeof BluetoothUUID == undefined) {
+  BluetoothUUID = {
+    getService: (uuid: number | string): string => toUUID(uuid),
+    getCharacteristic: (uuid: number | string): string => toUUID(uuid),
+    getDescriptor: (uuid: number | string): string => toUUID(uuid),
+    canonicalUUID: (alias: string | number) => toUUID(alias),
+  };
+}
 
 function toUUID(uuid: number | string): string {
   if (typeof uuid === "number") {
@@ -45,7 +42,6 @@ function toUUID(uuid: number | string): string {
 
   return uuid.toLowerCase();
 }
-
 /** LS_END */
 
 function generateBluetoothUUID(value: string): BluetoothServiceUUID {

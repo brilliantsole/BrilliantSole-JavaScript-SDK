@@ -3,7 +3,7 @@
  * @license MIT
  */
 import autoBind$1 from 'auto-bind';
-import * as alawmulaw from 'alawmulaw';
+import * as _alawmulaw from 'alawmulaw';
 import RGBQuant from 'rgbquant';
 import opentype from 'opentype.js';
 import { decompress } from 'woff2-encoder';
@@ -16,7 +16,8 @@ import * as dgram from 'dgram';
 import os from 'os';
 import noble from '@abandonware/noble';
 
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInProduction =
+"__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
 const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
@@ -546,6 +547,7 @@ const FileTypes = [
     "wifiServerCert",
     "wifiServerKey",
     "spriteSheet",
+    "cameraImage",
 ];
 const FileTransferStatuses = ["idle", "sending", "receiving"];
 const FileTransferCommands = [
@@ -673,7 +675,7 @@ class FileTransferManager {
         this.#updateLength(length);
     }
     #updateLength(length) {
-        _console$K.log(`length: ${length / 1024}kB`);
+        _console$K.log(`length: ${length / 1024}kB (${length} bytes)`);
         this.#length = length;
         this.#dispatchEvent("getFileLength", { fileLength: length });
     }
@@ -764,7 +766,7 @@ class FileTransferManager {
         this.#receivedBlocks.push(dataView.buffer);
         const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
         const progress = bytesReceived / this.#length;
-        _console$K.log(`received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`);
+        _console$K.log(`received ${bytesReceived}/${this.#length} bytes (${progress * 100}%) - ${this.#length - bytesReceived} bytes remaining`);
         this.#dispatchEvent("fileTransferProgress", {
             progress,
             fileType: this.type,
@@ -1356,8 +1358,7 @@ class BarometerSensorDataManager {
 const _console$F = createConsole("ParseUtils", { log: false });
 function parseStringFromDataView(dataView, byteOffset = 0) {
     const stringLength = dataView.getUint8(byteOffset++);
-    const string = textDecoder.decode(
-    dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
+    const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
     byteOffset += stringLength;
     return { string, byteOffset };
 }
@@ -1422,6 +1423,15 @@ const CameraConfigurationTypes = [
     "redGain",
     "greenGain",
     "blueGain",
+    "autoWhiteBalanceEnabled",
+    "autoGainEnabled",
+    "exposure",
+    "autoExposureEnabled",
+    "autoExposureLevel",
+    "brightness",
+    "saturation",
+    "contrast",
+    "sharpness",
 ];
 const CameraMessageTypes = [
     "cameraStatus",
@@ -1553,7 +1563,7 @@ class CameraManager {
                 }
                 break;
             case "imageSize":
-                this.#imageSize = dataView.getUint16(0, true);
+                this.#imageSize = dataView.getUint32(0, true);
                 _console$E.log({ imageSize: this.#imageSize });
                 this.#imageData = undefined;
                 this.#imageProgress == 0;
@@ -1620,6 +1630,35 @@ class CameraManager {
         this.#dispatchEvent("cameraImage", { url, blob });
         this.#didBuildImage = true;
     }
+    #buildHeaderCameraData() {
+        if (this.#headerSize && this.#headerProgress == 1 && this.#headerData) {
+            const headerDataView = new DataView(new ArrayBuffer(8));
+            headerDataView.setUint8(0, CameraDataTypes.indexOf("headerSize"));
+            headerDataView.setUint16(1, 2, true);
+            headerDataView.setUint16(3, this.#headerSize, true);
+            headerDataView.setUint8(5, CameraDataTypes.indexOf("header"));
+            headerDataView.setUint16(6, this.#headerSize, true);
+            return concatenateArrayBuffers(headerDataView, this.#headerData);
+        }
+    }
+    #buildFooterCameraData() {
+        if (this.#footerSize && this.#footerProgress == 1 && this.#footerData) {
+            const footerDataView = new DataView(new ArrayBuffer(8));
+            footerDataView.setUint8(0, CameraDataTypes.indexOf("footerSize"));
+            footerDataView.setUint16(1, 2, true);
+            footerDataView.setUint16(3, this.#footerSize, true);
+            footerDataView.setUint8(5, CameraDataTypes.indexOf("footer"));
+            footerDataView.setUint16(6, this.#footerSize, true);
+            return concatenateArrayBuffers(footerDataView, this.#footerData);
+        }
+    }
+    buildCameraData() {
+        const cameraData = [
+            this.#buildHeaderCameraData(),
+            this.#buildFooterCameraData(),
+        ];
+        return concatenateArrayBuffers(cameraData);
+    }
     #cameraConfiguration = {};
     get cameraConfiguration() {
         return this.#cameraConfiguration;
@@ -1629,13 +1668,22 @@ class CameraManager {
         return this.#availableCameraConfigurationTypes;
     }
     #cameraConfigurationRanges = {
-        resolution: { min: 100, max: 720 },
-        qualityFactor: { min: 15, max: 60 },
+        resolution: { min: 96, max: 2560 },
+        qualityFactor: { min: 0, max: 100 },
         shutter: { min: 4, max: 16383 },
-        gain: { min: 1, max: 248 },
-        redGain: { min: 0, max: 1023 },
-        greenGain: { min: 0, max: 1023 },
-        blueGain: { min: 0, max: 1023 },
+        gain: { min: 0, max: 248 },
+        redGain: { min: 0, max: 2047 },
+        greenGain: { min: 0, max: 2047 },
+        blueGain: { min: 0, max: 2047 },
+        autoWhiteBalanceEnabled: { min: 0, max: 1 },
+        autoGainEnabled: { min: 0, max: 1 },
+        exposure: { min: 0, max: 1200 },
+        autoExposureEnabled: { min: 0, max: 1 },
+        autoExposureLevel: { min: -4, max: 4 },
+        brightness: { min: -3, max: 3 },
+        saturation: { min: -4, max: 4 },
+        contrast: { min: -3, max: 3 },
+        sharpness: { min: -3, max: 3 },
     };
     get cameraConfigurationRanges() {
         return this.#cameraConfigurationRanges;
@@ -1643,12 +1691,29 @@ class CameraManager {
     #parseCameraConfiguration(dataView) {
         const parsedCameraConfiguration = {};
         let byteOffset = 0;
+        const size = 2;
         while (byteOffset < dataView.byteLength) {
             const cameraConfigurationTypeIndex = dataView.getUint8(byteOffset++);
             const cameraConfigurationType = CameraConfigurationTypes[cameraConfigurationTypeIndex];
             _console$E.assertWithError(cameraConfigurationType, `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`);
-            parsedCameraConfiguration[cameraConfigurationType] = dataView.getUint16(byteOffset, true);
-            byteOffset += 2;
+            _console$E.log({ cameraConfigurationType });
+            let value;
+            switch (cameraConfigurationType) {
+                case "autoExposureLevel":
+                case "brightness":
+                case "saturation":
+                case "contrast":
+                case "sharpness":
+                    value = dataView.getInt16(byteOffset, true);
+                    break;
+                default:
+                    value = dataView.getUint16(byteOffset, true);
+                    break;
+            }
+            _console$E.log({ [cameraConfigurationType]: value });
+            _console$E.assertTypeWithError(value, "number");
+            parsedCameraConfiguration[cameraConfigurationType] = value;
+            byteOffset += size;
         }
         _console$E.log({ parsedCameraConfiguration });
         this.#availableCameraConfigurationTypes = Object.keys(parsedCameraConfiguration);
@@ -1703,7 +1768,15 @@ class CameraManager {
             const cameraConfigurationTypeEnum = CameraConfigurationTypes.indexOf(cameraConfigurationType);
             dataView.setUint8(index * 3, cameraConfigurationTypeEnum);
             const value = cameraConfiguration[cameraConfigurationType];
-            dataView.setUint16(index * 3 + 1, value, true);
+            const offset = index * 3 + 1;
+            switch (cameraConfigurationType) {
+                case "autoExposureLevel":
+                    dataView.setInt16(offset, value, true);
+                    break;
+                default:
+                    dataView.setUint16(offset, value, true);
+                    break;
+            }
         });
         _console$E.log({ sensorConfigurationData: dataView });
         return dataView;
@@ -1767,6 +1840,7 @@ function writeString(view, offset, string) {
 }
 
 var _a$4;
+const alawmulaw = _alawmulaw.default ?? _alawmulaw;
 const { mulaw } = alawmulaw;
 const _console$D = createConsole("MicrophoneManager", { log: false });
 const MicrophoneSensorTypes = ["microphone"];
@@ -2368,11 +2442,17 @@ class SensorConfigurationManager {
         return this.eventDispatcher.waitForEvent;
     }
     #availableSensorTypes;
+    get availableSensorTypes() {
+        return this.#availableSensorTypes || [];
+    }
     #assertAvailableSensorType(sensorType) {
         _console$B.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
-        const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
+        const isSensorTypeAvailable = this.hasSensorType(sensorType);
         _console$B.log({ sensorType, isSensorTypeAvailable });
         return isSensorTypeAvailable;
+    }
+    hasSensorType(sensorType) {
+        return this.availableSensorTypes.includes(sensorType);
     }
     #configuration = {};
     get configuration() {
@@ -9386,7 +9466,8 @@ function removeEventListeners(target, boundEventListeners) {
 }
 
 const _console$l = createConsole("bluetoothUUIDs", { log: false });
-var BluetoothUUID = webbluetooth.BluetoothUUID;
+var BluetoothUUID;
+BluetoothUUID = webbluetooth.BluetoothUUID;
 function generateBluetoothUUID(value) {
     _console$l.assertTypeWithError(value, "string");
     _console$l.assertWithError(value.length == 4, "value must be 4 characters long");
@@ -10511,7 +10592,14 @@ const FirmwareEventTypes = [
     "firmwareStatus",
     "firmwareUploadComplete",
 ];
-const FirmwareStatuses = ["idle", "uploading", "uploaded", "pending", "testing", "erasing"];
+const FirmwareStatuses = [
+    "idle",
+    "uploading",
+    "uploaded",
+    "pending",
+    "testing",
+    "erasing",
+];
 class FirmwareManager {
     sendMessage;
     constructor() {
@@ -10659,7 +10747,7 @@ class FirmwareManager {
         this.#mcuManager.onImageUploadProgress(this.#onMcuImageUploadProgress.bind(this));
         this.#mcuManager.onImageUploadFinished(this.#onMcuImageUploadFinished.bind(this));
     }
-    #onMcuMessage({ op, group, id, data, length }) {
+    #onMcuMessage({ op, group, id, data, length, }) {
         _console$h.log("onMcuMessage", ...arguments);
         switch (group) {
             case constants.MGMT_GROUP_ID_OS:
@@ -11786,6 +11874,12 @@ class Device {
                         progress,
                     });
                     break;
+                case "cameraImage":
+                    this.#dispatchEvent("cameraImageProgress", {
+                        progress,
+                        type: "image",
+                    });
+                    break;
             }
         });
         this.addEventListener("fileTransferStatus", (event) => {
@@ -11797,6 +11891,18 @@ class Device {
                             spriteSheet: this.#displayManager.pendingSpriteSheet,
                             spriteSheetName: this.#displayManager.pendingSpriteSheetName,
                         });
+                    }
+                    break;
+            }
+        });
+        this.addEventListener("fileReceived", async (event) => {
+            const { fileType, file } = event.message;
+            switch (fileType) {
+                case "cameraImage":
+                    {
+                        const arrayBuffer = await file.arrayBuffer();
+                        const dataView = new DataView(arrayBuffer);
+                        this.#cameraManager.parseMessage("cameraData", dataView);
                     }
                     break;
             }
@@ -12294,6 +12400,12 @@ class Device {
         this.#assertIsConnected();
         return this.#sensorConfigurationManager.setConfiguration;
     }
+    get availableSensorTypes() {
+        return this.#sensorConfigurationManager.availableSensorTypes;
+    }
+    get hasSensorType() {
+        return this.#sensorConfigurationManager.hasSensorType;
+    }
     async clearSensorConfiguration() {
         this.#assertIsConnected();
         return this.#sensorConfigurationManager.clearSensorConfiguration();
@@ -12569,6 +12681,9 @@ class Device {
         });
     }
     #cameraManager = new CameraManager();
+    get _buildCameraData() {
+        return this.#cameraManager.buildCameraData;
+    }
     get hasCamera() {
         return this.sensorTypes.includes("camera");
     }
@@ -12578,17 +12693,23 @@ class Device {
     #assertHasCamera() {
         _console$b.assertWithError(this.hasCamera, "camera not available");
     }
-    async takePicture(sensorRate = 20) {
+    async takePicture(sensorRate) {
         this.#assertHasCamera();
-        if (this.sensorConfiguration.camera == 0 &&
+        if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
+            sensorRate = 20;
+        }
+        if (sensorRate != undefined &&
             this.sensorConfiguration.camera != sensorRate) {
             this.setSensorConfiguration({ camera: sensorRate }, false, false);
         }
         await this.#cameraManager.takePicture();
     }
-    async focusCamera(sensorRate = 20) {
+    async focusCamera(sensorRate) {
         this.#assertHasCamera();
-        if (this.sensorConfiguration.camera == 0 &&
+        if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
+            sensorRate = 20;
+        }
+        if (sensorRate != undefined &&
             this.sensorConfiguration.camera != sensorRate) {
             this.setSensorConfiguration({ camera: sensorRate }, false, false);
         }
@@ -12628,9 +12749,12 @@ class Device {
     #assertHasMicrophone() {
         _console$b.assertWithError(this.hasMicrophone, "microphone not available");
     }
-    async startMicrophone(sensorRate = 20) {
+    async startMicrophone(sensorRate) {
         this.#assertHasMicrophone();
-        if (this.sensorConfiguration.microphone == 0 &&
+        if (sensorRate == undefined && this.sensorConfiguration.microphone == 0) {
+            sensorRate = 5;
+        }
+        if (sensorRate != undefined &&
             this.sensorConfiguration.microphone != sensorRate) {
             this.setSensorConfiguration({ microphone: sensorRate }, false, false);
         }
@@ -14312,10 +14436,18 @@ class BaseServer {
         connectionMessage: this.#onDeviceConnectionMessage.bind(this),
     };
     #createDeviceMessage(device, messageType, dataView) {
-        return {
-            type: messageType,
-            data: dataView || device.latestConnectionMessages.get(messageType),
-        };
+        switch (messageType) {
+            case "cameraData":
+                return {
+                    type: "cameraData",
+                    data: dataView || device._buildCameraData(),
+                };
+            default:
+                return {
+                    type: messageType,
+                    data: dataView || device.latestConnectionMessages.get(messageType),
+                };
+        }
     }
     #onDeviceConnectionMessage(deviceEvent) {
         const { target: device, message } = deviceEvent;
@@ -14448,6 +14580,9 @@ class BaseServer {
                         RequiredWifiMessageTypes.forEach((messageType) => {
                             messages.push(this.#createDeviceMessage(device, messageType));
                         });
+                    }
+                    if (device.hasCamera) {
+                        messages.push(this.#createDeviceMessage(device, "cameraData"));
                     }
                     const responseMessage = this.#createDeviceServerMessage(device, ...messages);
                     if (responseMessage) {

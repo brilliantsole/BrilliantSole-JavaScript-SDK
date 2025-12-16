@@ -27,6 +27,6 @@ declare class ClientConnectionManager extends BaseConnectionManager {
     sendRequiredDeviceInformationMessage: Function;
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
     sendTxData(data: ArrayBuffer): Promise<void>;
-    onClientMessage(dataView: DataView): void;
+    onClientMessage(dataView: DataView<ArrayBuffer>): void;
 }
 export default ClientConnectionManager;

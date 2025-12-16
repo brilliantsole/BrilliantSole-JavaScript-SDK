@@ -4,7 +4,8 @@ export const BarometerSensorTypes = ["barometer"] as const;
 export type BarometerSensorType = (typeof BarometerSensorTypes)[number];
 
 export const ContinuousBarometerSensorTypes = BarometerSensorTypes;
-export type ContinuousBarometerSensorType = (typeof ContinuousBarometerSensorTypes)[number];
+export type ContinuousBarometerSensorType =
+  (typeof ContinuousBarometerSensorTypes)[number];
 
 export interface BarometerSensorDataEventMessages {
   barometer: {
@@ -30,7 +31,7 @@ class BarometerSensorDataManager {
     return h;
   }
 
-  parseData(dataView: DataView, scalar: number) {
+  parseData(dataView: DataView<ArrayBuffer>, scalar: number) {
     const pressure = dataView.getUint32(0, true) * scalar;
     const altitude = this.#calculcateAltitude(pressure);
     _console.log({ pressure, altitude });

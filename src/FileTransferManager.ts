@@ -30,6 +30,7 @@ export const FileTypes = [
   "wifiServerCert",
   "wifiServerKey",
   "spriteSheet",
+  "cameraImage",
 ] as const;
 export type FileType = (typeof FileTypes)[number];
 
@@ -147,7 +148,7 @@ class FileTransferManager {
   get fileTypes() {
     return this.#fileTypes;
   }
-  #parseFileTypes(dataView: DataView) {
+  #parseFileTypes(dataView: DataView<ArrayBuffer>) {
     const fileTypes = Array.from(new Uint8Array(dataView.buffer))
       .map((index) => FileTypes[index])
       .filter(Boolean);
@@ -167,7 +168,7 @@ class FileTransferManager {
   get maxLength() {
     return this.#maxLength;
   }
-  #parseMaxLength(dataView: DataView) {
+  #parseMaxLength(dataView: DataView<ArrayBuffer>) {
     _console.log("parseFileMaxLength", dataView);
     const maxLength = dataView.getUint32(0, true);
     _console.log(`maxLength: ${maxLength / 1024}kB`);
@@ -189,7 +190,7 @@ class FileTransferManager {
   get type() {
     return this.#type;
   }
-  #parseType(dataView: DataView) {
+  #parseType(dataView: DataView<ArrayBuffer>) {
     _console.log("parseFileType", dataView);
     const typeEnum = dataView.getUint8(0);
     this.#assertValidTypeEnum(typeEnum);
@@ -224,14 +225,14 @@ class FileTransferManager {
   get length() {
     return this.#length;
   }
-  #parseLength(dataView: DataView) {
+  #parseLength(dataView: DataView<ArrayBuffer>) {
     _console.log("parseFileLength", dataView);
     const length = dataView.getUint32(0, true);
 
     this.#updateLength(length);
   }
   #updateLength(length: number) {
-    _console.log(`length: ${length / 1024}kB`);
+    _console.log(`length: ${length / 1024}kB (${length} bytes)`);
     this.#length = length;
     this.#dispatchEvent("getFileLength", { fileLength: length });
   }
@@ -259,7 +260,7 @@ class FileTransferManager {
   get checksum() {
     return this.#checksum;
   }
-  #parseChecksum(dataView: DataView) {
+  #parseChecksum(dataView: DataView<ArrayBuffer>) {
     _console.log("checksum", dataView);
     const checksum = dataView.getUint32(0, true);
     this.#updateChecksum(checksum);
@@ -312,7 +313,7 @@ class FileTransferManager {
   get status() {
     return this.#status;
   }
-  #parseStatus(dataView: DataView) {
+  #parseStatus(dataView: DataView<ArrayBuffer>) {
     _console.log("parseFileStatus", dataView);
     const statusEnum = dataView.getUint8(0);
     this.#assertValidStatusEnum(statusEnum);
@@ -342,9 +343,8 @@ class FileTransferManager {
 
   #receivedBlocks: ArrayBuffer[] = [];
 
-  async #parseBlock(dataView: DataView) {
+  async #parseBlock(dataView: DataView<ArrayBuffer>) {
     _console.log("parseFileBlock", dataView);
-    // @ts-expect-error
     this.#receivedBlocks.push(dataView.buffer);
 
     const bytesReceived = this.#receivedBlocks.reduce(
@@ -354,7 +354,9 @@ class FileTransferManager {
     const progress = bytesReceived / this.#length;
 
     _console.log(
-      `received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`
+      `received ${bytesReceived}/${this.#length} bytes (${progress * 100}%) - ${
+        this.#length - bytesReceived
+      } bytes remaining`
     );
 
     this.#dispatchEvent("fileTransferProgress", {
@@ -418,7 +420,10 @@ class FileTransferManager {
     this.#dispatchEvent("fileReceived", { file, fileType: this.type! });
   }
 
-  parseMessage(messageType: FileTransferMessageType, dataView: DataView) {
+  parseMessage(
+    messageType: FileTransferMessageType,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log({ messageType });
 
     switch (messageType) {
@@ -570,7 +575,7 @@ class FileTransferManager {
     }
   }
 
-  async #parseBytesTransferred(dataView: DataView) {
+  async #parseBytesTransferred(dataView: DataView<ArrayBuffer>) {
     _console.log("parseBytesTransferred", dataView);
     const bytesTransferred = dataView.getUint32(0, true);
     _console.log({ bytesTransferred });

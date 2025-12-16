@@ -42,15 +42,15 @@
     #imageContainer {
       position: relative;
       display: inline-block;
-      width: 300;
-      height: 300;
-      aspect-ratio: 1;
+      width: 500;
+      height: fit-content;
     }
     #imageOverlay {
       position: absolute;
       top: 0;
       left: 0;
       pointer-events: none;
+      z-index: 1;
     }
   </style>
   <body>
@@ -68,6 +68,12 @@
           <option>none</option>
         </optgroup>
       </select>
+    </label>
+    <br />
+
+    <label>
+      rotate picture?
+      <input disabled type="checkbox" id="rotatePicture" />
     </label>
     <br />
 

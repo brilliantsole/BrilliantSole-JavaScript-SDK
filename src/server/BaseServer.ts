@@ -41,6 +41,7 @@ import DeviceManager, {
 } from "../DeviceManager.ts";
 import { RequiredWifiMessageTypes } from "../WifiManager.ts";
 import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
+import { RequiredCameraMessageTypes } from "../CameraManager.ts";
 
 const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...DeviceInformationTypes,
@@ -247,7 +248,6 @@ abstract class BaseServer {
   }
 
   // DEVICE LISTENERS
-
   #boundDeviceListeners: BoundDeviceEventListeners = {
     connectionMessage: this.#onDeviceConnectionMessage.bind(this),
   };
@@ -257,10 +257,19 @@ abstract class BaseServer {
     messageType: ConnectionMessageType,
     dataView?: DataView
   ): DeviceMessage {
-    return {
-      type: messageType as DeviceEventType,
-      data: dataView || device.latestConnectionMessages.get(messageType),
-    };
+    switch (messageType) {
+      case "cameraData":
+        return {
+          type: "cameraData",
+          // @ts-expect-error
+          data: dataView || device._buildCameraData(),
+        };
+      default:
+        return {
+          type: messageType as DeviceEventType,
+          data: dataView || device.latestConnectionMessages.get(messageType),
+        };
+    }
   }
 
   #onDeviceConnectionMessage(deviceEvent: DeviceEventMap["connectionMessage"]) {
@@ -328,7 +337,7 @@ abstract class BaseServer {
   }
 
   // PARSING
-  protected parseClientMessage(dataView: DataView) {
+  protected parseClientMessage(dataView: DataView<ArrayBuffer>) {
     let responseMessages: ArrayBuffer[] = [];
 
     parseMessage(
@@ -348,7 +357,7 @@ abstract class BaseServer {
 
   #onClientMessage(
     messageType: ServerMessageType,
-    dataView: DataView,
+    dataView: DataView<ArrayBuffer>,
     context: { responseMessages: ArrayBuffer[] }
   ) {
     _console.log(
@@ -455,6 +464,9 @@ abstract class BaseServer {
               messages.push(this.#createDeviceMessage(device, messageType));
             });
           }
+          if (device.hasCamera) {
+            messages.push(this.#createDeviceMessage(device, "cameraData"));
+          }
           const responseMessage = this.#createDeviceServerMessage(
             device,
             ...messages
@@ -470,7 +482,10 @@ abstract class BaseServer {
     }
   }
 
-  protected parseClientDeviceMessage(device: Device, dataView: DataView) {
+  protected parseClientDeviceMessage(
+    device: Device,
+    dataView: DataView<ArrayBuffer>
+  ) {
     _console.log("onDeviceMessage", device.bluetoothId, dataView);
 
     let responseMessages: DeviceMessage[] = [];
@@ -490,7 +505,7 @@ abstract class BaseServer {
 
   #parseClientDeviceMessageCallback(
     messageType: ConnectionMessageType,
-    dataView: DataView,
+    dataView: DataView<ArrayBuffer>,
     context: { responseMessages: DeviceMessage[]; device: Device }
   ) {
     _console.log(

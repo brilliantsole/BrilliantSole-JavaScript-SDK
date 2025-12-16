@@ -109,7 +109,7 @@ class UDPConnectionManager extends BaseConnectionManager {
   // SET REMOTE RECEIVE PORT
   #didSetRemoteReceivePort = false;
   #setRemoteReceivePortDataView = new DataView(new ArrayBuffer(2));
-  #parseReceivePort(dataView: DataView) {
+  #parseReceivePort(dataView: DataView<ArrayBuffer>) {
     const parsedReceivePort = dataView.getUint16(0, true);
     if (parsedReceivePort != this.receivePort) {
       _console.error(
@@ -212,7 +212,7 @@ class UDPConnectionManager extends BaseConnectionManager {
       message.byteOffset,
       message.byteOffset + message.byteLength
     );
-    const dataView = new DataView(arrayBuffer);
+    const dataView = new DataView(arrayBuffer) as DataView<ArrayBuffer>;
     this.#parseSocketMessage(dataView);
 
     if (this.status == "connecting" && this.#didSetRemoteReceivePort) {
@@ -276,7 +276,7 @@ class UDPConnectionManager extends BaseConnectionManager {
   }
 
   // PARSING
-  #parseSocketMessage(dataView: DataView) {
+  #parseSocketMessage(dataView: DataView<ArrayBuffer>) {
     parseMessage(
       dataView,
       SocketMessageTypes,
@@ -286,7 +286,7 @@ class UDPConnectionManager extends BaseConnectionManager {
     );
   }
 
-  #onMessage(messageType: SocketMessageType, dataView: DataView) {
+  #onMessage(messageType: SocketMessageType, dataView: DataView<ArrayBuffer>) {
     _console.log(
       `received "${messageType}" message (${dataView.byteLength} bytes)`
     );

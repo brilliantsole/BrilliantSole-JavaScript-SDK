@@ -2,8 +2,8 @@ type ENVIRONMENT_FLAG = "__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__";
 const __BRILLIANTSOLE__ENVIRONMENT__: ENVIRONMENT_FLAG =
   "__BRILLIANTSOLE__DEV__";
 
-//@ts-expect-error
 const isInProduction =
+  // @ts-expect-error
   __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
 const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 
@@ -32,11 +32,11 @@ const isSafari =
 const isIOS = isInBrowser && /iPad|iPhone|iPod/i.test(userAgent);
 const isMac = isInBrowser && /Macintosh/i.test(userAgent);
 
-// @ts-expect-error
 const isInLensStudio =
   !isInBrowser &&
   !isInNode &&
   typeof global !== "undefined" &&
+  // @ts-expect-error
   typeof Studio !== "undefined";
 
 export {
