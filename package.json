@@ -1,6 +1,6 @@
 {
   "name": "brilliantsole",
-  "version": "0.0.60",
+  "version": "0.0.61",
   "description": "JavaScript SDK for BrilliantSole Smart Insoles",
   "main": "./build/brilliantsole.module.js",
   "module": "./build/brilliantsole.module.js",
@@ -29,7 +29,8 @@
     "build": "rollup -c",
     "dev": "rollup -c -w",
     "server": "node server.js",
-    "simple-server": "node simple-server.js"
+    "simple-server": "node simple-server.js",
+    "docs": "npx typedoc"
   },
   "repository": {
     "type": "git",

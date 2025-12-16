@@ -9489,7 +9489,8 @@ function removeEventListeners(target, boundEventListeners) {
 }
 
 const _console$l = createConsole("bluetoothUUIDs", { log: false });
-var BluetoothUUID = webbluetooth__namespace.BluetoothUUID;
+var BluetoothUUID;
+BluetoothUUID = webbluetooth__namespace.BluetoothUUID;
 function generateBluetoothUUID(value) {
     _console$l.assertTypeWithError(value, "string");
     _console$l.assertWithError(value.length == 4, "value must be 4 characters long");

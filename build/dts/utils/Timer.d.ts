@@ -1,4 +1,4 @@
-export declare function wait(delay: number): Promise<unknown>;
+export declare function wait(delay: number): Promise<void>;
 export declare class Timer {
     #private;
     get callback(): Function;

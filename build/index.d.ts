@@ -1791,7 +1791,7 @@ declare class DeviceManager {
 }
 declare const _default: DeviceManager;
 
-declare function wait(delay: number): Promise<unknown>;
+declare function wait(delay: number): Promise<void>;
 declare class Timer {
     #private;
     get callback(): Function;

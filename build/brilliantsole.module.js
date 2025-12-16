@@ -24366,8 +24366,9 @@ function removeEventListeners(target, boundEventListeners) {
 }
 
 const _console$g = createConsole("bluetoothUUIDs", { log: false });
+var BluetoothUUID;
 if (isInBrowser) {
-    var BluetoothUUID = window.BluetoothUUID;
+    BluetoothUUID = window.BluetoothUUID;
 }
 function generateBluetoothUUID(value) {
     _console$g.assertTypeWithError(value, "string");
