@@ -6,4 +6,5 @@
        "skipLibCheck": true,
     "skipDefaultLibCheck": true
     },
+    "excludeExternals": false,
 }

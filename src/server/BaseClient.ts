@@ -135,7 +135,7 @@ abstract class BaseClient {
   abstract reconnect(): void;
   abstract toggleConnection(url?: ServerURL): void;
 
-  static _reconnectOnDisconnection = true;
+  private static _reconnectOnDisconnection = true;
   static get ReconnectOnDisconnection() {
     return this._reconnectOnDisconnection;
   }

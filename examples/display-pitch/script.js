@@ -103,10 +103,16 @@ displayCanvasHelper.addEventListener("color", (event) => {
   displayColorInputs[colorIndex].value = colorHex;
 });
 setupColors();
-const getTextColorIndex = () => 1;
-const getGraphIndex = () => 2;
+const getBackgroundColorIndex = () => 1;
+const getTextColorIndex = () => 2;
+const getGoodColorIndex = () => 3;
+const getMediumColorIndex = () => 4;
+const getBadColorIndex = () => 5;
+displayCanvasHelper.setColor(getBackgroundColorIndex(), "#545454");
 displayCanvasHelper.setColor(getTextColorIndex(), "white");
-displayCanvasHelper.setColor(getGraphIndex(), "red");
+displayCanvasHelper.setColor(getGoodColorIndex(), "#00ff00");
+displayCanvasHelper.setColor(getMediumColorIndex(), "orange");
+displayCanvasHelper.setColor(getBadColorIndex(), "red");
 displayCanvasHelper.flushContextCommands();
 
 // DRAW
@@ -121,35 +127,107 @@ displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
   isUploading = false;
 });
 
+const drawOffset = {
+  x: 0.5,
+  y: 0.5,
+};
+const drawSize = {
+  width: 200,
+  height: 200,
+};
+let drawLineWidth = 15;
+
 let didLoad = false;
-const draw = async () => {
+const draw = async (overrideIsMicrophoneLoaded = false) => {
   if (isUploading) {
+    console.warn("busy uploading");
     return;
   }
   if (!didLoad) {
-    console.log("hasn't loaded yet");
+    console.warn("hasn't loaded yet");
+    return;
+  }
+
+  if (!isMicrophoneLoaded && !overrideIsMicrophoneLoaded) {
+    console.warn("microphone hasn't loaded");
     return;
   }
 
   if (isDrawing) {
-    console.warn("busy drawing");
+    //console.warn("busy drawing");
     isWaitingToRedraw = true;
     return;
   }
+
   isDrawing = true;
 
-  // FILL
+  //console.log("draw");
+
+  let spriteColorIndex;
+  if (pitchOffsetAbs <= pitchOffsetThresholds.good) {
+    spriteColorIndex = getGoodColorIndex();
+  } else if (pitchOffsetAbs <= pitchOffsetThresholds.medium) {
+    spriteColorIndex = getMediumColorIndex();
+  } else {
+    spriteColorIndex = getBadColorIndex();
+  }
+  await displayCanvasHelper.selectSpriteColor(0, getBackgroundColorIndex());
+  await displayCanvasHelper.selectSpriteColor(1, spriteColorIndex);
+  await displayCanvasHelper.selectBackgroundColor(getBackgroundColorIndex());
+  await displayCanvasHelper.setFillBackground(true);
+  await displayCanvasHelper.startSprite(
+    drawOffset.x * displayCanvasHelper.width,
+    drawOffset.y * displayCanvasHelper.height,
+    drawSize.width,
+    drawSize.height
+  );
+  await displayCanvasHelper.setIgnoreFill(true);
+  await displayCanvasHelper.setLineWidth(drawLineWidth);
+  await displayCanvasHelper.drawArc(
+    0,
+    0,
+    drawSize.width / 2 - drawLineWidth,
+    -90,
+    normalizedPitchOffset * 145
+  );
+  await displayCanvasHelper.setSpriteScale(fontScale);
+  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  await displayCanvasHelper.drawSpritesString(
+    0,
+    0,
+    frequency.toNote().slice(0, -1)
+  );
+  await displayCanvasHelper.endSprite();
 
   await displayCanvasHelper.show();
 };
-
+window.draw = draw;
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
-  if (isWaitingToRedraw) {
+  if (isWaitingToRedraw || autoDraw) {
     isWaitingToRedraw = false;
     draw();
   }
 });
+const drawButton = document.getElementById("draw");
+drawButton.addEventListener("click", () => {
+  draw();
+});
+
+// AUTODRAW
+const autoDrawCheckbox = document.getElementById("autoDraw");
+autoDrawCheckbox.addEventListener("input", () => {
+  setAutoDraw(autoDrawCheckbox.checked);
+});
+let autoDraw = autoDrawCheckbox.checked;
+const setAutoDraw = (newAutoDraw) => {
+  autoDraw = newAutoDraw;
+  console.log({ autoDraw });
+  autoDrawCheckbox.checked = autoDraw;
+  if (autoDraw) {
+    draw();
+  }
+};
 
 // PROGRESS
 
@@ -235,7 +313,7 @@ const setFontScale = (newFontScale) => {
   fontScaleInput.value = fontScale;
   draw();
 };
-setFontScale(1);
+setFontScale(1.3);
 
 const loadFont = async (arrayBuffer) => {
   if (!arrayBuffer) {
@@ -343,7 +421,7 @@ window.addEventListener("drop", async (e) => {
 /** @type {Record<string, BS.Font[]>} */
 const fonts = {};
 window.fonts = fonts;
-const fontSize = 36;
+const fontSize = 72;
 /** @type {Record<string, BS.DisplaySpriteSheet>} */
 const fontSpriteSheets = {};
 window.fonts = fonts;
@@ -369,7 +447,7 @@ const addFont = async (font) => {
     fonts[fullName].push(font);
   }
 
-  console.log(`added font "${fullName}"`);
+  console.log(`added font "${fullName}"`, { isEnglish });
 
   if (isEnglish) {
     const spriteSheet = await BS.fontToSpriteSheet(
@@ -422,4 +500,236 @@ const selectFont = async (newFontName) => {
 
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Sans");
 
+// MICROPHONE AUDIO
+/** @type {HTMLAudioElement} */
+const microphoneAudio = document.getElementById("microphoneAudio");
+let isMicrophoneLoaded = false;
+microphoneAudio.addEventListener("loadstart", () => {
+  isMicrophoneLoaded = true;
+  if (autoDraw) {
+    draw();
+  }
+});
+microphoneAudio.addEventListener("emptied", () => {
+  isMicrophoneLoaded = false;
+});
+
+// AUDIO CONTEXT
+const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+  sampleRate: 16_000,
+  latencyHint: "interactive",
+});
+device.audioContext = audioContext;
+device.microphoneGainNode.gain.value = 5;
+window.audioContext = audioContext;
+const checkAudioContextState = () => {
+  const { state } = audioContext;
+  console.log({ audioContextState: state });
+  if (state != "running") {
+    document.addEventListener("click", () => audioContext.resume(), {
+      once: true,
+    });
+  }
+};
+audioContext.addEventListener("statechange", () => {
+  checkAudioContextState();
+});
+checkAudioContextState();
+
+const analyser = audioContext.createAnalyser();
+analyser.fftSize = 1024;
+
+// TONEJS
+/** @type {import("tone")} */
+const Tone = window.Tone;
+Tone.setContext(audioContext);
+
+// PITCHY
+import * as Pitchy from "https://esm.sh/pitchy@4";
+
+/** @type {import("pitchy")} */
+const pitchy = Pitchy;
+window.pitchy = pitchy;
+const { PitchDetector } = pitchy;
+
+const detector = PitchDetector.forFloat32Array(analyser.fftSize);
+detector.minVolumeDecibels = -20;
+const detectorInput = new Float32Array(detector.inputLength);
+
+window.clarityThreshold = 0.98;
+/** @type {import("tone").FrequencyClass?} */
+let frequency = Tone.Frequency("A3");
+/** @type {import("tone").FrequencyClass?} */
+let perfectFrequency;
+/** [-50, 50] */
+let pitchOffset = 0;
+let pitchOffsetAbs = Math.abs(pitchOffset);
+/** [-1, 1] */
+let normalizedPitchOffset = pitchOffset / 50;
+const pitchOffsetThresholds = {
+  medium: 10,
+  good: 5,
+};
+let getPitch = () => {
+  analyser.getFloatTimeDomainData(detectorInput);
+  const [pitch, clarity] = detector.findPitch(
+    detectorInput,
+    audioContext.sampleRate
+  );
+  //console.log({ pitch, clarity });
+  if (clarity < clarityThreshold) {
+    return;
+  }
+  frequency?.dispose();
+  perfectFrequency?.dispose();
+  frequency = Tone.Frequency(pitch);
+  perfectFrequency = Tone.Frequency(frequency.toNote());
+  const perfectPitch = perfectFrequency.toFrequency();
+  pitchOffset = 1200 * Math.log2(pitch / perfectPitch);
+  pitchOffsetAbs = Math.abs(pitchOffset);
+  normalizedPitchOffset = pitchOffset / 50;
+  console.log({
+    pitch,
+    perfectPitch,
+    pitchOffset,
+    pitchOffsetAbs,
+    normalizedPitchOffset,
+  });
+  draw();
+};
+window.getPitch = getPitch;
+
+const getPitchButton = document.getElementById("getPitch");
+getPitchButton.addEventListener("click", () => {
+  getPitch();
+});
+
+const autoPitchCheckbox = document.getElementById("autoPitch");
+let autoPitchIntervalId;
+autoPitchCheckbox.addEventListener("input", () => {
+  if (autoPitchIntervalId) {
+    clearInterval(autoPitchIntervalId);
+    autoPitchIntervalId = undefined;
+  }
+  if (autoPitchCheckbox.checked && isMicrophoneLoaded) {
+    autoPitchIntervalId = setInterval(() => {
+      getPitch();
+    }, 50);
+  }
+});
+
+microphoneAudio.addEventListener("loadstart", () => {
+  getPitchButton.disabled = false;
+  autoPitchCheckbox.disabled = false;
+});
+microphoneAudio.addEventListener("emptied", () => {
+  getPitchButton.disabled = true;
+  autoPitchCheckbox.disabled = true;
+
+  autoPitchCheckbox.checked = false;
+  if (autoPitchIntervalId) {
+    clearInterval(autoPitchIntervalId);
+  }
+});
+
+// MICROPHONE
+device.audioContext;
+device.microphoneGainNode.connect(analyser);
+
+/** @type {HTMLSelectElement} */
+const selectMicrophoneSelect = document.getElementById("selectMicrophone");
+/** @type {HTMLOptGroupElement} */
+const selectMicrophoneOptgroup =
+  selectMicrophoneSelect.querySelector("optgroup");
+selectMicrophoneSelect.addEventListener("input", () => {
+  selectMicrophone(selectMicrophoneSelect.value);
+});
+
+selectMicrophoneSelect.addEventListener("click", async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const audioDevices = devices.filter((device) => device.kind == "audioinput");
+  console.log("audioDevices", audioDevices);
+  if (audioDevices.length == 1 && audioDevices[0].deviceId == "") {
+    console.log("getting audio");
+    const microphoneStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+    });
+    microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    updateMicrophoneSources();
+  }
+});
+const updateMicrophoneSources = async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const audioDevices = devices.filter((device) => device.kind == "audioinput");
+  selectMicrophoneOptgroup.innerHTML = "";
+  selectMicrophoneOptgroup.appendChild(new Option("none"));
+  if (device.hasMicrophone) {
+    selectMicrophoneOptgroup.appendChild(new Option("device"));
+  }
+  audioDevices.forEach((audioInputDevice) => {
+    selectMicrophoneOptgroup.appendChild(
+      new Option(audioInputDevice.label, audioInputDevice.deviceId)
+    );
+  });
+  selectMicrophone.value = "none";
+  selectMicrophone(selectMicrophone.value);
+};
+/** @type {MediaStream?} */
+let microphoneStream;
+/** @type {MediaStreamAudioSourceNode?} */
+let microphoneMediaStreamSource;
+const selectMicrophone = async (deviceId) => {
+  stopMicrophoneStream();
+  if (deviceId == "none") {
+    microphoneAudio.setAttribute("hidden", "");
+    if (device.hasMicrophone) {
+      await device.stopMicrophone();
+    }
+  } else {
+    if (deviceId == "device") {
+      microphoneStream = device.microphoneMediaStreamDestination.stream;
+      console.log("starting microphone");
+      await device.startMicrophone();
+    } else {
+      microphoneStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: { exact: deviceId },
+          sampleRate: audioContext.sampleRate,
+          noiseSuppression: false,
+          echoCancellation: false,
+          autoGainControl: false,
+        },
+      });
+      microphoneMediaStreamSource =
+        audioContext.createMediaStreamSource(microphoneStream);
+      microphoneMediaStreamSource.connect(analyser);
+    }
+    microphoneAudio.srcObject = microphoneStream;
+    microphoneAudio.removeAttribute("hidden");
+    console.log("got microphoneStream", deviceId, microphoneStream);
+  }
+};
+const stopMicrophoneStream = () => {
+  if (microphoneStream) {
+    console.log("stopping microphoneStream");
+    microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    microphoneStream = undefined;
+  }
+  if (microphoneMediaStreamSource) {
+    microphoneMediaStreamSource.disconnect();
+    microphoneMediaStreamSource = undefined;
+  }
+  microphoneAudio.srcObject = undefined;
+  microphoneAudio.setAttribute("hidden", "");
+};
+navigator.mediaDevices.addEventListener("devicechange", () =>
+  updateMicrophoneSources()
+);
+device.addEventListener("isConnected", () => {
+  updateMicrophoneSources();
+});
+updateMicrophoneSources();
+
 didLoad = true;
+
+draw(true);

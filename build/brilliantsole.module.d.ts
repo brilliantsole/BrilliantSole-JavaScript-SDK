@@ -2299,7 +2299,7 @@ declare abstract class BaseClient {
     abstract disconnect(): void;
     abstract reconnect(): void;
     abstract toggleConnection(url?: ServerURL): void;
-    static _reconnectOnDisconnection: boolean;
+    private static _reconnectOnDisconnection;
     static get ReconnectOnDisconnection(): boolean;
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     protected _reconnectOnDisconnection: boolean;

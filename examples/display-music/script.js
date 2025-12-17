@@ -459,14 +459,7 @@ selectFontSelect.addEventListener("input", async () => {
 /** @type {BS.Font?} */
 let selectedFont;
 let spritesLineHeight = 0;
-/** @type {MediaRecorder} */
-let mediaRecorder;
 const selectFont = async (newFontName) => {
-  let wasTranscribing = Boolean(mediaRecorder);
-  if (wasTranscribing) {
-    await stopTranscribing();
-  }
-
   const newFont = fonts[newFontName][0];
   selectedFont = newFont;
 
