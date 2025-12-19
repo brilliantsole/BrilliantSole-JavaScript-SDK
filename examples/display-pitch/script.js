@@ -108,11 +108,11 @@ const getTextColorIndex = () => 2;
 const getGoodColorIndex = () => 3;
 const getMediumColorIndex = () => 4;
 const getBadColorIndex = () => 5;
-displayCanvasHelper.setColor(getBackgroundColorIndex(), "#545454");
+displayCanvasHelper.setColor(getBackgroundColorIndex(), "#4f4f4f");
 displayCanvasHelper.setColor(getTextColorIndex(), "white");
 displayCanvasHelper.setColor(getGoodColorIndex(), "#00ff00");
 displayCanvasHelper.setColor(getMediumColorIndex(), "orange");
-displayCanvasHelper.setColor(getBadColorIndex(), "red");
+displayCanvasHelper.setColor(getBadColorIndex(), "#ff4747");
 displayCanvasHelper.flushContextCommands();
 
 // DRAW
@@ -132,10 +132,10 @@ const drawOffset = {
   y: 0.5,
 };
 const drawSize = {
-  width: 200,
-  height: 200,
+  width: 110,
+  height: 110,
 };
-let drawLineWidth = 15;
+let drawLineWidth = 8;
 
 let didLoad = false;
 const draw = async (overrideIsMicrophoneLoaded = false) => {
@@ -421,7 +421,7 @@ window.addEventListener("drop", async (e) => {
 /** @type {Record<string, BS.Font[]>} */
 const fonts = {};
 window.fonts = fonts;
-const fontSize = 72;
+const fontSize = 42;
 /** @type {Record<string, BS.DisplaySpriteSheet>} */
 const fontSpriteSheets = {};
 window.fonts = fonts;
@@ -556,13 +556,13 @@ const detector = PitchDetector.forFloat32Array(analyser.fftSize);
 detector.minVolumeDecibels = -50;
 const detectorInput = new Float32Array(detector.inputLength);
 
-window.clarityThreshold = 0.97;
+window.clarityThreshold = 0.98;
 /** @type {import("tone").FrequencyClass?} */
 let frequency = Tone.Frequency("A3");
 /** @type {import("tone").FrequencyClass?} */
 let perfectFrequency;
 /** [-50, 50] */
-let pitchOffset = 0;
+let pitchOffset = 50;
 let pitchOffsetAbs = Math.abs(pitchOffset);
 /** [-1, 1] */
 let normalizedPitchOffset = pitchOffset / 50;
