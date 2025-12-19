@@ -6585,7 +6585,7 @@ function assertValidBitmapPixels(bitmap) {
     });
 }
 
-const _console$p = createConsole("DisplayManagerInterface", { log: true });
+const _console$p = createConsole("DisplayManagerInterface", { log: false });
 async function runDisplayContextCommand(displayManager, command, sendImmediately) {
     if (command.hide) {
         return;
@@ -6978,17 +6978,14 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
         case "drawSprites":
             {
                 const { offsetX, offsetY, spriteSerializedLines } = command;
-                _console$p.log({ offsetX, offsetY, spriteSerializedLines });
                 const spriteLines = [];
                 spriteSerializedLines.forEach((spriteSerializedLine) => {
                     const spriteLine = [];
                     spriteSerializedLine.forEach((spriteSerializedSubLine) => {
                         const { spriteIndices, spriteSheetIndex } = spriteSerializedSubLine;
-                        _console$p.log({ spriteIndices, spriteSheetIndex }, displayManager.spriteSheetIndices);
                         const spriteSheetName = Object.entries(displayManager.spriteSheetIndices).find(([_spriteSheetName, _spriteSheetIndex]) => {
                             return _spriteSheetIndex == spriteSheetIndex;
                         })[0];
-                        _console$p.log({ spriteSheetName });
                         const spriteSheet = displayManager.spriteSheets[spriteSheetName];
                         const spriteSubLine = {
                             spriteSheetName: spriteSheet.name,
@@ -6998,7 +6995,6 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                     });
                     spriteLines.push(spriteLine);
                 });
-                _console$p.log({ spriteLines });
                 await displayManager.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
             }
             break;

@@ -36,7 +36,7 @@ import {
 } from "./DisplayUtils.ts";
 import { degToRad, Vector2 } from "./MathUtils.ts";
 
-const _console = createConsole("DisplayManagerInterface", { log: true });
+const _console = createConsole("DisplayManagerInterface", { log: false });
 
 export interface DisplayManagerInterface {
   get isReady(): boolean;
@@ -1127,22 +1127,22 @@ export async function runDisplayContextCommand(
     case "drawSprites":
       {
         const { offsetX, offsetY, spriteSerializedLines } = command;
-        _console.log({ offsetX, offsetY, spriteSerializedLines });
+        //_console.log({ offsetX, offsetY, spriteSerializedLines });
         const spriteLines: DisplaySpriteLines = [];
         spriteSerializedLines.forEach((spriteSerializedLine) => {
           const spriteLine: DisplaySpriteLine = [];
           spriteSerializedLine.forEach((spriteSerializedSubLine) => {
             const { spriteIndices, spriteSheetIndex } = spriteSerializedSubLine;
-            _console.log(
-              { spriteIndices, spriteSheetIndex },
-              displayManager.spriteSheetIndices
-            );
+            // _console.log(
+            //   { spriteIndices, spriteSheetIndex },
+            //   displayManager.spriteSheetIndices
+            // );
             const spriteSheetName = Object.entries(
               displayManager.spriteSheetIndices
             ).find(([_spriteSheetName, _spriteSheetIndex]) => {
               return _spriteSheetIndex == spriteSheetIndex;
             })![0];
-            _console.log({ spriteSheetName });
+            //_console.log({ spriteSheetName });
             const spriteSheet = displayManager.spriteSheets[spriteSheetName];
             const spriteSubLine: DisplaySpriteSubLine = {
               spriteSheetName: spriteSheet.name,
@@ -1154,7 +1154,7 @@ export async function runDisplayContextCommand(
           });
           spriteLines.push(spriteLine);
         });
-        _console.log({ spriteLines });
+        //_console.log({ spriteLines });
         await displayManager.drawSprites(
           offsetX,
           offsetY,

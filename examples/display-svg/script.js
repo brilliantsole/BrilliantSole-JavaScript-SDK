@@ -600,7 +600,7 @@ window.addEventListener("drop", async (e) => {
 /** @type {Record<string, BS.Font[]>} */
 const fonts = {};
 window.fonts = fonts;
-const fontSize = 36;
+const fontSize = 20;
 /** @type {Record<string, BS.DisplaySpriteSheet>} */
 const fontSpriteSheets = {};
 window.fonts = fonts;
@@ -677,7 +677,7 @@ const selectFont = async (newFontName) => {
   await draw();
 };
 
-await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Sans");
+await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Serif");
 
 didLoad = true;
 

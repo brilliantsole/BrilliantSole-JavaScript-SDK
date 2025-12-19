@@ -1707,15 +1707,22 @@ export async function svgToDisplayContextCommands(
           let { x, y, strokeWidth } = canvasCommand;
           const { text, fontSize, fill, stroke } = canvasCommand;
           x = Math.round(x);
-          y = Math.round(y);
+          y = Math.round(y) - 5; // baseline fix
           strokeWidth = Math.round(strokeWidth);
 
           //_console.log({ text, x, y, fontSize, fill, stroke, strokeWidth });
 
-          // FIX
           displayCommands.push({
             type: "setSpritesLineHeight",
             spritesLineHeight: displayManager.contextState.spritesLineHeight,
+          });
+          displayCommands.push({
+            type: "setSpriteScaleX",
+            spriteScaleX: scaleX,
+          });
+          displayCommands.push({
+            type: "setSpriteScaleY",
+            spriteScaleY: scaleY,
           });
           displayCommands.push({
             type: "setHorizontalAlignment",
@@ -1723,24 +1730,8 @@ export async function svgToDisplayContextCommands(
           });
           displayCommands.push({
             type: "setVerticalAlignment",
-            verticalAlignment: "end",
+            verticalAlignment: "center",
           });
-          displayCommands.push({
-            type: "setSpritesAlignment",
-            spritesAlignment: "end",
-          });
-          displayCommands.push({
-            type: "setSpritesLineAlignment",
-            spritesLineAlignment: "start",
-          });
-          // displayCommands.push({
-          //   type: "setSpriteScaleX",
-          //   spriteScaleX: scaleX,
-          // });
-          // displayCommands.push({
-          //   type: "setSpriteScaleY",
-          //   spriteScaleY: scaleY,
-          // });
           const spriteLines = stringToSpriteLines(
             text,
             displayManager.spriteSheets,
@@ -1755,12 +1746,35 @@ export async function svgToDisplayContextCommands(
               spriteLines
             ),
           });
-          displayCommands.push({
-            type: "resetSpriteScale",
-          });
-          displayCommands.push({
-            type: "resetAlignment",
-          });
+          // trimContextCommands doesn't treat resetAlignment and setHorizontalAlignment/setVerticalAlignment as similar (yet)
+          if (true) {
+            displayCommands.push({
+              type: "setHorizontalAlignment",
+              horizontalAlignment: "center",
+            });
+            displayCommands.push({
+              type: "setVerticalAlignment",
+              verticalAlignment: "center",
+            });
+          } else {
+            displayCommands.push({
+              type: "resetAlignment",
+            });
+          }
+          if (true) {
+            displayCommands.push({
+              type: "setSpriteScaleX",
+              spriteScaleX: 1,
+            });
+            displayCommands.push({
+              type: "setSpriteScaleY",
+              spriteScaleY: 1,
+            });
+          } else {
+            displayCommands.push({
+              type: "resetSpriteScale",
+            });
+          }
         }
         break;
       default:

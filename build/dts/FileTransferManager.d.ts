@@ -79,11 +79,11 @@ declare class FileTransferManager {
         target: Device;
         message: FileTransferEventMessages[T];
     }>;
-    get fileTypes(): ("cameraImage" | "spriteSheet" | "tflite" | "wifiServerCert" | "wifiServerKey")[];
+    get fileTypes(): ("cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet")[];
     static get MaxLength(): number;
     /** kB */
     get maxLength(): number;
-    get type(): "cameraImage" | "spriteSheet" | "tflite" | "wifiServerCert" | "wifiServerKey" | undefined;
+    get type(): "cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | undefined;
     get length(): number;
     get checksum(): number;
     get status(): "idle" | "sending" | "receiving";
