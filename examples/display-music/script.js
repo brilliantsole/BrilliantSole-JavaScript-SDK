@@ -505,7 +505,7 @@ const osmd = new OpenSheetMusicDisplay.OpenSheetMusicDisplay(osmdContainer, {
 });
 window.osmd = osmd;
 
-//osmd.setOptions({ drawFromMeasureNumber: 1, drawUpToMeasureNumber: 3 });
+osmd.setOptions({ drawFromMeasureNumber: 1, drawUpToMeasureNumber: 3 });
 
 const loadOsmd = async (content) => {
   console.log("loadOsmd");

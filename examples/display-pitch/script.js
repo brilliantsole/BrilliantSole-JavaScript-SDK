@@ -553,10 +553,10 @@ window.pitchy = pitchy;
 const { PitchDetector } = pitchy;
 
 const detector = PitchDetector.forFloat32Array(analyser.fftSize);
-detector.minVolumeDecibels = -20;
+detector.minVolumeDecibels = -50;
 const detectorInput = new Float32Array(detector.inputLength);
 
-window.clarityThreshold = 0.98;
+window.clarityThreshold = 0.97;
 /** @type {import("tone").FrequencyClass?} */
 let frequency = Tone.Frequency("A3");
 /** @type {import("tone").FrequencyClass?} */

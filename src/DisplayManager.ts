@@ -1912,6 +1912,7 @@ class DisplayManager implements DisplayManagerInterface {
     spritesLineHeight: number,
     sendImmediately?: boolean
   ) {
+    spritesLineHeight = Math.round(spritesLineHeight);
     this.assertValidLineWidth(spritesLineHeight);
     const differences = this.#contextStateHelper.update({
       spritesLineHeight,

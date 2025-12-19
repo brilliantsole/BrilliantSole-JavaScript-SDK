@@ -115,7 +115,7 @@ import {
   stringToSpriteLinesMetrics,
 } from "./DisplaySpriteSheetUtils.ts";
 
-const _console = createConsole("DisplayCanvasHelper", { log: false });
+const _console = createConsole("DisplayCanvasHelper", { log: true });
 
 export const DisplayCanvasHelperEventTypes = [
   "contextState",
@@ -1702,6 +1702,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spritesLineHeight: number,
     sendImmediately?: boolean
   ) {
+    spritesLineHeight = Math.round(spritesLineHeight);
     this.assertValidLineWidth(spritesLineHeight);
     const differences = this.#contextStateHelper.update({
       spritesLineHeight,
@@ -3698,7 +3699,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     command: DisplayContextCommand,
     contextState: DisplayContextState
   ) {
-    //_console.log("runSpriteCommand", command);
+    _console.log("runSpriteCommand", command);
     if (command.type == "drawSprite") {
       const spriteSheet = this.spriteSheets[contextState.spriteSheetName!];
       const sprite = spriteSheet.sprites[command.spriteIndex];
@@ -3783,6 +3784,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spriteLines: DisplaySpriteLines,
     contextState: DisplayContextState
   ) {
+    // _console.log({ offsetX, offsetY, spriteLines });
+
     const { expandedSpritesLines, lineBreadths, localSize, size } =
       getSpriteLinesMetrics(spriteLines, this.#spriteSheets, contextState);
 
@@ -4253,7 +4256,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
   }
   #ignoreDevice = false;
-  #setIgnoreDevice(ignoreDevice: boolean) {
+  #setIgnoreDevice(ignoreDevice: boolean, override = false) {
     this.#ignoreDevice = ignoreDevice;
     this.#rearDrawStack.push(() => {
       //_console.log({ ignoreDevice });
@@ -4430,9 +4433,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   #reset() {
-    this.#useSpriteColorIndices = false;
-    this.#clearBoundingBoxOnDraw = true;
-    this.#ignoreDevice = false;
+    this.#setClearCanvasBoundingBoxOnDraw(true, true);
+    this.#setIgnoreDevice(true, true);
+    this.#setUseSpriteColorIndices(false, true);
     this.#resetColors();
     this.#resetOpacities();
     this.#resetContextState();

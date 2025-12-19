@@ -2317,7 +2317,7 @@ displayCanvasHelper.setSegmentRadius(1, true);
 fetch("./owl.svg").then(async (response) => {
   const svgString = await response.text();
 
-  const { commands, colors } = BS.svgToDisplayContextCommands(
+  const { commands, colors } = await BS.svgToDisplayContextCommands(
     svgString,
     2,
     0,

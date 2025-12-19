@@ -19,12 +19,14 @@ import {
 } from "./DisplayContextState.ts";
 import {
   DisplaySprite,
+  DisplaySpriteLine,
   DisplaySpriteLines,
   DisplaySpriteLinesMetrics,
   DisplaySpritePaletteSwap,
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
+  DisplaySpriteSubLine,
   reduceSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 import {
@@ -34,7 +36,7 @@ import {
 } from "./DisplayUtils.ts";
 import { degToRad, Vector2 } from "./MathUtils.ts";
 
-const _console = createConsole("DisplayManagerInterface", { log: false });
+const _console = createConsole("DisplayManagerInterface", { log: true });
 
 export interface DisplayManagerInterface {
   get isReady(): boolean;
@@ -1058,6 +1060,105 @@ export async function runDisplayContextCommand(
           offsetX,
           offsetY,
           spriteName,
+          sendImmediately
+        );
+      }
+      break;
+    case "setSpritesLineHeight":
+      {
+        const { spritesLineHeight } = command;
+        await displayManager.setSpritesLineHeight(
+          spritesLineHeight,
+          sendImmediately
+        );
+      }
+      break;
+    case "setSpritesSpacing":
+      {
+        const { spritesSpacing } = command;
+        await displayManager.setSpritesSpacing(spritesSpacing, sendImmediately);
+      }
+      break;
+    case "setSpritesAlignment":
+      {
+        const { spritesAlignment } = command;
+        await displayManager.setSpritesAlignment(
+          spritesAlignment,
+          sendImmediately
+        );
+      }
+      break;
+    case "setSpritesDirection":
+      {
+        const { spritesDirection } = command;
+        await displayManager.setSpritesDirection(
+          spritesDirection,
+          sendImmediately
+        );
+      }
+      break;
+    case "setSpritesLineAlignment":
+      {
+        const { spritesLineAlignment } = command;
+        await displayManager.setSpritesLineAlignment(
+          spritesLineAlignment,
+          sendImmediately
+        );
+      }
+      break;
+    case "setSpritesLineDirection":
+      {
+        const { spritesLineDirection } = command;
+        await displayManager.setSpritesLineDirection(
+          spritesLineDirection,
+          sendImmediately
+        );
+      }
+      break;
+    case "setSpritesLineSpacing":
+      {
+        const { spritesLineSpacing } = command;
+        await displayManager.setSpritesLineSpacing(
+          spritesLineSpacing,
+          sendImmediately
+        );
+      }
+      break;
+    case "drawSprites":
+      {
+        const { offsetX, offsetY, spriteSerializedLines } = command;
+        _console.log({ offsetX, offsetY, spriteSerializedLines });
+        const spriteLines: DisplaySpriteLines = [];
+        spriteSerializedLines.forEach((spriteSerializedLine) => {
+          const spriteLine: DisplaySpriteLine = [];
+          spriteSerializedLine.forEach((spriteSerializedSubLine) => {
+            const { spriteIndices, spriteSheetIndex } = spriteSerializedSubLine;
+            _console.log(
+              { spriteIndices, spriteSheetIndex },
+              displayManager.spriteSheetIndices
+            );
+            const spriteSheetName = Object.entries(
+              displayManager.spriteSheetIndices
+            ).find(([_spriteSheetName, _spriteSheetIndex]) => {
+              return _spriteSheetIndex == spriteSheetIndex;
+            })![0];
+            _console.log({ spriteSheetName });
+            const spriteSheet = displayManager.spriteSheets[spriteSheetName];
+            const spriteSubLine: DisplaySpriteSubLine = {
+              spriteSheetName: spriteSheet.name,
+              spriteNames: spriteIndices.map(
+                (spriteIndex) => spriteSheet.sprites[spriteIndex].name
+              ),
+            };
+            spriteLine.push(spriteSubLine);
+          });
+          spriteLines.push(spriteLine);
+        });
+        _console.log({ spriteLines });
+        await displayManager.drawSprites(
+          offsetX,
+          offsetY,
+          spriteLines,
           sendImmediately
         );
       }
