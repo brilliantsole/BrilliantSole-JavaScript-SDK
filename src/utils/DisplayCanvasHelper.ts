@@ -104,7 +104,6 @@ import {
   assertValidSpriteLines,
   DisplaySprite,
   DisplaySpriteLines,
-  DisplaySpriteLinesMetrics,
   DisplaySpritePaletteSwap,
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
@@ -115,7 +114,7 @@ import {
   stringToSpriteLinesMetrics,
 } from "./DisplaySpriteSheetUtils.ts";
 
-const _console = createConsole("DisplayCanvasHelper", { log: true });
+const _console = createConsole("DisplayCanvasHelper", { log: false });
 
 export const DisplayCanvasHelperEventTypes = [
   "contextState",
@@ -1876,6 +1875,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     //   fillStyle: this.context.fillStyle,
     // });
     //this.context.fillStyle = "red"; // remove when done debugigng
+    this.context.lineWidth = 0;
     this.context.fillRect(x, y, width, height);
     this.#restore();
   }
@@ -1999,7 +1999,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     offsetBoundingBox.y += offsetY;
     return offsetBoundingBox;
   }
-  #clearBoundingBoxOnDraw = true;
+  #_clearBoundingBoxOnDraw = true;
+  get #clearBoundingBoxOnDraw() {
+    return this.#_clearBoundingBoxOnDraw && !this.#isDrawingSprite;
+  }
   #clearBoundingBox(
     { x, y, width, height }: DisplayBoundingBox,
     contextState: DisplayContextState
@@ -2659,7 +2662,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
 
     const { points, edges } = wireframe;
-    this.#clearBoundingBoxOnDraw = false;
+    const _clearBoundingBoxOnDraw = this.#_clearBoundingBoxOnDraw;
+    this.#_clearBoundingBoxOnDraw = false;
     edges.forEach((edge) => {
       const { startIndex, endIndex } = edge;
       const startPoint = points[startIndex];
@@ -2674,7 +2678,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         false
       );
     });
-    this.#clearBoundingBoxOnDraw = true;
+    this.#_clearBoundingBoxOnDraw = _clearBoundingBoxOnDraw;
 
     this.#restore();
   }
@@ -3281,8 +3285,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#clearBoundingBox(box, contextState);
     }
 
-    const clearBoundingBoxOnDraw = this.#clearBoundingBoxOnDraw;
-    this.#clearBoundingBoxOnDraw = false;
+    const _clearBoundingBoxOnDraw = this.#_clearBoundingBoxOnDraw;
+    this.#_clearBoundingBoxOnDraw = false;
     points.forEach((point, index) => {
       if (index > 0) {
         const previousPoint = points[index - 1];
@@ -3302,7 +3306,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         );
       }
     });
-    this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
+    this.#_clearBoundingBoxOnDraw = _clearBoundingBoxOnDraw;
 
     this.#restore();
   }
@@ -3731,19 +3735,17 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sprite: DisplaySprite,
     contextState: DisplayContextState
   ) {
-    this.#setIgnoreDevice(true);
+    //this.#setIgnoreDevice(true);
     this.#saveContextForSprite(offsetX, offsetY, sprite, contextState);
-    this.#setUseSpriteColorIndices(true);
-    this.#setClearCanvasBoundingBoxOnDraw(false);
+    this.#setIsDrawingSprite(true);
 
     sprite.commands.forEach((command) => {
       this.#runSpriteCommand(command, contextState);
     });
 
-    this.#setIgnoreDevice(false);
     this.#restoreContextForSprite();
-    this.#setUseSpriteColorIndices(false);
-    this.#setClearCanvasBoundingBoxOnDraw(true);
+    this.#setIsDrawingSprite(false);
+    //this.#setIgnoreDevice(false);
   }
   async drawSprite(
     offsetX: number,
@@ -3811,7 +3813,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const spritesBreadthSign = isSpritesDirectionPositive ? 1 : -1;
     const spritesDepthSign = isSpritesLineDirectionPositive ? 1 : -1;
 
-    this.#setIgnoreDevice(true);
+    //this.#setIgnoreDevice(true);
     this.#setCanvasContextTransform(
       offsetX,
       offsetY,
@@ -3819,8 +3821,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       localSize.height,
       contextState
     );
-    this.#setUseSpriteColorIndices(true);
-    this.#setClearCanvasBoundingBoxOnDraw(false);
+    this.#setIsDrawingSprite(true);
 
     this.#saveContext();
     this.clearCrop();
@@ -4003,9 +4004,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#resetCanvasContextTransform();
     this.#restoreContext();
 
-    this.#setIgnoreDevice(false);
-    this.#setUseSpriteColorIndices(false);
-    this.#setClearCanvasBoundingBoxOnDraw(true);
+    this.#setIsDrawingSprite(false);
+    //this.#setIgnoreDevice(false);
   }
   async drawSprites(
     offsetX: number,
@@ -4242,40 +4242,39 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
   }
 
-  #setClearCanvasBoundingBoxOnDraw(
-    clearBoundingBoxOnDraw: boolean,
-    override = false
-  ) {
-    if (!override && this.#isDrawingBlankSprite) {
-      return;
+  #_ignoreDevice = false;
+  #_ignoreDeviceCounter = 0;
+  #setIgnoreDevice(newIgnoreDevice: boolean, override = false) {
+    if (override) {
+      this.#_ignoreDeviceCounter = newIgnoreDevice ? 1 : 0;
+    } else {
+      this.#_ignoreDeviceCounter += newIgnoreDevice ? 1 : -1;
+      this.#_ignoreDeviceCounter = Math.max(0, this.#_ignoreDeviceCounter);
+      _console.log({
+        ignoreDeviceCounter: this.#_ignoreDeviceCounter,
+      });
     }
-    this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
-    this.#rearDrawStack.push(() => {
-      //_console.log({ clearBoundingBoxOnDraw });
-      this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
+    const ignoreDevice = this.#_ignoreDeviceCounter > 0;
+    this.#_ignoreDevice = ignoreDevice;
+    _console.log({
+      ignoreDevice,
     });
-  }
-  #ignoreDevice = false;
-  #setIgnoreDevice(ignoreDevice: boolean, override = false) {
-    this.#ignoreDevice = ignoreDevice;
     this.#rearDrawStack.push(() => {
       //_console.log({ ignoreDevice });
-      this.#ignoreDevice = ignoreDevice;
+      this.#_ignoreDevice = ignoreDevice;
     });
   }
-
-  #useSpriteColorIndices = false;
-  #setUseSpriteColorIndices(useSpriteColorIndices: boolean, override = false) {
-    if (!override && this.#useSpriteColorIndices) {
-      return;
+  get #ignoreDevice() {
+    if (this.#_ignoreDevice) {
+      return true;
     }
-    if (override) {
-      this.#useSpriteColorIndices = useSpriteColorIndices;
+    if (this.#isDrawingBlankSprite) {
+      return this.#isDrawingSpriteCounter > 1;
     }
-    this.#rearDrawStack.push(() => {
-      //_console.log({ useSpriteColorIndices });
-      this.#useSpriteColorIndices = useSpriteColorIndices;
-    });
+    return this.#isDrawingSprite;
+  }
+  get #useSpriteColorIndices() {
+    return this.#isDrawingSprite;
   }
   #spriteContextStack: DisplayContextState[] = [];
   #spriteStack: DisplaySprite[] = [];
@@ -4353,31 +4352,27 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sprite: DisplaySprite,
     spriteSheet: DisplaySpriteSheet
   ) {
-    this.#setIgnoreDevice(true);
-    this.#setUseSpriteColorIndices(true);
+    //this.#setIgnoreDevice(true);
     const contextState = structuredClone(this.contextState);
     this.#saveContextForSprite(offsetX, offsetY, sprite, contextState);
-    this.#setClearCanvasBoundingBoxOnDraw(false);
+    this.#setIsDrawingSprite(true);
 
     sprite.commands.forEach((command) => {
       this.#runPreviewSpriteCommand(command, spriteSheet);
     });
 
-    this.#setIgnoreDevice(false);
     this.#restoreContextForSprite();
-    this.#setUseSpriteColorIndices(false);
-    this.#setClearCanvasBoundingBoxOnDraw(true);
+    this.#setIsDrawingSprite(false);
+    //this.#setIgnoreDevice(false);
   }
   previewSpriteCommands(commands: DisplayContextCommand[]) {
-    this.#setIgnoreDevice(true);
-    this.#setClearCanvasBoundingBoxOnDraw(false);
+    this.#setIsDrawingSprite(true);
 
     commands.forEach((command) => {
       this.runContextCommand(command);
     });
 
-    this.#setIgnoreDevice(false);
-    this.#setClearCanvasBoundingBoxOnDraw(true);
+    this.#setIsDrawingSprite(false);
   }
 
   // SPRITE SHEET PALETTES
@@ -4433,9 +4428,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   #reset() {
-    this.#setClearCanvasBoundingBoxOnDraw(true, true);
-    this.#setIgnoreDevice(true, true);
-    this.#setUseSpriteColorIndices(false, true);
+    this.#setIsDrawingSprite(false, true);
+    this.#setIgnoreDevice(false, true);
     this.#resetColors();
     this.#resetOpacities();
     this.#resetContextState();
@@ -4494,18 +4488,40 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     height: number,
     contextState: DisplayContextState
   ) {
+    //this.#setIgnoreDevice(true);
     this.#saveContextForSprite(
       offsetX,
       offsetY,
       { width, height },
       contextState
     );
-    this.#setUseSpriteColorIndices(true, true);
-    this.#setClearCanvasBoundingBoxOnDraw(false, true);
+    this.#setIsDrawingSprite(true);
 
     this.#blankSpriteColorIndices =
       this.contextState.spriteColorIndices.slice();
     _console.log("#blankSpriteColorIndices", this.#blankSpriteColorIndices);
+  }
+  #isDrawingSprite = false;
+  #isDrawingSpriteCounter = 0;
+  #setIsDrawingSprite(newIsDrawingSprite: boolean, override = false) {
+    if (override) {
+      this.#isDrawingSpriteCounter = newIsDrawingSprite ? 1 : 0;
+    } else {
+      this.#isDrawingSpriteCounter += newIsDrawingSprite ? 1 : -1;
+      this.#isDrawingSpriteCounter = Math.max(0, this.#isDrawingSpriteCounter);
+      _console.log({
+        isDrawingSpriteCounter: this.#isDrawingSpriteCounter,
+      });
+    }
+    const isDrawingSprite = this.#isDrawingSpriteCounter > 0;
+    this.#isDrawingSprite = isDrawingSprite;
+    _console.log({
+      isDrawingSprite,
+    });
+    this.#rearDrawStack.push(() => {
+      //_console.log({ isDrawingSprite });
+      this.#isDrawingSprite = isDrawingSprite;
+    });
   }
   #isDrawingBlankSprite = false;
   #blankSpriteColorIndices?: number[];
@@ -4541,9 +4557,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   #endSprite() {
     this.#restoreContextForSprite();
-    this.#setUseSpriteColorIndices(false, true);
-    this.#setClearCanvasBoundingBoxOnDraw(true, true);
     this.#blankSpriteColorIndices = undefined;
+    this.#setIsDrawingSprite(false);
+    this.#setIgnoreDevice(false);
   }
   async endSprite(sendImmediately?: boolean) {
     _console.assertWithError(

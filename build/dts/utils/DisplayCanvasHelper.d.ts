@@ -6,7 +6,7 @@ import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
-import { DisplaySprite, DisplaySpriteLines, DisplaySpriteLinesMetrics, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
+import { DisplaySprite, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
 export declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "resize", "update", "ready", "device", "deviceIsConnected", "deviceConnected", "deviceNotConnected", "deviceSpriteSheetUploadStart", "deviceSpriteSheetUploadProgress", "deviceSpriteSheetUploadComplete", "deviceUpdated"];
 export type DisplayCanvasHelperEventType = (typeof DisplayCanvasHelperEventTypes)[number];
 export interface DisplayCanvasHelperEventMessages {
@@ -243,7 +243,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
     drawSpritesString(offsetX: number, offsetY: number, string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[], sendImmediately?: boolean): Promise<void>;
     stringToSpriteLines(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLines;
-    stringToSpriteLinesMetrics(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLinesMetrics;
+    stringToSpriteLinesMetrics(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): import("./DisplaySpriteSheetUtils.ts").DisplaySpriteLinesMetrics;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
