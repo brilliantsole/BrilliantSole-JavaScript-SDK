@@ -21,7 +21,7 @@ import { kMeansColors, mapToClosestPaletteIndex } from "./ColorUtils.ts";
 import { DefaultDisplayContextState } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 
-const _console = createConsole("SvgUtils", { log: true });
+const _console = createConsole("SvgUtils", { log: false });
 
 type FillRule = "nonzero" | "evenodd";
 type CanvasCommand =

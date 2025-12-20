@@ -5663,7 +5663,7 @@ function simplifyPointsAsCubicCurveControlPoints(points, error) {
     return controlPoints;
 }
 
-createConsole("SvgUtils", { log: true });
+createConsole("SvgUtils", { log: false });
 function getBoundingBox(path) {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const p of path) {

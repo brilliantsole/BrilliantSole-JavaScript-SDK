@@ -558,7 +558,7 @@ const detectorInput = new Float32Array(detector.inputLength);
 
 window.clarityThreshold = 0.98;
 /** @type {import("tone").FrequencyClass?} */
-let frequency = Tone.Frequency("A3");
+let frequency = Tone.Frequency("B-3");
 /** @type {import("tone").FrequencyClass?} */
 let perfectFrequency;
 /** [-50, 50] */

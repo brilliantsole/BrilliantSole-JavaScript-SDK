@@ -19090,7 +19090,7 @@ const COMMAND_ARG_COUNTS = {
     [SVGPathData.ARC]: 7,
 };
 
-const _console$n = createConsole("SvgUtils", { log: true });
+const _console$n = createConsole("SvgUtils", { log: false });
 function decomposeTransform(t, tolerance = 1e-6) {
     const tx = t.e;
     const ty = t.f;
@@ -20402,7 +20402,7 @@ async function svgToDisplayContextCommands(svgString, numberOfColors, paletteOff
                     let { x, y, strokeWidth } = canvasCommand;
                     const { text, fontSize, fill, stroke } = canvasCommand;
                     x = Math.round(x);
-                    y = Math.round(y) - 4;
+                    y = Math.round(y) - 5;
                     strokeWidth = Math.round(strokeWidth);
                     displayCommands.push({
                         type: "setSpritesLineHeight",

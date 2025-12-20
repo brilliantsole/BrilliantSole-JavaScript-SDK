@@ -477,7 +477,7 @@ const selectFont = async (newFontName) => {
   await draw();
 };
 
-await loadFontUrl("https://fonts.googleapis.com/css2?family=Tinos");
+await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Serif");
 
 // OPEN SHEET MUSIC DISPLAY
 
