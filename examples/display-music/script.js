@@ -136,17 +136,36 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  console.log(displayCanvasHelper.selectedSpriteSheet);
-  await displayCanvasHelper.selectSpriteSheetPalette("palette");
-  // await displayCanvasHelper.selectBackgroundColor(1);
-  // await displayCanvasHelper.setFillBackground(true);
-  await displayCanvasHelper.setVerticalAlignment("start");
-  await displayCanvasHelper.drawSprite(displayCanvasHelper.width / 2, 0, "svg");
+  let y = 0;
+  for (let i = 0; i < systemsPerDisplay; i++) {
+    const systemIndex = currentSystemIndex + i;
+    if (!spriteSheets[systemIndex]) {
+      continue;
+    }
+    await displayCanvasHelper.selectSpriteSheet(`system-${systemIndex}`);
+    if (i == 0) {
+      await displayCanvasHelper.selectSpriteSheetPalette("palette");
+      await displayCanvasHelper.setVerticalAlignment("start");
+      // await displayCanvasHelper.selectBackgroundColor(1);
+      // await displayCanvasHelper.setFillBackground(true);
+    }
+    await displayCanvasHelper.drawSprite(
+      displayCanvasHelper.width / 2,
+      y,
+      "svg"
+    );
+    y += displayCanvasHelper.selectedSpriteSheet.sprites[0].height;
+  }
 
+  latestDrawTime = Date.now();
   await displayCanvasHelper.show();
 };
+let latestDrawTime = 0;
 
 displayCanvasHelper.addEventListener("ready", () => {
+  const now = Date.now();
+  console.log(`drawTime: ${now - latestDrawTime}ms`);
+
   isDrawing = false;
   if (isWaitingToRedraw) {
     isWaitingToRedraw = false;
@@ -504,6 +523,10 @@ const selectFont = async (newFontName) => {
   await draw();
 };
 
+displayCanvasHelper.addEventListener("deviceUpdated", () => {
+  draw();
+});
+
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Serif");
 
 // OPEN SHEET MUSIC DISPLAY
@@ -551,6 +574,8 @@ const loadOsmd = async (content) => {
 const renderOsmd = async () => {
   console.log("renderOsmd");
 
+  spriteSheets.length = 0;
+
   const rules = osmd.EngravingRules;
   rules.PageLeftMargin = 0;
   rules.PageRightMargin = 0;
@@ -574,7 +599,9 @@ const renderOsmd = async () => {
   osmd.render();
   updateOsmdSystem();
   updateOsmdZoom();
-  await createOsmdSystemSpriteSheet();
+  for (let i = 0; i < numberOfSystems; i++) {
+    await createOsmdSystemSpriteSheet(i);
+  }
   draw();
 };
 
@@ -584,6 +611,15 @@ const updateOsmdTitle = () => {
   osmdTitleContainer.classList.remove("hidden");
   osmdTitleSpan.innerText = osmd.Sheet?.TitleString;
 };
+
+let systemsPerDisplay = 3;
+const osmdSystemsPerDisplayContainer = document.getElementById(
+  "osmdSystemsPerDisplay"
+);
+osmdSystemsPerDisplayContainer.addEventListener("input", (event) => {
+  systemsPerDisplay = Number(event.target.value);
+  draw();
+});
 
 let numberOfSystems = 0;
 let currentSystemIndex = 0;
@@ -605,16 +641,21 @@ const setOsmdSystemIndex = async (newIndex, render = false) => {
     0,
     Math.min(currentSystemIndex, numberOfSystems - 1)
   );
-  console.log({ currentSystemIndex });
+  console.log({
+    currentSystemIndex,
+    render,
+  });
   osmdSystemInput.value = currentSystemIndex;
   osmdSystemValueSpan.innerText = currentSystemIndex;
 
   if (render) {
     await renderOsmd();
+  } else if (spriteSheets.length > 0) {
+    await draw();
   }
 };
 osmdSystemInput.addEventListener("input", () => {
-  setOsmdSystemIndex(Number(osmdSystemInput.value), true);
+  setOsmdSystemIndex(Number(osmdSystemInput.value), false);
 });
 
 let currentOsmdInstrumentIndex = 0;
@@ -674,16 +715,16 @@ osmdZoomInput.addEventListener("input", () => {
 });
 
 /** @type {Record<number, BS.DisplaySpriteSheet>} */
-const spriteSheets = {};
-const createOsmdSystemSpriteSheet = async () => {
-  const { x, width, height } = getSystemMetrics(0, currentSystemIndex);
+const spriteSheets = [];
+/** @param {number} systemIndex */
+const createOsmdSystemSpriteSheet = async (systemIndex) => {
   let systemSvg = osmdContainer.querySelector("svg");
   systemSvg = systemSvg.cloneNode(true);
   /** @type {SVGGElement} */
   let staffLine;
   Array.from(systemSvg.querySelectorAll(".staffline")).forEach(
     (_staffLine, index) => {
-      if (index == currentSystemIndex) {
+      if (index == systemIndex) {
         staffLine = _staffLine;
       } else {
         _staffLine.remove();
@@ -691,30 +732,35 @@ const createOsmdSystemSpriteSheet = async () => {
     }
   );
   document.body.appendChild(systemSvg);
-  console.log("staffLine", staffLine);
+  //console.log("staffLine", staffLine);
   const systemSvgBox = systemSvg.getBoundingClientRect();
   const staffLineBox = staffLine.getBoundingClientRect();
   systemSvg.setAttribute("display", "none");
-  console.log("staffLineBox", staffLineBox);
-  systemSvg.setAttribute("height", height);
+  //console.log("staffLineBox", staffLineBox);
+  systemSvg.setAttribute("height", staffLineBox.height);
   const viewBox = systemSvg.getAttribute("viewBox").split(" ");
   const svgWidth = systemSvg.getAttribute("width");
   const scale = viewBox[2] / svgWidth;
-  console.log({ scale }, systemSvg);
+  //console.log({ scale }, systemSvg);
   const y = staffLineBox.y - systemSvgBox.y;
-  const newViewBox = [viewBox[0], y * scale, viewBox[2], height * scale];
+  const newViewBox = [
+    viewBox[0],
+    y * scale,
+    viewBox[2],
+    staffLineBox.height * scale,
+  ];
   systemSvg.setAttribute("viewBox", newViewBox.join(" "));
-  console.log("systemSvg", systemSvg);
+  //console.log("systemSvg", systemSvg);
 
   const box = systemSvg.getBoundingClientRect();
-  testDiv.style.width = `${box.width}px`;
-  testDiv.style.height = `${box.height}px`;
-  testDiv.style.left = `${box.left + window.scrollX}px`;
-  testDiv.style.top = `${box.top + window.scrollY}px`;
+  // testDiv.style.width = `${box.width}px`;
+  // testDiv.style.height = `${box.height}px`;
+  // testDiv.style.left = `${box.left + window.scrollX}px`;
+  // testDiv.style.top = `${box.top + window.scrollY}px`;
 
   const spriteSheet = await BS.svgToSpriteSheet(
     systemSvg,
-    `system-${currentSystemIndex}`,
+    `system-${systemIndex}`,
     "svg",
     2,
     "palette",
@@ -723,8 +769,8 @@ const createOsmdSystemSpriteSheet = async () => {
       width: box.width,
     }
   );
-  console.log("spriteSheet", spriteSheet);
-  spriteSheets[currentSystemIndex] = spriteSheet;
+  //console.log("spriteSheet", spriteSheet);
+  spriteSheets[systemIndex] = spriteSheet;
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
   checkSpriteSheetSize();
@@ -756,7 +802,7 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
   width *= scalar;
   height *= scalar;
 
-  console.log({ systemIndex, x, y, width, height });
+  //console.log({ systemIndex, x, y, width, height });
 
   if (false) {
     const drawFromMeasureNumber = system.GraphicalMeasures[0][0].measureNumber;
@@ -765,7 +811,7 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
     osmd.setOptions({ drawFromMeasureNumber, drawUpToMeasureNumber });
   }
 
-  console.log("system", system);
+  //console.log("system", system);
   system.StaffLines.forEach((staffLine) => {
     staffLine.AbstractExpressions.forEach((abstractExpression) => {
       // console.log("abstractExpression", abstractExpression);
