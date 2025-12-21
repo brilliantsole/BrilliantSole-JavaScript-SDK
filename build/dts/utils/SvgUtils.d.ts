@@ -18,15 +18,15 @@ export declare function classifySubpath(subpath: Vector2[], previous: {
     path: Vector2[];
     isHole: boolean;
 }[], fillRule: FillRule): boolean;
-export declare function getSvgString(input: string): Promise<string>;
-export declare function svgToDisplayContextCommands(svgString: string, numberOfColors: number, paletteOffset: number, colors?: string[], options?: ParseSvgOptions): Promise<{
+export declare function getSvgString(input: string | SVGSVGElement): Promise<string>;
+export declare function svgToDisplayContextCommands(svgString: string | SVGSVGElement, numberOfColors: number, paletteOffset: number, colors?: string[], options?: ParseSvgOptions): Promise<{
     commands: DisplayContextCommand[];
     colors: string[];
     width: number;
     height: number;
 }>;
-export declare function svgToSprite(svgString: string, spriteName: string, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset?: number, options?: ParseSvgOptions): Promise<DisplaySprite>;
-export declare function svgToSpriteSheet(svgString: string, spriteSheetName: string, numberOfColors: number, paletteName: string, options?: ParseSvgOptions): Promise<DisplaySpriteSheet>;
+export declare function svgToSprite(svgString: string | SVGSVGElement, spriteName: string, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset?: number, options?: ParseSvgOptions): Promise<DisplaySprite>;
+export declare function svgToSpriteSheet(svgString: string, spriteSheetName: string, spriteName: string, numberOfColors: number, paletteName: string, options?: ParseSvgOptions): Promise<DisplaySpriteSheet>;
 export declare function getSvgStringFromDataUrl(string: string): string;
 export declare function isValidSVG(svgString: string): boolean;
 export {};

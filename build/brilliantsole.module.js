@@ -19918,9 +19918,13 @@ function classifySubpath(subpath, previous, fillRule) {
 }
 const SVG_XMLNS = "http://www.w3.org/2000/svg";
 async function getSvgString(input) {
+    if (input instanceof SVGSVGElement) {
+        return ensureSvgXmlnsFromElement(input);
+    }
     const trimmed = input.trim();
-    const svgText = trimmed.startsWith("<svg") ? trimmed : await fetchSvg(input);
-    console.log("svgText", svgText);
+    const svgText = trimmed.startsWith("<svg")
+        ? trimmed
+        : await fetchSvg(trimmed);
     return ensureSvgXmlns(svgText);
 }
 async function fetchSvg(pathOrUrl) {
@@ -19941,6 +19945,13 @@ function ensureSvgXmlns(svgText) {
         svg.setAttribute("xmlns", SVG_XMLNS);
     }
     return new XMLSerializer().serializeToString(svg);
+}
+function ensureSvgXmlnsFromElement(svg) {
+    const clone = svg.cloneNode(true);
+    if (!clone.hasAttribute("xmlns")) {
+        clone.setAttribute("xmlns", SVG_XMLNS);
+    }
+    return new XMLSerializer().serializeToString(clone);
 }
 async function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, colors, options) {
     svgString = await getSvgString(svgString);
@@ -20471,8 +20482,9 @@ async function svgToSprite(svgString, spriteName, numberOfColors, paletteName, o
         palette = {
             name: paletteName,
             numberOfColors,
-            colors: new Array(numberOfColors).fill("#000000"),
+            colors: new Array(numberOfColors).fill("white"),
         };
+        palette.colors[0] = "black";
         spriteSheet.palettes = spriteSheet.palettes || [];
         spriteSheet.palettes?.push(palette);
     }
@@ -20501,14 +20513,14 @@ async function svgToSprite(svgString, spriteName, numberOfColors, paletteName, o
     }
     return sprite;
 }
-async function svgToSpriteSheet(svgString, spriteSheetName, numberOfColors, paletteName, options) {
+async function svgToSpriteSheet(svgString, spriteSheetName, spriteName, numberOfColors, paletteName, options) {
     const spriteSheet = {
         name: spriteSheetName,
         palettes: [],
         paletteSwaps: [],
         sprites: [],
     };
-    await svgToSprite(svgString, "svg", numberOfColors, paletteName, true, spriteSheet, 0, options);
+    await svgToSprite(svgString, spriteName, numberOfColors, paletteName, false, spriteSheet, 0, options);
     return spriteSheet;
 }
 function getSvgStringFromDataUrl(string) {
@@ -25945,7 +25957,7 @@ const DeviceManagerEventTypes = [
     "availableDevices",
     "connectedDevices",
 ];
-class DeviceManager {
+let DeviceManager$1 = class DeviceManager {
     static shared = new DeviceManager();
     constructor() {
         if (DeviceManager.shared && this != DeviceManager.shared) {
@@ -26215,8 +26227,8 @@ class DeviceManager {
             connectedDevices: this.ConnectedDevices,
         });
     }
-}
-var DeviceManager$1 = DeviceManager.shared;
+};
+var DeviceManager = DeviceManager$1.shared;
 
 const _console$a = createConsole("ServerUtils", { log: false });
 const ServerMessageTypes = [
@@ -26704,7 +26716,7 @@ class Device {
                     break;
             }
         });
-        DeviceManager$1.onDevice(this);
+        DeviceManager.onDevice(this);
         if (isInBrowser) {
             window.addEventListener("beforeunload", () => {
                 if (this.isConnected && this.clearSensorConfigurationOnLeave) {
@@ -27013,7 +27025,7 @@ class Device {
                 this.#requestRequiredInformation();
             }
         }
-        DeviceManager$1.OnDeviceConnectionStatusUpdated(this, connectionStatus);
+        DeviceManager.OnDeviceConnectionStatusUpdated(this, connectionStatus);
     }
     #dispatchConnectionEvents(includeIsConnected = false) {
         this.#dispatchEvent("connectionStatus", {
@@ -31175,7 +31187,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager$1.AddEventListener("deviceConnected", (event) => {
+        DeviceManager.AddEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -31688,7 +31700,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager$1._CheckDeviceAvailability(device);
+            DeviceManager._CheckDeviceAvailability(device);
         });
     }
     disconnectFromDevice(bluetoothId) {
@@ -31868,5 +31880,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isValidSVG, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
+export { CameraCommands, CameraConfigurationTypes, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isValidSVG, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

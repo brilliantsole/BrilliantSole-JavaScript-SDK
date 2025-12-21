@@ -1151,13 +1151,21 @@ export function classifySubpath(
 
 const SVG_XMLNS = "http://www.w3.org/2000/svg";
 
-export async function getSvgString(input: string): Promise<string> {
+export async function getSvgString(
+  input: string | SVGSVGElement
+): Promise<string> {
+  // Case 1: already an <svg> element
+  if (input instanceof SVGSVGElement) {
+    return ensureSvgXmlnsFromElement(input);
+  }
+
   const trimmed = input.trim();
 
-  // If it's not markup, fetch it
-  const svgText = trimmed.startsWith("<svg") ? trimmed : await fetchSvg(input);
+  // Case 2: inline SVG markup
+  const svgText = trimmed.startsWith("<svg")
+    ? trimmed
+    : await fetchSvg(trimmed);
 
-  console.log("svgText", svgText);
   return ensureSvgXmlns(svgText);
 }
 
@@ -1188,8 +1196,19 @@ function ensureSvgXmlns(svgText: string): string {
   return new XMLSerializer().serializeToString(svg);
 }
 
+function ensureSvgXmlnsFromElement(svg: SVGSVGElement): string {
+  // Avoid mutating the original DOM node
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+
+  if (!clone.hasAttribute("xmlns")) {
+    clone.setAttribute("xmlns", SVG_XMLNS);
+  }
+
+  return new XMLSerializer().serializeToString(clone);
+}
+
 export async function svgToDisplayContextCommands(
-  svgString: string,
+  svgString: string | SVGSVGElement,
   numberOfColors: number,
   paletteOffset: number,
   colors?: string[],
@@ -1791,7 +1810,7 @@ export async function svgToDisplayContextCommands(
 }
 
 export async function svgToSprite(
-  svgString: string,
+  svgString: string | SVGSVGElement,
   spriteName: string,
   numberOfColors: number,
   paletteName: string,
@@ -1810,8 +1829,9 @@ export async function svgToSprite(
     palette = {
       name: paletteName,
       numberOfColors,
-      colors: new Array(numberOfColors).fill("#000000"),
+      colors: new Array(numberOfColors).fill("white"),
     };
+    palette.colors[0] = "black";
     spriteSheet.palettes = spriteSheet.palettes || [];
     spriteSheet.palettes?.push(palette);
   }
@@ -1855,6 +1875,7 @@ export async function svgToSprite(
 export async function svgToSpriteSheet(
   svgString: string,
   spriteSheetName: string,
+  spriteName: string,
   numberOfColors: number,
   paletteName: string,
   options?: ParseSvgOptions
@@ -1868,10 +1889,10 @@ export async function svgToSpriteSheet(
 
   await svgToSprite(
     svgString,
-    "svg",
+    spriteName,
     numberOfColors,
     paletteName,
-    true,
+    false,
     spriteSheet,
     0,
     options

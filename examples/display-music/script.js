@@ -136,7 +136,12 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  // FILL
+  console.log(displayCanvasHelper.selectedSpriteSheet);
+  await displayCanvasHelper.selectSpriteSheetPalette("palette");
+  // await displayCanvasHelper.selectBackgroundColor(1);
+  // await displayCanvasHelper.setFillBackground(true);
+  await displayCanvasHelper.setVerticalAlignment("start");
+  await displayCanvasHelper.drawSprite(displayCanvasHelper.width / 2, 0, "svg");
 
   await displayCanvasHelper.show();
 };
@@ -260,6 +265,28 @@ window.addEventListener("drop", async (e) => {
     console.log(file.type);
     loadMusicXMLFile(file);
   }
+});
+
+// SIZE
+
+const checkSpriteSheetSizeButton = document.getElementById(
+  "checkSpriteSheetSize"
+);
+const checkSpriteSheetSize = () => {
+  const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(
+    displayCanvasHelper.selectedSpriteSheet
+  );
+  checkSpriteSheetSizeButton.innerText = `size: ${(
+    arrayBuffer.byteLength / 1024
+  ).toFixed(2)}kb`;
+  if (displayCanvasHelper.device?.isConnected) {
+    checkSpriteSheetSizeButton.innerText += ` (max ${(
+      displayCanvasHelper.device.maxFileLength / 1024
+    ).toFixed(2)}kb)`;
+  }
+};
+checkSpriteSheetSizeButton.addEventListener("click", () => {
+  checkSpriteSheetSize();
 });
 
 // FONT
@@ -472,7 +499,7 @@ const selectFont = async (newFontName) => {
   fontMetrics = BS.getFontMetrics(selectedFont, fontSize, fontOptions);
   spritesLineHeight = BS.getFontMaxHeight(selectedFont, fontSize);
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
-  await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+  //await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
   await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await draw();
 };
@@ -499,13 +526,13 @@ const osmd = new OpenSheetMusicDisplay.OpenSheetMusicDisplay(osmdContainer, {
   // pageBackgroundColor: "black",
 
   drawMeasureNumbers: false,
-  // drawLyrics: false,
-  // drawSlurs: false,
+  drawLyrics: false,
+  drawSlurs: false,
   drawTimeSignatures: false,
 });
 window.osmd = osmd;
 
-osmd.setOptions({ drawFromMeasureNumber: 1, drawUpToMeasureNumber: 3 });
+//osmd.setOptions({ drawFromMeasureNumber: 1, drawUpToMeasureNumber: 3 });
 
 const loadOsmd = async (content) => {
   console.log("loadOsmd");
@@ -516,17 +543,38 @@ const loadOsmd = async (content) => {
   setOsmdInstrumentIndex(0);
 
   setOsmdSystemIndex(0);
+  setOsmdZoom(Number(osmdZoomInput.value));
 
   renderOsmd(true);
 };
 
-const renderOsmd = () => {
+const renderOsmd = async () => {
   console.log("renderOsmd");
+
+  const rules = osmd.EngravingRules;
+  rules.PageLeftMargin = 0;
+  rules.PageRightMargin = 0;
+  rules.PageTopMargin = 0; // optional
+  rules.PageBottomMargin = 0; // optional
+  rules.RenderTempoMarks = false;
+  rules.RenderMetronomeMarks = false; // hides ♪ = 120
+  rules.RenderRehearsalMarks = false; // hides A, B, C boxes
+  rules.RenderWordsAboveStaff = false;
+
+  rules.RepetitionAllowFirstMeasureBeginningRepeatBarline = false;
+
+  rules.RenderExpressions = false; // “Zart”, “dolce”, etc.
+  rules.RenderTempoMarks = false; // Allegro, ♩=120
+  rules.RenderDynamics = false; // p, mf, ff
+
+  rules.RenderArpeggios = false;
+  rules.RenderFirstTempoExpression = false;
+  rules.PageTopMarginNarrow = 0;
 
   osmd.render();
   updateOsmdSystem();
   updateOsmdZoom();
-  createOsmdSystemSpriteSheet();
+  await createOsmdSystemSpriteSheet();
   draw();
 };
 
@@ -562,7 +610,7 @@ const setOsmdSystemIndex = async (newIndex, render = false) => {
   osmdSystemValueSpan.innerText = currentSystemIndex;
 
   if (render) {
-    renderOsmd();
+    await renderOsmd();
   }
 };
 osmdSystemInput.addEventListener("input", () => {
@@ -595,7 +643,7 @@ const setOsmdInstrumentIndex = async (newInstrumentIndex, render = false) => {
   });
 
   if (render) {
-    renderOsmd();
+    await renderOsmd();
   }
 };
 osmdInstrumentSelect.addEventListener("input", () => {
@@ -618,16 +666,69 @@ const setOsmdZoom = async (newZoom, render = false) => {
   osmdZoomValueSpan.innerText = osmd.Zoom;
 
   if (render) {
-    renderOsmd();
+    await renderOsmd();
   }
 };
 osmdZoomInput.addEventListener("input", () => {
   setOsmdZoom(Number(osmdZoomInput.value), true);
 });
 
-const createOsmdSystemSpriteSheet = () => {
-  getSystemMetrics(0, currentSystemIndex);
-  // FILL
+/** @type {Record<number, BS.DisplaySpriteSheet>} */
+const spriteSheets = {};
+const createOsmdSystemSpriteSheet = async () => {
+  const { x, width, height } = getSystemMetrics(0, currentSystemIndex);
+  let systemSvg = osmdContainer.querySelector("svg");
+  systemSvg = systemSvg.cloneNode(true);
+  /** @type {SVGGElement} */
+  let staffLine;
+  Array.from(systemSvg.querySelectorAll(".staffline")).forEach(
+    (_staffLine, index) => {
+      if (index == currentSystemIndex) {
+        staffLine = _staffLine;
+      } else {
+        _staffLine.remove();
+      }
+    }
+  );
+  document.body.appendChild(systemSvg);
+  console.log("staffLine", staffLine);
+  const systemSvgBox = systemSvg.getBoundingClientRect();
+  const staffLineBox = staffLine.getBoundingClientRect();
+  systemSvg.setAttribute("display", "none");
+  console.log("staffLineBox", staffLineBox);
+  systemSvg.setAttribute("height", height);
+  const viewBox = systemSvg.getAttribute("viewBox").split(" ");
+  const svgWidth = systemSvg.getAttribute("width");
+  const scale = viewBox[2] / svgWidth;
+  console.log({ scale }, systemSvg);
+  const y = staffLineBox.y - systemSvgBox.y;
+  const newViewBox = [viewBox[0], y * scale, viewBox[2], height * scale];
+  systemSvg.setAttribute("viewBox", newViewBox.join(" "));
+  console.log("systemSvg", systemSvg);
+
+  const box = systemSvg.getBoundingClientRect();
+  testDiv.style.width = `${box.width}px`;
+  testDiv.style.height = `${box.height}px`;
+  testDiv.style.left = `${box.left + window.scrollX}px`;
+  testDiv.style.top = `${box.top + window.scrollY}px`;
+
+  const spriteSheet = await BS.svgToSpriteSheet(
+    systemSvg,
+    `system-${currentSystemIndex}`,
+    "svg",
+    2,
+    "palette",
+    {
+      height: box.height,
+      width: box.width,
+    }
+  );
+  console.log("spriteSheet", spriteSheet);
+  spriteSheets[currentSystemIndex] = spriteSheet;
+  await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
+  await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+  checkSpriteSheetSize();
+  systemSvg.remove();
 };
 
 const testDiv = document.getElementById("test");
@@ -701,11 +802,13 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
     });
   });
 
-  const box = osmd.container.getBoundingClientRect();
-  testDiv.style.width = `${width}px`;
-  testDiv.style.height = `${height}px`;
-  testDiv.style.left = `${x + box.left + window.scrollX}px`;
-  testDiv.style.top = `${y + box.top + window.scrollY}px`;
+  // const box = osmd.container.getBoundingClientRect();
+  // testDiv.style.width = `${width}px`;
+  // testDiv.style.height = `${height}px`;
+  // testDiv.style.left = `${x + box.left + window.scrollX}px`;
+  // testDiv.style.top = `${y + box.top + window.scrollY}px`;
+
+  return { x, y, width, height };
 };
 
 didLoad = true;
