@@ -1137,16 +1137,19 @@ device.addEventListener("connected", () => {
 
 /** @type {HTMLElement} */
 const topInferenceClassElement = document.getElementById("topInferenceClass");
-
+let topInferenceClassTimeoutId;
 /** @type {HTMLPreElement} */
 const tfliteInferencePre = document.getElementById("tfliteInference");
 device.addEventListener("tfliteInference", (event) => {
   const { tfliteInference } = event.message;
   console.log("inference", tfliteInference);
   tfliteInferencePre.textContent = JSON.stringify(tfliteInference, null, 2);
-
+  clearTimeout(topInferenceClassTimeoutId);
   if (device.tfliteTask == "classification") {
     topInferenceClassElement.innerText = tfliteInference.maxClass ?? "";
+    topInferenceClassTimeoutId = setTimeout(() => {
+      topInferenceClassElement.innerText = "";
+    }, Math.min(device.tfliteCaptureDelay, 500));
   }
 });
 

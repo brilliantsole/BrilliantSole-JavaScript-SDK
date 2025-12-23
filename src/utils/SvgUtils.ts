@@ -1162,9 +1162,7 @@ export async function getSvgString(
   const trimmed = input.trim();
 
   // Case 2: inline SVG markup
-  const svgText = trimmed.startsWith("<svg")
-    ? trimmed
-    : await fetchSvg(trimmed);
+  const svgText = trimmed.includes("<svg") ? trimmed : await fetchSvg(trimmed);
 
   return ensureSvgXmlns(svgText);
 }

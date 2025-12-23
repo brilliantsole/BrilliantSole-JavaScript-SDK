@@ -104,7 +104,9 @@ displayCanvasHelper.addEventListener("color", (event) => {
 });
 setupColors();
 const getTextColorIndex = () => 1;
+const getCursorColorIndex = () => 2;
 displayCanvasHelper.setColor(getTextColorIndex(), "white");
+displayCanvasHelper.setColor(getCursorColorIndex(), "#009900");
 displayCanvasHelper.flushContextCommands();
 
 // DRAW
@@ -136,25 +138,77 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  let y = 0;
+  await displayCanvasHelper.setVerticalAlignment("start");
+  await displayCanvasHelper.setHorizontalAlignment("start");
+  for (let i = 0; i < displayCanvasHelper.numberOfColors; i++) {
+    await displayCanvasHelper.selectSpriteColor(i, i);
+  }
+
+  let drawnCursorIndex = 0;
+
+  const spriteX = (displayCanvasHelper.width - osmdWidth) / 2;
+  let spriteY = 0;
   for (let i = 0; i < systemsPerDisplay; i++) {
     const systemIndex = currentSystemIndex + i;
-    if (!spriteSheets[systemIndex]) {
+    const x = -osmdWidth / 2;
+
+    const spriteSheet = spriteSheets[systemIndex];
+    if (!spriteSheet) {
       continue;
     }
-    await displayCanvasHelper.selectSpriteSheet(`system-${systemIndex}`);
-    if (i == 0) {
-      await displayCanvasHelper.selectSpriteSheetPalette("palette");
-      await displayCanvasHelper.setVerticalAlignment("start");
-      // await displayCanvasHelper.selectBackgroundColor(1);
-      // await displayCanvasHelper.setFillBackground(true);
-    }
-    await displayCanvasHelper.drawSprite(
-      displayCanvasHelper.width / 2,
-      y,
-      "svg"
+    const height = spriteSheet.sprites[0].height;
+
+    console.log({ spriteX, spriteY });
+    await displayCanvasHelper.startSprite(spriteX, spriteY, osmdWidth, height);
+
+    let y = -height / 2;
+
+    await displayCanvasHelper.setVerticalAlignment("start");
+    await displayCanvasHelper.setHorizontalAlignment("start");
+
+    const cursorsToDraw = cursors.filter(
+      (cursor) => cursor.systemIndex == systemIndex
     );
-    y += displayCanvasHelper.selectedSpriteSheet.sprites[0].height;
+    console.log("cursorsToDraw", cursorsToDraw);
+    for (
+      let cursorIndex = 0;
+      cursorIndex < cursorsToDraw.length &&
+      drawnCursorIndex + 2 < displayCanvasHelper.numberOfColors;
+      cursorIndex++, drawnCursorIndex++
+    ) {
+      const spriteSheet = spriteSheets[systemIndex];
+      if (!spriteSheet) {
+        continue;
+      }
+
+      // FILL - start drawing boxes starting at the current cursor to draw
+
+      const cursor = cursorsToDraw[cursorIndex];
+      const { x: offsetX, width, height } = cursor.rect;
+      const { localY: offsetY } = cursor;
+      // console.log("drawing cursor", {
+      //   width,
+      //   height,
+      //   x,
+      //   y,
+      //   offsetX,
+      //   offsetY,
+      // });
+      //console.log({ drawnCursorIndex, colorIndex: 2 + drawnCursorIndex });
+      await displayCanvasHelper.selectFillColor(2 + drawnCursorIndex);
+      await displayCanvasHelper.drawRect(
+        x + offsetX,
+        y + offsetY,
+        width,
+        height
+      );
+    }
+
+    await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+    await displayCanvasHelper.drawSprite(x, y, "svg");
+    spriteY += height;
+
+    await displayCanvasHelper.endSprite();
   }
 
   latestDrawTime = Date.now();
@@ -162,14 +216,14 @@ const draw = async () => {
 };
 let latestDrawTime = 0;
 
-displayCanvasHelper.addEventListener("ready", () => {
+displayCanvasHelper.addEventListener("ready", async () => {
   const now = Date.now();
   console.log(`drawTime: ${now - latestDrawTime}ms`);
 
   isDrawing = false;
   if (isWaitingToRedraw) {
     isWaitingToRedraw = false;
-    draw();
+    await draw();
   }
 });
 
@@ -562,19 +616,30 @@ const loadOsmd = async (content) => {
   await osmd.load(content);
   updateOsmdTitle();
 
+  updateShowCursor();
+
   updateOsmdInstrument();
   setOsmdInstrumentIndex(0);
 
   setOsmdSystemIndex(0);
   setOsmdZoom(Number(osmdZoomInput.value));
 
-  renderOsmd(true);
+  await renderOsmd(true);
 };
 
+let isRendering = false;
+let isWaitingToRender = false;
 const renderOsmd = async () => {
+  if (isRendering) {
+    console.warn("already rendering osmd");
+    isWaitingToRender = true;
+    return;
+  }
+  isRendering = true;
+
   console.log("renderOsmd");
 
-  spriteSheets.length = 0;
+  osmdContainer.style.width = osmdWidth;
 
   const rules = osmd.EngravingRules;
   rules.PageLeftMargin = 0;
@@ -597,12 +662,24 @@ const renderOsmd = async () => {
   rules.PageTopMarginNarrow = 0;
 
   osmd.render();
+  updateShowCursor();
   updateOsmdSystem();
   updateOsmdZoom();
-  for (let i = 0; i < numberOfSystems; i++) {
-    await createOsmdSystemSpriteSheet(i);
+  updateOsmdWidth();
+  updateCursorMetadata();
+  spriteSheets.length = 0;
+  for (let systemIndex = 0; systemIndex < numberOfSystems; systemIndex++) {
+    //getSystemMetrics(0, systemIndex);
+    await createOsmdSystemSpriteSheet(systemIndex);
   }
-  draw();
+
+  await draw();
+
+  isRendering = false;
+  if (isWaitingToRender) {
+    isWaitingToRender = false;
+    await renderOsmd();
+  }
 };
 
 const osmdTitleContainer = document.getElementById("osmdTitle");
@@ -611,15 +688,6 @@ const updateOsmdTitle = () => {
   osmdTitleContainer.classList.remove("hidden");
   osmdTitleSpan.innerText = osmd.Sheet?.TitleString;
 };
-
-let systemsPerDisplay = 3;
-const osmdSystemsPerDisplayContainer = document.getElementById(
-  "osmdSystemsPerDisplay"
-);
-osmdSystemsPerDisplayContainer.addEventListener("input", (event) => {
-  systemsPerDisplay = Number(event.target.value);
-  draw();
-});
 
 let numberOfSystems = 0;
 let currentSystemIndex = 0;
@@ -657,6 +725,25 @@ const setOsmdSystemIndex = async (newIndex, render = false) => {
 osmdSystemInput.addEventListener("input", () => {
   setOsmdSystemIndex(Number(osmdSystemInput.value), false);
 });
+
+let systemsPerDisplay = 2;
+const osmdSystemsPerDisplayContainer = document.getElementById(
+  "osmdSystemsPerDisplay"
+);
+const osmdSystemsPerDisplayInput =
+  osmdSystemsPerDisplayContainer.querySelector("input");
+osmdSystemsPerDisplayInput.addEventListener("input", (event) => {
+  setsystemsPerDisplay(Number(event.target.value));
+});
+const setsystemsPerDisplay = async (newSystemsPerDisplay) => {
+  systemsPerDisplay = newSystemsPerDisplay;
+  console.log({ systemsPerDisplay });
+  osmdSystemInput.step = systemsPerDisplay;
+  osmdSystemsPerDisplayInput.value = systemsPerDisplay;
+  await draw();
+};
+osmdSystemInput.step = systemsPerDisplay;
+osmdSystemsPerDisplayInput.value = systemsPerDisplay;
 
 let currentOsmdInstrumentIndex = 0;
 const osmdInstrumentContainer = document.getElementById("osmdInstrument");
@@ -714,6 +801,82 @@ osmdZoomInput.addEventListener("input", () => {
   setOsmdZoom(Number(osmdZoomInput.value), true);
 });
 
+let osmdWidth = 640;
+const osmdWidthContainer = document.getElementById("osmdWidth");
+const osmdWidthValueSpan = osmdWidthContainer.querySelector(".value");
+const osmdWidthInput = osmdWidthContainer.querySelector("input");
+const updateOsmdWidth = () => {
+  osmdWidthInput.value = osmdWidth;
+  osmdWidthValueSpan.innerText = osmdWidth;
+  console.log({ osmdWidth });
+};
+const setOsmdWidth = async (newWidth, render = false) => {
+  osmdWidth = newWidth;
+  console.log({ osmdWidth });
+  osmdWidthInput.value = osmdWidth;
+  osmdWidthValueSpan.innerText = osmdWidth;
+
+  if (render) {
+    await renderOsmd();
+  }
+};
+osmdWidthInput.addEventListener("input", () => {
+  console.log("WOW");
+  setOsmdWidth(Number(osmdWidthInput.value), true);
+});
+
+// CURSOR
+let showCursor = false;
+const showCursorContainer = document.getElementById("osmdShowCursor");
+const showCursorInput = showCursorContainer.querySelector("input");
+showCursorInput.addEventListener("input", () => {
+  setShowCursor(showCursorInput.checked);
+});
+const updateShowCursor = () => {
+  showCursorContainer.classList.remove("hidden");
+  if (showCursor) {
+    osmd.cursor?.show();
+  } else {
+    osmd.cursor?.hide();
+  }
+};
+const setShowCursor = (newShowCursor) => {
+  if (newShowCursor == showCursor) {
+    return;
+  }
+  showCursor = newShowCursor;
+  console.log({ showCursor });
+  showCursorInput.checked = showCursor;
+
+  draw();
+  if (showCursor) {
+    osmd.cursor?.show();
+  } else {
+    osmd.cursor?.hide();
+  }
+};
+setShowCursor(true);
+
+let speed = 1;
+const speedContainer = document.getElementById("osmdSpeed");
+const speedInput = speedContainer.querySelector("input");
+const speedSpan = speedContainer.querySelector("span.value");
+speedInput.addEventListener("input", () => {
+  setSpeed(Number(speedInput.value));
+});
+const setSpeed = (newSpeed) => {
+  if (newSpeed == speed) {
+    return;
+  }
+  speed = newSpeed;
+  console.log({ speed });
+  speedSpan.innerText = speed;
+  speedInput.value = speed;
+};
+setSpeed(1);
+
+// SPRITE SHEET
+
 /** @type {Record<number, BS.DisplaySpriteSheet>} */
 const spriteSheets = [];
 /** @param {number} systemIndex */
@@ -735,6 +898,8 @@ const createOsmdSystemSpriteSheet = async (systemIndex) => {
   //console.log("staffLine", staffLine);
   const systemSvgBox = systemSvg.getBoundingClientRect();
   const staffLineBox = staffLine.getBoundingClientRect();
+  staffLineBox.y -= systemSvgBox.y;
+  staffLineBox.x -= systemSvgBox.x;
   systemSvg.setAttribute("display", "none");
   //console.log("staffLineBox", staffLineBox);
   systemSvg.setAttribute("height", staffLineBox.height);
@@ -742,7 +907,7 @@ const createOsmdSystemSpriteSheet = async (systemIndex) => {
   const svgWidth = systemSvg.getAttribute("width");
   const scale = viewBox[2] / svgWidth;
   //console.log({ scale }, systemSvg);
-  const y = staffLineBox.y - systemSvgBox.y;
+  const y = staffLineBox.y;
   const newViewBox = [
     viewBox[0],
     y * scale,
@@ -751,6 +916,16 @@ const createOsmdSystemSpriteSheet = async (systemIndex) => {
   ];
   systemSvg.setAttribute("viewBox", newViewBox.join(" "));
   //console.log("systemSvg", systemSvg);
+
+  cursors.forEach((cursor) => {
+    if (
+      cursor.rect.y >= staffLineBox.y &&
+      cursor.rect.bottom <= staffLineBox.bottom
+    ) {
+      cursor.systemIndex = systemIndex;
+      cursor.localY = cursor.rect.y - staffLineBox.y;
+    }
+  });
 
   const box = systemSvg.getBoundingClientRect();
   // testDiv.style.width = `${box.width}px`;
@@ -777,7 +952,6 @@ const createOsmdSystemSpriteSheet = async (systemIndex) => {
   systemSvg.remove();
 };
 
-const testDiv = document.getElementById("test");
 const getSystemMetrics = (pageIndex, systemIndex) => {
   const system =
     osmd.GraphicSheet.MusicPages[pageIndex].MusicSystems[systemIndex];
@@ -830,7 +1004,7 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
       //   graphicalMeasure.InitiallyActiveClef
       // );
       graphicalMeasure.staffEntries.forEach((staffEntry) => {
-        // console.log("staffEntry", staffEntry);
+        //console.log("staffEntry", staffEntry);
         staffEntry.FingeringEntries.forEach((fingeringEntry) => {
           // console.log("fingeringEntry", fingeringEntry);
         });
@@ -849,13 +1023,63 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
   });
 
   // const box = osmd.container.getBoundingClientRect();
+  // const testDiv = document.getElementById("test");
   // testDiv.style.width = `${width}px`;
   // testDiv.style.height = `${height}px`;
   // testDiv.style.left = `${x + box.left + window.scrollX}px`;
   // testDiv.style.top = `${y + box.top + window.scrollY}px`;
-
-  return { x, y, width, height };
 };
+
+/** @typedef {{time: number, displayIndex: number?, systemIndex: number, rect: DOMRect, localY: number, pageIndex: number, measureIndex: number}} CursorMetadata */
+/** @type {CursorMetadata[]} */
+const cursors = [];
+const updateCursorMetadata = () => {
+  const bpm = osmd.Sheet.DefaultStartTempoInBpm;
+  const msPerQuarter = 60000 / bpm;
+
+  const { cursor } = osmd;
+
+  cursors.length = 0;
+  cursor.reset();
+
+  const parentRect = osmdContainer.querySelector("svg").getBoundingClientRect();
+
+  while (cursor.iterator.CurrentVoiceEntries) {
+    const ts = cursor.iterator.currentTimeStamp;
+    const time = ts.RealValue * msPerQuarter;
+
+    const rect = cursor.cursorElement.getBoundingClientRect();
+    rect.x -= parentRect.x;
+    rect.y -= parentRect.y;
+
+    cursors.push({
+      time,
+      measureIndex: cursor.iterator.CurrentMeasureIndex,
+      pageIndex: cursor.currentPageNumber,
+      rect,
+    });
+
+    cursor.next();
+  }
+
+  console.log("cursors", cursors);
+  cursor.reset();
+};
+
+const getCursorByTime = (time) => {
+  time *= speed;
+
+  /** @type {CursorMetadata} */
+  let cursor;
+  cursors.some((_cursor) => {
+    if (time < _cursor.time) {
+      return true;
+    }
+    cursor = _cursor;
+  });
+  return cursor;
+};
+window.getCursorByTime = getCursorByTime;
 
 didLoad = true;
 
