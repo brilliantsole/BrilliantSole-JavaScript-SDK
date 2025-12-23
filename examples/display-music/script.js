@@ -104,9 +104,8 @@ displayCanvasHelper.addEventListener("color", (event) => {
 });
 setupColors();
 const getTextColorIndex = () => 1;
-const getCursorColorIndex = () => 2;
 displayCanvasHelper.setColor(getTextColorIndex(), "white");
-displayCanvasHelper.setColor(getCursorColorIndex(), "#009900");
+const cursorColor = "#009900";
 displayCanvasHelper.flushContextCommands();
 
 // DRAW
@@ -145,6 +144,7 @@ const draw = async () => {
   }
 
   let drawnCursorIndex = 0;
+  drawnCursors.length = 0;
 
   const spriteX = (displayCanvasHelper.width - osmdWidth) / 2;
   let spriteY = 0;
@@ -166,9 +166,15 @@ const draw = async () => {
     await displayCanvasHelper.setVerticalAlignment("start");
     await displayCanvasHelper.setHorizontalAlignment("start");
 
-    const cursorsToDraw = cursors.filter(
+    let cursorsToDraw = cursors.filter(
       (cursor) => cursor.systemIndex == systemIndex
     );
+    if (cursorsToDraw.includes(currentCursor)) {
+      cursorsToDraw = cursorsToDraw.slice(cursorsToDraw.indexOf(currentCursor));
+    } else if (drawnCursorIndex == 0) {
+      cursorsToDraw.length = 0;
+    }
+
     console.log("cursorsToDraw", cursorsToDraw);
     for (
       let cursorIndex = 0;
@@ -181,9 +187,9 @@ const draw = async () => {
         continue;
       }
 
-      // FILL - start drawing boxes starting at the current cursor to draw
-
       const cursor = cursorsToDraw[cursorIndex];
+      const colorIndex = 2 + drawnCursorIndex;
+      drawnCursors[colorIndex] = cursor;
       const { x: offsetX, width, height } = cursor.rect;
       const { localY: offsetY } = cursor;
       // console.log("drawing cursor", {
@@ -195,7 +201,7 @@ const draw = async () => {
       //   offsetY,
       // });
       //console.log({ drawnCursorIndex, colorIndex: 2 + drawnCursorIndex });
-      await displayCanvasHelper.selectFillColor(2 + drawnCursorIndex);
+      await displayCanvasHelper.selectFillColor(colorIndex);
       await displayCanvasHelper.drawRect(
         x + offsetX,
         y + offsetY,
@@ -212,8 +218,13 @@ const draw = async () => {
   }
 
   latestDrawTime = Date.now();
+  await displayCanvasHelper.setColor(
+    drawnCursors.indexOf(currentCursor),
+    cursorColor
+  );
   await displayCanvasHelper.show();
 };
+window.draw = draw;
 let latestDrawTime = 0;
 
 displayCanvasHelper.addEventListener("ready", async () => {
@@ -224,6 +235,10 @@ displayCanvasHelper.addEventListener("ready", async () => {
   if (isWaitingToRedraw) {
     isWaitingToRedraw = false;
     await draw();
+  }
+  if (updateCurrentTime) {
+    updateCurrentTime = false;
+    onCurrentTimeUpdate();
   }
 });
 
@@ -667,6 +682,8 @@ const renderOsmd = async () => {
   updateOsmdZoom();
   updateOsmdWidth();
   updateCursorMetadata();
+  updateMaxTime();
+  setCurrentTime(0, false);
   spriteSheets.length = 0;
   for (let systemIndex = 0; systemIndex < numberOfSystems; systemIndex++) {
     //getSystemMetrics(0, systemIndex);
@@ -733,9 +750,9 @@ const osmdSystemsPerDisplayContainer = document.getElementById(
 const osmdSystemsPerDisplayInput =
   osmdSystemsPerDisplayContainer.querySelector("input");
 osmdSystemsPerDisplayInput.addEventListener("input", (event) => {
-  setsystemsPerDisplay(Number(event.target.value));
+  setSystemsPerDisplay(Number(event.target.value));
 });
-const setsystemsPerDisplay = async (newSystemsPerDisplay) => {
+const setSystemsPerDisplay = async (newSystemsPerDisplay) => {
   systemsPerDisplay = newSystemsPerDisplay;
   console.log({ systemsPerDisplay });
   osmdSystemInput.step = systemsPerDisplay;
@@ -825,7 +842,7 @@ osmdWidthInput.addEventListener("input", () => {
   setOsmdWidth(Number(osmdWidthInput.value), true);
 });
 
-// CURSOR
+// SHOW CURSOR
 let showCursor = false;
 const showCursorContainer = document.getElementById("osmdShowCursor");
 const showCursorInput = showCursorContainer.querySelector("input");
@@ -840,7 +857,7 @@ const updateShowCursor = () => {
     osmd.cursor?.hide();
   }
 };
-const setShowCursor = (newShowCursor) => {
+const setShowCursor = async (newShowCursor) => {
   if (newShowCursor == showCursor) {
     return;
   }
@@ -848,7 +865,17 @@ const setShowCursor = (newShowCursor) => {
   console.log({ showCursor });
   showCursorInput.checked = showCursor;
 
-  draw();
+  for (let i = 2; i < displayCanvasHelper.numberOfColors; i++) {
+    await displayCanvasHelper.setColor(i, "black");
+  }
+  if (showCursor && drawnCursors.includes(currentCursor)) {
+    await displayCanvasHelper.setColor(
+      drawnCursors.indexOf(currentCursor),
+      cursorColor
+    );
+  }
+  await displayCanvasHelper.flushContextCommands();
+
   if (showCursor) {
     osmd.cursor?.show();
   } else {
@@ -857,6 +884,82 @@ const setShowCursor = (newShowCursor) => {
 };
 setShowCursor(true);
 
+// TIME
+let currentTime = 0;
+const currentTimeContainer = document.getElementById("osmdTime");
+const currentTimeInput = currentTimeContainer.querySelector("input");
+const currentTimeSpan = currentTimeContainer.querySelector("span.value");
+const currentTimeTotalSpan = currentTimeContainer.querySelector("span.total");
+currentTimeInput.addEventListener("input", () => {
+  setCurrentTime(Number(currentTimeInput.value));
+});
+let maxTime = 0;
+const updateMaxTime = () => {
+  maxTime = cursors.at(-1).time;
+  console.log({ maxTime });
+  currentTimeTotalSpan.innerText = maxTime;
+  currentTimeInput.max = maxTime;
+};
+/** @type {CursorMetadata} */
+let currentCursor;
+let updateCurrentTime = false;
+const setCurrentTime = async (newCurrentTime, render = true) => {
+  currentTime = Math.min(newCurrentTime, maxTime);
+  console.log({ currentTime });
+  currentTimeSpan.innerText = currentTime;
+  currentTimeInput.value = currentTime;
+
+  if (isDrawing) {
+    updateCurrentTime = true;
+    return;
+  }
+  await onCurrentTimeUpdate(render);
+};
+const onCurrentTimeUpdate = async (render = true) => {
+  const _currentCursor = currentCursor;
+  currentCursor = getCursorByTime(currentTime);
+  if (currentCursor == _currentCursor) {
+    return;
+  }
+  console.log("currentCursor", cursors.indexOf(currentCursor), currentCursor);
+  if (_currentCursor && drawnCursors.includes(_currentCursor)) {
+    await displayCanvasHelper.setColor(
+      drawnCursors.indexOf(_currentCursor),
+      "black",
+      true
+    );
+  }
+
+  let shouldDraw = false;
+
+  if (
+    currentCursor.systemIndex < currentSystemIndex ||
+    currentSystemIndex + systemsPerDisplay <= currentCursor.systemIndex
+  ) {
+    setOsmdSystemIndex(currentCursor.systemIndex);
+    return;
+  }
+
+  if (!drawnCursors.includes(currentCursor)) {
+    shouldDraw = true;
+  }
+
+  console.log({ shouldDraw });
+
+  if (shouldDraw) {
+    if (render) {
+      await draw();
+    }
+  } else {
+    await displayCanvasHelper.setColor(
+      drawnCursors.indexOf(currentCursor),
+      cursorColor
+    );
+    await displayCanvasHelper.flushContextCommands();
+  }
+};
+
+// SPEED
 let speed = 1;
 const speedContainer = document.getElementById("osmdSpeed");
 const speedInput = speedContainer.querySelector("input");
@@ -875,12 +978,49 @@ const setSpeed = (newSpeed) => {
 };
 setSpeed(1);
 
+// PLAYBACK
+let isPlaying = false;
+const togglePlaybackButton = document.getElementById("togglePlayback");
+togglePlaybackButton.addEventListener("click", () => {
+  togglePlayback();
+});
+const togglePlayback = () => setIsPlaying(!isPlaying);
+let startPlayingTime = 0;
+let startPlayingCurrentTime = 0;
+let updateCurrentTimeIntervalId;
+const setIsPlaying = async (newIsPlaying) => {
+  if (newIsPlaying == isPlaying) {
+    return;
+  }
+  isPlaying = newIsPlaying;
+  console.log({ isPlaying });
+  togglePlaybackButton.innerText = isPlaying ? "pause" : "play";
+  if (isPlaying) {
+    if (currentTime == maxTime) {
+      await setCurrentTime(0);
+    }
+    startPlayingCurrentTime = currentTime;
+    startPlayingTime = Date.now();
+    updateCurrentTimeIntervalId = setInterval(() => {
+      const timeOffset = Date.now() - startPlayingTime;
+      const newCurrentTime = startPlayingCurrentTime + timeOffset;
+      setCurrentTime(newCurrentTime);
+      if (currentTime == maxTime) {
+        setIsPlaying(false);
+      }
+    }, 20);
+  } else {
+    clearInterval(updateCurrentTimeIntervalId);
+  }
+};
+
 // SPRITE SHEET
 
 /** @type {Record<number, BS.DisplaySpriteSheet>} */
 const spriteSheets = [];
 /** @param {number} systemIndex */
 const createOsmdSystemSpriteSheet = async (systemIndex) => {
+  console.log("createOsmdSystemSpriteSheet", systemIndex);
   let systemSvg = osmdContainer.querySelector("svg");
   systemSvg = systemSvg.cloneNode(true);
   /** @type {SVGGElement} */
@@ -1033,6 +1173,8 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
 /** @typedef {{time: number, displayIndex: number?, systemIndex: number, rect: DOMRect, localY: number, pageIndex: number, measureIndex: number}} CursorMetadata */
 /** @type {CursorMetadata[]} */
 const cursors = [];
+/** @type {CursorMetadata[]} */
+const drawnCursors = [];
 const updateCursorMetadata = () => {
   const bpm = osmd.Sheet.DefaultStartTempoInBpm;
   const msPerQuarter = 60000 / bpm;
