@@ -218,10 +218,12 @@ const draw = async () => {
   }
 
   latestDrawTime = Date.now();
-  await displayCanvasHelper.setColor(
-    drawnCursors.indexOf(currentCursor),
-    cursorColor
-  );
+  if (currentCursor && drawnCursors.includes(currentCursor)) {
+    await displayCanvasHelper.setColor(
+      drawnCursors.indexOf(currentCursor),
+      cursorColor
+    );
+  }
   await displayCanvasHelper.show();
 };
 window.draw = draw;
@@ -361,6 +363,9 @@ const checkSpriteSheetSizeButton = document.getElementById(
   "checkSpriteSheetSize"
 );
 const checkSpriteSheetSize = () => {
+  if (!displayCanvasHelper.selectedSpriteSheet) {
+    return;
+  }
   const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(
     displayCanvasHelper.selectedSpriteSheet
   );
@@ -626,7 +631,13 @@ window.osmd = osmd;
 
 //osmd.setOptions({ drawFromMeasureNumber: 1, drawUpToMeasureNumber: 3 });
 
+let isLoading = false;
 const loadOsmd = async (content) => {
+  isLoading = true;
+  for (let i = 2; i < displayCanvasHelper.numberOfColors; i++) {
+    await displayCanvasHelper.setColor(i, "black");
+  }
+  await displayCanvasHelper.flushContextCommands();
   console.log("loadOsmd");
   await osmd.load(content);
   updateOsmdTitle();
@@ -640,6 +651,7 @@ const loadOsmd = async (content) => {
   setOsmdZoom(Number(osmdZoomInput.value));
 
   await renderOsmd(true);
+  isLoading = false;
 };
 
 let isRendering = false;
@@ -838,9 +850,9 @@ const setOsmdWidth = async (newWidth, render = false) => {
   }
 };
 osmdWidthInput.addEventListener("input", () => {
-  console.log("WOW");
   setOsmdWidth(Number(osmdWidthInput.value), true);
 });
+setOsmdWidth(Number(osmdWidthInput.value));
 
 // SHOW CURSOR
 let showCursor = false;
@@ -897,7 +909,7 @@ let maxTime = 0;
 const updateMaxTime = () => {
   maxTime = cursors.at(-1).time;
   console.log({ maxTime });
-  currentTimeTotalSpan.innerText = maxTime;
+  currentTimeTotalSpan.innerText = Math.round(maxTime);
   currentTimeInput.max = maxTime;
 };
 /** @type {CursorMetadata} */
@@ -906,7 +918,7 @@ let updateCurrentTime = false;
 const setCurrentTime = async (newCurrentTime, render = true) => {
   currentTime = Math.min(newCurrentTime, maxTime);
   console.log({ currentTime });
-  currentTimeSpan.innerText = currentTime;
+  currentTimeSpan.innerText = Math.round(currentTime);
   currentTimeInput.value = currentTime;
 
   if (isDrawing) {
@@ -921,6 +933,25 @@ const onCurrentTimeUpdate = async (render = true) => {
   if (currentCursor == _currentCursor) {
     return;
   }
+
+  if (currentCursor) {
+    const { cursor } = osmd;
+    cursor.reset();
+    while (!cursor.iterator.EndReached) {
+      const ts = cursor.iterator.currentTimeStamp;
+      const time = ts.RealValue * msPerQuarter;
+      if (currentCursor.time == time) {
+        break;
+      }
+      cursor.next();
+    }
+    cursor.cursorElement.off;
+    osmdContainer.scrollTo({
+      top: osmd.cursor.cursorElement.offsetTop - 40,
+      behavior: "smooth",
+    });
+  }
+
   console.log("currentCursor", cursors.indexOf(currentCursor), currentCursor);
   if (_currentCursor && drawnCursors.includes(_currentCursor)) {
     await displayCanvasHelper.setColor(
@@ -996,13 +1027,13 @@ const setIsPlaying = async (newIsPlaying) => {
   console.log({ isPlaying });
   togglePlaybackButton.innerText = isPlaying ? "pause" : "play";
   if (isPlaying) {
-    if (currentTime == maxTime) {
+    if (currentTime >= maxTime) {
       await setCurrentTime(0);
     }
     startPlayingCurrentTime = currentTime;
     startPlayingTime = Date.now();
     updateCurrentTimeIntervalId = setInterval(() => {
-      const timeOffset = Date.now() - startPlayingTime;
+      const timeOffset = (Date.now() - startPlayingTime) * speed;
       const newCurrentTime = startPlayingCurrentTime + timeOffset;
       setCurrentTime(newCurrentTime);
       if (currentTime == maxTime) {
@@ -1175,9 +1206,11 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
 const cursors = [];
 /** @type {CursorMetadata[]} */
 const drawnCursors = [];
+let bpm = 0;
+let msPerQuarter = 0;
 const updateCursorMetadata = () => {
-  const bpm = osmd.Sheet.DefaultStartTempoInBpm;
-  const msPerQuarter = 60000 / bpm;
+  bpm = osmd.Sheet.DefaultStartTempoInBpm;
+  msPerQuarter = 60000 / bpm;
 
   const { cursor } = osmd;
 
@@ -1186,7 +1219,7 @@ const updateCursorMetadata = () => {
 
   const parentRect = osmdContainer.querySelector("svg").getBoundingClientRect();
 
-  while (cursor.iterator.CurrentVoiceEntries) {
+  while (!cursor.iterator.EndReached) {
     const ts = cursor.iterator.currentTimeStamp;
     const time = ts.RealValue * msPerQuarter;
 
@@ -1209,8 +1242,6 @@ const updateCursorMetadata = () => {
 };
 
 const getCursorByTime = (time) => {
-  time *= speed;
-
   /** @type {CursorMetadata} */
   let cursor;
   cursors.some((_cursor) => {
