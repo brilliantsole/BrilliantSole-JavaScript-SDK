@@ -139,8 +139,14 @@ const draw = async () => {
 
   await displayCanvasHelper.setVerticalAlignment("start");
   await displayCanvasHelper.setHorizontalAlignment("start");
-  for (let i = 0; i < displayCanvasHelper.numberOfColors; i++) {
-    await displayCanvasHelper.selectSpriteColor(i, i);
+  if (showCursor) {
+    for (let i = 0; i < displayCanvasHelper.numberOfColors; i++) {
+      await displayCanvasHelper.selectSpriteColor(i, i);
+    }
+  } else {
+    for (let i = 0; i < 2; i++) {
+      await displayCanvasHelper.selectSpriteColor(i, i);
+    }
   }
 
   let drawnCursorIndex = 0;
@@ -751,18 +757,16 @@ const setOsmdSystemIndex = async (newIndex, render = false) => {
     await draw();
   }
 };
-const goToNextSystemIndex = (loop = false) => {
-  if (currentSystemIndex + systemsPerDisplay > numberOfSystems) {
+const goToNextSystemIndex = (offByOne = true, loop = true) => {
+  let newSystemIndex = currentSystemIndex + (offByOne ? 1 : systemsPerDisplay);
+  if (newSystemIndex >= numberOfSystems) {
     if (loop) {
       setOsmdSystemIndex(0);
     }
     return;
   }
 
-  const newSystemIndex = Math.min(
-    currentSystemIndex + systemsPerDisplay,
-    numberOfSystems
-  );
+  newSystemIndex = Math.min(newSystemIndex, numberOfSystems - 1);
   if (newSystemIndex != currentSystemIndex) {
     setOsmdSystemIndex(newSystemIndex);
   }
@@ -777,7 +781,7 @@ document.addEventListener("keydown", (event) => {
   console.log(event.key);
   switch (event.key) {
     case "ArrowRight":
-      goToNextSystemIndex(true);
+      goToNextSystemIndex();
       break;
     case "ArrowLeft":
       goToPreviousSystemIndex();
@@ -1356,7 +1360,7 @@ insoleDevice.addEventListener("tfliteIsReady", (event) => {
 insoleDevice.addEventListener("tfliteInference", (event) => {
   const { maxClass } = event.message.tfliteInference;
   if (maxClass == "tap") {
-    goToNextSystemIndex(true);
+    goToNextSystemIndex();
   }
 });
 
