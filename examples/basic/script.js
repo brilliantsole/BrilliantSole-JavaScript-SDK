@@ -1149,7 +1149,7 @@ device.addEventListener("tfliteInference", (event) => {
     topInferenceClassElement.innerText = tfliteInference.maxClass ?? "";
     topInferenceClassTimeoutId = setTimeout(() => {
       topInferenceClassElement.innerText = "";
-    }, Math.min(device.tfliteCaptureDelay, 500));
+    }, Math.max(device.tfliteCaptureDelay, 500));
   }
 });
 

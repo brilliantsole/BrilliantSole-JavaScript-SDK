@@ -751,11 +751,44 @@ const setOsmdSystemIndex = async (newIndex, render = false) => {
     await draw();
   }
 };
+const goToNextSystemIndex = (loop = false) => {
+  if (currentSystemIndex + systemsPerDisplay > numberOfSystems) {
+    if (loop) {
+      setOsmdSystemIndex(0);
+    }
+    return;
+  }
+
+  const newSystemIndex = Math.min(
+    currentSystemIndex + systemsPerDisplay,
+    numberOfSystems
+  );
+  if (newSystemIndex != currentSystemIndex) {
+    setOsmdSystemIndex(newSystemIndex);
+  }
+};
+const goToPreviousSystemIndex = () => {
+  const newSystemIndex = Math.max(currentSystemIndex - systemsPerDisplay, 0);
+  if (newSystemIndex != currentSystemIndex) {
+    setOsmdSystemIndex(newSystemIndex);
+  }
+};
+document.addEventListener("keydown", (event) => {
+  console.log(event.key);
+  switch (event.key) {
+    case "ArrowRight":
+      goToNextSystemIndex(true);
+      break;
+    case "ArrowLeft":
+      goToPreviousSystemIndex();
+      break;
+  }
+});
 osmdSystemInput.addEventListener("input", () => {
   setOsmdSystemIndex(Number(osmdSystemInput.value), false);
 });
 
-let systemsPerDisplay = 2;
+let systemsPerDisplay = 3;
 const osmdSystemsPerDisplayContainer = document.getElementById(
   "osmdSystemsPerDisplay"
 );
@@ -852,7 +885,7 @@ const setOsmdWidth = async (newWidth, render = false) => {
 osmdWidthInput.addEventListener("input", () => {
   setOsmdWidth(Number(osmdWidthInput.value), true);
 });
-setOsmdWidth(Number(osmdWidthInput.value));
+setOsmdWidth(osmdWidth);
 
 // SHOW CURSOR
 let showCursor = false;
@@ -894,7 +927,7 @@ const setShowCursor = async (newShowCursor) => {
     osmd.cursor?.hide();
   }
 };
-setShowCursor(true);
+setShowCursor(false);
 
 // TIME
 let currentTime = 0;
@@ -1253,6 +1286,79 @@ const getCursorByTime = (time) => {
   return cursor;
 };
 window.getCursorByTime = getCursorByTime;
+
+// INSOLE
+const insoleDevice = new BS.Device();
+const toggleInsoleConnectionButton = document.getElementById(
+  "toggleInsoleConnection"
+);
+toggleInsoleConnectionButton.addEventListener("click", () => {
+  insoleDevice.toggleConnection();
+});
+insoleDevice.addEventListener("connectionStatus", (event) => {
+  const { connectionStatus } = event.message;
+  let text = connectionStatus;
+  switch (event.message.connectionStatus) {
+    case "notConnected":
+      text = "connect";
+      break;
+    case "connected":
+      text = "disconnect";
+      break;
+  }
+  toggleInsoleConnectionButton.innerText = text;
+});
+/** @type {BS.TfliteFileConfiguration} */
+const tfliteConfiguration = {
+  name: "kickStompTap",
+  task: "classification",
+  sensorTypes: ["gyroscope", "linearAcceleration"],
+  sampleRate: 20,
+  captureDelay: 500,
+  threshold: 0.65,
+  classes: ["idle", "kick", "stomp", "tap"],
+};
+fetch("./kickStompTap.tflite")
+  .then((response) => response.arrayBuffer())
+  .then((buffer) => {
+    tfliteConfiguration.file = buffer;
+    console.log("updated tfliteConfiguration", tfliteConfiguration);
+  })
+  .catch((err) => {
+    console.error("Error loading kick model:", err);
+  });
+
+insoleDevice.addEventListener("connected", () => {
+  if (insoleDevice.isInsole) {
+    insoleDevice.sendTfliteConfiguration(tfliteConfiguration);
+  } else {
+    console.error(`expected insole, got ${insoleDevice.type}`);
+    insoleDevice.disconnect();
+  }
+});
+
+/** @type {HTMLProgressElement} */
+const modelFileTransferProgress = document.getElementById(
+  "modelFileTransferProgress"
+);
+insoleDevice.addEventListener("fileTransferProgress", (event) => {
+  const { progress } = event.message;
+  console.log({ progress });
+  modelFileTransferProgress.value = progress;
+});
+
+insoleDevice.addEventListener("tfliteIsReady", (event) => {
+  if (event.message.tfliteIsReady) {
+    insoleDevice.enableTfliteInferencing();
+  }
+});
+
+insoleDevice.addEventListener("tfliteInference", (event) => {
+  const { maxClass } = event.message.tfliteInference;
+  if (maxClass == "tap") {
+    goToNextSystemIndex(true);
+  }
+});
 
 didLoad = true;
 
