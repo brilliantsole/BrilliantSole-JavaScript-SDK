@@ -1317,9 +1317,9 @@ const tfliteConfiguration = {
   name: "kickStompTap",
   task: "classification",
   sensorTypes: ["gyroscope", "linearAcceleration"],
-  sampleRate: 20,
+  sampleRate: 40,
   captureDelay: 500,
-  threshold: 0.65,
+  threshold: 0.0,
   classes: ["idle", "kick", "stomp", "tap"],
 };
 fetch("./kickStompTap.tflite")

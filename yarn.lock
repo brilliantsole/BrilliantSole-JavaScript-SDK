@@ -876,7 +876,7 @@
     "@babel/plugin-transform-modules-commonjs" "^7.27.1"
     "@babel/plugin-transform-typescript" "^7.28.5"
 
-"@babel/runtime@^7.13.8", "@babel/runtime@^7.25.6", "@babel/runtime@^7.28.4":
+"@babel/runtime@^7.13.8", "@babel/runtime@^7.20.6", "@babel/runtime@^7.25.6", "@babel/runtime@^7.28.4":
   version "7.28.4"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.28.4.tgz#a70226016fabe25c5783b2f22d3e1c9bc5ca3326"
   integrity sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==
@@ -3356,6 +3356,13 @@ dir-glob@^3.0.1:
   dependencies:
     path-type "^4.0.0"
 
+djipevents@^2.0.7:
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/djipevents/-/djipevents-2.0.7.tgz#4805dcb8dcf0b4a2c6e51eaecdfc218bb8f202fb"
+  integrity sha512-KNFYaU85imxOCKOUsIR70Iz9E19r96/X7LSH+u0tSoZdpWcBdzoqtTsU+wuLhc6GMpSFob+KInkZAbfKi01Bjg==
+  dependencies:
+    "@babel/runtime" "^7.20.6"
+
 dns-equal@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/dns-equal/-/dns-equal-1.0.0.tgz#b39e7f1da6eb0a75ba9c17324b34753c47e0654d"
@@ -5247,6 +5254,11 @@ jackspeak@^3.1.2:
   optionalDependencies:
     "@pkgjs/parseargs" "^0.11.0"
 
+jazz-midi@^1.7.9:
+  version "1.7.9"
+  resolved "https://registry.yarnpkg.com/jazz-midi/-/jazz-midi-1.7.9.tgz#ad564e85acf12414aec7ef7d879ad61a5d7f6896"
+  integrity sha512-c8c4BBgwxdsIr1iVm53nadCrtH7BUlnX3V95ciK/gbvXN/ndE5+POskBalXgqlc/r9p2XUbdLTrgrC6fou5p9w==
+
 jest-worker@^24.0.0:
   version "24.9.0"
   resolved "https://registry.yarnpkg.com/jest-worker/-/jest-worker-24.9.0.tgz#5dbfdb5b2d322e98567898238a9697bcce67b3e5"
@@ -5322,6 +5334,13 @@ jsonparse@^1.3.1:
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/jsonparse/-/jsonparse-1.3.1.tgz#3f4dae4a91fac315f71062f8521cc239f1366280"
   integrity sha512-POQXvpdL69+CluYsillJ7SUhKvytYjW9vG/GKpnf+xP8UWgYEM/RaMzHHofbALDiKbbP1W8UEYmgGl39WkPZsg==
+
+jzz@^1.8.5:
+  version "1.9.6"
+  resolved "https://registry.yarnpkg.com/jzz/-/jzz-1.9.6.tgz#557c64d9766d7c1e60d5b1be510be752a913ad21"
+  integrity sha512-J7ENLhXwfm2BNDKRUrL8eKtPhUS/CtMBpiafxQHDBcOWSocLhearDKEdh+ylnZFcr5OXWTed0gj6l/txeQA9vg==
+  dependencies:
+    jazz-midi "^1.7.9"
 
 kind-of@^1.1.0:
   version "1.1.0"
@@ -8858,6 +8877,15 @@ webidl-conversions@^3.0.0:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-3.0.1.tgz#24534275e2a7bc6be7bc86611cc16ae0a5654871"
   integrity sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==
+
+webmidi@^3.1.14:
+  version "3.1.14"
+  resolved "https://registry.yarnpkg.com/webmidi/-/webmidi-3.1.14.tgz#4b4f5a67aa718b9ac691f97b737cac0281cd3dbb"
+  integrity sha512-K9GzNm0J3R/61NJWAW7ipAJGWU5D/8bEjOir3PymFjLDpbQJ+ygjvm5jx/WQ8atQ1hu23St3lvnc5g1NKbOsrw==
+  dependencies:
+    djipevents "^2.0.7"
+  optionalDependencies:
+    jzz "^1.8.5"
 
 whatwg-url@^5.0.0:
   version "5.0.0"
