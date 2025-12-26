@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
     <script src="https://unpkg.com/tone@15.1.22/build/Tone.js"></script>
+    <script src="https://unpkg.com/abcjs@6.5.2/dist/abcjs-basic-min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/webmidi@latest/dist/iife/webmidi.iife.js"></script>
     <script type="module" src="./script.js"></script>
   </head>
@@ -83,8 +84,12 @@
       <progress value="0" id="fileTransferProgress"></progress>
     </label>
 
+    <button id="checkSpriteSheetSize">check spritesheet size</button>
+
     <br />
 
     <canvas id="display" width="640" height="400"></canvas>
+
+    <div id="abc" style="display: inline-block; background-color: black"></div>
   </body>
 </html>

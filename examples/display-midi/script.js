@@ -104,6 +104,7 @@ displayCanvasHelper.addEventListener("color", (event) => {
 });
 setupColors();
 const getTextColorIndex = () => 1;
+const getAbcColorIndex = () => 1;
 const getWhiteKeyColorIndex = () => 1;
 const getBlackKeyColorIndex = () => 2;
 const getWhiteKeyDownColorIndex = () => 3;
@@ -145,7 +146,16 @@ let draw = async () => {
 
   console.log("drawing");
 
-  // FILL - draw piano
+  if (shouldDrawSheet) {
+    const spriteSheet = abcSpriteSheets[0];
+    await displayCanvasHelper.selectSpriteColor(1, getAbcColorIndex());
+    await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+    await displayCanvasHelper.setHorizontalAlignment("start");
+    await displayCanvasHelper.setVerticalAlignment("start");
+    // await displayCanvasHelper.selectBackgroundColor(getAbcColorIndex());
+    // await displayCanvasHelper.setFillBackground(1);
+    await displayCanvasHelper.drawSprite(0, 0, "svg");
+  }
 
   if (shouldDrawPiano) {
     const {
@@ -302,6 +312,31 @@ window.addEventListener("drop", async (e) => {
     console.log(file.type);
     // FILL
   }
+});
+
+// SIZE
+
+const checkSpriteSheetSizeButton = document.getElementById(
+  "checkSpriteSheetSize"
+);
+const checkSpriteSheetSize = () => {
+  if (!displayCanvasHelper.selectedSpriteSheet) {
+    return;
+  }
+  const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(
+    displayCanvasHelper.selectedSpriteSheet
+  );
+  checkSpriteSheetSizeButton.innerText = `size: ${(
+    arrayBuffer.byteLength / 1024
+  ).toFixed(2)}kb`;
+  if (displayCanvasHelper.device?.isConnected) {
+    checkSpriteSheetSizeButton.innerText += ` (max ${(
+      displayCanvasHelper.device.maxFileLength / 1024
+    ).toFixed(2)}kb)`;
+  }
+};
+checkSpriteSheetSizeButton.addEventListener("click", () => {
+  checkSpriteSheetSize();
 });
 
 // FONT
@@ -521,8 +556,6 @@ const selectFont = async (newFontName) => {
 
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Sans");
 
-didLoad = true;
-
 // TONEJS
 /** @type {import("tone")} */
 const Tone = window.Tone;
@@ -702,5 +735,96 @@ try {
 } catch (error) {
   console.error(error);
 }
+
+// ABCJS
+/** @type {import("abcjs")} */
+const abcjs = window.ABCJS;
+
+let shouldDrawSheet = true;
+
+/** @type {Record<number, BS.DisplaySpriteSheet>} */
+const abcSpriteSheets = [];
+
+const abcScale = 2;
+const abcContainer = document.getElementById("abc");
+/** @param {string} string */
+const renderAbc = async (string) => {
+  const tuneObjectArray = abcjs.renderAbc(abcContainer.id, string, {
+    paddingbottom: 0,
+    paddingleft: 0,
+    paddingright: 0,
+    paddingtop: 0,
+
+    foregroundColor: "white",
+    add_classes: true,
+
+    staffwidth: displayCanvasHelper.width - 20,
+
+    scale: abcScale,
+
+    oneSvgPerLine: true,
+  });
+  console.log("tuneObjectArray", tuneObjectArray);
+
+  const svgs = abcContainer.querySelectorAll("svg");
+  console.log("svgs", svgs);
+
+  for (let systemIndex = 0; systemIndex < svgs.length; systemIndex++) {
+    const svg = svgs[systemIndex];
+    const systemSvg = svg.cloneNode(true);
+    document.body.appendChild(systemSvg);
+
+    const staffWrapper = systemSvg.querySelector(".abcjs-staff-wrapper");
+
+    const systemSvgBox = systemSvg.getBoundingClientRect();
+    const staffWrapperBox = staffWrapper.getBoundingClientRect();
+
+    staffWrapperBox.y -= systemSvgBox.y;
+    staffWrapperBox.x -= systemSvgBox.x;
+
+    console.log("systemSvgBox", systemSvgBox);
+    console.log("staffWrapperBox", staffWrapperBox);
+
+    systemSvg.setAttribute("height", staffWrapperBox.height);
+
+    const viewBox = systemSvg.getAttribute("viewBox").split(" ");
+    console.log("viewBox", viewBox);
+    const y = staffWrapperBox.y;
+    const newViewBox = [
+      viewBox[0] / abcScale,
+      y / abcScale,
+      viewBox[2] / abcScale,
+      staffWrapperBox.height / abcScale,
+    ];
+
+    console.log("newViewBox", newViewBox);
+    systemSvg.setAttribute("viewBox", newViewBox.join(" "));
+
+    const box = systemSvg.getBoundingClientRect();
+    console.log("box", box);
+
+    const spriteSheet = await BS.svgToSpriteSheet(
+      systemSvg,
+      `system-${systemIndex}`,
+      "svg",
+      2,
+      "palette",
+      {
+        height: box.height / abcScale,
+        width: box.width / abcScale,
+      }
+    );
+    //console.log("spriteSheet", spriteSheet);
+    abcSpriteSheets[systemIndex] = spriteSheet;
+    await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
+    await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+    console.log(spriteSheet.name, displayCanvasHelper.selectedSpriteSheet);
+    checkSpriteSheetSize();
+    systemSvg.remove();
+  }
+};
+await renderAbc("X:1\nK:D\nDD AA|BBA2|\nDD AA|BBA2|\n");
+
+didLoad = true;
 
 draw();

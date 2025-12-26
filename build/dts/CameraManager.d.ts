@@ -48,13 +48,13 @@ declare class CameraManager {
     constructor();
     sendMessage: SendCameraMessageCallback;
     eventDispatcher: CameraEventDispatcher;
-    get waitForEvent(): <T extends "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage">(type: T) => Promise<{
+    get waitForEvent(): <T extends "cameraStatus" | "getCameraConfiguration" | "cameraImageProgress" | "cameraImage" | "cameraCommand" | "setCameraConfiguration" | "cameraData">(type: T) => Promise<{
         type: T;
         target: Device;
         message: CameraEventMessages[T];
     }>;
     requestRequiredInformation(): void;
-    get cameraStatus(): "asleep" | "idle" | "focusing" | "takingPicture";
+    get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
     focus(): Promise<void>;
     takePicture(): Promise<void>;
     stop(): Promise<void>;
@@ -62,7 +62,7 @@ declare class CameraManager {
     wake(): Promise<void>;
     buildCameraData(): ArrayBuffer;
     get cameraConfiguration(): CameraConfiguration;
-    get availableCameraConfigurationTypes(): ("brightness" | "resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "saturation" | "contrast" | "sharpness")[];
+    get availableCameraConfigurationTypes(): ("resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "brightness" | "saturation" | "contrast" | "sharpness")[];
     get cameraConfigurationRanges(): CameraConfigurationRanges;
     setCameraConfiguration(newCameraConfiguration: CameraConfiguration): Promise<void>;
     static AssertValidCameraConfigurationType(cameraConfigurationType: CameraConfigurationType): void;

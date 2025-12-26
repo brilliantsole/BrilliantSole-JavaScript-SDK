@@ -1460,6 +1460,11 @@ abbrev@^2.0.0:
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-2.0.0.tgz#cf59829b8b4f03f89dda2771cb7f3653828c89bf"
   integrity sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==
 
+abcjs@^6.5.2:
+  version "6.5.2"
+  resolved "https://registry.yarnpkg.com/abcjs/-/abcjs-6.5.2.tgz#11390600dc15738e234a9d15a384a012c0dd5dc6"
+  integrity sha512-XLDZPy/4TZbOqPsLwuu0Umsl79NTAcObEkboPxdYZXI8/fU6PNh59SAnkZOnEPVbyT8EXfBUjgNoe/uKd3T0xQ==
+
 accepts@~1.3.8:
   version "1.3.8"
   resolved "https://registry.yarnpkg.com/accepts/-/accepts-1.3.8.tgz#0bf0be125b67014adcb0b0921e62db7bffe16b2e"

@@ -85,24 +85,24 @@ export type DisplayBoundingBox = {
 declare class DisplayCanvasHelper implements DisplayManagerInterface {
     #private;
     constructor();
-    get addEventListener(): <T extends "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: {
+    get addEventListener(): <T extends "device" | "deviceIsConnected" | "deviceNotConnected" | "deviceConnected" | "brightness" | "contextState" | "numberOfColors" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "device" | "deviceIsConnected" | "deviceNotConnected" | "deviceConnected" | "brightness" | "contextState" | "numberOfColors" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => Promise<{
+    get waitForEvent(): <T extends "device" | "deviceIsConnected" | "deviceNotConnected" | "deviceConnected" | "brightness" | "contextState" | "numberOfColors" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => Promise<{
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => void;
+    get removeEventListeners(): <T extends "device" | "deviceIsConnected" | "deviceNotConnected" | "deviceConnected" | "brightness" | "contextState" | "numberOfColors" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);

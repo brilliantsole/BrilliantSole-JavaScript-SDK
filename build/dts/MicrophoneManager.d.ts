@@ -56,7 +56,7 @@ declare class MicrophoneManager {
     constructor();
     sendMessage: SendMicrophoneMessageCallback;
     eventDispatcher: MicrophoneEventDispatcher;
-    get waitForEvent(): <T extends "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording">(type: T) => Promise<{
+    get waitForEvent(): <T extends "microphoneStatus" | "getMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "microphoneCommand" | "setMicrophoneConfiguration">(type: T) => Promise<{
         type: T;
         target: Device;
         message: MicrophoneEventMessages[T];
