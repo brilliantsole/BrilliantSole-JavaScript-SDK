@@ -148,13 +148,42 @@ let draw = async () => {
 
   if (shouldDrawSheet) {
     const spriteSheet = abcSpriteSheets[0];
+    const sprite = spriteSheet.sprites[0];
+    // FILL - setup colors (correct, incorrect colors)
     await displayCanvasHelper.selectSpriteColor(1, getAbcColorIndex());
-    await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+    await displayCanvasHelper.selectSpriteColor(2, getWhiteKeyDownColorIndex());
+
+    const { width, height } = sprite;
     await displayCanvasHelper.setHorizontalAlignment("start");
     await displayCanvasHelper.setVerticalAlignment("start");
+    await displayCanvasHelper.startSprite(0, 0, width, height);
+    await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
     // await displayCanvasHelper.selectBackgroundColor(getAbcColorIndex());
     // await displayCanvasHelper.setFillBackground(1);
-    await displayCanvasHelper.drawSprite(0, 0, "svg");
+    await displayCanvasHelper.drawSprite(0, 0, spriteSheet.sprites[0].name);
+
+    const overlaySpriteSheet = abcSpriteSheets["overlay"];
+    await displayCanvasHelper.selectSpriteSheet(overlaySpriteSheet.name);
+
+    const voices = tuneObjectArray[0].lines[0].staff[0].voices[0].filter(
+      (_) => _.pitches
+    );
+    console.log("voices", voices);
+    const { x, y } = voices[3].abselem.notePositions[0];
+
+    // FILL - draw current played keys (colored accordingly)
+    await displayCanvasHelper.drawSprite(
+      2 * x - width / 2 - 0.037064552307128906,
+      2 * y - height / 2 - 15.5494384765625,
+      overlaySpriteSheet.sprites[0].name
+    );
+    // await displayCanvasHelper.drawSprite(
+    //   40,
+    //   0,
+    //   overlaySpriteSheet.sprites[1].name
+    // );
+
+    await displayCanvasHelper.endSprite();
   }
 
   if (shouldDrawPiano) {
@@ -742,88 +771,174 @@ const abcjs = window.ABCJS;
 
 let shouldDrawSheet = true;
 
-/** @type {Record<number, BS.DisplaySpriteSheet>} */
-const abcSpriteSheets = [];
+/** @type {Record<string, BS.DisplaySpriteSheet>} */
+const abcSpriteSheets = {};
+window.abcSpriteSheets = abcSpriteSheets;
 
 const abcScale = 2;
 const abcContainer = document.getElementById("abc");
-/** @param {string} string */
-const renderAbc = async (string) => {
-  const tuneObjectArray = abcjs.renderAbc(abcContainer.id, string, {
-    paddingbottom: 0,
-    paddingleft: 0,
-    paddingright: 0,
-    paddingtop: 0,
+const classesToRemove = [
+  "abcjs-staff",
+  "abcjs-staff-extra",
+  "abcjs-stem",
+  "abcjs-beam-elem",
+  "abcjs-bar",
+];
+const dataNamesToRemove = ["flags.u8th", "rests.8th", "rests.quarter"];
+/** @type {import("abcjs").AbcVisualParams} */
+const abcVisualParams = {
+  paddingbottom: 0,
+  paddingleft: 0,
+  paddingright: 0,
+  paddingtop: 0,
 
-    foregroundColor: "white",
-    add_classes: true,
+  foregroundColor: "white",
+  add_classes: true,
 
-    staffwidth: displayCanvasHelper.width - 20,
+  staffwidth: displayCanvasHelper.width - 20,
 
-    scale: abcScale,
+  scale: abcScale,
 
-    oneSvgPerLine: true,
-  });
-  console.log("tuneObjectArray", tuneObjectArray);
+  oneSvgPerLine: true,
+};
 
-  const svgs = abcContainer.querySelectorAll("svg");
-  console.log("svgs", svgs);
+/**
+ * @param {SVGElement} svg
+ * @param {string} spriteSheetName
+ * @param {string} spriteName
+ */
+const svgToSpriteSheet = async (svg, spriteSheetName, spriteName) => {
+  const systemSvg = svg.cloneNode(true);
+  document.body.appendChild(systemSvg);
 
-  for (let systemIndex = 0; systemIndex < svgs.length; systemIndex++) {
-    const svg = svgs[systemIndex];
-    const systemSvg = svg.cloneNode(true);
-    document.body.appendChild(systemSvg);
+  const staffWrapper = systemSvg.querySelector(".abcjs-staff-wrapper");
 
-    const staffWrapper = systemSvg.querySelector(".abcjs-staff-wrapper");
+  let systemSvgBox = systemSvg.getBoundingClientRect();
+  const staffWrapperBox = staffWrapper.getBoundingClientRect();
 
-    const systemSvgBox = systemSvg.getBoundingClientRect();
-    const staffWrapperBox = staffWrapper.getBoundingClientRect();
+  staffWrapperBox.y -= systemSvgBox.y;
+  staffWrapperBox.x -= systemSvgBox.x;
 
-    staffWrapperBox.y -= systemSvgBox.y;
-    staffWrapperBox.x -= systemSvgBox.x;
+  console.log("systemSvgBox", systemSvgBox);
+  console.log("staffWrapperBox", staffWrapperBox);
 
-    console.log("systemSvgBox", systemSvgBox);
-    console.log("staffWrapperBox", staffWrapperBox);
+  systemSvg.setAttribute("height", staffWrapperBox.height);
+  systemSvg.setAttribute("width", staffWrapperBox.width);
 
-    systemSvg.setAttribute("height", staffWrapperBox.height);
+  const viewBox = systemSvg.getAttribute("viewBox").split(" ").map(Number);
+  //console.log("viewBox", viewBox);
+  const newViewBox = [
+    viewBox[0] + staffWrapperBox.x / abcScale,
+    viewBox[1] + staffWrapperBox.y / abcScale,
+    staffWrapperBox.width / abcScale,
+    staffWrapperBox.height / abcScale,
+  ];
 
-    const viewBox = systemSvg.getAttribute("viewBox").split(" ");
-    console.log("viewBox", viewBox);
-    const y = staffWrapperBox.y;
-    const newViewBox = [
-      viewBox[0] / abcScale,
-      y / abcScale,
-      viewBox[2] / abcScale,
-      staffWrapperBox.height / abcScale,
-    ];
+  //console.log("newViewBox", newViewBox);
+  systemSvg.setAttribute("viewBox", newViewBox.join(" "));
 
-    console.log("newViewBox", newViewBox);
-    systemSvg.setAttribute("viewBox", newViewBox.join(" "));
+  systemSvgBox = systemSvg.getBoundingClientRect();
+  //console.log("systemSvgBox", systemSvgBox);
 
-    const box = systemSvg.getBoundingClientRect();
-    console.log("box", box);
-
-    const spriteSheet = await BS.svgToSpriteSheet(
+  let spriteSheet = abcSpriteSheets[spriteSheetName];
+  /** @type {BS.DisplaySprite?} */
+  let sprite;
+  if (!spriteSheet) {
+    spriteSheet = await BS.svgToSpriteSheet(
       systemSvg,
-      `system-${systemIndex}`,
-      "svg",
+      spriteSheetName,
+      spriteName,
       2,
       "palette",
       {
-        height: box.height / abcScale,
-        width: box.width / abcScale,
+        height: systemSvgBox.height / abcScale,
+        width: systemSvgBox.width / abcScale,
       }
     );
-    //console.log("spriteSheet", spriteSheet);
-    abcSpriteSheets[systemIndex] = spriteSheet;
-    await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
-    await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
-    console.log(spriteSheet.name, displayCanvasHelper.selectedSpriteSheet);
-    checkSpriteSheetSize();
-    systemSvg.remove();
+    sprite = spriteSheet.sprites.find((sprite) => sprite.name == spriteName);
+  } else {
+    sprite = await BS.svgToSprite(
+      systemSvg,
+      spriteName,
+      2,
+      "palette",
+      false,
+      spriteSheet,
+      0,
+      {
+        height: systemSvgBox.height / abcScale,
+        width: systemSvgBox.width / abcScale,
+      }
+    );
+  }
+
+  if (spriteSheetName == "overlay") {
+    console.log("sprite", sprite, spriteSheet, spriteName);
+    sprite.commands.forEach((command) => {
+      switch (command.type) {
+        case "selectFillColor":
+          command.fillColorIndex = 2;
+          break;
+        case "selectLineColor":
+          command.lineColorIndex = 2;
+          break;
+      }
+    });
+  }
+
+  systemSvg.remove();
+  //console.log("spriteSheet", spriteSheet);
+  abcSpriteSheets[spriteSheetName] = spriteSheet;
+  await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
+  await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+  checkSpriteSheetSize();
+  return spriteSheet;
+};
+
+const renderAbcOverlay = async () => {
+  const tuneObjectArray = abcjs.renderAbc(
+    abcContainer.id,
+    "X:1\nK:C\nC",
+    abcVisualParams
+  );
+  //console.log("tuneObjectArray", tuneObjectArray);
+
+  const svgs = abcContainer.querySelectorAll("svg");
+  //console.log("svgs", svgs);
+
+  const svg = svgs[0];
+  svg
+    .querySelectorAll(classesToRemove.map((_) => "." + _).join(","))
+    .forEach((e) => e.remove());
+  svg
+    .querySelectorAll(
+      dataNamesToRemove.map((_) => `[data-name="${_}"]`).join(",")
+    )
+    .forEach((e) => e.remove());
+  await svgToSpriteSheet(svg, "overlay", "noteWithDash");
+
+  svg.querySelector(".abcjs-ledger").remove();
+
+  await svgToSpriteSheet(svg, "overlay", "noteWithoutDash");
+};
+await renderAbcOverlay();
+
+/** @type {import("abcjs").TuneObjectArray} */
+let tuneObjectArray;
+/** @param {string} string */
+const renderAbc = async (string) => {
+  tuneObjectArray = abcjs.renderAbc(abcContainer.id, string, abcVisualParams);
+  console.log("tuneObjectArray", tuneObjectArray);
+
+  const svgs = abcContainer.querySelectorAll("svg");
+  //console.log("svgs", svgs);
+
+  for (let systemIndex = 0; systemIndex < svgs.length; systemIndex++) {
+    const svg = svgs[systemIndex];
+    await svgToSpriteSheet(svg, systemIndex.toString(), "svg");
   }
 };
-await renderAbc("X:1\nK:D\nDD AA|BBA2|\nDD AA|BBA2|\n");
+await renderAbc("X:1\nK:C\nDD AA|BBA2");
 
 didLoad = true;
 

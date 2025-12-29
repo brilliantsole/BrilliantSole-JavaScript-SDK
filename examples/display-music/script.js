@@ -757,7 +757,7 @@ const setOsmdSystemIndex = async (newIndex, render = false) => {
     await draw();
   }
 };
-const goToNextSystemIndex = (offByOne = true, loop = true) => {
+const goToNextSystemIndex = (offByOne = false, loop = true) => {
   let newSystemIndex = currentSystemIndex + (offByOne ? 1 : systemsPerDisplay);
   if (newSystemIndex >= numberOfSystems) {
     if (loop) {

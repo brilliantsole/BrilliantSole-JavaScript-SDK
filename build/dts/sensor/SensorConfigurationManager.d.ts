@@ -34,7 +34,7 @@ declare class SensorConfigurationManager {
         target: Device;
         message: SensorConfigurationEventMessages[T];
     }>;
-    get availableSensorTypes(): ("pressure" | "barometer" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "stepDetector" | "stepCounter" | "activity" | "deviceOrientation" | "tapDetector" | "camera" | "microphone")[];
+    get availableSensorTypes(): ("rotation" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone")[];
     hasSensorType(sensorType: SensorType): boolean;
     get configuration(): SensorConfiguration;
     clear(): void;

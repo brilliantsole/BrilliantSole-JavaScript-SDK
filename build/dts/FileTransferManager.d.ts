@@ -62,28 +62,28 @@ declare class FileTransferManager {
     constructor();
     sendMessage: SendFileTransferMessageCallback;
     eventDispatcher: FileTransferEventDispatcher;
-    get addEventListener(): <T extends "getFileTypes" | "maxFileLength" | "getFileType" | "getFileLength" | "getFileChecksum" | "fileTransferStatus" | "getFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "setFileType" | "setFileLength" | "setFileChecksum" | "setFileTransferCommand" | "setFileBlock" | "fileBytesTransferred">(type: T, listener: (event: {
+    get addEventListener(): <T extends "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived">(type: T, listener: (event: {
         type: T;
         target: Device;
         message: FileTransferEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "getFileTypes" | "maxFileLength" | "getFileType" | "getFileLength" | "getFileChecksum" | "fileTransferStatus" | "getFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "setFileType" | "setFileLength" | "setFileChecksum" | "setFileTransferCommand" | "setFileBlock" | "fileBytesTransferred">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived">(type: T, listener: (event: {
         type: T;
         target: Device;
         message: FileTransferEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "getFileTypes" | "maxFileLength" | "getFileType" | "getFileLength" | "getFileChecksum" | "fileTransferStatus" | "getFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "setFileType" | "setFileLength" | "setFileChecksum" | "setFileTransferCommand" | "setFileBlock" | "fileBytesTransferred">(type: T) => Promise<{
+    get waitForEvent(): <T extends "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived">(type: T) => Promise<{
         type: T;
         target: Device;
         message: FileTransferEventMessages[T];
     }>;
-    get fileTypes(): ("cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet")[];
+    get fileTypes(): ("cameraImage" | "spriteSheet" | "tflite" | "wifiServerCert" | "wifiServerKey")[];
     static get MaxLength(): number;
     /** kB */
     get maxLength(): number;
-    get type(): "cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | undefined;
+    get type(): "cameraImage" | "spriteSheet" | "tflite" | "wifiServerCert" | "wifiServerKey" | undefined;
     get length(): number;
     get checksum(): number;
     get status(): "idle" | "sending" | "receiving";

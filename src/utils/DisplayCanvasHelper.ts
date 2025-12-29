@@ -3757,7 +3757,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.selectedSpriteSheet,
       "no spriteSheet selected"
     );
-    let sprite = this.selectedSpriteSheet?.sprites.find(
+    const sprite = this.selectedSpriteSheet?.sprites.find(
       (sprite) => sprite.name == spriteName
     );
     _console.assertWithError(sprite, `sprite "${spriteName}" not found`);
