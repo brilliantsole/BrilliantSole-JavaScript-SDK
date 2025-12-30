@@ -129,7 +129,7 @@
           <a-scene
             embedded
             xr-mode-ui="enabled: false"
-            obb-collider="showColliders: true"
+            obb-collider="showColliders: false"
           >
             <a-camera
               id="camera"
@@ -154,12 +154,12 @@
               hand-tracking-controls="hand: right; modelStyle: dots;"
             ></a-entity>
 
-            <a-sphere
+            <a-box
               grabbable
               color="blue"
               position="0 1.6 -0.5"
-              radius="0.1"
-            ></a-sphere>
+              scale="0.05 0.05 0.05"
+            ></a-box>
 
             <!-- <a-box
               position="-1 0.5 -3"

@@ -115,8 +115,10 @@ AFRAME.registerComponent("mediapipe-hand", {
     jointRadius: { type: "number", default: 0.005 },
     cylinderRadius: { type: "number", default: 0.003 },
     hand: { type: "selector" },
-    pinchStartDistance: { default: 0.05 },
-    pinchEndDistance: { default: 0.06 },
+    pinchStartDistance: { default: 0.045 },
+    pinchEndDistance: { default: 0.055 },
+    flatPinchStartDistance: { default: 0.03 },
+    flatPinchEndDistance: { default: 0.1 },
   },
 
   init() {
@@ -142,7 +144,17 @@ AFRAME.registerComponent("mediapipe-hand", {
           this.data.hand.components["hand-tracking-grab-controls"];
 
         this.obbCollider = this.data.hand.components["obb-collider"];
+        this.data.hand.setAttribute("obb-collider", { size: 0.055 });
         this.obbCollider.tick = this.obbColliderTick.bind(this);
+
+        this.data.hand.addEventListener(
+          "obbcollisionstarted",
+          this.onCollisionStarted.bind(this)
+        );
+        this.data.hand.addEventListener(
+          "obbcollisionended",
+          this.onCollisionEnded.bind(this)
+        );
       });
     }
 
@@ -174,6 +186,25 @@ AFRAME.registerComponent("mediapipe-hand", {
     });
   },
 
+  onCollisionStarted: function (evt) {
+    var withEl = evt.detail.withEl;
+    if (this.handTrackingGrabControls.collidedEl != withEl) {
+      return;
+    }
+    this.jointSpheres.forEach((sphere) => {
+      sphere.setAttribute("color", "yellow");
+    });
+  },
+
+  onCollisionEnded: function () {
+    if (this.handTrackingGrabControls.grabbedEl) {
+      return;
+    }
+    this.jointSpheres.forEach((sphere) => {
+      sphere.setAttribute("color", "red");
+    });
+  },
+
   /** @param {Vector3} vector */
   getRay(vector) {
     // Convert [0,1] → [-1,1] (NDC)
@@ -197,7 +228,9 @@ AFRAME.registerComponent("mediapipe-hand", {
       this.jointSpheres[HAND_LANDMARKS_MAP["WRIST"]].object3D.getWorldPosition(
         wristObject3D.position
       );
-      console.log(wristObject3D.position);
+      wristObject3D.visible = true;
+      htc.el.object3D.visible = true;
+      //console.log(wristObject3D.position);
       wristObject3D.quaternion.copy(this.wristQuaternion);
     }
   },
@@ -267,11 +300,31 @@ AFRAME.registerComponent("mediapipe-hand", {
 
     pinchEventDetail.wristRotation.copy(this.wristQuaternion);
 
-    var distance = indexTipPosition.distanceTo(thumbTipPosition);
+    let distance = 0;
+    let pinchStartDistance, pinchEndDistance;
+    if (true) {
+      const fingerTip = new THREE.Vector3().copy(
+        this.landmarks[HAND_LANDMARKS_MAP["INDEX_FINGER_TIP"]]
+      );
+      fingerTip.z = 0;
+
+      const thumbTip = new THREE.Vector3().copy(
+        this.landmarks[HAND_LANDMARKS_MAP["THUMB_TIP"]]
+      );
+      thumbTip.z = 0;
+
+      distance = fingerTip.distanceTo(thumbTip);
+      pinchStartDistance = this.data.flatPinchStartDistance;
+      pinchEndDistance = this.data.flatPinchEndDistance;
+    } else {
+      distance = indexTipPosition.distanceTo(thumbTipPosition);
+      pinchStartDistance = this.data.pinchStartDistance;
+      pinchEndDistance = this.data.pinchEndDistance;
+    }
 
     console.log({ distance });
 
-    if (distance < this.data.pinchStartDistance && htc.isPinched === false) {
+    if (distance < pinchStartDistance && htc.isPinched === false) {
       htc.isPinched = true;
       pinchEventDetail.position
         .copy(indexTipPosition)
@@ -281,7 +334,7 @@ AFRAME.registerComponent("mediapipe-hand", {
       // console.log("pinchstarted");
     }
 
-    if (distance > this.data.pinchEndDistance && htc.isPinched === true) {
+    if (distance > pinchEndDistance && htc.isPinched === true) {
       htc.isPinched = false;
       pinchEventDetail.position
         .copy(indexTipPosition)
@@ -322,6 +375,9 @@ AFRAME.registerComponent("mediapipe-hand", {
     const handedness = handLandmarkerResult.handednesses[index][0];
     const worldLandmarks = handLandmarkerResult.worldLandmarks[index];
     const landmarks = handLandmarkerResult.landmarks[index];
+
+    this.worldLandmarks = worldLandmarks;
+    this.landmarks = landmarks;
 
     /** @type {HAND_LANDMARK} */
     const originLandmarkName = "INDEX_FINGER_MCP";
@@ -381,17 +437,58 @@ AFRAME.registerComponent("mediapipe-hand", {
     handPosition.addScaledVector(localRayDirection, handDistance);
     this.hand.object3D.position.lerp(handPosition, this.getSmoothing());
 
-    this.updateHandTrackingControls();
+    const wrist = new THREE.Vector3();
+    this.jointSpheres[HAND_LANDMARKS_MAP["WRIST"]].object3D.getWorldPosition(
+      wrist
+    );
+
+    const indexFingerMcp = new THREE.Vector3();
+    this.jointSpheres[
+      HAND_LANDMARKS_MAP["INDEX_FINGER_MCP"]
+    ].object3D.getWorldPosition(indexFingerMcp);
+
+    const pinkyMcp = new THREE.Vector3();
+    this.jointSpheres[
+      HAND_LANDMARKS_MAP["PINKY_MCP"]
+    ].object3D.getWorldPosition(pinkyMcp);
+
+    const forward = new THREE.Vector3()
+      .subVectors(indexFingerMcp, wrist)
+      .normalize();
+
+    // direction toward pinky
+    const pinkyDir = new THREE.Vector3()
+      .subVectors(pinkyMcp, indexFingerMcp)
+      .normalize();
+
+    // up vector (X)
+    // If this points the wrong way, swap the cross order
+    const up = new THREE.Vector3();
+    const upCrossVectors = [forward, pinkyDir];
+    if (this.data.side == "left") {
+      upCrossVectors.reverse();
+    }
+    up.crossVectors(...upCrossVectors).normalize();
+
+    // Up vector (Y)
+    const right = new THREE.Vector3().crossVectors(forward, up).normalize();
+
+    const matrix = new THREE.Matrix4();
+    matrix.makeBasis(
+      right.normalize(),
+      up.normalize(),
+      forward.normalize().negate()
+    );
+
+    const wristQuaternion = new THREE.Quaternion();
+    wristQuaternion.setFromRotationMatrix(matrix).normalize();
+    this.wristQuaternion.slerp(wristQuaternion, this.getSmoothing());
 
     this.hand.object3D.visible = true;
   },
 
   getSmoothing() {
     return this.hand.object3D.visible ? this.data.smoothing : 1;
-  },
-
-  updateHandTrackingControls() {
-    // FILL
   },
 
   /**
