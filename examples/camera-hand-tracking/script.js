@@ -306,7 +306,7 @@ const updateRotation = () => {
   const sensorType = device.hasSensorType("gameRotation")
     ? "gameRotation"
     : "orientation";
-  device.setSensorConfiguration({ [sensorType]: rotationEnabled ? 40 : 0 });
+  device.setSensorConfiguration({ [sensorType]: rotationEnabled ? 20 : 0 });
 };
 device.addEventListener("gameRotation", (event) => {
   quaternion.copy(event.message.gameRotation);

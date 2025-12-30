@@ -322,7 +322,7 @@ AFRAME.registerComponent("mediapipe-hand", {
       pinchEndDistance = this.data.pinchEndDistance;
     }
 
-    console.log({ distance });
+    //console.log({ distance });
 
     if (distance < pinchStartDistance && htc.isPinched === false) {
       htc.isPinched = true;
@@ -382,7 +382,7 @@ AFRAME.registerComponent("mediapipe-hand", {
     /** @type {HAND_LANDMARK} */
     const originLandmarkName = "INDEX_FINGER_MCP";
     /** @type {HAND_LANDMARK[]} */
-    const referenceLandmarkNames = ["WRIST", "PINKY_MCP", "THUMB_CMC"];
+    const referenceLandmarkNames = ["WRIST", "THUMB_CMC", "PINKY_MCP"];
 
     const wristWorldLandmark = structuredClone(
       worldLandmarks[HAND_LANDMARKS_MAP[originLandmarkName]]
@@ -420,19 +420,29 @@ AFRAME.registerComponent("mediapipe-hand", {
       .applyQuaternion(inverseCameraQuaternion);
 
     const handPosition = new THREE.Vector3();
-    let handDistancesSum = 0;
+    let handDistances = [];
+    let handDistanceWeights = [];
     referenceLandmarkNames.forEach((referenceLandmarkName) => {
-      const _handDistance = this.solveRayScalar(
+      const { distance, weight } = this.solveRayScalar(
         cameraWorldLandmarks[HAND_LANDMARKS_MAP[referenceLandmarkName]],
         ray.direction,
         cameraLandmarks[HAND_LANDMARKS_MAP[referenceLandmarkName]],
         cameraLandmarks[HAND_LANDMARKS_MAP[originLandmarkName]]
       );
-      handDistancesSum += _handDistance;
+      handDistances.push(distance);
+      handDistanceWeights.push(weight);
     });
-    const handDistance = handDistancesSum / referenceLandmarkNames.length;
+    let handDistanceWeightSum = 0;
+    handDistanceWeights.forEach((handDistanceWeight) => {
+      handDistanceWeightSum += handDistanceWeight;
+    });
+    let handDistance = 0;
+    handDistances.forEach((_handDistance, index) => {
+      handDistance +=
+        _handDistance * (handDistanceWeights[index] / handDistanceWeightSum);
+    });
 
-    // console.log({ handDistance });
+    console.log({ handDistance });
 
     handPosition.addScaledVector(localRayDirection, handDistance);
     this.hand.object3D.position.lerp(handPosition, this.getSmoothing());
@@ -505,6 +515,12 @@ AFRAME.registerComponent("mediapipe-hand", {
 
     origin = new THREE.Vector3().copy(origin);
 
+    const v = new THREE.Vector3().subVectors(origin, vector);
+    const xy = Math.hypot(v.x, v.y);
+    const len = v.length();
+    const flatness = xy / len; // ∈ [0, 1]
+    const weight = flatness;
+
     const _vector = new THREE.Vector3();
     let distance = 0.0;
     let difference = 0;
@@ -547,7 +563,7 @@ AFRAME.registerComponent("mediapipe-hand", {
 
     //console.log({ i, improvement, offset });
 
-    return distance;
+    return { distance, weight };
   },
 
   /** @param {Vector3} vector */
