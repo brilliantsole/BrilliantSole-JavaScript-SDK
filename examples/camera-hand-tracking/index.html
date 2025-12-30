@@ -122,10 +122,15 @@
         </div>
       </div>
       <div
+        id="mediaContainer"
         style="display: flex; flex-direction: column; gap: 1rem; width: 500px"
       >
         <div id="sceneContainer">
-          <a-scene embedded xr-mode-ui="enabled: false">
+          <a-scene
+            embedded
+            xr-mode-ui="enabled: false"
+            obb-collider="showColliders: true"
+          >
             <a-camera
               id="camera"
               look-controls="enabled:false;"
@@ -134,8 +139,28 @@
             >
               <!-- <a-sphere color="blue" radius="0.01" position="0 0 -1"></a-sphere> -->
             </a-camera>
-            <a-entity mediapipe-hand="side: left"></a-entity>
-            <a-entity mediapipe-hand="side: right"></a-entity>
+
+            <a-entity mediapipe-hand="side: left; hand: #leftHand"></a-entity>
+            <a-entity mediapipe-hand="side: right; hand: #rightHand"></a-entity>
+
+            <a-entity
+              id="leftHand"
+              hand-tracking-grab-controls="hand: left;"
+              hand-tracking-controls="hand: left; modelStyle: dots;"
+            ></a-entity>
+            <a-entity
+              id="rightHand"
+              hand-tracking-grab-controls="hand: right;"
+              hand-tracking-controls="hand: right; modelStyle: dots;"
+            ></a-entity>
+
+            <a-sphere
+              grabbable
+              color="blue"
+              position="0 1.6 -0.5"
+              radius="0.1"
+            ></a-sphere>
+
             <!-- <a-box
               position="-1 0.5 -3"
               rotation="0 45 0"

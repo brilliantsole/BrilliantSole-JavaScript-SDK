@@ -114,13 +114,37 @@ AFRAME.registerComponent("mediapipe-hand", {
     pinchThreshold: { type: "number", default: 0.03 },
     jointRadius: { type: "number", default: 0.005 },
     cylinderRadius: { type: "number", default: 0.003 },
+    hand: { type: "selector" },
+    pinchStartDistance: { default: 0.05 },
+    pinchEndDistance: { default: 0.06 },
   },
 
   init() {
-    this.el.object3D.visible = false;
     this.camera = this.el.sceneEl.querySelector("a-camera");
     this.hand = document.createElement("a-entity");
+    this.hand.setAttribute("visible", "false");
     this.el.appendChild(this.hand);
+
+    this.thumbTipPosition = new THREE.Vector3();
+    this.wristQuaternion = new THREE.Quaternion();
+
+    console.log("this.data.hand", this.data.hand);
+
+    if (this.data.hand) {
+      this.data.hand.addEventListener("loaded", () => {
+        this.handTrackingControls =
+          this.data.hand.components["hand-tracking-controls"];
+        this.handTrackingControls.tick =
+          this.handTrackingControlsTick.bind(this);
+        this.handTrackingControls.detectPinch = this.detectPinch.bind(this);
+
+        this.handTrackingGrabControls =
+          this.data.hand.components["hand-tracking-grab-controls"];
+
+        this.obbCollider = this.data.hand.components["obb-collider"];
+        this.obbCollider.tick = this.obbColliderTick.bind(this);
+      });
+    }
 
     this.raycaster = new THREE.Raycaster();
 
@@ -162,6 +186,121 @@ AFRAME.registerComponent("mediapipe-hand", {
     return this.raycaster.ray.clone();
   },
 
+  handTrackingControlsTick() {
+    const htc = this.handTrackingControls;
+    htc.hasPoses = this.hand.object3D.visible;
+    if (this.hand.object3D.visible) {
+      htc.hasPoses = true;
+      htc.detectGesture();
+
+      const { wristObject3D } = htc;
+      this.jointSpheres[HAND_LANDMARKS_MAP["WRIST"]].object3D.getWorldPosition(
+        wristObject3D.position
+      );
+      console.log(wristObject3D.position);
+      wristObject3D.quaternion.copy(this.wristQuaternion);
+    }
+  },
+
+  obbColliderTick() {
+    const oc = this.obbCollider;
+
+    this.obbColliderStuff = this.obbColliderStuff || {
+      auxPosition: new THREE.Vector3(),
+      auxScale: new THREE.Vector3(),
+      auxQuaternion: new THREE.Quaternion(),
+      auxMatrix: new THREE.Matrix4(),
+    };
+    const { auxPosition, auxScale, auxQuaternion, auxMatrix } =
+      this.obbColliderStuff;
+
+    var obb = oc.obb;
+    var renderColliderMesh = oc.renderColliderMesh;
+    var trackedObject3D =
+      this.jointSpheres[HAND_LANDMARKS_MAP["INDEX_FINGER_DIP"]].object3D;
+
+    if (!trackedObject3D) {
+      return;
+    }
+
+    trackedObject3D.updateMatrix();
+    trackedObject3D.updateMatrixWorld(true);
+    trackedObject3D.matrixWorld.decompose(auxPosition, auxQuaternion, auxScale);
+
+    // Recalculate collider if scale has changed.
+    if (
+      Math.abs(auxScale.x - oc.previousScale.x) > 0.0001 ||
+      Math.abs(auxScale.y - oc.previousScale.y) > 0.0001 ||
+      Math.abs(auxScale.z - oc.previousScale.z) > 0.0001
+    ) {
+      oc.updateCollider();
+    }
+
+    oc.previousScale.copy(auxScale);
+
+    // reset scale, keep position and rotation
+    auxScale.set(1, 1, 1);
+    auxMatrix.compose(auxPosition, auxQuaternion, auxScale);
+    // Update OBB visual representation.
+    if (renderColliderMesh) {
+      renderColliderMesh.matrixWorld.copy(auxMatrix);
+    }
+
+    // Reset OBB with AABB and apply entity matrix. applyMatrix4 changes OBB internal state.
+    obb.copy(oc.aabb);
+    obb.applyMatrix4(auxMatrix);
+  },
+
+  detectPinch: function () {
+    const htc = this.handTrackingControls;
+
+    var indexTipPosition = htc.indexTipPosition;
+    var pinchEventDetail = htc.pinchEventDetail;
+    const { thumbTipPosition } = this;
+
+    this.jointSpheres[
+      HAND_LANDMARKS_MAP["INDEX_FINGER_TIP"]
+    ].object3D.getWorldPosition(indexTipPosition);
+    this.jointSpheres[
+      HAND_LANDMARKS_MAP["THUMB_TIP"]
+    ].object3D.getWorldPosition(thumbTipPosition);
+
+    pinchEventDetail.wristRotation.copy(this.wristQuaternion);
+
+    var distance = indexTipPosition.distanceTo(thumbTipPosition);
+
+    console.log({ distance });
+
+    if (distance < this.data.pinchStartDistance && htc.isPinched === false) {
+      htc.isPinched = true;
+      pinchEventDetail.position
+        .copy(indexTipPosition)
+        .add(thumbTipPosition)
+        .multiplyScalar(0.5);
+      htc.el.emit("pinchstarted", pinchEventDetail);
+      // console.log("pinchstarted");
+    }
+
+    if (distance > this.data.pinchEndDistance && htc.isPinched === true) {
+      htc.isPinched = false;
+      pinchEventDetail.position
+        .copy(indexTipPosition)
+        .add(thumbTipPosition)
+        .multiplyScalar(0.5);
+      htc.el.emit("pinchended", pinchEventDetail);
+      // console.log("pinchended");
+    }
+
+    if (htc.isPinched) {
+      pinchEventDetail.position
+        .copy(indexTipPosition)
+        .add(thumbTipPosition)
+        .multiplyScalar(0.5);
+      htc.el.emit("pinchmoved", pinchEventDetail);
+      // console.log("pinchmoved");
+    }
+  },
+
   /** @param {HandLandmarkerResult} handLandmarkerResult */
   updateFromLandmarks(handLandmarkerResult) {
     //console.log("handLandmarkerResult", handLandmarkerResult);
@@ -169,7 +308,7 @@ AFRAME.registerComponent("mediapipe-hand", {
       (handedness) => handedness[0].categoryName.toLowerCase() == this.data.side
     );
     if (index == -1) {
-      this.el.object3D.visible = false;
+      this.hand.object3D.visible = false;
       return;
     }
 
@@ -237,12 +376,22 @@ AFRAME.registerComponent("mediapipe-hand", {
     });
     const handDistance = handDistancesSum / referenceLandmarkNames.length;
 
-    console.log({ handDistance });
+    // console.log({ handDistance });
 
     handPosition.addScaledVector(localRayDirection, handDistance);
-    this.hand.object3D.position.lerp(handPosition, this.data.smoothing);
+    this.hand.object3D.position.lerp(handPosition, this.getSmoothing());
 
-    this.el.object3D.visible = true;
+    this.updateHandTrackingControls();
+
+    this.hand.object3D.visible = true;
+  },
+
+  getSmoothing() {
+    return this.hand.object3D.visible ? this.data.smoothing : 1;
+  },
+
+  updateHandTrackingControls() {
+    // FILL
   },
 
   /**
@@ -327,7 +476,7 @@ AFRAME.registerComponent("mediapipe-hand", {
     this.jointSpheres.forEach((sphere, index) => {
       const { object3D } = sphere;
       const position = cameraWorldLandmarks[index];
-      object3D.position.lerp(position, this.data.smoothing);
+      object3D.position.lerp(position, this.getSmoothing());
     });
   },
 
@@ -353,9 +502,9 @@ AFRAME.registerComponent("mediapipe-hand", {
       );
 
       const { object3D } = cylinder;
-      object3D.scale.lerp({ x: 1, y: height, z: 1 }, this.data.smoothing);
-      object3D.quaternion.slerp(quaternion, this.data.smoothing);
-      object3D.position.lerp(position, this.data.smoothing);
+      object3D.scale.lerp({ x: 1, y: height, z: 1 }, this.getSmoothing());
+      object3D.quaternion.slerp(quaternion, this.getSmoothing());
+      object3D.position.lerp(position, this.getSmoothing());
     });
   },
 });

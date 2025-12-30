@@ -485,12 +485,13 @@ const drawCameraVideo = () => {
   requestAnimationFrame(drawCameraVideo);
 };
 
+const mediaContainer = document.getElementById("mediaContainer");
 const toggleMirrorCameraButton = document.getElementById("toggleMirrorCamera");
 let mirrorCamera = false;
 const setMirrorCamera = (newMirrorCamera) => {
   mirrorCamera = newMirrorCamera;
   // console.log({ mirrorCamera });
-  cameraVideo.style.transform = mirrorCamera ? "scaleX(-1)" : "";
+  mediaContainer.style.transform = mirrorCamera ? "scaleX(-1)" : "";
   toggleMirrorCameraButton.innerText = mirrorCamera
     ? "unmirror camera"
     : "mirror camera";
