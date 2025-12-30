@@ -127,6 +127,11 @@ AFRAME.registerComponent("mediapipe-hand", {
     this.hand.setAttribute("visible", "false");
     this.el.appendChild(this.hand);
 
+    /** @type {HAND_LANDMARK} */
+    this.originLandmarkName = "INDEX_FINGER_MCP";
+    /** @type {HAND_LANDMARK[]} */
+    this.referenceLandmarkNames = ["WRIST", "THUMB_CMC", "PINKY_MCP"];
+
     this.thumbTipPosition = new THREE.Vector3();
     this.wristQuaternion = new THREE.Quaternion();
 
@@ -374,18 +379,12 @@ AFRAME.registerComponent("mediapipe-hand", {
 
     const handedness = handLandmarkerResult.handednesses[index][0];
     const worldLandmarks = handLandmarkerResult.worldLandmarks[index];
-    const landmarks = handLandmarkerResult.landmarks[index];
-
     this.worldLandmarks = worldLandmarks;
+    const landmarks = handLandmarkerResult.landmarks[index];
     this.landmarks = landmarks;
 
-    /** @type {HAND_LANDMARK} */
-    const originLandmarkName = "INDEX_FINGER_MCP";
-    /** @type {HAND_LANDMARK[]} */
-    const referenceLandmarkNames = ["WRIST", "THUMB_CMC", "PINKY_MCP"];
-
     const wristWorldLandmark = structuredClone(
-      worldLandmarks[HAND_LANDMARKS_MAP[originLandmarkName]]
+      worldLandmarks[HAND_LANDMARKS_MAP[this.originLandmarkName]]
     );
     worldLandmarks.forEach((worldLandmark) => {
       worldLandmark.x -= wristWorldLandmark.x;
@@ -398,22 +397,31 @@ AFRAME.registerComponent("mediapipe-hand", {
       const position = this.worldLandmarkToPosition(worldLandmark);
       return position;
     });
+    this.cameraWorldLandmarks = cameraWorldLandmarks;
 
     /** @type {Vector3[]} */
     const cameraLandmarks = landmarks.map((landmark) => {
       const position = this.landmarkToPosition(landmark);
       return position;
     });
+    this.cameraLandmarks = cameraLandmarks;
 
     this.updateJoints(cameraWorldLandmarks);
     this.updateJointConnections(cameraWorldLandmarks);
 
+    this.updateHandPosition();
+    this.updateWristOrientation();
+
+    this.hand.object3D.visible = true;
+  },
+
+  updateHandPosition() {
     const inverseCameraQuaternion = this.camera.object3D.quaternion
       .clone()
       .invert();
 
     const ray = this.getRay(
-      cameraLandmarks[HAND_LANDMARKS_MAP[originLandmarkName]]
+      this.cameraLandmarks[HAND_LANDMARKS_MAP[this.originLandmarkName]]
     );
     const localRayDirection = ray.direction
       .clone()
@@ -422,12 +430,12 @@ AFRAME.registerComponent("mediapipe-hand", {
     const handPosition = new THREE.Vector3();
     let handDistances = [];
     let handDistanceWeights = [];
-    referenceLandmarkNames.forEach((referenceLandmarkName) => {
+    this.referenceLandmarkNames.forEach((referenceLandmarkName) => {
       const { distance, weight } = this.solveRayScalar(
-        cameraWorldLandmarks[HAND_LANDMARKS_MAP[referenceLandmarkName]],
+        this.cameraWorldLandmarks[HAND_LANDMARKS_MAP[referenceLandmarkName]],
         ray.direction,
-        cameraLandmarks[HAND_LANDMARKS_MAP[referenceLandmarkName]],
-        cameraLandmarks[HAND_LANDMARKS_MAP[originLandmarkName]]
+        this.cameraLandmarks[HAND_LANDMARKS_MAP[referenceLandmarkName]],
+        this.cameraLandmarks[HAND_LANDMARKS_MAP[this.originLandmarkName]]
       );
       handDistances.push(distance);
       handDistanceWeights.push(weight);
@@ -446,7 +454,9 @@ AFRAME.registerComponent("mediapipe-hand", {
 
     handPosition.addScaledVector(localRayDirection, handDistance);
     this.hand.object3D.position.lerp(handPosition, this.getSmoothing());
+  },
 
+  updateWristOrientation() {
     const wrist = new THREE.Vector3();
     this.jointSpheres[HAND_LANDMARKS_MAP["WRIST"]].object3D.getWorldPosition(
       wrist
@@ -493,8 +503,6 @@ AFRAME.registerComponent("mediapipe-hand", {
     const wristQuaternion = new THREE.Quaternion();
     wristQuaternion.setFromRotationMatrix(matrix).normalize();
     this.wristQuaternion.slerp(wristQuaternion, this.getSmoothing());
-
-    this.hand.object3D.visible = true;
   },
 
   getSmoothing() {
