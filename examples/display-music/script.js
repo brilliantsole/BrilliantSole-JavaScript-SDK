@@ -792,7 +792,7 @@ osmdSystemInput.addEventListener("input", () => {
   setOsmdSystemIndex(Number(osmdSystemInput.value), false);
 });
 
-let systemsPerDisplay = 3;
+let systemsPerDisplay = 2;
 const osmdSystemsPerDisplayContainer = document.getElementById(
   "osmdSystemsPerDisplay"
 );
@@ -1317,9 +1317,9 @@ const tfliteConfiguration = {
   name: "kickStompTap",
   task: "classification",
   sensorTypes: ["gyroscope", "linearAcceleration"],
-  sampleRate: 40,
+  sampleRate: 20,
   captureDelay: 500,
-  threshold: 0.0,
+  threshold: 0,
   classes: ["idle", "kick", "stomp", "tap"],
 };
 fetch("./kickStompTap.tflite")
@@ -1359,6 +1359,7 @@ insoleDevice.addEventListener("tfliteIsReady", (event) => {
 
 insoleDevice.addEventListener("tfliteInference", (event) => {
   const { maxClass } = event.message.tfliteInference;
+  console.log({ maxClass });
   if (maxClass == "tap") {
     goToNextSystemIndex();
   }

@@ -16,8 +16,8 @@
     <script type="module" src="./script.js"></script>
   </head>
   <style>
-    img,
-    canvas {
+    canvas,
+    img {
       width: 100%;
       height: 100%;
     }
@@ -41,13 +41,28 @@
       aspect-ratio: 4/3;
       position: relative;
     }
+
+    #imageContainer > * {
+      height: revert;
+    }
+    #imageContainer > canvas {
+      height: 100%;
+    }
+
+    a-scene {
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      position: absolute;
+    }
   </style>
   <body>
     <nav>
       <a href="../../">home</a>
     </nav>
 
-    <h1>Camera | BrilliantSole JavaScript SDK</h1>
+    <h1>Camera Hand Tracking | BrilliantSole JavaScript SDK</h1>
 
     <div style="display: flex; flex-direction: row; gap: 1rem">
       <div>
@@ -112,14 +127,20 @@
         <div id="sceneContainer">
           <a-scene embedded xr-mode-ui="enabled: false">
             <a-camera
+              id="camera"
               look-controls="enabled:false;"
               wasd-controls="enabled:false;"
-              fov="60"
+              fov="40"
             >
               <!-- <a-sphere color="blue" radius="0.01" position="0 0 -1"></a-sphere> -->
             </a-camera>
             <a-entity mediapipe-hand="side: left"></a-entity>
             <a-entity mediapipe-hand="side: right"></a-entity>
+            <!-- <a-box
+              position="-1 0.5 -3"
+              rotation="0 45 0"
+              color="#4CC3D9"
+            ></a-box> -->
             <!-- <a-box
               position="-1 0.5 -3"
               rotation="0 45 0"
@@ -136,13 +157,13 @@
               height="1.5"
               color="#FFC65D"
             ></a-cylinder> -->
-            <a-plane
+            <!-- <a-plane
               position="0 0 -4"
               rotation="-90 0 0"
               width="4"
               height="4"
               color="#7BC8A4"
-            ></a-plane>
+            ></a-plane> -->
             <a-sky visible="false" color="#ECECEC"></a-sky>
           </a-scene>
           <img

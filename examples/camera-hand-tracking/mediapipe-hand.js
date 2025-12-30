@@ -72,15 +72,48 @@ console.log("HAND_LANDMARKS_MAP", HAND_LANDMARKS_MAP);
 
 window.defaultHandDistance = 0.4;
 
+/** @type {[HAND_LANDMARK, HAND_LANDMARK][]} */
+const JOINT_CONNECTIONS = [
+  ["WRIST", "THUMB_CMC"],
+  ["THUMB_CMC", "THUMB_MCP"],
+  ["THUMB_MCP", "THUMB_IP"],
+  ["THUMB_IP", "THUMB_TIP"],
+
+  //   ["WRIST", "INDEX_FINGER_MCP"],
+  //   ["THUMB_CMC", "INDEX_FINGER_MCP"],
+  ["THUMB_MCP", "INDEX_FINGER_MCP"],
+  ["INDEX_FINGER_MCP", "INDEX_FINGER_PIP"],
+  ["INDEX_FINGER_PIP", "INDEX_FINGER_DIP"],
+  ["INDEX_FINGER_DIP", "INDEX_FINGER_TIP"],
+
+  ["MIDDLE_FINGER_MCP", "MIDDLE_FINGER_PIP"],
+  ["MIDDLE_FINGER_PIP", "MIDDLE_FINGER_DIP"],
+  ["MIDDLE_FINGER_DIP", "MIDDLE_FINGER_TIP"],
+
+  ["RING_FINGER_MCP", "RING_FINGER_PIP"],
+  ["RING_FINGER_PIP", "RING_FINGER_DIP"],
+  ["RING_FINGER_DIP", "RING_FINGER_TIP"],
+
+  ["WRIST", "PINKY_MCP"],
+  ["PINKY_MCP", "PINKY_PIP"],
+  ["PINKY_PIP", "PINKY_DIP"],
+  ["PINKY_DIP", "PINKY_TIP"],
+
+  ["INDEX_FINGER_MCP", "MIDDLE_FINGER_MCP"],
+  ["MIDDLE_FINGER_MCP", "RING_FINGER_MCP"],
+  ["RING_FINGER_MCP", "PINKY_MCP"],
+];
+
 /** @type {import("three")} */
 const THREE = window.THREE;
 
 AFRAME.registerComponent("mediapipe-hand", {
   schema: {
     side: { type: "string", default: "left" },
-    smoothing: { type: "number", default: 0.5 },
+    smoothing: { type: "number", default: 0.7 },
     pinchThreshold: { type: "number", default: 0.03 },
-    jointRadius: { type: "number", default: 0.008 },
+    jointRadius: { type: "number", default: 0.005 },
+    cylinderRadius: { type: "number", default: 0.003 },
   },
 
   init() {
@@ -102,28 +135,15 @@ AFRAME.registerComponent("mediapipe-hand", {
       this.hand.appendChild(sphere);
     }
 
-    this.HAND_CONNECTIONS = [
-      [0, 1],
-      [1, 2],
-      [2, 3],
-      [3, 4],
-      [0, 5],
-      [5, 6],
-      [6, 7],
-      [7, 8],
-      [0, 9],
-      [9, 10],
-      [10, 11],
-      [11, 12],
-      [0, 13],
-      [13, 14],
-      [14, 15],
-      [15, 16],
-      [0, 17],
-      [17, 18],
-      [18, 19],
-      [19, 20],
-    ];
+    this.jointCylinders = [];
+    for (let i = 0; i < JOINT_CONNECTIONS.length; i++) {
+      const cylinder = document.createElement("a-cylinder");
+      cylinder.setAttribute("color", "white");
+      cylinder.setAttribute("radius", this.data.cylinderRadius);
+      cylinder.setAttribute("height", "1");
+      this.jointCylinders.push(cylinder);
+      this.hand.appendChild(cylinder);
+    }
 
     this.el.sceneEl.addEventListener("handLandmarkerResult", (e) => {
       this.updateFromLandmarks(e.detail.handLandmarkerResult);
@@ -166,8 +186,8 @@ AFRAME.registerComponent("mediapipe-hand", {
 
     /** @type {HAND_LANDMARK} */
     const originLandmarkName = "INDEX_FINGER_MCP";
-    /** @type {HAND_LANDMARK} */
-    const referenceLandmarkName = "PINKY_MCP";
+    /** @type {HAND_LANDMARK[]} */
+    const referenceLandmarkNames = ["WRIST", "PINKY_MCP", "THUMB_CMC"];
 
     const wristWorldLandmark = structuredClone(
       worldLandmarks[HAND_LANDMARKS_MAP[originLandmarkName]]
@@ -191,6 +211,7 @@ AFRAME.registerComponent("mediapipe-hand", {
     });
 
     this.updateJoints(cameraWorldLandmarks);
+    this.updateJointConnections(cameraWorldLandmarks);
 
     const inverseCameraQuaternion = this.camera.object3D.quaternion
       .clone()
@@ -204,14 +225,83 @@ AFRAME.registerComponent("mediapipe-hand", {
       .applyQuaternion(inverseCameraQuaternion);
 
     const handPosition = new THREE.Vector3();
-    let handDistance = defaultHandDistance; // FIX
+    let handDistancesSum = 0;
+    referenceLandmarkNames.forEach((referenceLandmarkName) => {
+      const _handDistance = this.solveRayScalar(
+        cameraWorldLandmarks[HAND_LANDMARKS_MAP[referenceLandmarkName]],
+        ray.direction,
+        cameraLandmarks[HAND_LANDMARKS_MAP[referenceLandmarkName]],
+        cameraLandmarks[HAND_LANDMARKS_MAP[originLandmarkName]]
+      );
+      handDistancesSum += _handDistance;
+    });
+    const handDistance = handDistancesSum / referenceLandmarkNames.length;
 
-    //console.log({ handDistance });
+    console.log({ handDistance });
 
     handPosition.addScaledVector(localRayDirection, handDistance);
     this.hand.object3D.position.lerp(handPosition, this.data.smoothing);
 
     this.el.object3D.visible = true;
+  },
+
+  /**
+   * @param {Vector3} vector
+   * @param {Vector3} direction
+   * @param {Vector3} projection
+   * @param {Vector3} origin
+   */
+  solveRayScalar(vector, direction, projection, origin, threshold = 0.000001) {
+    const camera = this.el.sceneEl.camera;
+
+    const _projection = new THREE.Vector3().copy(projection);
+    _projection.z = 0;
+
+    origin = new THREE.Vector3().copy(origin);
+
+    const _vector = new THREE.Vector3();
+    let distance = 0.0;
+    let difference = 0;
+    let offset = 0.1;
+    let didOvershoot = false;
+    let i = 0;
+    const distanceFromOriginToProjection = origin.distanceTo(projection);
+    let improvement = 0;
+    do {
+      distance += offset * (didOvershoot ? -1 : 1);
+      //console.log({ distance });
+      _vector
+        .copy(vector)
+        .add(this.camera.object3D.position)
+        .addScaledVector(direction, distance)
+        .project(camera)
+        .multiplyScalar(0.5)
+        .addScalar(0.5);
+      _vector.z = 0;
+
+      const _difference = _vector.distanceTo(_projection);
+      if (difference == 0) {
+        improvement = 1;
+      } else {
+        improvement = difference - _difference;
+      }
+      //console.log({ improvement });
+      difference = _difference;
+
+      const _didOvershoot =
+        origin.distanceTo(_vector) < distanceFromOriginToProjection;
+      //console.log({ difference, _didOvershoot, i });
+      if (_didOvershoot != didOvershoot) {
+        offset *= 0.5;
+        didOvershoot = _didOvershoot;
+        //console.log({ didOvershoot, offset });
+      }
+      i++;
+    } while (Math.abs(improvement) > threshold && i < 100);
+
+    //console.log({ i, improvement, offset });
+
+    return distance;
   },
 
   /** @param {Vector3} vector */
@@ -237,6 +327,34 @@ AFRAME.registerComponent("mediapipe-hand", {
     this.jointSpheres.forEach((sphere, index) => {
       const { object3D } = sphere;
       const position = cameraWorldLandmarks[index];
+      object3D.position.lerp(position, this.data.smoothing);
+    });
+  },
+
+  /** @param {Vector3[]?} cameraWorldLandmarks */
+  updateJointConnections(cameraWorldLandmarks) {
+    //console.log("updating joint cylinders", cameraWorldLandmarks);
+    const position = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+    this.jointCylinders.forEach((cylinder, index) => {
+      const [from, to] = JOINT_CONNECTIONS[index];
+      const fromLandmark = cameraWorldLandmarks[HAND_LANDMARKS_MAP[from]];
+      const toLandmark = cameraWorldLandmarks[HAND_LANDMARKS_MAP[to]];
+      //   console.log({ from, to, fromLandmark, toLandmark });
+      position.addVectors(fromLandmark, toLandmark).multiplyScalar(0.5);
+      direction.subVectors(toLandmark, fromLandmark);
+      const height = direction.length() - this.data.jointRadius * 2;
+      direction.normalize();
+
+      quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0), // cylinder's local up
+        direction
+      );
+
+      const { object3D } = cylinder;
+      object3D.scale.lerp({ x: 1, y: height, z: 1 }, this.data.smoothing);
+      object3D.quaternion.slerp(quaternion, this.data.smoothing);
       object3D.position.lerp(position, this.data.smoothing);
     });
   },

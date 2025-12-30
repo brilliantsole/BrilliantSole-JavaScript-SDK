@@ -33,6 +33,7 @@ device.addEventListener("connectionStatus", () => {
 
 device.addEventListener("connected", () => {
   if (device.hasCamera) {
+    //device.setSensorConfiguration({camera:20})
   } else {
     console.error("device doesn't have camera");
     device.disconnect();
@@ -542,6 +543,7 @@ const selectCameraInput = async (deviceId) => {
     cameraStream = await navigator.mediaDevices.getUserMedia({
       video: {
         deviceId: { exact: deviceId },
+        aspectRatio: 4 / 3,
         // width: { ideal: 1280 },
         // height: { ideal: 1280 },
       },
