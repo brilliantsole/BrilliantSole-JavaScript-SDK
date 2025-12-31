@@ -334,7 +334,7 @@ AFRAME.registerComponent("mediapipe-hand", {
     var obb = oc.obb;
     var renderColliderMesh = oc.renderColliderMesh;
     var trackedObject3D =
-      this.jointSpheres[HAND_LANDMARKS_MAP["INDEX_FINGER_DIP"]].object3D;
+      this.jointSpheres[HAND_LANDMARKS_MAP["INDEX_FINGER_PIP"]].object3D;
 
     if (!trackedObject3D) {
       return;
