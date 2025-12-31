@@ -499,7 +499,7 @@ const setMirrorCamera = (newMirrorCamera) => {
 toggleMirrorCameraButton.addEventListener("click", () => {
   setMirrorCamera(!mirrorCamera);
 });
-setMirrorCamera(false);
+setMirrorCamera(true);
 
 /** @type {HTMLSelectElement} */
 const cameraInput = document.getElementById("cameraInput");

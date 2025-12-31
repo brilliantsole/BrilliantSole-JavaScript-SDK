@@ -122,7 +122,7 @@ AFRAME.registerComponent("mediapipe-hand", {
     pinchStartDistance: { default: 0.045 },
     pinchEndDistance: { default: 0.055 },
     flatPinchStartDistance: { default: 0.04 },
-    flatPinchEndDistance: { default: 0.09 },
+    flatPinchEndDistance: { default: 0.08 },
   },
 
   init() {
@@ -169,7 +169,7 @@ AFRAME.registerComponent("mediapipe-hand", {
           this.data.hand.components["hand-tracking-grab-controls"];
 
         this.obbCollider = this.data.hand.components["obb-collider"];
-        this.data.hand.setAttribute("obb-collider", { size: 0.055 });
+        this.data.hand.setAttribute("obb-collider", { size: 0.065 });
         this.obbCollider.tick = this.obbColliderTick.bind(this);
 
         this.data.hand.addEventListener(
