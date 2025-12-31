@@ -5761,9 +5761,6 @@
             horizontalAlignment
           } = command;
           assertValidAlignment(horizontalAlignment);
-          _console$j.log({
-            horizontalAlignment
-          });
           dataView = new DataView(new ArrayBuffer(1));
           const alignmentEnum = DisplayAlignments.indexOf(horizontalAlignment);
           dataView.setUint8(0, alignmentEnum);
@@ -5775,9 +5772,6 @@
             verticalAlignment
           } = command;
           assertValidAlignment(verticalAlignment);
-          _console$j.log({
-            verticalAlignment
-          });
           dataView = new DataView(new ArrayBuffer(1));
           const alignmentEnum = DisplayAlignments.indexOf(verticalAlignment);
           dataView.setUint8(0, alignmentEnum);
@@ -5802,9 +5796,6 @@
             segmentStartCap
           } = command;
           assertValidSegmentCap(segmentStartCap);
-          _console$j.log({
-            segmentStartCap
-          });
           dataView = new DataView(new ArrayBuffer(1));
           const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
           dataView.setUint8(0, segmentCapEnum);
@@ -5816,9 +5807,6 @@
             segmentEndCap
           } = command;
           assertValidSegmentCap(segmentEndCap);
-          _console$j.log({
-            segmentEndCap
-          });
           dataView = new DataView(new ArrayBuffer(1));
           const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
           dataView.setUint8(0, segmentCapEnum);
@@ -5830,9 +5818,6 @@
             segmentCap
           } = command;
           assertValidSegmentCap(segmentCap);
-          _console$j.log({
-            segmentCap
-          });
           dataView = new DataView(new ArrayBuffer(1));
           const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentCap);
           dataView.setUint8(0, segmentCapEnum);
@@ -5843,9 +5828,6 @@
           const {
             segmentStartRadius
           } = command;
-          _console$j.log({
-            segmentStartRadius
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, segmentStartRadius, true);
         }
@@ -5855,9 +5837,6 @@
           const {
             segmentEndRadius
           } = command;
-          _console$j.log({
-            segmentEndRadius
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, segmentEndRadius, true);
         }
@@ -5867,9 +5846,6 @@
           const {
             segmentRadius
           } = command;
-          _console$j.log({
-            segmentRadius
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, segmentRadius, true);
         }
@@ -5879,9 +5855,6 @@
           const {
             cropTop
           } = command;
-          _console$j.log({
-            cropTop
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, cropTop, true);
         }
@@ -5891,9 +5864,6 @@
           const {
             cropRight
           } = command;
-          _console$j.log({
-            cropRight
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, cropRight, true);
         }
@@ -5903,9 +5873,6 @@
           const {
             cropBottom
           } = command;
-          _console$j.log({
-            cropBottom
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, cropBottom, true);
         }
@@ -5915,9 +5882,6 @@
           const {
             cropLeft
           } = command;
-          _console$j.log({
-            cropLeft
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, cropLeft, true);
         }
@@ -5927,9 +5891,6 @@
           const {
             rotationCropTop
           } = command;
-          _console$j.log({
-            rotationCropTop
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, rotationCropTop, true);
         }
@@ -5939,9 +5900,6 @@
           const {
             rotationCropRight
           } = command;
-          _console$j.log({
-            rotationCropRight
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, rotationCropRight, true);
         }
@@ -5951,9 +5909,6 @@
           const {
             rotationCropBottom
           } = command;
-          _console$j.log({
-            rotationCropBottom
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, rotationCropBottom, true);
         }
@@ -5963,9 +5918,6 @@
           const {
             rotationCropLeft
           } = command;
-          _console$j.log({
-            rotationCropLeft
-          });
           dataView = new DataView(new ArrayBuffer(2));
           dataView.setUint16(0, rotationCropLeft, true);
         }
@@ -6373,9 +6325,6 @@
           });
           const pointDataType = getPointDataType(allControlPoints);
           const numberOfControlPoints = allControlPoints.length;
-          _console$j.log({
-            numberOfControlPoints
-          });
           curves.forEach((curve, index) => {
             const {
               type,
@@ -19218,16 +19167,6 @@
     log: false
   });
   const spriteHeaderLength = 3 * 2;
-  function getCurvesPoints(curves) {
-    const curvePoints = [];
-    curves.forEach((curve, index) => {
-      if (index == 0) {
-        curvePoints.push(curve.controlPoints[0]);
-      }
-      curvePoints.push(curve.controlPoints.at(-1));
-    });
-    return curvePoints;
-  }
   function serializeSpriteSheet(displayManager, spriteSheet) {
     const {
       name,
@@ -19556,11 +19495,6 @@
                 break;
             }
           });
-          allCurves.sort((a, b) => {
-            const aPoints = getCurvesPoints(a);
-            const bPoints = getCurvesPoints(b);
-            return contourArea(bPoints) - contourArea(aPoints);
-          });
           allCurves.forEach(curves => {
             let controlPoints = curves.flatMap(c => c.controlPoints);
             const isHole = classifySubpath(controlPoints, parsedPaths);
@@ -19583,6 +19517,10 @@
               }
             }
             const isSegments = curves.every(c => c.type === "segment");
+            controlPoints.forEach(controlPoint => {
+              controlPoint.x = Math.round(controlPoint.x);
+              controlPoint.y = Math.round(controlPoint.y);
+            });
             controlPoints = controlPoints.map(_ref => {
               let {
                 x,
@@ -20667,6 +20605,93 @@
           } = command;
           const spriteName = (_displayManager$selec = displayManager.selectedSpriteSheet) === null || _displayManager$selec === void 0 ? void 0 : _displayManager$selec.sprites[spriteIndex].name;
           await displayManager.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
+        }
+        break;
+      case "setSpritesLineHeight":
+        {
+          const {
+            spritesLineHeight
+          } = command;
+          await displayManager.setSpritesLineHeight(spritesLineHeight, sendImmediately);
+        }
+        break;
+      case "setSpritesSpacing":
+        {
+          const {
+            spritesSpacing
+          } = command;
+          await displayManager.setSpritesSpacing(spritesSpacing, sendImmediately);
+        }
+        break;
+      case "setSpritesAlignment":
+        {
+          const {
+            spritesAlignment
+          } = command;
+          await displayManager.setSpritesAlignment(spritesAlignment, sendImmediately);
+        }
+        break;
+      case "setSpritesDirection":
+        {
+          const {
+            spritesDirection
+          } = command;
+          await displayManager.setSpritesDirection(spritesDirection, sendImmediately);
+        }
+        break;
+      case "setSpritesLineAlignment":
+        {
+          const {
+            spritesLineAlignment
+          } = command;
+          await displayManager.setSpritesLineAlignment(spritesLineAlignment, sendImmediately);
+        }
+        break;
+      case "setSpritesLineDirection":
+        {
+          const {
+            spritesLineDirection
+          } = command;
+          await displayManager.setSpritesLineDirection(spritesLineDirection, sendImmediately);
+        }
+        break;
+      case "setSpritesLineSpacing":
+        {
+          const {
+            spritesLineSpacing
+          } = command;
+          await displayManager.setSpritesLineSpacing(spritesLineSpacing, sendImmediately);
+        }
+        break;
+      case "drawSprites":
+        {
+          const {
+            offsetX,
+            offsetY,
+            spriteSerializedLines
+          } = command;
+          const spriteLines = [];
+          spriteSerializedLines.forEach(spriteSerializedLine => {
+            const spriteLine = [];
+            spriteSerializedLine.forEach(spriteSerializedSubLine => {
+              const {
+                spriteIndices,
+                spriteSheetIndex
+              } = spriteSerializedSubLine;
+              const spriteSheetName = Object.entries(displayManager.spriteSheetIndices).find(_ref2 => {
+                let [_spriteSheetName, _spriteSheetIndex] = _ref2;
+                return _spriteSheetIndex == spriteSheetIndex;
+              })[0];
+              const spriteSheet = displayManager.spriteSheets[spriteSheetName];
+              const spriteSubLine = {
+                spriteSheetName: spriteSheet.name,
+                spriteNames: spriteIndices.map(spriteIndex => spriteSheet.sprites[spriteIndex].name)
+              };
+              spriteLine.push(spriteSubLine);
+            });
+            spriteLines.push(spriteLine);
+          });
+          await displayManager.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
         }
         break;
       case "selectSpriteSheet":
@@ -22011,6 +22036,7 @@
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSpritesLineHeight(spritesLineHeight, sendImmediately) {
+      spritesLineHeight = Math.round(spritesLineHeight);
       this.assertValidLineWidth(spritesLineHeight);
       const differences = _classPrivateFieldGet2(_contextStateHelper, this).update({
         spritesLineHeight
