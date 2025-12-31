@@ -72,6 +72,9 @@ console.log("HAND_LANDMARKS_MAP", HAND_LANDMARKS_MAP);
 
 window.defaultHandDistance = 0.4;
 
+window.handRaycasterPitchOffset = 0;
+window.handRaycasterYawOffset = 0;
+
 /** @type {[HAND_LANDMARK, HAND_LANDMARK][]} */
 const JOINT_CONNECTIONS = [
   ["WRIST", "THUMB_CMC"],
@@ -115,10 +118,11 @@ AFRAME.registerComponent("mediapipe-hand", {
     jointRadius: { type: "number", default: 0.005 },
     cylinderRadius: { type: "number", default: 0.003 },
     hand: { type: "selector" },
+    raycaster: { type: "selector" },
     pinchStartDistance: { default: 0.045 },
     pinchEndDistance: { default: 0.055 },
-    flatPinchStartDistance: { default: 0.03 },
-    flatPinchEndDistance: { default: 0.1 },
+    flatPinchStartDistance: { default: 0.04 },
+    flatPinchEndDistance: { default: 0.09 },
   },
 
   init() {
@@ -126,6 +130,22 @@ AFRAME.registerComponent("mediapipe-hand", {
     this.hand = document.createElement("a-entity");
     this.hand.setAttribute("visible", "false");
     this.el.appendChild(this.hand);
+
+    this.indexFingerMcp = new THREE.Vector3();
+    this.ringFingerMcp = new THREE.Vector3();
+    this.pinkyMcp = new THREE.Vector3();
+
+    this.pinkyDir = new THREE.Vector3();
+
+    this.forward = new THREE.Vector3();
+    this.right = new THREE.Vector3();
+    this.up = new THREE.Vector3();
+
+    this.ringFingerForward = new THREE.Vector3();
+    this.indexFingerForward = new THREE.Vector3();
+    this.pinkyForward = new THREE.Vector3();
+
+    this.wrist = new THREE.Vector3();
 
     /** @type {HAND_LANDMARK} */
     this.originLandmarkName = "INDEX_FINGER_MCP";
@@ -220,6 +240,65 @@ AFRAME.registerComponent("mediapipe-hand", {
 
     this.raycaster.setFromCamera(ndc, this.el.sceneEl.camera);
     return this.raycaster.ray.clone();
+  },
+
+  setRaycasterEnabled(enabled) {
+    const raycaster = this.data.raycaster?.components?.raycaster;
+    if (!raycaster) return;
+
+    raycaster.data.enabled = enabled;
+    raycaster.data.showLine = enabled;
+
+    if (enabled) {
+    } else {
+      raycaster.clearAllIntersections();
+      raycaster.el.removeAttribute("line");
+    }
+  },
+  updateRaycaster() {
+    const raycaster = this.data.raycaster?.components?.raycaster;
+    if (!raycaster) return;
+
+    const origin = new THREE.Vector3();
+    const direction = new THREE.Vector3(0, 0, -1);
+
+    const directionEuler = new THREE.Euler(0, 0, 0, "XYZ");
+    directionEuler.x = handRaycasterPitchOffset;
+    directionEuler.y = handRaycasterYawOffset;
+    if (this.data.side == "right") {
+      directionEuler.y *= -1;
+    }
+    const directionQuaternion = new THREE.Quaternion().setFromEuler(
+      directionEuler
+    );
+    directionQuaternion.premultiply(this.wristQuaternion);
+    direction.applyQuaternion(directionQuaternion);
+
+    this.jointSpheres[HAND_LANDMARKS_MAP["WRIST"]].object3D.getWorldPosition(
+      origin
+    );
+
+    const fingerTip = new THREE.Vector3();
+    this.jointSpheres[
+      HAND_LANDMARKS_MAP["INDEX_FINGER_TIP"]
+    ].object3D.getWorldPosition(fingerTip);
+    const thumbTip = new THREE.Vector3();
+    this.jointSpheres[
+      HAND_LANDMARKS_MAP["THUMB_TIP"]
+    ].object3D.getWorldPosition(thumbTip);
+
+    origin
+      .addVectors(fingerTip, thumbTip)
+      .multiplyScalar(0.5)
+      .addScaledVector(direction, 0.005);
+
+    const enabled = true; // FILL - false if angle is away from camera direction
+    this.setRaycasterEnabled(enabled);
+
+    raycaster.data.direction = direction;
+    raycaster.data.origin = origin;
+    raycaster.unitLineEndVec3.copy(direction).normalize();
+    raycaster.drawLine();
   },
 
   handTrackingControlsTick() {
@@ -367,6 +446,7 @@ AFRAME.registerComponent("mediapipe-hand", {
     );
     if (index == -1) {
       this.hand.object3D.visible = false;
+      this.setRaycasterEnabled(false);
       return;
     }
 
@@ -412,6 +492,8 @@ AFRAME.registerComponent("mediapipe-hand", {
     this.updateHandPosition();
     this.updateWristOrientation();
 
+    this.updateRaycaster();
+
     this.hand.object3D.visible = true;
   },
 
@@ -450,54 +532,61 @@ AFRAME.registerComponent("mediapipe-hand", {
         _handDistance * (handDistanceWeights[index] / handDistanceWeightSum);
     });
 
-    console.log({ handDistance });
+    //console.log({ handDistance });
 
     handPosition.addScaledVector(localRayDirection, handDistance);
     this.hand.object3D.position.lerp(handPosition, this.getSmoothing());
   },
 
   updateWristOrientation() {
-    const wrist = new THREE.Vector3();
     this.jointSpheres[HAND_LANDMARKS_MAP["WRIST"]].object3D.getWorldPosition(
-      wrist
+      this.wrist
     );
 
-    const indexFingerMcp = new THREE.Vector3();
     this.jointSpheres[
       HAND_LANDMARKS_MAP["INDEX_FINGER_MCP"]
-    ].object3D.getWorldPosition(indexFingerMcp);
+    ].object3D.getWorldPosition(this.indexFingerMcp);
 
-    const pinkyMcp = new THREE.Vector3();
+    this.jointSpheres[
+      HAND_LANDMARKS_MAP["RING_FINGER_MCP"]
+    ].object3D.getWorldPosition(this.ringFingerMcp);
+
     this.jointSpheres[
       HAND_LANDMARKS_MAP["PINKY_MCP"]
-    ].object3D.getWorldPosition(pinkyMcp);
+    ].object3D.getWorldPosition(this.pinkyMcp);
 
-    const forward = new THREE.Vector3()
-      .subVectors(indexFingerMcp, wrist)
-      .normalize();
+    this.indexFingerForward.subVectors(this.indexFingerMcp, this.wrist);
+    this.ringFingerForward.subVectors(this.ringFingerMcp, this.wrist);
+    this.pinkyForward.subVectors(this.pinkyMcp, this.wrist);
+
+    if (false) {
+      this.forward.copy(this.indexFingerForward);
+    } else {
+      this.forward
+        .addVectors(this.indexFingerForward, this.pinkyForward)
+        .multiplyScalar(0.5);
+    }
+    this.forward.normalize();
 
     // direction toward pinky
-    const pinkyDir = new THREE.Vector3()
-      .subVectors(pinkyMcp, indexFingerMcp)
-      .normalize();
+    this.pinkyDir.subVectors(this.pinkyMcp, this.indexFingerMcp).normalize();
 
     // up vector (X)
     // If this points the wrong way, swap the cross order
-    const up = new THREE.Vector3();
-    const upCrossVectors = [forward, pinkyDir];
+    const upCrossVectors = [this.forward, this.pinkyDir];
     if (this.data.side == "left") {
       upCrossVectors.reverse();
     }
-    up.crossVectors(...upCrossVectors).normalize();
+    this.up.crossVectors(...upCrossVectors).normalize();
 
     // Up vector (Y)
-    const right = new THREE.Vector3().crossVectors(forward, up).normalize();
+    this.right.crossVectors(this.forward, this.up).normalize();
 
     const matrix = new THREE.Matrix4();
     matrix.makeBasis(
-      right.normalize(),
-      up.normalize(),
-      forward.normalize().negate()
+      this.right.normalize(),
+      this.up.normalize(),
+      this.forward.normalize().negate()
     );
 
     const wristQuaternion = new THREE.Quaternion();
@@ -526,7 +615,7 @@ AFRAME.registerComponent("mediapipe-hand", {
     const v = new THREE.Vector3().subVectors(origin, vector);
     const xy = Math.hypot(v.x, v.y);
     const len = v.length();
-    const flatness = xy / len; // ∈ [0, 1]
+    const flatness = xy / len;
     const weight = flatness;
 
     const _vector = new THREE.Vector3();

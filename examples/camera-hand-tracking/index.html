@@ -131,6 +131,17 @@
             xr-mode-ui="enabled: false"
             obb-collider="showColliders: false"
           >
+            <a-assets>
+              <a-asset-item
+                id="leftInsoleModel"
+                src="../../assets/3d/leftInsole.glb"
+              ></a-asset-item>
+              <a-asset-item
+                id="rightInsoleModel"
+                src="../../assets/3d/rightInsole.glb"
+              ></a-asset-item>
+            </a-assets>
+
             <a-camera
               id="camera"
               look-controls="enabled:false;"
@@ -140,8 +151,38 @@
               <!-- <a-sphere color="blue" radius="0.01" position="0 0 -1"></a-sphere> -->
             </a-camera>
 
-            <a-entity mediapipe-hand="side: left; hand: #leftHand"></a-entity>
-            <a-entity mediapipe-hand="side: right; hand: #rightHand"></a-entity>
+            <!-- <a-entity
+              gltf-model="#rightInsoleModel"
+              position="0.1 1.6 -0.8"
+              rotation="90 0 0"
+              scale="1 1 1"
+              grabbable
+            ></a-entity>
+            <a-entity
+              gltf-model="#leftInsoleModel"
+              position="-0.1 1.6 -0.8"
+              rotation="90 0 0"
+              scale="1 1 1"
+              grabbable
+            ></a-entity> -->
+
+            <a-entity
+              mediapipe-hand="side: left; hand: #leftHand; raycaster: #leftHandRaycaster;"
+              id="leftHandMediapipe"
+            ></a-entity>
+            <a-entity
+              mediapipe-hand="side: right; hand: #rightHand; raycaster: #rightHandRaycaster;"
+              id="rightHandMediapipe"
+            ></a-entity>
+
+            <!-- <a-entity
+              id="leftHandRaycaster"
+              raycaster="color: black; showLine: true;"
+            ></a-entity>
+            <a-entity
+              id="rightHandRaycaster"
+              raycaster="color: black; showLine: true;"
+            ></a-entity> -->
 
             <a-entity
               id="leftHand"
