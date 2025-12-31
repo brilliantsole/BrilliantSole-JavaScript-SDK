@@ -105,6 +105,7 @@ displayCanvasHelper.addEventListener("color", (event) => {
 setupColors();
 const getTextColorIndex = () => 1;
 displayCanvasHelper.setColor(getTextColorIndex(), "white");
+const cursorColor = "#009900";
 displayCanvasHelper.flushContextCommands();
 
 // DRAW
@@ -136,16 +137,116 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  // FILL
+  await displayCanvasHelper.setVerticalAlignment("start");
+  await displayCanvasHelper.setHorizontalAlignment("start");
+  if (showCursor) {
+    for (let i = 0; i < displayCanvasHelper.numberOfColors; i++) {
+      await displayCanvasHelper.selectSpriteColor(i, i);
+    }
+  } else {
+    for (let i = 0; i < 2; i++) {
+      await displayCanvasHelper.selectSpriteColor(i, i);
+    }
+  }
 
+  let drawnCursorIndex = 0;
+  drawnCursors.length = 0;
+
+  const spriteX = (displayCanvasHelper.width - osmdWidth) / 2;
+  let spriteY = 0;
+  for (let i = 0; i < systemsPerDisplay; i++) {
+    const systemIndex = currentSystemIndex + i;
+    const x = -osmdWidth / 2;
+
+    const spriteSheet = spriteSheets[systemIndex];
+    if (!spriteSheet) {
+      continue;
+    }
+    const height = spriteSheet.sprites[0].height;
+
+    console.log({ spriteX, spriteY });
+    await displayCanvasHelper.startSprite(spriteX, spriteY, osmdWidth, height);
+
+    let y = -height / 2;
+
+    await displayCanvasHelper.setVerticalAlignment("start");
+    await displayCanvasHelper.setHorizontalAlignment("start");
+
+    let cursorsToDraw = cursors.filter(
+      (cursor) => cursor.systemIndex == systemIndex
+    );
+    if (cursorsToDraw.includes(currentCursor)) {
+      cursorsToDraw = cursorsToDraw.slice(cursorsToDraw.indexOf(currentCursor));
+    } else if (drawnCursorIndex == 0) {
+      cursorsToDraw.length = 0;
+    }
+
+    console.log("cursorsToDraw", cursorsToDraw);
+    for (
+      let cursorIndex = 0;
+      cursorIndex < cursorsToDraw.length &&
+      drawnCursorIndex + 2 < displayCanvasHelper.numberOfColors;
+      cursorIndex++, drawnCursorIndex++
+    ) {
+      const spriteSheet = spriteSheets[systemIndex];
+      if (!spriteSheet) {
+        continue;
+      }
+
+      const cursor = cursorsToDraw[cursorIndex];
+      const colorIndex = 2 + drawnCursorIndex;
+      drawnCursors[colorIndex] = cursor;
+      const { x: offsetX, width, height } = cursor.rect;
+      const { localY: offsetY } = cursor;
+      // console.log("drawing cursor", {
+      //   width,
+      //   height,
+      //   x,
+      //   y,
+      //   offsetX,
+      //   offsetY,
+      // });
+      //console.log({ drawnCursorIndex, colorIndex: 2 + drawnCursorIndex });
+      await displayCanvasHelper.selectFillColor(colorIndex);
+      await displayCanvasHelper.drawRect(
+        x + offsetX,
+        y + offsetY,
+        width,
+        height
+      );
+    }
+
+    await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+    await displayCanvasHelper.drawSprite(x, y, "svg");
+    spriteY += height;
+
+    await displayCanvasHelper.endSprite();
+  }
+
+  latestDrawTime = Date.now();
+  if (currentCursor && drawnCursors.includes(currentCursor)) {
+    await displayCanvasHelper.setColor(
+      drawnCursors.indexOf(currentCursor),
+      cursorColor
+    );
+  }
   await displayCanvasHelper.show();
 };
+window.draw = draw;
+let latestDrawTime = 0;
 
-displayCanvasHelper.addEventListener("ready", () => {
+displayCanvasHelper.addEventListener("ready", async () => {
+  const now = Date.now();
+  console.log(`drawTime: ${now - latestDrawTime}ms`);
+
   isDrawing = false;
   if (isWaitingToRedraw) {
     isWaitingToRedraw = false;
-    draw();
+    await draw();
+  }
+  if (updateCurrentTime) {
+    updateCurrentTime = false;
+    onCurrentTimeUpdate();
   }
 });
 
@@ -260,6 +361,31 @@ window.addEventListener("drop", async (e) => {
     console.log(file.type);
     loadMusicXMLFile(file);
   }
+});
+
+// SIZE
+
+const checkSpriteSheetSizeButton = document.getElementById(
+  "checkSpriteSheetSize"
+);
+const checkSpriteSheetSize = () => {
+  if (!displayCanvasHelper.selectedSpriteSheet) {
+    return;
+  }
+  const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(
+    displayCanvasHelper.selectedSpriteSheet
+  );
+  checkSpriteSheetSizeButton.innerText = `size: ${(
+    arrayBuffer.byteLength / 1024
+  ).toFixed(2)}kb`;
+  if (displayCanvasHelper.device?.isConnected) {
+    checkSpriteSheetSizeButton.innerText += ` (max ${(
+      displayCanvasHelper.device.maxFileLength / 1024
+    ).toFixed(2)}kb)`;
+  }
+};
+checkSpriteSheetSizeButton.addEventListener("click", () => {
+  checkSpriteSheetSize();
 });
 
 // FONT
@@ -459,14 +585,7 @@ selectFontSelect.addEventListener("input", async () => {
 /** @type {BS.Font?} */
 let selectedFont;
 let spritesLineHeight = 0;
-/** @type {MediaRecorder} */
-let mediaRecorder;
 const selectFont = async (newFontName) => {
-  let wasTranscribing = Boolean(mediaRecorder);
-  if (wasTranscribing) {
-    await stopTranscribing();
-  }
-
   const newFont = fonts[newFontName][0];
   selectedFont = newFont;
 
@@ -479,12 +598,16 @@ const selectFont = async (newFontName) => {
   fontMetrics = BS.getFontMetrics(selectedFont, fontSize, fontOptions);
   spritesLineHeight = BS.getFontMaxHeight(selectedFont, fontSize);
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
-  await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+  //await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
   await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await draw();
 };
 
-await loadFontUrl("https://fonts.googleapis.com/css2?family=Tinos");
+displayCanvasHelper.addEventListener("deviceUpdated", () => {
+  draw();
+});
+
+await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Serif");
 
 // OPEN SHEET MUSIC DISPLAY
 
@@ -506,35 +629,92 @@ const osmd = new OpenSheetMusicDisplay.OpenSheetMusicDisplay(osmdContainer, {
   // pageBackgroundColor: "black",
 
   drawMeasureNumbers: false,
-  // drawLyrics: false,
-  // drawSlurs: false,
+  drawLyrics: false,
+  drawSlurs: false,
   drawTimeSignatures: false,
 });
 window.osmd = osmd;
 
 //osmd.setOptions({ drawFromMeasureNumber: 1, drawUpToMeasureNumber: 3 });
 
+let isLoading = false;
 const loadOsmd = async (content) => {
+  isLoading = true;
+  for (let i = 2; i < displayCanvasHelper.numberOfColors; i++) {
+    await displayCanvasHelper.setColor(i, "black");
+  }
+  await displayCanvasHelper.flushContextCommands();
   console.log("loadOsmd");
   await osmd.load(content);
   updateOsmdTitle();
+
+  updateShowCursor();
 
   updateOsmdInstrument();
   setOsmdInstrumentIndex(0);
 
   setOsmdSystemIndex(0);
+  setOsmdZoom(Number(osmdZoomInput.value));
 
-  renderOsmd(true);
+  await renderOsmd(true);
+  isLoading = false;
 };
 
-const renderOsmd = () => {
+let isRendering = false;
+let isWaitingToRender = false;
+const renderOsmd = async () => {
+  if (isRendering) {
+    console.warn("already rendering osmd");
+    isWaitingToRender = true;
+    return;
+  }
+  isRendering = true;
+
   console.log("renderOsmd");
 
+  osmdContainer.style.width = osmdWidth;
+
+  const rules = osmd.EngravingRules;
+  rules.PageLeftMargin = 0;
+  rules.PageRightMargin = 0;
+  rules.PageTopMargin = 0; // optional
+  rules.PageBottomMargin = 0; // optional
+  rules.RenderTempoMarks = false;
+  rules.RenderMetronomeMarks = false; // hides ♪ = 120
+  rules.RenderRehearsalMarks = false; // hides A, B, C boxes
+  rules.RenderWordsAboveStaff = false;
+
+  rules.RepetitionAllowFirstMeasureBeginningRepeatBarline = false;
+
+  rules.RenderExpressions = false; // “Zart”, “dolce”, etc.
+  rules.RenderTempoMarks = false; // Allegro, ♩=120
+  rules.RenderDynamics = false; // p, mf, ff
+
+  rules.RenderArpeggios = false;
+  rules.RenderFirstTempoExpression = false;
+  rules.PageTopMarginNarrow = 0;
+
   osmd.render();
+  updateShowCursor();
   updateOsmdSystem();
   updateOsmdZoom();
-  createOsmdSystemSpriteSheet();
-  draw();
+  updateOsmdWidth();
+  updateCursorMetadata();
+  updateMaxTime();
+  setCurrentTime(0, false);
+  spriteSheets.length = 0;
+  for (let systemIndex = 0; systemIndex < numberOfSystems; systemIndex++) {
+    //getSystemMetrics(0, systemIndex);
+    await createOsmdSystemSpriteSheet(systemIndex);
+  }
+
+  await draw();
+
+  isRendering = false;
+  if (isWaitingToRender) {
+    isWaitingToRender = false;
+    await renderOsmd();
+  }
 };
 
 const osmdTitleContainer = document.getElementById("osmdTitle");
@@ -564,17 +744,72 @@ const setOsmdSystemIndex = async (newIndex, render = false) => {
     0,
     Math.min(currentSystemIndex, numberOfSystems - 1)
   );
-  console.log({ currentSystemIndex });
+  console.log({
+    currentSystemIndex,
+    render,
+  });
   osmdSystemInput.value = currentSystemIndex;
   osmdSystemValueSpan.innerText = currentSystemIndex;
 
   if (render) {
-    renderOsmd();
+    await renderOsmd();
+  } else if (spriteSheets.length > 0) {
+    await draw();
   }
 };
-osmdSystemInput.addEventListener("input", () => {
-  setOsmdSystemIndex(Number(osmdSystemInput.value), true);
+const goToNextSystemIndex = (offByOne = false, loop = true) => {
+  let newSystemIndex = currentSystemIndex + (offByOne ? 1 : systemsPerDisplay);
+  if (newSystemIndex >= numberOfSystems) {
+    if (loop) {
+      setOsmdSystemIndex(0);
+    }
+    return;
+  }
+
+  newSystemIndex = Math.min(newSystemIndex, numberOfSystems - 1);
+  if (newSystemIndex != currentSystemIndex) {
+    setOsmdSystemIndex(newSystemIndex);
+  }
+};
+const goToPreviousSystemIndex = () => {
+  const newSystemIndex = Math.max(currentSystemIndex - systemsPerDisplay, 0);
+  if (newSystemIndex != currentSystemIndex) {
+    setOsmdSystemIndex(newSystemIndex);
+  }
+};
+document.addEventListener("keydown", (event) => {
+  console.log(event.key);
+  switch (event.key) {
+    case "ArrowRight":
+      goToNextSystemIndex();
+      break;
+    case "ArrowLeft":
+      goToPreviousSystemIndex();
+      break;
+  }
 });
+osmdSystemInput.addEventListener("input", () => {
+  setOsmdSystemIndex(Number(osmdSystemInput.value), false);
+});
+
+let systemsPerDisplay = 2;
+const osmdSystemsPerDisplayContainer = document.getElementById(
+  "osmdSystemsPerDisplay"
+);
+const osmdSystemsPerDisplayInput =
+  osmdSystemsPerDisplayContainer.querySelector("input");
+osmdSystemsPerDisplayInput.addEventListener("input", (event) => {
+  setSystemsPerDisplay(Number(event.target.value));
+});
+const setSystemsPerDisplay = async (newSystemsPerDisplay) => {
+  systemsPerDisplay = newSystemsPerDisplay;
+  console.log({ systemsPerDisplay });
+  osmdSystemInput.step = systemsPerDisplay;
+  osmdSystemsPerDisplayInput.value = systemsPerDisplay;
+  await draw();
+};
+osmdSystemInput.step = systemsPerDisplay;
+osmdSystemsPerDisplayInput.value = systemsPerDisplay;
 
 let currentOsmdInstrumentIndex = 0;
 const osmdInstrumentContainer = document.getElementById("osmdInstrument");
@@ -602,7 +837,7 @@ const setOsmdInstrumentIndex = async (newInstrumentIndex, render = false) => {
   });
 
   if (render) {
-    renderOsmd();
+    await renderOsmd();
   }
 };
 osmdInstrumentSelect.addEventListener("input", () => {
@@ -625,19 +860,306 @@ const setOsmdZoom = async (newZoom, render = false) => {
   osmdZoomValueSpan.innerText = osmd.Zoom;
 
   if (render) {
-    renderOsmd();
+    await renderOsmd();
   }
 };
 osmdZoomInput.addEventListener("input", () => {
   setOsmdZoom(Number(osmdZoomInput.value), true);
 });
 
-const createOsmdSystemSpriteSheet = () => {
-  getSystemMetrics(0, currentSystemIndex);
-  // FILL
+let osmdWidth = 640;
+const osmdWidthContainer = document.getElementById("osmdWidth");
+const osmdWidthValueSpan = osmdWidthContainer.querySelector(".value");
+const osmdWidthInput = osmdWidthContainer.querySelector("input");
+const updateOsmdWidth = () => {
+  osmdWidthInput.value = osmdWidth;
+  osmdWidthValueSpan.innerText = osmdWidth;
+  console.log({ osmdWidth });
+};
+const setOsmdWidth = async (newWidth, render = false) => {
+  osmdWidth = newWidth;
+  console.log({ osmdWidth });
+  osmdWidthInput.value = osmdWidth;
+  osmdWidthValueSpan.innerText = osmdWidth;
+
+  if (render) {
+    await renderOsmd();
+  }
+};
+osmdWidthInput.addEventListener("input", () => {
+  setOsmdWidth(Number(osmdWidthInput.value), true);
+});
+setOsmdWidth(osmdWidth);
+
+// SHOW CURSOR
+let showCursor = false;
+const showCursorContainer = document.getElementById("osmdShowCursor");
+const showCursorInput = showCursorContainer.querySelector("input");
+showCursorInput.addEventListener("input", () => {
+  setShowCursor(showCursorInput.checked);
+});
+const updateShowCursor = () => {
+  showCursorContainer.classList.remove("hidden");
+  if (showCursor) {
+    osmd.cursor?.show();
+  } else {
+    osmd.cursor?.hide();
+  }
+};
+const setShowCursor = async (newShowCursor) => {
+  if (newShowCursor == showCursor) {
+    return;
+  }
+  showCursor = newShowCursor;
+  console.log({ showCursor });
+  showCursorInput.checked = showCursor;
+
+  for (let i = 2; i < displayCanvasHelper.numberOfColors; i++) {
+    await displayCanvasHelper.setColor(i, "black");
+  }
+  if (showCursor && drawnCursors.includes(currentCursor)) {
+    await displayCanvasHelper.setColor(
+      drawnCursors.indexOf(currentCursor),
+      cursorColor
+    );
+  }
+  await displayCanvasHelper.flushContextCommands();
+
+  if (showCursor) {
+    osmd.cursor?.show();
+  } else {
+    osmd.cursor?.hide();
+  }
+};
+setShowCursor(false);
+
+// TIME
+let currentTime = 0;
+const currentTimeContainer = document.getElementById("osmdTime");
+const currentTimeInput = currentTimeContainer.querySelector("input");
+const currentTimeSpan = currentTimeContainer.querySelector("span.value");
+const currentTimeTotalSpan = currentTimeContainer.querySelector("span.total");
+currentTimeInput.addEventListener("input", () => {
+  setCurrentTime(Number(currentTimeInput.value));
+});
+let maxTime = 0;
+const updateMaxTime = () => {
+  maxTime = cursors.at(-1).time;
+  console.log({ maxTime });
+  currentTimeTotalSpan.innerText = Math.round(maxTime);
+  currentTimeInput.max = maxTime;
+};
+/** @type {CursorMetadata} */
+let currentCursor;
+let updateCurrentTime = false;
+const setCurrentTime = async (newCurrentTime, render = true) => {
+  currentTime = Math.min(newCurrentTime, maxTime);
+  console.log({ currentTime });
+  currentTimeSpan.innerText = Math.round(currentTime);
+  currentTimeInput.value = currentTime;
+
+  if (isDrawing) {
+    updateCurrentTime = true;
+    return;
+  }
+  await onCurrentTimeUpdate(render);
+};
+const onCurrentTimeUpdate = async (render = true) => {
+  const _currentCursor = currentCursor;
+  currentCursor = getCursorByTime(currentTime);
+  if (currentCursor == _currentCursor) {
+    return;
+  }
+
+  if (currentCursor) {
+    const { cursor } = osmd;
+    cursor.reset();
+    while (!cursor.iterator.EndReached) {
+      const ts = cursor.iterator.currentTimeStamp;
+      const time = ts.RealValue * msPerQuarter;
+      if (currentCursor.time == time) {
+        break;
+      }
+      cursor.next();
+    }
+    cursor.cursorElement.off;
+    osmdContainer.scrollTo({
+      top: osmd.cursor.cursorElement.offsetTop - 40,
+      behavior: "smooth",
+    });
+  }
+
+  console.log("currentCursor", cursors.indexOf(currentCursor), currentCursor);
+  if (_currentCursor && drawnCursors.includes(_currentCursor)) {
+    await displayCanvasHelper.setColor(
+      drawnCursors.indexOf(_currentCursor),
+      "black",
+      true
+    );
+  }
+
+  let shouldDraw = false;
+
+  if (
+    currentCursor.systemIndex < currentSystemIndex ||
+    currentSystemIndex + systemsPerDisplay <= currentCursor.systemIndex
+  ) {
+    setOsmdSystemIndex(currentCursor.systemIndex);
+    return;
+  }
+
+  if (!drawnCursors.includes(currentCursor)) {
+    shouldDraw = true;
+  }
+
+  console.log({ shouldDraw });
+
+  if (shouldDraw) {
+    if (render) {
+      await draw();
+    }
+  } else {
+    await displayCanvasHelper.setColor(
+      drawnCursors.indexOf(currentCursor),
+      cursorColor
+    );
+    await displayCanvasHelper.flushContextCommands();
+  }
 };
 
-const testDiv = document.getElementById("test");
+// SPEED
+let speed = 1;
+const speedContainer = document.getElementById("osmdSpeed");
+const speedInput = speedContainer.querySelector("input");
+const speedSpan = speedContainer.querySelector("span.value");
+speedInput.addEventListener("input", () => {
+  setSpeed(Number(speedInput.value));
+});
+const setSpeed = (newSpeed) => {
+  if (newSpeed == speed) {
+    return;
+  }
+  speed = newSpeed;
+  console.log({ speed });
+  speedSpan.innerText = speed;
+  speedInput.value = speed;
+};
+setSpeed(1);
+
+// PLAYBACK
+let isPlaying = false;
+const togglePlaybackButton = document.getElementById("togglePlayback");
+togglePlaybackButton.addEventListener("click", () => {
+  togglePlayback();
+});
+const togglePlayback = () => setIsPlaying(!isPlaying);
+let startPlayingTime = 0;
+let startPlayingCurrentTime = 0;
+let updateCurrentTimeIntervalId;
+const setIsPlaying = async (newIsPlaying) => {
+  if (newIsPlaying == isPlaying) {
+    return;
+  }
+  isPlaying = newIsPlaying;
+  console.log({ isPlaying });
+  togglePlaybackButton.innerText = isPlaying ? "pause" : "play";
+  if (isPlaying) {
+    if (currentTime >= maxTime) {
+      await setCurrentTime(0);
+    }
+    startPlayingCurrentTime = currentTime;
+    startPlayingTime = Date.now();
+    updateCurrentTimeIntervalId = setInterval(() => {
+      const timeOffset = (Date.now() - startPlayingTime) * speed;
+      const newCurrentTime = startPlayingCurrentTime + timeOffset;
+      setCurrentTime(newCurrentTime);
+      if (currentTime == maxTime) {
+        setIsPlaying(false);
+      }
+    }, 20);
+  } else {
+    clearInterval(updateCurrentTimeIntervalId);
+  }
+};
+
+// SPRITE SHEET
+
+/** @type {Record<number, BS.DisplaySpriteSheet>} */
+const spriteSheets = [];
+/** @param {number} systemIndex */
+const createOsmdSystemSpriteSheet = async (systemIndex) => {
+  console.log("createOsmdSystemSpriteSheet", systemIndex);
+  let systemSvg = osmdContainer.querySelector("svg");
+  systemSvg = systemSvg.cloneNode(true);
+  /** @type {SVGGElement} */
+  let staffLine;
+  Array.from(systemSvg.querySelectorAll(".staffline")).forEach(
+    (_staffLine, index) => {
+      if (index == systemIndex) {
+        staffLine = _staffLine;
+      } else {
+        _staffLine.remove();
+      }
+    }
+  );
+  document.body.appendChild(systemSvg);
+  //console.log("staffLine", staffLine);
+  const systemSvgBox = systemSvg.getBoundingClientRect();
+  const staffLineBox = staffLine.getBoundingClientRect();
+  staffLineBox.y -= systemSvgBox.y;
+  staffLineBox.x -= systemSvgBox.x;
+  systemSvg.setAttribute("display", "none");
+  //console.log("staffLineBox", staffLineBox);
+  systemSvg.setAttribute("height", staffLineBox.height);
+  const viewBox = systemSvg.getAttribute("viewBox").split(" ");
+  const svgWidth = systemSvg.getAttribute("width");
+  const scale = viewBox[2] / svgWidth;
+  //console.log({ scale }, systemSvg);
+  const y = staffLineBox.y;
+  const newViewBox = [
+    viewBox[0],
+    y * scale,
+    viewBox[2],
+    staffLineBox.height * scale,
+  ];
+  systemSvg.setAttribute("viewBox", newViewBox.join(" "));
+  //console.log("systemSvg", systemSvg);
+
+  cursors.forEach((cursor) => {
+    if (
+      cursor.rect.y >= staffLineBox.y &&
+      cursor.rect.bottom <= staffLineBox.bottom
+    ) {
+      cursor.systemIndex = systemIndex;
+      cursor.localY = cursor.rect.y - staffLineBox.y;
+    }
+  });
+
+  const box = systemSvg.getBoundingClientRect();
+  // testDiv.style.width = `${box.width}px`;
+  // testDiv.style.height = `${box.height}px`;
+  // testDiv.style.left = `${box.left + window.scrollX}px`;
+  // testDiv.style.top = `${box.top + window.scrollY}px`;
+
+  const spriteSheet = await BS.svgToSpriteSheet(
+    systemSvg,
+    `system-${systemIndex}`,
+    "svg",
+    2,
+    "palette",
+    {
+      height: box.height,
+      width: box.width,
+    }
+  );
+  //console.log("spriteSheet", spriteSheet);
+  spriteSheets[systemIndex] = spriteSheet;
+  await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
+  await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+  checkSpriteSheetSize();
+  systemSvg.remove();
+};
+
 const getSystemMetrics = (pageIndex, systemIndex) => {
   const system =
     osmd.GraphicSheet.MusicPages[pageIndex].MusicSystems[systemIndex];
@@ -662,7 +1184,7 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
   width *= scalar;
   height *= scalar;
 
-  console.log({ systemIndex, x, y, width, height });
+  //console.log({ systemIndex, x, y, width, height });
 
   if (false) {
     const drawFromMeasureNumber = system.GraphicalMeasures[0][0].measureNumber;
@@ -671,7 +1193,7 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
     osmd.setOptions({ drawFromMeasureNumber, drawUpToMeasureNumber });
   }
 
-  console.log("system", system);
+  //console.log("system", system);
   system.StaffLines.forEach((staffLine) => {
     staffLine.AbstractExpressions.forEach((abstractExpression) => {
       // console.log("abstractExpression", abstractExpression);
@@ -690,7 +1212,7 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
       //   graphicalMeasure.InitiallyActiveClef
       // );
       graphicalMeasure.staffEntries.forEach((staffEntry) => {
-        // console.log("staffEntry", staffEntry);
+        //console.log("staffEntry", staffEntry);
         staffEntry.FingeringEntries.forEach((fingeringEntry) => {
           // console.log("fingeringEntry", fingeringEntry);
         });
@@ -708,12 +1230,140 @@ const getSystemMetrics = (pageIndex, systemIndex) => {
     });
   });
 
-  const box = osmd.container.getBoundingClientRect();
-  testDiv.style.width = `${width}px`;
-  testDiv.style.height = `${height}px`;
-  testDiv.style.left = `${x + box.left + window.scrollX}px`;
-  testDiv.style.top = `${y + box.top + window.scrollY}px`;
+  // const box = osmd.container.getBoundingClientRect();
+  // const testDiv = document.getElementById("test");
+  // testDiv.style.width = `${width}px`;
+  // testDiv.style.height = `${height}px`;
+  // testDiv.style.left = `${x + box.left + window.scrollX}px`;
+  // testDiv.style.top = `${y + box.top + window.scrollY}px`;
 };
+
+/** @typedef {{time: number, displayIndex: number?, systemIndex: number, rect: DOMRect, localY: number, pageIndex: number, measureIndex: number}} CursorMetadata */
+/** @type {CursorMetadata[]} */
+const cursors = [];
+/** @type {CursorMetadata[]} */
+const drawnCursors = [];
+let bpm = 0;
+let msPerQuarter = 0;
+const updateCursorMetadata = () => {
+  bpm = osmd.Sheet.DefaultStartTempoInBpm;
+  msPerQuarter = 60000 / bpm;
+
+  const { cursor } = osmd;
+
+  cursors.length = 0;
+  cursor.reset();
+
+  const parentRect = osmdContainer.querySelector("svg").getBoundingClientRect();
+
+  while (!cursor.iterator.EndReached) {
+    const ts = cursor.iterator.currentTimeStamp;
+    const time = ts.RealValue * msPerQuarter;
+
+    const rect = cursor.cursorElement.getBoundingClientRect();
+    rect.x -= parentRect.x;
+    rect.y -= parentRect.y;
+
+    cursors.push({
+      time,
+      measureIndex: cursor.iterator.CurrentMeasureIndex,
+      pageIndex: cursor.currentPageNumber,
+      rect,
+    });
+
+    cursor.next();
+  }
+
+  console.log("cursors", cursors);
+  cursor.reset();
+};
+
+const getCursorByTime = (time) => {
+  /** @type {CursorMetadata} */
+  let cursor;
+  cursors.some((_cursor) => {
+    if (time < _cursor.time) {
+      return true;
+    }
+    cursor = _cursor;
+  });
+  return cursor;
+};
+window.getCursorByTime = getCursorByTime;
+
+// INSOLE
+const insoleDevice = new BS.Device();
+const toggleInsoleConnectionButton = document.getElementById(
+  "toggleInsoleConnection"
+);
+toggleInsoleConnectionButton.addEventListener("click", () => {
+  insoleDevice.toggleConnection();
+});
+insoleDevice.addEventListener("connectionStatus", (event) => {
+  const { connectionStatus } = event.message;
+  let text = connectionStatus;
+  switch (event.message.connectionStatus) {
+    case "notConnected":
+      text = "connect";
+      break;
+    case "connected":
+      text = "disconnect";
+      break;
+  }
+  toggleInsoleConnectionButton.innerText = text;
+});
+/** @type {BS.TfliteFileConfiguration} */
+const tfliteConfiguration = {
+  name: "kickStompTap",
+  task: "classification",
+  sensorTypes: ["gyroscope", "linearAcceleration"],
+  sampleRate: 20,
+  captureDelay: 500,
+  threshold: 0,
+  classes: ["idle", "kick", "stomp", "tap"],
+};
+fetch("./kickStompTap.tflite")
+  .then((response) => response.arrayBuffer())
+  .then((buffer) => {
+    tfliteConfiguration.file = buffer;
+    console.log("updated tfliteConfiguration", tfliteConfiguration);
+  })
+  .catch((err) => {
+    console.error("Error loading kick model:", err);
+  });
+
+insoleDevice.addEventListener("connected", () => {
+  if (insoleDevice.isInsole) {
+    insoleDevice.sendTfliteConfiguration(tfliteConfiguration);
+  } else {
+    console.error(`expected insole, got ${insoleDevice.type}`);
+    insoleDevice.disconnect();
+  }
+});
+
+/** @type {HTMLProgressElement} */
+const modelFileTransferProgress = document.getElementById(
+  "modelFileTransferProgress"
+);
+insoleDevice.addEventListener("fileTransferProgress", (event) => {
+  const { progress } = event.message;
+  console.log({ progress });
+  modelFileTransferProgress.value = progress;
+});
+
+insoleDevice.addEventListener("tfliteIsReady", (event) => {
+  if (event.message.tfliteIsReady) {
+    insoleDevice.enableTfliteInferencing();
+  }
+});
+
+insoleDevice.addEventListener("tfliteInference", (event) => {
+  const { maxClass } = event.message.tfliteInference;
+  console.log({ maxClass });
+  if (maxClass == "tap") {
+    goToNextSystemIndex();
+  }
+});
 
 didLoad = true;
 

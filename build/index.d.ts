@@ -1813,15 +1813,17 @@ type ParseSvgOptions = {
     offsetX?: number;
     offsetY?: number;
     centered?: boolean;
+    displayManager?: DisplayManagerInterface;
+    includeText?: boolean;
 };
-declare function svgToDisplayContextCommands(svgString: string, numberOfColors: number, paletteOffset: number, colors?: string[], options?: ParseSvgOptions): {
+declare function svgToDisplayContextCommands(svgString: string | SVGSVGElement, numberOfColors: number, paletteOffset: number, colors?: string[], options?: ParseSvgOptions): Promise<{
     commands: DisplayContextCommand[];
     colors: string[];
     width: number;
     height: number;
-};
-declare function svgToSprite(svgString: string, spriteName: string, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset?: number, options?: ParseSvgOptions): DisplaySprite;
-declare function svgToSpriteSheet(svgString: string, spriteSheetName: string, numberOfColors: number, paletteName: string, options?: ParseSvgOptions): DisplaySpriteSheet;
+}>;
+declare function svgToSprite(svgString: string | SVGSVGElement, spriteName: string, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset?: number, options?: ParseSvgOptions): Promise<DisplaySprite>;
+declare function svgToSpriteSheet(svgString: string, spriteSheetName: string, spriteName: string, numberOfColors: number, paletteName: string, options?: ParseSvgOptions): Promise<DisplaySpriteSheet>;
 declare function getSvgStringFromDataUrl(string: string): string;
 declare function isValidSVG(svgString: string): boolean;
 
@@ -2299,7 +2301,7 @@ declare abstract class BaseClient {
     abstract disconnect(): void;
     abstract reconnect(): void;
     abstract toggleConnection(url?: ServerURL): void;
-    static _reconnectOnDisconnection: boolean;
+    private static _reconnectOnDisconnection;
     static get ReconnectOnDisconnection(): boolean;
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     protected _reconnectOnDisconnection: boolean;

@@ -4141,9 +4141,8 @@ spriteImage.addEventListener("load", async () => {
   const isSvg = spriteImage.src.startsWith("data:image/svg+xml;");
   console.log({ isSvg });
   if (isSvg) {
-    const svgString = BS.getSvgStringFromDataUrl(spriteImage.src);
-    BS.svgToSprite(
-      svgString,
+    await BS.svgToSprite(
+      spriteImage.src,
       name,
       selectedPalette.numberOfColors,
       selectedPalette.name,

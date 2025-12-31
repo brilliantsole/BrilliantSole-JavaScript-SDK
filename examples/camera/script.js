@@ -136,6 +136,7 @@ device.addEventListener("cameraStatus", () => {
 
 /** @type {HTMLImageElement} */
 const cameraImage = document.getElementById("cameraImage");
+const cameraImageParent = cameraImage.parentElement;
 device.addEventListener("cameraImage", (event) => {
   cameraImage.src = event.message.url;
 });
@@ -355,7 +356,7 @@ device.addEventListener("connected", () => {
 });
 const updateRotation = () => {
   if (!rotatePicture) {
-    cameraImage.style.transform = `rotate(${0}rad)`;
+    cameraImageParent.style.transform = `rotate(${0}rad)`;
   }
   if (!device.isConnected) {
     return;
@@ -386,8 +387,8 @@ device.addEventListener("cameraStatus", () => {
 });
 cameraImage.addEventListener("load", () => {
   if (rotatePicture) {
-    cameraImage.style.transform = `rotate(${-cameraRoll}rad)`;
+    cameraImageParent.style.transform = `rotate(${-cameraRoll}rad)`;
   } else {
-    cameraImage.style.transform = `rotate(${0}rad)`;
+    cameraImageParent.style.transform = `rotate(${0}rad)`;
   }
 });

@@ -55,6 +55,7 @@ import {
   twoPi,
   Vector2,
 } from "./MathUtils.ts";
+import { deepEqual } from "./ObjectUtils.ts";
 
 const _console = createConsole("DisplayContextCommand", { log: false });
 
@@ -836,7 +837,7 @@ export function serializeContextCommand(
       {
         const { horizontalAlignment } = command;
         assertValidAlignment(horizontalAlignment);
-        _console.log({ horizontalAlignment });
+        //_console.log({ horizontalAlignment });
         dataView = new DataView(new ArrayBuffer(1));
         const alignmentEnum = DisplayAlignments.indexOf(horizontalAlignment);
         dataView.setUint8(0, alignmentEnum);
@@ -846,7 +847,7 @@ export function serializeContextCommand(
       {
         const { verticalAlignment } = command;
         assertValidAlignment(verticalAlignment);
-        _console.log({ verticalAlignment });
+        //_console.log({ verticalAlignment });
         dataView = new DataView(new ArrayBuffer(1));
         const alignmentEnum = DisplayAlignments.indexOf(verticalAlignment);
         dataView.setUint8(0, alignmentEnum);
@@ -867,7 +868,7 @@ export function serializeContextCommand(
       {
         const { segmentStartCap } = command;
         assertValidSegmentCap(segmentStartCap);
-        _console.log({ segmentStartCap });
+        //_console.log({ segmentStartCap });
         dataView = new DataView(new ArrayBuffer(1));
         const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
         dataView.setUint8(0, segmentCapEnum);
@@ -877,7 +878,7 @@ export function serializeContextCommand(
       {
         const { segmentEndCap } = command;
         assertValidSegmentCap(segmentEndCap);
-        _console.log({ segmentEndCap });
+        //_console.log({ segmentEndCap });
         dataView = new DataView(new ArrayBuffer(1));
         const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
         dataView.setUint8(0, segmentCapEnum);
@@ -887,7 +888,7 @@ export function serializeContextCommand(
       {
         const { segmentCap } = command;
         assertValidSegmentCap(segmentCap);
-        _console.log({ segmentCap });
+        //_console.log({ segmentCap });
         dataView = new DataView(new ArrayBuffer(1));
         const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentCap);
         dataView.setUint8(0, segmentCapEnum);
@@ -896,7 +897,7 @@ export function serializeContextCommand(
     case "setSegmentStartRadius":
       {
         const { segmentStartRadius } = command;
-        _console.log({ segmentStartRadius });
+        //_console.log({ segmentStartRadius });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, segmentStartRadius, true);
       }
@@ -904,7 +905,7 @@ export function serializeContextCommand(
     case "setSegmentEndRadius":
       {
         const { segmentEndRadius } = command;
-        _console.log({ segmentEndRadius });
+        //_console.log({ segmentEndRadius });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, segmentEndRadius, true);
       }
@@ -912,7 +913,7 @@ export function serializeContextCommand(
     case "setSegmentRadius":
       {
         const { segmentRadius } = command;
-        _console.log({ segmentRadius });
+        //_console.log({ segmentRadius });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, segmentRadius, true);
       }
@@ -920,7 +921,7 @@ export function serializeContextCommand(
     case "setCropTop":
       {
         const { cropTop } = command;
-        _console.log({ cropTop });
+        //_console.log({ cropTop });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, cropTop, true);
       }
@@ -928,7 +929,7 @@ export function serializeContextCommand(
     case "setCropRight":
       {
         const { cropRight } = command;
-        _console.log({ cropRight });
+        //_console.log({ cropRight });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, cropRight, true);
       }
@@ -936,7 +937,7 @@ export function serializeContextCommand(
     case "setCropBottom":
       {
         const { cropBottom } = command;
-        _console.log({ cropBottom });
+        //_console.log({ cropBottom });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, cropBottom, true);
       }
@@ -944,7 +945,7 @@ export function serializeContextCommand(
     case "setCropLeft":
       {
         const { cropLeft } = command;
-        _console.log({ cropLeft });
+        //_console.log({ cropLeft });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, cropLeft, true);
       }
@@ -952,7 +953,7 @@ export function serializeContextCommand(
     case "setRotationCropTop":
       {
         const { rotationCropTop } = command;
-        _console.log({ rotationCropTop });
+        // _console.log({ rotationCropTop });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, rotationCropTop, true);
       }
@@ -960,7 +961,7 @@ export function serializeContextCommand(
     case "setRotationCropRight":
       {
         const { rotationCropRight } = command;
-        _console.log({ rotationCropRight });
+        //_console.log({ rotationCropRight });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, rotationCropRight, true);
       }
@@ -968,7 +969,7 @@ export function serializeContextCommand(
     case "setRotationCropBottom":
       {
         const { rotationCropBottom } = command;
-        _console.log({ rotationCropBottom });
+        //_console.log({ rotationCropBottom });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, rotationCropBottom, true);
       }
@@ -976,7 +977,7 @@ export function serializeContextCommand(
     case "setRotationCropLeft":
       {
         const { rotationCropLeft } = command;
-        _console.log({ rotationCropLeft });
+        //_console.log({ rotationCropLeft });
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, rotationCropLeft, true);
       }
@@ -1316,7 +1317,7 @@ export function serializeContextCommand(
         });
         const pointDataType = getPointDataType(allControlPoints);
         const numberOfControlPoints = allControlPoints.length;
-        _console.log({ numberOfControlPoints });
+        //_console.log({ numberOfControlPoints });
 
         curves.forEach((curve, index) => {
           const { type, controlPoints } = curve;
@@ -1798,19 +1799,20 @@ export function trimContextCommands(commands: DisplayContextCommand[]) {
         }
       }
 
-      //_console.log("command", command, "dependencies", dependencies);
+      _console.log("command", command, "dependencies", dependencies);
 
+      let similarCommandIndex = -1;
+      let dependentCommandIndex = -1;
       if (dependencies) {
-        const similarCommandIndex = trimmedCommands.findIndex(
-          (trimmedCommand) => {
-            return trimmedCommand.type == command.type;
-          }
-        );
-        const dependentCommandIndex = trimmedCommands.findIndex(
-          (trimmedCommand) => dependencies.has(trimmedCommand.type)
+        similarCommandIndex = trimmedCommands.findIndex((trimmedCommand) => {
+          // FILL - expand, e.g. clearRotation is similar to setRotation
+          return trimmedCommand.type == command.type;
+        });
+        dependentCommandIndex = trimmedCommands.findIndex((trimmedCommand) =>
+          dependencies.has(trimmedCommand.type)
         );
 
-        //_console.log({ similarCommandIndex, dependentCommandIndex });
+        _console.log({ similarCommandIndex, dependentCommandIndex });
 
         if (dependentCommandIndex == -1) {
           include = false;
@@ -1819,9 +1821,16 @@ export function trimContextCommands(commands: DisplayContextCommand[]) {
         }
       }
       if (include) {
+        if (
+          similarCommandIndex != -1 &&
+          deepEqual(command, trimmedCommands[similarCommandIndex])
+        ) {
+          // FILL - replace deepEqual with "isSimilarCommand"
+          trimmedCommands.splice(similarCommandIndex, 1);
+        }
         trimmedCommands.unshift(command);
       } else {
-        //_console.log("skipping command", command);
+        _console.log("skipping command", command);
       }
     });
 

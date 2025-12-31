@@ -1181,6 +1181,9 @@ const stopMicrophoneStream = () => {
 navigator.mediaDevices.addEventListener("devicechange", () =>
   updateMicrophoneSources()
 );
+device.addEventListener("isConnected", () => {
+  updateMicrophoneSources();
+});
 updateMicrophoneSources();
 
 /** @type {HTMLAudioElement} */

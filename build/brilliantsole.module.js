@@ -5709,7 +5709,6 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { horizontalAlignment } = command;
                 assertValidAlignment(horizontalAlignment);
-                _console$o.log({ horizontalAlignment });
                 dataView = new DataView(new ArrayBuffer(1));
                 const alignmentEnum = DisplayAlignments.indexOf(horizontalAlignment);
                 dataView.setUint8(0, alignmentEnum);
@@ -5719,7 +5718,6 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { verticalAlignment } = command;
                 assertValidAlignment(verticalAlignment);
-                _console$o.log({ verticalAlignment });
                 dataView = new DataView(new ArrayBuffer(1));
                 const alignmentEnum = DisplayAlignments.indexOf(verticalAlignment);
                 dataView.setUint8(0, alignmentEnum);
@@ -5739,7 +5737,6 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { segmentStartCap } = command;
                 assertValidSegmentCap(segmentStartCap);
-                _console$o.log({ segmentStartCap });
                 dataView = new DataView(new ArrayBuffer(1));
                 const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
                 dataView.setUint8(0, segmentCapEnum);
@@ -5749,7 +5746,6 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { segmentEndCap } = command;
                 assertValidSegmentCap(segmentEndCap);
-                _console$o.log({ segmentEndCap });
                 dataView = new DataView(new ArrayBuffer(1));
                 const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
                 dataView.setUint8(0, segmentCapEnum);
@@ -5759,7 +5755,6 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { segmentCap } = command;
                 assertValidSegmentCap(segmentCap);
-                _console$o.log({ segmentCap });
                 dataView = new DataView(new ArrayBuffer(1));
                 const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentCap);
                 dataView.setUint8(0, segmentCapEnum);
@@ -5768,7 +5763,6 @@ function serializeContextCommand(displayManager, command) {
         case "setSegmentStartRadius":
             {
                 const { segmentStartRadius } = command;
-                _console$o.log({ segmentStartRadius });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, segmentStartRadius, true);
             }
@@ -5776,7 +5770,6 @@ function serializeContextCommand(displayManager, command) {
         case "setSegmentEndRadius":
             {
                 const { segmentEndRadius } = command;
-                _console$o.log({ segmentEndRadius });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, segmentEndRadius, true);
             }
@@ -5784,7 +5777,6 @@ function serializeContextCommand(displayManager, command) {
         case "setSegmentRadius":
             {
                 const { segmentRadius } = command;
-                _console$o.log({ segmentRadius });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, segmentRadius, true);
             }
@@ -5792,7 +5784,6 @@ function serializeContextCommand(displayManager, command) {
         case "setCropTop":
             {
                 const { cropTop } = command;
-                _console$o.log({ cropTop });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, cropTop, true);
             }
@@ -5800,7 +5791,6 @@ function serializeContextCommand(displayManager, command) {
         case "setCropRight":
             {
                 const { cropRight } = command;
-                _console$o.log({ cropRight });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, cropRight, true);
             }
@@ -5808,7 +5798,6 @@ function serializeContextCommand(displayManager, command) {
         case "setCropBottom":
             {
                 const { cropBottom } = command;
-                _console$o.log({ cropBottom });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, cropBottom, true);
             }
@@ -5816,7 +5805,6 @@ function serializeContextCommand(displayManager, command) {
         case "setCropLeft":
             {
                 const { cropLeft } = command;
-                _console$o.log({ cropLeft });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, cropLeft, true);
             }
@@ -5824,7 +5812,6 @@ function serializeContextCommand(displayManager, command) {
         case "setRotationCropTop":
             {
                 const { rotationCropTop } = command;
-                _console$o.log({ rotationCropTop });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, rotationCropTop, true);
             }
@@ -5832,7 +5819,6 @@ function serializeContextCommand(displayManager, command) {
         case "setRotationCropRight":
             {
                 const { rotationCropRight } = command;
-                _console$o.log({ rotationCropRight });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, rotationCropRight, true);
             }
@@ -5840,7 +5826,6 @@ function serializeContextCommand(displayManager, command) {
         case "setRotationCropBottom":
             {
                 const { rotationCropBottom } = command;
-                _console$o.log({ rotationCropBottom });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, rotationCropBottom, true);
             }
@@ -5848,7 +5833,6 @@ function serializeContextCommand(displayManager, command) {
         case "setRotationCropLeft":
             {
                 const { rotationCropLeft } = command;
-                _console$o.log({ rotationCropLeft });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, rotationCropLeft, true);
             }
@@ -6153,7 +6137,6 @@ function serializeContextCommand(displayManager, command) {
                 });
                 const pointDataType = getPointDataType(allControlPoints);
                 const numberOfControlPoints = allControlPoints.length;
-                _console$o.log({ numberOfControlPoints });
                 curves.forEach((curve, index) => {
                     const { type, controlPoints } = curve;
                     const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
@@ -6476,11 +6459,15 @@ function trimContextCommands(commands) {
                 break;
             }
         }
+        _console$o.log("command", command, "dependencies", dependencies);
+        let similarCommandIndex = -1;
+        let dependentCommandIndex = -1;
         if (dependencies) {
-            const similarCommandIndex = trimmedCommands.findIndex((trimmedCommand) => {
+            similarCommandIndex = trimmedCommands.findIndex((trimmedCommand) => {
                 return trimmedCommand.type == command.type;
             });
-            const dependentCommandIndex = trimmedCommands.findIndex((trimmedCommand) => dependencies.has(trimmedCommand.type));
+            dependentCommandIndex = trimmedCommands.findIndex((trimmedCommand) => dependencies.has(trimmedCommand.type));
+            _console$o.log({ similarCommandIndex, dependentCommandIndex });
             if (dependentCommandIndex == -1) {
                 include = false;
             }
@@ -6489,7 +6476,14 @@ function trimContextCommands(commands) {
             }
         }
         if (include) {
+            if (similarCommandIndex != -1 &&
+                deepEqual(command, trimmedCommands[similarCommandIndex])) {
+                trimmedCommands.splice(similarCommandIndex, 1);
+            }
             trimmedCommands.unshift(command);
+        }
+        else {
+            _console$o.log("skipping command", command);
         }
     });
     _console$o.log("trimmedCommands", trimmedCommands);
@@ -19617,12 +19611,35 @@ function svgJsonToCanvasCommands(svgJson) {
                 break;
             }
             case "svg":
+            case "g":
+                break;
+            case "text":
+                const text = node.children.find((child) => child.type == "text")?.value ?? "";
+                const x = parseFloat(node.attributes.x || "0");
+                const y = parseFloat(node.attributes.y || "0");
+                const p = applyTransform(x, y, nodeTransform);
+                const strokeWidth = parseFloat(node.attributes["stroke-width"] || "0");
+                const { "font-family": fontFamily, fill, "font-size": fontSize, "font-style": fontStyle, "font-weight": fontWeight, stroke, "stroke-dasharray": strokeDasharray, } = node.attributes;
+                commands.push({
+                    type: "text",
+                    text,
+                    x: p.x,
+                    y: p.y,
+                    fontFamily,
+                    fill,
+                    fontSize,
+                    fontStyle,
+                    fontWeight,
+                    stroke,
+                    strokeDasharray,
+                    strokeWidth,
+                });
                 break;
             default:
                 _console$n.log("uncaught node", node);
                 break;
         }
-        if (node.children) {
+        if (node.children && node.name != "text") {
             for (const child of node.children)
                 traverse(child, nodeTransform);
         }
@@ -19895,7 +19912,43 @@ function classifySubpath(subpath, previous, fillRule) {
         return winding !== 0;
     }
 }
-function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, colors, options) {
+const SVG_XMLNS = "http://www.w3.org/2000/svg";
+async function getSvgString(input) {
+    if (input instanceof SVGSVGElement) {
+        return ensureSvgXmlnsFromElement(input);
+    }
+    const trimmed = input.trim();
+    const svgText = trimmed.includes("<svg") ? trimmed : await fetchSvg(trimmed);
+    return ensureSvgXmlns(svgText);
+}
+async function fetchSvg(pathOrUrl) {
+    const res = await fetch(pathOrUrl);
+    if (!res.ok) {
+        throw new Error(`Failed to load SVG: ${pathOrUrl}`);
+    }
+    return await res.text();
+}
+function ensureSvgXmlns(svgText) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgText, "image/svg+xml");
+    const svg = doc.documentElement;
+    if (svg.tagName.toLowerCase() !== "svg") {
+        throw new Error("Invalid SVG");
+    }
+    if (!svg.hasAttribute("xmlns")) {
+        svg.setAttribute("xmlns", SVG_XMLNS);
+    }
+    return new XMLSerializer().serializeToString(svg);
+}
+function ensureSvgXmlnsFromElement(svg) {
+    const clone = svg.cloneNode(true);
+    if (!clone.hasAttribute("xmlns")) {
+        clone.setAttribute("xmlns", SVG_XMLNS);
+    }
+    return new XMLSerializer().serializeToString(clone);
+}
+async function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, colors, options) {
+    svgString = await getSvgString(svgString);
     _console$n.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
     options = { ...defaultParseSvgOptions, ...options };
     _console$n.log("options", options);
@@ -19903,6 +19956,7 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
     let canvasCommands = svgJsonToCanvasCommands(svgJson);
     _console$n.log("canvasCommands", canvasCommands);
     const boundingBox = getSvgJsonBoundingBox(svgJson);
+    _console$n.log("boundingBox", boundingBox);
     let intrinsicWidth = boundingBox.width;
     let intrinsicHeight = boundingBox.height;
     _console$n.log({ intrinsicWidth, intrinsicHeight });
@@ -19922,8 +19976,8 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
             scaleX = scaleY * options.aspectRatio;
     }
     _console$n.log({ scaleX, scaleY });
-    let width = intrinsicWidth * scaleX;
-    let height = intrinsicWidth * scaleX;
+    let width = Math.ceil(intrinsicWidth * scaleX);
+    let height = Math.ceil(intrinsicHeight * scaleY);
     _console$n.log({ width, height });
     if (scaleX !== 1 || scaleY !== 1) {
         canvasCommands = scaleCanvasCommands(canvasCommands, scaleX, scaleY);
@@ -20079,6 +20133,10 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                     break;
                 curves = simplifyCurves(curves);
                 const controlPoints = curves.flatMap((c) => c.controlPoints);
+                controlPoints.forEach((controlPoint) => {
+                    controlPoint.x = Math.round(controlPoint.x);
+                    controlPoint.y = Math.round(controlPoint.y);
+                });
                 if (isDrawingPath) {
                     const isHole = classifySubpath(controlPoints, parsedPaths, fillRule);
                     parsedPaths.push({ path: controlPoints, isHole });
@@ -20199,12 +20257,11 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                 }
                 break;
             case "fillStyle":
-                _console$n.log("fillStyle", canvasCommand.fillStyle);
-                if (fillStyle != canvasCommand.fillStyle) {
-                    const newIgnoreFill = canvasCommand.fillStyle == "none";
+                const newIgnoreFill = canvasCommand.fillStyle == "none";
+                if (fillStyle != canvasCommand.fillStyle ||
+                    ignoreFill != newIgnoreFill) {
                     if (ignoreFill != newIgnoreFill) {
                         ignoreFill = newIgnoreFill;
-                        _console$n.log({ ignoreFill });
                         displayCommands.push({ type: "setIgnoreFill", ignoreFill });
                     }
                     if (!ignoreFill) {
@@ -20223,19 +20280,17 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                 }
                 break;
             case "strokeStyle":
-                _console$n.log("strokeStyle", canvasCommand.strokeStyle);
-                if (strokeStyle != canvasCommand.strokeStyle) {
-                    const newIgnoreLine = canvasCommand.strokeStyle == "none";
+                const newIgnoreLine = canvasCommand.strokeStyle == "none";
+                if (strokeStyle != canvasCommand.strokeStyle ||
+                    ignoreLine != newIgnoreLine) {
                     if (ignoreLine != newIgnoreLine) {
                         ignoreLine = newIgnoreLine;
-                        _console$n.log({ ignoreLine });
                         displayCommands.push({ type: "setIgnoreLine", ignoreLine });
                     }
                     if (!ignoreLine) {
                         if (strokeStyle != canvasCommand.strokeStyle) {
                             strokeStyle = canvasCommand.strokeStyle;
                             if (lineColorIndex != colorToIndex[strokeStyle]) {
-                                _console$n.log({ lineColorIndex });
                                 lineColorIndex = colorToIndex[strokeStyle];
                                 displayCommands.push({
                                     type: "selectLineColor",
@@ -20249,8 +20304,10 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
             case "lineWidth":
                 if (lineWidth != canvasCommand.lineWidth) {
                     lineWidth = canvasCommand.lineWidth;
+                    lineWidth = Math.ceil(lineWidth);
                     displayCommands.push({ type: "setLineWidth", lineWidth });
                     segmentRadius = lineWidth / 2;
+                    segmentRadius = Math.ceil(segmentRadius);
                     displayCommands.push({
                         type: "setSegmentRadius",
                         segmentRadius,
@@ -20262,7 +20319,12 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                 break;
             case "rect":
                 {
-                    const { x, y, width, height, rotation } = canvasCommand;
+                    let { x, y, width, height, rotation } = canvasCommand;
+                    x = Math.round(x);
+                    y = Math.round(y);
+                    width = Math.round(width);
+                    height = Math.round(height);
+                    rotation = Math.round(rotation);
                     displayCommands.push({
                         type: "setRotation",
                         rotation,
@@ -20279,7 +20341,13 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                 break;
             case "roundRect":
                 {
-                    const { x, y, width, height, rotation, r } = canvasCommand;
+                    let { x, y, width, height, rotation, r } = canvasCommand;
+                    x = Math.round(x);
+                    y = Math.round(y);
+                    width = Math.round(width);
+                    height = Math.round(height);
+                    rotation = Math.round(rotation);
+                    r = Math.round(r);
                     displayCommands.push({
                         type: "setRotation",
                         rotation,
@@ -20297,7 +20365,10 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                 break;
             case "circle":
                 {
-                    const { x, y, r } = canvasCommand;
+                    let { x, y, r } = canvasCommand;
+                    x = Math.round(x);
+                    y = Math.round(y);
+                    r = Math.round(r);
                     displayCommands.push({
                         type: "drawCircle",
                         offsetX: x,
@@ -20308,7 +20379,14 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                 break;
             case "ellipse":
                 {
-                    const { x, y, rx, ry, rotation } = canvasCommand;
+                    let { x, y, rx, ry, rotation } = canvasCommand;
+                    x = Math.round(x);
+                    y = Math.round(y);
+                    width = Math.round(width);
+                    height = Math.round(height);
+                    rotation = Math.round(rotation);
+                    rx = Math.round(rx);
+                    ry = Math.round(ry);
                     displayCommands.push({
                         type: "setRotation",
                         rotation,
@@ -20323,6 +20401,63 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
                     });
                 }
                 break;
+            case "text":
+                if (options.includeText && options.displayManager) {
+                    const { displayManager } = options;
+                    let { x, y, strokeWidth } = canvasCommand;
+                    const { text, fontSize, fill, stroke } = canvasCommand;
+                    x = Math.round(x);
+                    y = Math.round(y) - 5;
+                    strokeWidth = Math.round(strokeWidth);
+                    displayCommands.push({
+                        type: "setSpritesLineHeight",
+                        spritesLineHeight: displayManager.contextState.spritesLineHeight,
+                    });
+                    displayCommands.push({
+                        type: "setSpriteScaleX",
+                        spriteScaleX: scaleX,
+                    });
+                    displayCommands.push({
+                        type: "setSpriteScaleY",
+                        spriteScaleY: scaleY,
+                    });
+                    displayCommands.push({
+                        type: "setHorizontalAlignment",
+                        horizontalAlignment: "start",
+                    });
+                    displayCommands.push({
+                        type: "setVerticalAlignment",
+                        verticalAlignment: "center",
+                    });
+                    const spriteLines = stringToSpriteLines(text, displayManager.spriteSheets, DefaultDisplayContextState);
+                    displayCommands.push({
+                        type: "drawSprites",
+                        offsetX: Math.round(x - width / 2),
+                        offsetY: Math.round(y - height / 2),
+                        spriteSerializedLines: spriteLinesToSerializedLines(displayManager, spriteLines),
+                    });
+                    {
+                        displayCommands.push({
+                            type: "setHorizontalAlignment",
+                            horizontalAlignment: "center",
+                        });
+                        displayCommands.push({
+                            type: "setVerticalAlignment",
+                            verticalAlignment: "center",
+                        });
+                    }
+                    {
+                        displayCommands.push({
+                            type: "setSpriteScaleX",
+                            spriteScaleX: 1,
+                        });
+                        displayCommands.push({
+                            type: "setSpriteScaleY",
+                            spriteScaleY: 1,
+                        });
+                    }
+                }
+                break;
             default:
                 _console$n.warn("uncaught canvasCommand", canvasCommand);
                 break;
@@ -20333,7 +20468,7 @@ function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, c
     _console$n.log("colors", colors);
     return { commands: displayCommands, colors, width, height };
 }
-function svgToSprite(svgString, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0, options) {
+async function svgToSprite(svgString, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0, options) {
     options = { ...defaultParseSvgOptions, ...options };
     _console$n.log("options", options, { overridePalette });
     let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
@@ -20341,13 +20476,14 @@ function svgToSprite(svgString, spriteName, numberOfColors, paletteName, overrid
         palette = {
             name: paletteName,
             numberOfColors,
-            colors: new Array(numberOfColors).fill("#000000"),
+            colors: new Array(numberOfColors).fill("white"),
         };
+        palette.colors[0] = "black";
         spriteSheet.palettes = spriteSheet.palettes || [];
         spriteSheet.palettes?.push(palette);
     }
     _console$n.log("pallete", palette);
-    const { commands, colors, width, height } = svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, !overridePalette ? palette.colors : undefined, options);
+    const { commands, colors, width, height } = await svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, !overridePalette ? palette.colors : undefined, options);
     const sprite = {
         name: spriteName,
         width,
@@ -20371,14 +20507,14 @@ function svgToSprite(svgString, spriteName, numberOfColors, paletteName, overrid
     }
     return sprite;
 }
-function svgToSpriteSheet(svgString, spriteSheetName, numberOfColors, paletteName, options) {
+async function svgToSpriteSheet(svgString, spriteSheetName, spriteName, numberOfColors, paletteName, options) {
     const spriteSheet = {
         name: spriteSheetName,
         palettes: [],
         paletteSwaps: [],
         sprites: [],
     };
-    svgToSprite(svgString, "svg", numberOfColors, paletteName, true, spriteSheet, 0, options);
+    await svgToSprite(svgString, spriteName, numberOfColors, paletteName, false, spriteSheet, 0, options);
     return spriteSheet;
 }
 function getSvgStringFromDataUrl(string) {
@@ -20423,16 +20559,6 @@ const _console$m = createConsole("DisplaySpriteSheetUtils", { log: false });
 const spriteHeaderLength = 3 * 2;
 function calculateSpriteSheetHeaderLength(numberOfSprites) {
     return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
-}
-function getCurvesPoints(curves) {
-    const curvePoints = [];
-    curves.forEach((curve, index) => {
-        if (index == 0) {
-            curvePoints.push(curve.controlPoints[0]);
-        }
-        curvePoints.push(curve.controlPoints.at(-1));
-    });
-    return curvePoints;
 }
 function serializeSpriteSheet(displayManager, spriteSheet) {
     const { name, sprites } = spriteSheet;
@@ -20723,11 +20849,6 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                             break;
                     }
                 });
-                allCurves.sort((a, b) => {
-                    const aPoints = getCurvesPoints(a);
-                    const bPoints = getCurvesPoints(b);
-                    return contourArea(bPoints) - contourArea(aPoints);
-                });
                 allCurves.forEach((curves) => {
                     let controlPoints = curves.flatMap((c) => c.controlPoints);
                     const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
@@ -20748,6 +20869,10 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                         }
                     }
                     const isSegments = curves.every((c) => c.type === "segment");
+                    controlPoints.forEach((controlPoint) => {
+                        controlPoint.x = Math.round(controlPoint.x);
+                        controlPoint.y = Math.round(controlPoint.y);
+                    });
                     controlPoints = controlPoints.map(({ x, y }) => ({
                         x: Math.round(x),
                         y: Math.round(y),
@@ -21855,6 +21980,71 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 const { offsetX, offsetY, spriteIndex } = command;
                 const spriteName = displayManager.selectedSpriteSheet?.sprites[spriteIndex].name;
                 await displayManager.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
+            }
+            break;
+        case "setSpritesLineHeight":
+            {
+                const { spritesLineHeight } = command;
+                await displayManager.setSpritesLineHeight(spritesLineHeight, sendImmediately);
+            }
+            break;
+        case "setSpritesSpacing":
+            {
+                const { spritesSpacing } = command;
+                await displayManager.setSpritesSpacing(spritesSpacing, sendImmediately);
+            }
+            break;
+        case "setSpritesAlignment":
+            {
+                const { spritesAlignment } = command;
+                await displayManager.setSpritesAlignment(spritesAlignment, sendImmediately);
+            }
+            break;
+        case "setSpritesDirection":
+            {
+                const { spritesDirection } = command;
+                await displayManager.setSpritesDirection(spritesDirection, sendImmediately);
+            }
+            break;
+        case "setSpritesLineAlignment":
+            {
+                const { spritesLineAlignment } = command;
+                await displayManager.setSpritesLineAlignment(spritesLineAlignment, sendImmediately);
+            }
+            break;
+        case "setSpritesLineDirection":
+            {
+                const { spritesLineDirection } = command;
+                await displayManager.setSpritesLineDirection(spritesLineDirection, sendImmediately);
+            }
+            break;
+        case "setSpritesLineSpacing":
+            {
+                const { spritesLineSpacing } = command;
+                await displayManager.setSpritesLineSpacing(spritesLineSpacing, sendImmediately);
+            }
+            break;
+        case "drawSprites":
+            {
+                const { offsetX, offsetY, spriteSerializedLines } = command;
+                const spriteLines = [];
+                spriteSerializedLines.forEach((spriteSerializedLine) => {
+                    const spriteLine = [];
+                    spriteSerializedLine.forEach((spriteSerializedSubLine) => {
+                        const { spriteIndices, spriteSheetIndex } = spriteSerializedSubLine;
+                        const spriteSheetName = Object.entries(displayManager.spriteSheetIndices).find(([_spriteSheetName, _spriteSheetIndex]) => {
+                            return _spriteSheetIndex == spriteSheetIndex;
+                        })[0];
+                        const spriteSheet = displayManager.spriteSheets[spriteSheetName];
+                        const spriteSubLine = {
+                            spriteSheetName: spriteSheet.name,
+                            spriteNames: spriteIndices.map((spriteIndex) => spriteSheet.sprites[spriteIndex].name),
+                        };
+                        spriteLine.push(spriteSubLine);
+                    });
+                    spriteLines.push(spriteLine);
+                });
+                await displayManager.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
             }
             break;
         case "selectSpriteSheet":
@@ -23285,6 +23475,7 @@ class DisplayManager {
         this.#onContextStateUpdate(differences);
     }
     async setSpritesLineHeight(spritesLineHeight, sendImmediately) {
+        spritesLineHeight = Math.round(spritesLineHeight);
         this.assertValidLineWidth(spritesLineHeight);
         const differences = this.#contextStateHelper.update({
             spritesLineHeight,
@@ -28941,6 +29132,7 @@ class DisplayCanvasHelper {
         this.#onContextStateUpdate(differences);
     }
     async setSpritesLineHeight(spritesLineHeight, sendImmediately) {
+        spritesLineHeight = Math.round(spritesLineHeight);
         this.assertValidLineWidth(spritesLineHeight);
         const differences = this.#contextStateHelper.update({
             spritesLineHeight,
@@ -29032,6 +29224,7 @@ class DisplayCanvasHelper {
             backgroundColorIndex = spriteColorIndices[backgroundColorIndex];
         }
         this.context.fillStyle = this.#colorIndexToRgbString(fillBackground ? backgroundColorIndex : 0);
+        this.context.lineWidth = 0;
         this.context.fillRect(x, y, width, height);
         this.#restore();
     }
@@ -29125,7 +29318,10 @@ class DisplayCanvasHelper {
         offsetBoundingBox.y += offsetY;
         return offsetBoundingBox;
     }
-    #clearBoundingBoxOnDraw = true;
+    #_clearBoundingBoxOnDraw = true;
+    get #clearBoundingBoxOnDraw() {
+        return this.#_clearBoundingBoxOnDraw && !this.#isDrawingSprite;
+    }
     #clearBoundingBox({ x, y, width, height }, contextState) {
         this.#clearRectToCanvas(x, y, width, height, contextState);
     }
@@ -29514,14 +29710,15 @@ class DisplayCanvasHelper {
             this.#clearBoundingBox(box, contextState);
         }
         const { points, edges } = wireframe;
-        this.#clearBoundingBoxOnDraw = false;
+        const _clearBoundingBoxOnDraw = this.#_clearBoundingBoxOnDraw;
+        this.#_clearBoundingBoxOnDraw = false;
         edges.forEach((edge) => {
             const { startIndex, endIndex } = edge;
             const startPoint = points[startIndex];
             const endPoint = points[endIndex];
             this.#drawSegmentToCanvas(startPoint.x, startPoint.y, endPoint.x, endPoint.y, contextState, false);
         });
-        this.#clearBoundingBoxOnDraw = true;
+        this.#_clearBoundingBoxOnDraw = _clearBoundingBoxOnDraw;
         this.#restore();
     }
     async drawWireframe(wireframe, sendImmediately) {
@@ -29905,8 +30102,8 @@ class DisplayCanvasHelper {
         if (this.#clearBoundingBoxOnDraw) {
             this.#clearBoundingBox(box, contextState);
         }
-        const clearBoundingBoxOnDraw = this.#clearBoundingBoxOnDraw;
-        this.#clearBoundingBoxOnDraw = false;
+        const _clearBoundingBoxOnDraw = this.#_clearBoundingBoxOnDraw;
+        this.#_clearBoundingBoxOnDraw = false;
         points.forEach((point, index) => {
             if (index > 0) {
                 const previousPoint = points[index - 1];
@@ -29917,7 +30114,7 @@ class DisplayCanvasHelper {
                 this.#drawSegmentToCanvas(startX, startY, endX, endY, contextState, false);
             }
         });
-        this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
+        this.#_clearBoundingBoxOnDraw = _clearBoundingBoxOnDraw;
         this.#restore();
     }
     async drawSegments(points, sendImmediately) {
@@ -30122,6 +30319,7 @@ class DisplayCanvasHelper {
         this.#onContextStateUpdate(differences);
     }
     #runSpriteCommand(command, contextState) {
+        _console$6.log("runSpriteCommand", command);
         if (command.type == "drawSprite") {
             const spriteSheet = this.spriteSheets[contextState.spriteSheetName];
             const sprite = spriteSheet.sprites[command.spriteIndex];
@@ -30143,21 +30341,17 @@ class DisplayCanvasHelper {
         }
     }
     #drawSpriteToCanvas(offsetX, offsetY, sprite, contextState) {
-        this.#setIgnoreDevice(true);
         this.#saveContextForSprite(offsetX, offsetY, sprite, contextState);
-        this.#setUseSpriteColorIndices(true);
-        this.#setClearCanvasBoundingBoxOnDraw(false);
+        this.#setIsDrawingSprite(true);
         sprite.commands.forEach((command) => {
             this.#runSpriteCommand(command, contextState);
         });
-        this.#setIgnoreDevice(false);
         this.#restoreContextForSprite();
-        this.#setUseSpriteColorIndices(false);
-        this.#setClearCanvasBoundingBoxOnDraw(true);
+        this.#setIsDrawingSprite(false);
     }
     async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
         _console$6.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
-        let sprite = this.selectedSpriteSheet?.sprites.find((sprite) => sprite.name == spriteName);
+        const sprite = this.selectedSpriteSheet?.sprites.find((sprite) => sprite.name == spriteName);
         _console$6.assertWithError(sprite, `sprite "${spriteName}" not found`);
         _console$6.assertWithError("width" in sprite, "sprite has no width");
         _console$6.assertWithError("height" in sprite, "sprite has no height");
@@ -30182,10 +30376,8 @@ class DisplayCanvasHelper {
         const breadthSizeKey = isSpritesDirectionHorizontal ? "width" : "height";
         const spritesBreadthSign = isSpritesDirectionPositive ? 1 : -1;
         const spritesDepthSign = isSpritesLineDirectionPositive ? 1 : -1;
-        this.#setIgnoreDevice(true);
         this.#setCanvasContextTransform(offsetX, offsetY, localSize.width, localSize.height, contextState);
-        this.#setUseSpriteColorIndices(true);
-        this.#setClearCanvasBoundingBoxOnDraw(false);
+        this.#setIsDrawingSprite(true);
         this.#saveContext();
         this.clearCrop();
         this.clearRotation();
@@ -30352,9 +30544,7 @@ class DisplayCanvasHelper {
         });
         this.#resetCanvasContextTransform();
         this.#restoreContext();
-        this.#setIgnoreDevice(false);
-        this.#setUseSpriteColorIndices(false);
-        this.#setClearCanvasBoundingBoxOnDraw(true);
+        this.#setIsDrawingSprite(false);
     }
     async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
         _console$6.assertWithError(this.contextState.spritesLineHeight > 0, `spritesLineHeight must be >0`);
@@ -30482,33 +30672,39 @@ class DisplayCanvasHelper {
             this.#restore();
         });
     }
-    #setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw, override = false) {
-        if (!override && this.#isDrawingBlankSprite) {
-            return;
-        }
-        this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
-        this.#rearDrawStack.push(() => {
-            this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
-        });
-    }
-    #ignoreDevice = false;
-    #setIgnoreDevice(ignoreDevice) {
-        this.#ignoreDevice = ignoreDevice;
-        this.#rearDrawStack.push(() => {
-            this.#ignoreDevice = ignoreDevice;
-        });
-    }
-    #useSpriteColorIndices = false;
-    #setUseSpriteColorIndices(useSpriteColorIndices, override = false) {
-        if (!override && this.#useSpriteColorIndices) {
-            return;
-        }
+    #_ignoreDevice = false;
+    #_ignoreDeviceCounter = 0;
+    #setIgnoreDevice(newIgnoreDevice, override = false) {
         if (override) {
-            this.#useSpriteColorIndices = useSpriteColorIndices;
+            this.#_ignoreDeviceCounter = newIgnoreDevice ? 1 : 0;
         }
-        this.#rearDrawStack.push(() => {
-            this.#useSpriteColorIndices = useSpriteColorIndices;
+        else {
+            this.#_ignoreDeviceCounter += newIgnoreDevice ? 1 : -1;
+            this.#_ignoreDeviceCounter = Math.max(0, this.#_ignoreDeviceCounter);
+            _console$6.log({
+                ignoreDeviceCounter: this.#_ignoreDeviceCounter,
+            });
+        }
+        const ignoreDevice = this.#_ignoreDeviceCounter > 0;
+        this.#_ignoreDevice = ignoreDevice;
+        _console$6.log({
+            ignoreDevice,
         });
+        this.#rearDrawStack.push(() => {
+            this.#_ignoreDevice = ignoreDevice;
+        });
+    }
+    get #ignoreDevice() {
+        if (this.#_ignoreDevice) {
+            return true;
+        }
+        if (this.#isDrawingBlankSprite) {
+            return this.#isDrawingSpriteCounter > 1;
+        }
+        return this.#isDrawingSprite;
+    }
+    get #useSpriteColorIndices() {
+        return this.#isDrawingSprite;
     }
     #spriteContextStack = [];
     #spriteStack = [];
@@ -30552,27 +30748,21 @@ class DisplayCanvasHelper {
         }
     }
     previewSprite(offsetX, offsetY, sprite, spriteSheet) {
-        this.#setIgnoreDevice(true);
-        this.#setUseSpriteColorIndices(true);
         const contextState = structuredClone(this.contextState);
         this.#saveContextForSprite(offsetX, offsetY, sprite, contextState);
-        this.#setClearCanvasBoundingBoxOnDraw(false);
+        this.#setIsDrawingSprite(true);
         sprite.commands.forEach((command) => {
             this.#runPreviewSpriteCommand(command, spriteSheet);
         });
-        this.#setIgnoreDevice(false);
         this.#restoreContextForSprite();
-        this.#setUseSpriteColorIndices(false);
-        this.#setClearCanvasBoundingBoxOnDraw(true);
+        this.#setIsDrawingSprite(false);
     }
     previewSpriteCommands(commands) {
-        this.#setIgnoreDevice(true);
-        this.#setClearCanvasBoundingBoxOnDraw(false);
+        this.#setIsDrawingSprite(true);
         commands.forEach((command) => {
             this.runContextCommand(command);
         });
-        this.#setIgnoreDevice(false);
-        this.#setClearCanvasBoundingBoxOnDraw(true);
+        this.#setIsDrawingSprite(false);
     }
     assertSpriteSheetPalette(paletteName) {
         assertSpriteSheetPalette(this, paletteName);
@@ -30593,9 +30783,8 @@ class DisplayCanvasHelper {
         await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
     }
     #reset() {
-        this.#useSpriteColorIndices = false;
-        this.#clearBoundingBoxOnDraw = true;
-        this.#ignoreDevice = false;
+        this.#setIsDrawingSprite(false, true);
+        this.#setIgnoreDevice(false, true);
         this.#resetColors();
         this.#resetOpacities();
         this.#resetContextState();
@@ -30618,11 +30807,32 @@ class DisplayCanvasHelper {
     }
     #startSprite(offsetX, offsetY, width, height, contextState) {
         this.#saveContextForSprite(offsetX, offsetY, { width, height }, contextState);
-        this.#setUseSpriteColorIndices(true, true);
-        this.#setClearCanvasBoundingBoxOnDraw(false, true);
+        this.#setIsDrawingSprite(true);
         this.#blankSpriteColorIndices =
             this.contextState.spriteColorIndices.slice();
         _console$6.log("#blankSpriteColorIndices", this.#blankSpriteColorIndices);
+    }
+    #isDrawingSprite = false;
+    #isDrawingSpriteCounter = 0;
+    #setIsDrawingSprite(newIsDrawingSprite, override = false) {
+        if (override) {
+            this.#isDrawingSpriteCounter = newIsDrawingSprite ? 1 : 0;
+        }
+        else {
+            this.#isDrawingSpriteCounter += newIsDrawingSprite ? 1 : -1;
+            this.#isDrawingSpriteCounter = Math.max(0, this.#isDrawingSpriteCounter);
+            _console$6.log({
+                isDrawingSpriteCounter: this.#isDrawingSpriteCounter,
+            });
+        }
+        const isDrawingSprite = this.#isDrawingSpriteCounter > 0;
+        this.#isDrawingSprite = isDrawingSprite;
+        _console$6.log({
+            isDrawingSprite,
+        });
+        this.#rearDrawStack.push(() => {
+            this.#isDrawingSprite = isDrawingSprite;
+        });
     }
     #isDrawingBlankSprite = false;
     #blankSpriteColorIndices;
@@ -30642,9 +30852,9 @@ class DisplayCanvasHelper {
     }
     #endSprite() {
         this.#restoreContextForSprite();
-        this.#setUseSpriteColorIndices(false, true);
-        this.#setClearCanvasBoundingBoxOnDraw(true, true);
         this.#blankSpriteColorIndices = undefined;
+        this.#setIsDrawingSprite(false);
+        this.#setIgnoreDevice(false);
     }
     async endSprite(sendImmediately) {
         _console$6.assertWithError(this.#isDrawingBlankSprite, `not drawing blank sprite`);

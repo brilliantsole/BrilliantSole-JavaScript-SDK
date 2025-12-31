@@ -85,8 +85,8 @@
     </label>
 
     <label id="inputHeight" class="verticalLabel">
-      <span>input height (<span class="value">200</span>px)</span>
-      <input type="range" min="20" max="400" step="10" value="200" />
+      <span>input height (<span class="value">130</span>px)</span>
+      <input type="range" min="20" max="400" step="10" value="130" />
     </label>
 
     <label class="verticalLabel">
@@ -99,6 +99,31 @@
     <label>
       <span>override colors</span>
       <input type="checkbox" id="overrideColors" />
+    </label>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>select font</span>
+      <select id="selectFont">
+        <optgroup label="select font"></optgroup>
+      </select>
+    </label>
+
+    <label class="verticalLabel">
+      add font
+      <input
+        id="loadFont"
+        type="file"
+        accept=".ttf,.otf,.woff,.woff2"
+        multiple="true"
+        style="width: 6rem"
+      />
+    </label>
+
+    <label id="fontScale" class="verticalLabel">
+      <span>font scale (<span class="value">1.0</span>x)</span>
+      <input type="range" value="1.0" min="0.5" max="5" step="0.1" />
     </label>
 
     <br />

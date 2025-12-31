@@ -528,11 +528,11 @@ export async function fontToSpriteSheet(
           }
         });
 
-        allCurves.sort((a, b) => {
-          const aPoints = getCurvesPoints(a);
-          const bPoints = getCurvesPoints(b);
-          return contourArea(bPoints) - contourArea(aPoints);
-        });
+        // allCurves.sort((a, b) => {
+        //   const aPoints = getCurvesPoints(a);
+        //   const bPoints = getCurvesPoints(b);
+        //   return contourArea(bPoints) - contourArea(aPoints);
+        // });
 
         allCurves.forEach((curves) => {
           let controlPoints = curves.flatMap((c) => c.controlPoints);
@@ -554,6 +554,10 @@ export async function fontToSpriteSheet(
           }
 
           const isSegments = curves.every((c) => c.type === "segment");
+          controlPoints.forEach((controlPoint) => {
+            controlPoint.x = Math.round(controlPoint.x);
+            controlPoint.y = Math.round(controlPoint.y);
+          });
           controlPoints = controlPoints.map(({ x, y }) => ({
             x: Math.round(x),
             y: Math.round(y),
