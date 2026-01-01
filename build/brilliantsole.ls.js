@@ -25784,7 +25784,18 @@
       _classPrivateFieldSet2(_clearSensorConfigurationOnLeave, this, newClearSensorConfigurationOnLeave);
     }
     get numberOfPressureSensors() {
-      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.numberOfSensors;
+      if (this.hasSensorType("pressure")) {
+        return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.numberOfSensors;
+      } else {
+        return 0;
+      }
+    }
+    get pressureSensorPositions() {
+      if (this.hasSensorType("pressure")) {
+        return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.positions;
+      } else {
+        return [];
+      }
     }
     resetPressureRange() {
       _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.resetRange();
