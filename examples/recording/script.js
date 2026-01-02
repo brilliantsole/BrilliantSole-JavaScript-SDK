@@ -170,7 +170,7 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
         const pressure = data;
         const pressureSensorData = pressure.sensors.map((sensor) => {
           const { normalizedValue, rawValue, scaledValue } = sensor;
-          return scaledValue;
+          return rawValue;
         });
         sensorTypeData.data.push(pressureSensorData);
       } else {

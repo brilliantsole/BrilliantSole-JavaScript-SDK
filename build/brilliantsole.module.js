@@ -30641,7 +30641,8 @@ class DisplayCanvasHelper {
         if (!this.device?.isConnected) {
             return;
         }
-        await this.uploadSpriteSheets(Object.values(this.spriteSheets));
+        const sortedSpriteSheets = Object.values(this.spriteSheets).sort((a, b) => this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name]);
+        await this.uploadSpriteSheets(sortedSpriteSheets);
     }
     async #updateDeviceSelectedSpriteSheet(sendImmediately) {
         if (!this.device?.isConnected) {

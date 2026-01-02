@@ -109,10 +109,14 @@ const getWhiteKeyColorIndex = () => 1;
 const getBlackKeyColorIndex = () => 2;
 const getWhiteKeyDownColorIndex = () => 3;
 const getBlackKeyDownColorIndex = () => 4;
+const getCorrectNoteColorIndex = () => 5;
+const getIncorrectNoteColorIndex = () => 6;
 displayCanvasHelper.setColor(getWhiteKeyColorIndex(), "white");
 displayCanvasHelper.setColor(getBlackKeyColorIndex(), "black");
 displayCanvasHelper.setColor(getWhiteKeyDownColorIndex(), "yellow");
 displayCanvasHelper.setColor(getBlackKeyDownColorIndex(), "#A0A018");
+displayCanvasHelper.setColor(getCorrectNoteColorIndex(), "green");
+displayCanvasHelper.setColor(getIncorrectNoteColorIndex(), "red");
 displayCanvasHelper.flushContextCommands();
 
 // DRAW
@@ -127,6 +131,7 @@ displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
   isUploading = false;
 });
 
+let currentVoiceIndex = 0;
 let didLoad = false;
 let draw = async () => {
   if (isUploading) {
@@ -146,12 +151,33 @@ let draw = async () => {
 
   console.log("drawing");
 
+  const voices = tuneObjectArray[0].lines[0].staff[0].voices[0].filter(
+    (_) => _.pitches
+  );
+  console.log("voices", voices);
+
+  const voice = voices[currentVoiceIndex];
+  console.log("voice", voice);
+  const { pitches } = voice;
+  //console.log("pitches", pitches);
+  /** @type {Frequency[]} */
+  const frequencies = pitches.map((pitch) => abcPitchToToneFrequency(pitch));
+  //console.log("frequencies", frequencies);
+  const { notePositions } = voice.abselem;
+
+  const frequencyMidis = frequencies.map((frequency) => frequency.toMidi());
+  //console.log("frequencyMidis", frequencyMidis);
+
   if (shouldDrawSheet) {
     const spriteSheet = abcSpriteSheets[0];
     const sprite = spriteSheet.sprites[0];
-    // FILL - setup colors (correct, incorrect colors)
     await displayCanvasHelper.selectSpriteColor(1, getAbcColorIndex());
     await displayCanvasHelper.selectSpriteColor(2, getWhiteKeyDownColorIndex());
+    await displayCanvasHelper.selectSpriteColor(3, getCorrectNoteColorIndex());
+    await displayCanvasHelper.selectSpriteColor(
+      4,
+      getIncorrectNoteColorIndex()
+    );
 
     const { width, height } = sprite;
     await displayCanvasHelper.setHorizontalAlignment("start");
@@ -165,24 +191,70 @@ let draw = async () => {
     const overlaySpriteSheet = abcSpriteSheets["overlay"];
     await displayCanvasHelper.selectSpriteSheet(overlaySpriteSheet.name);
 
-    const voices = tuneObjectArray[0].lines[0].staff[0].voices[0].filter(
-      (_) => _.pitches
-    );
-    console.log("voices", voices);
-    const { x, y } = voices[3].abselem.notePositions[0];
+    for (let i = 0; i < downFrequencies.length; i++) {
+      const downFrequency = downFrequencies[i];
+      const pitchIndex = frequencyMidis.indexOf(downFrequency.toMidi());
+      const isCorrect = pitchIndex != -1;
 
-    // FILL - draw current played keys (colored accordingly)
-    await displayCanvasHelper.drawSprite(
-      2 * x - width / 2 - 0.037064552307128906,
-      2 * y - height / 2 - 15.5494384765625,
-      overlaySpriteSheet.sprites[0].name
-    );
-    // await displayCanvasHelper.drawSprite(
-    //   40,
-    //   0,
-    //   overlaySpriteSheet.sprites[1].name
-    // );
+      // await displayCanvasHelper.selectFillColor(isCorrect ? 3 : 4);
 
+      //const hasDash = isOffStaff(downFrequency);
+      const hasDash = ["C4", "C#4"].includes(downFrequency.toNote());
+      let spriteIndex = hasDash ? 2 : 4;
+      if (!isCorrect) {
+        spriteIndex++;
+      }
+
+      const sprite = overlaySpriteSheet.sprites[spriteIndex];
+
+      //console.log(downFrequency.toNote(), { pitchIndex, isCorrect }, sprite);
+
+      let { x, y } = notePositions[isCorrect ? pitchIndex : 0];
+      let yOffset = 0;
+      let semitoneDifference = 0;
+      let staffDistance = 0;
+      if (!isCorrect) {
+        let closestFrequency = frequencies[0];
+        let closestFrequencyIndex = 0;
+        let closestDistance =
+          downFrequency.toMidi() - closestFrequency.toMidi();
+        frequencies.slice(1).forEach((_frequency, frequencyIndex) => {
+          const distance = downFrequency.toMidi() - _frequency.toMidi();
+          if (Math.abs(distance) < Math.abs(closestDistance)) {
+            closestDistance = distance;
+            closestFrequency = _frequency;
+            closestFrequencyIndex = frequencyIndex + 1;
+          }
+        });
+
+        // console.log({ closestFrequencyIndex });
+        ({ x, y } = notePositions[closestFrequencyIndex]);
+
+        staffDistance = getStaffDistance(downFrequency, closestFrequency);
+        yOffset = -staffDistance * 0.5 * sprite.height;
+
+        semitoneDifference = downFrequency.toMidi() - closestFrequency.toMidi();
+      }
+
+      await displayCanvasHelper.drawSprite(
+        2 * x - width / 2 - 0.037064552307128906,
+        2 * y - height / 2 - 15.5494384765625 + yOffset,
+        sprite.name
+      );
+
+      let drawSharp = downFrequency.toNote().includes("#");
+      if (drawSharp) {
+        const sharpSprite = overlaySpriteSheet.sprites.at(isCorrect ? -2 : -1);
+        await displayCanvasHelper.drawSprite(
+          2 * x - width / 2 - 0.037064552307128906 - 21,
+          2 * y - height / 2 - 15.5494384765625 + yOffset,
+          sharpSprite.name
+        );
+      }
+
+      // FILL - draw sharp to the left if a sharp
+      console.log({ staffDistance, semitoneDifference });
+    }
     await displayCanvasHelper.endSprite();
   }
 
@@ -212,7 +284,18 @@ let draw = async () => {
       //console.log(`drawing white note ${frequency.toNote()}`);
       const isDown = getDownFrequencyIndex(frequency) != -1;
       if (isDown) {
-        await displayCanvasHelper.selectFillColor(getWhiteKeyDownColorIndex());
+        if (shouldCorrectDrawnPianoDownKeys) {
+          const isCorrect = frequencyMidis.includes(frequency.toMidi());
+          await displayCanvasHelper.selectFillColor(
+            isCorrect
+              ? getCorrectNoteColorIndex()
+              : getIncorrectNoteColorIndex()
+          );
+        } else {
+          await displayCanvasHelper.selectFillColor(
+            getWhiteKeyDownColorIndex()
+          );
+        }
       }
       await displayCanvasHelper.drawRect(
         x + xOffset,
@@ -238,7 +321,18 @@ let draw = async () => {
       //console.log(`drawing black note ${frequency.toNote()}`);
       const isDown = getDownFrequencyIndex(frequency) != -1;
       if (isDown) {
-        await displayCanvasHelper.selectFillColor(getBlackKeyDownColorIndex());
+        if (shouldCorrectDrawnPianoDownKeys) {
+          const isCorrect = frequencyMidis.includes(frequency.toMidi());
+          await displayCanvasHelper.selectFillColor(
+            isCorrect
+              ? getCorrectNoteColorIndex()
+              : getIncorrectNoteColorIndex()
+          );
+        } else {
+          await displayCanvasHelper.selectFillColor(
+            getBlackKeyDownColorIndex()
+          );
+        }
       }
       await displayCanvasHelper.drawRect(
         x + xOffset,
@@ -267,7 +361,7 @@ let draw = async () => {
   latestDrawTime = Date.now();
   await displayCanvasHelper.show();
 };
-draw = BS.ThrottleUtils.debounce(draw, 20, false);
+const debouncedDraw = BS.ThrottleUtils.debounce(draw, 40, false);
 window.draw = draw;
 
 let latestDrawTime = 0;
@@ -317,14 +411,12 @@ function isValidUrl(string) {
 
 window.addEventListener("paste", (event) => {
   const string = event.clipboardData.getData("text");
-  // FILL
 });
 window.addEventListener("paste", async (event) => {
   const items = event.clipboardData.items;
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     console.log("item.type", item.type);
-    // FILL
   }
 });
 
@@ -339,7 +431,6 @@ window.addEventListener("drop", async (e) => {
   const file = e.dataTransfer.files[0];
   if (file) {
     console.log(file.type);
-    // FILL
   }
 });
 
@@ -650,7 +741,7 @@ const drawPianoConfig = {
   whiteKeySpacing: 10,
   x: 0,
   y: 400 - 80,
-  startOctave: 3,
+  startOctave: 4,
 };
 window.drawPianoConfig = drawPianoConfig;
 
@@ -693,7 +784,7 @@ const onFrequency = (frequency) => {
   sampler.triggerAttack(frequency.toNote());
   console.log({ note: frequency.toNote(), downFrequencies });
   if (shouldDrawPiano) {
-    draw();
+    debouncedDraw();
   }
 };
 /** @param {Frequency} frequency */
@@ -703,7 +794,7 @@ const offFrequency = (frequency) => {
   sampler.triggerRelease(frequency.toNote());
   console.log({ note: frequency.toNote(), downFrequencies });
   if (shouldDrawPiano) {
-    draw();
+    debouncedDraw();
   }
 };
 
@@ -769,7 +860,70 @@ try {
 /** @type {import("abcjs")} */
 const abcjs = window.ABCJS;
 
+const DIATONIC_TO_SEMITONE = [0, 2, 4, 5, 7, 9, 11];
+function abcPitchToMidi(note) {
+  const middleCMidi = 60;
+
+  const diatonic = ((note.pitch % 7) + 7) % 7;
+  const octaves = Math.floor(note.pitch / 7);
+
+  let midi = middleCMidi + octaves * 12 + DIATONIC_TO_SEMITONE[diatonic];
+
+  // accidentals
+  if (note.accidental === "sharp") midi += 1;
+  if (note.accidental === "flat") midi -= 1;
+  if (note.accidental === "dblsharp") midi += 2;
+  if (note.accidental === "dblflat") midi -= 2;
+
+  return midi;
+}
+function abcPitchToToneFrequency(note) {
+  return Tone.Frequency(abcPitchToMidi(note), "midi");
+}
+const LETTER_INDEX = {
+  C: 0,
+  D: 1,
+  E: 2,
+  F: 3,
+  G: 4,
+  A: 5,
+  B: 6,
+};
+
+function toDiatonicIndex(input) {
+  const note = input.toNote();
+
+  const match = note.match(/^([A-G])([#b]?)(\d+)$/);
+  if (!match) throw new Error(`Invalid note: ${note}`);
+
+  const [, letter, , octaveStr] = match;
+  const octave = Number(octaveStr);
+
+  return octave * 7 + LETTER_INDEX[letter];
+}
+
+function getStaffDistance(a, b) {
+  return toDiatonicIndex(a) - toDiatonicIndex(b);
+}
+
+const STAFF_RANGES = {
+  treble: {
+    min: Tone.Frequency("E4").toMidi(), // bottom line
+    max: Tone.Frequency("F5").toMidi(), // top line
+  },
+  bass: {
+    min: Tone.Frequency("G2").toMidi(),
+    max: Tone.Frequency("A3").toMidi(),
+  },
+};
+function isOffStaff(freq, clef = "treble") {
+  const midi = freq.toMidi();
+  const { min, max } = STAFF_RANGES[clef];
+  return midi < min || midi > max;
+}
+
 let shouldDrawSheet = true;
+let shouldCorrectDrawnPianoDownKeys = true;
 
 /** @type {Record<string, BS.DisplaySpriteSheet>} */
 const abcSpriteSheets = {};
@@ -819,8 +973,8 @@ const svgToSpriteSheet = async (svg, spriteSheetName, spriteName) => {
   staffWrapperBox.y -= systemSvgBox.y;
   staffWrapperBox.x -= systemSvgBox.x;
 
-  console.log("systemSvgBox", systemSvgBox);
-  console.log("staffWrapperBox", staffWrapperBox);
+  //console.log("systemSvgBox", systemSvgBox);
+  //console.log("staffWrapperBox", staffWrapperBox);
 
   systemSvg.setAttribute("height", staffWrapperBox.height);
   systemSvg.setAttribute("width", staffWrapperBox.width);
@@ -877,10 +1031,14 @@ const svgToSpriteSheet = async (svg, spriteSheetName, spriteName) => {
     sprite.commands.forEach((command) => {
       switch (command.type) {
         case "selectFillColor":
-          command.fillColorIndex = 2;
+          if (command.fillColorIndex != 0) {
+            command.fillColorIndex = 2;
+          }
           break;
         case "selectLineColor":
-          command.lineColorIndex = 2;
+          if (command.lineColorIndex != 0) {
+            command.lineColorIndex = 2;
+          }
           break;
       }
     });
@@ -898,7 +1056,7 @@ const svgToSpriteSheet = async (svg, spriteSheetName, spriteName) => {
 const renderAbcOverlay = async () => {
   const tuneObjectArray = abcjs.renderAbc(
     abcContainer.id,
-    "X:1\nK:C\nC",
+    "X:1\nK:C\nC2",
     abcVisualParams
   );
   //console.log("tuneObjectArray", tuneObjectArray);
@@ -920,6 +1078,125 @@ const renderAbcOverlay = async () => {
   svg.querySelector(".abcjs-ledger").remove();
 
   await svgToSpriteSheet(svg, "overlay", "noteWithoutDash");
+
+  const spriteSheet = abcSpriteSheets["overlay"];
+
+  const noteWithDashSprite = spriteSheet.sprites[0];
+  const noteWithoutDashSprite = spriteSheet.sprites[1];
+
+  const spriteSheetIndex = displayCanvasHelper.spriteSheetIndices["overlay"];
+
+  /**
+   * @param {boolean} isCorrect
+   * @param {boolean} hasDash
+   * @returns {BS.DisplayContextCommand[]}
+   */
+  const createCommands = (isCorrect, hasDash) => {
+    const comamnds = spriteSheet.sprites[hasDash ? 0 : 1].commands.filter(
+      (command) => {
+        switch (command.type) {
+          case "selectFillColor":
+          case "selectLineColor":
+            return false;
+          default:
+            return true;
+        }
+      }
+    );
+    return [
+      { type: "selectFillColor", fillColorIndex: isCorrect ? 3 : 4 },
+      { type: "selectLineColor", lineColorIndex: isCorrect ? 3 : 4 },
+      // { type: "drawRect", x: 0, y: 0, width: 20, height: 17 },
+      ...comamnds,
+    ];
+  };
+
+  const correctNoteWithDashSprite = { ...noteWithDashSprite };
+  correctNoteWithDashSprite.name = "correctNoteWithDash";
+  correctNoteWithDashSprite.commands = createCommands(true, true);
+  const incorrectNoteWithDashSprite = { ...noteWithDashSprite };
+  incorrectNoteWithDashSprite.name = "incorrectNoteWithDash";
+  incorrectNoteWithDashSprite.commands = createCommands(false, true);
+
+  const correctNoteWithoutDashSprite = { ...noteWithDashSprite };
+  correctNoteWithoutDashSprite.name = "correctNoteWithoutDash";
+  correctNoteWithoutDashSprite.commands = createCommands(true, false);
+  const incorrectNoteWithoutDashSprite = { ...noteWithoutDashSprite };
+  incorrectNoteWithoutDashSprite.name = "incorrectNoteWithoutDash";
+  incorrectNoteWithoutDashSprite.commands = createCommands(false, false);
+  spriteSheet.sprites.push(
+    correctNoteWithDashSprite,
+    incorrectNoteWithDashSprite,
+    correctNoteWithoutDashSprite,
+    incorrectNoteWithoutDashSprite
+  );
+  console.log("overlay", spriteSheet);
+
+  await renderAbcOverlaySymbols();
+
+  await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
+  await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+  checkSpriteSheetSize();
+};
+const renderAbcOverlaySymbols = async () => {
+  const tuneObjectArray = abcjs.renderAbc(
+    abcContainer.id,
+    "X:1\nK:C\n^C2",
+    abcVisualParams
+  );
+  //console.log("tuneObjectArray", tuneObjectArray);
+
+  const svgs = abcContainer.querySelectorAll("svg");
+  //console.log("svgs", svgs);
+
+  const svg = svgs[0];
+  svg
+    .querySelectorAll(classesToRemove.map((_) => "." + _).join(","))
+    .forEach((e) => e.remove());
+  svg
+    .querySelectorAll(
+      dataNamesToRemove.map((_) => `[data-name="${_}"]`).join(",")
+    )
+    .forEach((e) => e.remove());
+  svg.querySelector(".abcjs-ledger").remove();
+  svg.querySelector(".abcjs-notehead").remove();
+  await svgToSpriteSheet(svg, "overlay", "sharp");
+
+  const spriteSheet = abcSpriteSheets["overlay"];
+  const sharpSprite = spriteSheet.sprites.at(-1);
+
+  /**
+   * @param {boolean} isCorrect
+   * @returns {BS.DisplayContextCommand[]}
+   */
+  const createCommands = (isCorrect) => {
+    const comamnds = sharpSprite.commands.filter((command, index) => {
+      switch (command.type) {
+        case "selectFillColor":
+          return command.fillColorIndex == 0;
+          break;
+        case "selectLineColor":
+          return command.lineColorIndex == 0;
+        default:
+          return true;
+      }
+    });
+    return [
+      { type: "selectFillColor", fillColorIndex: isCorrect ? 3 : 4 },
+      { type: "selectLineColor", lineColorIndex: isCorrect ? 3 : 4 },
+      // { type: "drawRect", x: 0, y: 0, width: 20, height: 17 },
+      ...comamnds,
+    ];
+  };
+
+  const correctSharpSprite = { ...sharpSprite };
+  correctSharpSprite.name = "correctSharp";
+  correctSharpSprite.commands = createCommands(true);
+  const incorrectSharpSprite = { ...sharpSprite };
+  incorrectSharpSprite.name = "incorrectSharp";
+  incorrectSharpSprite.commands = createCommands(false);
+
+  spriteSheet.sprites.push(correctSharpSprite, incorrectSharpSprite);
 };
 await renderAbcOverlay();
 
@@ -928,7 +1205,11 @@ let tuneObjectArray;
 /** @param {string} string */
 const renderAbc = async (string) => {
   tuneObjectArray = abcjs.renderAbc(abcContainer.id, string, abcVisualParams);
-  console.log("tuneObjectArray", tuneObjectArray);
+  console.log(
+    "tuneObjectArray",
+    tuneObjectArray,
+    tuneObjectArray[0].getKeySignature()
+  );
 
   const svgs = abcContainer.querySelectorAll("svg");
   //console.log("svgs", svgs);
@@ -938,7 +1219,7 @@ const renderAbc = async (string) => {
     await svgToSpriteSheet(svg, systemIndex.toString(), "svg");
   }
 };
-await renderAbc("X:1\nK:C\nDD AA|BBA2");
+await renderAbc("X:1\nK:C\n[DG]^d AA|BBA2");
 
 didLoad = true;
 
