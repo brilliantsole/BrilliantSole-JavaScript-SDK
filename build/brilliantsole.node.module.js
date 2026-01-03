@@ -7956,10 +7956,7 @@ class DisplayManager {
         }
         const commandType = "clearRotation";
         const dataView = serializeContextCommand(this, { type: commandType });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView?.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSegmentStartCap(segmentStartCap, sendImmediately) {

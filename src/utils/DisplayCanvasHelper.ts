@@ -1090,7 +1090,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       rotation: 0,
     });
-
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.clearRotation(sendImmediately);
     } else {

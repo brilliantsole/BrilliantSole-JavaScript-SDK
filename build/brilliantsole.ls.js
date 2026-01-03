@@ -21537,10 +21537,7 @@
       const dataView = serializeContextCommand(this, {
         type: commandType
       });
-      if (!dataView) {
-        return;
-      }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSegmentStartCap(segmentStartCap, sendImmediately) {
