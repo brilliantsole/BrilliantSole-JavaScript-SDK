@@ -111,12 +111,16 @@ const getWhiteKeyDownColorIndex = () => 3;
 const getBlackKeyDownColorIndex = () => 4;
 const getCorrectNoteColorIndex = () => 5;
 const getIncorrectNoteColorIndex = () => 6;
+const getHighlightedWhiteColorIndex = () => 7;
+const getHighlightedBlackColorIndex = () => 8;
 displayCanvasHelper.setColor(getWhiteKeyColorIndex(), "white");
 displayCanvasHelper.setColor(getBlackKeyColorIndex(), "black");
 displayCanvasHelper.setColor(getWhiteKeyDownColorIndex(), "yellow");
 displayCanvasHelper.setColor(getBlackKeyDownColorIndex(), "#A0A018");
 displayCanvasHelper.setColor(getCorrectNoteColorIndex(), "green");
 displayCanvasHelper.setColor(getIncorrectNoteColorIndex(), "red");
+displayCanvasHelper.setColor(getHighlightedWhiteColorIndex(), "lightblue");
+displayCanvasHelper.setColor(getHighlightedBlackColorIndex(), "blue");
 displayCanvasHelper.flushContextCommands();
 
 // DRAW
@@ -131,13 +135,58 @@ displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
   isUploading = false;
 });
 
+/**
+ * @typedef {Object} VoiceConfig
+ * @property {number} voiceIndex
+ * @property {import("abcjs").VoiceItem} voice
+ * @property {{
+ *   pitch: number,
+ *   name: string,
+ *   verticalPos: number,
+ *   highestVert: number,
+ *   accidental: "sharp" | "flat" | "natural" | undefined
+ * }[]} pitches
+ * @property {Frequency[]} frequencies
+ * @property {{ x: number, y: number }[]} notePositions
+ * @property {number[]} frequencyMidis
+ */
+
+/** @type {VoiceConfig} */
+let currentVoiceConfig = {};
+/** @type {VoiceConfig} */
+let previousVoiceConfig = {};
+
 let currentVoiceIndex = 0;
+
 const setCurrentVoiceIndex = async (newCurrentVoiceIndex) => {
-  currentVoiceIndex = Math.max(
+  newCurrentVoiceIndex = Math.max(
     0,
-    Math.min(newCurrentVoiceIndex, voices.length - 1)
+    Math.min(newCurrentVoiceIndex, voices.length)
   );
+  if (newCurrentVoiceIndex == voices.length) {
+    // FILL - finished
+    currentVoiceIndex = 0;
+  } else {
+    currentVoiceIndex = newCurrentVoiceIndex;
+  }
   console.log({ currentVoiceIndex });
+
+  previousVoiceConfig = currentVoiceConfig;
+
+  currentVoiceConfig = {};
+  currentVoiceConfig.voiceIndex = currentVoiceIndex;
+  currentVoiceConfig.voice = voices[currentVoiceIndex];
+  currentVoiceConfig.pitches = currentVoiceConfig.voice.pitches;
+  currentVoiceConfig.frequencies = currentVoiceConfig.pitches.map((pitch) =>
+    abcPitchToToneFrequency(pitch)
+  );
+  currentVoiceConfig.frequencyMidis = currentVoiceConfig.frequencies.map(
+    (frequency) => frequency.toMidi()
+  );
+  currentVoiceConfig.notePositions =
+    currentVoiceConfig.voice.abselem.notePositions;
+  console.log("currentVoiceConfig", currentVoiceConfig);
+
   await draw();
 };
 window.setCurrentVoiceIndex = setCurrentVoiceIndex;
@@ -180,18 +229,6 @@ let draw = async () => {
 
   console.log("drawing");
 
-  const voice = voices[currentVoiceIndex];
-  console.log("voice", voice);
-  const { pitches } = voice;
-  //console.log("pitches", pitches);
-  /** @type {Frequency[]} */
-  const frequencies = pitches.map((pitch) => abcPitchToToneFrequency(pitch));
-  //console.log("frequencies", frequencies);
-  const { notePositions } = voice.abselem;
-
-  const frequencyMidis = frequencies.map((frequency) => frequency.toMidi());
-  //console.log("frequencyMidis", frequencyMidis);
-
   if (shouldDrawSheet) {
     const spriteSheet = abcSpriteSheets[0];
     const sprite = spriteSheet.sprites[0];
@@ -217,8 +254,13 @@ let draw = async () => {
 
     for (let i = 0; i < downFrequencies.length; i++) {
       const downFrequency = downFrequencies[i];
+      /** @type {VoiceConfig} */
+      const voiceConfig = downFrequency.voiceConfig;
+      const { isCorrect } = downFrequency;
+      console.log("voiceConfig", voiceConfig);
+      const { frequencyMidis, notePositions, frequencies } = voiceConfig;
+
       const pitchIndex = frequencyMidis.indexOf(downFrequency.toMidi());
-      const isCorrect = pitchIndex != -1;
 
       // await displayCanvasHelper.selectFillColor(isCorrect ? 3 : 4);
 
@@ -281,6 +323,7 @@ let draw = async () => {
     await displayCanvasHelper.endSprite();
 
     if (shouldDrawCurrentMarker) {
+      const { notePositions } = currentVoiceConfig;
       console.log({ shouldDrawCurrentMarker });
       let { x, y } = notePositions[0];
       await displayCanvasHelper.setRotation(30, false);
@@ -315,15 +358,21 @@ let draw = async () => {
     await displayCanvasHelper.setHorizontalAlignment("start");
     await displayCanvasHelper.setVerticalAlignment("start");
 
+    const { frequencyMidis } = currentVoiceConfig;
+
     let frequency = Tone.Frequency(`C${startOctave}`);
     let xOffset = 0;
     await displayCanvasHelper.selectFillColor(getWhiteKeyColorIndex());
     for (let i = 0; i < numberOfWhiteKeys; i++) {
       //console.log(`drawing white note ${frequency.toNote()}`);
+
       const isCorrect = frequencyMidis.includes(frequency.toMidi());
-      const isDown = getDownFrequencyIndex(frequency) != -1;
-      if (isDown) {
-        if (shouldCorrectDrawnPianoDownKeys) {
+      const downFrequency = getDownFrequency(frequency);
+      const isCurrent =
+        downFrequency &&
+        downFrequency.voiceConfig.voiceIndex == currentVoiceIndex;
+      if (downFrequency) {
+        if (isCurrent && shouldCorrectDrawnPianoDownKeys) {
           await displayCanvasHelper.selectFillColor(
             isCorrect
               ? getCorrectNoteColorIndex()
@@ -337,7 +386,7 @@ let draw = async () => {
       } else {
         if (shouldHighlightCurrentVoiceNotes && isCorrect) {
           await displayCanvasHelper.selectFillColor(
-            getWhiteKeyDownColorIndex()
+            getHighlightedWhiteColorIndex()
           );
         } else {
           await displayCanvasHelper.selectFillColor(getWhiteKeyColorIndex());
@@ -353,7 +402,7 @@ let draw = async () => {
       do {
         frequency = frequency.transpose(1);
       } while (frequency.toNote().length == 3);
-      if (isDown) {
+      if (downFrequency) {
         await displayCanvasHelper.selectFillColor(getWhiteKeyColorIndex());
       }
     }
@@ -366,9 +415,12 @@ let draw = async () => {
     for (let i = 0; i < numberOfBlackKeys; i++) {
       //console.log(`drawing black note ${frequency.toNote()}`);
       const isCorrect = frequencyMidis.includes(frequency.toMidi());
-      const isDown = getDownFrequencyIndex(frequency) != -1;
-      if (isDown) {
-        if (shouldCorrectDrawnPianoDownKeys) {
+      const downFrequency = getDownFrequency(frequency);
+      const isCurrent =
+        downFrequency &&
+        downFrequency.voiceConfig.voiceIndex == currentVoiceIndex;
+      if (downFrequency) {
+        if (isCurrent && shouldCorrectDrawnPianoDownKeys) {
           await displayCanvasHelper.selectFillColor(
             isCorrect
               ? getCorrectNoteColorIndex()
@@ -382,7 +434,7 @@ let draw = async () => {
       } else {
         if (shouldHighlightCurrentVoiceNotes && isCorrect) {
           await displayCanvasHelper.selectFillColor(
-            getBlackKeyDownColorIndex()
+            getHighlightedBlackColorIndex()
           );
         } else {
           await displayCanvasHelper.selectFillColor(getBlackKeyColorIndex());
@@ -406,7 +458,7 @@ let draw = async () => {
       do {
         frequency = frequency.transpose(1);
       } while (frequency.toNote().length == 2);
-      if (isDown) {
+      if (downFrequency) {
         await displayCanvasHelper.selectFillColor(getBlackKeyColorIndex());
       }
     }
@@ -415,7 +467,7 @@ let draw = async () => {
   latestDrawTime = Date.now();
   await displayCanvasHelper.show();
 };
-const debouncedDraw = true ? draw : BS.ThrottleUtils.debounce(draw, 40, false);
+const debouncedDraw = false ? draw : BS.ThrottleUtils.debounce(draw, 40, false);
 window.draw = draw;
 
 let latestDrawTime = 0;
@@ -817,6 +869,12 @@ const getDownFrequencyIndex = (frequency) => {
   );
   return index;
 };
+/** @param {Frequency} frequency */
+const getDownFrequency = (frequency) => {
+  return downFrequencies.find(
+    (_frequency) => _frequency.toMidi() == frequency.toMidi()
+  );
+};
 /** @type {InputEventMap["noteon"]} */
 const onWebMidiNoteOn = (event) => {
   const { value, note } = event;
@@ -836,9 +894,24 @@ const onFrequency = (frequency) => {
   if (index != -1) {
     return;
   }
+  const { frequencyMidis } = currentVoiceConfig;
+
+  frequency.voiceConfig = currentVoiceConfig;
+  frequency.isCorrect = currentVoiceConfig.frequencyMidis.includes(
+    frequency.toMidi()
+  );
   downFrequencies.push(frequency);
   sampler.triggerAttack(frequency.toNote());
   console.log({ note: frequency.toNote(), downFrequencies });
+
+  const areCorrectNotesPlayed =
+    downFrequencies.length == frequencyMidis.length &&
+    downFrequencies.every((downFrequency) => downFrequency.isCorrect);
+  if (areCorrectNotesPlayed) {
+    console.log("areCorrectNotesPlayed", areCorrectNotesPlayed);
+    setCurrentVoiceIndex(currentVoiceIndex + 1);
+  }
+
   if (shouldDrawPiano) {
     debouncedDraw();
   }
@@ -855,29 +928,29 @@ const offFrequency = (frequency) => {
 };
 
 const keyToNote = {
-  a: "C3",
-  s: "D3",
-  d: "E3",
-  f: "F3",
-  g: "G3",
-  h: "A3",
-  j: "B3",
-  k: "C4",
-  l: "D4",
-  ";": "E4",
-  "'": "F4",
+  a: "C4",
+  s: "D4",
+  d: "E4",
+  f: "F4",
+  g: "G4",
+  h: "A4",
+  j: "B4",
+  k: "C5",
+  l: "D5",
+  ";": "E5",
+  "'": "F5",
 
-  w: "C#3",
-  e: "D#3",
+  w: "C#4",
+  e: "D#4",
 
-  t: "F#3",
-  y: "G#3",
-  u: "A#3",
+  t: "F#4",
+  y: "G#4",
+  u: "A#4",
 
-  o: "C#4",
-  p: "D#4",
+  o: "C#5",
+  p: "D#5",
 
-  "]": "F#4",
+  "]": "F#5",
 };
 document.addEventListener("keydown", (event) => {
   const { key } = event;
@@ -1281,6 +1354,7 @@ const renderAbc = async (string) => {
     const svg = svgs[systemIndex];
     await svgToSpriteSheet(svg, systemIndex.toString(), "svg");
   }
+  await setCurrentVoiceIndex(0);
 };
 await renderAbc("X:1\nK:C\n[DG]^d AA|BBA2");
 
