@@ -785,7 +785,7 @@ await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Sans");
 // TONEJS
 /** @type {import("tone")} */
 const Tone = window.Tone;
-const audioContext = Tone.getContext().rawContext;
+const audioContext = Tone.getContext().rawContext._nativeAudioContext;
 console.log(audioContext);
 const checkAudioContextState = () => {
   const { state } = audioContext;
@@ -1361,3 +1361,177 @@ await renderAbc("X:1\nK:C\n[DG]^d AA|BBA2");
 didLoad = true;
 
 draw();
+
+// MICROPHONE
+/** @type {HTMLSelectElement} */
+const selectMicrophoneSelect = document.getElementById("selectMicrophone");
+/** @type {HTMLOptGroupElement} */
+const selectMicrophoneOptgroup =
+  selectMicrophoneSelect.querySelector("optgroup");
+selectMicrophoneSelect.addEventListener("input", () => {
+  selectMicrophone(selectMicrophoneSelect.value);
+});
+
+selectMicrophoneSelect.addEventListener("click", async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const audioDevices = devices.filter((device) => device.kind == "audioinput");
+  console.log("audioDevices", audioDevices);
+  if (audioDevices.length == 1 && audioDevices[0].deviceId == "") {
+    console.log("getting audio");
+    const microphoneStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+    });
+    microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    updateMicrophoneSources();
+  }
+});
+const updateMicrophoneSources = async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const audioDevices = devices.filter((device) => device.kind == "audioinput");
+  selectMicrophoneOptgroup.innerHTML = "";
+  selectMicrophoneOptgroup.appendChild(new Option("none"));
+  if (device.hasMicrophone) {
+    selectMicrophoneOptgroup.appendChild(new Option("device"));
+  }
+  audioDevices.forEach((audioInputDevice) => {
+    selectMicrophoneOptgroup.appendChild(
+      new Option(audioInputDevice.label, audioInputDevice.deviceId)
+    );
+  });
+  selectMicrophone.value = "none";
+  selectMicrophone(selectMicrophone.value);
+};
+/** @type {MediaStream?} */
+let microphoneStream;
+/** @type {MediaStreamAudioSourceNode?} */
+let microphoneMediaStreamSource;
+const selectMicrophone = async (deviceId) => {
+  stopMicrophoneStream();
+  if (deviceId == "none") {
+    microphoneAudio.setAttribute("hidden", "");
+    if (device.hasMicrophone) {
+      await device.stopMicrophone();
+    }
+  } else {
+    if (deviceId == "device") {
+      microphoneStream = device.microphoneMediaStreamDestination.stream;
+      console.log("starting microphone");
+      await device.startMicrophone();
+    } else {
+      microphoneStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: { exact: deviceId },
+          sampleRate: audioContext.sampleRate,
+          noiseSuppression: false,
+          echoCancellation: false,
+          autoGainControl: false,
+        },
+      });
+      loadPitchDetection();
+    }
+    microphoneAudio.srcObject = microphoneStream;
+    microphoneAudio.removeAttribute("hidden");
+    console.log("got microphoneStream", deviceId, microphoneStream);
+  }
+};
+const stopMicrophoneStream = () => {
+  if (microphoneStream) {
+    console.log("stopping microphoneStream");
+    microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    microphoneStream = undefined;
+  }
+  if (microphoneMediaStreamSource) {
+    microphoneMediaStreamSource.disconnect();
+    microphoneMediaStreamSource = undefined;
+  }
+  microphoneAudio.srcObject = undefined;
+  microphoneAudio.setAttribute("hidden", "");
+};
+navigator.mediaDevices.addEventListener("devicechange", () =>
+  updateMicrophoneSources()
+);
+device.addEventListener("isConnected", () => {
+  updateMicrophoneSources();
+});
+updateMicrophoneSources();
+
+// MICROPHONE AUDIO
+
+/** @type {HTMLAudioElement} */
+const microphoneAudio = document.getElementById("microphoneAudio");
+let isMicrophoneLoaded = false;
+microphoneAudio.addEventListener("loadstart", () => {
+  isMicrophoneLoaded = true;
+});
+microphoneAudio.addEventListener("emptied", () => {
+  isMicrophoneLoaded = false;
+});
+
+// PITCH DETECTION
+
+let pitchDetection;
+
+const onModelLoaded = () => {
+  console.log("onModelLoaded");
+};
+
+const onPitch = (error, _frequency) => {
+  if (error) {
+    console.error(error);
+  } else if (_frequency) {
+    const frequency = Tone.Frequency(_frequency);
+    console.log({
+      frequency: frequency.toFrequency(),
+      midi: frequency.toMidi(),
+      note: frequency.toNote(),
+    });
+  }
+  if (autoPitchCheckbox.checked) {
+    getPitch();
+  }
+};
+
+const loadPitchDetection = async () => {
+  if (!microphoneStream) {
+    return;
+  }
+  console.log("audioContext", audioContext);
+  pitchDetection = ml5.pitchDetection(
+    "https://cdn.jsdelivr.net/gh/ml5js/ml5-data-and-models/models/pitch-detection/crepe/",
+    audioContext,
+    microphoneStream,
+    onModelLoaded
+  );
+};
+
+const getPitch = () => {
+  pitchDetection.getPitch(onPitch);
+};
+
+window.getPitch = getPitch;
+
+const getPitchButton = document.getElementById("getPitch");
+getPitchButton.addEventListener("click", () => {
+  getPitch();
+});
+
+const autoPitchCheckbox = document.getElementById("autoPitch");
+autoPitchCheckbox.addEventListener("input", () => {
+  if (autoPitchCheckbox.checked && isMicrophoneLoaded) {
+    getPitch();
+  }
+});
+
+microphoneAudio.addEventListener("loadstart", () => {
+  getPitchButton.disabled = false;
+  autoPitchCheckbox.disabled = false;
+});
+microphoneAudio.addEventListener("emptied", () => {
+  getPitchButton.disabled = true;
+  autoPitchCheckbox.disabled = true;
+
+  autoPitchCheckbox.checked = false;
+  if (autoPitchIntervalId) {
+    clearInterval(autoPitchIntervalId);
+  }
+});
