@@ -102,6 +102,9 @@ displayCanvasHelper.addEventListener("color", (event) => {
   const { colorHex, colorIndex } = event.message;
   displayColorInputs[colorIndex].value = colorHex;
 });
+displayCanvasHelper.addEventListener("deviceUpdated", () => {
+  draw();
+});
 setupColors();
 const getTextColorIndex = () => 1;
 const getAbcColorIndex = () => 1;
@@ -934,7 +937,7 @@ const onWebMidiNoteOff = (event) => {
   offFrequency(frequency);
 };
 
-let ignoreMidi = false;
+let ignoreMidi = true;
 /** @param {Frequency} frequency */
 const onFrequency = (frequency) => {
   if (ignoreMidi) {
@@ -1558,7 +1561,7 @@ const onModelLoaded = () => {
 
 /** @type {Frequency?} */
 let pitchDetectionFrequency;
-let pitchDetectionInterval = 20;
+let pitchDetectionInterval = 0;
 let lastTimePitchDetected = 0;
 const onPitch = async (error, pitch) => {
   const _lastTimePitchDetected = lastTimePitchDetected;
@@ -1568,7 +1571,7 @@ const onPitch = async (error, pitch) => {
   if (error) {
     console.error(error);
   } else if (pitch) {
-    newPitchDetectionFrequency = Tone.Frequency(pitch);
+    newPitchDetectionFrequency = Tone.Frequency(pitch).transpose(24);
   }
 
   if (
