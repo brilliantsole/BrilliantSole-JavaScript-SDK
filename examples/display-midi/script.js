@@ -835,7 +835,9 @@ await loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Sans");
 /** @type {import("tone")} */
 const Tone = window.Tone;
 const audioContext = Tone.getContext().rawContext._nativeAudioContext;
-console.log(audioContext);
+device.audioContext = audioContext;
+device.microphoneGainNode.gain.value = 5;
+window.audioContext = audioContext;
 const checkAudioContextState = () => {
   const { state } = audioContext;
   console.log({ audioContextState: state });
@@ -849,6 +851,9 @@ audioContext.addEventListener("statechange", () => {
   checkAudioContextState();
 });
 checkAudioContextState();
+
+const analyser = audioContext.createAnalyser();
+analyser.fftSize = 1024;
 
 const sampler = new Tone.Sampler({
   urls: {
@@ -937,7 +942,7 @@ const onWebMidiNoteOff = (event) => {
   offFrequency(frequency);
 };
 
-let ignoreMidi = true;
+let ignoreMidi = false;
 /** @param {Frequency} frequency */
 const onFrequency = (frequency) => {
   if (ignoreMidi) {
@@ -958,7 +963,7 @@ const onFrequency = (frequency) => {
   console.log({ note: frequency.toNote(), downFrequencies });
 
   const areCorrectNotesPlayed =
-    downFrequencies.length == frequencyMidis.length &&
+    //downFrequencies.length == frequencyMidis.length &&
     downFrequencies.every((downFrequency) => downFrequency.isCorrect);
   if (areCorrectNotesPlayed) {
     console.log("areCorrectNotesPlayed", areCorrectNotesPlayed);
@@ -1440,13 +1445,16 @@ const renderAbc = async (string) => {
   }
   await setCurrentVoiceIndex(0);
 };
-await renderAbc("X:1\nK:C\n[DG]^d AA|BBA2");
+await renderAbc("X:1\nK:C\ne e e c e g G");
 
 didLoad = true;
 
 draw();
 
 // MICROPHONE
+device.audioContext;
+device.microphoneGainNode.connect(analyser);
+
 /** @type {HTMLSelectElement} */
 const selectMicrophoneSelect = document.getElementById("selectMicrophone");
 /** @type {HTMLOptGroupElement} */
@@ -1511,7 +1519,12 @@ const selectMicrophone = async (deviceId) => {
           autoGainControl: false,
         },
       });
-      loadPitchDetection();
+      microphoneMediaStreamSource =
+        audioContext.createMediaStreamSource(microphoneStream);
+      microphoneMediaStreamSource.connect(analyser);
+      if (!usePitchy) {
+        loadPitchDetection();
+      }
     }
     microphoneAudio.srcObject = microphoneStream;
     microphoneAudio.removeAttribute("hidden");
@@ -1551,7 +1564,47 @@ microphoneAudio.addEventListener("emptied", () => {
   isMicrophoneLoaded = false;
 });
 
-// PITCH DETECTION
+// PITCHY
+import * as Pitchy from "https://esm.sh/pitchy@4";
+
+/** @type {import("pitchy")} */
+const pitchy = Pitchy;
+window.pitchy = pitchy;
+const { PitchDetector } = pitchy;
+
+const detector = PitchDetector.forFloat32Array(analyser.fftSize);
+detector.minVolumeDecibels = -50;
+const detectorInput = new Float32Array(detector.inputLength);
+
+window.clarityThreshold = 0.98;
+/** @type {import("tone").FrequencyClass?} */
+let frequency = Tone.Frequency("B-3");
+/** @type {import("tone").FrequencyClass?} */
+let perfectFrequency;
+/** [-50, 50] */
+let pitchOffset = 50;
+let pitchOffsetAbs = Math.abs(pitchOffset);
+/** [-1, 1] */
+let normalizedPitchOffset = pitchOffset / 50;
+const pitchOffsetThresholds = {
+  medium: 10,
+  good: 5,
+};
+let getPitchyPitch = () => {
+  analyser.getFloatTimeDomainData(detectorInput);
+  const [pitch, clarity] = detector.findPitch(
+    detectorInput,
+    audioContext.sampleRate
+  );
+  //console.log({ pitch, clarity });
+  if (clarity < clarityThreshold) {
+    onPitch();
+  } else {
+    onPitch(pitch);
+  }
+};
+
+// ML5.js PITCH DETECTION
 
 let pitchDetection;
 
@@ -1561,16 +1614,26 @@ const onModelLoaded = () => {
 
 /** @type {Frequency?} */
 let pitchDetectionFrequency;
-let pitchDetectionInterval = 0;
+let pitchDetectionInterval = 50;
 let lastTimePitchDetected = 0;
-const onPitch = async (error, pitch) => {
+const onMl5Pitch = async (error, pitch) => {
+  if (error) {
+    console.error(error);
+    onPitch();
+  } else if (pitch) {
+    onPitch(pitch);
+  } else {
+    onPitch();
+  }
+};
+
+/** @param {number?} pitch */
+const onPitch = async (pitch) => {
   const _lastTimePitchDetected = lastTimePitchDetected;
   lastTimePitchDetected = Date.now();
   //console.log({ pitch });
   let newPitchDetectionFrequency;
-  if (error) {
-    console.error(error);
-  } else if (pitch) {
+  if (pitch != undefined) {
     newPitchDetectionFrequency = Tone.Frequency(pitch).transpose(24);
   }
 
@@ -1591,11 +1654,14 @@ const onPitch = async (error, pitch) => {
   }
 
   if (autoPitchCheckbox.checked) {
-    const timeRemaining = _lastTimePitchDetected - lastTimePitchDetected;
-    //console.log({ timeRemaining });
-    if (timeRemaining > pitchDetectionInterval) {
-      //console.log("waiting", timeRemaining);
-      await BS.wait(timeRemaining);
+    const timeSinceLastTimePitchDetected =
+      lastTimePitchDetected - _lastTimePitchDetected;
+    //console.log({ timeSinceLastTimePitchDetected });
+    if (timeSinceLastTimePitchDetected < pitchDetectionInterval) {
+      const timeToWait =
+        pitchDetectionInterval - timeSinceLastTimePitchDetected;
+      //console.log("timeToWait", timeToWait);
+      await BS.wait(timeToWait);
     }
     getPitch();
   }
@@ -1614,11 +1680,18 @@ const loadPitchDetection = async () => {
   );
 };
 
-const getPitch = () => {
-  pitchDetection.getPitch(onPitch);
+const getMl5Pitch = () => {
+  pitchDetection.getPitch(onMl5Pitch);
 };
 
-window.getPitch = getPitch;
+let usePitchy = true;
+const getPitch = () => {
+  if (usePitchy) {
+    getPitchyPitch();
+  } else {
+    getMl5Pitch();
+  }
+};
 
 const getPitchButton = document.getElementById("getPitch");
 getPitchButton.addEventListener("click", () => {

@@ -633,7 +633,6 @@ microphoneAudio.addEventListener("emptied", () => {
 });
 
 // MICROPHONE
-device.audioContext;
 device.microphoneGainNode.connect(analyser);
 
 /** @type {HTMLSelectElement} */
