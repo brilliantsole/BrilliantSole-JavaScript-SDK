@@ -111,8 +111,10 @@ const getWhiteKeyDownColorIndex = () => 3;
 const getBlackKeyDownColorIndex = () => 4;
 const getCorrectNoteColorIndex = () => 5;
 const getIncorrectNoteColorIndex = () => 6;
-const getHighlightedWhiteColorIndex = () => 7;
-const getHighlightedBlackColorIndex = () => 8;
+const getPitchHighlightedWhiteColorIndex = () => 7;
+const getPitchHighlightedBlackColorIndex = () => 8;
+const getHighlightedWhiteColorIndex = () => 9;
+const getHighlightedBlackColorIndex = () => 10;
 displayCanvasHelper.setColor(getWhiteKeyColorIndex(), "white");
 displayCanvasHelper.setColor(getBlackKeyColorIndex(), "black");
 displayCanvasHelper.setColor(getWhiteKeyDownColorIndex(), "yellow");
@@ -121,6 +123,8 @@ displayCanvasHelper.setColor(getCorrectNoteColorIndex(), "green");
 displayCanvasHelper.setColor(getIncorrectNoteColorIndex(), "red");
 displayCanvasHelper.setColor(getHighlightedWhiteColorIndex(), "lightblue");
 displayCanvasHelper.setColor(getHighlightedBlackColorIndex(), "blue");
+displayCanvasHelper.setColor(getPitchHighlightedWhiteColorIndex(), "orange");
+displayCanvasHelper.setColor(getPitchHighlightedBlackColorIndex(), "orange");
 displayCanvasHelper.flushContextCommands();
 
 // DRAW
@@ -239,6 +243,10 @@ let draw = async () => {
       4,
       getIncorrectNoteColorIndex()
     );
+    await displayCanvasHelper.selectSpriteColor(
+      5,
+      getPitchHighlightedWhiteColorIndex()
+    );
 
     const { width, height } = sprite;
     await displayCanvasHelper.setHorizontalAlignment("start");
@@ -252,13 +260,27 @@ let draw = async () => {
     const overlaySpriteSheet = abcSpriteSheets["overlay"];
     await displayCanvasHelper.selectSpriteSheet(overlaySpriteSheet.name);
 
-    for (let i = 0; i < downFrequencies.length; i++) {
-      const downFrequency = downFrequencies[i];
+    for (let i = 0; i <= downFrequencies.length; i++) {
+      const downFrequency = downFrequencies[i] ?? pitchDetectionFrequency;
+      if (!downFrequency) {
+        continue;
+      }
+      const isPitchDetectionFrequency =
+        downFrequency == pitchDetectionFrequency;
+      if (
+        pitchDetectionFrequency &&
+        downFrequency.toMidi() == pitchDetectionFrequency.toMidi() &&
+        !isPitchDetectionFrequency
+      ) {
+        continue;
+      }
       /** @type {VoiceConfig} */
       const voiceConfig = downFrequency.voiceConfig;
       const { isCorrect } = downFrequency;
-      console.log("voiceConfig", voiceConfig);
+      // console.log("voiceConfig", voiceConfig);
       const { frequencyMidis, notePositions, frequencies } = voiceConfig;
+
+      console.log({ isCorrect, isPitchDetectionFrequency });
 
       const pitchIndex = frequencyMidis.indexOf(downFrequency.toMidi());
 
@@ -269,6 +291,11 @@ let draw = async () => {
       let spriteIndex = hasDash ? 2 : 4;
       if (!isCorrect) {
         spriteIndex++;
+      }
+      if (isPitchDetectionFrequency) {
+        spriteIndex = overlaySpriteSheet.sprites.findIndex(
+          (sprite) => sprite.name == "pitchHighlightedNote"
+        );
       }
 
       const sprite = overlaySpriteSheet.sprites[spriteIndex];
@@ -310,7 +337,12 @@ let draw = async () => {
 
       let drawSharp = downFrequency.toNote().includes("#");
       if (drawSharp) {
-        const sharpSprite = overlaySpriteSheet.sprites.at(isCorrect ? -2 : -1);
+        let sharpSprite = overlaySpriteSheet.sprites.at(isCorrect ? -3 : -2);
+        if (isPitchDetectionFrequency) {
+          sharpSprite = overlaySpriteSheet.sprites.find(
+            (sprite) => sprite.name == "pitchHighlightedSharp"
+          );
+        }
         await displayCanvasHelper.drawSprite(
           2 * x - width / 2 - 0.037064552307128906 - 21,
           2 * y - height / 2 - 15.5494384765625 + yOffset,
@@ -371,7 +403,14 @@ let draw = async () => {
       const isCurrent =
         downFrequency &&
         downFrequency.voiceConfig.voiceIndex == currentVoiceIndex;
-      if (downFrequency) {
+      if (
+        pitchDetectionFrequency &&
+        pitchDetectionFrequency.toMidi() == frequency.toMidi()
+      ) {
+        await displayCanvasHelper.selectFillColor(
+          getPitchHighlightedWhiteColorIndex()
+        );
+      } else if (downFrequency) {
         if (isCurrent && shouldCorrectDrawnPianoDownKeys) {
           await displayCanvasHelper.selectFillColor(
             isCorrect
@@ -419,7 +458,14 @@ let draw = async () => {
       const isCurrent =
         downFrequency &&
         downFrequency.voiceConfig.voiceIndex == currentVoiceIndex;
-      if (downFrequency) {
+      if (
+        pitchDetectionFrequency &&
+        pitchDetectionFrequency.toMidi() == frequency.toMidi()
+      ) {
+        await displayCanvasHelper.selectFillColor(
+          getPitchHighlightedBlackColorIndex()
+        );
+      } else if (downFrequency) {
         if (isCurrent && shouldCorrectDrawnPianoDownKeys) {
           await displayCanvasHelper.selectFillColor(
             isCorrect
@@ -888,8 +934,12 @@ const onWebMidiNoteOff = (event) => {
   offFrequency(frequency);
 };
 
+let ignoreMidi = false;
 /** @param {Frequency} frequency */
 const onFrequency = (frequency) => {
+  if (ignoreMidi) {
+    return;
+  }
   const index = getDownFrequencyIndex(frequency);
   if (index != -1) {
     return;
@@ -900,8 +950,8 @@ const onFrequency = (frequency) => {
   frequency.isCorrect = currentVoiceConfig.frequencyMidis.includes(
     frequency.toMidi()
   );
-  downFrequencies.push(frequency);
   sampler.triggerAttack(frequency.toNote());
+  downFrequencies.push(frequency);
   console.log({ note: frequency.toNote(), downFrequencies });
 
   const areCorrectNotesPlayed =
@@ -918,6 +968,9 @@ const onFrequency = (frequency) => {
 };
 /** @param {Frequency} frequency */
 const offFrequency = (frequency) => {
+  if (ignoreMidi) {
+    return;
+  }
   const index = getDownFrequencyIndex(frequency);
   downFrequencies.splice(index, 1);
   sampler.triggerRelease(frequency.toNote());
@@ -1218,9 +1271,10 @@ const renderAbcOverlay = async () => {
   /**
    * @param {boolean} isCorrect
    * @param {boolean} hasDash
+   * @param {number|undefined} colorIndexOverride
    * @returns {BS.DisplayContextCommand[]}
    */
-  const createCommands = (isCorrect, hasDash) => {
+  const createCommands = (isCorrect, hasDash, colorIndexOverride) => {
     const comamnds = spriteSheet.sprites[hasDash ? 0 : 1].commands.filter(
       (command) => {
         switch (command.type) {
@@ -1233,8 +1287,14 @@ const renderAbcOverlay = async () => {
       }
     );
     return [
-      { type: "selectFillColor", fillColorIndex: isCorrect ? 3 : 4 },
-      { type: "selectLineColor", lineColorIndex: isCorrect ? 3 : 4 },
+      {
+        type: "selectFillColor",
+        fillColorIndex: colorIndexOverride ?? (isCorrect ? 3 : 4),
+      },
+      {
+        type: "selectLineColor",
+        lineColorIndex: colorIndexOverride ?? (isCorrect ? 3 : 4),
+      },
       // { type: "drawRect", x: 0, y: 0, width: 20, height: 17 },
       ...comamnds,
     ];
@@ -1247,7 +1307,7 @@ const renderAbcOverlay = async () => {
   incorrectNoteWithDashSprite.name = "incorrectNoteWithDash";
   incorrectNoteWithDashSprite.commands = createCommands(false, true);
 
-  const correctNoteWithoutDashSprite = { ...noteWithDashSprite };
+  const correctNoteWithoutDashSprite = { ...noteWithoutDashSprite };
   correctNoteWithoutDashSprite.name = "correctNoteWithoutDash";
   correctNoteWithoutDashSprite.commands = createCommands(true, false);
   const incorrectNoteWithoutDashSprite = { ...noteWithoutDashSprite };
@@ -1259,6 +1319,12 @@ const renderAbcOverlay = async () => {
     correctNoteWithoutDashSprite,
     incorrectNoteWithoutDashSprite
   );
+
+  const pitchHighlightedNote = { ...noteWithoutDashSprite };
+  pitchHighlightedNote.name = "pitchHighlightedNote";
+  pitchHighlightedNote.commands = createCommands(true, false, 5);
+  spriteSheet.sprites.push(pitchHighlightedNote);
+
   console.log("overlay", spriteSheet);
 
   await renderAbcOverlaySymbols();
@@ -1296,9 +1362,10 @@ const renderAbcOverlaySymbols = async () => {
 
   /**
    * @param {boolean} isCorrect
+   * @param {number|undefined} colorIndexOverride
    * @returns {BS.DisplayContextCommand[]}
    */
-  const createCommands = (isCorrect) => {
+  const createCommands = (isCorrect, colorIndexOverride) => {
     const comamnds = sharpSprite.commands.filter((command, index) => {
       switch (command.type) {
         case "selectFillColor":
@@ -1311,8 +1378,14 @@ const renderAbcOverlaySymbols = async () => {
       }
     });
     return [
-      { type: "selectFillColor", fillColorIndex: isCorrect ? 3 : 4 },
-      { type: "selectLineColor", lineColorIndex: isCorrect ? 3 : 4 },
+      {
+        type: "selectFillColor",
+        fillColorIndex: colorIndexOverride ?? (isCorrect ? 3 : 4),
+      },
+      {
+        type: "selectLineColor",
+        lineColorIndex: colorIndexOverride ?? (isCorrect ? 3 : 4),
+      },
       // { type: "drawRect", x: 0, y: 0, width: 20, height: 17 },
       ...comamnds,
     ];
@@ -1325,7 +1398,15 @@ const renderAbcOverlaySymbols = async () => {
   incorrectSharpSprite.name = "incorrectSharp";
   incorrectSharpSprite.commands = createCommands(false);
 
-  spriteSheet.sprites.push(correctSharpSprite, incorrectSharpSprite);
+  const pitchHighlightedSharp = { ...sharpSprite };
+  pitchHighlightedSharp.name = "pitchHighlightedSharp";
+  pitchHighlightedSharp.commands = createCommands(false, 5);
+
+  spriteSheet.sprites.push(
+    correctSharpSprite,
+    incorrectSharpSprite,
+    pitchHighlightedSharp
+  );
 };
 await renderAbcOverlay();
 
@@ -1475,18 +1556,44 @@ const onModelLoaded = () => {
   console.log("onModelLoaded");
 };
 
-const onPitch = (error, _frequency) => {
+/** @type {Frequency?} */
+let pitchDetectionFrequency;
+let pitchDetectionInterval = 20;
+let lastTimePitchDetected = 0;
+const onPitch = async (error, pitch) => {
+  const _lastTimePitchDetected = lastTimePitchDetected;
+  lastTimePitchDetected = Date.now();
+  //console.log({ pitch });
+  let newPitchDetectionFrequency;
   if (error) {
     console.error(error);
-  } else if (_frequency) {
-    const frequency = Tone.Frequency(_frequency);
-    console.log({
-      frequency: frequency.toFrequency(),
-      midi: frequency.toMidi(),
-      note: frequency.toNote(),
-    });
+  } else if (pitch) {
+    newPitchDetectionFrequency = Tone.Frequency(pitch);
   }
+
+  if (
+    Boolean(pitchDetectionFrequency) != Boolean(newPitchDetectionFrequency) ||
+    pitchDetectionFrequency?.toMidi() != newPitchDetectionFrequency?.toMidi()
+  ) {
+    pitchDetectionFrequency = newPitchDetectionFrequency;
+    if (pitchDetectionFrequency) {
+      pitchDetectionFrequency.voiceConfig = currentVoiceConfig;
+      console.log({
+        frequency: pitchDetectionFrequency.toFrequency(),
+        midi: pitchDetectionFrequency.toMidi(),
+        note: pitchDetectionFrequency.toNote(),
+      });
+    }
+    draw();
+  }
+
   if (autoPitchCheckbox.checked) {
+    const timeRemaining = _lastTimePitchDetected - lastTimePitchDetected;
+    //console.log({ timeRemaining });
+    if (timeRemaining > pitchDetectionInterval) {
+      //console.log("waiting", timeRemaining);
+      await BS.wait(timeRemaining);
+    }
     getPitch();
   }
 };
@@ -1531,7 +1638,4 @@ microphoneAudio.addEventListener("emptied", () => {
   autoPitchCheckbox.disabled = true;
 
   autoPitchCheckbox.checked = false;
-  if (autoPitchIntervalId) {
-    clearInterval(autoPitchIntervalId);
-  }
 });
