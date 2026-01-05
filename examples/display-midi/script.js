@@ -124,7 +124,7 @@ displayCanvasHelper.setColor(getWhiteKeyDownColorIndex(), "yellow");
 displayCanvasHelper.setColor(getBlackKeyDownColorIndex(), "#A0A018");
 displayCanvasHelper.setColor(getCorrectNoteColorIndex(), "green");
 displayCanvasHelper.setColor(getIncorrectNoteColorIndex(), "red");
-displayCanvasHelper.setColor(getHighlightedWhiteColorIndex(), "lightblue");
+displayCanvasHelper.setColor(getHighlightedWhiteColorIndex(), "00BFFF");
 displayCanvasHelper.setColor(getHighlightedBlackColorIndex(), "blue");
 displayCanvasHelper.setColor(getPitchHighlightedWhiteColorIndex(), "orange");
 displayCanvasHelper.setColor(getPitchHighlightedBlackColorIndex(), "orange");
@@ -371,6 +371,20 @@ let draw = async () => {
         3
       );
       await displayCanvasHelper.clearRotation();
+    }
+
+    if (shouldDrawNoteName) {
+      const { notePositions, pitches, frequencies } = currentVoiceConfig;
+      console.log({ shouldDrawNoteName });
+      let { x, y } = notePositions[0];
+      await displayCanvasHelper.setHorizontalAlignment("center");
+      await displayCanvasHelper.selectSpriteSheet("english");
+      await displayCanvasHelper.selectFillColor(getTextColorIndex());
+      await displayCanvasHelper.drawSpritesString(
+        2 * x - 3,
+        sprite.height + 20 + 10,
+        frequencies[0].toNote().slice(0, -1)
+      );
     }
   }
 
@@ -896,6 +910,7 @@ const sampler = new Tone.Sampler({
 let shouldDrawPiano = true;
 let shouldHighlightCurrentVoiceNotes = true;
 let shouldDrawCurrentMarker = true;
+let shouldDrawNoteName = true;
 const drawPianoConfig = {
   whiteKeyWidth: 34,
   whiteKeyHeight: 60,
@@ -1445,7 +1460,12 @@ const renderAbc = async (string) => {
   }
   await setCurrentVoiceIndex(0);
 };
-await renderAbc("X:1\nK:C\ne e e c e g G");
+await renderAbc(`
+  X:1
+  K:C
+  L:1/4
+  e e e c e g G
+`);
 
 didLoad = true;
 

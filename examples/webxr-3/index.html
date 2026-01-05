@@ -103,16 +103,20 @@
       obb-collider="showColliders: false;"
       xr-mode-ui="enabled: true; XRMode: ar"
       device-orientation-permission-ui="enabled: false"
+      light="defaultLightsEnabled: false"
+      renderer="physicallyCorrectLights: false"
+      environment="preset: none"
     >
       <a-assets></a-assets>
 
       <a-camera position="0 1.6 0">
         <a-image
           grabbable
-          width="0.15"
+          width="0.19999"
           height="0.15"
           position="0 0 -0.5"
           bs-camera
+          material="shader:flat"
         ></a-image>
       </a-camera>
 
