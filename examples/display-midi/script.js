@@ -171,18 +171,24 @@ const setCurrentSystemIndex = async (
 ) => {
   newCurrentSystemIndex = Math.max(
     0,
-    Math.min(newCurrentSystemIndex, voices.length)
+    Math.min(newCurrentSystemIndex, currentVoices.length)
   );
   if (newCurrentSystemIndex == numberOfSystems) {
-    // FILL - finished - go to next step
-    currentSystemIndex = 0;
+    if (isPracticingNote) {
+      learnedNotes.push(noteToLearn);
+      addNoteToLearn();
+      return;
+    } else {
+      currentSystemIndex = 0;
+    }
   } else {
     currentSystemIndex = newCurrentSystemIndex;
   }
+  currentVoices = allVoices[currentSystemIndex];
+  console.log("currentVoices", currentVoices);
+
   console.log({ currentSystemIndex });
-  if (drawImmediately) {
-    await draw();
-  }
+  setCurrentVoiceIndex(0, drawImmediately);
 };
 
 let currentVoiceIndex = 0;
@@ -192,11 +198,11 @@ const setCurrentVoiceIndex = async (
 ) => {
   newCurrentVoiceIndex = Math.max(
     0,
-    Math.min(newCurrentVoiceIndex, voices.length)
+    Math.min(newCurrentVoiceIndex, currentVoices.length)
   );
-  if (newCurrentVoiceIndex == voices.length) {
-    // FILL - finished - go to next step
-    currentVoiceIndex = 0;
+  if (newCurrentVoiceIndex == currentVoices.length) {
+    setCurrentSystemIndex(currentSystemIndex + 1, drawImmediately);
+    return;
   } else {
     currentVoiceIndex = newCurrentVoiceIndex;
   }
@@ -206,7 +212,7 @@ const setCurrentVoiceIndex = async (
 
   currentVoiceConfig = {};
   currentVoiceConfig.voiceIndex = currentVoiceIndex;
-  currentVoiceConfig.voice = voices[currentVoiceIndex];
+  currentVoiceConfig.voice = currentVoices[currentVoiceIndex];
   currentVoiceConfig.pitches = currentVoiceConfig.voice.pitches;
   currentVoiceConfig.frequencies = currentVoiceConfig.pitches.map((pitch) =>
     abcPitchToToneFrequency(pitch)
@@ -215,7 +221,10 @@ const setCurrentVoiceIndex = async (
     (frequency) => frequency.toMidi()
   );
   currentVoiceConfig.notePositions =
-    currentVoiceConfig.voice.abselem.notePositions;
+    currentVoiceConfig.voice.abselem.notePositions.map(({ x, y }) => ({
+      x,
+      y: y - currentSystemIndex * 92.347,
+    }));
   console.log("currentVoiceConfig", currentVoiceConfig);
 
   if (drawImmediately) {
@@ -990,11 +999,13 @@ let checkCorrectNotesOnPress = false;
 const checkAreCorrectNotesPlayed = () => {
   const areCorrectNotesPlayed =
     //downFrequencies.length == frequencyMidis.length &&
+    downFrequencies.length > 0 &&
     downFrequencies.every((downFrequency) => downFrequency.isCorrect);
   if (areCorrectNotesPlayed) {
     console.log("areCorrectNotesPlayed", areCorrectNotesPlayed);
     setCurrentVoiceIndex(currentVoiceIndex + 1, false);
   }
+  return areCorrectNotesPlayed;
 };
 
 let ignoreMidi = false;
@@ -1030,6 +1041,9 @@ const offFrequency = (frequency) => {
   const index = getDownFrequencyIndex(frequency);
   const downFrequency = downFrequencies[index];
 
+  const shouldPracticeNote =
+    isLearningNote && downFrequency?.isCorrect && !isPracticingNote;
+
   if (!checkCorrectNotesOnPress) {
     checkAreCorrectNotesPlayed();
   }
@@ -1043,7 +1057,7 @@ const offFrequency = (frequency) => {
 
   console.log({ note: frequency.toNote(), downFrequencies });
 
-  if (downFrequency.isCorrect && isLearningNote && !isPracticingNote) {
+  if (shouldPracticeNote) {
     practiceNote();
   } else {
     debouncedDraw();
@@ -1486,20 +1500,23 @@ await renderAbcOverlay();
 /** @type {import("abcjs").TuneObjectArray} */
 let tuneObjectArray;
 /** @type {import("abcjs").VoiceItem[]} */
-let voices = [];
-console.log("voices", voices);
+let currentVoices = [];
+/** @type {import("abcjs").VoiceItem[][]} */
+let allVoices = [];
+console.log("currentVoices", currentVoices);
 /** @param {string} string */
 const renderAbc = async (string) => {
+  console.log("renderAbc", string);
   tuneObjectArray = abcjs.renderAbc(abcContainer.id, string, abcVisualParams);
   console.log(
     "tuneObjectArray",
     tuneObjectArray,
     tuneObjectArray[0].getKeySignature()
   );
-  voices = tuneObjectArray[0].lines[0].staff[0].voices[0].filter(
-    (_) => _.pitches
+  allVoices = tuneObjectArray[0].lines.map((line) =>
+    line.staff[0].voices[0].filter((_) => _.pitches)
   );
-  console.log("voices", voices);
+  console.log("allVoices", allVoices);
 
   const svgs = abcContainer.querySelectorAll("svg");
   //console.log("svgs", svgs);
@@ -1509,8 +1526,7 @@ const renderAbc = async (string) => {
     const svg = svgs[systemIndex];
     await svgToSpriteSheet(svg, systemIndex.toString(), "svg");
   }
-  await setCurrentSystemIndex(0, false);
-  await setCurrentVoiceIndex(0);
+  await setCurrentSystemIndex(0);
 };
 
 didLoad = true;
@@ -1794,6 +1810,8 @@ const allNotesToLearn = ["C", "D", "E", "F", "G", "A", "B"].flatMap((note) => {
 let isLearningNote = false;
 let isPracticingNote = false;
 
+let notesPerSystem = 6;
+let systemsPerPractice = 3;
 const practiceNote = async () => {
   if (isPracticingNote) {
     return;
@@ -1804,22 +1822,34 @@ const practiceNote = async () => {
   console.log({ isPracticingNote });
 
   //await BS.wait(500);
-  console.log("practice note!");
 
   const _learnedNotes = [...learnedNotes, noteToLearn];
-  /** @type {Frequency[]} */
-  const notes = [];
-  for (let i = 0; i < 6; i++) {
-    const note =
-      _learnedNotes[Math.floor(Math.random() * _learnedNotes.length)];
-    notes.push(note);
+  /** @type {Frequency[][]} */
+  const systems = [];
+  let _systemsPerPractice = systemsPerPractice;
+  if (_learnedNotes.length == 1) {
+    _systemsPerPractice = 1;
   }
-  console.log("notes", notes);
+  for (let systemIndex = 0; systemIndex < _systemsPerPractice; systemIndex++) {
+    /** @type {Frequency[]} */
+    const system = [];
+    for (let i = 0; i < notesPerSystem; i++) {
+      const note =
+        _learnedNotes[Math.floor(Math.random() * _learnedNotes.length)];
+      system.push(Tone.Frequency(note));
+    }
+    systems.push(system);
+  }
+  console.log("systems", systems);
   await renderAbc(`
     X:1
     K:C
     L:1/4
-    ${notes.map((note) => note.toNote().slice(0, -1).toLowerCase()).join(" ")}
+    ${systems
+      .map((system) =>
+        system.map((note) => note.toNote().slice(0, -1).toLowerCase()).join(" ")
+      )
+      .join(`\n`)}
   `);
 };
 
