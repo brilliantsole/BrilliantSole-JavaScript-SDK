@@ -1518,6 +1518,7 @@ declare class Device {
     get clearSensorConfigurationOnLeave(): boolean;
     set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave: boolean);
     get numberOfPressureSensors(): number;
+    get pressureSensorPositions(): Vector2[];
     resetPressureRange(): void;
     get vibrationLocations(): ("front" | "rear")[];
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;

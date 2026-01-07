@@ -23015,10 +23015,7 @@
 	        }
 	        const commandType = "clearRotation";
 	        const dataView = serializeContextCommand(this, { type: commandType });
-	        if (!dataView) {
-	            return;
-	        }
-	        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
+	        await this.#sendContextCommand(commandType, dataView?.buffer, sendImmediately);
 	        this.#onContextStateUpdate(differences);
 	    }
 	    async setSegmentStartCap(segmentStartCap, sendImmediately) {
@@ -27235,8 +27232,24 @@
 	        _console$7.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
 	        this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
 	    }
+	    #assertPressure() {
+	        _console$7.assertWithError(this.hasSensorType("pressure"), "pressure sensorType not included in device");
+	    }
 	    get numberOfPressureSensors() {
-	        return this.#sensorDataManager.pressureSensorDataManager.numberOfSensors;
+	        if (this.hasSensorType("pressure")) {
+	            return this.#sensorDataManager.pressureSensorDataManager.numberOfSensors;
+	        }
+	        else {
+	            return 0;
+	        }
+	    }
+	    get pressureSensorPositions() {
+	        if (this.hasSensorType("pressure")) {
+	            return this.#sensorDataManager.pressureSensorDataManager.positions;
+	        }
+	        else {
+	            return [];
+	        }
 	    }
 	    #sensorDataManager = new SensorDataManager();
 	    resetPressureRange() {
@@ -30631,7 +30644,8 @@
 	        if (!this.device?.isConnected) {
 	            return;
 	        }
-	        await this.uploadSpriteSheets(Object.values(this.spriteSheets));
+	        const sortedSpriteSheets = Object.values(this.spriteSheets).sort((a, b) => this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name]);
+	        await this.uploadSpriteSheets(sortedSpriteSheets);
 	    }
 	    async #updateDeviceSelectedSpriteSheet(sendImmediately) {
 	        if (!this.device?.isConnected) {

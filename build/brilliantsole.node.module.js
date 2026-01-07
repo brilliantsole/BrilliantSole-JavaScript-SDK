@@ -7956,10 +7956,7 @@ class DisplayManager {
         }
         const commandType = "clearRotation";
         const dataView = serializeContextCommand(this, { type: commandType });
-        if (!dataView) {
-            return;
-        }
-        await this.#sendContextCommand(commandType, dataView.buffer, sendImmediately);
+        await this.#sendContextCommand(commandType, dataView?.buffer, sendImmediately);
         this.#onContextStateUpdate(differences);
     }
     async setSegmentStartCap(segmentStartCap, sendImmediately) {
@@ -12464,8 +12461,24 @@ class Device {
         _console$b.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
         this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
     }
+    #assertPressure() {
+        _console$b.assertWithError(this.hasSensorType("pressure"), "pressure sensorType not included in device");
+    }
     get numberOfPressureSensors() {
-        return this.#sensorDataManager.pressureSensorDataManager.numberOfSensors;
+        if (this.hasSensorType("pressure")) {
+            return this.#sensorDataManager.pressureSensorDataManager.numberOfSensors;
+        }
+        else {
+            return 0;
+        }
+    }
+    get pressureSensorPositions() {
+        if (this.hasSensorType("pressure")) {
+            return this.#sensorDataManager.pressureSensorDataManager.positions;
+        }
+        else {
+            return [];
+        }
     }
     #sensorDataManager = new SensorDataManager();
     resetPressureRange() {

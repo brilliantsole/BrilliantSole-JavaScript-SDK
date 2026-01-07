@@ -6,7 +6,9 @@ console.log({ BS });
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
-const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
+const availableDeviceTemplate = document.getElementById(
+  "availableDeviceTemplate"
+);
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
@@ -15,12 +17,17 @@ function onAvailableDevices(availableDevices) {
     availableDevicesContainer.innerText = "no devices available";
   } else {
     availableDevices.forEach((availableDevice) => {
-      let availableDeviceContainer = availableDeviceTemplate.content.cloneNode(true).querySelector(".availableDevice");
-      availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
-      availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
+      let availableDeviceContainer = availableDeviceTemplate.content
+        .cloneNode(true)
+        .querySelector(".availableDevice");
+      availableDeviceContainer.querySelector(".name").innerText =
+        availableDevice.name;
+      availableDeviceContainer.querySelector(".type").innerText =
+        availableDevice.type;
 
       /** @type {HTMLButtonElement} */
-      const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+      const toggleConnectionButton =
+        availableDeviceContainer.querySelector(".toggleConnection");
       toggleConnectionButton.addEventListener("click", () => {
         availableDevice.toggleConnection();
       });
@@ -29,7 +36,9 @@ function onAvailableDevices(availableDevices) {
           case "connected":
           case "notConnected":
             toggleConnectionButton.disabled = false;
-            toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
+            toggleConnectionButton.innerText = availableDevice.isConnected
+              ? "disconnect"
+              : "connect";
             break;
           case "connecting":
           case "disconnecting":
@@ -38,7 +47,9 @@ function onAvailableDevices(availableDevices) {
             break;
         }
       };
-      availableDevice.addEventListener("connectionStatus", () => onConnectionStatusUpdate());
+      availableDevice.addEventListener("connectionStatus", () =>
+        onConnectionStatusUpdate()
+      );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
@@ -74,18 +85,23 @@ window.addEventListener("isSensorDataEnabled", () => {
 
 const connectedDevicesContainer = document.getElementById("connectedDevices");
 /** @type {HTMLTemplateElement} */
-const connectedDeviceTemplate = document.getElementById("connectedDeviceTemplate");
+const connectedDeviceTemplate = document.getElementById(
+  "connectedDeviceTemplate"
+);
 
 BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
   /** @type {BS.Device} */
   const device = event.message.device;
   console.log("deviceConnected", device);
-  const connectedDeviceContainer = connectedDeviceTemplate.content.cloneNode(true).querySelector(".connectedDevice");
+  const connectedDeviceContainer = connectedDeviceTemplate.content
+    .cloneNode(true)
+    .querySelector(".connectedDevice");
   connectedDeviceContainer.querySelector(".name").innerText = device.name;
   connectedDeviceContainer.querySelector(".type").innerText = device.type;
 
   /** @type {HTMLButtonElement} */
-  const disconnectButton = connectedDeviceContainer.querySelector(".disconnect");
+  const disconnectButton =
+    connectedDeviceContainer.querySelector(".disconnect");
   disconnectButton.addEventListener("click", () => {
     disconnectButton.innerText = "disconnecting...";
     disconnectButton.disabled = true;
@@ -100,9 +116,15 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
   });
 
   /** @type {HTMLPreElement} */
-  const sensorConfigurationPre = connectedDeviceContainer.querySelector("pre.sensorConfiguration");
+  const sensorConfigurationPre = connectedDeviceContainer.querySelector(
+    "pre.sensorConfiguration"
+  );
   const updateSensorConfigurationPre = () => {
-    sensorConfigurationPre.textContent = JSON.stringify(device.sensorConfiguration, null, 2);
+    sensorConfigurationPre.textContent = JSON.stringify(
+      device.sensorConfiguration,
+      null,
+      2
+    );
   };
   device.addEventListener("getSensorConfiguration", () => {
     updateSensorConfigurationPre();
@@ -115,9 +137,16 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
     const { [sensorType]: data } = event.message;
     //console.log({ name: device.name, sensorType, timestamp, data });
     if (isRecording && currentRecording) {
-      let deviceRecording = currentRecording.devices.find((_deviceRecording) => _deviceRecording.id == device.id);
+      let deviceRecording = currentRecording.devices.find(
+        (_deviceRecording) => _deviceRecording.id == device.id
+      );
       if (!deviceRecording) {
-        deviceRecording = { id: device.id, type: device.type, name: device.name, sensorData: [] };
+        deviceRecording = {
+          id: device.id,
+          type: device.type,
+          name: device.name,
+          sensorData: [],
+        };
         currentRecording.devices.push(deviceRecording);
       }
       let sensorTypeData = deviceRecording.sensorData.find(
@@ -130,6 +159,9 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
           data: [],
           dataRate: device.sensorConfiguration[sensorType],
         };
+        if (sensorType == "pressure") {
+          sensorTypeData.positions = device.pressureSensorPositions;
+        }
         deviceRecording.sensorData.push(sensorTypeData);
       }
 
@@ -137,8 +169,8 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
         /** @type {BS.PressureData} */
         const pressure = data;
         const pressureSensorData = pressure.sensors.map((sensor) => {
-          const { name, normalizedValue } = sensor;
-          return normalizedValue;
+          const { normalizedValue, rawValue, scaledValue } = sensor;
+          return rawValue;
         });
         sensorTypeData.data.push(pressureSensorData);
       } else {
@@ -154,35 +186,47 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
 
 /** @type {BS.SensorConfiguration} */
 const sensorConfiguration = {};
-const sensorConfigurationContainer = document.getElementById("sensorConfiguration");
+const sensorConfigurationContainer = document.getElementById(
+  "sensorConfiguration"
+);
 /** @type {HTMLTemplateElement} */
-const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
+const sensorTypeConfigurationTemplate = document.getElementById(
+  "sensorTypeConfigurationTemplate"
+);
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeConfigurationContainers = {};
 BS.ContinuousSensorTypes.forEach((sensorType) => {
   sensorConfiguration[sensorType] = 0;
 
-  const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
-    .cloneNode(true)
-    .querySelector(".sensorTypeConfiguration");
-  sensorTypeConfigurationContainer.querySelector(".sensorType").innerText = sensorType;
+  const sensorTypeConfigurationContainer =
+    sensorTypeConfigurationTemplate.content
+      .cloneNode(true)
+      .querySelector(".sensorTypeConfiguration");
+  sensorTypeConfigurationContainer.querySelector(".sensorType").innerText =
+    sensorType;
 
   /** @type {HTMLInputElement} */
-  const sensorRateInput = sensorTypeConfigurationContainer.querySelector(".sensorRate");
+  const sensorRateInput =
+    sensorTypeConfigurationContainer.querySelector(".sensorRate");
   sensorRateInput.value = 0;
   sensorRateInput.max = BS.MaxSensorRate;
   sensorRateInput.step = BS.SensorRateStep;
   sensorRateInput.addEventListener("input", () => {
     sensorConfiguration[sensorType] = Number(sensorRateInput.value);
     console.log({ sensorConfiguration });
-    window.dispatchEvent(new CustomEvent("sensorConfiguration", { detail: { sensorConfiguration } }));
+    window.dispatchEvent(
+      new CustomEvent("sensorConfiguration", {
+        detail: { sensorConfiguration },
+      })
+    );
   });
 
   window.addEventListener("isSensorDataEnabled", () => {
     sensorRateInput.disabled = isSensorDataEnabled;
   });
 
-  sensorTypeConfigurationContainers[sensorType] = sensorTypeConfigurationContainer;
+  sensorTypeConfigurationContainers[sensorType] =
+    sensorTypeConfigurationContainer;
 
   sensorConfigurationContainer.appendChild(sensorTypeConfigurationContainer);
 });
@@ -206,7 +250,9 @@ function setIsSensorDataEnabled(newIsSensorDataEnabled) {
     }
   });
 
-  window.dispatchEvent(new CustomEvent("isSensorDataEnabled", { detail: isSensorDataEnabled }));
+  window.dispatchEvent(
+    new CustomEvent("isSensorDataEnabled", { detail: isSensorDataEnabled })
+  );
 }
 /** @type {HTMLInputElement} */
 const toggleSensorDataCheckbox = document.getElementById("toggleSensorData");
@@ -214,8 +260,11 @@ toggleSensorDataCheckbox.addEventListener("input", () => {
   setIsSensorDataEnabled(toggleSensorDataCheckbox.checked);
 });
 function updateToggleSensorDataCheckbox() {
-  const isSensorConfigurationZero = Object.values(sensorConfiguration).every((sensorRate) => sensorRate == 0);
-  toggleSensorDataCheckbox.disabled = isSensorConfigurationZero || BS.DeviceManager.ConnectedDevices.length == 0;
+  const isSensorConfigurationZero = Object.values(sensorConfiguration).every(
+    (sensorRate) => sensorRate == 0
+  );
+  toggleSensorDataCheckbox.disabled =
+    isSensorConfigurationZero || BS.DeviceManager.ConnectedDevices.length == 0;
 }
 window.addEventListener("sensorConfiguration", (event) => {
   updateToggleSensorDataCheckbox();
@@ -229,7 +278,9 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", () => {
 
 let recordingCountdown = 0;
 /** @type {HTMLInputElement} */
-const recordingCountdownInput = document.getElementById("recordingCountdownInput");
+const recordingCountdownInput = document.getElementById(
+  "recordingCountdownInput"
+);
 recordingCountdownInput.addEventListener("input", () => {
   recordingCountdown = Number(recordingCountdownInput.value);
   console.log({ recordingCountdown });
@@ -238,7 +289,9 @@ recordingCountdownInput.addEventListener("input", () => {
 let isRecordingFixedDuration = false;
 
 /** @type {HTMLInputElement} */
-const isRecordingFixedDurationCheckbox = document.getElementById("isRecordingFixedDuration");
+const isRecordingFixedDurationCheckbox = document.getElementById(
+  "isRecordingFixedDuration"
+);
 isRecordingFixedDurationCheckbox.addEventListener("input", () => {
   isRecordingFixedDuration = !isRecordingFixedDuration;
   console.log({ isRecordingFixedDuration });
@@ -340,7 +393,8 @@ const recordingCountdownTimer = {
     return this.intervalId != null;
   },
 };
-recordingCountdownTimer.onCountdown = (countdown) => updateRecordingCountdown(countdown);
+recordingCountdownTimer.onCountdown = (countdown) =>
+  updateRecordingCountdown(countdown);
 recordingCountdownTimer.onStop = () => updateRecordingCountdown(0);
 recordingCountdownTimer.onEnd = () => startRecording();
 
@@ -370,7 +424,10 @@ function startRecordingTimeout() {
     console.warn("recording duration must be greater than 0");
     return;
   }
-  recordingTimeoutId = setTimeout(() => stopRecording(), recordingDuration * 1_000);
+  recordingTimeoutId = setTimeout(
+    () => stopRecording(),
+    recordingDuration * 1_000
+  );
 }
 function clearRecordingTimeout() {
   if (recordingTimeoutId != null) {
@@ -422,7 +479,9 @@ window.addEventListener("isSensorDataEnabled", () => {
 });
 
 /** @type {HTMLSpanElement} */
-const recordingCountdownSpan = document.getElementById("recordingCountdownSpan");
+const recordingCountdownSpan = document.getElementById(
+  "recordingCountdownSpan"
+);
 
 /** @param {number} recordingCountdown */
 function updateRecordingCountdown(recordingCountdown) {
@@ -452,9 +511,13 @@ function vibrate(effect) {
 /** @type {HTMLTemplateElement} */
 const recordingTemplate = document.getElementById("recordingTemplate");
 /** @type {HTMLTemplateElement} */
-const deviceRecordingTemplate = document.getElementById("deviceRecordingTemplate");
+const deviceRecordingTemplate = document.getElementById(
+  "deviceRecordingTemplate"
+);
 /** @type {HTMLTemplateElement} */
-const sensorTypeRecordingTemplate = document.getElementById("sensorTypeRecordingTemplate");
+const sensorTypeRecordingTemplate = document.getElementById(
+  "sensorTypeRecordingTemplate"
+);
 const recordingsContainer = document.getElementById("recordings");
 
 /**
@@ -465,42 +528,65 @@ function onRecording(recording, saveRecordings = true) {
   recordings.push(recording);
   console.log({ recordings });
 
-  const recordingContainer = recordingTemplate.content.cloneNode(true).querySelector(".recording");
-  const deviceRecordingsContainer = recordingContainer.querySelector(".devices");
+  const recordingContainer = recordingTemplate.content
+    .cloneNode(true)
+    .querySelector(".recording");
+  const deviceRecordingsContainer =
+    recordingContainer.querySelector(".devices");
   const initialDate = new Date(recording.timestamp);
   const duration = recording.finalTimestamp - recording.timestamp;
-  recordingContainer.querySelector(".timestamp").innerText = dateToString(initialDate);
-  recordingContainer.querySelector(".duration").innerText = (duration / 1000).toFixed(2);
+  recordingContainer.querySelector(".timestamp").innerText =
+    dateToString(initialDate);
+  recordingContainer.querySelector(".duration").innerText = (
+    duration / 1000
+  ).toFixed(2);
   recording.devices.forEach((deviceRecording) => {
-    const deviceRecordingContainer = deviceRecordingTemplate.content.cloneNode(true).querySelector(".deviceRecording");
+    const deviceRecordingContainer = deviceRecordingTemplate.content
+      .cloneNode(true)
+      .querySelector(".deviceRecording");
 
-    deviceRecordingContainer.querySelector(".name").innerText = deviceRecording.name;
-    deviceRecordingContainer.querySelector(".id").innerText = deviceRecording.id;
-    deviceRecordingContainer.querySelector(".type").innerText = deviceRecording.type;
-    const sensorTypesContainer = deviceRecordingContainer.querySelector(".sensorTypes");
+    deviceRecordingContainer.querySelector(".name").innerText =
+      deviceRecording.name;
+    deviceRecordingContainer.querySelector(".id").innerText =
+      deviceRecording.id;
+    deviceRecordingContainer.querySelector(".type").innerText =
+      deviceRecording.type;
+    const sensorTypesContainer =
+      deviceRecordingContainer.querySelector(".sensorTypes");
     deviceRecording.sensorData.forEach((sensorTypeData) => {
       const sensorTypeRecordingContainer = sensorTypeRecordingTemplate.content
         .cloneNode(true)
         .querySelector(".sensorTypeRecording");
-      sensorTypeRecordingContainer.querySelector(".sensorType").innerText = sensorTypeData.sensorType;
-      sensorTypeRecordingContainer.querySelector(".dataRate").innerText = sensorTypeData.dataRate;
+      sensorTypeRecordingContainer.querySelector(".sensorType").innerText =
+        sensorTypeData.sensorType;
+      sensorTypeRecordingContainer.querySelector(".dataRate").innerText =
+        sensorTypeData.dataRate;
       const date = new Date(sensorTypeData.initialTimestamp);
-      sensorTypeRecordingContainer.querySelector(".initialTimestamp").innerText = dateToString(date);
+      sensorTypeRecordingContainer.querySelector(
+        ".initialTimestamp"
+      ).innerText = dateToString(date);
 
       /** @type {HTMLCanvasElement} */
-      const visualizationCanvas = sensorTypeRecordingContainer.querySelector(".visualization canvas");
-      const visualizationContainer = visualizationCanvas.closest(".visualization");
+      const visualizationCanvas = sensorTypeRecordingContainer.querySelector(
+        ".visualization canvas"
+      );
+      const visualizationContainer =
+        visualizationCanvas.closest(".visualization");
 
       /** @type {HTMLButtonElement} */
-      const toggleVisualizationButton = sensorTypeRecordingContainer.querySelector(".toggleVisualization");
+      const toggleVisualizationButton =
+        sensorTypeRecordingContainer.querySelector(".toggleVisualization");
       toggleVisualizationButton.addEventListener("click", () => {
-        const showVisualization = visualizationContainer.classList.contains("hidden");
+        const showVisualization =
+          visualizationContainer.classList.contains("hidden");
         visualizationContainer.classList.toggle("hidden");
         console.log({ showVisualization, visualizationCanvas });
         if (showVisualization) {
           visualizeSensorTypeData(sensorTypeData, visualizationCanvas);
         }
-        toggleVisualizationButton.innerText = showVisualization ? "hide visualization" : "show visualization";
+        toggleVisualizationButton.innerText = showVisualization
+          ? "hide visualization"
+          : "show visualization";
       });
 
       sensorTypesContainer.appendChild(sensorTypeRecordingContainer);
@@ -512,7 +598,9 @@ function onRecording(recording, saveRecordings = true) {
   /** @type {HTMLButtonElement} */
   const deleteButton = recordingContainer.querySelector(".delete");
   deleteButton.addEventListener("click", () => {
-    const confirmDeletion = window.confirm("are you sure you want to delete this recording?");
+    const confirmDeletion = window.confirm(
+      "are you sure you want to delete this recording?"
+    );
     if (!confirmDeletion) {
       return;
     }
@@ -543,14 +631,20 @@ function onRecording(recording, saveRecordings = true) {
 }
 
 /** @type {HTMLButtonElement} */
-const deleteAllRecordingsButton = document.getElementById("deleteAllRecordings");
+const deleteAllRecordingsButton = document.getElementById(
+  "deleteAllRecordings"
+);
 deleteAllRecordingsButton.addEventListener("click", () => {
-  const confirmDeletion = window.confirm("are you sure you want to delete all recordings?");
+  const confirmDeletion = window.confirm(
+    "are you sure you want to delete all recordings?"
+  );
   if (!confirmDeletion) {
     return;
   }
   recordings.length = 0;
-  recordingsContainer.querySelectorAll(".recording").forEach((recordingContainer) => recordingContainer.remove());
+  recordingsContainer
+    .querySelectorAll(".recording")
+    .forEach((recordingContainer) => recordingContainer.remove());
   saveRecordingsToLocalStorage();
   window.dispatchEvent(new CustomEvent("recordingsUpdate"));
 });
@@ -689,7 +783,9 @@ function visualizeSensorTypeData(sensorTypeData, canvas) {
   const config = {
     type: "line",
     data: {
-      labels: sensorTypeData.data.map((_, index) => index * sensorTypeData.dataRate),
+      labels: sensorTypeData.data.map(
+        (_, index) => index * sensorTypeData.dataRate
+      ),
       datasets: Object.keys(sensorTypeData.data[0]).map((key) => {
         let label = key;
         let data = sensorTypeData.data.map((value) => {

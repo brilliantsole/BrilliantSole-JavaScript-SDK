@@ -21537,10 +21537,7 @@
       const dataView = serializeContextCommand(this, {
         type: commandType
       });
-      if (!dataView) {
-        return;
-      }
-      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, commandType, dataView === null || dataView === void 0 ? void 0 : dataView.buffer, sendImmediately);
       _assertClassBrand(_DisplayManager_brand, this, _onContextStateUpdate).call(this, differences);
     }
     async setSegmentStartCap(segmentStartCap, sendImmediately) {
@@ -25784,7 +25781,18 @@
       _classPrivateFieldSet2(_clearSensorConfigurationOnLeave, this, newClearSensorConfigurationOnLeave);
     }
     get numberOfPressureSensors() {
-      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.numberOfSensors;
+      if (this.hasSensorType("pressure")) {
+        return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.numberOfSensors;
+      } else {
+        return 0;
+      }
+    }
+    get pressureSensorPositions() {
+      if (this.hasSensorType("pressure")) {
+        return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.positions;
+      } else {
+        return [];
+      }
     }
     resetPressureRange() {
       _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.resetRange();
