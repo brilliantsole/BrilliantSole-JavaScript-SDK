@@ -965,6 +965,7 @@ window.drawPianoConfig = drawPianoConfig;
 
 /** @type {WebMidi} */
 const WebMidi = window.WebMidi;
+WebMidi.octaveOffset = 1;
 
 /** @typedef {import("tone").FrequencyClass} Frequency */
 /** @type {Frequency[]} */
@@ -984,7 +985,12 @@ const getDownFrequency = (frequency) => {
 };
 /** @type {InputEventMap["noteon"]} */
 const onWebMidiNoteOn = (event) => {
-  const { value, note } = event;
+  const { value, note, message } = event;
+  const { channel } = message;
+  console.log({ value, note, channel });
+  if (channel != 1) {
+    return;
+  }
   const frequency = Tone.Midi(note.number);
   onFrequency(frequency);
 };
@@ -1004,7 +1010,12 @@ const checkAreCorrectNotesPlayed = () => {
   if (areCorrectNotesPlayed) {
     console.log("areCorrectNotesPlayed", areCorrectNotesPlayed);
     setCurrentVoiceIndex(currentVoiceIndex + 1, false);
+    resetFailedAttempts();
+    hideHint();
+  } else {
+    addFailedAttempt();
   }
+  setHintTimeout();
   return areCorrectNotesPlayed;
 };
 
@@ -1816,6 +1827,7 @@ const practiceNote = async () => {
   if (isPracticingNote) {
     return;
   }
+  attempts = 0;
   isPracticingNote = true;
   shouldDrawNoteName = false;
   shouldDrawPiano = false;
@@ -1847,10 +1859,60 @@ const practiceNote = async () => {
     L:1/4
     ${systems
       .map((system) =>
-        system.map((note) => note.toNote().slice(0, -1).toLowerCase()).join(" ")
+        system.map((note) => note.toNote().slice(0, -1).toUpperCase()).join(" ")
       )
       .join(`\n`)}
   `);
+
+  setHintTimeout();
+};
+
+let hintTimeoutId;
+const clearHintTimeout = () => {
+  if (hintTimeoutId != undefined) {
+    clearTimeout(hintTimeoutId);
+    hintTimeoutId = undefined;
+  }
+};
+const setHintTimeout = (delay = 5000) => {
+  clearHintTimeout();
+  if (shouldDrawPiano && shouldDrawNoteName) {
+    return;
+  }
+  console.log("setHintTimeout");
+  hintTimeoutId = setTimeout(() => {
+    showHint();
+  }, delay);
+};
+let attemptsUntilShowHint = 3;
+let attempts = 0;
+const resetFailedAttempts = () => {
+  attempts = 0;
+};
+const addFailedAttempt = () => {
+  attempts++;
+  console.log({ attempts });
+  if (attempts >= attemptsUntilShowHint) {
+    showHint();
+  }
+};
+const showHint = async () => {
+  if (shouldDrawPiano && shouldDrawNoteName) {
+    return;
+  }
+  clearHintTimeout();
+  console.log("showHint");
+  shouldDrawPiano = true;
+  shouldDrawNoteName = true;
+  draw();
+};
+const hideHint = () => {
+  if (!isPracticingNote) {
+    return;
+  }
+  console.log("hideHint");
+  shouldDrawPiano = false;
+  shouldDrawNoteName = false;
 };
 
 const addNoteToLearn = async () => {
@@ -1865,12 +1927,12 @@ const addNoteToLearn = async () => {
   isPracticingNote = false;
   shouldDrawNoteName = true;
   shouldDrawPiano = true;
-  noteToLearn.toNote().slice(0, -1).toLowerCase();
+  noteToLearn.toNote().slice(0, -1).toUpperCase();
   await renderAbc(`
     X:1
     K:C
     L:1/4
-    ${noteToLearn.toNote().slice(0, -1).toLowerCase()}
+    ${noteToLearn.toNote().slice(0, -1).toUpperCase()}
   `);
 };
 addNoteToLearn();
