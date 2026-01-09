@@ -959,6 +959,18 @@ const drawPianoConfig = {
   startOctave: 4,
 };
 window.drawPianoConfig = drawPianoConfig;
+const frequencyRange = {
+  min: Tone.Frequency(`C${drawPianoConfig.startOctave}`),
+  max: Tone.Frequency(
+    `C${drawPianoConfig.startOctave + drawPianoConfig.octaves}`
+  ),
+};
+window.frequencyRange = frequencyRange;
+const frequencyMidiRange = {
+  min: frequencyRange.min.toMidi(),
+  max: frequencyRange.max.toMidi(),
+};
+console.log("frequencyMidiRange", frequencyMidiRange);
 
 /** @typedef {import("webmidi").WebMidi} WebMidi */
 /** @typedef {import("webmidi").InputEventMap} InputEventMap */
@@ -1727,7 +1739,14 @@ const onPitch = async (pitch) => {
   //console.log({ pitch });
   let newPitchDetectionFrequency;
   if (pitch != undefined) {
-    newPitchDetectionFrequency = Tone.Frequency(pitch).transpose(24);
+    let pitchFrequency = Tone.Frequency(pitch);
+    while (pitchFrequency.toMidi() < frequencyMidiRange.min) {
+      pitchFrequency = pitchFrequency.transpose(12);
+    }
+    while (pitchFrequency.toMidi() > frequencyMidiRange.max) {
+      pitchFrequency = pitchFrequency.transpose(-12);
+    }
+    newPitchDetectionFrequency = pitchFrequency;
   }
 
   if (
