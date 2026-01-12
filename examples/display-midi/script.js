@@ -956,7 +956,7 @@ const drawPianoConfig = {
   whiteKeySpacing: 10,
   x: 0,
   y: 400 - 80,
-  startOctave: 4,
+  startOctave: 3,
 };
 window.drawPianoConfig = drawPianoConfig;
 const frequencyRange = {
@@ -977,7 +977,7 @@ console.log("frequencyMidiRange", frequencyMidiRange);
 
 /** @type {WebMidi} */
 const WebMidi = window.WebMidi;
-WebMidi.octaveOffset = 1;
+WebMidi.octaveOffset = 0;
 
 /** @typedef {import("tone").FrequencyClass} Frequency */
 /** @type {Frequency[]} */
@@ -1840,8 +1840,8 @@ const allNotesToLearn = ["C", "D", "E", "F", "G", "A", "B"].flatMap((note) => {
 let isLearningNote = false;
 let isPracticingNote = false;
 
-let notesPerSystem = 6;
-let systemsPerPractice = 3;
+let notesPerSystem = 5;
+let systemsPerPractice = 2;
 const practiceNote = async () => {
   if (isPracticingNote) {
     return;
@@ -1893,7 +1893,7 @@ const clearHintTimeout = () => {
     hintTimeoutId = undefined;
   }
 };
-const setHintTimeout = (delay = 5000) => {
+const setHintTimeout = (delay = 3000) => {
   clearHintTimeout();
   if (shouldDrawPiano && shouldDrawNoteName) {
     return;
