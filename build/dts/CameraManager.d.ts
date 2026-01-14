@@ -31,6 +31,10 @@ export interface CameraImage {
     timestamp: number;
     latency: number;
 }
+export interface CameraImageFrame extends CameraImage {
+    duration: number;
+    timeOffset: number;
+}
 export interface CameraEventMessages {
     cameraStatus: {
         cameraStatus: CameraStatus;
@@ -48,7 +52,7 @@ export interface CameraEventMessages {
         isRecordingCamera: boolean;
     };
     cameraRecording: {
-        images: CameraImage[];
+        imageFrames: CameraImageFrame[];
         configuration: CameraConfiguration;
         blob: Blob;
         url: string;

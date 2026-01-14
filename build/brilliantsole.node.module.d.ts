@@ -976,6 +976,10 @@ interface CameraImage {
     timestamp: number;
     latency: number;
 }
+interface CameraImageFrame extends CameraImage {
+    duration: number;
+    timeOffset: number;
+}
 interface CameraEventMessages {
     cameraStatus: {
         cameraStatus: CameraStatus;
@@ -993,7 +997,7 @@ interface CameraEventMessages {
         isRecordingCamera: boolean;
     };
     cameraRecording: {
-        images: CameraImage[];
+        imageFrames: CameraImageFrame[];
         configuration: CameraConfiguration;
         blob: Blob;
         url: string;
