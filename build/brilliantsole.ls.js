@@ -2028,13 +2028,15 @@
         break;
     }
   }
-  async function _buildImage() {
+  function _buildImage() {
     _console$v.log("building image...");
     const now = Date.now();
+    const timestamp = _classPrivateFieldGet2(_latestTakingPictureTimestamp, this);
     const imageData = concatenateArrayBuffers(_classPrivateFieldGet2(_headerData, this), _classPrivateFieldGet2(_imageData, this), _classPrivateFieldGet2(_footerData, this));
     _console$v.log({
       imageData
     });
+    _classPrivateFieldSet2(_didBuildImage, this, true);
     let blob = new Blob([imageData], {
       type: "image/jpeg"
     });
@@ -2044,8 +2046,8 @@
     const cameraImage = {
       url,
       blob,
-      timestamp: _classPrivateFieldGet2(_latestTakingPictureTimestamp, this),
-      latency: now - _classPrivateFieldGet2(_latestTakingPictureTimestamp, this),
+      timestamp,
+      latency: now - timestamp,
       arrayBuffer: imageData
     };
     _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraImage", cameraImage);
@@ -2057,25 +2059,25 @@
             _classPrivateFieldGet2(_recordingImage, this).onload = () => resolve();
           });
           _classPrivateFieldGet2(_recordingImage, this).src = cameraImage.url;
-          await promise;
-          const {
-            width,
-            height
-          } = _classPrivateFieldGet2(_recordingImage, this);
-          if (_classPrivateFieldGet2(_recordingCanvas, this).width != width) {
-            _classPrivateFieldGet2(_recordingCanvas, this).width = width;
-          }
-          if (_classPrivateFieldGet2(_recordingCanvas, this).height != height) {
-            _classPrivateFieldGet2(_recordingCanvas, this).height = height;
-          }
-          _classPrivateFieldGet2(_recordingCanvasContext, this).drawImage(_classPrivateFieldGet2(_recordingImage, this), 0, 0, width, height);
+          promise.then(() => {
+            const {
+              width,
+              height
+            } = _classPrivateFieldGet2(_recordingImage, this);
+            if (_classPrivateFieldGet2(_recordingCanvas, this).width != width) {
+              _classPrivateFieldGet2(_recordingCanvas, this).width = width;
+            }
+            if (_classPrivateFieldGet2(_recordingCanvas, this).height != height) {
+              _classPrivateFieldGet2(_recordingCanvas, this).height = height;
+            }
+            _classPrivateFieldGet2(_recordingCanvasContext, this).drawImage(_classPrivateFieldGet2(_recordingImage, this), 0, 0, width, height);
+          });
         } else {
           _console$v.error("camera recording failed - recording image/canvas/context not found");
           this.stopRecording();
         }
       }
     }
-    _classPrivateFieldSet2(_didBuildImage, this, true);
     if (this.autoPicture) {
       this.takePicture();
     }
