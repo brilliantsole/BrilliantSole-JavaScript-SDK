@@ -110,6 +110,10 @@ export interface CameraImage {
   timestamp: number;
   latency: number;
 }
+export interface CameraImageFrame extends CameraImage {
+  duration: number;
+  timeOffset: number;
+}
 export interface CameraEventMessages {
   cameraStatus: {
     cameraStatus: CameraStatus;
@@ -122,7 +126,7 @@ export interface CameraEventMessages {
     isRecordingCamera: boolean;
   };
   cameraRecording: {
-    images: CameraImage[];
+    imageFrames: CameraImageFrame[];
     configuration: CameraConfiguration;
     blob: Blob;
     url: string;
@@ -663,9 +667,12 @@ class CameraManager {
     }
     this.#cameraRecordingData = [];
     if (isInBrowser) {
-      this.#recordingCanvas = document.createElement("canvas");
-      this.#recordingCanvasContext = this.#recordingCanvas.getContext("2d")!;
-      this.#recordingImage = document.createElement("img");
+      this.#recordingCanvas =
+        this.#recordingCanvas ?? document.createElement("canvas");
+      this.#recordingCanvasContext =
+        this.#recordingCanvasContext ?? this.#recordingCanvas.getContext("2d")!;
+      this.#recordingImage =
+        this.#recordingImage ?? document.createElement("img");
       this.#recordingCanvasStream = this.#recordingCanvas.captureStream(30);
       const mediaStream = audioStream
         ? new MediaStream([
@@ -696,7 +703,19 @@ class CameraManager {
     }
     if (this.#cameraRecordingData && this.#cameraRecordingData.length > 0) {
       const images = this.#cameraRecordingData;
-      if (images?.length > 0) {
+      if (images.length > 0) {
+        const imageFrames: CameraImageFrame[] = images.map((image, index) => {
+          const isLast = index == images.length - 1;
+          const timeOffset = image.timestamp - images[0].timestamp;
+          const duration = isLast
+            ? 0
+            : images[index + 1].timestamp - images[index].timestamp;
+          return {
+            ...image,
+            timeOffset,
+            duration,
+          };
+        });
         if (isInBrowser) {
           this.#recordingMediaRecorder!.onstop = () => {
             _console.log("recordingMediaRecorder onstop");
@@ -705,11 +724,14 @@ class CameraManager {
             });
             const url = URL.createObjectURL(blob);
             this.#dispatchEvent("cameraRecording", {
-              images,
+              imageFrames,
               configuration: structuredClone(this.cameraConfiguration),
               blob,
               url,
             });
+            this.#recordingCanvasStream
+              ?.getVideoTracks()
+              .forEach((track) => track.stop());
           };
           this.#recordingMediaRecorder?.stop();
         } else if (isInNode) {
@@ -739,22 +761,19 @@ class CameraManager {
             filename,
           ]);
 
-          const timestamps = images.map(
-            (image) => image.timestamp - images[0].timestamp
-          );
-          for (let i = 0; i < images.length; i++) {
-            const image = images[i];
-            const rawRGBA = await sharp(image.arrayBuffer, { failOn: "none" })
+          for (let i = 0; i < imageFrames.length; i++) {
+            const imageFrame = imageFrames[i];
+            const rawRGBA = await sharp(imageFrame.arrayBuffer, {
+              failOn: "none",
+            })
               .resize(width, height)
               .ensureAlpha()
               .raw()
               .toBuffer();
 
-            const isLast = i == images.length - 1;
-            const duration = isLast ? 0 : timestamps[i + 1] - timestamps[i];
             const frames = Math.max(
               1,
-              Math.round(Math.max(0, duration) / (1000 / fps))
+              Math.round(Math.max(0, imageFrame.duration) / (1000 / fps))
             );
             for (let j = 0; j < frames; j++) {
               ffmpeg.stdin.write(rawRGBA);
@@ -776,7 +795,7 @@ class CameraManager {
           const url = URL.createObjectURL(blob);
 
           this.#dispatchEvent("cameraRecording", {
-            images,
+            imageFrames,
             configuration: structuredClone(this.cameraConfiguration),
             blob,
             url,
