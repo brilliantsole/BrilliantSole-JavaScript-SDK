@@ -22,8 +22,15 @@ export type CameraConfigurationRanges = {
     };
 };
 export declare const RequiredCameraMessageTypes: CameraMessageType[];
-export declare const CameraEventTypes: readonly ["cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "cameraImageProgress", "cameraImage"];
+export declare const CameraEventTypes: readonly ["cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "cameraImageProgress", "cameraImage", "isRecordingCamera", "cameraRecording", "autoPicture"];
 export type CameraEventType = (typeof CameraEventTypes)[number];
+export interface CameraImage {
+    blob: Blob;
+    url: string;
+    arrayBuffer: ArrayBuffer;
+    timestamp: number;
+    latency: number;
+}
 export interface CameraEventMessages {
     cameraStatus: {
         cameraStatus: CameraStatus;
@@ -36,9 +43,18 @@ export interface CameraEventMessages {
         progress: number;
         type: CameraDataType;
     };
-    cameraImage: {
+    cameraImage: CameraImage;
+    isRecordingCamera: {
+        isRecordingCamera: boolean;
+    };
+    cameraRecording: {
+        images: CameraImage[];
+        configuration: CameraConfiguration;
         blob: Blob;
         url: string;
+    };
+    autoPicture: {
+        autoPicture: boolean;
     };
 }
 export type CameraEventDispatcher = EventDispatcher<Device, CameraEventType, CameraEventMessages>;
@@ -48,7 +64,7 @@ declare class CameraManager {
     constructor();
     sendMessage: SendCameraMessageCallback;
     eventDispatcher: CameraEventDispatcher;
-    get waitForEvent(): <T extends "cameraImage" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress">(type: T) => Promise<{
+    get waitForEvent(): <T extends "cameraImage" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "isRecordingCamera" | "cameraRecording" | "autoPicture">(type: T) => Promise<{
         type: T;
         target: Device;
         message: CameraEventMessages[T];
@@ -67,6 +83,13 @@ declare class CameraManager {
     setCameraConfiguration(newCameraConfiguration: CameraConfiguration): Promise<void>;
     static AssertValidCameraConfigurationType(cameraConfigurationType: CameraConfigurationType): void;
     static AssertValidCameraConfigurationTypeEnum(cameraConfigurationTypeEnum: number): void;
+    get isRecording(): boolean;
+    get isRecordingAvailable(): boolean;
+    startRecording(): void;
+    stopRecording(): Promise<void>;
+    toggleRecording(): void;
+    get autoPicture(): boolean;
+    set autoPicture(newAutoPicture: boolean);
     parseMessage(messageType: CameraMessageType, dataView: DataView<ArrayBuffer>): void;
     clear(): void;
 }

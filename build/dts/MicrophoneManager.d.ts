@@ -43,8 +43,7 @@ export interface MicrophoneEventMessages {
     };
     microphoneRecording: {
         samples: Float32Array;
-        sampleRate: MicrophoneSampleRate;
-        bitDepth: MicrophoneBitDepth;
+        configuration: MicrophoneConfiguration;
         blob: Blob;
         url: string;
     };

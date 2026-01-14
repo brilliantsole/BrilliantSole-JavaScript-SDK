@@ -517,19 +517,14 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         }
       });
 
-      let autoPicture = false;
       /** @type {HTMLButtonElement} */
       const autoPictureCheckbox =
         deviceCameraContainer.querySelector(".autoPicture");
       autoPictureCheckbox.addEventListener("input", () => {
-        autoPicture = autoPictureCheckbox.checked;
-        console.log({ autoPicture });
+        device.autoPicture = autoPictureCheckbox.checked;
       });
-      autoPictureCheckbox.checked = autoPicture;
-      device.addEventListener("cameraImage", () => {
-        if (autoPicture) {
-          device.takePicture();
-        }
+      device.addEventListener("autoPicture", () => {
+        autoPictureCheckbox.checked = device.autoPicture;
       });
 
       /** @type {HTMLPreElement} */

@@ -1,6 +1,6 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import { createConsole } from "./utils/Console.ts";
-import { isInNode } from "./utils/environment.ts";
+import { isInBrowser, isInNode } from "./utils/environment.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 import { parseMessage } from "./utils/ParseUtils.ts";
@@ -8,6 +8,12 @@ import {
   concatenateArrayBuffers,
   UInt8ByteBuffer,
 } from "./utils/ArrayBufferUtils.ts";
+
+/** NODE_START */
+import sharp from "sharp";
+import { spawn } from "child_process";
+import fs from "fs/promises";
+/** NODE_END */
 
 const _console = createConsole("CameraManager", { log: false });
 
@@ -89,9 +95,19 @@ export const CameraEventTypes = [
   ...CameraMessageTypes,
   "cameraImageProgress",
   "cameraImage",
+  "isRecordingCamera",
+  "cameraRecording",
+  "autoPicture",
 ] as const;
 export type CameraEventType = (typeof CameraEventTypes)[number];
 
+export interface CameraImage {
+  blob: Blob;
+  url: string;
+  arrayBuffer: ArrayBuffer;
+  timestamp: number;
+  latency: number;
+}
 export interface CameraEventMessages {
   cameraStatus: {
     cameraStatus: CameraStatus;
@@ -99,7 +115,19 @@ export interface CameraEventMessages {
   };
   getCameraConfiguration: { cameraConfiguration: CameraConfiguration };
   cameraImageProgress: { progress: number; type: CameraDataType };
-  cameraImage: { blob: Blob; url: string };
+  cameraImage: CameraImage;
+  isRecordingCamera: {
+    isRecordingCamera: boolean;
+  };
+  cameraRecording: {
+    images: CameraImage[];
+    configuration: CameraConfiguration;
+    blob: Blob;
+    url: string;
+  };
+  autoPicture: {
+    autoPicture: boolean;
+  };
 }
 
 export type CameraEventDispatcher = EventDispatcher<
@@ -142,6 +170,7 @@ class CameraManager {
     const newCameraStatus = CameraStatuses[cameraStatusIndex];
     this.#updateCameraStatus(newCameraStatus);
   }
+  #latestTakingPictureTimestamp = 0;
   #updateCameraStatus(newCameraStatus: CameraStatus) {
     _console.assertEnumWithError(newCameraStatus, CameraStatuses);
     if (newCameraStatus == this.#cameraStatus) {
@@ -155,6 +184,10 @@ class CameraManager {
       cameraStatus: this.cameraStatus,
       previousCameraStatus,
     });
+
+    if (this.cameraStatus == "takingPicture") {
+      this.#latestTakingPictureTimestamp = Date.now();
+    }
 
     if (
       this.#cameraStatus != "takingPicture" &&
@@ -316,8 +349,9 @@ class CameraManager {
   #footerProgress: number = 0;
 
   #didBuildImage: boolean = false;
-  #buildImage() {
+  async #buildImage() {
     _console.log("building image...");
+    const now = Date.now();
     const imageData = concatenateArrayBuffers(
       this.#headerData,
       this.#imageData,
@@ -331,9 +365,60 @@ class CameraManager {
     const url = URL.createObjectURL(blob);
     _console.log("created url", url);
 
-    this.#dispatchEvent("cameraImage", { url, blob });
+    const cameraImage: CameraImage = {
+      url,
+      blob,
+      timestamp: this.#latestTakingPictureTimestamp,
+      latency: now - this.#latestTakingPictureTimestamp,
+      arrayBuffer: imageData,
+    };
+
+    this.#dispatchEvent("cameraImage", cameraImage);
+
+    if (this.isRecording) {
+      this.#cameraRecordingData!.push(cameraImage);
+      if (isInBrowser) {
+        if (this.#recordingMediaRecorder?.state != "recording") {
+          this.#recordingMediaRecorder!.start();
+        }
+        if (
+          this.#recordingImage &&
+          this.#recordingCanvasContext &&
+          this.#recordingCanvas
+        ) {
+          const promise = new Promise<void>((resolve) => {
+            this.#recordingImage!.onload = () => resolve();
+          });
+          this.#recordingImage.src = cameraImage.url;
+          await promise;
+          const { width, height } = this.#recordingImage;
+          if (this.#recordingCanvas.width != width) {
+            this.#recordingCanvas.width = width;
+          }
+          if (this.#recordingCanvas.height != height) {
+            this.#recordingCanvas.height = height;
+          }
+          this.#recordingCanvasContext!.drawImage(
+            this.#recordingImage!,
+            0,
+            0,
+            width,
+            height
+          );
+        } else {
+          _console.error(
+            "camera recording failed - recording image/canvas/context not found"
+          );
+          this.stopRecording();
+        }
+      }
+    }
 
     this.#didBuildImage = true;
+
+    if (this.autoPicture) {
+      this.takePicture();
+    }
   }
 
   #buildHeaderCameraData() {
@@ -551,6 +636,177 @@ class CameraManager {
     return dataView;
   }
 
+  // RECORDING
+  #isRecording = false;
+  get isRecording() {
+    return this.#isRecording;
+  }
+  #cameraRecordingData?: CameraImage[];
+  get isRecordingAvailable() {
+    return Boolean((isInBrowser && window.MediaRecorder) || isInNode);
+  }
+  #recordingCanvas?: HTMLCanvasElement;
+  #recordingImage?: HTMLImageElement;
+  #recordingCanvasContext?: CanvasRenderingContext2D;
+  #recordingCanvasStream?: MediaStream;
+  #recordingMediaRecorder?: MediaRecorder;
+  #recordingChunks?: Blob[];
+  startRecording() {
+    if (!this.isRecordingAvailable) {
+      _console.error("camera recording is not available");
+      return;
+    }
+    if (this.isRecording) {
+      _console.log("already recording camera");
+      return;
+    }
+    this.#cameraRecordingData = [];
+    if (isInBrowser) {
+      this.#recordingCanvas = document.createElement("canvas");
+      this.#recordingCanvasContext = this.#recordingCanvas.getContext("2d")!;
+      this.#recordingImage = document.createElement("img");
+      this.#recordingCanvasStream = this.#recordingCanvas.captureStream(30);
+      this.#recordingMediaRecorder = new MediaRecorder(
+        this.#recordingCanvasStream,
+        {
+          mimeType: "video/webm",
+        }
+      );
+      this.#recordingChunks = [];
+      this.#recordingMediaRecorder.ondataavailable = (e) => {
+        _console.log("adding chunk", e.data);
+        this.#recordingChunks!.push(e.data);
+      };
+    }
+    this.#isRecording = true;
+    this.#dispatchEvent("isRecordingCamera", {
+      isRecordingCamera: this.isRecording,
+    });
+  }
+  async stopRecording() {
+    if (!this.isRecording) {
+      _console.log("already not recording");
+      return;
+    }
+    if (this.#cameraRecordingData && this.#cameraRecordingData.length > 0) {
+      const images = this.#cameraRecordingData;
+      if (images?.length > 0) {
+        if (isInBrowser) {
+          this.#recordingMediaRecorder!.onstop = () => {
+            _console.log("recordingMediaRecorder onstop");
+            const blob = new Blob(this.#recordingChunks, {
+              type: "video/webm",
+            });
+            const url = URL.createObjectURL(blob);
+            this.#dispatchEvent("cameraRecording", {
+              images,
+              configuration: structuredClone(this.cameraConfiguration),
+              blob,
+              url,
+            });
+          };
+          this.#recordingMediaRecorder?.stop();
+        } else if (isInNode) {
+          const metadata = await sharp(images[0].arrayBuffer).metadata();
+          const { width, height } = metadata;
+          const fps = 30;
+          const filename = `${new Date()
+            .toLocaleString()
+            .replaceAll("/", "-")}.mp4`;
+          const ffmpeg = spawn("ffmpeg", [
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgba",
+            "-s",
+            `${width}x${height}`,
+            "-r",
+            `${fps}`,
+            "-i",
+            "-",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "+faststart",
+            filename,
+          ]);
+
+          const timestamps = images.map(
+            (image) => image.timestamp - images[0].timestamp
+          );
+          for (let i = 0; i < images.length; i++) {
+            const image = images[i];
+            const rawRGBA = await sharp(image.arrayBuffer, { failOn: "none" })
+              .resize(width, height)
+              .ensureAlpha()
+              .raw()
+              .toBuffer();
+
+            const isLast = i == images.length - 1;
+            const duration = isLast ? 0 : timestamps[i + 1] - timestamps[i];
+            const frames = Math.max(
+              1,
+              Math.round(Math.max(0, duration) / (1000 / fps))
+            );
+            for (let j = 0; j < frames; j++) {
+              ffmpeg.stdin.write(rawRGBA);
+            }
+          }
+          const promise = new Promise<void>((resolve, reject) => {
+            ffmpeg.on("close", (code) => {
+              if (code === 0) resolve();
+              else reject(new Error(`ffmpeg exited with ${code}`));
+            });
+            ffmpeg.on("error", reject);
+          });
+          ffmpeg.stdin.end();
+          await promise;
+
+          const videoData = await fs.readFile(filename);
+
+          const blob = new Blob([videoData], { type: "video/mp4" });
+          const url = URL.createObjectURL(blob);
+
+          this.#dispatchEvent("cameraRecording", {
+            images,
+            configuration: structuredClone(this.cameraConfiguration),
+            blob,
+            url,
+          });
+          await fs.unlink(filename);
+        }
+      }
+    }
+    this.#isRecording = false;
+    this.#cameraRecordingData = undefined;
+    this.#dispatchEvent("isRecordingCamera", {
+      isRecordingCamera: this.isRecording,
+    });
+  }
+  toggleRecording() {
+    if (this.isRecording) {
+      this.stopRecording();
+    } else {
+      this.startRecording();
+    }
+  }
+
+  // AUTO
+  #autoPicture = false;
+  get autoPicture() {
+    return this.#autoPicture;
+  }
+  set autoPicture(newAutoPicture) {
+    if (this.#autoPicture == newAutoPicture) {
+      return;
+    }
+    this.#autoPicture = newAutoPicture;
+    _console.log({ autoPicture: this.#autoPicture });
+    this.#dispatchEvent("autoPicture", { autoPicture: this.autoPicture });
+  }
+
   // MESSAGE
   parseMessage(
     messageType: CameraMessageType,
@@ -577,9 +833,14 @@ class CameraManager {
   clear() {
     // @ts-ignore
     this.#cameraStatus = undefined;
+    this.#cameraConfiguration = {};
     this.#headerProgress = 0;
     this.#imageProgress = 0;
     this.#footerProgress = 0;
+    this.autoPicture = false;
+    if (this.isRecording) {
+      this.stopRecording();
+    }
   }
 }
 

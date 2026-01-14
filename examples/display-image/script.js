@@ -776,9 +776,6 @@ displayCanvasHelper.addEventListener("ready", () => {
     console.log("redrawing video");
     drawImage();
   }
-  if (autoPicture && device.isConnected) {
-    device.takePicture();
-  }
 });
 
 // PROGRESS
@@ -877,9 +874,11 @@ device.addEventListener("cameraStatus", (event) => {
 
 /** @type {HTMLInputElement} */
 const autoPictureCheckbox = document.getElementById("autoPicture");
-let autoPicture = autoPictureCheckbox.checked;
 autoPictureCheckbox.addEventListener("input", () => {
-  autoPicture = autoPictureCheckbox.checked;
+  device.autoPicture = autoPictureCheckbox.checked;
+});
+device.addEventListener("autoPicture", () => {
+  autoPictureCheckbox.checked = device.autoPicture;
 });
 
 /** @type {HTMLPreElement} */

@@ -174,6 +174,43 @@ function onCameraImage(event) {
   );
 }
 
+// CAMERA RECORDING
+
+const autoRecordCamera = process.env.AUTO_RECORD_CAMERA == "true";
+const saveCameraRecordingsToFolder =
+  process.env.SAVE_CAMERA_RECORDINGS_TO_FOLDER == "true";
+
+const cameraRecordingsFolderName = "cameraRecordings";
+const cameraRecordingsFolderPath = `./${cameraRecordingsFolderName}`;
+if (saveCameraRecordingsToFolder) {
+  if (!fs.existsSync(cameraRecordingsFolderPath)) {
+    fs.mkdirSync(cameraRecordingsFolderPath);
+    console.log(`Folder '${cameraRecordingsFolderPath}' created successfully.`);
+  } else {
+    console.log(`Folder '${cameraRecordingsFolderPath}' already exists.`);
+  }
+}
+
+/** @param {BS.DeviceEventMap["isRecordingCamera"]} event */
+function onIsRecordingCamera(event) {
+  console.log(`isRecordingCamera? ${event.message.isRecordingCamera}`);
+}
+
+/** @param {BS.DeviceEventMap["cameraRecording"]} event */
+function onCameraRecording(event) {
+  console.log({
+    saveCameraRecordingsToFolder,
+  });
+  if (!saveCameraRecordingsToFolder) {
+    return;
+  }
+  saveBlobUrlContent(
+    cameraRecordingsFolderPath,
+    event.message.blob,
+    `${new Date().toLocaleString().replaceAll("/", "-")}.mp4`
+  );
+}
+
 // DEVICE LISTENERS
 
 /** @param {BS.DeviceEventMap["acceleration"]} event */
@@ -200,6 +237,9 @@ const boundDeviceEventListeners = {
   microphoneStatus: onMicrophoneStatus,
 
   cameraImage: onCameraImage,
+
+  isRecordingCamera: onIsRecordingCamera,
+  cameraRecording: onCameraRecording,
 
   fileTransferStatus: onFileTransferStatus,
   fileTransferProgress: onFileTransferProgress,
@@ -354,16 +394,22 @@ if (autoScan) {
   BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
     console.log("device connected - stopping scan...");
     BS.Scanner.stopScan();
-
-    const { device } = event.message;
-    console.log(`connected to "${device.name}"`);
-    if (autoEnableSensorData) {
-      console.log("setting configuration...");
-      device.setSensorConfiguration({ acceleration: 20 });
-    }
   });
   BS.DeviceManager.AddEventListener("deviceDisconnected", (event) => {
     console.log("device disconnected - restarting scan...");
     BS.Scanner.startScan();
   });
 }
+
+BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  console.log(`connected to "${device.name}"`);
+  if (autoEnableSensorData) {
+    console.log("setting configuration...");
+    device.setSensorConfiguration({ acceleration: 20 });
+  }
+  if (autoRecordCamera) {
+    console.log("recording camera...");
+    device.startRecordingCamera();
+  }
+});

@@ -1515,9 +1515,10 @@
   const CameraConfigurationTypes = ["resolution", "qualityFactor", "shutter", "gain", "redGain", "greenGain", "blueGain", "autoWhiteBalanceEnabled", "autoGainEnabled", "exposure", "autoExposureEnabled", "autoExposureLevel", "brightness", "saturation", "contrast", "sharpness"];
   const CameraMessageTypes = ["cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData"];
   const RequiredCameraMessageTypes = ["getCameraConfiguration", "cameraStatus"];
-  const CameraEventTypes = [...CameraMessageTypes, "cameraImageProgress", "cameraImage"];
+  const CameraEventTypes = [...CameraMessageTypes, "cameraImageProgress", "cameraImage", "isRecordingCamera", "cameraRecording", "autoPicture"];
   var _CameraManager_brand = new WeakSet();
   var _cameraStatus = new WeakMap();
+  var _latestTakingPictureTimestamp = new WeakMap();
   var _headerSize = new WeakMap();
   var _headerData = new WeakMap();
   var _headerProgress = new WeakMap();
@@ -1531,12 +1532,22 @@
   var _cameraConfiguration = new WeakMap();
   var _availableCameraConfigurationTypes = new WeakMap();
   var _cameraConfigurationRanges = new WeakMap();
+  var _isRecording$1 = new WeakMap();
+  var _cameraRecordingData = new WeakMap();
+  var _recordingCanvas = new WeakMap();
+  var _recordingImage = new WeakMap();
+  var _recordingCanvasContext = new WeakMap();
+  var _recordingCanvasStream = new WeakMap();
+  var _recordingMediaRecorder = new WeakMap();
+  var _recordingChunks = new WeakMap();
+  var _autoPicture = new WeakMap();
   class CameraManager {
     constructor() {
       _classPrivateMethodInitSpec(this, _CameraManager_brand);
       _defineProperty$1(this, "sendMessage", void 0);
       _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _cameraStatus, void 0);
+      _classPrivateFieldInitSpec(this, _latestTakingPictureTimestamp, 0);
       _classPrivateFieldInitSpec(this, _headerSize, 0);
       _classPrivateFieldInitSpec(this, _headerData, void 0);
       _classPrivateFieldInitSpec(this, _headerProgress, 0);
@@ -1615,6 +1626,15 @@
           max: 3
         }
       });
+      _classPrivateFieldInitSpec(this, _isRecording$1, false);
+      _classPrivateFieldInitSpec(this, _cameraRecordingData, void 0);
+      _classPrivateFieldInitSpec(this, _recordingCanvas, void 0);
+      _classPrivateFieldInitSpec(this, _recordingImage, void 0);
+      _classPrivateFieldInitSpec(this, _recordingCanvasContext, void 0);
+      _classPrivateFieldInitSpec(this, _recordingCanvasStream, void 0);
+      _classPrivateFieldInitSpec(this, _recordingMediaRecorder, void 0);
+      _classPrivateFieldInitSpec(this, _recordingChunks, void 0);
+      _classPrivateFieldInitSpec(this, _autoPicture, false);
       autoBind(this);
     }
     get waitForEvent() {
@@ -1689,6 +1709,138 @@
       _console$v.assertTypeWithError(cameraConfigurationTypeEnum, "number");
       _console$v.assertWithError(cameraConfigurationTypeEnum in CameraConfigurationTypes, `invalid cameraConfigurationTypeEnum ${cameraConfigurationTypeEnum}`);
     }
+    get isRecording() {
+      return _classPrivateFieldGet2(_isRecording$1, this);
+    }
+    get isRecordingAvailable() {
+      return Boolean(isInBrowser && window.MediaRecorder || isInNode);
+    }
+    startRecording() {
+      if (!this.isRecordingAvailable) {
+        _console$v.error("camera recording is not available");
+        return;
+      }
+      if (this.isRecording) {
+        _console$v.log("already recording camera");
+        return;
+      }
+      _classPrivateFieldSet2(_cameraRecordingData, this, []);
+      if (isInBrowser) {
+        _classPrivateFieldSet2(_recordingCanvas, this, document.createElement("canvas"));
+        _classPrivateFieldSet2(_recordingCanvasContext, this, _classPrivateFieldGet2(_recordingCanvas, this).getContext("2d"));
+        _classPrivateFieldSet2(_recordingImage, this, document.createElement("img"));
+        _classPrivateFieldSet2(_recordingCanvasStream, this, _classPrivateFieldGet2(_recordingCanvas, this).captureStream(30));
+        _classPrivateFieldSet2(_recordingMediaRecorder, this, new MediaRecorder(_classPrivateFieldGet2(_recordingCanvasStream, this), {
+          mimeType: "video/webm"
+        }));
+        _classPrivateFieldSet2(_recordingChunks, this, []);
+        _classPrivateFieldGet2(_recordingMediaRecorder, this).ondataavailable = e => {
+          _console$v.log("adding chunk", e.data);
+          _classPrivateFieldGet2(_recordingChunks, this).push(e.data);
+        };
+      }
+      _classPrivateFieldSet2(_isRecording$1, this, true);
+      _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "isRecordingCamera", {
+        isRecordingCamera: this.isRecording
+      });
+    }
+    async stopRecording() {
+      if (!this.isRecording) {
+        _console$v.log("already not recording");
+        return;
+      }
+      if (_classPrivateFieldGet2(_cameraRecordingData, this) && _classPrivateFieldGet2(_cameraRecordingData, this).length > 0) {
+        const images = _classPrivateFieldGet2(_cameraRecordingData, this);
+        if ((images === null || images === void 0 ? void 0 : images.length) > 0) {
+          if (isInBrowser) {
+            var _classPrivateFieldGet2$1;
+            _classPrivateFieldGet2(_recordingMediaRecorder, this).onstop = () => {
+              _console$v.log("recordingMediaRecorder onstop");
+              const blob = new Blob(_classPrivateFieldGet2(_recordingChunks, this), {
+                type: "video/webm"
+              });
+              const url = URL.createObjectURL(blob);
+              _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraRecording", {
+                images,
+                configuration: structuredClone(this.cameraConfiguration),
+                blob,
+                url
+              });
+            };
+            (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_recordingMediaRecorder, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.stop();
+          } else if (isInNode) {
+            const metadata = await sharp(images[0].arrayBuffer).metadata();
+            const {
+              width,
+              height
+            } = metadata;
+            const fps = 30;
+            const filename = `${new Date().toLocaleString().replaceAll("/", "-")}.mp4`;
+            const ffmpeg = spawn("ffmpeg", ["-f", "rawvideo", "-pix_fmt", "rgba", "-s", `${width}x${height}`, "-r", `${fps}`, "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", filename]);
+            const timestamps = images.map(image => image.timestamp - images[0].timestamp);
+            for (let i = 0; i < images.length; i++) {
+              const image = images[i];
+              const rawRGBA = await sharp(image.arrayBuffer, {
+                failOn: "none"
+              }).resize(width, height).ensureAlpha().raw().toBuffer();
+              const isLast = i == images.length - 1;
+              const duration = isLast ? 0 : timestamps[i + 1] - timestamps[i];
+              const frames = Math.max(1, Math.round(Math.max(0, duration) / (1000 / fps)));
+              for (let j = 0; j < frames; j++) {
+                ffmpeg.stdin.write(rawRGBA);
+              }
+            }
+            const promise = new Promise((resolve, reject) => {
+              ffmpeg.on("close", code => {
+                if (code === 0) resolve();else reject(new Error(`ffmpeg exited with ${code}`));
+              });
+              ffmpeg.on("error", reject);
+            });
+            ffmpeg.stdin.end();
+            await promise;
+            const videoData = await fs.readFile(filename);
+            const blob = new Blob([videoData], {
+              type: "video/mp4"
+            });
+            const url = URL.createObjectURL(blob);
+            _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraRecording", {
+              images,
+              configuration: structuredClone(this.cameraConfiguration),
+              blob,
+              url
+            });
+            await fs.unlink(filename);
+          }
+        }
+      }
+      _classPrivateFieldSet2(_isRecording$1, this, false);
+      _classPrivateFieldSet2(_cameraRecordingData, this, undefined);
+      _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "isRecordingCamera", {
+        isRecordingCamera: this.isRecording
+      });
+    }
+    toggleRecording() {
+      if (this.isRecording) {
+        this.stopRecording();
+      } else {
+        this.startRecording();
+      }
+    }
+    get autoPicture() {
+      return _classPrivateFieldGet2(_autoPicture, this);
+    }
+    set autoPicture(newAutoPicture) {
+      if (_classPrivateFieldGet2(_autoPicture, this) == newAutoPicture) {
+        return;
+      }
+      _classPrivateFieldSet2(_autoPicture, this, newAutoPicture);
+      _console$v.log({
+        autoPicture: _classPrivateFieldGet2(_autoPicture, this)
+      });
+      _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "autoPicture", {
+        autoPicture: this.autoPicture
+      });
+    }
     parseMessage(messageType, dataView) {
       _console$v.log({
         messageType,
@@ -1711,9 +1863,14 @@
     }
     clear() {
       _classPrivateFieldSet2(_cameraStatus, this, undefined);
+      _classPrivateFieldSet2(_cameraConfiguration, this, {});
       _classPrivateFieldSet2(_headerProgress, this, 0);
       _classPrivateFieldSet2(_imageProgress, this, 0);
       _classPrivateFieldSet2(_footerProgress, this, 0);
+      this.autoPicture = false;
+      if (this.isRecording) {
+        this.stopRecording();
+      }
     }
   }
   function _get_dispatchEvent$b(_this) {
@@ -1737,6 +1894,9 @@
       cameraStatus: this.cameraStatus,
       previousCameraStatus
     });
+    if (this.cameraStatus == "takingPicture") {
+      _classPrivateFieldSet2(_latestTakingPictureTimestamp, this, Date.now());
+    }
     if (_classPrivateFieldGet2(_cameraStatus, this) != "takingPicture" && _classPrivateFieldGet2(_imageProgress, this) > 0 && !_classPrivateFieldGet2(_didBuildImage, this)) {
       _assertClassBrand(_CameraManager_brand, this, _buildImage).call(this);
     }
@@ -1764,7 +1924,7 @@
     parseMessage(dataView, CameraDataTypes, _assertClassBrand(_CameraManager_brand, this, _onCameraData).bind(this), null, true);
   }
   function _onCameraData(cameraDataType, dataView) {
-    var _classPrivateFieldGet2$1, _classPrivateFieldGet3, _classPrivateFieldGet4;
+    var _classPrivateFieldGet3, _classPrivateFieldGet4, _classPrivateFieldGet5;
     _console$v.log({
       cameraDataType,
       dataView
@@ -1783,7 +1943,7 @@
         _console$v.log({
           headerData: _classPrivateFieldGet2(_headerData, this)
         });
-        _classPrivateFieldSet2(_headerProgress, this, ((_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_headerData, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.byteLength) / _classPrivateFieldGet2(_headerSize, this));
+        _classPrivateFieldSet2(_headerProgress, this, ((_classPrivateFieldGet3 = _classPrivateFieldGet2(_headerData, this)) === null || _classPrivateFieldGet3 === void 0 ? void 0 : _classPrivateFieldGet3.byteLength) / _classPrivateFieldGet2(_headerSize, this));
         _console$v.log({
           headerProgress: _classPrivateFieldGet2(_headerProgress, this)
         });
@@ -1809,7 +1969,7 @@
         _console$v.log({
           imageData: _classPrivateFieldGet2(_imageData, this)
         });
-        _classPrivateFieldSet2(_imageProgress, this, ((_classPrivateFieldGet3 = _classPrivateFieldGet2(_imageData, this)) === null || _classPrivateFieldGet3 === void 0 ? void 0 : _classPrivateFieldGet3.byteLength) / _classPrivateFieldGet2(_imageSize, this));
+        _classPrivateFieldSet2(_imageProgress, this, ((_classPrivateFieldGet4 = _classPrivateFieldGet2(_imageData, this)) === null || _classPrivateFieldGet4 === void 0 ? void 0 : _classPrivateFieldGet4.byteLength) / _classPrivateFieldGet2(_imageSize, this));
         _console$v.log({
           imageProgress: _classPrivateFieldGet2(_imageProgress, this)
         });
@@ -1837,7 +1997,7 @@
         _console$v.log({
           footerData: _classPrivateFieldGet2(_footerData, this)
         });
-        _classPrivateFieldSet2(_footerProgress, this, ((_classPrivateFieldGet4 = _classPrivateFieldGet2(_footerData, this)) === null || _classPrivateFieldGet4 === void 0 ? void 0 : _classPrivateFieldGet4.byteLength) / _classPrivateFieldGet2(_footerSize, this));
+        _classPrivateFieldSet2(_footerProgress, this, ((_classPrivateFieldGet5 = _classPrivateFieldGet2(_footerData, this)) === null || _classPrivateFieldGet5 === void 0 ? void 0 : _classPrivateFieldGet5.byteLength) / _classPrivateFieldGet2(_footerSize, this));
         _console$v.log({
           footerProgress: _classPrivateFieldGet2(_footerProgress, this)
         });
@@ -1854,8 +2014,9 @@
         break;
     }
   }
-  function _buildImage() {
+  async function _buildImage() {
     _console$v.log("building image...");
+    const now = Date.now();
     const imageData = concatenateArrayBuffers(_classPrivateFieldGet2(_headerData, this), _classPrivateFieldGet2(_imageData, this), _classPrivateFieldGet2(_footerData, this));
     _console$v.log({
       imageData
@@ -1866,11 +2027,48 @@
     _console$v.log("created blob", blob);
     const url = URL.createObjectURL(blob);
     _console$v.log("created url", url);
-    _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraImage", {
+    const cameraImage = {
       url,
-      blob
-    });
+      blob,
+      timestamp: _classPrivateFieldGet2(_latestTakingPictureTimestamp, this),
+      latency: now - _classPrivateFieldGet2(_latestTakingPictureTimestamp, this),
+      arrayBuffer: imageData
+    };
+    _classPrivateGetter(_CameraManager_brand, this, _get_dispatchEvent$b).call(this, "cameraImage", cameraImage);
+    if (this.isRecording) {
+      _classPrivateFieldGet2(_cameraRecordingData, this).push(cameraImage);
+      if (isInBrowser) {
+        var _classPrivateFieldGet6;
+        if (((_classPrivateFieldGet6 = _classPrivateFieldGet2(_recordingMediaRecorder, this)) === null || _classPrivateFieldGet6 === void 0 ? void 0 : _classPrivateFieldGet6.state) != "recording") {
+          _classPrivateFieldGet2(_recordingMediaRecorder, this).start();
+        }
+        if (_classPrivateFieldGet2(_recordingImage, this) && _classPrivateFieldGet2(_recordingCanvasContext, this) && _classPrivateFieldGet2(_recordingCanvas, this)) {
+          const promise = new Promise(resolve => {
+            _classPrivateFieldGet2(_recordingImage, this).onload = () => resolve();
+          });
+          _classPrivateFieldGet2(_recordingImage, this).src = cameraImage.url;
+          await promise;
+          const {
+            width,
+            height
+          } = _classPrivateFieldGet2(_recordingImage, this);
+          if (_classPrivateFieldGet2(_recordingCanvas, this).width != width) {
+            _classPrivateFieldGet2(_recordingCanvas, this).width = width;
+          }
+          if (_classPrivateFieldGet2(_recordingCanvas, this).height != height) {
+            _classPrivateFieldGet2(_recordingCanvas, this).height = height;
+          }
+          _classPrivateFieldGet2(_recordingCanvasContext, this).drawImage(_classPrivateFieldGet2(_recordingImage, this), 0, 0, width, height);
+        } else {
+          _console$v.error("camera recording failed - recording image/canvas/context not found");
+          this.stopRecording();
+        }
+      }
+    }
     _classPrivateFieldSet2(_didBuildImage, this, true);
+    if (this.autoPicture) {
+      this.takePicture();
+    }
   }
   function _buildHeaderCameraData() {
     if (_classPrivateFieldGet2(_headerSize, this) && _classPrivateFieldGet2(_headerProgress, this) == 1 && _classPrivateFieldGet2(_headerData, this)) {
@@ -1941,9 +2139,9 @@
     });
   }
   function _assertAvailableCameraConfigurationType(cameraConfigurationType) {
-    var _classPrivateFieldGet5;
+    var _classPrivateFieldGet7;
     _console$v.assertWithError(_classPrivateFieldGet2(_availableCameraConfigurationTypes, this), "must get initial cameraConfiguration");
-    const isCameraConfigurationTypeAvailable = (_classPrivateFieldGet5 = _classPrivateFieldGet2(_availableCameraConfigurationTypes, this)) === null || _classPrivateFieldGet5 === void 0 ? void 0 : _classPrivateFieldGet5.includes(cameraConfigurationType);
+    const isCameraConfigurationTypeAvailable = (_classPrivateFieldGet7 = _classPrivateFieldGet2(_availableCameraConfigurationTypes, this)) === null || _classPrivateFieldGet7 === void 0 ? void 0 : _classPrivateFieldGet7.includes(cameraConfigurationType);
     _console$v.assertWithError(isCameraConfigurationTypeAvailable, `unavailable camera configuration type "${cameraConfigurationType}"`);
     return isCameraConfigurationTypeAvailable;
   }
@@ -2344,7 +2542,7 @@
     }
     startRecording() {
       if (this.isRecording) {
-        _console$u.log("already recording");
+        _console$u.log("already recording microphone");
         return;
       }
       _classPrivateFieldSet2(_microphoneRecordingData, this, []);
@@ -2367,8 +2565,7 @@
         const url = URL.createObjectURL(blob);
         _classPrivateGetter(_MicrophoneManager_brand, this, _get_dispatchEvent$a).call(this, "microphoneRecording", {
           samples,
-          sampleRate: this.sampleRate,
-          bitDepth: this.bitDepth,
+          configuration: structuredClone(this.microphoneConfiguration),
           blob,
           url
         });
@@ -26056,6 +26253,12 @@
       }
       await _classPrivateFieldGet2(_cameraManager, this).takePicture();
     }
+    get autoPicture() {
+      return _classPrivateFieldGet2(_cameraManager, this).autoPicture;
+    }
+    set autoPicture(newAutoPicture) {
+      _classPrivateFieldGet2(_cameraManager, this).autoPicture = newAutoPicture;
+    }
     async focusCamera(sensorRate) {
       _assertClassBrand(_Device_brand, this, _assertHasCamera).call(this);
       if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
@@ -26091,6 +26294,18 @@
     }
     get setCameraConfiguration() {
       return _classPrivateFieldGet2(_cameraManager, this).setCameraConfiguration;
+    }
+    get isRecordingCamera() {
+      return _classPrivateFieldGet2(_cameraManager, this).isRecording;
+    }
+    get startRecordingCamera() {
+      return _classPrivateFieldGet2(_cameraManager, this).startRecording;
+    }
+    get stopRecordingCamera() {
+      return _classPrivateFieldGet2(_cameraManager, this).stopRecording;
+    }
+    get toggleCameraRecording() {
+      return _classPrivateFieldGet2(_cameraManager, this).toggleRecording;
     }
     get hasMicrophone() {
       return this.sensorTypes.includes("microphone");
@@ -26640,12 +26855,14 @@
     }));
     _assertClassBrand(_Device_brand, this, _sendTxMessages).call(this, messages);
   }
-  function _onConnectionStatusUpdated(connectionStatus) {
+  async function _onConnectionStatusUpdated(connectionStatus) {
     _console$3.log({
       connectionStatus
     });
     if (connectionStatus == "notConnected") {
       _assertClassBrand(_Device_brand, this, _clearConnection).call(this);
+      await this.stopRecordingCamera();
+      this.stopRecordingMicrophone();
       if (this.canReconnect && this.reconnectOnDisconnection) {
         _console$3.log("starting reconnect interval...");
         _classPrivateFieldSet2(_reconnectIntervalId, this, setInterval(() => {

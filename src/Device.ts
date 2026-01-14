@@ -725,7 +725,6 @@ class Device {
         { once: true }
       );
     }
-
     return this.connectionManager!.disconnect();
   }
 
@@ -763,11 +762,14 @@ class Device {
     );
   }
 
-  #onConnectionStatusUpdated(connectionStatus: ConnectionStatus) {
+  async #onConnectionStatusUpdated(connectionStatus: ConnectionStatus) {
     _console.log({ connectionStatus });
 
     if (connectionStatus == "notConnected") {
       this.#clearConnection();
+
+      await this.stopRecordingCamera();
+      this.stopRecordingMicrophone();
 
       if (this.canReconnect && this.reconnectOnDisconnection) {
         _console.log("starting reconnect interval...");
@@ -1432,7 +1434,7 @@ class Device {
     });
   }
 
-  // CAMERA MANAGER
+  // CAMERA
   #cameraManager = new CameraManager();
 
   private get _buildCameraData() {
@@ -1459,6 +1461,12 @@ class Device {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
     await this.#cameraManager.takePicture();
+  }
+  get autoPicture() {
+    return this.#cameraManager.autoPicture;
+  }
+  set autoPicture(newAutoPicture) {
+    this.#cameraManager.autoPicture = newAutoPicture;
   }
   async focusCamera(sensorRate?: number) {
     this.#assertHasCamera();
@@ -1498,6 +1506,19 @@ class Device {
 
   get setCameraConfiguration() {
     return this.#cameraManager.setCameraConfiguration;
+  }
+
+  get isRecordingCamera() {
+    return this.#cameraManager.isRecording;
+  }
+  get startRecordingCamera() {
+    return this.#cameraManager.startRecording;
+  }
+  get stopRecordingCamera() {
+    return this.#cameraManager.stopRecording;
+  }
+  get toggleCameraRecording() {
+    return this.#cameraManager.toggleRecording;
   }
 
   // MICROPHONE
