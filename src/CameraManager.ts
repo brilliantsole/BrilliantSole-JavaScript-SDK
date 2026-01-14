@@ -96,6 +96,8 @@ export const CameraEventTypes = [
   "cameraImageProgress",
   "cameraImage",
   "isRecordingCamera",
+  "startRecordingCamera",
+  "stopRecordingCamera",
   "cameraRecording",
   "autoPicture",
 ] as const;
@@ -128,6 +130,8 @@ export interface CameraEventMessages {
   autoPicture: {
     autoPicture: boolean;
   };
+  startRecordingCamera: {};
+  stopRecordingCamera: {};
 }
 
 export type CameraEventDispatcher = EventDispatcher<
@@ -378,9 +382,6 @@ class CameraManager {
     if (this.isRecording) {
       this.#cameraRecordingData!.push(cameraImage);
       if (isInBrowser) {
-        if (this.#recordingMediaRecorder?.state != "recording") {
-          this.#recordingMediaRecorder!.start();
-        }
         if (
           this.#recordingImage &&
           this.#recordingCanvasContext &&
@@ -651,7 +652,7 @@ class CameraManager {
   #recordingCanvasStream?: MediaStream;
   #recordingMediaRecorder?: MediaRecorder;
   #recordingChunks?: Blob[];
-  startRecording() {
+  startRecording(audioStream?: MediaStream) {
     if (!this.isRecordingAvailable) {
       _console.error("camera recording is not available");
       return;
@@ -666,22 +667,27 @@ class CameraManager {
       this.#recordingCanvasContext = this.#recordingCanvas.getContext("2d")!;
       this.#recordingImage = document.createElement("img");
       this.#recordingCanvasStream = this.#recordingCanvas.captureStream(30);
-      this.#recordingMediaRecorder = new MediaRecorder(
-        this.#recordingCanvasStream,
-        {
-          mimeType: "video/webm",
-        }
-      );
+      const mediaStream = audioStream
+        ? new MediaStream([
+            ...this.#recordingCanvasStream.getVideoTracks(),
+            ...audioStream.getAudioTracks(),
+          ])
+        : this.#recordingCanvasStream;
+      this.#recordingMediaRecorder = new MediaRecorder(mediaStream, {
+        mimeType: "video/webm; codecs=vp9,opus",
+      });
       this.#recordingChunks = [];
       this.#recordingMediaRecorder.ondataavailable = (e) => {
         _console.log("adding chunk", e.data);
         this.#recordingChunks!.push(e.data);
       };
+      this.#recordingMediaRecorder.start();
     }
     this.#isRecording = true;
     this.#dispatchEvent("isRecordingCamera", {
       isRecordingCamera: this.isRecording,
     });
+    this.#dispatchEvent("startRecordingCamera", {});
   }
   async stopRecording() {
     if (!this.isRecording) {
@@ -695,7 +701,7 @@ class CameraManager {
           this.#recordingMediaRecorder!.onstop = () => {
             _console.log("recordingMediaRecorder onstop");
             const blob = new Blob(this.#recordingChunks, {
-              type: "video/webm",
+              type: this.#recordingMediaRecorder?.mimeType,
             });
             const url = URL.createObjectURL(blob);
             this.#dispatchEvent("cameraRecording", {
@@ -784,12 +790,13 @@ class CameraManager {
     this.#dispatchEvent("isRecordingCamera", {
       isRecordingCamera: this.isRecording,
     });
+    this.#dispatchEvent("stopRecordingCamera", {});
   }
-  toggleRecording() {
+  toggleRecording(audioStream?: MediaStream) {
     if (this.isRecording) {
       this.stopRecording();
     } else {
-      this.startRecording();
+      this.startRecording(audioStream);
     }
   }
 

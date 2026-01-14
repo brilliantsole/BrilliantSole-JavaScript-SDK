@@ -852,17 +852,24 @@
           <img id="cameraImage" />
         </div>
       </div>
-    </div>
 
-    <div>
-      <b>recording</b>
-      <button disabled id="toggleCameraRecording">start recording</button>
-      <label>
-        auto play
-        <input type="checkbox" id="autoPlayCameraRecording" />
-      </label>
-      <br />
-      <video hidden loop muted controls id="cameraRecording"></video>
+      <div>
+        <b>recording</b>
+        <button disabled id="toggleCameraRecording">start recording</button>
+        <label>
+          auto play
+          <input type="checkbox" id="autoPlayCameraRecording" />
+        </label>
+        <label>
+          microphone
+          <select id="selectMicrophone">
+            <optgroup label="select microphone"></optgroup>
+          </select>
+        </label>
+        <audio id="microphoneAudio" controls hidden></audio>
+        <br />
+        <video hidden muted controls id="cameraRecording"></video>
+      </div>
     </div>
 
     <div id="microphone" hidden>

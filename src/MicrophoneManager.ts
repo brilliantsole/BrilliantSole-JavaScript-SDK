@@ -60,6 +60,8 @@ export const RequiredMicrophoneMessageTypes: MicrophoneMessageType[] = [
 export const MicrophoneEventTypes = [
   ...MicrophoneMessageTypes,
   "isRecordingMicrophone",
+  "startRecordingMicrophone",
+  "stopRecordingMicrophone",
   "microphoneRecording",
 ] as const;
 export type MicrophoneEventType = (typeof MicrophoneEventTypes)[number];
@@ -86,6 +88,8 @@ export interface MicrophoneEventMessages {
     blob: Blob;
     url: string;
   };
+  startRecordingMicrophone: {};
+  stopRecordingMicrophone: {};
 }
 
 export type MicrophoneEventDispatcher = EventDispatcher<
@@ -564,6 +568,7 @@ class MicrophoneManager {
     this.#dispatchEvent("isRecordingMicrophone", {
       isRecordingMicrophone: this.isRecording,
     });
+    this.#dispatchEvent("startRecordingMicrophone", {});
   }
   stopRecording() {
     if (!this.isRecording) {
@@ -597,6 +602,7 @@ class MicrophoneManager {
     this.#dispatchEvent("isRecordingMicrophone", {
       isRecordingMicrophone: this.isRecording,
     });
+    this.#dispatchEvent("stopRecordingMicrophone", {});
   }
   toggleRecording() {
     if (this.#isRecording) {

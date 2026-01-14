@@ -22,7 +22,7 @@ export type CameraConfigurationRanges = {
     };
 };
 export declare const RequiredCameraMessageTypes: CameraMessageType[];
-export declare const CameraEventTypes: readonly ["cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "cameraImageProgress", "cameraImage", "isRecordingCamera", "cameraRecording", "autoPicture"];
+export declare const CameraEventTypes: readonly ["cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "cameraImageProgress", "cameraImage", "isRecordingCamera", "startRecordingCamera", "stopRecordingCamera", "cameraRecording", "autoPicture"];
 export type CameraEventType = (typeof CameraEventTypes)[number];
 export interface CameraImage {
     blob: Blob;
@@ -56,6 +56,8 @@ export interface CameraEventMessages {
     autoPicture: {
         autoPicture: boolean;
     };
+    startRecordingCamera: {};
+    stopRecordingCamera: {};
 }
 export type CameraEventDispatcher = EventDispatcher<Device, CameraEventType, CameraEventMessages>;
 export type SendCameraMessageCallback = SendMessageCallback<CameraMessageType>;
@@ -64,7 +66,7 @@ declare class CameraManager {
     constructor();
     sendMessage: SendCameraMessageCallback;
     eventDispatcher: CameraEventDispatcher;
-    get waitForEvent(): <T extends "cameraImage" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "isRecordingCamera" | "cameraRecording" | "autoPicture">(type: T) => Promise<{
+    get waitForEvent(): <T extends "cameraImage" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "isRecordingCamera" | "startRecordingCamera" | "stopRecordingCamera" | "cameraRecording" | "autoPicture">(type: T) => Promise<{
         type: T;
         target: Device;
         message: CameraEventMessages[T];
@@ -85,9 +87,9 @@ declare class CameraManager {
     static AssertValidCameraConfigurationTypeEnum(cameraConfigurationTypeEnum: number): void;
     get isRecording(): boolean;
     get isRecordingAvailable(): boolean;
-    startRecording(): void;
+    startRecording(audioStream?: MediaStream): void;
     stopRecording(): Promise<void>;
-    toggleRecording(): void;
+    toggleRecording(audioStream?: MediaStream): void;
     get autoPicture(): boolean;
     set autoPicture(newAutoPicture: boolean);
     parseMessage(messageType: CameraMessageType, dataView: DataView<ArrayBuffer>): void;
