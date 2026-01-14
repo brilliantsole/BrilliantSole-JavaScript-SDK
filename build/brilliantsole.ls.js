@@ -1730,7 +1730,6 @@
         _classPrivateFieldSet2(_recordingCanvasContext, this, _classPrivateFieldGet2(_recordingCanvas, this).getContext("2d"));
         _classPrivateFieldSet2(_recordingImage, this, document.createElement("img"));
         _classPrivateFieldSet2(_recordingCanvasStream, this, _classPrivateFieldGet2(_recordingCanvas, this).captureStream(30));
-        console.log("audioStream", audioStream);
         const mediaStream = audioStream ? new MediaStream([..._classPrivateFieldGet2(_recordingCanvasStream, this).getVideoTracks(), ...audioStream.getAudioTracks()]) : _classPrivateFieldGet2(_recordingCanvasStream, this);
         _classPrivateFieldSet2(_recordingMediaRecorder, this, new MediaRecorder(mediaStream, {
           mimeType: "video/webm; codecs=vp9,opus"

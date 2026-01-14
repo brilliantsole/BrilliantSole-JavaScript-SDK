@@ -667,7 +667,6 @@ class CameraManager {
       this.#recordingCanvasContext = this.#recordingCanvas.getContext("2d")!;
       this.#recordingImage = document.createElement("img");
       this.#recordingCanvasStream = this.#recordingCanvas.captureStream(30);
-      console.log("audioStream", audioStream);
       const mediaStream = audioStream
         ? new MediaStream([
             ...this.#recordingCanvasStream.getVideoTracks(),
