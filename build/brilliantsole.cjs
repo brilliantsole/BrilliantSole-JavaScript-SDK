@@ -1654,11 +1654,13 @@ class CameraManager {
     #footerData;
     #footerProgress = 0;
     #didBuildImage = false;
-    async #buildImage() {
+    #buildImage() {
         _console$E.log("building image...");
         const now = Date.now();
+        const timestamp = this.#latestTakingPictureTimestamp;
         const imageData = concatenateArrayBuffers(this.#headerData, this.#imageData, this.#footerData);
         _console$E.log({ imageData });
+        this.#didBuildImage = true;
         let blob = new Blob([imageData], { type: "image/jpeg" });
         _console$E.log("created blob", blob);
         const url = URL.createObjectURL(blob);
@@ -1666,8 +1668,8 @@ class CameraManager {
         const cameraImage = {
             url,
             blob,
-            timestamp: this.#latestTakingPictureTimestamp,
-            latency: now - this.#latestTakingPictureTimestamp,
+            timestamp,
+            latency: now - timestamp,
             arrayBuffer: imageData,
         };
         this.#dispatchEvent("cameraImage", cameraImage);
@@ -1681,15 +1683,16 @@ class CameraManager {
                         this.#recordingImage.onload = () => resolve();
                     });
                     this.#recordingImage.src = cameraImage.url;
-                    await promise;
-                    const { width, height } = this.#recordingImage;
-                    if (this.#recordingCanvas.width != width) {
-                        this.#recordingCanvas.width = width;
-                    }
-                    if (this.#recordingCanvas.height != height) {
-                        this.#recordingCanvas.height = height;
-                    }
-                    this.#recordingCanvasContext.drawImage(this.#recordingImage, 0, 0, width, height);
+                    promise.then(() => {
+                        const { width, height } = this.#recordingImage;
+                        if (this.#recordingCanvas.width != width) {
+                            this.#recordingCanvas.width = width;
+                        }
+                        if (this.#recordingCanvas.height != height) {
+                            this.#recordingCanvas.height = height;
+                        }
+                        this.#recordingCanvasContext.drawImage(this.#recordingImage, 0, 0, width, height);
+                    });
                 }
                 else {
                     _console$E.error("camera recording failed - recording image/canvas/context not found");
@@ -1697,7 +1700,6 @@ class CameraManager {
                 }
             }
         }
-        this.#didBuildImage = true;
         if (this.autoPicture) {
             this.takePicture();
         }
