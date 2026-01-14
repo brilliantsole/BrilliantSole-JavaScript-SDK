@@ -1574,14 +1574,11 @@ device.addEventListener("cameraImageProgress", (event) => {
 
 /** @type {HTMLInputElement} */
 const autoPictureCheckbox = document.getElementById("autoPicture");
-let autoPicture = autoPictureCheckbox.checked;
 autoPictureCheckbox.addEventListener("input", () => {
-  autoPicture = autoPictureCheckbox.checked;
+  device.autoPicture = autoPictureCheckbox.checked;
 });
-device.addEventListener("cameraImage", () => {
-  if (autoPicture) {
-    device.takePicture();
-  }
+device.addEventListener("autoPicture", () => {
+  autoPictureCheckbox.checked = device.autoPicture;
 });
 
 /** @type {HTMLPreElement} */
@@ -1745,6 +1742,51 @@ device.addEventListener("getCameraConfiguration", () => {
   updateCameraWhiteBalanceInput();
 });
 
+/** @type {HTMLVideoElement} */
+const cameraRecordingVideoElement = document.getElementById("cameraRecording");
+/** @type {HTMLInputElement} */
+const autoPlayCameraRecordingCheckbox = document.getElementById(
+  "autoPlayCameraRecording"
+);
+let autoPlayCameraRecording = autoPlayCameraRecordingCheckbox.checked;
+autoPlayCameraRecordingCheckbox.addEventListener("input", () => {
+  autoPlayCameraRecording = autoPlayCameraRecordingCheckbox.checked;
+  console.log({ autoPlayCameraRecording });
+});
+device.addEventListener("cameraRecording", (event) => {
+  cameraRecordingVideoElement.src = event.message.url;
+  cameraRecordingVideoElement.removeAttribute("hidden");
+  if (autoPlayCameraRecording) {
+    cameraRecordingVideoElement.play();
+  }
+});
+
+/** @type {HTMLButtonElement} */
+const toggleCameraRecordingButton = document.getElementById(
+  "toggleCameraRecording"
+);
+toggleCameraRecordingButton.addEventListener("click", () => {
+  device.toggleCameraRecording();
+});
+device.addEventListener("connected", () => {
+  updateToggleCameraRecordingButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateToggleCameraRecordingButton();
+});
+const updateToggleCameraRecordingButton = () => {
+  let disabled = !device.isConnected || !device.hasCamera;
+
+  toggleCameraRecordingButton.innerText = device.isRecordingCamera
+    ? "stop recording"
+    : "start recording";
+
+  toggleCameraRecordingButton.disabled = disabled;
+};
+device.addEventListener("isRecordingCamera", () => {
+  updateToggleCameraRecordingButton();
+});
+
 // MICROPHONE
 
 /** @type {HTMLSpanElement} */
@@ -1889,7 +1931,9 @@ stopMicrophoneButton.addEventListener("click", () => {
   device.stopMicrophone();
 });
 /** @type {HTMLButtonElement} */
-const enableMicrophoneVadButton = document.getElementById("enableMicrphoneVad");
+const enableMicrophoneVadButton = document.getElementById(
+  "enableMicrophoneVad"
+);
 enableMicrophoneVadButton.addEventListener("click", () => {
   device.enableMicrophoneVad();
 });
@@ -1944,18 +1988,18 @@ const microphoneRecordingAudioElement = document.getElementById(
   "microphoneRecording"
 );
 /** @type {HTMLInputElement} */
-const autoPlayMicrphoneRecordingCheckbox = document.getElementById(
-  "autoPlayMicrphoneRecording"
+const autoPlayMicrophoneRecordingCheckbox = document.getElementById(
+  "autoPlayMicrophoneRecording"
 );
-let autoPlayMicrphoneRecording = autoPlayMicrphoneRecordingCheckbox.checked;
-console.log("autoPlayMicrphoneRecording", autoPlayMicrphoneRecording);
-autoPlayMicrphoneRecordingCheckbox.addEventListener("input", () => {
-  autoPlayMicrphoneRecording = autoPlayMicrphoneRecordingCheckbox.checked;
-  console.log({ autoPlayMicrphoneRecording });
+let autoPlayMicrophoneRecording = autoPlayMicrophoneRecordingCheckbox.checked;
+console.log("autoPlayMicrophoneRecording", autoPlayMicrophoneRecording);
+autoPlayMicrophoneRecordingCheckbox.addEventListener("input", () => {
+  autoPlayMicrophoneRecording = autoPlayMicrophoneRecordingCheckbox.checked;
+  console.log({ autoPlayMicrophoneRecording });
 });
 device.addEventListener("microphoneRecording", (event) => {
   microphoneRecordingAudioElement.src = event.message.url;
-  if (autoPlayMicrphoneRecording) {
+  if (autoPlayMicrophoneRecording) {
     microphoneRecordingAudioElement.play();
   }
 });

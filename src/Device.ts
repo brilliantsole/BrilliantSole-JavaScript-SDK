@@ -1432,7 +1432,7 @@ class Device {
     });
   }
 
-  // CAMERA MANAGER
+  // CAMERA
   #cameraManager = new CameraManager();
 
   private get _buildCameraData() {
@@ -1459,6 +1459,12 @@ class Device {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
     await this.#cameraManager.takePicture();
+  }
+  get autoPicture() {
+    return this.#cameraManager.autoPicture;
+  }
+  set autoPicture(newAutoPicture) {
+    this.#cameraManager.autoPicture = newAutoPicture;
   }
   async focusCamera(sensorRate?: number) {
     this.#assertHasCamera();
@@ -1498,6 +1504,19 @@ class Device {
 
   get setCameraConfiguration() {
     return this.#cameraManager.setCameraConfiguration;
+  }
+
+  get isRecordingCamera() {
+    return this.#cameraManager.isRecording;
+  }
+  startRecordingCamera() {
+    this.#cameraManager.startRecording();
+  }
+  stopRecordingCamera() {
+    this.#cameraManager.stopRecording();
+  }
+  toggleCameraRecording() {
+    this.#cameraManager.toggleRecording();
   }
 
   // MICROPHONE

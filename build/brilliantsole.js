@@ -1478,6 +1478,9 @@
 	    ...CameraMessageTypes,
 	    "cameraImageProgress",
 	    "cameraImage",
+	    "isRecordingCamera",
+	    "cameraRecording",
+	    "autoPicture",
 	];
 	class CameraManager {
 	    constructor() {
@@ -1507,6 +1510,7 @@
 	        const newCameraStatus = CameraStatuses[cameraStatusIndex];
 	        this.#updateCameraStatus(newCameraStatus);
 	    }
+	    #latestTakingPictureTimestamp = 0;
 	    #updateCameraStatus(newCameraStatus) {
 	        _console$A.assertEnumWithError(newCameraStatus, CameraStatuses);
 	        if (newCameraStatus == this.#cameraStatus) {
@@ -1520,6 +1524,9 @@
 	            cameraStatus: this.cameraStatus,
 	            previousCameraStatus,
 	        });
+	        if (this.cameraStatus == "takingPicture") {
+	            this.#latestTakingPictureTimestamp = Date.now();
+	        }
 	        if (this.#cameraStatus != "takingPicture" &&
 	            this.#imageProgress > 0 &&
 	            !this.#didBuildImage) {
@@ -1649,16 +1656,52 @@
 	    #footerData;
 	    #footerProgress = 0;
 	    #didBuildImage = false;
-	    #buildImage() {
+	    async #buildImage() {
 	        _console$A.log("building image...");
+	        const now = Date.now();
 	        const imageData = concatenateArrayBuffers(this.#headerData, this.#imageData, this.#footerData);
 	        _console$A.log({ imageData });
 	        let blob = new Blob([imageData], { type: "image/jpeg" });
 	        _console$A.log("created blob", blob);
 	        const url = URL.createObjectURL(blob);
 	        _console$A.log("created url", url);
-	        this.#dispatchEvent("cameraImage", { url, blob });
+	        const cameraImage = {
+	            url,
+	            blob,
+	            timestamp: this.#latestTakingPictureTimestamp,
+	            latency: now - this.#latestTakingPictureTimestamp,
+	        };
+	        this.#dispatchEvent("cameraImage", cameraImage);
+	        if (this.#isRecording) {
+	            this.#cameraRecordingData.push(cameraImage);
+	            if (isInBrowser) {
+	                if (this.#recordingImage &&
+	                    this.#recordingCanvasContext &&
+	                    this.#recordingCanvas) {
+	                    const promise = new Promise((resolve) => {
+	                        this.#recordingImage.onload = () => resolve();
+	                    });
+	                    this.#recordingImage.src = cameraImage.url;
+	                    await promise;
+	                    const { width, height } = this.#recordingImage;
+	                    if (this.#recordingCanvas.width != width) {
+	                        this.#recordingCanvas.width = width;
+	                    }
+	                    if (this.#recordingCanvas.height != height) {
+	                        this.#recordingCanvas.height = height;
+	                    }
+	                    this.#recordingCanvasContext.drawImage(this.#recordingImage, 0, 0, width, height);
+	                }
+	                else {
+	                    _console$A.error("camera recording failed - recording image/canvas/context not found");
+	                    this.stopRecording();
+	                }
+	            }
+	        }
 	        this.#didBuildImage = true;
+	        if (this.autoPicture) {
+	            this.takePicture();
+	        }
 	    }
 	    #buildHeaderCameraData() {
 	        if (this.#headerSize && this.#headerProgress == 1 && this.#headerData) {
@@ -1811,6 +1854,101 @@
 	        _console$A.log({ sensorConfigurationData: dataView });
 	        return dataView;
 	    }
+	    #isRecording = false;
+	    get isRecording() {
+	        return this.#isRecording;
+	    }
+	    #cameraRecordingData;
+	    get isRecordingAvailable() {
+	        return Boolean((isInBrowser && window.MediaRecorder) || isInNode);
+	    }
+	    #recordingCanvas;
+	    #recordingImage;
+	    #recordingCanvasContext;
+	    #recordingCanvasStream;
+	    #recordingMediaRecorder;
+	    #recordingChunks;
+	    startRecording() {
+	        if (!this.isRecordingAvailable) {
+	            _console$A.error("camera recording is not available");
+	            return;
+	        }
+	        if (this.isRecording) {
+	            _console$A.log("already recording camera");
+	            return;
+	        }
+	        this.#cameraRecordingData = [];
+	        if (isInBrowser) {
+	            this.#recordingCanvas = document.createElement("canvas");
+	            this.#recordingCanvasContext = this.#recordingCanvas.getContext("2d");
+	            this.#recordingImage = document.createElement("img");
+	            this.#recordingCanvasStream = this.#recordingCanvas.captureStream(30);
+	            this.#recordingMediaRecorder = new MediaRecorder(this.#recordingCanvasStream, {
+	                mimeType: "video/webm",
+	            });
+	            this.#recordingChunks = [];
+	            this.#recordingMediaRecorder.ondataavailable = (e) => {
+	                _console$A.log("adding chunk", e.data);
+	                this.#recordingChunks.push(e.data);
+	            };
+	            this.#recordingMediaRecorder.start();
+	        }
+	        this.#isRecording = true;
+	        this.#dispatchEvent("isRecordingCamera", {
+	            isRecordingCamera: this.isRecording,
+	        });
+	    }
+	    stopRecording() {
+	        if (!this.isRecording) {
+	            _console$A.log("already not recording");
+	            return;
+	        }
+	        if (this.#cameraRecordingData && this.#cameraRecordingData.length > 0) {
+	            const images = this.#cameraRecordingData;
+	            if (isInBrowser) {
+	                this.#recordingMediaRecorder.onstop = () => {
+	                    _console$A.log("recordingMediaRecorder onstop");
+	                    if (!images || images.length == 0) {
+	                        return;
+	                    }
+	                    const blob = new Blob(this.#recordingChunks, { type: "video/webm" });
+	                    const url = URL.createObjectURL(blob);
+	                    this.#dispatchEvent("cameraRecording", {
+	                        images,
+	                        configuration: structuredClone(this.cameraConfiguration),
+	                        blob,
+	                        url,
+	                    });
+	                };
+	                this.#recordingMediaRecorder?.stop();
+	            }
+	        }
+	        this.#isRecording = false;
+	        this.#cameraRecordingData = undefined;
+	        this.#dispatchEvent("isRecordingCamera", {
+	            isRecordingCamera: this.isRecording,
+	        });
+	    }
+	    toggleRecording() {
+	        if (this.#isRecording) {
+	            this.stopRecording();
+	        }
+	        else {
+	            this.startRecording();
+	        }
+	    }
+	    #autoPicture = false;
+	    get autoPicture() {
+	        return this.#autoPicture;
+	    }
+	    set autoPicture(newAutoPicture) {
+	        if (this.#autoPicture == newAutoPicture) {
+	            return;
+	        }
+	        this.#autoPicture = newAutoPicture;
+	        _console$A.log({ autoPicture: this.#autoPicture });
+	        this.#dispatchEvent("autoPicture", { autoPicture: this.autoPicture });
+	    }
 	    parseMessage(messageType, dataView) {
 	        _console$A.log({ messageType, dataView });
 	        switch (messageType) {
@@ -1830,9 +1968,14 @@
 	    }
 	    clear() {
 	        this.#cameraStatus = undefined;
+	        this.#cameraConfiguration = {};
 	        this.#headerProgress = 0;
 	        this.#imageProgress = 0;
 	        this.#footerProgress = 0;
+	        this.autoPicture = false;
+	        if (this.isRecording) {
+	            this.stopRecording();
+	        }
 	    }
 	}
 	_a$4 = CameraManager;
@@ -2361,7 +2504,7 @@
 	    #microphoneRecordingData;
 	    startRecording() {
 	        if (this.isRecording) {
-	            _console$z.log("already recording");
+	            _console$z.log("already recording microphone");
 	            return;
 	        }
 	        this.#microphoneRecordingData = [];
@@ -2385,8 +2528,7 @@
 	            const url = URL.createObjectURL(blob);
 	            this.#dispatchEvent("microphoneRecording", {
 	                samples,
-	                sampleRate: this.sampleRate,
-	                bitDepth: this.bitDepth,
+	                configuration: structuredClone(this.microphoneConfiguration),
 	                blob,
 	                url,
 	            });
@@ -27526,6 +27668,12 @@
 	        }
 	        await this.#cameraManager.takePicture();
 	    }
+	    get autoPicture() {
+	        return this.#cameraManager.autoPicture;
+	    }
+	    set autoPicture(newAutoPicture) {
+	        this.#cameraManager.autoPicture = newAutoPicture;
+	    }
 	    async focusCamera(sensorRate) {
 	        this.#assertHasCamera();
 	        if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
@@ -27560,6 +27708,18 @@
 	    }
 	    get setCameraConfiguration() {
 	        return this.#cameraManager.setCameraConfiguration;
+	    }
+	    get isRecordingCamera() {
+	        return this.#cameraManager.isRecording;
+	    }
+	    startRecordingCamera() {
+	        this.#cameraManager.startRecording();
+	    }
+	    stopRecordingCamera() {
+	        this.#cameraManager.stopRecording();
+	    }
+	    toggleCameraRecording() {
+	        this.#cameraManager.toggleRecording();
 	    }
 	    #microphoneManager = new MicrophoneManager();
 	    get hasMicrophone() {

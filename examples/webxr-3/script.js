@@ -258,14 +258,11 @@ const onDevice = () => {
 
   /** @type {HTMLInputElement} */
   const autoPictureCheckbox = document.getElementById("autoPicture");
-  let autoPicture = autoPictureCheckbox.checked;
   autoPictureCheckbox.addEventListener("input", () => {
-    autoPicture = autoPictureCheckbox.checked;
+    device.autoPicture = autoPictureCheckbox.checked;
   });
-  device.addEventListener("cameraImage", () => {
-    if (autoPicture) {
-      device.takePicture();
-    }
+  device.addEventListener("autoPicture", () => {
+    autoPictureCheckbox.checked = device.autoPicture;
   });
 
   /** @type {HTMLPreElement} */

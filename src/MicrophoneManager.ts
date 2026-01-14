@@ -82,8 +82,7 @@ export interface MicrophoneEventMessages {
   };
   microphoneRecording: {
     samples: Float32Array;
-    sampleRate: MicrophoneSampleRate;
-    bitDepth: MicrophoneBitDepth;
+    configuration: MicrophoneConfiguration;
     blob: Blob;
     url: string;
   };
@@ -557,7 +556,7 @@ class MicrophoneManager {
   #microphoneRecordingData?: Float32Array[];
   startRecording() {
     if (this.isRecording) {
-      _console.log("already recording");
+      _console.log("already recording microphone");
       return;
     }
     this.#microphoneRecordingData = [];
@@ -589,8 +588,7 @@ class MicrophoneManager {
       const url = URL.createObjectURL(blob);
       this.#dispatchEvent("microphoneRecording", {
         samples,
-        sampleRate: this.sampleRate!,
-        bitDepth: this.bitDepth!,
+        configuration: structuredClone(this.microphoneConfiguration),
         blob,
         url,
       });

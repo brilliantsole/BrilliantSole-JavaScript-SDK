@@ -819,6 +819,7 @@
       <button disabled id="focusCamera">focus camera</button>
       <br />
       <button disabled id="sleepCamera">sleep camera</button>
+      <br />
 
       <div style="display: flex; flex-direction: row">
         <div>
@@ -853,6 +854,17 @@
       </div>
     </div>
 
+    <div>
+      <b>recording</b>
+      <button disabled id="toggleCameraRecording">start recording</button>
+      <label>
+        auto play
+        <input type="checkbox" id="autoPlayCameraRecording" />
+      </label>
+      <br />
+      <video hidden muted controls id="cameraRecording"></video>
+    </div>
+
     <div id="microphone" hidden>
       <h2>microphone</h2>
 
@@ -866,7 +878,7 @@
       <button disabled hidden id="toggleMicrophone">start microphone</button>
       <button disabled id="startMicrophone">start microphone</button>
       <button disabled id="stopMicrophone">stop microphone</button>
-      <button disabled id="enableMicrphoneVad">
+      <button disabled id="enableMicrophoneVad">
         enable microphone voice activity detection
       </button>
       <br />
@@ -900,7 +912,7 @@
           <b>recording</b>
           <label>
             auto play
-            <input type="checkbox" id="autoPlayMicrphoneRecording" />
+            <input type="checkbox" id="autoPlayMicrophoneRecording" />
           </label>
           <br />
           <audio id="microphoneRecording" controls></audio>
