@@ -670,8 +670,8 @@ const updateMicrophoneSources = async () => {
       new Option(audioInputDevice.label, audioInputDevice.deviceId)
     );
   });
-  selectMicrophone.value = "none";
-  selectMicrophone(selectMicrophone.value);
+  selectMicrophoneSelect.value = "none";
+  selectMicrophone(selectMicrophoneSelect.value);
 };
 /** @type {MediaStream?} */
 let microphoneStream;

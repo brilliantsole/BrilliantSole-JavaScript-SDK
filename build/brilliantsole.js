@@ -1479,6 +1479,8 @@
 	    "cameraImageProgress",
 	    "cameraImage",
 	    "isRecordingCamera",
+	    "startRecordingCamera",
+	    "stopRecordingCamera",
 	    "cameraRecording",
 	    "autoPicture",
 	];
@@ -1676,9 +1678,6 @@
 	        if (this.isRecording) {
 	            this.#cameraRecordingData.push(cameraImage);
 	            if (isInBrowser) {
-	                if (this.#recordingMediaRecorder?.state != "recording") {
-	                    this.#recordingMediaRecorder.start();
-	                }
 	                if (this.#recordingImage &&
 	                    this.#recordingCanvasContext &&
 	                    this.#recordingCanvas) {
@@ -1872,7 +1871,7 @@
 	    #recordingCanvasStream;
 	    #recordingMediaRecorder;
 	    #recordingChunks;
-	    startRecording() {
+	    startRecording(audioStream) {
 	        if (!this.isRecordingAvailable) {
 	            _console$A.error("camera recording is not available");
 	            return;
@@ -1887,19 +1886,28 @@
 	            this.#recordingCanvasContext = this.#recordingCanvas.getContext("2d");
 	            this.#recordingImage = document.createElement("img");
 	            this.#recordingCanvasStream = this.#recordingCanvas.captureStream(30);
-	            this.#recordingMediaRecorder = new MediaRecorder(this.#recordingCanvasStream, {
-	                mimeType: "video/webm",
+	            console.log("audioStream", audioStream);
+	            const mediaStream = audioStream
+	                ? new MediaStream([
+	                    ...this.#recordingCanvasStream.getVideoTracks(),
+	                    ...audioStream.getAudioTracks(),
+	                ])
+	                : this.#recordingCanvasStream;
+	            this.#recordingMediaRecorder = new MediaRecorder(mediaStream, {
+	                mimeType: "video/webm; codecs=vp9,opus",
 	            });
 	            this.#recordingChunks = [];
 	            this.#recordingMediaRecorder.ondataavailable = (e) => {
 	                _console$A.log("adding chunk", e.data);
 	                this.#recordingChunks.push(e.data);
 	            };
+	            this.#recordingMediaRecorder.start();
 	        }
 	        this.#isRecording = true;
 	        this.#dispatchEvent("isRecordingCamera", {
 	            isRecordingCamera: this.isRecording,
 	        });
+	        this.#dispatchEvent("startRecordingCamera", {});
 	    }
 	    async stopRecording() {
 	        if (!this.isRecording) {
@@ -1913,7 +1921,7 @@
 	                    this.#recordingMediaRecorder.onstop = () => {
 	                        _console$A.log("recordingMediaRecorder onstop");
 	                        const blob = new Blob(this.#recordingChunks, {
-	                            type: "video/webm",
+	                            type: this.#recordingMediaRecorder?.mimeType,
 	                        });
 	                        const url = URL.createObjectURL(blob);
 	                        this.#dispatchEvent("cameraRecording", {
@@ -1995,13 +2003,14 @@
 	        this.#dispatchEvent("isRecordingCamera", {
 	            isRecordingCamera: this.isRecording,
 	        });
+	        this.#dispatchEvent("stopRecordingCamera", {});
 	    }
-	    toggleRecording() {
+	    toggleRecording(audioStream) {
 	        if (this.isRecording) {
 	            this.stopRecording();
 	        }
 	        else {
-	            this.startRecording();
+	            this.startRecording(audioStream);
 	        }
 	    }
 	    #autoPicture = false;
@@ -2250,6 +2259,8 @@
 	const MicrophoneEventTypes = [
 	    ...MicrophoneMessageTypes,
 	    "isRecordingMicrophone",
+	    "startRecordingMicrophone",
+	    "stopRecordingMicrophone",
 	    "microphoneRecording",
 	];
 	class MicrophoneManager {
@@ -2579,6 +2590,7 @@
 	        this.#dispatchEvent("isRecordingMicrophone", {
 	            isRecordingMicrophone: this.isRecording,
 	        });
+	        this.#dispatchEvent("startRecordingMicrophone", {});
 	    }
 	    stopRecording() {
 	        if (!this.isRecording) {
@@ -2604,6 +2616,7 @@
 	        this.#dispatchEvent("isRecordingMicrophone", {
 	            isRecordingMicrophone: this.isRecording,
 	        });
+	        this.#dispatchEvent("stopRecordingMicrophone", {});
 	    }
 	    toggleRecording() {
 	        if (this.#isRecording) {

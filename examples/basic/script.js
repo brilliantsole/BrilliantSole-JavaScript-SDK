@@ -1766,7 +1766,7 @@ const toggleCameraRecordingButton = document.getElementById(
   "toggleCameraRecording"
 );
 toggleCameraRecordingButton.addEventListener("click", () => {
-  device.toggleCameraRecording();
+  device.toggleCameraRecording(microphoneStream);
 });
 device.addEventListener("connected", () => {
   updateToggleCameraRecordingButton();
@@ -1785,6 +1785,85 @@ const updateToggleCameraRecordingButton = () => {
 };
 device.addEventListener("isRecordingCamera", () => {
   updateToggleCameraRecordingButton();
+});
+
+/** @type {HTMLSelectElement} */
+const selectMicrophoneSelect = document.getElementById("selectMicrophone");
+/** @type {HTMLOptGroupElement} */
+const selectMicrophoneOptgroup =
+  selectMicrophoneSelect.querySelector("optgroup");
+selectMicrophoneSelect.addEventListener("input", () => {
+  selectMicrophone(selectMicrophoneSelect.value);
+});
+
+selectMicrophoneSelect.addEventListener("click", async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const audioDevices = devices.filter((device) => device.kind == "audioinput");
+  console.log("audioDevices", audioDevices);
+  if (audioDevices.length == 1 && audioDevices[0].deviceId == "") {
+    console.log("getting audio");
+    const microphoneStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+    });
+    microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    updateMicrophoneSources();
+  }
+});
+const updateMicrophoneSources = async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const audioDevices = devices.filter((device) => device.kind == "audioinput");
+  selectMicrophoneOptgroup.innerHTML = "";
+  selectMicrophoneOptgroup.appendChild(new Option("none"));
+  audioDevices.forEach((audioInputDevice) => {
+    selectMicrophoneOptgroup.appendChild(
+      new Option(audioInputDevice.label, audioInputDevice.deviceId)
+    );
+  });
+  selectMicrophoneSelect.value = "none";
+  selectMicrophone(selectMicrophoneSelect.value);
+};
+/** @type {MediaStream?} */
+let microphoneStream;
+const selectMicrophone = async (deviceId) => {
+  stopMicrophoneStream();
+  if (deviceId == "none") {
+    microphoneAudio.setAttribute("hidden", "");
+  } else {
+    microphoneStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        deviceId: { exact: deviceId },
+        // noiseSuppression: false,
+        // echoCancellation: false,
+        // autoGainControl: false,
+      },
+    });
+    microphoneAudio.srcObject = microphoneStream;
+    microphoneAudio.removeAttribute("hidden");
+    console.log("got microphoneStream", deviceId, microphoneStream);
+  }
+};
+const stopMicrophoneStream = () => {
+  if (microphoneStream) {
+    console.log("stopping microphoneStream");
+    microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    microphoneStream = undefined;
+  }
+  microphoneAudio.srcObject = undefined;
+  microphoneAudio.setAttribute("hidden", "");
+};
+navigator.mediaDevices.addEventListener("devicechange", () =>
+  updateMicrophoneSources()
+);
+updateMicrophoneSources();
+
+/** @type {HTMLAudioElement} */
+const microphoneAudio = document.getElementById("microphoneAudio");
+let isMicrophoneLoaded = false;
+microphoneAudio.addEventListener("loadstart", () => {
+  isMicrophoneLoaded = true;
+});
+microphoneAudio.addEventListener("emptied", () => {
+  isMicrophoneLoaded = false;
 });
 
 // MICROPHONE

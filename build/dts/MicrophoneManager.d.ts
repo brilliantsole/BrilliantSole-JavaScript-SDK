@@ -23,7 +23,7 @@ export declare const MicrophoneConfigurationValues: {
     bitDepth: readonly ["8", "16"];
 };
 export declare const RequiredMicrophoneMessageTypes: MicrophoneMessageType[];
-export declare const MicrophoneEventTypes: readonly ["microphoneStatus", "microphoneCommand", "getMicrophoneConfiguration", "setMicrophoneConfiguration", "microphoneData", "isRecordingMicrophone", "microphoneRecording"];
+export declare const MicrophoneEventTypes: readonly ["microphoneStatus", "microphoneCommand", "getMicrophoneConfiguration", "setMicrophoneConfiguration", "microphoneData", "isRecordingMicrophone", "startRecordingMicrophone", "stopRecordingMicrophone", "microphoneRecording"];
 export type MicrophoneEventType = (typeof MicrophoneEventTypes)[number];
 export interface MicrophoneEventMessages {
     microphoneStatus: {
@@ -47,6 +47,8 @@ export interface MicrophoneEventMessages {
         blob: Blob;
         url: string;
     };
+    startRecordingMicrophone: {};
+    stopRecordingMicrophone: {};
 }
 export type MicrophoneEventDispatcher = EventDispatcher<Device, MicrophoneEventType, MicrophoneEventMessages>;
 export type SendMicrophoneMessageCallback = SendMessageCallback<MicrophoneMessageType>;
@@ -55,7 +57,7 @@ declare class MicrophoneManager {
     constructor();
     sendMessage: SendMicrophoneMessageCallback;
     eventDispatcher: MicrophoneEventDispatcher;
-    get waitForEvent(): <T extends "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording">(type: T) => Promise<{
+    get waitForEvent(): <T extends "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "startRecordingMicrophone" | "stopRecordingMicrophone" | "microphoneRecording">(type: T) => Promise<{
         type: T;
         target: Device;
         message: MicrophoneEventMessages[T];
