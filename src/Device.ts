@@ -725,7 +725,6 @@ class Device {
         { once: true }
       );
     }
-
     return this.connectionManager!.disconnect();
   }
 
@@ -763,11 +762,14 @@ class Device {
     );
   }
 
-  #onConnectionStatusUpdated(connectionStatus: ConnectionStatus) {
+  async #onConnectionStatusUpdated(connectionStatus: ConnectionStatus) {
     _console.log({ connectionStatus });
 
     if (connectionStatus == "notConnected") {
       this.#clearConnection();
+
+      await this.stopRecordingCamera();
+      this.stopRecordingMicrophone();
 
       if (this.canReconnect && this.reconnectOnDisconnection) {
         _console.log("starting reconnect interval...");
@@ -1509,14 +1511,14 @@ class Device {
   get isRecordingCamera() {
     return this.#cameraManager.isRecording;
   }
-  startRecordingCamera() {
-    this.#cameraManager.startRecording();
+  get startRecordingCamera() {
+    return this.#cameraManager.startRecording;
   }
-  stopRecordingCamera() {
-    this.#cameraManager.stopRecording();
+  get stopRecordingCamera() {
+    return this.#cameraManager.stopRecording;
   }
-  toggleCameraRecording() {
-    this.#cameraManager.toggleRecording();
+  get toggleCameraRecording() {
+    return this.#cameraManager.toggleRecording;
   }
 
   // MICROPHONE

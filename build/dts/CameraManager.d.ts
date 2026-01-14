@@ -27,6 +27,7 @@ export type CameraEventType = (typeof CameraEventTypes)[number];
 export interface CameraImage {
     blob: Blob;
     url: string;
+    arrayBuffer: ArrayBuffer;
     timestamp: number;
     latency: number;
 }
@@ -85,7 +86,7 @@ declare class CameraManager {
     get isRecording(): boolean;
     get isRecordingAvailable(): boolean;
     startRecording(): void;
-    stopRecording(): void;
+    stopRecording(): Promise<void>;
     toggleRecording(): void;
     get autoPicture(): boolean;
     set autoPicture(newAutoPicture: boolean);

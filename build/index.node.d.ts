@@ -970,6 +970,7 @@ type CameraConfigurationRanges = {
 interface CameraImage {
     blob: Blob;
     url: string;
+    arrayBuffer: ArrayBuffer;
     timestamp: number;
     latency: number;
 }
@@ -1609,9 +1610,9 @@ declare class Device {
     get cameraConfigurationRanges(): CameraConfigurationRanges;
     get setCameraConfiguration(): (newCameraConfiguration: CameraConfiguration) => Promise<void>;
     get isRecordingCamera(): boolean;
-    startRecordingCamera(): void;
-    stopRecordingCamera(): void;
-    toggleCameraRecording(): void;
+    get startRecordingCamera(): () => void;
+    get stopRecordingCamera(): () => Promise<void>;
+    get toggleCameraRecording(): () => void;
     get hasMicrophone(): boolean;
     get microphoneStatus(): "idle" | "vad" | "streaming";
     startMicrophone(sensorRate?: number): Promise<void>;

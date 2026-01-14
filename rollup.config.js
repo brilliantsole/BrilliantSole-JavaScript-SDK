@@ -96,6 +96,9 @@ const nodeExternal = [
   "fit-curve",
   "os",
   "alawmulaw",
+  "sharp",
+  "fs/promises",
+  "child_process",
 ];
 
 const lensStudioPlugins = [
