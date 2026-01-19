@@ -1665,7 +1665,7 @@
 	        const imageData = concatenateArrayBuffers(this.#headerData, this.#imageData, this.#footerData);
 	        _console$A.log({ imageData });
 	        this.#didBuildImage = true;
-	        let blob = new Blob([imageData], { type: "image/jpeg" });
+	        let blob = new Blob([imageData], { type: "image/jpg" });
 	        _console$A.log("created blob", blob);
 	        const url = URL.createObjectURL(blob);
 	        _console$A.log("created url", url);
@@ -2987,6 +2987,8 @@
 	    "linearAcceleration",
 	    "gyroscope",
 	    "magnetometer",
+	    "microphone",
+	    "camera",
 	];
 	class TfliteManager {
 	    constructor() {
@@ -32192,9 +32194,11 @@
 	exports.MaxVibrationWaveformSegmentDuration = MaxVibrationWaveformSegmentDuration;
 	exports.MaxWifiPasswordLength = MaxWifiPasswordLength;
 	exports.MaxWifiSSIDLength = MaxWifiSSIDLength;
+	exports.MicrophoneBitDepths = MicrophoneBitDepths;
 	exports.MicrophoneCommands = MicrophoneCommands;
 	exports.MicrophoneConfigurationTypes = MicrophoneConfigurationTypes;
 	exports.MicrophoneConfigurationValues = MicrophoneConfigurationValues;
+	exports.MicrophoneSampleRates = MicrophoneSampleRates;
 	exports.MinNameLength = MinNameLength;
 	exports.MinSpriteSheetNameLength = MinSpriteSheetNameLength;
 	exports.MinWifiPasswordLength = MinWifiPasswordLength;

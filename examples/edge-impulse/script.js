@@ -278,9 +278,9 @@ window.addEventListener("load", () => {
 
 // SENSOR TYPES
 
-/** @type {BS.ContinuousSensorType[]} */
+/** @type {BS.TfliteSensorType[]} */
 let sensorTypes = [];
-/** @param {BS.ContinuousSensorType[]} newSensorTypes */
+/** @param {BS.TfliteSensorType[]} newSensorTypes */
 function setSensorTypes(newSensorTypes) {
   sensorTypes = newSensorTypes;
   console.log("sensorTypes", sensorTypes);
@@ -294,7 +294,7 @@ const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 const sensorTypeContainers = {};
 
 const TfliteSensorTypes = BS.TfliteSensorTypes.slice();
-const includeAcceleration = true;
+const includeAcceleration = false;
 if (includeAcceleration) {
   // for testing with Frame
   TfliteSensorTypes.push("acceleration");
@@ -428,6 +428,9 @@ function setIsSampling(newIsSampling) {
   isSampling = newIsSampling;
   console.log({ isSampling });
   window.dispatchEvent(new Event("isSampling"));
+  if (isSampling) {
+    sendRemoteManagementMessage({ sampleStarted: true });
+  }
 }
 
 /** @type {HTMLButtonElement} */
@@ -461,7 +464,7 @@ device.addEventListener("isConnected", () => {
 });
 
 async function sampleAndUpload() {
-  /** @type {SensorConfiguration} */
+  /** @type {BS.SensorConfiguration} */
   const sensorConfiguration = {};
   sensorTypes.forEach((sensorType) => {
     sensorConfiguration[sensorType] = samplingInterval;
@@ -479,7 +482,7 @@ async function sampleAndUpload() {
   setIsSampling(false);
 
   sendRemoteManagementMessage?.({ sampleUploading: true });
-  await uploadData(sensorTypes, deviceData);
+  await uploadMotionData(sensorTypes, deviceData);
 }
 
 // EDGE IMPULSE API
@@ -597,6 +600,26 @@ async function getHmacKey() {
  * @property {string} sensor
  */
 
+/** @param {Blob} blob */
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      // reader.result is a data URL: "data:image/png;base64,...."
+      resolve(reader.result.split(",")[1]);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+/** @param {string} string */
+const lowercaseFirstLetter = (string) =>
+  string[0].toLowerCase() + string.slice(1);
+
+/** @type {SamplingDetails?} */
+let microphoneSamplingDetails;
+
 /** @type {WebSocket?} */
 let remoteManagementWebSocket;
 /** @type {(message: object)=>{}?} */
@@ -619,7 +642,7 @@ async function connectToRemoteManagement() {
     window.dispatchEvent(new Event("remoteManagementConnection"));
     sendRemoteManagementMessage(remoteManagementHelloMessage());
     intervalId = setInterval(() => {
-      console.log("ping");
+      //console.log("ping");
       ws.send("ping");
     }, 3000);
   });
@@ -641,7 +664,7 @@ async function connectToRemoteManagement() {
     window.dispatchEvent(new Event("remoteManagementConnection"));
   });
   ws.addEventListener("message", async (event) => {
-    console.log("remoteManagementWebSocket.message", event.data);
+    //console.log("remoteManagementWebSocket.message", event.data);
 
     const data = await parseRemoteManagementMessage(event);
     if (!data) {
@@ -664,11 +687,26 @@ async function connectToRemoteManagement() {
       const samplingDetails = data.sample;
       console.log("samplingDetails", samplingDetails);
 
-      /** @type {BS.ContinuousSensorType[]} */
-      const sensorTypes = samplingDetails.sensor.split(
-        sensorCombinationSeparator
-      );
-      console.log("sensorTypes", sensorTypes);
+      let cameraResolution;
+
+      /** @type {BS.TfliteSensorType[]} */
+      const sensorTypes = samplingDetails.sensor
+        .split(sensorCombinationSeparator)
+        .map((sensorType) => {
+          if (sensorType.startsWith("Camera")) {
+            cameraResolution = sensorType
+              .split(" ")[1]
+              ?.slice(1, -1)
+              ?.split("x")
+              ?.map(Number);
+            console.log("cameraResolution", cameraResolution);
+            return "camera";
+          } else if (sensorType.startsWith("Microphone")) {
+            return "microphone";
+          }
+          return sensorType;
+        });
+      console.log("samplingDetails sensorTypes", sensorTypes);
 
       const allowedTfliteSensorTypes = device.allowedTfliteSensorTypes;
       if (includeAcceleration) {
@@ -681,17 +719,39 @@ async function connectToRemoteManagement() {
         console.error("invalid sensorTypes", invalidSensors);
         return;
       }
-
-      const numberOfSamples = samplingDetails.length / samplingDetails.interval;
-      setNumberOfSamples(numberOfSamples);
       setSensorTypes(sensorTypes);
-      setSamplingInterval(samplingDetails.interval);
-      setSamplingLength(samplingDetails.length);
+
       setLabel(samplingDetails.label);
       setHmacKey(samplingDetails.hmacKey);
       setPath(samplingDetails.path);
 
-      sampleAndUpload();
+      const isCamera = sensorTypes.includes("camera");
+      const isMicrophone = sensorTypes.includes("microphone");
+      console.log({ isCamera, isMicrophone });
+
+      sendRemoteManagementMessage({ sample: true });
+
+      if (isCamera) {
+        setSamplingInterval(20);
+        await device.takePicture();
+      } else if (isMicrophone) {
+        microphoneSamplingDetails = samplingDetails;
+        setSamplingInterval(20);
+        /** @type {BS.MicrophoneSampleRate} */
+        const sampleRate = 1000 / samplingDetails.interval;
+        console.log({ sampleRate });
+        await device.setMicrophoneConfiguration({ sampleRate });
+        console.log("starting microphone...");
+        await device.startMicrophone();
+      } else {
+        const numberOfSamples =
+          samplingDetails.length / samplingDetails.interval;
+        setNumberOfSamples(numberOfSamples);
+        setSamplingInterval(samplingDetails.interval);
+        setSamplingLength(samplingDetails.length);
+
+        sampleAndUpload();
+      }
 
       // /** @type {SensorConfiguration} */
       // const sensorConfiguration = {};
@@ -716,9 +776,128 @@ async function connectToRemoteManagement() {
   });
 }
 
+device.addEventListener("cameraStatus", (event) => {
+  const { cameraStatus, previousCameraStatus } = event.message;
+  switch (cameraStatus) {
+    case "takingPicture":
+      setIsSampling(true);
+      break;
+    case "idle":
+      if (previousCameraStatus == "takingPicture") {
+        sendRemoteManagementMessage?.({ sampleFinished: true });
+        setIsSampling(false);
+      }
+      break;
+  }
+});
+let cropSquare = false;
+async function normalizeJpeg(blob) {
+  const img = await createImageBitmap(blob);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = cropSquare ? img.height : img.width;
+  canvas.height = img.height;
+
+  let x = 0;
+  if (cropSquare) {
+    x = (img.width - img.height) / 2;
+  }
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, -x, 0);
+
+  return await new Promise((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", 1)
+  );
+}
+device.addEventListener("cameraImage", async (event) => {
+  let { blob } = event.message;
+  blob = await normalizeJpeg(blob);
+  if (cropSquare) {
+    const url = URL.createObjectURL(blob);
+    cameraImage.src = url;
+  }
+
+  sendRemoteManagementMessage?.({ sampleFinished: true });
+  sendRemoteManagementMessage?.({ sampleUploading: true });
+  const imageString = await blobToBase64(blob);
+  sendRemoteManagementMessage?.({ snapshotFrame: imageString });
+
+  const form = new FormData();
+  form.append("data", blob, "image.jpg");
+
+  await fetch("https://ingestion.edgeimpulse.com/api/training/files", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "x-label": label,
+    },
+    body: form,
+  });
+});
+
+/**
+ * @param {Float32Array} float32Array
+ * @returns {Int16Array}
+ */
+function convertFloat32ToPCM(float32Array) {
+  const pcmArray = new Int16Array(float32Array.length);
+
+  for (let i = 0; i < float32Array.length; i++) {
+    const clampedValue = Math.max(-1, Math.min(1, float32Array[i]));
+
+    pcmArray[i] =
+      clampedValue < 0 ? clampedValue * 0x8000 : clampedValue * 0x7fff;
+  }
+
+  return pcmArray;
+}
+device.addEventListener("microphoneStatus", async (event) => {
+  // console.log("microphoneStatus", event.message);
+  const { microphoneStatus, previousMicrophoneStatus } = event.message;
+  switch (microphoneStatus) {
+    case "streaming":
+      setIsSampling(true);
+      if (microphoneSamplingDetails) {
+        device.startRecordingMicrophone();
+        await BS.wait(microphoneSamplingDetails.length);
+        device.stopRecordingMicrophone();
+        microphoneSamplingDetails = undefined;
+        await device.stopMicrophone();
+      }
+      break;
+    case "idle":
+      if (previousMicrophoneStatus == "streaming") {
+        sendRemoteManagementMessage?.({ sampleFinished: true });
+        setIsSampling(false);
+      }
+      break;
+  }
+});
+device.addEventListener("microphoneRecording", async (event) => {
+  // console.log("microphoneRecording", event.message);
+
+  const { blob } = event.message;
+
+  sendRemoteManagementMessage?.({ sampleFinished: true });
+  sendRemoteManagementMessage?.({ sampleUploading: true });
+
+  const form = new FormData();
+  form.append("data", blob, "sound.wav");
+
+  await fetch("https://ingestion.edgeimpulse.com/api/training/files", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "x-label": label,
+    },
+    body: form,
+  });
+});
+
 async function parseRemoteManagementMessage(event) {
   if (event.data instanceof Blob) {
-    return await readFile(event.data);
+    return await event.data.text();
   } else if (typeof event.data === "string") {
     if (event.data === "pong") return null;
     return JSON.parse(event.data);
@@ -761,7 +940,32 @@ function remoteManagementHelloMessage() {
   if (includeAcceleration) {
     allowedTfliteSensorTypes.push("acceleration");
   }
-  const sensorCombinations = generateSubarrays(allowedTfliteSensorTypes);
+  const sensorCombinations = generateSubarrays(
+    allowedTfliteSensorTypes.filter((sensorType) => {
+      switch (sensorType) {
+        case "camera":
+        case "microphone":
+        case "pressure":
+          return false;
+        default:
+          return true;
+      }
+    })
+  );
+  const singleTliteSensorTypes = allowedTfliteSensorTypes.filter(
+    (sensorType) => {
+      switch (sensorType) {
+        case "camera":
+        case "microphone":
+        case "pressure":
+          return true;
+        default:
+          return false;
+      }
+    }
+  );
+  sensorCombinations.push(...singleTliteSensorTypes);
+
   console.log("sensorCombinations", sensorCombinations);
   return {
     hello: {
@@ -771,13 +975,30 @@ function remoteManagementHelloMessage() {
       deviceType: "BrilliantSole",
       connection: "ip",
       sensors: sensorCombinations.map((sensorCombination) => {
-        return {
-          name: sensorCombination,
-          maxSampleLengthS: 1 * 60,
-          frequencies: [100.0, 50.0, 25.0, 12.5], // 10ms, 20ms, 40ms, 80ms
-        };
+        switch (sensorCombination) {
+          case "camera":
+            return {
+              name: "Camera",
+              frequencies: [],
+              maxSampleLengthS: 1 * 60,
+              units: "jpg",
+            };
+          case "microphone":
+            return {
+              name: "Microphone",
+              frequencies: BS.MicrophoneSampleRates,
+              maxSampleLengthS: 1 * 60,
+              units: "wav",
+            };
+          default:
+            return {
+              name: sensorCombination,
+              maxSampleLengthS: 1 * 60,
+              frequencies: [100.0, 50.0, 25.0, 12.5], // 10ms, 20ms, 40ms, 80ms
+            };
+        }
       }),
-      supportsSnapshotStreaming: false,
+      supportsSnapshotStreaming: true,
     },
   };
 }
@@ -860,7 +1081,7 @@ const scalars = {
 /** @typedef {Object.<string, SensorData[]>} DeviceData */
 
 /**
- * @param {BS.ContinuousSensorType[]} sensorTypes
+ * @param {BS.TfliteSensorType[]} sensorTypes
  * @param {number} numberOfSamples
  * @returns {Promise<DeviceData>}
  */
@@ -876,7 +1097,7 @@ async function collectData(sensorTypes, numberOfSamples) {
     console.log("deviceData", deviceData);
 
     const onDeviceSensorData = (event) => {
-      /** @type {SensorType} */
+      /** @type {BS.TfliteSensorType} */
       const sensorType = event.message.sensorType;
 
       if (!(sensorType in deviceData)) {
@@ -912,10 +1133,10 @@ async function collectData(sensorTypes, numberOfSamples) {
 const emptySignature = Array(64).fill("0").join("");
 
 /**
- * @param {BS.ContinuousSensorType[]} sensorTypes
+ * @param {BS.TfliteSensorType[]} sensorTypes
  * @param {DeviceData} deviceData
  */
-async function uploadData(sensorTypes, deviceData) {
+async function uploadMotionData(sensorTypes, deviceData) {
   const sensors = sensorTypes.flatMap((sensorType) => {
     let names = [];
     let units;
@@ -995,8 +1216,16 @@ async function uploadData(sensorTypes, deviceData) {
     values.push(value);
   }
 
-  console.log("values", values);
+  uploadData(values, sensors);
+}
 
+/**
+ * @param {number[]} values
+ * @param {{name: string, units: string}[]} sensors
+ * @returns
+ */
+async function uploadData(values, sensors) {
+  console.log("values", values);
   const data = {
     protected: {
       ver: "v1",
@@ -1139,4 +1368,558 @@ Object.keys(config).forEach((type) => {
     };
     saveConfigToLocalStorage();
   });
+});
+
+// CAMERA
+const cameraContainer = document.getElementById("camera");
+device.addEventListener("connected", () => {
+  if (!device.hasCamera) {
+    cameraContainer.setAttribute("hidden", "");
+  } else {
+    cameraContainer.removeAttribute("hidden");
+  }
+});
+/** @type {HTMLSpanElement} */
+const isCameraAvailableSpan = document.getElementById("isCameraAvailable");
+device.addEventListener("connected", () => {
+  isCameraAvailableSpan.innerText = device.hasCamera;
+});
+
+/** @type {HTMLSpanElement} */
+const cameraStatusSpan = document.getElementById("cameraStatus");
+device.addEventListener("cameraStatus", () => {
+  cameraStatusSpan.innerText = device.cameraStatus;
+});
+
+/** @type {HTMLButtonElement} */
+const takePictureButton = document.getElementById("takePicture");
+takePictureButton.addEventListener("click", () => {
+  if (device.cameraStatus == "idle") {
+    device.takePicture();
+  } else {
+    device.stopCamera();
+  }
+});
+device.addEventListener("connected", () => {
+  updateTakePictureButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateTakePictureButton();
+});
+const updateTakePictureButton = () => {
+  takePictureButton.disabled = !device.isConnected;
+  // device.sensorConfiguration.camera == 0 ||
+  // device.cameraStatus != "idle";
+};
+device.addEventListener("cameraStatus", () => {
+  updateTakePictureButton();
+});
+
+/** @type {HTMLButtonElement} */
+const focusCameraButton = document.getElementById("focusCamera");
+focusCameraButton.addEventListener("click", () => {
+  if (device.cameraStatus == "idle") {
+    device.focusCamera();
+  } else {
+    device.stopCamera();
+  }
+});
+device.addEventListener("connected", () => {
+  updateFocusCameraButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateFocusCameraButton();
+});
+const updateFocusCameraButton = () => {
+  focusCameraButton.disabled =
+    !device.isConnected ||
+    //device.sensorConfiguration.camera == 0 ||
+    device.cameraStatus != "idle";
+};
+device.addEventListener("cameraStatus", (event) => {
+  updateFocusCameraButton();
+  if (
+    device.cameraStatus == "idle" &&
+    event.message.previousCameraStatus == "focusing"
+  ) {
+    device.takePicture();
+  }
+});
+
+/** @type {HTMLButtonElement} */
+const sleepCameraButton = document.getElementById("sleepCamera");
+sleepCameraButton.addEventListener("click", () => {
+  if (device.cameraStatus == "asleep") {
+    device.wakeCamera();
+  } else {
+    device.sleepCamera();
+  }
+});
+device.addEventListener("connected", () => {
+  updateSleepCameraButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateSleepCameraButton();
+});
+const updateSleepCameraButton = () => {
+  let disabled = !device.isConnected || !device.hasCamera;
+  switch (device.cameraStatus) {
+    case "asleep":
+      sleepCameraButton.innerText = "wake camera";
+      break;
+    case "idle":
+      sleepCameraButton.innerText = "sleep camera";
+      break;
+    default:
+      disabled = true;
+      break;
+  }
+  sleepCameraButton.disabled = disabled;
+};
+device.addEventListener("cameraStatus", () => {
+  updateSleepCameraButton();
+});
+
+/** @type {HTMLImageElement} */
+const cameraImage = document.getElementById("cameraImage");
+device.addEventListener("cameraImage", (event) => {
+  if (!cropSquare) {
+    cameraImage.src = event.message.url;
+  }
+});
+
+/** @type {HTMLProgressElement} */
+const cameraImageProgress = document.getElementById("cameraImageProgress");
+device.addEventListener("cameraImageProgress", (event) => {
+  if (event.message.type == "image") {
+    cameraImageProgress.value = event.message.progress;
+  }
+});
+
+/** @type {HTMLInputElement} */
+const autoPictureCheckbox = document.getElementById("autoPicture");
+autoPictureCheckbox.addEventListener("input", () => {
+  device.autoPicture = autoPictureCheckbox.checked;
+});
+device.addEventListener("autoPicture", () => {
+  autoPictureCheckbox.checked = device.autoPicture;
+});
+
+/** @type {HTMLPreElement} */
+const cameraConfigurationPre = document.getElementById(
+  "cameraConfigurationPre"
+);
+device.addEventListener("getCameraConfiguration", () => {
+  cameraConfigurationPre.textContent = JSON.stringify(
+    device.cameraConfiguration,
+    null,
+    2
+  );
+});
+
+const cameraConfigurationContainer = document.getElementById(
+  "cameraConfiguration"
+);
+/** @type {HTMLTemplateElement} */
+const cameraConfigurationTypeTemplate = document.getElementById(
+  "cameraConfigurationTypeTemplate"
+);
+BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
+  const cameraConfigurationTypeContainer =
+    cameraConfigurationTypeTemplate.content
+      .cloneNode(true)
+      .querySelector(".cameraConfigurationType");
+
+  cameraConfigurationContainer.appendChild(cameraConfigurationTypeContainer);
+
+  cameraConfigurationTypeContainer.querySelector(".type").innerText =
+    cameraConfigurationType;
+
+  /** @type {HTMLInputElement} */
+  const input = cameraConfigurationTypeContainer.querySelector("input");
+
+  /** @type {HTMLSpanElement} */
+  const span = cameraConfigurationTypeContainer.querySelector("span");
+
+  device.addEventListener("isConnected", () => {
+    updateIsInputDisabled();
+  });
+  device.addEventListener("connected", () => {
+    updateContainerVisibility();
+  });
+  device.addEventListener("cameraStatus", () => {
+    updateIsInputDisabled();
+  });
+  const updateIsInputDisabled = () => {
+    input.disabled =
+      !device.isConnected || !device.hasCamera || device.cameraStatus != "idle";
+  };
+
+  const updateContainerVisibility = () => {
+    const isVisible = cameraConfigurationType in device.cameraConfiguration;
+    cameraConfigurationTypeContainer.style.display = isVisible ? "" : "none";
+  };
+  const updateInput = () => {
+    const value = device.cameraConfiguration[cameraConfigurationType];
+    span.innerText = value;
+    input.value = value;
+  };
+
+  device.addEventListener("connected", () => {
+    if (!device.hasCamera) {
+      return;
+    }
+    const range = device.cameraConfigurationRanges[cameraConfigurationType];
+    input.min = range.min;
+    input.max = range.max;
+
+    updateInput();
+  });
+
+  device.addEventListener("getCameraConfiguration", () => {
+    updateInput();
+  });
+
+  input.addEventListener("change", () => {
+    const value = Number(input.value);
+    // console.log(`updating ${cameraConfigurationType} to ${value}`);
+    device.setCameraConfiguration({
+      [cameraConfigurationType]: value,
+    });
+    if (takePictureAfterUpdate) {
+      device.addEventListener(
+        "getCameraConfiguration",
+        () => {
+          setTimeout(() => device.takePicture()), 100;
+        },
+        { once: true }
+      );
+    }
+  });
+});
+
+/** @type {HTMLInputElement} */
+const takePictureAfterUpdateCheckbox = document.getElementById(
+  "takePictureAfterUpdate"
+);
+let takePictureAfterUpdate = false;
+takePictureAfterUpdateCheckbox.addEventListener("input", () => {
+  takePictureAfterUpdate = takePictureAfterUpdateCheckbox.checked;
+  console.log({ takePictureAfterUpdate });
+});
+
+/** @type {HTMLInputElement} */
+const cameraWhiteBalanceInput = document.getElementById("cameraWhiteBalance");
+const updateWhiteBalance = BS.ThrottleUtils.throttle(
+  (config) => {
+    if (device.cameraStatus != "idle") {
+      return;
+    }
+
+    device.setCameraConfiguration(config);
+
+    if (takePictureAfterUpdate) {
+      device.addEventListener(
+        "getCameraConfiguration",
+        () => {
+          setTimeout(() => device.takePicture()), 100;
+        },
+        { once: true }
+      );
+    }
+  },
+  200,
+  true
+);
+cameraWhiteBalanceInput.addEventListener("input", () => {
+  let [redGain, greenGain, blueGain] = cameraWhiteBalanceInput.value
+    .replace("#", "")
+    .match(/.{1,2}/g)
+    .map((value) => Number(`0x${value}`))
+    .map((value) => value / 255)
+    .map((value) => value * device.cameraConfigurationRanges.blueGain.max)
+    .map((value) => Math.round(value));
+
+  updateWhiteBalance({ redGain, greenGain, blueGain });
+});
+const updateCameraWhiteBalanceInput = () => {
+  if (!device.hasCamera) {
+    return;
+  }
+  cameraWhiteBalanceInput.disabled =
+    !device.isConnected || !device.hasCamera || device.cameraStatus != "idle";
+
+  const { redGain, blueGain, greenGain } = device.cameraConfiguration;
+  const cameraWhiteBalanceHex = `#${[redGain, blueGain, greenGain]
+    .map((value) => value / device.cameraConfigurationRanges.redGain.max)
+    .map((value) => value * 255)
+    .map((value) => Math.round(value))
+    .map((value) => value.toString(16).padStart(2, "0"))
+    .join("")}`;
+  console.log({ cameraWhiteBalanceHex });
+  cameraWhiteBalanceInput.value = cameraWhiteBalanceHex;
+};
+device.addEventListener("connected", () => {
+  updateCameraWhiteBalanceInput();
+});
+device.addEventListener("getCameraConfiguration", () => {
+  updateCameraWhiteBalanceInput();
+});
+
+// MICROPHONE
+const microphoneContainer = document.getElementById("microphone");
+device.addEventListener("connected", () => {
+  if (!device.hasMicrophone) {
+    microphoneContainer.setAttribute("hidden", "");
+  } else {
+    microphoneContainer.removeAttribute("hidden");
+  }
+});
+
+/** @type {HTMLSpanElement} */
+const isMicrophoneAvailableSpan = document.getElementById(
+  "isMicrophoneAvailable"
+);
+device.addEventListener("connected", () => {
+  isMicrophoneAvailableSpan.innerText = device.hasMicrophone;
+});
+
+/** @type {HTMLSpanElement} */
+const microphoneStatusSpan = document.getElementById("microphoneStatus");
+device.addEventListener("microphoneStatus", () => {
+  microphoneStatusSpan.innerText = device.microphoneStatus;
+});
+
+/** @type {HTMLPreElement} */
+const microphoneConfigurationPre = document.getElementById(
+  "microphoneConfigurationPre"
+);
+device.addEventListener("getMicrophoneConfiguration", () => {
+  microphoneConfigurationPre.textContent = JSON.stringify(
+    device.microphoneConfiguration,
+    null,
+    2
+  );
+});
+
+const microphoneConfigurationContainer = document.getElementById(
+  "microphoneConfiguration"
+);
+/** @type {HTMLTemplateElement} */
+const microphoneConfigurationTypeTemplate = document.getElementById(
+  "microphoneConfigurationTypeTemplate"
+);
+BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
+  const microphoneConfigurationTypeContainer =
+    microphoneConfigurationTypeTemplate.content
+      .cloneNode(true)
+      .querySelector(".microphoneConfigurationType");
+
+  microphoneConfigurationContainer.appendChild(
+    microphoneConfigurationTypeContainer
+  );
+
+  microphoneConfigurationTypeContainer.querySelector(".type").innerText =
+    microphoneConfigurationType;
+
+  /** @type {HTMLSelectElement} */
+  const select = microphoneConfigurationTypeContainer.querySelector("select");
+  /** @type {HTMLOptGroupElement} */
+  const optgroup = select.querySelector("optgroup");
+  optgroup.label = microphoneConfigurationType;
+
+  BS.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
+    (value) => {
+      optgroup.appendChild(new Option(value));
+    }
+  );
+
+  /** @type {HTMLSpanElement} */
+  const span = microphoneConfigurationTypeContainer.querySelector("span");
+
+  device.addEventListener("isConnected", () => {
+    updateisInputDisabled();
+  });
+  device.addEventListener("microphoneStatus", () => {
+    updateisInputDisabled();
+  });
+  const updateisInputDisabled = () => {
+    select.disabled =
+      !device.isConnected ||
+      !device.hasMicrophone ||
+      device.microphoneStatus != "idle";
+  };
+
+  const updateSelect = () => {
+    const value = device.microphoneConfiguration[microphoneConfigurationType];
+    span.innerText = value;
+    select.value = value;
+  };
+
+  device.addEventListener("connected", () => {
+    if (!device.hasMicrophone) {
+      return;
+    }
+    updateSelect();
+  });
+
+  device.addEventListener("getMicrophoneConfiguration", () => {
+    updateSelect();
+  });
+
+  select.addEventListener("input", () => {
+    const value = select.value;
+    // console.log(`updating ${microphoneConfigurationType} to ${value}`);
+    device.setMicrophoneConfiguration({
+      [microphoneConfigurationType]: value,
+    });
+  });
+});
+
+/** @type {HTMLButtonElement} */
+const toggleMicrophoneButton = document.getElementById("toggleMicrophone");
+toggleMicrophoneButton.addEventListener("click", () => {
+  device.toggleMicrophone();
+});
+device.addEventListener("connected", () => {
+  updateToggleMicrophoneButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateToggleMicrophoneButton();
+});
+const updateToggleMicrophoneButton = () => {
+  let disabled =
+    !device.isConnected ||
+    device.sensorConfiguration.microphone == 0 ||
+    !device.hasMicrophone;
+
+  switch (device.microphoneStatus) {
+    case "streaming":
+      toggleMicrophoneButton.innerText = "stop microphone";
+      break;
+    case "idle":
+      toggleMicrophoneButton.innerText = "start microphone";
+      break;
+  }
+  toggleMicrophoneButton.disabled = disabled;
+};
+device.addEventListener("microphoneStatus", () => {
+  updateToggleMicrophoneButton();
+});
+
+/** @type {HTMLButtonElement} */
+const startMicrophoneButton = document.getElementById("startMicrophone");
+startMicrophoneButton.addEventListener("click", () => {
+  device.startMicrophone();
+});
+/** @type {HTMLButtonElement} */
+const stopMicrophoneButton = document.getElementById("stopMicrophone");
+stopMicrophoneButton.addEventListener("click", () => {
+  device.stopMicrophone();
+});
+/** @type {HTMLButtonElement} */
+const enableMicrophoneVadButton = document.getElementById(
+  "enableMicrophoneVad"
+);
+enableMicrophoneVadButton.addEventListener("click", () => {
+  device.enableMicrophoneVad();
+});
+
+const updateMicrophoneButtons = () => {
+  let disabled = !device.isConnected || !device.hasMicrophone;
+
+  startMicrophoneButton.disabled =
+    disabled || device.microphoneStatus == "streaming";
+  stopMicrophoneButton.disabled = disabled || device.microphoneStatus == "idle";
+  enableMicrophoneVadButton.disabled =
+    disabled || device.microphoneStatus == "vad";
+};
+device.addEventListener("microphoneStatus", () => {
+  updateMicrophoneButtons();
+});
+device.addEventListener("connected", () => {
+  updateMicrophoneButtons();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateMicrophoneButtons();
+});
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+  sampleRate: 16_000,
+  latencyHint: "interactive",
+});
+const checkAudioContextState = () => {
+  const { state } = audioContext;
+  console.log({ audioContextState: state });
+  if (state != "running") {
+    document.addEventListener("click", () => audioContext.resume(), {
+      once: true,
+    });
+  }
+};
+audioContext.addEventListener("statechange", () => {
+  checkAudioContextState();
+});
+checkAudioContextState();
+
+device.audioContext = audioContext;
+
+/** @type {HTMLAudioElement} */
+const microphoneStreamAudioElement =
+  document.getElementById("microphoneStream");
+microphoneStreamAudioElement.srcObject =
+  device.microphoneMediaStreamDestination.stream;
+
+/** @type {HTMLAudioElement} */
+const microphoneRecordingAudioElement = document.getElementById(
+  "microphoneRecording"
+);
+/** @type {HTMLInputElement} */
+const autoPlayMicrophoneRecordingCheckbox = document.getElementById(
+  "autoPlayMicrophoneRecording"
+);
+let autoPlayMicrophoneRecording = autoPlayMicrophoneRecordingCheckbox.checked;
+console.log("autoPlayMicrophoneRecording", autoPlayMicrophoneRecording);
+autoPlayMicrophoneRecordingCheckbox.addEventListener("input", () => {
+  autoPlayMicrophoneRecording = autoPlayMicrophoneRecordingCheckbox.checked;
+  console.log({ autoPlayMicrophoneRecording });
+});
+device.addEventListener("microphoneRecording", (event) => {
+  microphoneRecordingAudioElement.src = event.message.url;
+  if (autoPlayMicrophoneRecording) {
+    microphoneRecordingAudioElement.play();
+  }
+});
+
+/** @type {HTMLButtonElement} */
+const toggleMicrophoneRecordingButton = document.getElementById(
+  "toggleMicrophoneRecording"
+);
+toggleMicrophoneRecordingButton.addEventListener("click", () => {
+  device.toggleMicrophoneRecording();
+});
+device.addEventListener("connected", () => {
+  updateToggleMicrophoneRecordingButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateToggleMicrophoneRecordingButton();
+});
+const updateToggleMicrophoneRecordingButton = () => {
+  let disabled =
+    !device.isConnected ||
+    device.sensorConfiguration.microphone == 0 ||
+    !device.hasMicrophone ||
+    device.microphoneStatus != "streaming";
+
+  toggleMicrophoneRecordingButton.innerText = device.isRecordingMicrophone
+    ? "stop recording"
+    : "start recording";
+
+  toggleMicrophoneRecordingButton.disabled = disabled;
+};
+device.addEventListener("isRecordingMicrophone", () => {
+  updateToggleMicrophoneRecordingButton();
+});
+device.addEventListener("microphoneStatus", () => {
+  updateToggleMicrophoneRecordingButton();
 });

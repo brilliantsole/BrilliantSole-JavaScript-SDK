@@ -1241,7 +1241,7 @@ class Device {
   get allowedTfliteSensorTypes() {
     return this.sensorTypes.filter((sensorType) =>
       TfliteSensorTypes.includes(sensorType as TfliteSensorType)
-    );
+    ) as TfliteSensorType[];
   }
   get setTfliteSensorTypes() {
     return this.#tfliteManager.setSensorTypes;

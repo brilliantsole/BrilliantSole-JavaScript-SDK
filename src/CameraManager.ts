@@ -370,7 +370,7 @@ class CameraManager {
     _console.log({ imageData });
     this.#didBuildImage = true;
 
-    let blob = new Blob([imageData], { type: "image/jpeg" });
+    let blob = new Blob([imageData], { type: "image/jpg" });
     _console.log("created blob", blob);
 
     const url = URL.createObjectURL(blob);

@@ -168,6 +168,10 @@ import {
   MicrophoneConfigurationType,
   MicrophoneConfigurationTypes,
   MicrophoneConfigurationValues,
+  MicrophoneBitDepth,
+  MicrophoneBitDepths,
+  MicrophoneSampleRate,
+  MicrophoneSampleRates,
 } from "./MicrophoneManager.ts";
 export {
   MicrophoneConfiguration,
@@ -176,6 +180,10 @@ export {
   MicrophoneConfigurationType,
   MicrophoneConfigurationTypes,
   MicrophoneConfigurationValues,
+  MicrophoneBitDepth,
+  MicrophoneBitDepths,
+  MicrophoneSampleRate,
+  MicrophoneSampleRates,
 };
 
 import {

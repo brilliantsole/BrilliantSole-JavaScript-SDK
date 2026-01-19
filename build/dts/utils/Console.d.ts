@@ -25,7 +25,7 @@ declare class Console {
     /** @throws {Error} if value's type doesn't match */
     assertTypeWithError(value: any, type: string): void;
     /** @throws {Error} if value's type doesn't match */
-    assertEnumWithError(value: string, enumeration: readonly string[]): void;
+    assertEnumWithError<T extends string | number>(value: T, enumeration: readonly T[]): void;
     /** @throws {Error} if value is not within some range */
     assertRangeWithError(name: string, value: number, min: number, max: number): void;
 }

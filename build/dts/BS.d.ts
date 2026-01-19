@@ -32,8 +32,8 @@ import { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, TfliteFil
 export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, TfliteFileConfiguration, };
 import { CameraConfiguration, CameraCommand, CameraCommands, CameraConfigurationType, CameraConfigurationTypes } from "./CameraManager.ts";
 export { CameraConfiguration, CameraCommand, CameraCommands, CameraConfigurationType, CameraConfigurationTypes, };
-import { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues } from "./MicrophoneManager.ts";
-export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, };
+import { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneBitDepth, MicrophoneBitDepths, MicrophoneSampleRate, MicrophoneSampleRates } from "./MicrophoneManager.ts";
+export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneBitDepth, MicrophoneBitDepths, MicrophoneSampleRate, MicrophoneSampleRates, };
 import { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, MinSpriteSheetNameLength, MaxSpriteSheetNameLength, DisplayBitmap, DisplaySpriteColorPair, DisplayWireframeEdge, DisplayWireframe, DisplayBezierCurveType, DisplayBezierCurveTypes } from "./DisplayManager.ts";
 export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, MinSpriteSheetNameLength, MaxSpriteSheetNameLength, DisplayBitmap, DisplaySpriteColorPair, DisplayWireframeEdge, DisplayWireframe, DisplayBezierCurveType, DisplayBezierCurveTypes, };
 import { wait, Timer } from "./utils/Timer.ts";

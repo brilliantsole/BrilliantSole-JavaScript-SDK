@@ -5,10 +5,49 @@
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
     <script type="module" src="./script.js"></script>
   </head>
+
   <style>
     .column {
       display: flex;
       flex-direction: column;
+    }
+    label {
+      display: block;
+    }
+    div {
+      margin-top: 1rem;
+    }
+    ul,
+    ol {
+      margin-top: 0;
+      list-style: none;
+    }
+    .hidden {
+      display: none;
+    }
+    .flexColorsContainer {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .flexColorsContainer > * {
+      /* flex: 0 0 120px; */
+      margin-right: 10px;
+    }
+    #bitmap canvas {
+      width: 200px;
+      height: 200px;
+      background-color: black;
+    }
+    #bitmap img {
+      width: 200px;
+      height: 200px;
+      background-color: black;
+      image-rendering: pixelated;
+    }
+
+    #topInferenceClass {
+      font-size: 72px;
+      font-weight: bolder;
     }
   </style>
   <body>
@@ -82,6 +121,7 @@
     <div class="column">
       <label>path <input id="path" type="text" readonly /></label>
       <label>label <input id="label" type="text" /></label>
+
       <label>
         interval (ms)
         <input
@@ -113,5 +153,113 @@
 
     <button id="getHmacKey" disabled>get hmacKey</button>
     <button id="toggleSampling" disabled>start sampling</button>
+
+    <div id="camera" hidden>
+      <h3>camera</h3>
+
+      <label>
+        <b>is camera available?</b>
+        <span id="isCameraAvailable"></span>
+      </label>
+
+      <label><b>status:</b> <span id="cameraStatus"></span></label>
+
+      <label>auto picture: <input type="checkbox" id="autoPicture" /> </label>
+
+      <button disabled id="takePicture">take picture</button>
+      <progress value="0" id="cameraImageProgress"></progress>
+      <br />
+      <button disabled id="focusCamera">focus camera</button>
+      <br />
+      <button disabled id="sleepCamera">sleep camera</button>
+      <br />
+
+      <div style="display: flex; flex-direction: row">
+        <div>
+          <label>
+            <b>camera configuration: </b>
+            <pre id="cameraConfigurationPre"></pre>
+          </label>
+          <br />
+
+          <label>
+            take picture after update?
+            <input type="checkbox" id="takePictureAfterUpdate" />
+          </label>
+
+          <div id="cameraConfiguration">
+            <template id="cameraConfigurationTypeTemplate">
+              <label class="cameraConfigurationType">
+                <b class="type"></b> <span></span>
+                <br />
+                <input class="value" type="range" value="" disabled />
+              </label>
+            </template>
+          </div>
+          <label>
+            <b>white balance</b>
+            <input type="color" id="cameraWhiteBalance" disabled />
+          </label>
+        </div>
+        <div>
+          <img id="cameraImage" />
+        </div>
+      </div>
+    </div>
+
+    <div id="microphone" hidden>
+      <h3>Microphone</h3>
+
+      <label>
+        <b>is microphone available?</b>
+        <span id="isMicrophoneAvailable"></span>
+      </label>
+
+      <label><b>status:</b> <span id="microphoneStatus"></span></label>
+
+      <button disabled hidden id="toggleMicrophone">start microphone</button>
+      <button disabled id="startMicrophone">start microphone</button>
+      <button disabled id="stopMicrophone">stop microphone</button>
+      <button disabled id="enableMicrophoneVad">
+        enable microphone voice activity detection
+      </button>
+      <br />
+      <button disabled id="toggleMicrophoneRecording">start recording</button>
+
+      <div>
+        <label>
+          <b>microphone configuration: </b>
+          <pre id="microphoneConfigurationPre"></pre>
+        </label>
+        <br />
+
+        <div id="microphoneConfiguration">
+          <template id="microphoneConfigurationTypeTemplate">
+            <label class="microphoneConfigurationType">
+              <b class="type"></b> <span hidden></span>
+              <select disabled>
+                <optgroup></optgroup>
+              </select>
+            </label>
+          </template>
+        </div>
+
+        <div>
+          <b>stream</b>
+          <br />
+          <audio id="microphoneStream" controls autoplay></audio>
+        </div>
+
+        <div>
+          <b>recording</b>
+          <label>
+            auto play
+            <input type="checkbox" id="autoPlayMicrophoneRecording" />
+          </label>
+          <br />
+          <audio id="microphoneRecording" controls></audio>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

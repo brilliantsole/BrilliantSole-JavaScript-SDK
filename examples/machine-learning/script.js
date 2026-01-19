@@ -25,7 +25,9 @@ function vibrate(effect) {
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
-const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
+const availableDeviceTemplate = document.getElementById(
+  "availableDeviceTemplate"
+);
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
@@ -34,12 +36,17 @@ function onAvailableDevices(availableDevices) {
     availableDevicesContainer.innerText = "no devices available";
   } else {
     availableDevices.forEach((availableDevice) => {
-      let availableDeviceContainer = availableDeviceTemplate.content.cloneNode(true).querySelector(".availableDevice");
-      availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
-      availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
+      let availableDeviceContainer = availableDeviceTemplate.content
+        .cloneNode(true)
+        .querySelector(".availableDevice");
+      availableDeviceContainer.querySelector(".name").innerText =
+        availableDevice.name;
+      availableDeviceContainer.querySelector(".type").innerText =
+        availableDevice.type;
 
       /** @type {HTMLButtonElement} */
-      const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+      const toggleConnectionButton =
+        availableDeviceContainer.querySelector(".toggleConnection");
       toggleConnectionButton.addEventListener("click", () => {
         availableDevice.toggleConnection();
       });
@@ -51,7 +58,9 @@ function onAvailableDevices(availableDevices) {
           case "connected":
           case "notConnected":
             toggleConnectionButton.disabled = false;
-            toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
+            toggleConnectionButton.innerText = availableDevice.isConnected
+              ? "disconnect"
+              : "connect";
             break;
           case "connecting":
           case "disconnecting":
@@ -60,7 +69,9 @@ function onAvailableDevices(availableDevices) {
             break;
         }
       };
-      availableDevice.addEventListener("connectionStatus", () => onConnectionStatusUpdate());
+      availableDevice.addEventListener("connectionStatus", () =>
+        onConnectionStatusUpdate()
+      );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
@@ -96,17 +107,22 @@ window.addEventListener("createNeuralNetwork", () => {
 
 const connectedDevicesContainer = document.getElementById("connectedDevices");
 /** @type {HTMLTemplateElement} */
-const connectedDeviceTemplate = document.getElementById("connectedDeviceTemplate");
+const connectedDeviceTemplate = document.getElementById(
+  "connectedDeviceTemplate"
+);
 
 BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
   const { device } = event.message;
   console.log("deviceConnected", device);
-  const connectedDeviceContainer = connectedDeviceTemplate.content.cloneNode(true).querySelector(".connectedDevice");
+  const connectedDeviceContainer = connectedDeviceTemplate.content
+    .cloneNode(true)
+    .querySelector(".connectedDevice");
   connectedDeviceContainer.querySelector(".name").innerText = device.name;
   connectedDeviceContainer.querySelector(".type").innerText = device.type;
 
   /** @type {HTMLButtonElement} */
-  const disconnectButton = connectedDeviceContainer.querySelector(".disconnect");
+  const disconnectButton =
+    connectedDeviceContainer.querySelector(".disconnect");
   disconnectButton.addEventListener("click", () => {
     disconnectButton.innerText = "disconnecting...";
     disconnectButton.disabled = true;
@@ -117,7 +133,8 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
   });
 
   /** @type {HTMLButtonElement} */
-  const toggleSelectonButton = connectedDeviceContainer.querySelector(".toggleSelection");
+  const toggleSelectonButton =
+    connectedDeviceContainer.querySelector(".toggleSelection");
   toggleSelectonButton.addEventListener("click", () => {
     toggleSelectonButton.disabled = true;
     toggleDeviceSelection(device);
@@ -129,7 +146,9 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
     if (device != event.detail.device) {
       return;
     }
-    toggleSelectonButton.innerText = isDeviceSelected(device) ? "deselect" : "select";
+    toggleSelectonButton.innerText = isDeviceSelected(device)
+      ? "deselect"
+      : "select";
     toggleSelectonButton.disabled = false;
   });
 
@@ -144,7 +163,9 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
 
 const selectedDevicesContainer = document.getElementById("selectedDevices");
 /** @type {HTMLTemplateElement} */
-const selectedDeviceTemplate = document.getElementById("selectedDeviceTemplate");
+const selectedDeviceTemplate = document.getElementById(
+  "selectedDeviceTemplate"
+);
 
 /** @type {Object.<string, HTMLElement>} */
 const selectedDeviceContainers = {};
@@ -166,16 +187,25 @@ function selectDevice(device) {
 
   let selectedDeviceContainer = selectedDeviceContainers[device.id];
   if (!selectedDeviceContainer) {
-    selectedDeviceContainer = selectedDeviceTemplate.content.cloneNode(true).querySelector(".selectedDevice");
+    selectedDeviceContainer = selectedDeviceTemplate.content
+      .cloneNode(true)
+      .querySelector(".selectedDevice");
 
     selectedDeviceContainer.querySelector(".name").innerText = device.name;
     selectedDeviceContainer.querySelector(".type").innerText = device.type;
-    selectedDeviceContainer.querySelector(".index").innerText = selectedDevices.indexOf(device);
+    selectedDeviceContainer.querySelector(".index").innerText =
+      selectedDevices.indexOf(device);
 
     /** @type {HTMLPreElement} */
-    const sensorConfigurationPre = selectedDeviceContainer.querySelector("pre.sensorConfiguration");
+    const sensorConfigurationPre = selectedDeviceContainer.querySelector(
+      "pre.sensorConfiguration"
+    );
     const updateSensorConfigurationPre = () => {
-      sensorConfigurationPre.textContent = JSON.stringify(device.sensorConfiguration, null, 2);
+      sensorConfigurationPre.textContent = JSON.stringify(
+        device.sensorConfiguration,
+        null,
+        2
+      );
     };
     device.addEventListener("getSensorConfiguration", () => {
       updateSensorConfigurationPre();
@@ -196,7 +226,9 @@ function selectDevice(device) {
 
   selectedDevicesContainer.appendChild(selectedDeviceContainer);
 
-  window.dispatchEvent(new CustomEvent("deviceSelection", { detail: { device } }));
+  window.dispatchEvent(
+    new CustomEvent("deviceSelection", { detail: { device } })
+  );
 }
 
 /** @param {BS.Device} device */
@@ -214,7 +246,9 @@ function deselectDevice(device) {
   }
   selectedDeviceContainer.remove();
 
-  window.dispatchEvent(new CustomEvent("deviceSelection", { detail: { device } }));
+  window.dispatchEvent(
+    new CustomEvent("deviceSelection", { detail: { device } })
+  );
 }
 
 /** @param {BS.Device} device */
@@ -264,7 +298,11 @@ function getInputs() {
   sensorTypes.forEach((sensorType) => {
     switch (sensorType) {
       case "pressure":
-        for (let index = 0; index < BS.DefaultNumberOfPressureSensors; index++) {
+        for (
+          let index = 0;
+          index < BS.DefaultNumberOfPressureSensors;
+          index++
+        ) {
           _inputs.push(`${sensorType}.${index}`);
         }
         break;
@@ -307,7 +345,9 @@ const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 const sensorTypeContainers = {};
 
 BS.TfliteSensorTypes.forEach((sensorType) => {
-  const sensorTypeContainer = sensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
+  const sensorTypeContainer = sensorTypeTemplate.content
+    .cloneNode(true)
+    .querySelector(".sensorType");
   sensorTypeContainer.querySelector(".name").innerText = sensorType;
 
   /** @type {HTMLInputElement} */
@@ -318,9 +358,15 @@ BS.TfliteSensorTypes.forEach((sensorType) => {
     } else {
       sensorTypes.splice(sensorTypes.indexOf(sensorType), 1);
     }
-    sensorTypes.sort((a, b) => BS.ContinuousSensorTypes.indexOf(a) - BS.ContinuousSensorTypes.indexOf(b));
+    sensorTypes.sort(
+      (a, b) =>
+        BS.ContinuousSensorTypes.indexOf(a) -
+        BS.ContinuousSensorTypes.indexOf(b)
+    );
     console.log("sensorTypes", sensorTypes);
-    window.dispatchEvent(new CustomEvent("sensorTypes", { detail: { sensorTypes } }));
+    window.dispatchEvent(
+      new CustomEvent("sensorTypes", { detail: { sensorTypes } })
+    );
   });
 
   window.addEventListener("createNeuralNetwork", () => {
@@ -363,7 +409,9 @@ function updateOutputLabels() {
   outputLabels = updatedOutputsLabels;
   console.log({ outputLabels });
 
-  window.dispatchEvent(new CustomEvent("outputLabels", { detail: { outputLabels } }));
+  window.dispatchEvent(
+    new CustomEvent("outputLabels", { detail: { outputLabels } })
+  );
 }
 
 function getOutputValues() {
@@ -411,7 +459,9 @@ function setNumberOfOutputs(newNumberOfOutputs) {
 
   while (outputContainers.length < numberOfOutputs) {
     /** @type {HTMLElement} */
-    const outputContainer = outputTemplate.content.cloneNode(true).querySelector(".output");
+    const outputContainer = outputTemplate.content
+      .cloneNode(true)
+      .querySelector(".output");
 
     const index = outputContainers.length;
     outputContainer.setAttribute("order", index);
@@ -451,7 +501,9 @@ function setNumberOfOutputs(newNumberOfOutputs) {
     }
   });
 
-  window.dispatchEvent(new CustomEvent("numberOfOutputs", { detail: { numberOfOutputs } }));
+  window.dispatchEvent(
+    new CustomEvent("numberOfOutputs", { detail: { numberOfOutputs } })
+  );
 
   updateOutputLabels();
 }
@@ -485,7 +537,9 @@ const numberOfSamplesInput = document.getElementById("numberOfSamples");
 numberOfSamplesInput.addEventListener("input", () => {
   numberOfSamples = Number(numberOfSamplesInput.value);
   //console.log({ numberOfSamples });
-  window.dispatchEvent(new CustomEvent("numberOfSamples", { detail: { numberOfSamples } }));
+  window.dispatchEvent(
+    new CustomEvent("numberOfSamples", { detail: { numberOfSamples } })
+  );
   updateSamplingPeriod();
 });
 numberOfSamples = Number(numberOfSamplesInput.value);
@@ -500,7 +554,9 @@ samplingRateInput.addEventListener("input", () => {
   samplingRate = Number(samplingRateInput.value);
   //console.log({ samplingRate });
   samplingPeriodInput.step = samplingRate;
-  window.dispatchEvent(new CustomEvent("samplingRate", { detail: { samplingRate } }));
+  window.dispatchEvent(
+    new CustomEvent("samplingRate", { detail: { samplingRate } })
+  );
   updateSamplingPeriod();
 });
 samplingRate = Number(samplingRateInput.value);
@@ -532,7 +588,9 @@ const hiddenUnitsInput = document.getElementById("hiddenUnits");
 hiddenUnitsInput.addEventListener("input", () => {
   hiddenUnits = Number(hiddenUnitsInput.value);
   console.log({ hiddenUnits });
-  window.dispatchEvent(new CustomEvent("hiddenUnits", { detail: { hiddenUnits } }));
+  window.dispatchEvent(
+    new CustomEvent("hiddenUnits", { detail: { hiddenUnits } })
+  );
 });
 hiddenUnitsInput.dispatchEvent(new Event("input"));
 
@@ -541,7 +599,9 @@ const learningRateInput = document.getElementById("learningRate");
 learningRateInput.addEventListener("input", () => {
   learningRate = Number(learningRateInput.value);
   console.log({ learningRate });
-  window.dispatchEvent(new CustomEvent("learningRate", { detail: { learningRate } }));
+  window.dispatchEvent(
+    new CustomEvent("learningRate", { detail: { learningRate } })
+  );
 });
 learningRateInput.dispatchEvent(new Event("input"));
 
@@ -574,14 +634,22 @@ function checkIfCanCreateNeuralNetwork() {
   createNeuralNetworkButton.disabled = !canCreateNeuralNetwork();
 }
 
-["task", "sensorTypes", "outputLabels", "deviceSelection", "createNeuralNetwork"].forEach((eventType) => {
+[
+  "task",
+  "sensorTypes",
+  "outputLabels",
+  "deviceSelection",
+  "createNeuralNetwork",
+].forEach((eventType) => {
   window.addEventListener(eventType, () => {
     checkIfCanCreateNeuralNetwork();
   });
 });
 
 /** @type {HTMLButtonElement} */
-const createNeuralNetworkButton = document.getElementById("createNeuralNetwork");
+const createNeuralNetworkButton = document.getElementById(
+  "createNeuralNetwork"
+);
 createNeuralNetworkButton.addEventListener("click", () => {
   if (!canCreateNeuralNetwork()) {
     return;
@@ -596,7 +664,9 @@ createNeuralNetworkButton.addEventListener("click", () => {
   });
   console.log({ neuralNetwork });
   window.neuralNetwork = neuralNetwork;
-  window.dispatchEvent(new CustomEvent("createNeuralNetwork", { detail: { neuralNetwork } }));
+  window.dispatchEvent(
+    new CustomEvent("createNeuralNetwork", { detail: { neuralNetwork } })
+  );
 });
 
 window.addEventListener("createNeuralNetwork", () => {
@@ -627,7 +697,11 @@ toggleSensorDataInputs.forEach((toggleSensorDataInput) => {
     } else {
       clearSensorConfiguration();
     }
-    window.dispatchEvent(new CustomEvent("isSensorDataEnabled", { detail: { isSensorDataEnabled } }));
+    window.dispatchEvent(
+      new CustomEvent("isSensorDataEnabled", {
+        detail: { isSensorDataEnabled },
+      })
+    );
   });
 
   window.addEventListener("createNeuralNetwork", () => {
@@ -656,7 +730,8 @@ addDataButton.addEventListener("click", () => {
   addData();
 });
 const updateAddDataButton = () => {
-  addDataButton.disabled = !isSensorDataEnabled || isTraining || neuralNetwork.neuralNetwork.isTrained;
+  addDataButton.disabled =
+    !isSensorDataEnabled || isTraining || neuralNetwork.neuralNetwork.isTrained;
 };
 ["isSensorDataEnabled", "training"].forEach((eventType) => {
   window.addEventListener(eventType, () => {
@@ -667,7 +742,9 @@ const updateAddDataButton = () => {
 let addDataContinuously = false;
 
 /** @type {HTMLButtonElement} */
-const toggleAddDataContinuouslyInput = document.getElementById("toggleAddDataContinuously");
+const toggleAddDataContinuouslyInput = document.getElementById(
+  "toggleAddDataContinuously"
+);
 toggleAddDataContinuouslyInput.addEventListener("input", () => {
   addDataContinuously = toggleAddDataContinuouslyInput.checked;
   console.log({ addDataContinuously });
@@ -701,7 +778,9 @@ async function addData() {
 
 /** @param {BS.DeviceData} deviceData */
 function didFinishCollectingDeviceData(deviceData) {
-  return Object.values(deviceData).every((sensorData) => sensorData.length >= numberOfSamples);
+  return Object.values(deviceData).every(
+    (sensorData) => sensorData.length >= numberOfSamples
+  );
 }
 /** @param {BS.DevicesData} devicesData */
 function didFinishCollectingDevicesData(devicesData) {
@@ -745,7 +824,9 @@ function flattenDeviceData(deviceData) {
             const vector3 = sensorData;
             const { x, y, z } = vector3;
 
-            flattenedDeviceData.push(...[x, y, z].map((value) => value * scalar));
+            flattenedDeviceData.push(
+              ...[x, y, z].map((value) => value * scalar)
+            );
           }
           break;
         case "gameRotation":
@@ -754,14 +835,18 @@ function flattenDeviceData(deviceData) {
             /** @type {BS.Quaternion} */
             const quaternion = sensorData;
             const { x, y, z, w } = quaternion;
-            flattenedDeviceData.push(...[x, y, z, w].map((value) => value * scalar));
+            flattenedDeviceData.push(
+              ...[x, y, z, w].map((value) => value * scalar)
+            );
           }
           break;
         case "pressure":
           {
             /** @type {BS.PressureData} */
             const pressure = sensorData;
-            flattenedDeviceData.push(...pressure.sensors.map((sensor) => sensor.rawValue * scalar));
+            flattenedDeviceData.push(
+              ...pressure.sensors.map((sensor) => sensor.rawValue * scalar)
+            );
           }
           break;
         case "barometer":
@@ -772,7 +857,9 @@ function flattenDeviceData(deviceData) {
       }
     });
   }
-  return flattenedDeviceData.map((value) => (value == 0 ? 0.000001 * Math.random() : value));
+  return flattenedDeviceData.map((value) =>
+    value == 0 ? 0.000001 * Math.random() : value
+  );
 }
 
 /** @returns {Promise<number[]>} */
@@ -814,7 +901,9 @@ async function collectData() {
         }
 
         if (deviceData[sensorType].length == numberOfSamples) {
-          console.log(`finished collecting ${sensorType} data for device #${index}`);
+          console.log(
+            `finished collecting ${sensorType} data for device #${index}`
+          );
           return;
         }
 
@@ -880,7 +969,9 @@ let thresholdsEnabled = true;
 function setThresholdsEnabled(newThresholdsEnabled) {
   thresholdsEnabled = newThresholdsEnabled;
   console.log({ thresholdsEnabled });
-  window.dispatchEvent(new CustomEvent("thresholdsEnabled", { detail: { thresholdsEnabled } }));
+  window.dispatchEvent(
+    new CustomEvent("thresholdsEnabled", { detail: { thresholdsEnabled } })
+  );
 }
 window.addEventListener("loadConfig", () => {
   toggleThresholdsInput.checked = config.thresholdsEnabled;
@@ -901,7 +992,9 @@ captureDelayInput.addEventListener("input", () => {
   captureDelay = Number(captureDelayInput.value);
   console.log({ captureDelay });
   throttledOnThresholdReached.interval = captureDelay;
-  window.dispatchEvent(new CustomEvent("captureDelay", { detail: { captureDelay } }));
+  window.dispatchEvent(
+    new CustomEvent("captureDelay", { detail: { captureDelay } })
+  );
 });
 captureDelayInput.dispatchEvent(new Event("input"));
 window.addEventListener("loadConfig", () => {
@@ -918,7 +1011,9 @@ const thresholdTemplate = document.getElementById("thresholdTemplate");
 const thresholdContainers = {};
 
 thresholdSensorTypes.forEach((sensorType) => {
-  const thresholdContainer = thresholdTemplate.content.cloneNode(true).querySelector(".threshold");
+  const thresholdContainer = thresholdTemplate.content
+    .cloneNode(true)
+    .querySelector(".threshold");
 
   thresholdContainer.querySelector(".sensorType").innerText = sensorType;
 
@@ -926,7 +1021,11 @@ thresholdSensorTypes.forEach((sensorType) => {
   const meterElement = thresholdContainer.querySelector(".meter");
 
   const dispatchEvent = () =>
-    window.dispatchEvent(new CustomEvent("threshold", { detail: { sensorType, enabled, threshold } }));
+    window.dispatchEvent(
+      new CustomEvent("threshold", {
+        detail: { sensorType, enabled, threshold },
+      })
+    );
 
   let enabled = false;
   /** @type {HTMLInputElement} */
@@ -990,7 +1089,8 @@ thresholdSensorTypes.forEach((sensorType) => {
   window.addEventListener("thresholdsEnabled", () => {
     toggleThresholdInput.disabled = !thresholdsEnabled;
 
-    const disabled = toggleThresholdInput.disabled || !toggleThresholdInput.checked;
+    const disabled =
+      toggleThresholdInput.disabled || !toggleThresholdInput.checked;
     thresholdInput.disabled = disabled;
     meterElement.disabled = disabled;
   });
@@ -1031,7 +1131,9 @@ const identityQuaternion = new THREE.Quaternion();
 /** @param {BS.Vector3} euler */
 function getEulerMagnitude(euler) {
   const { x, y, z } = euler;
-  thresholdEuler.set(...[x, y, z].map((value) => THREE.MathUtils.degToRad(value)));
+  thresholdEuler.set(
+    ...[x, y, z].map((value) => THREE.MathUtils.degToRad(value))
+  );
   thresholdQuaternion.setFromEuler(thresholdEuler);
   return thresholdQuaternion.angleTo(identityQuaternion);
 }
@@ -1063,7 +1165,9 @@ window.addEventListener(
           default:
             throw Error(`uncaught sensorType ${sensorType}`);
         }
-        window.dispatchEvent(new CustomEvent(`threshold.${sensorType}`, { detail: { value } }));
+        window.dispatchEvent(
+          new CustomEvent(`threshold.${sensorType}`, { detail: { value } })
+        );
       });
     }
   },
@@ -1166,7 +1270,9 @@ window.addEventListener("finishedTraining", () => {
 
 let testContinuously = false;
 /** @type {HTMLInputElement} */
-const toggleTestContinuouslyInput = document.getElementById("toggleTestContinuously");
+const toggleTestContinuouslyInput = document.getElementById(
+  "toggleTestContinuously"
+);
 toggleTestContinuouslyInput.addEventListener("input", () => {
   testContinuously = toggleTestContinuouslyInput.checked;
   console.log({ testContinuously });
@@ -1184,14 +1290,19 @@ testButton.addEventListener("click", () => {
   test();
 });
 const updateTestButton = () => {
-  const enabled = neuralNetwork?.neuralNetwork?.isTrained && isSensorDataEnabled && !isTesting;
+  const enabled =
+    neuralNetwork?.neuralNetwork?.isTrained &&
+    isSensorDataEnabled &&
+    !isTesting;
   testButton.disabled = !enabled;
 };
-["training", "loadModel", "finishedTraining", "isSensorDataEnabled"].forEach((eventType) => {
-  window.addEventListener(eventType, () => {
-    updateTestButton();
-  });
-});
+["training", "loadModel", "finishedTraining", "isSensorDataEnabled"].forEach(
+  (eventType) => {
+    window.addEventListener(eventType, () => {
+      updateTestButton();
+    });
+  }
+);
 
 /** @type {HTMLPreElement} */
 const resultsPreElement = document.getElementById("results");
@@ -1414,7 +1525,9 @@ const pythonServerUrlInput = document.getElementById("pythonServerUrl");
 pythonServerUrlInput.addEventListener("input", () => {
   pythonServerUrl = pythonServerUrlInput.value || defaultPythonServerUrl;
   console.log({ pythonServerUrl });
-  window.dispatchEvent(new CustomEvent("pythonServerUrl", { detail: { pythonServerUrl } }));
+  window.dispatchEvent(
+    new CustomEvent("pythonServerUrl", { detail: { pythonServerUrl } })
+  );
 });
 
 window.addEventListener("loadConfig", () => {
@@ -1440,7 +1553,9 @@ const tfLiteFiles = {
 };
 
 /** @type {HTMLButtonElement} */
-const convertModelToTfliteButton = document.getElementById("convertModelToTflite");
+const convertModelToTfliteButton = document.getElementById(
+  "convertModelToTflite"
+);
 convertModelToTfliteButton.addEventListener("click", () => {
   convertModelToTfliteButton.disabled = true;
   convertModelToTfliteButton.innerText = "converting model to tflite...";
@@ -1459,19 +1574,25 @@ async function convertModelToTflite() {
 
   neuralNetwork.neuralNetwork.model
     .save(
-      ml5.tf.io.browserHTTPRequest(`${pythonServerUrl}/convert?${quantizeModel ? "quantize=true" : ""}`, {
-        fetchFunc: (url, req) => {
-          if (quantizeModel) {
-            const [, , test_x] = shuffleAndSplitDataSet(prepareDataSet(), 1 - trainTestSplit);
-            console.log({ test_x });
-            req.body.append("quantize_data", JSON.stringify(test_x));
-          }
+      ml5.tf.io.browserHTTPRequest(
+        `${pythonServerUrl}/convert?${quantizeModel ? "quantize=true" : ""}`,
+        {
+          fetchFunc: (url, req) => {
+            if (quantizeModel) {
+              const [, , test_x] = shuffleAndSplitDataSet(
+                prepareDataSet(),
+                1 - trainTestSplit
+              );
+              console.log({ test_x });
+              req.body.append("quantize_data", JSON.stringify(test_x));
+            }
 
-          console.log({ url, req });
+            console.log({ url, req });
 
-          return fetch(url, req);
-        },
-      })
+            return fetch(url, req);
+          },
+        }
+      )
     )
     .then((result) => {
       console.log({ result });
@@ -1484,13 +1605,23 @@ async function convertModelToTflite() {
         .then((files) => {
           // js-untar returns a list of files (See https://github.com/InvokIT/js-untar#file-object for details)
           console.log("received files", files);
-          const tfLite_model_cpp = files.find((file) => file.name === "tfLite_model.cpp");
-          const model_tflite = files.find((file) => file.name === "model.tflite");
+          const tfLite_model_cpp = files.find(
+            (file) => file.name === "tfLite_model.cpp"
+          );
+          const model_tflite = files.find(
+            (file) => file.name === "model.tflite"
+          );
           console.log({ tfLite_model_cpp, model_tflite });
           isConvertingModel = false;
           Object.assign(tfLiteFiles, { tfLite_model_cpp, model_tflite });
-          window.dispatchEvent(new CustomEvent("convertModelToTflite", { detail: { tfLiteFiles, files } }));
-          window.dispatchEvent(new CustomEvent("tflite", { detail: { tfliteModel: model_tflite } }));
+          window.dispatchEvent(
+            new CustomEvent("convertModelToTflite", {
+              detail: { tfLiteFiles, files },
+            })
+          );
+          window.dispatchEvent(
+            new CustomEvent("tflite", { detail: { tfliteModel: model_tflite } })
+          );
         });
     })
     .catch((error) => {
@@ -1519,7 +1650,9 @@ loadTfliteInput.addEventListener("input", () => {
   if (tfliteModel) {
     console.log({ tfliteModel });
     tfLiteFiles.model_tflite = tfliteModel;
-    window.dispatchEvent(new CustomEvent("tflite", { detail: { tfliteModel } }));
+    window.dispatchEvent(
+      new CustomEvent("tflite", { detail: { tfliteModel } })
+    );
   }
 });
 
@@ -1543,7 +1676,8 @@ transferTfliteButton.addEventListener("click", async () => {
   });
 });
 const updateTransferTfliteButton = () => {
-  const enabled = tfLiteFiles.model_tflite && neuralNetwork && selectedDevices.length == 1;
+  const enabled =
+    tfLiteFiles.model_tflite && neuralNetwork && selectedDevices.length == 1;
   transferTfliteButton.disabled = !enabled;
 
   if (!enabled) {
@@ -1564,14 +1698,19 @@ const updateTransferTfliteButton = () => {
 };
 
 /** @type {HTMLProgressElement} */
-const transferTfliteProgress = document.getElementById("transferTfliteProgress");
+const transferTfliteProgress = document.getElementById(
+  "transferTfliteProgress"
+);
 window.addEventListener(
   "createNeuralNetwork",
   () => {
     if (selectedDevices.length == 1) {
       const device = selectedDevices[0];
       device.addEventListener("fileTransferStatus", () => {
-        transferTfliteButton.innerText = device.fileTransferStatus == "idle" ? "send file" : "stop sending file";
+        transferTfliteButton.innerText =
+          device.fileTransferStatus == "idle"
+            ? "send file"
+            : "stop sending file";
 
         switch (device.fileTransferStatus) {
           case "idle":
@@ -1592,7 +1731,9 @@ window.addEventListener(
 );
 
 /** @type {HTMLButtonElement} */
-const toggleTfliteInferencingEnabledButton = document.getElementById("toggleTfliteInferencingEnabled");
+const toggleTfliteInferencingEnabledButton = document.getElementById(
+  "toggleTfliteInferencingEnabled"
+);
 toggleTfliteInferencingEnabledButton.addEventListener("click", async () => {
   await selectedDevices[0].setTfliteCaptureDelay(1000);
   await selectedDevices[0].toggleTfliteInferencing();
@@ -1606,7 +1747,9 @@ const setTfliteIsReadyInput = document.getElementById("tfliteIsReady");
 const tfliteInferencePre = document.getElementById("tfliteInference");
 
 /** @type {HTMLElement} */
-const tfliteInferenceClassContainer = document.getElementById("tfliteInferenceClass");
+const tfliteInferenceClassContainer = document.getElementById(
+  "tfliteInferenceClass"
+);
 
 window.addEventListener(
   "createNeuralNetwork",
@@ -1622,26 +1765,34 @@ window.addEventListener(
         toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
       });
       device.addEventListener("getTfliteInferencingEnabled", () => {
-        toggleTfliteInferencingEnabledButton.innerText = device.tfliteInferencingEnabled
-          ? "disable inferencing"
-          : "enable inferencing";
+        toggleTfliteInferencingEnabledButton.innerText =
+          device.tfliteInferencingEnabled
+            ? "disable inferencing"
+            : "enable inferencing";
         toggleTfliteInferencingEnabledButton.disabled = false;
       });
 
       device.addEventListener("tfliteInference", (event) => {
-        tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteInference, null, 2);
+        tfliteInferencePre.textContent = JSON.stringify(
+          event.message.tfliteInference,
+          null,
+          2
+        );
         let highestClassValue = 0;
         let highestClassIndex = 0;
-        event.message.tfliteInference.values.forEach((classValue, classIndex) => {
-          if (classValue > highestClassValue) {
-            highestClassValue = classValue;
-            highestClassIndex = classIndex;
+        event.message.tfliteInference.values.forEach(
+          (classValue, classIndex) => {
+            if (classValue > highestClassValue) {
+              highestClassValue = classValue;
+              highestClassIndex = classIndex;
+            }
           }
-        });
+        );
         if (highestClassIndex == 0) {
           tfliteInferenceClassContainer.innerText = "";
         } else {
-          tfliteInferenceClassContainer.innerText = outputLabels[highestClassIndex];
+          tfliteInferenceClassContainer.innerText =
+            outputLabels[highestClassIndex];
         }
       });
     }

@@ -2038,7 +2038,7 @@
     });
     _classPrivateFieldSet2(_didBuildImage, this, true);
     let blob = new Blob([imageData], {
-      type: "image/jpeg"
+      type: "image/jpg"
     });
     _console$v.log("created blob", blob);
     const url = URL.createObjectURL(blob);
@@ -3088,7 +3088,7 @@
   const TfliteEventTypes = TfliteMessageTypes;
   const RequiredTfliteMessageTypes = ["getTfliteName", "getTfliteTask", "getTfliteSampleRate", "getTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "getTfliteThreshold", "getTfliteInferencingEnabled"];
   const TfliteTasks = ["classification", "regression"];
-  const TfliteSensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
+  const TfliteSensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer", "microphone", "camera"];
   var _TfliteManager_brand = new WeakSet();
   var _classes = new WeakMap();
   var _name$2 = new WeakMap();
@@ -27544,9 +27544,11 @@
   exports.MaxVibrationWaveformSegmentDuration = MaxVibrationWaveformSegmentDuration;
   exports.MaxWifiPasswordLength = MaxWifiPasswordLength;
   exports.MaxWifiSSIDLength = MaxWifiSSIDLength;
+  exports.MicrophoneBitDepths = MicrophoneBitDepths;
   exports.MicrophoneCommands = MicrophoneCommands;
   exports.MicrophoneConfigurationTypes = MicrophoneConfigurationTypes;
   exports.MicrophoneConfigurationValues = MicrophoneConfigurationValues;
+  exports.MicrophoneSampleRates = MicrophoneSampleRates;
   exports.MinNameLength = MinNameLength;
   exports.MinSpriteSheetNameLength = MinSpriteSheetNameLength;
   exports.MinWifiPasswordLength = MinWifiPasswordLength;
