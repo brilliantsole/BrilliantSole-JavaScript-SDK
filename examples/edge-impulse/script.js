@@ -836,29 +836,14 @@ device.addEventListener("cameraImage", async (event) => {
   });
 });
 
-/**
- * @param {Float32Array} float32Array
- * @returns {Int16Array}
- */
-function convertFloat32ToPCM(float32Array) {
-  const pcmArray = new Int16Array(float32Array.length);
-
-  for (let i = 0; i < float32Array.length; i++) {
-    const clampedValue = Math.max(-1, Math.min(1, float32Array[i]));
-
-    pcmArray[i] =
-      clampedValue < 0 ? clampedValue * 0x8000 : clampedValue * 0x7fff;
-  }
-
-  return pcmArray;
-}
 device.addEventListener("microphoneStatus", async (event) => {
   // console.log("microphoneStatus", event.message);
   const { microphoneStatus, previousMicrophoneStatus } = event.message;
   switch (microphoneStatus) {
     case "streaming":
-      setIsSampling(true);
       if (microphoneSamplingDetails) {
+        await BS.wait(200);
+        setIsSampling(true);
         device.startRecordingMicrophone();
         await BS.wait(microphoneSamplingDetails.length);
         device.stopRecordingMicrophone();
