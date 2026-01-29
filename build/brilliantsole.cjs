@@ -2866,7 +2866,11 @@ const RequiredTfliteMessageTypes = [
     "getTfliteThreshold",
     "getTfliteInferencingEnabled",
 ];
-const TfliteTasks = ["classification", "regression"];
+const TfliteTasks = [
+    "classification",
+    "regression",
+    "objectDetection",
+];
 const TfliteSensorTypes = [
     "pressure",
     "linearAcceleration",

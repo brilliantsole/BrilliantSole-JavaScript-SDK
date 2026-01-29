@@ -790,7 +790,7 @@ device.addEventListener("cameraStatus", (event) => {
       break;
   }
 });
-let cropSquare = false;
+let cropSquare = true;
 async function normalizeJpeg(blob) {
   const img = await createImageBitmap(blob);
 
@@ -824,7 +824,7 @@ device.addEventListener("cameraImage", async (event) => {
   sendRemoteManagementMessage?.({ snapshotFrame: imageString });
 
   const form = new FormData();
-  form.append("data", blob, "image.jpg");
+  form.append("data", blob, `${new Date().toLocaleString()}.jpg`);
 
   await fetch("https://ingestion.edgeimpulse.com/api/training/files", {
     method: "POST",
@@ -868,7 +868,7 @@ device.addEventListener("microphoneRecording", async (event) => {
   sendRemoteManagementMessage?.({ sampleUploading: true });
 
   const form = new FormData();
-  form.append("data", blob, "sound.wav");
+  form.append("data", blob, `${new Date().toLocaleString()}.wav`);
 
   await fetch("https://ingestion.edgeimpulse.com/api/training/files", {
     method: "POST",
@@ -1000,6 +1000,9 @@ const toggleRemoteManagementConnectionButton = document.getElementById(
   "toggleRemoteManagementConnection"
 );
 toggleRemoteManagementConnectionButton.addEventListener("click", () => {
+  toggleRemoteManagementConnection();
+});
+const toggleRemoteManagementConnection = () => {
   if (isRemoteManagementConnected()) {
     remoteManagementWebSocket.dontReconnect = true;
     remoteManagementWebSocket.close();
@@ -1009,6 +1012,9 @@ toggleRemoteManagementConnectionButton.addEventListener("click", () => {
     connectToRemoteManagement();
     toggleRemoteManagementConnectionButton.innerText = "connecting...";
   }
+};
+device.addEventListener("connected", () => {
+  toggleRemoteManagementConnection();
 });
 
 window.addEventListener("remoteManagementConnection", () => {

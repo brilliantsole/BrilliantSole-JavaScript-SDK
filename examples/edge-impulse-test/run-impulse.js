@@ -10,10 +10,13 @@ class EdgeImpulseClassifier {
     init() {
         if (classifierInitialized === true) return Promise.resolve();
 
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             Module.onRuntimeInitialized = () => {
                 classifierInitialized = true;
-                Module.init();
+                let ret = Module.init();
+                if (typeof ret === 'number' && ret != 0) {
+                    return reject('init() failed with code ' + ret);
+                }
                 resolve();
             };
         });
@@ -125,6 +128,18 @@ class EdgeImpulseClassifier {
                 let c = ret.visual_ad_grid_cells_get(cx);
                 jsResult.visual_ad_grid_cells.push({ label: c.label, value: c.value, x: c.x, y: c.y, width: c.width, height: c.height });
                 c.delete();
+            }
+        }
+
+        if (ret.freeform) {
+            jsResult.freeform = [];
+            for (let ix = 0; ix < ret.freeform.size(); ix++) {
+                let arr = [];
+                const tensor = ret.freeform.get(ix);
+                for (let jx = 0; jx < tensor.size(); jx++) {
+                    arr.push(tensor.get(jx));
+                }
+                jsResult.freeform.push(arr);
             }
         }
 

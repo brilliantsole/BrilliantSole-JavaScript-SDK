@@ -123,7 +123,7 @@ declare class Device {
     sendTfliteConfiguration(configuration: TfliteFileConfiguration): Promise<void>;
     get tfliteClasses(): string[] | undefined;
     get setTfliteClasses(): (newClasses?: string[]) => void;
-    get tfliteTask(): "classification" | "regression";
+    get tfliteTask(): "classification" | "regression" | "objectDetection";
     get setTfliteTask(): (newTask: import("./TfliteManager.ts").TfliteTask, sendImmediately?: boolean) => Promise<void>;
     get tfliteSampleRate(): number;
     get setTfliteSampleRate(): (newSampleRate: number, sendImmediately?: boolean) => Promise<void>;

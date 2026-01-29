@@ -1127,7 +1127,7 @@ interface AnySensorDataEventMessages {
 }
 type SensorDataEventMessages = _SensorDataEventMessages & AnySensorDataEventMessages;
 
-declare const TfliteTasks: readonly ["classification", "regression"];
+declare const TfliteTasks: readonly ["classification", "regression", "objectDetection"];
 type TfliteTask = (typeof TfliteTasks)[number];
 interface TfliteEventMessages {
     getTfliteName: {
@@ -1558,7 +1558,7 @@ declare class Device {
     sendTfliteConfiguration(configuration: TfliteFileConfiguration): Promise<void>;
     get tfliteClasses(): string[] | undefined;
     get setTfliteClasses(): (newClasses?: string[]) => void;
-    get tfliteTask(): "classification" | "regression";
+    get tfliteTask(): "classification" | "regression" | "objectDetection";
     get setTfliteTask(): (newTask: TfliteTask, sendImmediately?: boolean) => Promise<void>;
     get tfliteSampleRate(): number;
     get setTfliteSampleRate(): (newSampleRate: number, sendImmediately?: boolean) => Promise<void>;

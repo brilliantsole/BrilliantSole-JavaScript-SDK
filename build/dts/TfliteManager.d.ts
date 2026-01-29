@@ -7,7 +7,7 @@ export type TfliteMessageType = (typeof TfliteMessageTypes)[number];
 export declare const TfliteEventTypes: readonly ["getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference"];
 export type TfliteEventType = (typeof TfliteEventTypes)[number];
 export declare const RequiredTfliteMessageTypes: TfliteMessageType[];
-export declare const TfliteTasks: readonly ["classification", "regression"];
+export declare const TfliteTasks: readonly ["classification", "regression", "objectDetection"];
 export type TfliteTask = (typeof TfliteTasks)[number];
 export interface TfliteEventMessages {
     getTfliteName: {
@@ -88,7 +88,7 @@ declare class TfliteManager {
     setClasses(newClasses?: string[]): void;
     get name(): string;
     setName(newName: string, sendImmediately?: boolean): Promise<void>;
-    get task(): "classification" | "regression";
+    get task(): "classification" | "regression" | "objectDetection";
     setTask(newTask: TfliteTask, sendImmediately?: boolean): Promise<void>;
     get sampleRate(): number;
     setSampleRate(newSampleRate: number, sendImmediately?: boolean): Promise<void>;
