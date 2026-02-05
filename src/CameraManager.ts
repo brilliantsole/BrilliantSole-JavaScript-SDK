@@ -865,7 +865,7 @@ class CameraManager {
     this.#headerProgress = 0;
     this.#imageProgress = 0;
     this.#footerProgress = 0;
-    this.autoPicture = false;
+    //this.autoPicture = false;
     if (this.isRecording) {
       this.stopRecording();
     }

@@ -2039,7 +2039,6 @@ class CameraManager {
         this.#headerProgress = 0;
         this.#imageProgress = 0;
         this.#footerProgress = 0;
-        this.autoPicture = false;
         if (this.isRecording) {
             this.stopRecording();
         }
@@ -2843,11 +2842,7 @@ const RequiredTfliteMessageTypes = [
     "getTfliteThreshold",
     "getTfliteInferencingEnabled",
 ];
-const TfliteTasks = [
-    "classification",
-    "regression",
-    "objectDetection",
-];
+const TfliteTasks = ["classification", "regression"];
 const TfliteSensorTypes = [
     "pressure",
     "linearAcceleration",

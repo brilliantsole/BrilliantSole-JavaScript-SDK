@@ -1881,7 +1881,6 @@
       _classPrivateFieldSet2(_headerProgress, this, 0);
       _classPrivateFieldSet2(_imageProgress, this, 0);
       _classPrivateFieldSet2(_footerProgress, this, 0);
-      this.autoPicture = false;
       if (this.isRecording) {
         this.stopRecording();
       }
@@ -3087,7 +3086,7 @@
   const TfliteMessageTypes = ["getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference"];
   const TfliteEventTypes = TfliteMessageTypes;
   const RequiredTfliteMessageTypes = ["getTfliteName", "getTfliteTask", "getTfliteSampleRate", "getTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "getTfliteThreshold", "getTfliteInferencingEnabled"];
-  const TfliteTasks = ["classification", "regression", "objectDetection"];
+  const TfliteTasks = ["classification", "regression"];
   const TfliteSensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer", "microphone", "camera"];
   var _TfliteManager_brand = new WeakSet();
   var _classes = new WeakMap();

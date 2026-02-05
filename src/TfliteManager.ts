@@ -47,11 +47,7 @@ export const RequiredTfliteMessageTypes: TfliteMessageType[] = [
   "getTfliteInferencingEnabled",
 ];
 
-export const TfliteTasks = [
-  "classification",
-  "regression",
-  "objectDetection",
-] as const;
+export const TfliteTasks = ["classification", "regression"] as const;
 export type TfliteTask = (typeof TfliteTasks)[number];
 
 export interface TfliteEventMessages {

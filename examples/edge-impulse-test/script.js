@@ -117,16 +117,16 @@ device.addEventListener("connected", () => {
 });
 
 // CAMERA
-const imageSideLength = 96;
 /** @type {HTMLCanvasElement} */
 const cameraImageCanvas = document.getElementById("cameraImage");
-cameraImageCanvas.width = cameraImageCanvas.height = imageSideLength;
+cameraImageCanvas.width = input_width;
+cameraImageCanvas.height = input_height;
 const cameraImageContext = cameraImageCanvas.getContext("2d");
 
 /** @type {HTMLCanvasElement} */
 const cameraImageResultsCanvas = document.getElementById("cameraImageResults");
-cameraImageResultsCanvas.width = cameraImageResultsCanvas.height =
-  imageSideLength;
+cameraImageResultsCanvas.width = input_width;
+cameraImageResultsCanvas.height = input_height;
 const cameraImageResultsContext = cameraImageResultsCanvas.getContext("2d");
 
 device.addEventListener("cameraImage", async (event) => {
@@ -134,8 +134,8 @@ device.addEventListener("cameraImage", async (event) => {
   const imageBitmap = await createImageBitmap(blob);
 
   const scale = Math.max(
-    imageSideLength / imageBitmap.width,
-    imageSideLength / imageBitmap.height
+    input_width / imageBitmap.width,
+    input_height / imageBitmap.height
   );
 
   const drawWidth = imageBitmap.width * scale;
@@ -218,7 +218,7 @@ device.addEventListener("isConnected", () => {
 device.addEventListener("connected", () => {
   if (device.hasCamera && sensorTypes.includes("camera")) {
     device.setCameraConfiguration({
-      resolution: input_width,
+      resolution: 320,
       qualityFactor: 40,
     });
   }
