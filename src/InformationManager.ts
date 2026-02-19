@@ -208,6 +208,24 @@ class InformationManager {
     }
   }
 
+  get isGlasses() {
+    switch (this.type) {
+      case "glasses":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  get isGeneric() {
+    switch (this.type) {
+      case "generic":
+        return true;
+      default:
+        return false;
+    }
+  }
+
   get side(): Side {
     switch (this.type) {
       case "leftInsole":

@@ -1419,6 +1419,8 @@ declare class InformationManager {
     setType(newType: DeviceType): Promise<void>;
     get isInsole(): boolean;
     get isGlove(): boolean;
+    get isGlasses(): boolean;
+    get isGeneric(): boolean;
     get side(): Side;
     get mtu(): number;
     get isCurrentTimeSet(): boolean;
@@ -1527,6 +1529,8 @@ declare class Device {
     get setType(): (newType: DeviceType) => Promise<void>;
     get isInsole(): boolean;
     get isGlove(): boolean;
+    get isGlasses(): boolean;
+    get isGeneric(): boolean;
     get side(): "left" | "right";
     get mtu(): number;
     get sensorTypes(): SensorType[];

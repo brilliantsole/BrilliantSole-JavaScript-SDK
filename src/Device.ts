@@ -1037,6 +1037,12 @@ class Device {
   get isGlove() {
     return this._informationManager.isGlove;
   }
+  get isGlasses() {
+    return this._informationManager.isGlasses;
+  }
+  get isGeneric() {
+    return this._informationManager.isGeneric;
+  }
   get side() {
     return this._informationManager.side;
   }

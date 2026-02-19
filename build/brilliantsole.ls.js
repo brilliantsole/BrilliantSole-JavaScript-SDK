@@ -3826,6 +3826,22 @@
           return false;
       }
     }
+    get isGlasses() {
+      switch (this.type) {
+        case "glasses":
+          return true;
+        default:
+          return false;
+      }
+    }
+    get isGeneric() {
+      switch (this.type) {
+        case "generic":
+          return true;
+        default:
+          return false;
+      }
+    }
     get side() {
       switch (this.type) {
         case "leftInsole":
@@ -25956,6 +25972,12 @@
     }
     get isGlove() {
       return this._informationManager.isGlove;
+    }
+    get isGlasses() {
+      return this._informationManager.isGlasses;
+    }
+    get isGeneric() {
+      return this._informationManager.isGeneric;
     }
     get side() {
       return this._informationManager.side;
