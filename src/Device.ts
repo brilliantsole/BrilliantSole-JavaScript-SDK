@@ -728,10 +728,10 @@ class Device {
     return this.connectionManager!.disconnect();
   }
 
-  toggleConnection(reconnectIfConnected = true) {
+  toggleConnection(reconnect = true) {
     if (this.isConnected) {
       this.disconnect();
-    } else if (reconnectIfConnected && this.canReconnect) {
+    } else if (reconnect && this.canReconnect) {
       try {
         this.reconnect();
       } catch (error) {
@@ -1066,6 +1066,10 @@ class Device {
   get setSensorConfiguration() {
     this.#assertIsConnected();
     return this.#sensorConfigurationManager.setConfiguration;
+  }
+  get toggleSensor() {
+    this.#assertIsConnected();
+    return this.#sensorConfigurationManager.toggleSensor;
   }
   get availableSensorTypes() {
     return this.#sensorConfigurationManager.availableSensorTypes;

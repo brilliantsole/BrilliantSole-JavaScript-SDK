@@ -129,6 +129,24 @@ class SensorConfigurationManager {
     );
     await promise;
   }
+  async toggleSensor(
+    sensorType: SensorType,
+    sensorRate: number,
+    clearRest?: boolean,
+    sendImmediately?: boolean
+  ) {
+    const newSensorConfiguration: SensorConfiguration = {};
+    if (this.configuration[sensorType]) {
+      newSensorConfiguration[sensorType] = 0;
+    } else {
+      newSensorConfiguration[sensorType] = sensorRate;
+    }
+    await this.setConfiguration(
+      newSensorConfiguration,
+      clearRest,
+      sendImmediately
+    );
+  }
 
   #parse(dataView: DataView<ArrayBuffer>) {
     const parsedSensorConfiguration: SensorConfiguration = {};

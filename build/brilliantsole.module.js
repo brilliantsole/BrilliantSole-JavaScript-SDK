@@ -2868,6 +2868,16 @@ class SensorConfigurationManager {
         ], sendImmediately);
         await promise;
     }
+    async toggleSensor(sensorType, sensorRate, clearRest, sendImmediately) {
+        const newSensorConfiguration = {};
+        if (this.configuration[sensorType]) {
+            newSensorConfiguration[sensorType] = 0;
+        }
+        else {
+            newSensorConfiguration[sensorType] = sensorRate;
+        }
+        await this.setConfiguration(newSensorConfiguration, clearRest, sendImmediately);
+    }
     #parse(dataView) {
         const parsedSensorConfiguration = {};
         for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 3) {
@@ -27199,11 +27209,11 @@ class Device {
         }
         return this.connectionManager.disconnect();
     }
-    toggleConnection(reconnectIfConnected = true) {
+    toggleConnection(reconnect = true) {
         if (this.isConnected) {
             this.disconnect();
         }
-        else if (reconnectIfConnected && this.canReconnect) {
+        else if (reconnect && this.canReconnect) {
             try {
                 this.reconnect();
             }
@@ -27442,6 +27452,10 @@ class Device {
     get setSensorConfiguration() {
         this.#assertIsConnected();
         return this.#sensorConfigurationManager.setConfiguration;
+    }
+    get toggleSensor() {
+        this.#assertIsConnected();
+        return this.#sensorConfigurationManager.toggleSensor;
     }
     get availableSensorTypes() {
         return this.#sensorConfigurationManager.availableSensorTypes;

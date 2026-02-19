@@ -1508,7 +1508,7 @@ declare class Device {
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get connectionType(): "webBluetooth" | "noble" | "client" | "webSocket" | "udp" | undefined;
     disconnect(): Promise<boolean | undefined>;
-    toggleConnection(reconnectIfConnected?: boolean): void;
+    toggleConnection(reconnect?: boolean): void;
     get connectionStatus(): ConnectionStatus;
     get isConnectionBusy(): boolean;
     latestConnectionMessages: Map<ConnectionMessageType, DataView>;
@@ -1532,6 +1532,7 @@ declare class Device {
     get continuousSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "barometer")[];
     get sensorConfiguration(): SensorConfiguration;
     get setSensorConfiguration(): (newSensorConfiguration: SensorConfiguration, clearRest?: boolean, sendImmediately?: boolean) => Promise<void>;
+    get toggleSensor(): (sensorType: SensorType, sensorRate: number, clearRest?: boolean, sendImmediately?: boolean) => Promise<void>;
     get availableSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone")[];
     get hasSensorType(): (sensorType: SensorType) => boolean;
     clearSensorConfiguration(): Promise<void>;

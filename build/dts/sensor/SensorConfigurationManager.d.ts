@@ -39,6 +39,7 @@ declare class SensorConfigurationManager {
     get configuration(): SensorConfiguration;
     clear(): void;
     setConfiguration(newSensorConfiguration: SensorConfiguration, clearRest?: boolean, sendImmediately?: boolean): Promise<void>;
+    toggleSensor(sensorType: SensorType, sensorRate: number, clearRest?: boolean, sendImmediately?: boolean): Promise<void>;
     static get ZeroSensorConfiguration(): SensorConfiguration;
     get zeroSensorConfiguration(): SensorConfiguration;
     clearSensorConfiguration(): Promise<void>;

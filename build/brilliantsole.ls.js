@@ -2966,6 +2966,15 @@
       }], sendImmediately);
       await promise;
     }
+    async toggleSensor(sensorType, sensorRate, clearRest, sendImmediately) {
+      const newSensorConfiguration = {};
+      if (this.configuration[sensorType]) {
+        newSensorConfiguration[sensorType] = 0;
+      } else {
+        newSensorConfiguration[sensorType] = sensorRate;
+      }
+      await this.setConfiguration(newSensorConfiguration, clearRest, sendImmediately);
+    }
     static get ZeroSensorConfiguration() {
       return _assertClassBrand(SensorConfigurationManager, this, _ZeroSensorConfiguration)._;
     }
@@ -25881,10 +25890,10 @@
       return this.connectionManager.disconnect();
     }
     toggleConnection() {
-      let reconnectIfConnected = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+      let reconnect = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
       if (this.isConnected) {
         this.disconnect();
-      } else if (reconnectIfConnected && this.canReconnect) {
+      } else if (reconnect && this.canReconnect) {
         try {
           this.reconnect();
         } catch (error) {
@@ -25966,6 +25975,10 @@
     get setSensorConfiguration() {
       _assertClassBrand(_Device_brand, this, _assertIsConnected).call(this);
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).setConfiguration;
+    }
+    get toggleSensor() {
+      _assertClassBrand(_Device_brand, this, _assertIsConnected).call(this);
+      return _classPrivateFieldGet2(_sensorConfigurationManager, this).toggleSensor;
     }
     get availableSensorTypes() {
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).availableSensorTypes;
