@@ -25881,9 +25881,10 @@
       return this.connectionManager.disconnect();
     }
     toggleConnection() {
+      let reconnectIfConnected = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
       if (this.isConnected) {
         this.disconnect();
-      } else if (this.canReconnect) {
+      } else if (reconnectIfConnected && this.canReconnect) {
         try {
           this.reconnect();
         } catch (error) {

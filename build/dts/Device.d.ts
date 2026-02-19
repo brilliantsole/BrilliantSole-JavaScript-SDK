@@ -74,7 +74,7 @@ declare class Device {
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get connectionType(): "webBluetooth" | "noble" | "client" | "webSocket" | "udp" | undefined;
     disconnect(): Promise<boolean | undefined>;
-    toggleConnection(): void;
+    toggleConnection(reconnectIfConnected?: boolean): void;
     get connectionStatus(): ConnectionStatus;
     get isConnectionBusy(): boolean;
     latestConnectionMessages: Map<ConnectionMessageType, DataView>;

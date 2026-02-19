@@ -27205,11 +27205,11 @@
 	        }
 	        return this.connectionManager.disconnect();
 	    }
-	    toggleConnection() {
+	    toggleConnection(reconnectIfConnected = true) {
 	        if (this.isConnected) {
 	            this.disconnect();
 	        }
-	        else if (this.canReconnect) {
+	        else if (reconnectIfConnected && this.canReconnect) {
 	            try {
 	                this.reconnect();
 	            }
