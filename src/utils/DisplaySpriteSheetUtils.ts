@@ -153,7 +153,7 @@ export const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
   strokeWidth: 1,
   unicodeOnly: true,
   englishOnly: true,
-  usePath: false,
+  usePath: true,
   overrideMaxSpriteHeight: true,
 };
 
@@ -209,11 +209,16 @@ export function contourArea(points: Vector2[]) {
   return area;
 }
 
+export type FontMetrics = {
+  maxSpriteHeight: number;
+  maxSpriteY: number;
+  minSpriteY: number;
+};
 export function getFontMetrics(
   font: Font | Font[],
   fontSize: number,
   options?: FontToSpriteSheetOptions
-) {
+): FontMetrics {
   _console.assertTypeWithError(fontSize, "number");
 
   options = options

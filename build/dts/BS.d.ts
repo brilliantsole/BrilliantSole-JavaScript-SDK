@@ -50,8 +50,8 @@ import { DisplayContextCommand, DisplayContextCommandType, DisplayContextCommand
 export { DisplayContextCommand, DisplayContextCommandType, DisplayContextCommandTypes, DisplaySpriteContextCommandType, DisplaySpriteContextCommandTypes, };
 import { simplifyPoints, simplifyCurves, simplifyPointsAsCubicCurveControlPoints } from "./utils/PathUtils.ts";
 export { simplifyPoints, simplifyCurves, simplifyPointsAsCubicCurveControlPoints, };
-import { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, fontToSpriteSheet, getFontMetrics, DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, getFontMaxHeight, getMaxSpriteSheetSize, englishRegex, FontToSpriteSheetOptions } from "./utils/DisplaySpriteSheetUtils.ts";
-export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, fontToSpriteSheet, getFontMetrics, DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, getFontMaxHeight, getMaxSpriteSheetSize, englishRegex, FontToSpriteSheetOptions, };
+import { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, fontToSpriteSheet, getFontMetrics, DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, getFontMaxHeight, getMaxSpriteSheetSize, englishRegex, FontToSpriteSheetOptions, FontMetrics } from "./utils/DisplaySpriteSheetUtils.ts";
+export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, fontToSpriteSheet, getFontMetrics, DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, getFontMaxHeight, getMaxSpriteSheetSize, englishRegex, FontToSpriteSheetOptions, FontMetrics, };
 /** BROWSER_START */
 import { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap } from "./utils/DisplayCanvasHelper.ts";
 export { DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, };

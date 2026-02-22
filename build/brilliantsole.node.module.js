@@ -6022,7 +6022,7 @@ const defaultFontToSpriteSheetOptions = {
     strokeWidth: 1,
     unicodeOnly: true,
     englishOnly: true,
-    usePath: false,
+    usePath: true,
     overrideMaxSpriteHeight: true,
 };
 function isWoff2(arrayBuffer) {

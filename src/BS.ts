@@ -318,6 +318,7 @@ import {
   getMaxSpriteSheetSize,
   englishRegex,
   FontToSpriteSheetOptions,
+  FontMetrics,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 export {
   DisplaySprite,
@@ -336,6 +337,7 @@ export {
   getMaxSpriteSheetSize,
   englishRegex,
   FontToSpriteSheetOptions,
+  FontMetrics,
 };
 
 /** BROWSER_START */
