@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
     <script type="module" src="./script.js"></script>
+    <script src="../utils/misc/pointerLock.js"></script>
   </head>
   <style>
     #display {
@@ -169,6 +170,38 @@
       <span>translate?</span>
       <input type="checkbox" id="toggleTranslate" />
     </label>
+
+    <label>
+      <span>teleprompter?</span>
+      <input type="checkbox" id="toggleTeleprompter" />
+    </label>
+
+    <label class="teleprompter" hidden>
+      <span>slide index:</span>
+      <input
+        id="currentTeleprompterSlideIndex"
+        type="number"
+        min="1"
+        max="1"
+        value="1"
+      />
+      /<input
+        id="numberOfTeleprompterSlides"
+        type="number"
+        min="1"
+        max="10"
+        value="1"
+      />
+    </label>
+
+    <button
+      id="teleprompterPointerLock"
+      class="teleprompter"
+      hidden
+      data-pointer-lock
+    >
+      lock pointer
+    </button>
 
     <audio
       id="microphoneAudio"
