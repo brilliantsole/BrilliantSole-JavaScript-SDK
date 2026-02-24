@@ -266,6 +266,9 @@ displayCanvasHelper.addEventListener("ready", () => {
     draw();
   }
 });
+displayCanvasHelper.addEventListener("deviceUpdated", () => {
+  draw();
+});
 
 // DRAW PARAMS
 
