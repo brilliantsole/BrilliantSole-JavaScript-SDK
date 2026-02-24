@@ -4,7 +4,7 @@ import { SensorConfiguration, SensorConfigurationEventMessages } from "./sensor/
 import { SensorDataEventMessages, SensorType } from "./sensor/SensorDataManager.ts";
 import { VibrationConfiguration } from "./vibration/VibrationManager.ts";
 import { FileTransferEventMessages, FileType } from "./FileTransferManager.ts";
-import { TfliteEventMessages, TfliteFileConfiguration } from "./TfliteManager.ts";
+import { TfliteEventMessages, TfliteFileConfiguration, TfliteSensorType } from "./TfliteManager.ts";
 import { FirmwareEventMessages } from "./FirmwareManager.ts";
 import { DeviceInformationEventMessages } from "./DeviceInformationManager.ts";
 import InformationManager, { DeviceType, InformationEventMessages } from "./InformationManager.ts";
@@ -74,7 +74,7 @@ declare class Device {
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get connectionType(): "webBluetooth" | "noble" | "client" | "webSocket" | "udp" | undefined;
     disconnect(): Promise<boolean | undefined>;
-    toggleConnection(): void;
+    toggleConnection(reconnect?: boolean): void;
     get connectionStatus(): ConnectionStatus;
     get isConnectionBusy(): boolean;
     latestConnectionMessages: Map<ConnectionMessageType, DataView>;
@@ -92,12 +92,15 @@ declare class Device {
     get setType(): (newType: DeviceType) => Promise<void>;
     get isInsole(): boolean;
     get isGlove(): boolean;
+    get isGlasses(): boolean;
+    get isGeneric(): boolean;
     get side(): "left" | "right";
     get mtu(): number;
     get sensorTypes(): SensorType[];
     get continuousSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "barometer")[];
     get sensorConfiguration(): SensorConfiguration;
     get setSensorConfiguration(): (newSensorConfiguration: SensorConfiguration, clearRest?: boolean, sendImmediately?: boolean) => Promise<void>;
+    get toggleSensor(): (sensorType: SensorType, sensorRate: number, clearRest?: boolean, sendImmediately?: boolean) => Promise<void>;
     get availableSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone")[];
     get hasSensorType(): (sensorType: SensorType) => boolean;
     clearSensorConfiguration(): Promise<void>;
@@ -127,8 +130,8 @@ declare class Device {
     get setTfliteTask(): (newTask: import("./TfliteManager.ts").TfliteTask, sendImmediately?: boolean) => Promise<void>;
     get tfliteSampleRate(): number;
     get setTfliteSampleRate(): (newSampleRate: number, sendImmediately?: boolean) => Promise<void>;
-    get tfliteSensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer")[];
-    get allowedTfliteSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone")[];
+    get tfliteSensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer" | "camera" | "microphone")[];
+    get allowedTfliteSensorTypes(): TfliteSensorType[];
     get setTfliteSensorTypes(): (newSensorTypes: SensorType[], sendImmediately?: boolean) => Promise<void>;
     get tfliteIsReady(): boolean;
     get tfliteInferencingEnabled(): boolean;

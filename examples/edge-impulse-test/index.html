@@ -14,6 +14,14 @@
         font-family: monospace;
         white-space: pre;
       }
+
+      #cameraImageContainer {
+        display: grid;
+      }
+
+      #cameraImageContainer > * {
+        grid-area: 1 / 1;
+      }
     </style>
   </head>
   <body>
@@ -31,6 +39,13 @@
     <p>
       <button id="run-inference">Run inference</button>
     </p>
+    <button id="toggleMicrophone" disabled>start microphone</button>
+    <button id="takePicture" disabled>take picture</button>
+    <label>auto picture <input id="autoPicture" type="checkbox" /></label>
+    <div id="cameraImageContainer">
+      <canvas id="cameraImage"></canvas>
+      <canvas id="cameraImageResults"></canvas>
+    </div>
     <p id="results"></p>
 
     <script src="edge-impulse-standalone.js"></script>

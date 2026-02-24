@@ -3787,6 +3787,11 @@ function xnnLoadWasmModuleJS(code,offset,offset_end,invalid_function_index){ con
       return object instanceof constructor;
     }
 
+  function __emval_is_number(handle) {
+      handle = Emval.toValue(handle);
+      return typeof handle == 'number';
+    }
+
   function __emval_new_array() {
       return Emval.toHandle([]);
     }
@@ -6647,6 +6652,7 @@ var asmLibraryArg = {
   "_emval_get_property": __emval_get_property,
   "_emval_incref": __emval_incref,
   "_emval_instanceof": __emval_instanceof,
+  "_emval_is_number": __emval_is_number,
   "_emval_new_array": __emval_new_array,
   "_emval_new_cstring": __emval_new_cstring,
   "_emval_new_object": __emval_new_object,

@@ -674,11 +674,12 @@ type FontToSpriteSheetOptions = {
 declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
 declare function getFontUnicodeRange(font: Font): Range | undefined;
 declare const englishRegex: RegExp;
-declare function getFontMetrics(font: Font | Font[], fontSize: number, options?: FontToSpriteSheetOptions): {
+type FontMetrics = {
     maxSpriteHeight: number;
     maxSpriteY: number;
     minSpriteY: number;
 };
+declare function getFontMetrics(font: Font | Font[], fontSize: number, options?: FontToSpriteSheetOptions): FontMetrics;
 declare function fontToSpriteSheet(font: Font | Font[], fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
 declare function stringToSprites(string: string, spriteSheet: DisplaySpriteSheet, requireAll?: boolean): DisplaySprite[];
 declare function getFontMaxHeight(font: Font, fontSize: number): number;
@@ -1168,7 +1169,7 @@ interface TfliteInference {
         [key: string]: number;
     };
 }
-declare const TfliteSensorTypes: readonly ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
+declare const TfliteSensorTypes: readonly ["pressure", "linearAcceleration", "gyroscope", "magnetometer", "microphone", "camera"];
 type TfliteSensorType = (typeof TfliteSensorTypes)[number];
 interface TfliteFileConfiguration extends FileConfiguration {
     type: "tflite";
@@ -1419,6 +1420,8 @@ declare class InformationManager {
     setType(newType: DeviceType): Promise<void>;
     get isInsole(): boolean;
     get isGlove(): boolean;
+    get isGlasses(): boolean;
+    get isGeneric(): boolean;
     get side(): Side;
     get mtu(): number;
     get isCurrentTimeSet(): boolean;
@@ -1509,7 +1512,7 @@ declare class Device {
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get connectionType(): "webBluetooth" | "noble" | "client" | "webSocket" | "udp" | undefined;
     disconnect(): Promise<boolean | undefined>;
-    toggleConnection(): void;
+    toggleConnection(reconnect?: boolean): void;
     get connectionStatus(): ConnectionStatus;
     get isConnectionBusy(): boolean;
     latestConnectionMessages: Map<ConnectionMessageType, DataView>;
@@ -1527,12 +1530,15 @@ declare class Device {
     get setType(): (newType: DeviceType) => Promise<void>;
     get isInsole(): boolean;
     get isGlove(): boolean;
+    get isGlasses(): boolean;
+    get isGeneric(): boolean;
     get side(): "left" | "right";
     get mtu(): number;
     get sensorTypes(): SensorType[];
     get continuousSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "barometer")[];
     get sensorConfiguration(): SensorConfiguration;
     get setSensorConfiguration(): (newSensorConfiguration: SensorConfiguration, clearRest?: boolean, sendImmediately?: boolean) => Promise<void>;
+    get toggleSensor(): (sensorType: SensorType, sensorRate: number, clearRest?: boolean, sendImmediately?: boolean) => Promise<void>;
     get availableSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone")[];
     get hasSensorType(): (sensorType: SensorType) => boolean;
     clearSensorConfiguration(): Promise<void>;
@@ -1562,8 +1568,8 @@ declare class Device {
     get setTfliteTask(): (newTask: TfliteTask, sendImmediately?: boolean) => Promise<void>;
     get tfliteSampleRate(): number;
     get setTfliteSampleRate(): (newSampleRate: number, sendImmediately?: boolean) => Promise<void>;
-    get tfliteSensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer")[];
-    get allowedTfliteSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone")[];
+    get tfliteSensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer" | "camera" | "microphone")[];
+    get allowedTfliteSensorTypes(): TfliteSensorType[];
     get setTfliteSensorTypes(): (newSensorTypes: SensorType[], sendImmediately?: boolean) => Promise<void>;
     get tfliteIsReady(): boolean;
     get tfliteInferencingEnabled(): boolean;
@@ -2389,5 +2395,5 @@ declare const ThrottleUtils: {
     debounce: typeof debounce;
 };
 
-export { CameraCommands, CameraConfigurationTypes, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, _default as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment_d as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isValidSVG, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
-export type { BoundDeviceEventListeners, BoundDeviceManagerEventListeners, BoundDevicePairEventListeners, CameraCommand, CameraConfiguration, CameraConfigurationType, CenterOfPressure, ConnectionEventType, ConnectionMessageType, ContinuousSensorType, DeviceEvent, DeviceEventListenerMap, DeviceEventMap, DeviceInformation, DeviceManagerEvent, DeviceManagerEventListenerMap, DeviceManagerEventMap, DevicePairEvent, DevicePairEventListenerMap, DevicePairEventMap, DevicePairType, DeviceType, DiscoveredDevice, DisplayAlignment, DisplayBezierCurveType, DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayCanvasHelperEvent, DisplayCanvasHelperEventListenerMap, DisplayCanvasHelperEventMap, DisplayColorRGB, DisplayContextCommand, DisplayContextCommandType, DisplayDirection, DisplaySegmentCap, DisplaySize, DisplaySprite, DisplaySpriteColorPair, DisplaySpriteContextCommandType, DisplaySpriteLine, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSubLine, DisplayWireframe, DisplayWireframeEdge, Euler, FileTransferDirection, FileType, FontToSpriteSheetOptions, MicrophoneCommand, MicrophoneConfiguration, MicrophoneConfigurationType, PressureData, Quaternion, Range, SensorConfiguration, SensorType, Side, TfliteFileConfiguration, TfliteSensorType, TfliteTask, TxRxMessageType, Vector2, Vector3, VibrationConfiguration, VibrationLocation, VibrationType, VibrationWaveformEffect };
+export { CameraCommands, CameraConfigurationTypes, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, _default as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment_d as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isValidSVG, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
+export type { BoundDeviceEventListeners, BoundDeviceManagerEventListeners, BoundDevicePairEventListeners, CameraCommand, CameraConfiguration, CameraConfigurationType, CenterOfPressure, ConnectionEventType, ConnectionMessageType, ContinuousSensorType, DeviceEvent, DeviceEventListenerMap, DeviceEventMap, DeviceInformation, DeviceManagerEvent, DeviceManagerEventListenerMap, DeviceManagerEventMap, DevicePairEvent, DevicePairEventListenerMap, DevicePairEventMap, DevicePairType, DeviceType, DiscoveredDevice, DisplayAlignment, DisplayBezierCurveType, DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayCanvasHelperEvent, DisplayCanvasHelperEventListenerMap, DisplayCanvasHelperEventMap, DisplayColorRGB, DisplayContextCommand, DisplayContextCommandType, DisplayDirection, DisplaySegmentCap, DisplaySize, DisplaySprite, DisplaySpriteColorPair, DisplaySpriteContextCommandType, DisplaySpriteLine, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSubLine, DisplayWireframe, DisplayWireframeEdge, Euler, FileTransferDirection, FileType, FontMetrics, FontToSpriteSheetOptions, MicrophoneBitDepth, MicrophoneCommand, MicrophoneConfiguration, MicrophoneConfigurationType, MicrophoneSampleRate, PressureData, Quaternion, Range, SensorConfiguration, SensorType, Side, TfliteFileConfiguration, TfliteSensorType, TfliteTask, TxRxMessageType, Vector2, Vector3, VibrationConfiguration, VibrationLocation, VibrationType, VibrationWaveformEffect };

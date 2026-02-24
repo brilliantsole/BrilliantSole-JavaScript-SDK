@@ -69,11 +69,12 @@ export declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Fo
 export declare function getFontUnicodeRange(font: Font): import("./RangeHelper.ts").Range | undefined;
 export declare const englishRegex: RegExp;
 export declare function contourArea(points: Vector2[]): number;
-export declare function getFontMetrics(font: Font | Font[], fontSize: number, options?: FontToSpriteSheetOptions): {
+export type FontMetrics = {
     maxSpriteHeight: number;
     maxSpriteY: number;
     minSpriteY: number;
 };
+export declare function getFontMetrics(font: Font | Font[], fontSize: number, options?: FontToSpriteSheetOptions): FontMetrics;
 export declare function fontToSpriteSheet(font: Font | Font[], fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
 export declare function stringToSprites(string: string, spriteSheet: DisplaySpriteSheet, requireAll?: boolean): DisplaySprite[];
 export declare function getReferencedSprites(sprite: DisplaySprite, spriteSheet: DisplaySpriteSheet): DisplaySprite[];

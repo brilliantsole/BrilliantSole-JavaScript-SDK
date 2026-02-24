@@ -728,10 +728,10 @@ class Device {
     return this.connectionManager!.disconnect();
   }
 
-  toggleConnection() {
+  toggleConnection(reconnect = true) {
     if (this.isConnected) {
       this.disconnect();
-    } else if (this.canReconnect) {
+    } else if (reconnect && this.canReconnect) {
       try {
         this.reconnect();
       } catch (error) {
@@ -1037,6 +1037,12 @@ class Device {
   get isGlove() {
     return this._informationManager.isGlove;
   }
+  get isGlasses() {
+    return this._informationManager.isGlasses;
+  }
+  get isGeneric() {
+    return this._informationManager.isGeneric;
+  }
   get side() {
     return this._informationManager.side;
   }
@@ -1066,6 +1072,10 @@ class Device {
   get setSensorConfiguration() {
     this.#assertIsConnected();
     return this.#sensorConfigurationManager.setConfiguration;
+  }
+  get toggleSensor() {
+    this.#assertIsConnected();
+    return this.#sensorConfigurationManager.toggleSensor;
   }
   get availableSensorTypes() {
     return this.#sensorConfigurationManager.availableSensorTypes;
@@ -1241,7 +1251,7 @@ class Device {
   get allowedTfliteSensorTypes() {
     return this.sensorTypes.filter((sensorType) =>
       TfliteSensorTypes.includes(sensorType as TfliteSensorType)
-    );
+    ) as TfliteSensorType[];
   }
   get setTfliteSensorTypes() {
     return this.#tfliteManager.setSensorTypes;

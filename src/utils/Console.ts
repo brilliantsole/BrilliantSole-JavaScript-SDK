@@ -173,7 +173,10 @@ class Console {
   }
 
   /** @throws {Error} if value's type doesn't match */
-  assertEnumWithError(value: string, enumeration: readonly string[]) {
+  assertEnumWithError<T extends string | number>(
+    value: T,
+    enumeration: readonly T[]
+  ) {
     this.assertWithError(
       enumeration.includes(value),
       `invalid enum "${value}"`

@@ -83,6 +83,8 @@ export const TfliteSensorTypes = [
   "linearAcceleration",
   "gyroscope",
   "magnetometer",
+  "microphone",
+  "camera",
 ] as const satisfies readonly SensorType[];
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
 

@@ -370,7 +370,7 @@ class CameraManager {
     _console.log({ imageData });
     this.#didBuildImage = true;
 
-    let blob = new Blob([imageData], { type: "image/jpeg" });
+    let blob = new Blob([imageData], { type: "image/jpg" });
     _console.log("created blob", blob);
 
     const url = URL.createObjectURL(blob);
@@ -865,7 +865,7 @@ class CameraManager {
     this.#headerProgress = 0;
     this.#imageProgress = 0;
     this.#footerProgress = 0;
-    this.autoPicture = false;
+    //this.autoPicture = false;
     if (this.isRecording) {
       this.stopRecording();
     }

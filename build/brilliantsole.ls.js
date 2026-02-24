@@ -1881,7 +1881,6 @@
       _classPrivateFieldSet2(_headerProgress, this, 0);
       _classPrivateFieldSet2(_imageProgress, this, 0);
       _classPrivateFieldSet2(_footerProgress, this, 0);
-      this.autoPicture = false;
       if (this.isRecording) {
         this.stopRecording();
       }
@@ -2038,7 +2037,7 @@
     });
     _classPrivateFieldSet2(_didBuildImage, this, true);
     let blob = new Blob([imageData], {
-      type: "image/jpeg"
+      type: "image/jpg"
     });
     _console$v.log("created blob", blob);
     const url = URL.createObjectURL(blob);
@@ -2967,6 +2966,15 @@
       }], sendImmediately);
       await promise;
     }
+    async toggleSensor(sensorType, sensorRate, clearRest, sendImmediately) {
+      const newSensorConfiguration = {};
+      if (this.configuration[sensorType]) {
+        newSensorConfiguration[sensorType] = 0;
+      } else {
+        newSensorConfiguration[sensorType] = sensorRate;
+      }
+      await this.setConfiguration(newSensorConfiguration, clearRest, sendImmediately);
+    }
     static get ZeroSensorConfiguration() {
       return _assertClassBrand(SensorConfigurationManager, this, _ZeroSensorConfiguration)._;
     }
@@ -3088,7 +3096,7 @@
   const TfliteEventTypes = TfliteMessageTypes;
   const RequiredTfliteMessageTypes = ["getTfliteName", "getTfliteTask", "getTfliteSampleRate", "getTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "getTfliteThreshold", "getTfliteInferencingEnabled"];
   const TfliteTasks = ["classification", "regression"];
-  const TfliteSensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
+  const TfliteSensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer", "microphone", "camera"];
   var _TfliteManager_brand = new WeakSet();
   var _classes = new WeakMap();
   var _name$2 = new WeakMap();
@@ -3813,6 +3821,22 @@
       switch (this.type) {
         case "leftGlove":
         case "rightGlove":
+          return true;
+        default:
+          return false;
+      }
+    }
+    get isGlasses() {
+      switch (this.type) {
+        case "glasses":
+          return true;
+        default:
+          return false;
+      }
+    }
+    get isGeneric() {
+      switch (this.type) {
+        case "generic":
           return true;
         default:
           return false;
@@ -19412,7 +19436,7 @@
     strokeWidth: 1,
     unicodeOnly: true,
     englishOnly: true,
-    usePath: false,
+    usePath: true,
     overrideMaxSpriteHeight: true
   };
   function isWoff2(arrayBuffer) {
@@ -25882,9 +25906,10 @@
       return this.connectionManager.disconnect();
     }
     toggleConnection() {
+      let reconnect = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
       if (this.isConnected) {
         this.disconnect();
-      } else if (this.canReconnect) {
+      } else if (reconnect && this.canReconnect) {
         try {
           this.reconnect();
         } catch (error) {
@@ -25948,6 +25973,12 @@
     get isGlove() {
       return this._informationManager.isGlove;
     }
+    get isGlasses() {
+      return this._informationManager.isGlasses;
+    }
+    get isGeneric() {
+      return this._informationManager.isGeneric;
+    }
     get side() {
       return this._informationManager.side;
     }
@@ -25966,6 +25997,10 @@
     get setSensorConfiguration() {
       _assertClassBrand(_Device_brand, this, _assertIsConnected).call(this);
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).setConfiguration;
+    }
+    get toggleSensor() {
+      _assertClassBrand(_Device_brand, this, _assertIsConnected).call(this);
+      return _classPrivateFieldGet2(_sensorConfigurationManager, this).toggleSensor;
     }
     get availableSensorTypes() {
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).availableSensorTypes;
@@ -27544,9 +27579,11 @@
   exports.MaxVibrationWaveformSegmentDuration = MaxVibrationWaveformSegmentDuration;
   exports.MaxWifiPasswordLength = MaxWifiPasswordLength;
   exports.MaxWifiSSIDLength = MaxWifiSSIDLength;
+  exports.MicrophoneBitDepths = MicrophoneBitDepths;
   exports.MicrophoneCommands = MicrophoneCommands;
   exports.MicrophoneConfigurationTypes = MicrophoneConfigurationTypes;
   exports.MicrophoneConfigurationValues = MicrophoneConfigurationValues;
+  exports.MicrophoneSampleRates = MicrophoneSampleRates;
   exports.MinNameLength = MinNameLength;
   exports.MinSpriteSheetNameLength = MinSpriteSheetNameLength;
   exports.MinWifiPasswordLength = MinWifiPasswordLength;

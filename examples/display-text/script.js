@@ -266,6 +266,9 @@ displayCanvasHelper.addEventListener("ready", () => {
     draw();
   }
 });
+displayCanvasHelper.addEventListener("deviceUpdated", () => {
+  draw();
+});
 
 // DRAW PARAMS
 
@@ -1478,6 +1481,166 @@ const translate = async (string) => {
   return translation;
 };
 window.translate = translate;
+
+// TELEPROMPTER START
+let useTeleprompter = false;
+const setUseTeleprompter = (newUseTeleprompter) => {
+  useTeleprompter = newUseTeleprompter;
+  console.log({ useTeleprompter });
+  toggleTeleprompterCheckbox.checked = useTeleprompter;
+  document.querySelectorAll(".teleprompter").forEach((element) => {
+    if (useTeleprompter) {
+      element.removeAttribute("hidden");
+    } else {
+      element.setAttribute("hidden", "");
+    }
+  });
+  refreshTeleprompter();
+};
+const toggleTeleprompterCheckbox =
+  document.getElementById("toggleTeleprompter");
+toggleTeleprompterCheckbox.addEventListener("input", (event) => {
+  setUseTeleprompter(event.target.checked);
+});
+
+let numberOfTeleprompterSlides = 1;
+let currentTeleprompterSlideIndex = 1;
+const teleprompterSlides = [];
+
+const currentTeleprompterSlideIndexInput = document.getElementById(
+  "currentTeleprompterSlideIndex"
+);
+currentTeleprompterSlideIndexInput.addEventListener("input", (event) => {
+  setCurrentTeleprompterSlideIndex(+event.target.value);
+});
+const numberOfTeleprompterSlidesInput = document.getElementById(
+  "numberOfTeleprompterSlides"
+);
+numberOfTeleprompterSlidesInput.addEventListener("input", (event) => {
+  setNumberOfTeleprompterSlides(+event.target.value);
+});
+
+const setNumberOfTeleprompterSlides = (newNumberOfTeleprompterSlides) => {
+  numberOfTeleprompterSlides = newNumberOfTeleprompterSlides;
+  console.log({ numberOfTeleprompterSlides });
+  numberOfTeleprompterSlidesInput.value = numberOfTeleprompterSlides;
+  currentTeleprompterSlideIndexInput.max = numberOfTeleprompterSlides + 1;
+  teleprompterSlides.length = numberOfTeleprompterSlides + 1;
+  if (currentTeleprompterSlideIndex > numberOfTeleprompterSlides) {
+    setCurrentTeleprompterSlideIndex(numberOfTeleprompterSlides);
+  }
+};
+
+const setCurrentTeleprompterSlideIndex = (
+  newCurrentTeleprompterSlideIndex,
+  isOffset
+) => {
+  if (isOffset) {
+    newCurrentTeleprompterSlideIndex =
+      currentTeleprompterSlideIndex + newCurrentTeleprompterSlideIndex;
+  }
+  currentTeleprompterSlideIndex = newCurrentTeleprompterSlideIndex;
+  currentTeleprompterSlideIndex = Math.max(
+    1,
+    Math.min(numberOfTeleprompterSlides, currentTeleprompterSlideIndex)
+  );
+  currentTeleprompterSlideIndexInput.value = currentTeleprompterSlideIndex;
+  //console.log({ currentTeleprompterSlideIndex });
+  refreshTeleprompter();
+};
+
+const refreshTeleprompter = () => {
+  textarea.value = useTeleprompter
+    ? teleprompterSlides[currentTeleprompterSlideIndex] ?? ""
+    : "";
+  textarea.dispatchEvent(new Event("input"));
+};
+
+textarea.addEventListener("input", () => {
+  if (!useTeleprompter) {
+    return;
+  }
+  const { value } = textarea;
+  teleprompterSlides[currentTeleprompterSlideIndex] = value;
+});
+window.teleprompterSlides = teleprompterSlides;
+
+const teleprompterLocalStorageKey = "teleprompter";
+const loadTeleprompterFromLocalStorage = () => {
+  //console.log("loadTeleprompterFromLocalStorage")
+  const teleprompterString = localStorage.getItem(teleprompterLocalStorageKey);
+  console.log({ teleprompterString });
+  if (!teleprompterString) {
+    return;
+  }
+  try {
+    const {
+      slides,
+      currentTeleprompterSlideIndex,
+      numberOfTeleprompterSlides,
+      useTeleprompter,
+    } = JSON.parse(teleprompterString);
+    slides.forEach((slide, index) => {
+      teleprompterSlides[index] = slide;
+    });
+    setUseTeleprompter(useTeleprompter);
+    setNumberOfTeleprompterSlides(numberOfTeleprompterSlides);
+    setCurrentTeleprompterSlideIndex(currentTeleprompterSlideIndex);
+  } catch (error) {
+    console.error("error parsing teleprompterString", error);
+  }
+};
+const saveTeleprompterToLocalStorage = () => {
+  //console.log("saveTeleprompterToLocalStorage")
+  localStorage.setItem(
+    teleprompterLocalStorageKey,
+    JSON.stringify({
+      useTeleprompter,
+      numberOfTeleprompterSlides,
+      currentTeleprompterSlideIndex,
+      slides: teleprompterSlides,
+    })
+  );
+};
+window.addEventListener("beforeunload", () => {
+  saveTeleprompterToLocalStorage();
+});
+loadTeleprompterFromLocalStorage();
+
+const teleprompterPointerLockButton = document.getElementById(
+  "teleprompterPointerLock"
+);
+teleprompterPointerLockButton.addEventListener("keydown", (event) => {
+  const { key, target } = event;
+  const { isPointerLocked } = target;
+  if (!isPointerLocked) {
+    return;
+  }
+
+  let preventDefault = true;
+  switch (key) {
+    case "ArrowDown":
+      break;
+    case "ArrowUp":
+      break;
+    case "ArrowRight":
+      setCurrentTeleprompterSlideIndex(1, true);
+      break;
+    case "ArrowLeft":
+      setCurrentTeleprompterSlideIndex(-1, true);
+      break;
+    default:
+      preventDefault = false;
+      console.log(`uncaught key "${key}"`);
+      break;
+  }
+  if (preventDefault) {
+    event.preventDefault();
+  }
+});
+// FILL - lock pointer and use arrow keys
+
+// TELEPROMPTER END
 
 // LOAD
 didLoad = true;

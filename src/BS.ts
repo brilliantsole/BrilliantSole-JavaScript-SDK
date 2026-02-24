@@ -168,6 +168,10 @@ import {
   MicrophoneConfigurationType,
   MicrophoneConfigurationTypes,
   MicrophoneConfigurationValues,
+  MicrophoneBitDepth,
+  MicrophoneBitDepths,
+  MicrophoneSampleRate,
+  MicrophoneSampleRates,
 } from "./MicrophoneManager.ts";
 export {
   MicrophoneConfiguration,
@@ -176,6 +180,10 @@ export {
   MicrophoneConfigurationType,
   MicrophoneConfigurationTypes,
   MicrophoneConfigurationValues,
+  MicrophoneBitDepth,
+  MicrophoneBitDepths,
+  MicrophoneSampleRate,
+  MicrophoneSampleRates,
 };
 
 import {
@@ -310,6 +318,7 @@ import {
   getMaxSpriteSheetSize,
   englishRegex,
   FontToSpriteSheetOptions,
+  FontMetrics,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 export {
   DisplaySprite,
@@ -328,6 +337,7 @@ export {
   getMaxSpriteSheetSize,
   englishRegex,
   FontToSpriteSheetOptions,
+  FontMetrics,
 };
 
 /** BROWSER_START */
