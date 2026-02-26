@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Navisens Web Demo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f4ee;
+        --panel: #ffffff;
+        --text: #161616;
+        --muted: #5e5e5e;
+        --accent: #1e6f5c;
+        --accent-dark: #155244;
+        --border: #d8d2c8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: "Avenir Next", "Helvetica Neue", Helvetica, Arial,
+          sans-serif;
+        background: radial-gradient(
+          circle at top,
+          #fffaf1,
+          #efe7dc 55%,
+          #e7ded2 100%
+        );
+        color: var(--text);
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        display: grid;
+        gap: 20px;
+      }
+
+      header {
+        display: grid;
+        gap: 8px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        letter-spacing: 0.4px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand img {
+        height: 32px;
+        width: auto;
+        display: block;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 14px 30px rgba(32, 22, 10, 0.08);
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .control-stack {
+        display: grid;
+        gap: 10px;
+      }
+
+      .top-panel {
+        display: grid;
+        gap: 16px;
+        align-items: center;
+        grid-template-columns: minmax(220px, 1.2fr) minmax(200px, 0.8fr);
+      }
+
+      .control-text {
+        color: var(--muted);
+        font-size: 14px;
+        flex: 1 1 auto;
+        min-width: 0;
+        white-space: normal;
+        line-height: 1.3;
+      }
+
+      .input-mode {
+        display: grid;
+        gap: 8px;
+      }
+
+      .input-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .input-button {
+        background: #f4eee3;
+        color: #3d3d3d;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: none;
+        transform: none;
+      }
+
+      .input-button.selected {
+        background: rgba(30, 111, 92, 0.12);
+        color: var(--accent-dark);
+        border-color: var(--accent);
+      }
+
+      .input-note {
+        font-size: 12px;
+        line-height: 1.35;
+        margin-top: 2px;
+      }
+
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .primary {
+        background: var(--accent);
+        color: #ffffff;
+        box-shadow: 0 10px 18px rgba(30, 111, 92, 0.3);
+      }
+
+      .primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 22px rgba(30, 111, 92, 0.4);
+      }
+
+      .danger {
+        background: #c53a2f;
+        color: #ffffff;
+        box-shadow: 0 10px 18px rgba(197, 58, 47, 0.3);
+      }
+
+      .danger:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 22px rgba(197, 58, 47, 0.4);
+      }
+
+      .status-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr;
+      }
+
+      .status-card {
+        display: grid;
+        gap: 8px;
+        padding: 12px;
+        border-radius: 12px;
+        background: #faf6ef;
+        border: 1px solid var(--border);
+      }
+
+      .status-item {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .status-item + .status-item {
+        border-top: 1px solid var(--border);
+        padding-top: 8px;
+      }
+
+      .status-item.wide {
+        grid-column: 1 / -1;
+      }
+
+      .status-item.message {
+        align-items: flex-start;
+      }
+
+      .status-item.message .status-value {
+        text-align: right;
+        max-width: 65%;
+        word-break: break-word;
+        font-weight: 500;
+      }
+
+      .build-footer {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+        color: var(--muted);
+        text-align: left;
+        padding-bottom: 8px;
+      }
+
+      .status-label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      .status-value {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .status-inline {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .data-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+
+      .data-card {
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        padding: 12px;
+        background: #fbf8f2;
+      }
+
+      .data-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .data-card strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 18px;
+      }
+
+      .plot-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      .plot-header h2 {
+        margin: 0;
+      }
+
+      .plot-title {
+        flex: 1 1 auto;
+      }
+
+      .plot-container {
+        border-radius: 12px;
+        border: 1px solid #2a2a2a;
+        background: #0b0b0b;
+        padding: 10px;
+        position: relative;
+      }
+
+      #positionPlot {
+        display: block;
+        width: 100%;
+        height: 360px;
+      }
+
+      .legend {
+        display: flex;
+        gap: 8px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        align-items: center;
+        position: absolute;
+        top: 12px;
+        right: 12px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .legend-dot.current {
+        background: #ff3b30;
+      }
+
+      .legend-dot.path {
+        background: #2ecc71;
+      }
+
+      @media (max-width: 720px) {
+        .top-panel {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+    <script defer src="./script.js"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="brand">
+          <h1>Navisens Web Demo</h1>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="top-panel">
+          <div class="control-stack">
+            <div class="control-text">
+              Tap start and walk around to view your path.
+            </div>
+            <div class="input-mode">
+              <div class="status-label">Input</div>
+              <div class="input-buttons">
+                <button
+                  class="input-button selected"
+                  id="inputBrowserButton"
+                  type="button"
+                >
+                  Browser Sensors
+                </button>
+                <button
+                  class="input-button"
+                  id="inputExternalButton"
+                  type="button"
+                >
+                  External Feed
+                </button>
+              </div>
+              <div class="control-text input-note" id="inputModeNote">
+                Browser mode: SDK reads device sensors directly.
+              </div>
+            </div>
+          </div>
+          <div class="status-grid">
+            <div class="status-card">
+              <div class="status-item">
+                <div class="status-label">State</div>
+                <div class="status-value" id="runStateValue">Loading</div>
+              </div>
+              <div class="status-item">
+                <div class="status-label">SDK</div>
+                <div class="status-value" id="sdkStatusValue">--</div>
+              </div>
+              <div class="status-item message wide">
+                <div class="status-label">Message</div>
+                <div class="status-value" id="sdkMessageValue">None</div>
+              </div>
+              <div class="status-item">
+                <div class="status-label">Motion Permission</div>
+                <div class="status-value" id="motionStatus">Unknown</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="plot-header">
+          <div class="plot-title">
+            <h2>Path</h2>
+          </div>
+          <button class="primary" id="toggleButton">Start</button>
+        </div>
+        <div class="plot-container">
+          <div class="legend">1m grid</div>
+          <canvas id="positionPlot"></canvas>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="data-grid">
+          <div class="data-card">
+            <span>X</span><strong id="posX">--</strong>
+          </div>
+          <div class="data-card">
+            <span>Y</span><strong id="posY">--</strong>
+          </div>
+          <div class="data-card">
+            <span>HDG</span><strong id="posHeading">--</strong>
+          </div>
+          <div class="data-card">
+            <span>Time</span><strong id="posTime">--</strong>
+          </div>
+          <div class="data-card">
+            <span>Motion</span><strong id="posMotion">--</strong>
+          </div>
+        </div>
+      </section>
+
+      <footer class="build-footer" id="buildText">BUILD --</footer>
+    </main>
+  </body>
+</html>
