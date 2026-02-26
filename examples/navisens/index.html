@@ -1,0 +1,90 @@
+<html>
+  <head>
+    <title>Navisens | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+  </head>
+  <style>
+    label {
+      display: block;
+    }
+
+    #navisensPath {
+      background-color: black;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>
+      <a href="https://www.navisens.com/" target="_blank">Navisens</a> |
+      BrilliantSole JavaScript SDK
+    </h1>
+
+    <label>
+      navisens api key (get one
+      <a href="https://www.navisens.com/request-key" target="_blank">here</a>)
+      <input type="text" id="navisensApiKey" size="52" />
+    </label>
+    <label>
+      <button id="toggleNavisens" disabled>start navisens</button>
+    </label>
+    <label>
+      navisens filename
+      <input id="logFileName" type="text" disabled size="25" />
+    </label>
+    <br />
+
+    <label>
+      use local motion data
+      <input type="checkbox" id="useLocalSensorData" />
+    </label>
+    <label>
+      local motion data
+      <pre id="localSensorData"></pre>
+    </label>
+    <br />
+
+    <label>
+      <button id="toggleConnection">connect</button>
+    </label>
+
+    <label>
+      sensor rate
+      <input
+        id="sensorRate"
+        type="number"
+        value="50"
+        min="50"
+        max="100"
+        step="10"
+      />
+    </label>
+    <label>
+      include magnetometer
+      <input type="checkbox" id="includeMagnetometer" />
+    </label>
+    <label>
+      <button id="toggleSensorData" disabled>enable motion</button>
+    </label>
+    <label>
+      device motion data
+      <pre id="sensorData"></pre>
+    </label>
+    <br />
+
+    <label>
+      input motion data
+      <pre id="inputMotion"></pre>
+    </label>
+    <label>
+      navisens update
+      <pre id="navisensUpdate"></pre>
+    </label>
+
+    <canvas id="navisensPath" width="300" height="300"></canvas>
+  </body>
+</html>
