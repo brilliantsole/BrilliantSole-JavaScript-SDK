@@ -1638,8 +1638,6 @@ teleprompterPointerLockButton.addEventListener("keydown", (event) => {
     event.preventDefault();
   }
 });
-// FILL - lock pointer and use arrow keys
-
 // TELEPROMPTER END
 
 // LOAD
