@@ -25,58 +25,6 @@ device.addEventListener("connectionStatus", () => {
 });
 // CONNECTION END
 
-// MULTISET CREDENTIALS START
-const multiSetCredentials = {
-  clientSecret: "",
-  clientSecretLength: 64,
-
-  clientId: "",
-  clientIdLength: 36,
-};
-window.multiSetCredentials = multiSetCredentials;
-
-const setupMultiSetCredentialsInput = (name) => {
-  const length = multiSetCredentials[`${name}Length`];
-  const input = document.querySelector(`[data-multiset-credential="${name}"]`);
-  //console.log(name, input);
-  multiSetCredentials[`${name}Input`] = input;
-  const setValue = (value, didLoad) => {
-    value = value.trim();
-    const isValidLength = value.length == length;
-    if (isValidLength) {
-      //console.log({ [name]: value });
-      multiSetCredentials[name] = value;
-      input.value = value;
-      if (!didLoad) {
-        saveToLocalStorage();
-      }
-    } else {
-      //console.log("invalid length", { value, name, length });
-    }
-  };
-  input.addEventListener("input", (event) => {
-    const value = event.target.value;
-    setValue(value);
-  });
-  const localStorageKey = ["multiset", name].join(".");
-  const saveToLocalStorage = () => {
-    //console.log("saveToLocalStorage", { name, localStorageKey });
-    localStorage.setItem(localStorageKey, multiSetCredentials[name]);
-  };
-  const loadFromLocalStorage = () => {
-    //console.log("loadFromLocalStorage", { name, localStorageKey });
-    const value = localStorage.getItem(localStorageKey);
-    if (!value) {
-      return;
-    }
-    setValue(value, true);
-  };
-  loadFromLocalStorage();
-};
-setupMultiSetCredentialsInput("clientId");
-setupMultiSetCredentialsInput("clientSecret");
-// MULTISET CREDENTIALS END
-
 // MULTISET START
 const multiSetApiBaseEndpoint = "https://api.multiset.ai/v1/";
 

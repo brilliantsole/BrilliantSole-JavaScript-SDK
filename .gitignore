@@ -137,5 +137,3 @@ tflite-converter/uploads
 /cameraImages
 /cameraRecordings
 /microphoneRecordings
-
-config.env
