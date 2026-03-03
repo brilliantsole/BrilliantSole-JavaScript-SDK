@@ -3,12 +3,12 @@ window.addEventListener("load", () => {
     if (!("pointerLock" in button.dataset)) {
       return;
     }
-    //console.log("loadButton", button);
+    // console.log("loadButton", button);
 
     let isPointerLocked = false;
     const setIsPointerLocked = (newIsPointerLocked) => {
       isPointerLocked = newIsPointerLocked;
-      //   console.log({ isPointerLocked });
+      // console.log({ isPointerLocked });
       updateButtonText();
       button.dispatchEvent(
         new CustomEvent("isPointerLocked", { detail: { isPointerLocked } })
