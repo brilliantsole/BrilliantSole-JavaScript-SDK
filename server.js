@@ -81,22 +81,6 @@ app.post("/bottango", async (req, res) => {
   }
 });
 
-app.get("/multiset/token", async (req, res) => {
-  try {
-    // Make the PUT request to the ControlInput endpoint
-    const putUrl = `http://localhost:${port}/ControlInput/`;
-    const putData = { identifier, value };
-
-    await axios.put(putUrl, putData);
-
-    // Respond back to the client after the PUT request succeeds
-    res.status(200).send("Request forwarded successfully");
-  } catch (error) {
-    console.error("Error making PUT request:", error.message);
-    res.status(500).send("Failed to forward request");
-  }
-});
-
 let serverOptions;
 if (true) {
   serverOptions = {
