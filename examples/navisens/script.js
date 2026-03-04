@@ -127,7 +127,7 @@ device.addEventListener("isConnected", () => {
   toggleSensorDataButton.disabled = !device.isConnected;
 });
 
-const gravitySalar = 9.81;
+const gravityScalar = 9.81;
 /** @type {{acceleration: BS.Vector3, gyroscope: BS.Vector3, magnetometer?: BS.Vector3, timestamp: number}} */
 let latestSensorData;
 /** @type {HTMLPreElement} */
@@ -178,9 +178,9 @@ device.addEventListener("sensorData", (event) => {
           z: gyroscope.y,
         },
         {
-          x: -acceleration.x * gravitySalar,
-          y: acceleration.z * gravitySalar,
-          z: -acceleration.y * gravitySalar,
+          x: -acceleration.x * gravityScalar,
+          y: acceleration.z * gravityScalar,
+          z: -acceleration.y * gravityScalar,
         },
         includeMagnetometer
           ? {
