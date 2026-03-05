@@ -122,14 +122,14 @@ let cameraStream;
 
 /** @param {MediaStreamConstraints} */
 window.getUserMedia = async (constraints) => {
-  console.log("getUserMedia", constraints);
+  // console.log("getUserMedia", constraints);
 
   if (!constraints.target) {
     if (cameraStream) {
       cameraStream.getTracks().forEach((track) => track.stop());
     }
     cameraStream = cameraStreamCanvas.captureStream();
-    console.log("cameraStream", cameraStream);
+    // console.log("cameraStream", cameraStream);
     cameraStreamVideo.srcObject = cameraStream;
     return cameraStream;
   } else {

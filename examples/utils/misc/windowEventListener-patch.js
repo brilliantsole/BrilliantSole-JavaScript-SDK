@@ -22,7 +22,7 @@ const _windowEventListenerMap = {};
   };
   window.addEventListener = (type, listener, options) => {
     if (type in _windowEventListenerMap) {
-      console.log({ type }, _windowEventListenerMap);
+      // console.log({ type }, _windowEventListenerMap);
       _windowEventListenerMap[type].push(listener);
     }
 
