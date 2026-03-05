@@ -6,19 +6,14 @@
     <script src="../utils/misc/cameraSelect.js"></script>
     <script src="../utils/misc/deviceMotion-patch.js"></script>
     <script src="../utils/misc/getUserMedia-patch.js"></script>
-    <script>
-      window.navigatorPatch = {
-        userAgent:
-          "Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1",
-      };
-      window.windowEventListeners = [
-        "devicemotion",
-        "deviceorientation",
-        "deviceorientationabsolute",
-      ];
-    </script>
-    <script src="../utils/misc/windowEventListener-patch.js"></script>
-    <script src="../utils/misc/navigator-patch.js"></script>
+    <script
+      src="../utils/misc/windowEventListener-patch.js"
+      data-window-event-listeners="devicemotion,deviceorientation,deviceorientationabsolute"
+    ></script>
+    <script
+      src="../utils/misc/navigator-patch.js"
+      data-navigator-user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+    ></script>
     <script type="module" src="./script.js"></script>
 
     <script src="./external/scripts/8frame-1.5.0.min.js"></script>
@@ -52,7 +47,8 @@
       display: block;
     }
     video,
-    img {
+    img,
+    canvas {
       height: 300px;
     }
 
@@ -91,18 +87,22 @@
       camera
       <select data-camera data-width="1280" data-height="720"></select>
     </label>
-    <label>
-      <button id="grabVideoFrame" disabled>grab video frame</button>
-    </label>
-    <label>
-      auto grab
-      <input type="checkbox" data-multiset-grabvideoframe="auto" />
-    </label>
 
-    <video id="cameraVideo" autoplay muted></video>
-    <img id="cameraImage" hidden />
+    <video id="cameraVideo" autoplay></video>
+    <img id="cameraImage" />
 
     <br />
+    <label>
+      ip address:
+      <input
+        id="deviceIpAddress"
+        placeholder="192.168.4.01"
+        type="text"
+        minlength="7"
+        maxlength="253"
+        size="25"
+      />
+    </label>
     <button id="toggleConnection">connect</button>
     <button id="takePicture" disabled>take picture</button>
     <button id="focusCamera" disabled>focus</button>
@@ -110,9 +110,11 @@
 
     <label>
       auto picture
-      <input type="checkbox" data-multiset-devicecamera="auto" />
+      <input type="checkbox" id="autoPicture" checked />
     </label>
-    <img id="deviceImage" hidden />
+    <img id="deviceImage" />
+    <canvas id="cameraStreamCanvas"></canvas>
+    <video id="cameraStreamVideo" autoplay muted></video>
 
     <br />
 

@@ -728,18 +728,39 @@ class Device {
     return this.connectionManager!.disconnect();
   }
 
-  toggleConnection(reconnect = true) {
+  async toggleConnection(options: ConnectOptions): Promise<void>;
+  async toggleConnection(reconnect?: boolean): Promise<void>;
+  async toggleConnection(arg: ConnectOptions | boolean = true) {
+    let options: ConnectOptions | undefined;
+    let reconnect = true;
+    switch (typeof arg) {
+      case "boolean":
+      case "bigint":
+      case "number":
+      case "string":
+        reconnect = Boolean(arg);
+        break;
+      case "object":
+        options = arg;
+        reconnect = false;
+        break;
+      default:
+        _console.error("uncaught toggleConnection param", arg);
+        break;
+    }
+    _console.log("reconnect", { reconnect, options });
+
     if (this.isConnected) {
       this.disconnect();
     } else if (reconnect && this.canReconnect) {
       try {
-        this.reconnect();
+        await this.reconnect();
       } catch (error) {
         _console.error("error trying to reconnect", error);
-        this.connect();
+        await this.connect(options);
       }
     } else {
-      this.connect();
+      await this.connect(options);
     }
   }
 

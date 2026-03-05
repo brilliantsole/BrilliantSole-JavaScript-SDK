@@ -5,10 +5,18 @@ const device = new BS.Device();
 window.device = device;
 
 // CONNECTION START
+const deviceIpAddressInput = document.getElementById("deviceIpAddress");
 const toggleConnectionButton = document.getElementById("toggleConnection");
-toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
-);
+toggleConnectionButton.addEventListener("click", () => {
+  if (deviceIpAddressInput.value) {
+    device.toggleConnection({
+      type: "webSocket",
+      ipAddress: deviceIpAddressInput.value,
+    });
+  } else {
+    device.toggleConnection();
+  }
+});
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
   let innerText = device.connectionStatus;
@@ -31,14 +39,163 @@ const THREE = window.THREE;
 /** @typedef {import("three").Object3D} Object3D */
 // THREE END
 
+// DEVICE CAMERA START
+/** @type {HTMLImageElement} */
+const deviceImage = document.getElementById("deviceImage");
+device.addEventListener("cameraImage", (event) => {
+  const { url } = event.message;
+  deviceImage.src = url;
+});
+deviceImage.addEventListener("load", async () => {
+  if (deviceImage.hasAttribute("hidden")) {
+    deviceImage.removeAttribute("hidden");
+  }
+  if (autoPictureCheckbox.checked) {
+    //console.log("retake");
+    takePicture();
+  }
+});
+
+const takePicture = () => {
+  device.takePicture();
+};
+const takePictureButton = document.getElementById("takePicture");
+takePictureButton.addEventListener("click", () => {
+  takePicture();
+});
+const updateTakePictureButton = () => {
+  takePictureButton.disabled =
+    !device.isConnected || device.cameraStatus != "idle" || !device.hasCamera;
+  takePictureButton.innerText =
+    device.cameraStatus == "takingPicture" ? "taking picture" : "take picture";
+};
+device.addEventListener("isConnected", () => {
+  updateTakePictureButton();
+});
+device.addEventListener("cameraStatus", () => {
+  updateTakePictureButton();
+});
+device.addEventListener("cameraStatus", (event) => {
+  const { cameraStatus, previousCameraStatus } = event.message;
+  if (cameraStatus == "idle" && previousCameraStatus == "focusing") {
+    takePicture();
+  }
+});
+
+const focusCameraButton = document.getElementById("focusCamera");
+focusCameraButton.addEventListener("click", () => {
+  device.focusCamera();
+});
+const updateFocusCameraButton = () => {
+  focusCameraButton.innerText =
+    device.cameraStatus == "focusing" ? "focusing" : "focus";
+  focusCameraButton.disabled =
+    !device.isConnected || device.cameraStatus != "idle";
+};
+device.addEventListener("isConnected", () => {
+  updateFocusCameraButton();
+});
+device.addEventListener("cameraStatus", () => {
+  updateFocusCameraButton();
+});
+
+/** @type {HTMLProgressElement} */
+const deviceImageProgress = document.getElementById("deviceImageProgress");
+device.addEventListener("cameraImageProgress", (event) => {
+  if (event.message.type == "image") {
+    deviceImageProgress.value = event.message.progress;
+  }
+});
+
+const autoPictureCheckbox = document.getElementById("autoPicture");
+// DEVICE CAMERA END
+
 // GET USER MEDIA START
+/** @type {HTMLCanvasElement} */
+const cameraStreamCanvas = document.getElementById("cameraStreamCanvas");
+cameraStreamCanvas.width = 320;
+cameraStreamCanvas.height = 240;
+const cameraStreamContext = cameraStreamCanvas.getContext("2d");
+const cameraStreamVideo = document.getElementById("cameraStreamVideo");
+/** @type {MediaStream} */
+let cameraStream;
+
 /** @param {MediaStreamConstraints} */
 window.getUserMedia = async (constraints) => {
   console.log("getUserMedia", constraints);
-  // FILL
-  return _getUserMedia(constraints);
+
+  if (!constraints.target) {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop());
+    }
+    cameraStream = cameraStreamCanvas.captureStream();
+    console.log("cameraStream", cameraStream);
+    cameraStreamVideo.srcObject = cameraStream;
+    return cameraStream;
+  } else {
+    return _getUserMedia(constraints);
+  }
 };
+
+deviceImage.addEventListener("load", () => {
+  if (cameraStreamCanvas.width != deviceImage.naturalWidth) {
+    cameraStreamCanvas.width = deviceImage.naturalWidth;
+  }
+  if (cameraStreamCanvas.height != deviceImage.naturalHeight) {
+    cameraStreamCanvas.height = deviceImage.naturalHeight;
+  }
+  cameraStreamContext.drawImage(deviceImage, 0, 0);
+});
 // GET USER MEDIA END
+
+// CAMERA START
+const cameraSelect = document.querySelector("[data-camera]");
+/** @type {HTMLVideoElement} */
+const cameraVideo = document.getElementById("cameraVideo");
+/** @type {HTMLImageElement} */
+const cameraImage = document.getElementById("cameraImage");
+
+cameraSelect.addEventListener("cameraStreamStart", (event) => {
+  const { cameraStream } = event.detail;
+  //console.log("cameraStream", cameraStream);
+  cameraVideo.srcObject = cameraStream;
+});
+cameraSelect.addEventListener("cameraStreamStop", () => {
+  //console.log("stopCameraStream");
+  cameraVideo.srcObject = undefined;
+});
+
+let drawCameraVideoIntervalId;
+const startDrawingCameraVideo = () => {
+  stopDrawingCameraVideo();
+  drawCameraVideoIntervalId = setInterval(() => {
+    // console.log("drawingCameraVideo");
+    if (cameraStreamCanvas.width != cameraVideo.videoWidth) {
+      cameraStreamCanvas.width = cameraVideo.videoWidth;
+    }
+    if (cameraStreamCanvas.height != cameraVideo.videoHeight) {
+      cameraStreamCanvas.height = cameraVideo.videoHeight;
+    }
+    cameraStreamContext.drawImage(cameraVideo, 0, 0);
+  }, 10);
+};
+const stopDrawingCameraVideo = () => {
+  if (drawCameraVideoIntervalId == undefined) {
+    return;
+  }
+  clearInterval(drawCameraVideoIntervalId);
+  drawCameraVideoIntervalId = undefined;
+};
+cameraVideo.addEventListener("loadedmetadata", () => {
+  // console.log("loadedmetadata");
+  startDrawingCameraVideo();
+});
+cameraVideo.addEventListener("emptied", () => {
+  // console.log("emptied");
+  stopDrawingCameraVideo();
+});
+
+// CAMERA END
 
 // DEVICE MOTION START
 window.DeviceOrientationEvent_requestPermission = () => {
@@ -54,17 +211,14 @@ const absoluteOrientation = false;
 const sensorRate = 20;
 const toggleSensorData = async () => {
   latestSensorData = undefined;
-  if (device.sensorConfiguration.acceleration) {
-    await device.clearSensorConfiguration();
-  } else {
-    await device.setSensorConfiguration({
-      acceleration: sensorRate,
-      linearAcceleration: sensorRate,
-      gyroscope: sensorRate,
-      rotation: absoluteOrientation ? sensorRate : 0,
-      gameRotation: !absoluteOrientation ? sensorRate : 0,
-    });
-  }
+  const _sensorRate = device.sensorConfiguration.acceleration ? 0 : sensorRate;
+  await device.setSensorConfiguration({
+    acceleration: _sensorRate,
+    linearAcceleration: _sensorRate,
+    gyroscope: _sensorRate,
+    rotation: absoluteOrientation ? _sensorRate : 0,
+    gameRotation: !absoluteOrientation ? _sensorRate : 0,
+  });
 };
 
 const toggleSensorDataButton = document.getElementById("toggleSensorData");
@@ -115,35 +269,51 @@ const quaternionToDeviceOrientation = (quaternion) => {
   };
 };
 
-const onQuaternion = (quaternion, absolute = false) => {
+const onQuaternion = (quaternion, timestamp, absolute = false) => {
   const { alpha, gamma, beta } = quaternionToDeviceOrientation(quaternion);
-  window.dispatchEvent(
-    new DeviceOrientationEvent(deviceOrientationEventType, {
-      absolute,
-      alpha,
-      beta,
-      gamma,
-    })
-  );
-  if (absolute) {
-    window.dispatchEvent(
-      new DeviceOrientationEvent(deviceOrientationAbsoluteEventType, {
-        absolute,
-        alpha,
-        beta,
-        gamma,
-      })
+  /** @type {DeviceOrientationEventInit} */
+  const deviceOrientationInitData = {
+    absolute,
+    alpha,
+    beta,
+    gamma,
+    timestamp,
+  };
+  if (true) {
+    _windowEventListenerMap["deviceorientation"].forEach((listener) =>
+      listener(deviceOrientationInitData)
     );
+    if (absolute) {
+      _windowEventListenerMap["deviceorientationabsolute"].forEach((listener) =>
+        listener(deviceOrientationInitData)
+      );
+    }
+  } else {
+    window.dispatchEvent(
+      new DeviceOrientationEvent(
+        deviceOrientationEventType,
+        deviceOrientationInitData
+      )
+    );
+    if (absolute) {
+      window.dispatchEvent(
+        new DeviceOrientationEvent(
+          deviceOrientationAbsoluteEventType,
+          deviceOrientationInitData
+        )
+      );
+    }
   }
 };
 device.addEventListener("sensorData", (event) => {
   const { message } = event;
+  const { timestamp } = message;
   switch (message.sensorType) {
     case "gameRotation":
-      onQuaternion(message.gameRotation);
+      onQuaternion(message.gameRotation, timestamp);
       break;
     case "rotation":
-      onQuaternion(message.rotation, true);
+      onQuaternion(message.rotation, timestamp, true);
       break;
   }
 });
@@ -173,26 +343,36 @@ device.addEventListener("sensorData", (event) => {
 
   const { acceleration, linearAcceleration, gyroscope } = latestSensorData;
   if (linearAcceleration && acceleration && gyroscope) {
-    window.dispatchEvent(
-      new DeviceMotionEvent(deviceMotionEventType, {
-        acceleration: {
-          x: -linearAcceleration.x * gravityScalar,
-          y: -linearAcceleration.y * gravityScalar,
-          z: -linearAcceleration.z * gravityScalar,
-        },
-        accelerationIncludingGravity: {
-          x: -acceleration.x * gravityScalar,
-          y: -acceleration.y * gravityScalar,
-          z: -acceleration.z * gravityScalar,
-        },
-        rotationRate: {
-          alpha: gyroscope.x,
-          beta: gyroscope.y,
-          gamma: gyroscope.z,
-        },
-        interval: sensorRate,
-      })
-    );
+    /** @type {deviceMotionInitData} */
+    const deviceMotionInitData = {
+      timestamp,
+      acceleration: {
+        x: -linearAcceleration.x * gravityScalar,
+        y: -linearAcceleration.y * gravityScalar,
+        z: -linearAcceleration.z * gravityScalar,
+      },
+      accelerationIncludingGravity: {
+        x: -acceleration.x * gravityScalar,
+        y: -acceleration.y * gravityScalar,
+        z: -acceleration.z * gravityScalar,
+      },
+      rotationRate: {
+        alpha: gyroscope.x,
+        beta: gyroscope.y,
+        gamma: gyroscope.z,
+      },
+      interval: sensorRate,
+    };
+    if (true) {
+      _windowEventListenerMap["devicemotion"].forEach((listener) =>
+        listener(deviceMotionInitData)
+      );
+    } else {
+      window.dispatchEvent(
+        new DeviceMotionEvent(deviceMotionEventType, deviceMotionInitData)
+      );
+    }
+
     latestSensorData = undefined;
   }
 });
@@ -233,6 +413,21 @@ window.addEventListener(deviceOrientationEventType, (event) => {
     })
   );
 });
+window.addEventListener(deviceOrientationAbsoluteEventType, (event) => {
+  const { absolute, alpha, beta, gamma } = event;
+  if (device.isConnected) {
+    return;
+  }
+  // console.log("deviceorientationabsolute", event);
+  window.dispatchEvent(
+    new DeviceOrientationEvent(deviceOrientationAbsoluteEventType, {
+      absolute,
+      alpha,
+      beta,
+      gamma,
+    })
+  );
+});
 
 /** @type {HTMLPreElement} */
 const deviceMotionPre = document.getElementById("deviceMotion");
@@ -257,14 +452,18 @@ window.addEventListener("devicemotion", (event) => {
       rotationRate,
     },
     (_, value) => {
-      if (value instanceof DeviceMotionEventAcceleration) {
+      if (value === null) {
+        return value;
+      } else if (typeof value != "object") {
+        return value;
+      } else if ("x" in value) {
         const { x, y, z } = value;
         return {
           x,
           y,
           z,
         };
-      } else if (value instanceof DeviceMotionEventRotationRate) {
+      } else if ("alpha" in value) {
         const { alpha, beta, gamma } = value;
         return {
           alpha,
@@ -292,7 +491,6 @@ window.addEventListener("deviceorientation", (event) => {
     2
   );
 });
-
 // DEVICE MOTION END
 
 // AFRAME START

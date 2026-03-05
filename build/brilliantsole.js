@@ -27231,21 +27231,39 @@
 	        }
 	        return this.connectionManager.disconnect();
 	    }
-	    toggleConnection(reconnect = true) {
+	    async toggleConnection(arg = true) {
+	        let options;
+	        let reconnect = true;
+	        switch (typeof arg) {
+	            case "boolean":
+	            case "bigint":
+	            case "number":
+	            case "string":
+	                reconnect = Boolean(arg);
+	                break;
+	            case "object":
+	                options = arg;
+	                reconnect = false;
+	                break;
+	            default:
+	                _console$7.error("uncaught toggleConnection param", arg);
+	                break;
+	        }
+	        _console$7.log("reconnect", { reconnect, options });
 	        if (this.isConnected) {
 	            this.disconnect();
 	        }
 	        else if (reconnect && this.canReconnect) {
 	            try {
-	                this.reconnect();
+	                await this.reconnect();
 	            }
 	            catch (error) {
 	                _console$7.error("error trying to reconnect", error);
-	                this.connect();
+	                await this.connect(options);
 	            }
 	        }
 	        else {
-	            this.connect();
+	            await this.connect(options);
 	        }
 	    }
 	    get connectionStatus() {

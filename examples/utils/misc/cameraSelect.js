@@ -71,6 +71,7 @@ window.addEventListener("load", () => {
         return;
       }
       stream = await navigator.mediaDevices.getUserMedia({
+        target: select,
         video: {
           ...properties,
           deviceId: { exact: deviceId },
