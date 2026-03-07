@@ -122,7 +122,8 @@ const autoPictureCheckbox = document.getElementById("autoPicture");
 /** @type {HTMLCanvasElement} */
 const cameraStreamCanvas = document.getElementById("cameraStreamCanvas");
 const cameraStreamContext = cameraStreamCanvas.getContext("2d");
-const cameraStreamContextAspectRatio = 0.5625;
+const cameraStreamContextAspectRatio =
+  window.screen.orientation.angle == 90 ? 4 / 3 : 3 / 4;
 
 /** @param {HTMLMediaElement} element */
 const drawCanvasStreamCanvas = (element) => {
@@ -346,6 +347,11 @@ let latestSensorData;
 
 const deviceOrientationEuler = new THREE.Euler(0, 0, 0, "YXZ");
 const deviceOrientationQuaternion = new THREE.Quaternion();
+const deviceOrientationLandscapeQuaternion =
+  new THREE.Quaternion().setFromAxisAngle(
+    new THREE.Vector3(0, 0, 1), // forward axis
+    Math.PI / 2 // 90 degrees
+  );
 const deviceOrientationCorrectionQuaternion = new THREE.Quaternion(
   -Math.sqrt(0.5),
   0,
@@ -356,7 +362,11 @@ const deviceOrientationCorrectionQuaternion = new THREE.Quaternion(
 const quaternionToDeviceOrientation = (quaternion) => {
   deviceOrientationQuaternion
     .copy(quaternion)
-    .multiply(deviceOrientationCorrectionQuaternion);
+    .multiply(deviceOrientationLandscapeQuaternion);
+
+  if (window.screen.orientation.angle == 90) {
+    deviceOrientationQuaternion.multiply(deviceOrientationCorrectionQuaternion);
+  }
 
   deviceOrientationEuler.setFromQuaternion(deviceOrientationQuaternion);
 

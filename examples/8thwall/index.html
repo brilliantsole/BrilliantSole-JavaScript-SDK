@@ -13,12 +13,27 @@
     <script
       src="../utils/misc/window-patch.js"
       data-navigator-user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
-      data-screen-width="101"
-      data-screen-height="180"
-      data-inner-width="101"
-      data-inner-height="180"
+      data-screen-height="101"
+      data-screen-width="180"
+      data-inner-height="101"
+      data-inner-width="180"
     ></script>
     <script type="module" src="./script.js"></script>
+
+    <script>
+      try {
+        Object.defineProperty(window, "orientation", {
+          get: function () {
+            return 90;
+          },
+        });
+        Object.defineProperty(window.screen.orientation, "angle", {
+          get: function () {
+            return 90;
+          },
+        });
+      } catch (error) {}
+    </script>
 
     <script src="./external/scripts/8frame-1.5.0.min.js"></script>
     <script src="./external/xrextras/xrextras.js"></script>
@@ -68,7 +83,7 @@
 
     #sceneContainer {
       display: grid;
-      aspect-ratio: 0.5625;
+      aspect-ratio: 1.333;
       height: 500px;
     }
     #sceneContainer > * {
