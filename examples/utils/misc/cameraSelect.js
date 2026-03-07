@@ -13,13 +13,13 @@ window.addEventListener("load", () => {
     };
 
     const addProperty = (name, defaultValue, isFirstLoad) => {
-      properties[name] = select.dataset[name] ?? defaultValue;
+      properties[name] = +(select.dataset[name] ?? defaultValue);
       if (isFirstLoad) {
         select.dataset[name] = properties[name];
       }
       //console.log({ [name]: properties[name] });
       const setValue = (newValue, updateDataset) => {
-        properties[name] = newValue;
+        properties[name] = +newValue;
         const detail = { [name]: properties[name] };
         //console.log(detail);
         select.dispatchEvent(new CustomEvent(`camera-${name}`, { detail }));

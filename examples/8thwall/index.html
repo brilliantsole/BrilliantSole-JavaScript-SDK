@@ -11,8 +11,12 @@
       data-window-event-listeners="devicemotion,deviceorientation,deviceorientationabsolute"
     ></script>
     <script
-      src="../utils/misc/navigator-patch.js"
+      src="../utils/misc/window-patch.js"
       data-navigator-user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+      data-screen-width="101"
+      data-screen-height="180"
+      data-inner-width="101"
+      data-inner-height="180"
     ></script>
     <script type="module" src="./script.js"></script>
 
@@ -64,7 +68,7 @@
 
     #sceneContainer {
       display: grid;
-      aspect-ratio: 1.3;
+      aspect-ratio: 0.5625;
       height: 500px;
     }
     #sceneContainer > * {
@@ -88,7 +92,7 @@
       <select data-camera data-width="1280" data-height="720"></select>
     </label>
 
-    <video id="cameraVideo" autoplay></video>
+    <video id="cameraVideo" autoplay playsinline></video>
     <img id="cameraImage" />
 
     <br />
@@ -114,7 +118,7 @@
     </label>
     <img id="deviceImage" />
     <canvas id="cameraStreamCanvas"></canvas>
-    <video id="cameraStreamVideo" autoplay muted></video>
+    <video id="cameraStreamVideo" autoplay playsinline></video>
 
     <br />
 
@@ -210,10 +214,12 @@
         >
         </a-box>
 
-        <a-entity id="model" position="0 0 0"></a-entity>
+        <a-entity id="model" position="0 8 12" scale="1 1 1"></a-entity>
       </a-scene>
     </div>
     <button id="openInspector">open inspector</button>
+    <button id="recenter">recenter</button>
+    <button id="toggleXR">pause XR</button>
     <label style="height: 24rem">
       camera pose
       <pre id="cameraPose"></pre>
