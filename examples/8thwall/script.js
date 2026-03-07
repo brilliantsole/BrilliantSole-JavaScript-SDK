@@ -45,7 +45,7 @@ const deviceImage = document.getElementById("deviceImage");
 device.addEventListener("connected", (event) => {
   if (device.hasCamera) {
     device.setCameraConfiguration({
-      resolution: 240,
+      resolution: 200,
       qualityFactor: 70,
     });
   }
