@@ -314,11 +314,14 @@ if (false) {
 
 const absoluteOrientation = false;
 const sensorRate = 20;
+let includeAcceleration = !true;
 const toggleSensorData = async () => {
   latestSensorData = undefined;
-  const _sensorRate = device.sensorConfiguration.acceleration ? 0 : sensorRate;
+  const _sensorRate = device.sensorConfiguration.linearAcceleration
+    ? 0
+    : sensorRate;
   await device.setSensorConfiguration({
-    acceleration: _sensorRate,
+    acceleration: includeAcceleration ? _sensorRate : 0,
     linearAcceleration: _sensorRate,
     gyroscope: _sensorRate,
     rotation: absoluteOrientation ? _sensorRate : 0,
@@ -332,7 +335,7 @@ toggleSensorDataButton.addEventListener("click", () => {
 });
 
 device.addEventListener("getSensorConfiguration", () => {
-  const enabled = device.sensorConfiguration.acceleration;
+  const enabled = device.sensorConfiguration.linearAcceleration;
   toggleSensorDataButton.innerText = enabled
     ? "disable motion"
     : "enable motion";
@@ -342,7 +345,7 @@ device.addEventListener("isConnected", () => {
 });
 
 const gravityScalar = 9.81;
-/** @type {{acceleration: BS.Vector3, linearAcceleration: BS.Vector3, gyroscope: BS.Vector3,  timestamp: number}} */
+/** @type {{acceleration?: BS.Vector3, linearAcceleration: BS.Vector3, gyroscope: BS.Vector3, timestamp: number}} */
 let latestSensorData;
 
 const deviceOrientationEuler = new THREE.Euler(0, 0, 0, "YXZ");
@@ -454,14 +457,15 @@ device.addEventListener("sensorData", (event) => {
   }
 });
 
+const accelerationVector = new THREE.Vector3();
 device.addEventListener("sensorData", (event) => {
   const { message } = event;
   const { timestamp } = message;
   //console.log({ timestamp }, message.sensorType);
 
   switch (message.sensorType) {
-    case "linearAcceleration":
     case "acceleration":
+    case "linearAcceleration":
     case "gyroscope":
       break;
     default:
@@ -477,9 +481,21 @@ device.addEventListener("sensorData", (event) => {
   }
   latestSensorData[message.sensorType] = message[message.sensorType];
 
-  const { acceleration, linearAcceleration, gyroscope } = latestSensorData;
-  if (linearAcceleration && acceleration && gyroscope) {
-    // FIX - get latest timestamp if skipped
+  let { acceleration, linearAcceleration, gyroscope } = latestSensorData;
+  if (
+    linearAcceleration &&
+    gyroscope &&
+    (!includeAcceleration || acceleration)
+  ) {
+    if (!includeAcceleration) {
+      accelerationVector
+        .set(0, 1, 0)
+        .applyQuaternion(_quaternion)
+        .add(linearAcceleration);
+      const { x, y, z } = accelerationVector;
+      acceleration = { x, y, z };
+    }
+
     /** @type {DeviceMotionEventInit} */
     const deviceMotionInitData = {
       timeStamp: timestamp,
