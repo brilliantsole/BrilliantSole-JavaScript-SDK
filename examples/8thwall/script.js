@@ -123,7 +123,7 @@ const autoPictureCheckbox = document.getElementById("autoPicture");
 const cameraStreamCanvas = document.getElementById("cameraStreamCanvas");
 const cameraStreamContext = cameraStreamCanvas.getContext("2d");
 const cameraStreamContextAspectRatio =
-  window.screen.orientation.angle == 90 ? 4 / 3 : 3 / 4;
+  window.screen.orientation.angle == 90 ? 16 / 9 : 9 / 16;
 
 /** @param {HTMLMediaElement} element */
 const drawCanvasStreamCanvas = (element) => {
