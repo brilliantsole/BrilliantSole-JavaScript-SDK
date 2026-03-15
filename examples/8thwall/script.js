@@ -547,6 +547,7 @@ window.addEventListener(deviceMotionEventType, (event) => {
   if (device.isConnected) {
     return;
   }
+  return;
 
   /** @type {DeviceMotionEventInit} */
   const deviceMotionInitData = {
