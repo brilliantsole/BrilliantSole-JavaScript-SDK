@@ -565,16 +565,22 @@ const queryMultiSetMap = async (query) => {
 };
 /** @param {MultiSetMapMultiQuery} query */
 const queryMultiSetMapMulti = async (query) => {
-  //console.log("queryMultiSetMapMulti", query);
-  query.mapCode = multiSetConfig.mapCode;
-  query.convertToGeoCoordinates = false;
-  // FILL - store the last n images? How does this work?
-  delete query.queryImage;
-  // FILL - append to query
-  await fetchMultiSetQuery(
-    query,
-    "https://api.multiset.ai/v1/vps/map/multi-image-query"
-  );
+  // requires pictures to have existing generic positions/orientations (relative to session, e.g. ARKit or 8thWall)
+  // so we'll just ignore it unless we integrate 8thwall into this demo as an option
+  if (true) {
+    await queryMultiSetMap(query);
+  } else {
+    //console.log("queryMultiSetMapMulti", query);
+    query.mapCode = multiSetConfig.mapCode;
+    query.convertToGeoCoordinates = false;
+    // FILL - store the last n images? How does this work?
+    delete query.queryImage;
+    // FILL - append to query
+    await fetchMultiSetQuery(
+      query,
+      "https://api.multiset.ai/v1/vps/map/multi-image-query"
+    );
+  }
 };
 
 /**

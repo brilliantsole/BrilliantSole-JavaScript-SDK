@@ -164,7 +164,7 @@
       <input type="checkbox" data-multiset-grabvideoframe="auto" />
     </label>
 
-    <video id="cameraVideo" autoplay muted></video>
+    <video id="cameraVideo" autoplay></video>
     <img id="cameraImage" hidden />
 
     <br />
@@ -202,7 +202,7 @@
           position="0 0 0.5"
         ></a-camera>
         <a-entity id="multiSetPose">
-          <a-entity class="head">
+          <a-entity class="head" scale="2 2 2">
             <a-box color="red" scale="0.1 0.1 0.1"></a-box>
             <a-entity class="left eye" position="-0.024 0.016 -0.049">
               <a-sphere

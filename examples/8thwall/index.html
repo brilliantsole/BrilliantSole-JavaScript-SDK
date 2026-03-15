@@ -1,0 +1,243 @@
+<html>
+  <head>
+    <title>8thWall | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="../utils/misc/cameraSelect.js"></script>
+    <script src="../utils/misc/deviceMotion-patch.js"></script>
+    <script src="../utils/misc/getUserMedia-patch.js"></script>
+    <script
+      src="../utils/misc/windowEventListener-patch.js"
+      data-window-event-listeners="devicemotion,deviceorientation,deviceorientationabsolute"
+    ></script>
+    <script
+      src="../utils/misc/window-patch.js"
+      data-navigator-user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1"
+      data-screen-height="113"
+      data-inner-height="113"
+      data-screen-width="200"
+      data-inner-width="200"
+    ></script>
+    <script type="module" src="./script.js"></script>
+
+    <script>
+      try {
+        Object.defineProperty(window, "orientation", {
+          get: function () {
+            return 90;
+          },
+        });
+        Object.defineProperty(window.screen.orientation, "angle", {
+          get: function () {
+            return 90;
+          },
+        });
+      } catch (error) {}
+    </script>
+
+    <script src="./external/scripts/8frame-1.5.0.min.js"></script>
+    <script src="./external/xrextras/xrextras.js"></script>
+    <script src="./external/landing-page/landing-page.js"></script>
+    <script
+      src="./external/xr/xr.js"
+      async="true"
+      data-preload-chunks="slam"
+    ></script>
+    <script src="./tap-place.js"></script>
+
+    <!-- Copyright (c) 2024 8th Wall, Inc. -->
+    <!-- head.html is optional; elements will be added to your html head before app.js is loaded. -->
+
+    <!-- This product includes the XR Engine software developed by Niantic Spatial, Inc. Copyright © 2026 Niantic Spatial, Inc. All rights reserved. -->
+
+    <!-- Use "8thwall:" meta tags to hook into 8th Wall's build process and developer tools. -->
+    <meta name="8thwall:renderer" content="aframe:1.5.0" />
+    <meta name="8thwall:package" content="@8thwall.xrextras" />
+    <meta name="8thwall:package" content="@8thwall.landing-page" />
+
+    <!-- Add GIF for sharing -->
+    <meta
+      property="og:image"
+      content="https://i.giphy.com/media/rAi32DNlsWNpItOpDr/giphy.gif"
+    />
+  </head>
+  <style>
+    label {
+      display: block;
+    }
+    video,
+    img,
+    canvas {
+      height: 300px;
+    }
+
+    .aframe-inspector-opened a-scene,
+    .aframe-inspector-opened a-scene canvas {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 9999;
+    }
+
+    #sceneContainer {
+      display: grid;
+      aspect-ratio: 1.7777;
+      width: 500px;
+    }
+    #sceneContainer > * {
+      width: 100%;
+      height: 100%;
+      grid-area: 1 / 1;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>
+      <a href="https://8thwall.org/" target="_blank">8thWall</a> | BrilliantSole
+      JavaScript SDK
+    </h1>
+
+    <label>
+      camera
+      <select data-camera data-width="1280" data-height="720"></select>
+    </label>
+
+    <video id="cameraVideo" autoplay playsinline></video>
+    <img id="cameraImage" />
+
+    <br />
+    <label>
+      ip address:
+      <input
+        id="deviceIpAddress"
+        placeholder="192.168.4.01"
+        type="text"
+        minlength="7"
+        maxlength="253"
+        size="25"
+      />
+    </label>
+    <button id="toggleConnection">connect</button>
+    <button id="takePicture" disabled>take picture</button>
+    <button id="focusCamera" disabled>focus</button>
+    <progress value="0" id="deviceImageProgress"></progress>
+
+    <label>
+      auto picture
+      <input type="checkbox" id="autoPicture" checked />
+    </label>
+    <img id="deviceImage" />
+    <canvas id="cameraStreamCanvas"></canvas>
+    <video id="cameraStreamVideo" autoplay playsinline></video>
+
+    <br />
+
+    <label>
+      <button id="toggleSensorData" disabled>enable motion</button>
+    </label>
+    <label style="height: 11rem">
+      device orientation
+      <pre id="deviceOrientation"></pre>
+    </label>
+    <label style="height: 24rem">
+      device motion
+      <pre id="deviceMotion"></pre>
+    </label>
+
+    <br />
+
+    <label>
+      load model
+      <input type="file" id="modelFile" accept=".glb,.gltf" multiple="false" />
+    </label>
+    <div id="sceneContainer">
+      <a-scene
+        id="scene"
+        embedded
+        xr-mode-ui="enabled: false;"
+        tap-place
+        landing-page
+        _xrextras-loading
+        _xrextras-runtime-error
+        renderer="colorManagement:true"
+        xrweb="
+        allowedDevices: any;
+        defaultEnvironmentFogIntensity: 0.5; 
+        defaultEnvironmentFloorTexture: #groundTex; 
+        defaultEnvironmentFloorColor: #FFF;
+        defaultEnvironmentSkyBottomColor: #B4C4CC; 
+        defaultEnvironmentSkyTopColor: #5ac8fa;
+        defaultEnvironmentSkyGradientStrength: 0.5;"
+      >
+        <a-assets>
+          <a-asset-item
+            id="glassesModel"
+            src="../../assets/3d/glasses.glb"
+          ></a-asset-item>
+
+          <img id="groundTex" src="./assets/sand.jpg" />
+          <a-asset-item
+            id="cactusModel"
+            src="./assets/cactus.glb"
+          ></a-asset-item>
+        </a-assets>
+
+        <!-- The raycaster will emit mouse events on scene objects specified with the cantap class -->
+        <a-camera
+          id="camera"
+          position="0 8 8"
+          raycaster="objects: .cantap"
+          cursor="
+    fuse: false;
+    rayOrigin: mouse;"
+        >
+        </a-camera>
+
+        <a-entity
+          light="
+    type: directional;
+    intensity: 0.8;
+    castShadow: true;
+    shadowMapHeight:2048;
+    shadowMapWidth:2048;
+    shadowCameraTop: 40;
+    shadowCameraBottom: -40;
+    shadowCameraRight: 40;
+    shadowCameraLeft: -40;
+    target: #camera"
+          xrextras-attach="target: camera; offset: 8 15 4"
+          position="1 4.3 2.5"
+          shadow
+        >
+        </a-entity>
+
+        <a-light type="ambient" intensity="0.5"></a-light>
+
+        <!-- Adding the cantap class allows the ground to be clicked -->
+        <a-box
+          id="ground"
+          class="cantap"
+          scale="1000 2 1000"
+          position="0 -0.99 0"
+          material="shader: shadow; transparent: true; opacity: 0.4"
+          shadow
+        >
+        </a-box>
+
+        <a-entity id="model" position="0 8 12" scale="1 1 1"></a-entity>
+      </a-scene>
+    </div>
+    <button id="openInspector">open inspector</button>
+    <button id="recenter">recenter</button>
+    <button id="toggleXR">pause XR</button>
+    <label style="height: 24rem">
+      camera pose
+      <pre id="cameraPose"></pre>
+    </label>
+  </body>
+</html>

@@ -1,4 +1,6 @@
 import { createConsole } from "../utils/Console.ts";
+import { Quaternion as TQuaternion, Euler as TEuler } from "three";
+import { radToDeg } from "../utils/MathUtils.ts";
 
 const _console = createConsole("MotionSensorDataManager", { log: false });
 
@@ -72,8 +74,8 @@ export interface MotionSensorDataEventMessages {
   linearAcceleration: { linearAcceleration: Vector3 };
   gyroscope: { gyroscope: Vector3 };
   magnetometer: { magnetometer: Vector3 };
-  gameRotation: { gameRotation: Quaternion };
-  rotation: { rotation: Quaternion };
+  gameRotation: { gameRotation: Quaternion; gameRotationEuler: Euler };
+  rotation: { rotation: Quaternion; rotationEuler: Euler };
   orientation: { orientation: Euler };
   stepDetector: { stepDetector: Object };
   stepCounter: { stepCounter: number };
@@ -112,6 +114,18 @@ class MotionSensorDataManager {
     _console.log({ quaternion });
     return quaternion;
   }
+  #euler = new TEuler(0, 0, 0, "YXZ");
+  #quaternion = new TQuaternion();
+  quaternionToEuler(quaternion: Quaternion): Euler {
+    this.#quaternion.copy(quaternion);
+    this.#euler.setFromQuaternion(this.#quaternion);
+    const { x, y, z } = this.#euler;
+    return {
+      heading: radToDeg(y),
+      pitch: radToDeg(x),
+      roll: radToDeg(z),
+    };
+  }
 
   parseEuler(dataView: DataView<ArrayBuffer>, scalar: number): Euler {
     let [heading, pitch, roll] = [
@@ -122,7 +136,7 @@ class MotionSensorDataManager {
 
     pitch *= -1;
     heading *= -1;
-    if (heading < 0) {
+    if (heading < -180) {
       heading += 360;
     }
 

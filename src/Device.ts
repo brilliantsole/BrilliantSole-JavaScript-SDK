@@ -138,6 +138,8 @@ import UDPConnectionManager from "./connection/udp/UDPConnectionManager.ts";
 import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 /** NODE_END */
 
+import autoBind from "auto-bind";
+
 const _console = createConsole("Device", { log: false });
 
 export const DeviceEventTypes = [
@@ -238,6 +240,8 @@ class Device {
   }
 
   constructor() {
+    autoBind(this);
+
     this.#deviceInformationManager.eventDispatcher = this
       .#eventDispatcher as DeviceInformationEventDispatcher;
 
@@ -728,18 +732,39 @@ class Device {
     return this.connectionManager!.disconnect();
   }
 
-  toggleConnection(reconnect = true) {
+  async toggleConnection(options: ConnectOptions): Promise<void>;
+  async toggleConnection(reconnect?: boolean): Promise<void>;
+  async toggleConnection(arg: ConnectOptions | boolean = true) {
+    let options: ConnectOptions | undefined;
+    let reconnect = true;
+    switch (typeof arg) {
+      case "boolean":
+      case "bigint":
+      case "number":
+      case "string":
+        reconnect = Boolean(arg);
+        break;
+      case "object":
+        options = arg;
+        reconnect = false;
+        break;
+      default:
+        _console.error("uncaught toggleConnection param", arg);
+        break;
+    }
+    _console.log("reconnect", { reconnect, options });
+
     if (this.isConnected) {
       this.disconnect();
     } else if (reconnect && this.canReconnect) {
       try {
-        this.reconnect();
+        await this.reconnect();
       } catch (error) {
         _console.error("error trying to reconnect", error);
-        this.connect();
+        await this.connect(options);
       }
     } else {
-      this.connect();
+      await this.connect(options);
     }
   }
 
@@ -1109,6 +1134,9 @@ class Device {
     this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
   }
 
+  // SENSOR DATA
+  #sensorDataManager = new SensorDataManager();
+
   // PRESSURE
   #assertPressure() {
     _console.assertWithError(
@@ -1130,11 +1158,48 @@ class Device {
       return [];
     }
   }
-
-  // SENSOR DATA
-  #sensorDataManager = new SensorDataManager();
   resetPressureRange() {
     this.#sensorDataManager.pressureSensorDataManager.resetRange();
+  }
+  get canCalibratePressure() {
+    return this.#sensorDataManager.pressureSensorDataManager.canCalibrate;
+  }
+  get isRecordingPressureCalibrationData() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .isRecordingCalibrationData;
+  }
+  get isTrainingPressureCalibrationModel() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .isTrainingCalibrationModel;
+  }
+  get startRecordingPressureCalibrationData() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .startRecordingCalibrationData;
+  }
+  get stopRecordingPressureCalibrationData() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .stopRecordingCalibrationData;
+  }
+  toggleRecordingPressureCalibrationData() {
+    this.#sensorDataManager.pressureSensorDataManager.toggleRecordingCalibrationData();
+  }
+  get pressureCalibrationModel() {
+    return this.#sensorDataManager.pressureSensorDataManager.calibrationModel;
+  }
+  get isPressureCalibrationModelTrained() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .isCalibrationModelTrained;
+  }
+  async trainPressureCalibrationModel() {
+    await this.#sensorDataManager.pressureSensorDataManager.train();
+  }
+  get savePressureCalibrationModel() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .saveCalibrationModel;
+  }
+  get loadPressureCalibrationModel() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .loadCalibrationModel;
   }
 
   // VIBRATION

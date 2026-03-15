@@ -37,9 +37,11 @@ export interface MotionSensorDataEventMessages {
     };
     gameRotation: {
         gameRotation: Quaternion;
+        gameRotationEuler: Euler;
     };
     rotation: {
         rotation: Quaternion;
+        rotationEuler: Euler;
     };
     orientation: {
         orientation: Euler;
@@ -62,8 +64,10 @@ export interface MotionSensorDataEventMessages {
 }
 export type MotionSensorDataEventMessage = ValueOf<MotionSensorDataEventMessages>;
 declare class MotionSensorDataManager {
+    #private;
     parseVector3(dataView: DataView<ArrayBuffer>, scalar: number): Vector3;
     parseQuaternion(dataView: DataView<ArrayBuffer>, scalar: number): Quaternion;
+    quaternionToEuler(quaternion: Quaternion): Euler;
     parseEuler(dataView: DataView<ArrayBuffer>, scalar: number): Euler;
     parseStepCounter(dataView: DataView<ArrayBuffer>): number;
     parseActivity(dataView: DataView<ArrayBuffer>): Activity;

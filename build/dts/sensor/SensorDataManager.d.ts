@@ -1,4 +1,4 @@
-import PressureSensorDataManager, { PressureDataEventMessages } from "./PressureSensorDataManager.ts";
+import PressureSensorDataManager, { PressureDataEventMessages, PressureSensorEventMessages } from "./PressureSensorDataManager.ts";
 import MotionSensorDataManager, { MotionSensorDataEventMessages } from "./MotionSensorDataManager.ts";
 import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./BarometerSensorDataManager.ts";
 import EventDispatcher from "../utils/EventDispatcher.ts";
@@ -11,7 +11,7 @@ export type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];
 export declare const SensorDataMessageTypes: readonly ["getPressurePositions", "getSensorScalars", "sensorData"];
 export type SensorDataMessageType = (typeof SensorDataMessageTypes)[number];
 export declare const RequiredPressureMessageTypes: SensorDataMessageType[];
-export declare const SensorDataEventTypes: readonly ["getPressurePositions", "getSensorScalars", "sensorData", "pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera", "microphone"];
+export declare const SensorDataEventTypes: readonly ["getPressurePositions", "getSensorScalars", "sensorData", "pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera", "microphone", "isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
 export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 interface BaseSensorDataEventMessage {
     timestamp: number;
@@ -24,17 +24,19 @@ interface AnySensorDataEventMessages {
     sensorData: SensorDataEventMessage;
     isLast: boolean;
 }
-export type SensorDataEventMessages = _SensorDataEventMessages & AnySensorDataEventMessages;
+export type SensorDataEventMessages = (_SensorDataEventMessages & AnySensorDataEventMessages) & PressureSensorEventMessages;
 export type SensorDataEventDispatcher = EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;
 declare class SensorDataManager {
     #private;
+    constructor();
     pressureSensorDataManager: PressureSensorDataManager;
     motionSensorDataManager: MotionSensorDataManager;
     barometerSensorDataManager: BarometerSensorDataManager;
     static AssertValidSensorType(sensorType: SensorType): void;
     static AssertValidSensorTypeEnum(sensorTypeEnum: number): void;
-    eventDispatcher: SensorDataEventDispatcher;
-    get dispatchEvent(): <T extends "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone" | "getPressurePositions" | "getSensorScalars" | "sensorData">(type: T, message: SensorDataEventMessages[T]) => void;
+    get eventDispatcher(): SensorDataEventDispatcher;
+    set eventDispatcher(eventDispatcher: SensorDataEventDispatcher);
+    get dispatchEvent(): <T extends "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone" | "pressure" | "getPressurePositions" | "getSensorScalars" | "sensorData">(type: T, message: (ExtendInterfaceValues<AddKeysAsPropertyToInterface<BaseSensorDataEventMessages, "sensorType">, BaseSensorDataEventMessage> & AnySensorDataEventMessages & PressureSensorEventMessages)[T]) => void;
     parseMessage(messageType: SensorDataMessageType, dataView: DataView<ArrayBuffer>): void;
     parseScalars(dataView: DataView<ArrayBuffer>): void;
     private parseData;

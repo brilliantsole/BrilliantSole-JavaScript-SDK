@@ -3,6 +3,9 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: false });
 
+/** @type {import("three")} */
+const THREE = window.THREE;
+
 // DEVICE
 
 const device = new BS.Device();
@@ -31,10 +34,6 @@ device.addEventListener("connectionStatus", () => {
 });
 
 // 3D VISUALIZATION
-
-/** @typedef {import("../utils/three/three.module.min.js").Vector3} TVector3 */
-/** @typedef {import("../utils/three/three.module.min.js").Quaternion} TQuaternion */
-/** @typedef {import("../utils/three/three.module.min.js").Euler} TEuler */
 
 window.sensorRate = 20;
 window.interpolationSmoothing = 0.4;
@@ -177,7 +176,6 @@ device.addEventListener("getSensorConfiguration", () => {
   positionSelect.value = newPositionSelectValue;
 });
 
-/** @type {TVector3} */
 const _position = new THREE.Vector3();
 
 /** @param {BS.Vector3} position */
@@ -202,16 +200,14 @@ device.addEventListener("linearAcceleration", (event) => {
   updatePosition(linearAcceleration);
 });
 
-/** @type {TQuaternion} */
 const offsetQuaternion = new THREE.Quaternion();
 const resetOrientation = () => {
   offsetQuaternion.copy(_quaternion).invert();
 };
 
-/** @type {TQuaternion} */
 const _quaternion = new THREE.Quaternion();
-/** @type {TQuaternion} */
 const targetQuaternion = new THREE.Quaternion();
+
 /**
  * @param {BS.Quaternion} quaternion
  * @param {boolean} applyOffset
@@ -220,7 +216,7 @@ const updateQuaternion = (quaternion, applyOffset = false) => {
   _quaternion.copy(quaternion);
   targetQuaternion.copy(_quaternion);
   if (applyOffset) {
-    targetQuaternion.premultiply(offsetQuaternion);
+    targetQuaternion.multiply(offsetQuaternion);
   }
   targetRotationEntity.object3D.quaternion.slerp(
     targetQuaternion,
@@ -237,11 +233,8 @@ device.addEventListener("rotation", (event) => {
   updateQuaternion(rotation, true);
 });
 
-/** @type {TVector3} */
 const orientationVector3 = new THREE.Vector3();
-/** @type {TEuler} */
 const orientationEuler = new THREE.Euler(0, 0, 0, "YXZ");
-/** @type {TQuaternion} */
 const orientationQuaternion = new THREE.Quaternion();
 device.addEventListener("orientation", (event) => {
   const orientation = event.message.orientation;
@@ -253,11 +246,8 @@ device.addEventListener("orientation", (event) => {
   updateQuaternion(orientationQuaternion);
 });
 
-/** @type {TVector3} */
 const gyroscopeVector3 = new THREE.Vector3();
-/** @type {TEuler} */
 const gyroscopeEuler = new THREE.Euler();
-/** @type {TQuaternion} */
 const gyroscopeQuaternion = new THREE.Quaternion();
 device.addEventListener("gyroscope", (event) => {
   const gyroscope = event.message.gyroscope;
