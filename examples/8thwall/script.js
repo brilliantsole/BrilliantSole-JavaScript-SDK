@@ -572,6 +572,7 @@ window.addEventListener(deviceOrientationEventType, (event) => {
   if (device.isConnected) {
     return;
   }
+  return;
   // console.log("deviceorientation", event);
   /** @type {DeviceOrientationEventInit} */
   const deviceOrientationInitData = {
