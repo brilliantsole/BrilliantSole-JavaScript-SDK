@@ -101,6 +101,12 @@ client.addEventListener("isScanning", () => {
   toggleScanButton.innerText = client.isScanning ? "stop scanning" : "scan";
 });
 
+// DEVICE
+const connectToDeviceButton = document.getElementById("connectToDevice");
+connectToDeviceButton.addEventListener("click", () => {
+  BS.Device.Connect();
+});
+
 // DEVICES
 
 /** @type {BS.Device?} */
