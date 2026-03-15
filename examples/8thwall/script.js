@@ -170,6 +170,8 @@ const cameraStreamVideo = document.getElementById("cameraStreamVideo");
 let cameraStream;
 
 let pauseXRIntervalId = setInterval(() => {
+  return;
+
   if (!XR.isPaused()) {
     XR.pause();
   } else {
