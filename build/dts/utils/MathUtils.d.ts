@@ -1,4 +1,3 @@
-import { PressureSensorPosition } from "../sensor/PressureSensorDataManager.ts";
 export declare function getInterpolation(value: number, min: number, max: number, span: number): number;
 export declare const Uint16Max: number;
 export declare const Int16Max: number;
@@ -29,7 +28,7 @@ export interface Euler {
     pitch: number;
     roll: number;
 }
-export declare function computeVoronoiWeights(points: PressureSensorPosition[], sampleCount?: number): number[];
+export declare const defaultEuler: Euler;
 export declare function getVector3Length(vector: Vector3): number;
 export declare function clamp(value: number, min?: number, max?: number): number;
 export declare function degToRad(deg: number): number;

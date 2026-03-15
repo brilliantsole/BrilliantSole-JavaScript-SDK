@@ -102,15 +102,18 @@ class DevicePairPressureSensorDataManager {
         } else {
           sidePressure.sensors.forEach((sensor) => {
             const _sensor: PressureSensorValue = structuredClone(sensor);
-            _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
+            _sensor.weightedScaledValue =
+              sensor.scaledValue / pressure.scaledSum;
             let { x, y } = sensor.position;
             x /= 2;
             if (side == "right") {
               x += 0.5;
             }
             _sensor.position = { x, y };
-            pressure.center!.x += _sensor.position.x * _sensor.weightedValue;
-            pressure.center!.y += _sensor.position.y * _sensor.weightedValue;
+            pressure.center!.x +=
+              _sensor.position.x * _sensor.weightedScaledValue;
+            pressure.center!.y +=
+              _sensor.position.y * _sensor.weightedScaledValue;
             pressure.sensors[side].push(_sensor);
           });
         }

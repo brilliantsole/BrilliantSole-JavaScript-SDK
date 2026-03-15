@@ -1,4 +1,4 @@
-import { getInterpolation } from "./MathUtils.ts";
+import { clamp, getInterpolation } from "./MathUtils.ts";
 
 export interface Range {
   min: number;
@@ -49,7 +49,11 @@ class RangeHelper {
     this.#updateSpan();
   }
 
-  getNormalization(value: number, weightByRange: boolean) {
+  getNormalization(
+    value: number,
+    weightByRange: boolean,
+    clampValue: boolean = true
+  ) {
     let normalization = getInterpolation(
       value,
       this.#range.min,
@@ -58,6 +62,10 @@ class RangeHelper {
     );
     if (weightByRange) {
       normalization *= this.#range.span;
+    }
+    normalization = normalization || 0;
+    if (clampValue) {
+      normalization = clamp(normalization, 0, 1);
     }
     return normalization || 0;
   }

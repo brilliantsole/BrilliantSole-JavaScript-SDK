@@ -25,6 +25,9 @@ export {
   BoundDeviceEventListeners,
 };
 
+import { isTensorFlowAvailable } from "./utils/Tensorflow.ts";
+export { isTensorFlowAvailable };
+
 import {
   default as DeviceManager,
   DeviceManagerEvent,
@@ -84,11 +87,21 @@ export { MaxSensorRate, SensorRateStep, SensorConfiguration };
 import {
   DefaultNumberOfPressureSensors,
   PressureData,
+  PressureSensorPosition,
+  PressureSensorValue,
 } from "./sensor/PressureSensorDataManager.ts";
-export { DefaultNumberOfPressureSensors, PressureData };
+export {
+  DefaultNumberOfPressureSensors,
+  PressureData,
+  PressureSensorPosition,
+  PressureSensorValue,
+};
 
 import { CenterOfPressure } from "./utils/CenterOfPressureHelper.ts";
 export { CenterOfPressure };
+
+import CenterOfPressureModel from "./utils/CenterOfPressureModel.ts";
+export { CenterOfPressureModel };
 
 import {
   VibrationConfiguration,

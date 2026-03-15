@@ -314,7 +314,7 @@ if (false) {
 
 const absoluteOrientation = false;
 const sensorRate = 20;
-let includeAcceleration = !true;
+let includeAcceleration = true;
 const toggleSensorData = async () => {
   latestSensorData = undefined;
   const _sensorRate = device.sensorConfiguration.linearAcceleration

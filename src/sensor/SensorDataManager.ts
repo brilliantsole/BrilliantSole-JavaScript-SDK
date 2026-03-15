@@ -2,6 +2,9 @@ import { createConsole } from "../utils/Console.ts";
 import { parseTimestamp } from "../utils/MathUtils.ts";
 import PressureSensorDataManager, {
   PressureDataEventMessages,
+  PressureSensorEventDispatcher,
+  PressureSensorEventMessages,
+  PressureSensorEventTypes,
 } from "./PressureSensorDataManager.ts";
 import MotionSensorDataManager, {
   MotionSensorDataEventMessages,
@@ -31,6 +34,7 @@ import {
 } from "../utils/TypeScriptUtils.ts";
 import { CameraSensorTypes } from "../CameraManager.ts";
 import { MicrophoneSensorTypes } from "../MicrophoneManager.ts";
+import autoBind from "auto-bind";
 
 const _console = createConsole("SensorDataManager", { log: false });
 
@@ -64,6 +68,7 @@ export const RequiredPressureMessageTypes: SensorDataMessageType[] = [
 export const SensorDataEventTypes = [
   ...SensorDataMessageTypes,
   ...SensorTypes,
+  ...PressureSensorEventTypes,
 ] as const;
 export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 
@@ -84,8 +89,9 @@ interface AnySensorDataEventMessages {
   sensorData: SensorDataEventMessage;
   isLast: boolean;
 }
-export type SensorDataEventMessages = _SensorDataEventMessages &
-  AnySensorDataEventMessages;
+export type SensorDataEventMessages =
+  | (_SensorDataEventMessages & AnySensorDataEventMessages) &
+      PressureSensorEventMessages;
 
 export type SensorDataEventDispatcher = EventDispatcher<
   Device,
@@ -93,7 +99,13 @@ export type SensorDataEventDispatcher = EventDispatcher<
   SensorDataEventMessages
 >;
 
+type SensorDataParseContext = { timestamp: number };
+
 class SensorDataManager {
+  constructor() {
+    autoBind(this);
+  }
+
   pressureSensorDataManager = new PressureSensorDataManager();
   motionSensorDataManager = new MotionSensorDataManager();
   barometerSensorDataManager = new BarometerSensorDataManager();
@@ -111,7 +123,22 @@ class SensorDataManager {
     );
   }
 
-  eventDispatcher!: SensorDataEventDispatcher;
+  #eventDispatcher!: SensorDataEventDispatcher;
+  get eventDispatcher() {
+    return this.#eventDispatcher;
+  }
+  set eventDispatcher(eventDispatcher) {
+    if (this.#eventDispatcher == eventDispatcher) {
+      return;
+    }
+    _console.assertWithError(
+      !this.#eventDispatcher,
+      "eventDispatcher already defined"
+    );
+    this.#eventDispatcher = eventDispatcher;
+    this.pressureSensorDataManager.eventDispatcher =
+      eventDispatcher as PressureSensorEventDispatcher;
+  }
   get dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }
@@ -164,23 +191,34 @@ class SensorDataManager {
 
     const _dataView = new DataView(dataView.buffer, byteOffset);
 
-    parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), {
-      timestamp,
-    });
+    const context: SensorDataParseContext = { timestamp };
+    parseMessage(
+      _dataView,
+      SensorTypes,
+      this.parseDataCallback.bind(this),
+      context
+    );
   }
 
   private parseDataCallback(
     sensorType: SensorType,
     dataView: DataView<ArrayBuffer>,
-    { timestamp }: { timestamp: number },
+    context: SensorDataParseContext,
     isLast?: boolean
   ) {
+    const { timestamp } = context;
+
     const scalar = this.#scalars.get(sensorType) || 1;
 
     let sensorData = null;
+    let sensorDataEuler = null;
     switch (sensorType) {
       case "pressure":
-        sensorData = this.pressureSensorDataManager.parseData(dataView, scalar);
+        sensorData = this.pressureSensorDataManager.parseData(
+          dataView,
+          scalar,
+          timestamp
+        );
         break;
       case "acceleration":
       case "gravity":
@@ -198,9 +236,13 @@ class SensorDataManager {
           dataView,
           scalar
         );
+        sensorDataEuler =
+          this.motionSensorDataManager.quaternionToEuler(sensorData);
+        this.pressureSensorDataManager.onEuler(sensorDataEuler, timestamp);
         break;
       case "orientation":
         sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
+        this.pressureSensorDataManager.onEuler(sensorData, timestamp);
         break;
       case "stepCounter":
         sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
@@ -241,20 +283,19 @@ class SensorDataManager {
 
     _console.log({ sensorType, sensorData });
 
-    // @ts-expect-error
-    this.dispatchEvent(sensorType, {
+    const message = {
       sensorType,
       [sensorType]: sensorData,
       timestamp,
       isLast: isLast!,
-    });
+    };
+    if (sensorDataEuler) {
+      message[`${sensorType}Euler`] = sensorDataEuler;
+    }
     // @ts-expect-error
-    this.dispatchEvent("sensorData", {
-      sensorType,
-      [sensorType]: sensorData,
-      timestamp,
-      isLast: isLast!,
-    });
+    this.dispatchEvent(sensorType, message);
+    // @ts-expect-error
+    this.dispatchEvent("sensorData", message);
   }
 }
 

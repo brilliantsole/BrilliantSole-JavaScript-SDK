@@ -5,6 +5,8 @@
 'use strict';
 
 var autoBind$1 = require('auto-bind');
+var tf = require('@tensorflow/tfjs');
+var webbluetooth = require('webbluetooth');
 var sharp = require('sharp');
 var child_process = require('child_process');
 var fs = require('fs/promises');
@@ -16,10 +18,10 @@ var simplify = require('simplify-js');
 var fitCurve = require('fit-curve');
 require('svgson');
 require('svg-pathdata');
-var webbluetooth = require('webbluetooth');
-var dgram = require('dgram');
 var os = require('os');
 var noble = require('@abandonware/noble');
+var three = require('three');
+var dgram = require('dgram');
 
 function _interopNamespaceDefault(e) {
     var n = Object.create(null);
@@ -38,8 +40,9 @@ function _interopNamespaceDefault(e) {
     return Object.freeze(n);
 }
 
-var _alawmulaw__namespace = /*#__PURE__*/_interopNamespaceDefault(_alawmulaw);
+var tf__namespace = /*#__PURE__*/_interopNamespaceDefault(tf);
 var webbluetooth__namespace = /*#__PURE__*/_interopNamespaceDefault(webbluetooth);
+var _alawmulaw__namespace = /*#__PURE__*/_interopNamespaceDefault(_alawmulaw);
 var dgram__namespace = /*#__PURE__*/_interopNamespaceDefault(dgram);
 
 const isInProduction =
@@ -219,7 +222,7 @@ function setAllConsoleLevelFlags(levelFlags) {
     Console.setAllLevelFlags(levelFlags);
 }
 
-const _console$N = createConsole("EventDispatcher", { log: false });
+const _console$O = createConsole("EventDispatcher", { log: false });
 class EventDispatcher {
     target;
     validEventTypes;
@@ -242,7 +245,7 @@ class EventDispatcher {
             return;
         this.listeners[type] = this.listeners[type].filter((listenerObj) => {
             if (listenerObj.shouldRemove) {
-                _console$N.log(`removing "${type}" eventListener`, listenerObj);
+                _console$O.log(`removing "${type}" eventListener`, listenerObj);
             }
             return !listenerObj.shouldRemove;
         });
@@ -253,19 +256,19 @@ class EventDispatcher {
         }
         if (!this.listeners[type]) {
             this.listeners[type] = [];
-            _console$N.log(`creating "${type}" listeners array`, this.listeners[type]);
+            _console$O.log(`creating "${type}" listeners array`, this.listeners[type]);
         }
         const alreadyAdded = this.listeners[type].find((listenerObject) => {
             return (listenerObject.listener == listener &&
                 listenerObject.once == options.once);
         });
         if (alreadyAdded) {
-            _console$N.log("already added listener");
+            _console$O.log("already added listener");
             return;
         }
-        _console$N.log(`adding "${type}" listener`, listener, options);
+        _console$O.log(`adding "${type}" listener`, listener, options);
         this.listeners[type].push({ listener, once: options.once });
-        _console$N.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
+        _console$O.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
     }
     removeEventListener(type, listener) {
         if (!this.isValidEventType(type)) {
@@ -273,11 +276,11 @@ class EventDispatcher {
         }
         if (!this.listeners[type])
             return;
-        _console$N.log(`removing "${type}" listener...`, listener);
+        _console$O.log(`removing "${type}" listener...`, listener);
         this.listeners[type].forEach((listenerObj) => {
             const isListenerToRemove = listenerObj.listener === listener;
             if (isListenerToRemove) {
-                _console$N.log(`flagging "${type}" listener`, listener);
+                _console$O.log(`flagging "${type}" listener`, listener);
                 listenerObj.shouldRemove = true;
             }
         });
@@ -289,11 +292,11 @@ class EventDispatcher {
         }
         if (!this.listeners[type])
             return;
-        _console$N.log(`removing "${type}" listeners...`);
+        _console$O.log(`removing "${type}" listeners...`);
         this.listeners[type] = [];
     }
     removeAllEventListeners() {
-        _console$N.log(`removing listeners...`);
+        _console$O.log(`removing listeners...`);
         this.listeners = {};
     }
     dispatchEvent(type, message) {
@@ -307,7 +310,7 @@ class EventDispatcher {
             if (listenerObj.shouldRemove) {
                 return;
             }
-            _console$N.log(`dispatching "${type}" listener`, listenerObj);
+            _console$O.log(`dispatching "${type}" listener`, listenerObj);
             try {
                 listenerObj.listener({ type, target: this.target, message });
             }
@@ -315,7 +318,7 @@ class EventDispatcher {
                 console.error(error);
             }
             if (listenerObj.once) {
-                _console$N.log(`flagging "${type}" listener`, listenerObj);
+                _console$O.log(`flagging "${type}" listener`, listenerObj);
                 listenerObj.shouldRemove = true;
             }
         });
@@ -331,9 +334,9 @@ class EventDispatcher {
     }
 }
 
-const _console$M = createConsole("Timer", { log: false });
+const _console$N = createConsole("Timer", { log: false });
 async function wait(delay) {
-    _console$M.log(`waiting for ${delay}ms`);
+    _console$N.log(`waiting for ${delay}ms`);
     return new Promise((resolve) => {
         setTimeout(() => resolve(), delay);
     });
@@ -344,8 +347,8 @@ class Timer {
         return this.#callback;
     }
     set callback(newCallback) {
-        _console$M.assertTypeWithError(newCallback, "function");
-        _console$M.log({ newCallback });
+        _console$N.assertTypeWithError(newCallback, "function");
+        _console$N.log({ newCallback });
         this.#callback = newCallback;
         if (this.isRunning) {
             this.restart();
@@ -356,9 +359,9 @@ class Timer {
         return this.#interval;
     }
     set interval(newInterval) {
-        _console$M.assertTypeWithError(newInterval, "number");
-        _console$M.assertWithError(newInterval > 0, "interval must be above 0");
-        _console$M.log({ newInterval });
+        _console$N.assertTypeWithError(newInterval, "number");
+        _console$N.assertWithError(newInterval > 0, "interval must be above 0");
+        _console$N.log({ newInterval });
         this.#interval = newInterval;
         if (this.isRunning) {
             this.restart();
@@ -374,10 +377,10 @@ class Timer {
     }
     start(immediately = false) {
         if (this.isRunning) {
-            _console$M.log("interval already running");
+            _console$N.log("interval already running");
             return;
         }
-        _console$M.log(`starting interval every ${this.#interval}ms`);
+        _console$N.log(`starting interval every ${this.#interval}ms`);
         this.#intervalId = setInterval(this.#callback, this.#interval);
         if (immediately) {
             this.#callback();
@@ -385,10 +388,10 @@ class Timer {
     }
     stop() {
         if (!this.isRunning) {
-            _console$M.log("interval already not running");
+            _console$N.log("interval already not running");
             return;
         }
-        _console$M.log("stopping interval");
+        _console$N.log("stopping interval");
         clearInterval(this.#intervalId);
         this.#intervalId = undefined;
     }
@@ -453,7 +456,7 @@ else {
 const textEncoder = new _TextEncoder();
 const textDecoder = new _TextDecoder();
 
-const _console$L = createConsole("ArrayBufferUtils", { log: false });
+const _console$M = createConsole("ArrayBufferUtils", { log: false });
 function concatenateArrayBuffers(...arrayBuffers) {
     arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
     arrayBuffers = arrayBuffers.map((arrayBuffer) => {
@@ -518,7 +521,7 @@ function sliceDataView(dataView, begin, length) {
     if (length != undefined) {
         end = dataView.byteOffset + begin + length;
     }
-    _console$L.log({ dataView, begin, end, length });
+    _console$M.log({ dataView, begin, end, length });
     return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
 }
 async function getFileBuffer(file) {
@@ -552,7 +555,7 @@ function UInt8ByteBuffer(value) {
 }
 
 var _a$6;
-const _console$K = createConsole("FileTransferManager", { log: false });
+const _console$L = createConsole("FileTransferManager", { log: false });
 const FileTransferMessageTypes = [
     "getFileTypes",
     "maxFileLength",
@@ -614,19 +617,19 @@ class FileTransferManager {
         return this.eventDispatcher.waitForEvent;
     }
     #assertValidType(type) {
-        _console$K.assertEnumWithError(type, FileTypes);
+        _console$L.assertEnumWithError(type, FileTypes);
     }
     #isValidType(type) {
         return FileTypes.includes(type);
     }
     #assertValidTypeEnum(typeEnum) {
-        _console$K.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
+        _console$L.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
     }
     #assertValidStatusEnum(statusEnum) {
-        _console$K.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
+        _console$L.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
     }
     #assertValidCommand(command) {
-        _console$K.assertEnumWithError(command, FileTransferCommands);
+        _console$L.assertEnumWithError(command, FileTransferCommands);
     }
     #fileTypes = [];
     get fileTypes() {
@@ -637,7 +640,7 @@ class FileTransferManager {
             .map((index) => FileTypes[index])
             .filter(Boolean);
         this.#fileTypes = fileTypes;
-        _console$K.log("fileTypes", fileTypes);
+        _console$L.log("fileTypes", fileTypes);
         this.#dispatchEvent("getFileTypes", {
             fileTypes: this.#fileTypes,
         });
@@ -651,39 +654,39 @@ class FileTransferManager {
         return this.#maxLength;
     }
     #parseMaxLength(dataView) {
-        _console$K.log("parseFileMaxLength", dataView);
+        _console$L.log("parseFileMaxLength", dataView);
         const maxLength = dataView.getUint32(0, true);
-        _console$K.log(`maxLength: ${maxLength / 1024}kB`);
+        _console$L.log(`maxLength: ${maxLength / 1024}kB`);
         this.#updateMaxLength(maxLength);
     }
     #updateMaxLength(maxLength) {
-        _console$K.log({ maxLength });
+        _console$L.log({ maxLength });
         this.#maxLength = maxLength;
         this.#dispatchEvent("maxFileLength", { maxFileLength: maxLength });
     }
     #assertValidLength(length) {
-        _console$K.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
+        _console$L.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
     }
     #type;
     get type() {
         return this.#type;
     }
     #parseType(dataView) {
-        _console$K.log("parseFileType", dataView);
+        _console$L.log("parseFileType", dataView);
         const typeEnum = dataView.getUint8(0);
         this.#assertValidTypeEnum(typeEnum);
         const type = FileTypes[typeEnum];
         this.#updateType(type);
     }
     #updateType(type) {
-        _console$K.log({ fileTransferType: type });
+        _console$L.log({ fileTransferType: type });
         this.#type = type;
         this.#dispatchEvent("getFileType", { fileType: type });
     }
     async #setType(newType, sendImmediately) {
         this.#assertValidType(newType);
         if (this.type == newType) {
-            _console$K.log(`redundant type assignment ${newType}`);
+            _console$L.log(`redundant type assignment ${newType}`);
             return;
         }
         const promise = this.waitForEvent("getFileType");
@@ -696,20 +699,20 @@ class FileTransferManager {
         return this.#length;
     }
     #parseLength(dataView) {
-        _console$K.log("parseFileLength", dataView);
+        _console$L.log("parseFileLength", dataView);
         const length = dataView.getUint32(0, true);
         this.#updateLength(length);
     }
     #updateLength(length) {
-        _console$K.log(`length: ${length / 1024}kB (${length} bytes)`);
+        _console$L.log(`length: ${length / 1024}kB (${length} bytes)`);
         this.#length = length;
         this.#dispatchEvent("getFileLength", { fileLength: length });
     }
     async #setLength(newLength, sendImmediately) {
-        _console$K.assertTypeWithError(newLength, "number");
+        _console$L.assertTypeWithError(newLength, "number");
         this.#assertValidLength(newLength);
         if (this.length == newLength) {
-            _console$K.log(`redundant length assignment ${newLength}`);
+            _console$L.log(`redundant length assignment ${newLength}`);
             return;
         }
         const promise = this.waitForEvent("getFileLength");
@@ -723,19 +726,19 @@ class FileTransferManager {
         return this.#checksum;
     }
     #parseChecksum(dataView) {
-        _console$K.log("checksum", dataView);
+        _console$L.log("checksum", dataView);
         const checksum = dataView.getUint32(0, true);
         this.#updateChecksum(checksum);
     }
     #updateChecksum(checksum) {
-        _console$K.log({ checksum });
+        _console$L.log({ checksum });
         this.#checksum = checksum;
         this.#dispatchEvent("getFileChecksum", { fileChecksum: checksum });
     }
     async #setChecksum(newChecksum, sendImmediately) {
-        _console$K.assertTypeWithError(newChecksum, "number");
+        _console$L.assertTypeWithError(newChecksum, "number");
         if (this.checksum == newChecksum) {
-            _console$K.log(`redundant checksum assignment ${newChecksum}`);
+            _console$L.log(`redundant checksum assignment ${newChecksum}`);
             return;
         }
         const promise = this.waitForEvent("getFileChecksum");
@@ -747,7 +750,7 @@ class FileTransferManager {
     async #setCommand(command, sendImmediately) {
         this.#assertValidCommand(command);
         const promise = this.waitForEvent("fileTransferStatus");
-        _console$K.log(`setting command ${command}`);
+        _console$L.log(`setting command ${command}`);
         const commandEnum = FileTransferCommands.indexOf(command);
         this.sendMessage([
             {
@@ -762,14 +765,14 @@ class FileTransferManager {
         return this.#status;
     }
     #parseStatus(dataView) {
-        _console$K.log("parseFileStatus", dataView);
+        _console$L.log("parseFileStatus", dataView);
         const statusEnum = dataView.getUint8(0);
         this.#assertValidStatusEnum(statusEnum);
         const status = FileTransferStatuses[statusEnum];
         this.#updateStatus(status);
     }
     #updateStatus(status) {
-        _console$K.log({ status });
+        _console$L.log({ status });
         this.#status = status;
         this.#receivedBlocks.length = 0;
         this.#isCancelling = false;
@@ -781,18 +784,18 @@ class FileTransferManager {
         });
     }
     #assertIsIdle() {
-        _console$K.assertWithError(this.#status == "idle", "status is not idle");
+        _console$L.assertWithError(this.#status == "idle", "status is not idle");
     }
     #assertIsNotIdle() {
-        _console$K.assertWithError(this.#status != "idle", "status is idle");
+        _console$L.assertWithError(this.#status != "idle", "status is idle");
     }
     #receivedBlocks = [];
     async #parseBlock(dataView) {
-        _console$K.log("parseFileBlock", dataView);
+        _console$L.log("parseFileBlock", dataView);
         this.#receivedBlocks.push(dataView.buffer);
         const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
         const progress = bytesReceived / this.#length;
-        _console$K.log(`received ${bytesReceived}/${this.#length} bytes (${progress * 100}%) - ${this.#length - bytesReceived} bytes remaining`);
+        _console$L.log(`received ${bytesReceived}/${this.#length} bytes (${progress * 100}%) - ${this.#length - bytesReceived} bytes remaining`);
         this.#dispatchEvent("fileTransferProgress", {
             progress,
             fileType: this.type,
@@ -808,7 +811,7 @@ class FileTransferManager {
             ]);
             return;
         }
-        _console$K.log("file transfer complete");
+        _console$L.log("file transfer complete");
         let fileName = new Date().toLocaleString();
         switch (this.type) {
             case "tflite":
@@ -830,12 +833,12 @@ class FileTransferManager {
         }
         const arrayBuffer = await file.arrayBuffer();
         const checksum = crc32(arrayBuffer);
-        _console$K.log({ checksum });
+        _console$L.log({ checksum });
         if (checksum != this.#checksum) {
-            _console$K.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
+            _console$L.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
             return;
         }
-        _console$K.log("received file", file);
+        _console$L.log("received file", file);
         this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
         this.#dispatchEvent("fileTransferComplete", {
             direction: "receiving",
@@ -844,7 +847,7 @@ class FileTransferManager {
         this.#dispatchEvent("fileReceived", { file, fileType: this.type });
     }
     parseMessage(messageType, dataView) {
-        _console$K.log({ messageType });
+        _console$L.log({ messageType });
         switch (messageType) {
             case "getFileTypes":
                 this.#parseFileTypes(dataView);
@@ -888,16 +891,16 @@ class FileTransferManager {
         this.#assertValidLength(fileLength);
         if (!override) {
             if (type != this.type) {
-                _console$K.log("different fileTypes - sending");
+                _console$L.log("different fileTypes - sending");
             }
             else if (fileLength != this.length) {
-                _console$K.log("different fileLengths - sending");
+                _console$L.log("different fileLengths - sending");
             }
             else if (checksum != this.checksum) {
-                _console$K.log("different fileChecksums - sending");
+                _console$L.log("different fileChecksums - sending");
             }
             else {
-                _console$K.log("already sent file");
+                _console$L.log("already sent file");
                 return false;
             }
         }
@@ -932,29 +935,29 @@ class FileTransferManager {
             return;
         }
         if (this.#isCancelling) {
-            _console$K.error("not sending block - busy cancelling");
+            _console$L.error("not sending block - busy cancelling");
             return;
         }
         if (!this.#buffer) {
             if (!this.isServerSide) {
-                _console$K.error("no buffer defined");
+                _console$L.error("no buffer defined");
             }
             return;
         }
         const buffer = this.#buffer;
         let offset = this.#bytesTransferred;
-        _console$K.log("sending block", { buffer, offset, mtu: this.mtu });
+        _console$L.log("sending block", { buffer, offset, mtu: this.mtu });
         const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
-        _console$K.log("slicedBuffer", slicedBuffer);
+        _console$L.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
-        _console$K.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
+        _console$L.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
         this.#dispatchEvent("fileTransferProgress", {
             progress,
             fileType: this.type,
         });
         if (slicedBuffer.byteLength == 0) {
-            _console$K.log("finished sending buffer");
+            _console$L.log("finished sending buffer");
             this.#dispatchEvent("fileTransferComplete", {
                 direction: "sending",
                 fileType: this.type,
@@ -966,15 +969,15 @@ class FileTransferManager {
         }
     }
     async #parseBytesTransferred(dataView) {
-        _console$K.log("parseBytesTransferred", dataView);
+        _console$L.log("parseBytesTransferred", dataView);
         const bytesTransferred = dataView.getUint32(0, true);
-        _console$K.log({ bytesTransferred });
+        _console$L.log({ bytesTransferred });
         if (this.status != "sending") {
-            _console$K.error(`not currently sending file`);
+            _console$L.error(`not currently sending file`);
             return;
         }
         if (!this.isServerSide && this.#bytesTransferred != bytesTransferred) {
-            _console$K.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${this.#bytesTransferred}`);
+            _console$L.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${this.#bytesTransferred}`);
             this.cancel();
             return;
         }
@@ -989,7 +992,7 @@ class FileTransferManager {
     #isCancelling = false;
     async cancel() {
         this.#assertIsNotIdle();
-        _console$K.log("cancelling file transfer...");
+        _console$L.log("cancelling file transfer...");
         this.#isCancelling = true;
         await this.#setCommand("cancel");
     }
@@ -999,14 +1002,14 @@ class FileTransferManager {
     }
     set isServerSide(newIsServerSide) {
         if (this.#isServerSide == newIsServerSide) {
-            _console$K.log("redundant isServerSide assignment");
+            _console$L.log("redundant isServerSide assignment");
             return;
         }
-        _console$K.log({ newIsServerSide });
+        _console$L.log({ newIsServerSide });
         this.#isServerSide = newIsServerSide;
     }
     requestRequiredInformation() {
-        _console$K.log("requesting required fileTransfer information");
+        _console$L.log("requesting required fileTransfer information");
         const messages = RequiredFileTransferMessageTypes.map((messageType) => ({
             type: messageType,
         }));
@@ -1029,7 +1032,7 @@ class FileTransferManager {
 }
 _a$6 = FileTransferManager;
 
-const _console$J = createConsole("MathUtils", { log: false });
+const _console$K = createConsole("MathUtils", { log: false });
 function getInterpolation(value, min, max, span) {
     if (span == undefined) {
         span = max - min;
@@ -1050,10 +1053,10 @@ function parseTimestamp(dataView, byteOffset) {
     let timestamp = nowWithoutLower2Bytes + lower2Bytes;
     const timestampDifference = Math.abs(now - timestamp);
     if (timestampDifference > timestampThreshold) {
-        _console$J.log("correcting timestamp delta");
+        _console$K.log("correcting timestamp delta");
         timestamp += Uint16Max * Math.sign(now - timestamp);
     }
-    _console$J.log({
+    _console$K.log({
         now,
         nowWithoutLower2Bytes,
         lower2Bytes,
@@ -1065,6 +1068,11 @@ function parseTimestamp(dataView, byteOffset) {
 function getVector2Distance(a, b) {
     return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
 }
+const defaultEuler = {
+    heading: 0,
+    pitch: 0,
+    roll: 0,
+};
 function getVector3Length(vector) {
     const { x, y, z } = vector;
     return Math.sqrt(x ** 2 + y ** 2 + z ** 2);
@@ -1074,6 +1082,9 @@ function clamp(value, min = 0, max = 1) {
 }
 function degToRad(deg) {
     return deg * (Math.PI / 180);
+}
+function radToDeg(rad) {
+    return rad * (180 / Math.PI);
 }
 const twoPi = Math.PI * 2;
 function normalizeRadians(rad) {
@@ -1128,10 +1139,14 @@ class RangeHelper {
         this.#range.max = Math.max(value, this.#range.max);
         this.#updateSpan();
     }
-    getNormalization(value, weightByRange) {
+    getNormalization(value, weightByRange, clampValue = true) {
         let normalization = getInterpolation(value, this.#range.min, this.#range.max, this.#range.span);
         if (weightByRange) {
             normalization *= this.#range.span;
+        }
+        normalization = normalization || 0;
+        if (clampValue) {
+            normalization = clamp(normalization, 0, 1);
         }
         return normalization || 0;
     }
@@ -1182,11 +1197,333 @@ function arrayWithoutDuplicates(array) {
     return array.filter((value, index) => array.indexOf(value) == index);
 }
 
-const _console$I = createConsole("PressureDataManager", { log: false });
+function isTensorFlowAvailable() {
+    if (isInBrowser) {
+        return Boolean(window.tf);
+    }
+    return Boolean(tf__namespace);
+}
+
+const _console$J = createConsole("CenterOfPressureModel", { log: true });
+class CenterOfPressureModel {
+    constructor() {
+        autoBind$1(this);
+    }
+    eventDispatcher;
+    get dispatchEvent() {
+        return this.eventDispatcher.dispatchEvent;
+    }
+    #model;
+    get model() {
+        return this.#model;
+    }
+    #hiddenUnitScalars = [4, 2];
+    #numberOfSensors = 0;
+    get numberOfSensors() {
+        return this.#numberOfSensors;
+    }
+    set numberOfSensors(newNumberOfSensors) {
+        if (this.#numberOfSensors == newNumberOfSensors) {
+            return;
+        }
+        this.#numberOfSensors = newNumberOfSensors;
+        _console$J.log({ numberOfSensors: this.numberOfSensors });
+        this.#createModel();
+    }
+    async #createModel() {
+        if (!isTensorFlowAvailable()) {
+            _console$J.warn("tensorflow is not available");
+            return;
+        }
+        if (this.#model) {
+            _console$J.log("disposing model", this.#model);
+            this.#model.dispose();
+            this.#data.inputs.length = this.#data.outputs.length = 0;
+            this.#model = undefined;
+            this.#isTrained;
+        }
+        if (this.numberOfSensors == 0) {
+            _console$J.log("zero numberOfSensors - no model needed");
+            return;
+        }
+        await tf__namespace.ready();
+        const model = tf__namespace.sequential();
+        model.name = "centerOfPressure";
+        this.#hiddenUnitScalars.forEach((hiddenUnitScalar, index) => {
+            const isFirst = index == 0;
+            model.add(tf__namespace.layers.dense({
+                useBias: isFirst ? true : false,
+                units: Math.round(this.numberOfSensors * hiddenUnitScalar),
+                activation: "relu",
+                inputShape: isFirst ? [this.numberOfSensors] : undefined,
+            }));
+        });
+        model.add(tf__namespace.layers.dense({ units: 2 }));
+        model.compile({
+            optimizer: tf__namespace.train.adam(0.001),
+            loss: "meanSquaredError",
+        });
+        this.#model = model;
+        _console$J.log("created model", this.#model);
+    }
+    #maxDataLength = 2000;
+    #data = { inputs: [], outputs: [] };
+    clearData() {
+        _console$J.log("clearData");
+        this.#data.outputs.length = 0;
+        this.#data.inputs.length = 0;
+    }
+    #getInputs(pressureData) {
+        return pressureData.sensors.map((sensor) => sensor.scaledValue);
+    }
+    #getOutputs(euler) {
+        return [-euler.roll, -euler.pitch];
+    }
+    addData(pressureData, euler) {
+        if (!isTensorFlowAvailable()) {
+            return;
+        }
+        this.#data.inputs.push(this.#getInputs(pressureData));
+        this.#data.outputs.push(this.#getOutputs(euler));
+        while (this.#data.inputs.length > this.#maxDataLength) {
+            this.#data.inputs.shift();
+            this.#data.outputs.shift();
+        }
+        _console$J.log("addData", pressureData, euler, {
+            dataLength: this.#data.inputs.length,
+        });
+        this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
+        });
+    }
+    #isTrained = false;
+    get isTrained() {
+        return this.#isTrained;
+    }
+    #isTraining = false;
+    get isTraining() {
+        return this.#isTraining;
+    }
+    async train() {
+        if (!isTensorFlowAvailable()) {
+            return;
+        }
+        if (!this.#model) {
+            _console$J.error("no model defined");
+            return;
+        }
+        if (this.isTraining) {
+            _console$J.warn("already training");
+            return;
+        }
+        await tf__namespace.nextFrame();
+        const { inputs, outputs } = this.#data;
+        if (inputs.length == 0) {
+            _console$J.log("no data to train on");
+            return;
+        }
+        _console$J.log("train");
+        const xs = tf__namespace.tensor2d(inputs);
+        const ys = tf__namespace.tidy(() => {
+            const ys = tf__namespace.tensor2d(outputs);
+            const minYs = ys.min();
+            const maxYs = ys.max();
+            return ys.sub(minYs).div(maxYs.sub(minYs));
+        });
+        this.#isTrained = false;
+        this.dispatchEvent("pressureCalibrationTrainStart", {});
+        this.#isTraining = true;
+        try {
+            await this.#model.fit(xs, ys, {
+                epochs: 32,
+                batchSize: 32,
+                shuffle: true,
+                callbacks: {
+                    onTrainBegin: (logs) => {
+                        _console$J.log("onTrainBegin", logs);
+                    },
+                    onTrainEnd: (logs) => {
+                        _console$J.log("onTrainEnd", logs);
+                    },
+                    onEpochBegin: (epoch, logs) => {
+                        _console$J.log("onEpochBegin", { epoch }, logs);
+                    },
+                    onEpochEnd: (epoch, logs) => {
+                        const { loss } = logs;
+                        _console$J.log("onEpochEnd", { epoch, loss }, logs);
+                        this.dispatchEvent("pressureCalibrationTrainProgress", {
+                        });
+                    },
+                    onBatchBegin: (batch, logs) => {
+                        _console$J.log("onBatchBegin", { batch }, logs);
+                    },
+                    onBatchEnd: (batch, logs) => {
+                        const { size, loss } = logs;
+                        _console$J.log("onBatchEnd", { batch, size, loss }, logs);
+                    },
+                    onYield: (epoch, batch, logs) => {
+                        _console$J.log("onYield", { epoch, batch }, logs);
+                    },
+                },
+            });
+        }
+        catch (error) {
+            _console$J.error("error training", error);
+        }
+        xs.dispose();
+        ys.dispose();
+        this.#isTraining = false;
+        _console$J.log("finished training");
+        this.#isTrained = true;
+        this.#dispatchCalibratedPressureModel();
+    }
+    #dispatchCalibratedPressureModel(wasLoaded = false) {
+        this.dispatchEvent("calibratedPressureModel", {
+            model: this.#model,
+            wasLoaded,
+        });
+    }
+    predict(pressureData) {
+        if (!isTensorFlowAvailable()) {
+            return;
+        }
+        if (!this.#model) {
+            _console$J.log("no model defined");
+            return;
+        }
+        if (!this.#isTrained) {
+            return;
+        }
+        const inputs = this.#getInputs(pressureData);
+        _console$J.log("predict", inputs);
+        const input = tf__namespace.tensor2d([inputs]);
+        const prediction = this.#model.predict(input);
+        const [x, y] = prediction.dataSync().map((value) => clamp(value, 0, 1));
+        _console$J.log({ x, y });
+        input.dispose();
+        prediction.dispose();
+        return { x, y };
+    }
+    async saveModel(handlerOrURL, config) {
+        if (!isTensorFlowAvailable()) {
+            return false;
+        }
+        await tf__namespace.ready();
+        if (!this.model) {
+            _console$J.error("model not found");
+            return false;
+        }
+        if (!this.isTrained) {
+            _console$J.error("model not trained");
+            return false;
+        }
+        try {
+            await this.model.save(handlerOrURL, config);
+        }
+        catch (error) {
+            _console$J.error("failed to save model", error);
+            return false;
+        }
+        return true;
+    }
+    async loadModel(pathOrIOHandlerOrFileList, options) {
+        if (!isTensorFlowAvailable()) {
+            return false;
+        }
+        await tf__namespace.ready();
+        if (!this.model) {
+            _console$J.error("model not found");
+            return false;
+        }
+        let pathOrIOHandler;
+        if (pathOrIOHandlerOrFileList instanceof FileList) {
+            const fileList = Array.from(pathOrIOHandlerOrFileList);
+            const jsonFile = fileList.find((f) => f.name.endsWith(".json"));
+            const weightsFile = fileList.find((f) => f.name.endsWith(".bin"));
+            if (!jsonFile) {
+                _console$J.error("no model.json found");
+                return false;
+            }
+            if (!weightsFile) {
+                _console$J.error("no weights.bin found");
+                return false;
+            }
+            pathOrIOHandler = tf__namespace.io.browserFiles([jsonFile, weightsFile]);
+        }
+        else {
+            pathOrIOHandler = pathOrIOHandlerOrFileList;
+        }
+        let loadedModel;
+        try {
+            loadedModel = await tf__namespace.loadLayersModel(pathOrIOHandler, options);
+            _console$J.log("loadedModel", loadedModel);
+            if (this.model.layers.length != loadedModel.layers.length) {
+                throw Error("layer count mismatch");
+            }
+            for (let i = 0; i < this.model.layers.length; i++) {
+                const weights = this.model.layers[i].getWeights();
+                const loadedWeights = loadedModel.layers[i].getWeights();
+                if (weights.length != loadedWeights.length) {
+                    throw Error(`weight count mismatch in layer ${i} (${this.model.layers[i].name})`);
+                }
+                for (let j = 0; j < weights.length; j++) {
+                    const shapeA = weights[j].shape;
+                    const shapeB = loadedWeights[j].shape;
+                    if (!shapeA.every((v, idx) => v === shapeB[idx])) {
+                        throw Error(`weight shape mismatch in layer ${i} weight ${j}`);
+                    }
+                }
+            }
+            this.model.setWeights(loadedModel.getWeights());
+            _console$J.log("weights successfully loaded into model");
+            this.#dispatchCalibratedPressureModel(true);
+        }
+        catch (error) {
+            _console$J.error("error loading model", error);
+            loadedModel?.dispose();
+            return false;
+        }
+        finally {
+            loadedModel?.dispose();
+        }
+        return true;
+    }
+}
+
+const _console$I = createConsole("PressureDataManager", { log: true });
 const PressureSensorTypes = ["pressure"];
 const ContinuousPressureSensorTypes = PressureSensorTypes;
+const PressureSensorEventTypes = [
+    "isRecordingPressureCalibrationData",
+    "pressureCalibrationDataRecordStart",
+    "pressureCalibrationDataRecordStop",
+    "pressureCalibrationDataRecordingProgress",
+    "isTrainingPressureCalibration",
+    "pressureCalibrationTrainStart",
+    "pressureCalibrationTrainEnd",
+    "pressureCalibrationTrainProgress",
+    "calibratedPressureModel",
+];
 const DefaultNumberOfPressureSensors = 8;
 class PressureSensorDataManager {
+    constructor() {
+        autoBind$1(this);
+    }
+    #eventDispatcher;
+    get eventDispatcher() {
+        return this.#eventDispatcher;
+    }
+    set eventDispatcher(eventDispatcher) {
+        if (this.#eventDispatcher == eventDispatcher) {
+            return;
+        }
+        _console$I.assertWithError(!this.#eventDispatcher, "eventDispatcher already defined");
+        this.#eventDispatcher = eventDispatcher;
+        this.#centerOfPressureModel.eventDispatcher =
+            eventDispatcher;
+    }
+    get dispatchEvent() {
+        return this.eventDispatcher.dispatchEvent;
+    }
     #positions = [];
     get positions() {
         return this.#positions;
@@ -1204,6 +1541,7 @@ class PressureSensorDataManager {
         }
         _console$I.log({ positions });
         this.#positions = positions;
+        this.#centerOfPressureModel.numberOfSensors = this.numberOfSensors;
         this.#sensorRangeHelpers = createArray(this.numberOfSensors, () => new RangeHelper());
         this.resetRange();
     }
@@ -1211,45 +1549,154 @@ class PressureSensorDataManager {
     #normalizedSumRangeHelper = new RangeHelper();
     #centerOfPressureHelper = new CenterOfPressureHelper();
     resetRange() {
+        this.stopRecordingCalibrationData();
         this.#sensorRangeHelpers?.forEach((rangeHelper) => rangeHelper.reset());
         this.#centerOfPressureHelper.reset();
         this.#normalizedSumRangeHelper.reset();
+        Object.assign(this.#euler, defaultEuler);
+        this.#eulerCenterOfPressureRangeHelper.reset();
     }
-    parseData(dataView, scalar) {
-        const pressure = {
+    #euler = structuredClone(defaultEuler);
+    #eulerTimestamp = 0;
+    #eulerCenterOfPressureRangeHelper = new CenterOfPressureHelper();
+    onEuler(euler, timestamp) {
+        Object.assign(this.#euler, euler);
+        this.#eulerTimestamp = timestamp;
+    }
+    #centerOfPressureModel = new CenterOfPressureModel();
+    get calibrationModel() {
+        return this.#centerOfPressureModel.model;
+    }
+    get isCalibrationModelTrained() {
+        return this.#centerOfPressureModel.isTrained;
+    }
+    get isTrainingCalibrationModel() {
+        return this.#centerOfPressureModel.isTraining;
+    }
+    saveCalibrationModel(handlerOrURL, config) {
+        return this.#centerOfPressureModel.saveModel(handlerOrURL, config);
+    }
+    loadCalibrationModel(pathOrIOHandlerOrFileList, options) {
+        return this.#centerOfPressureModel.loadModel(pathOrIOHandlerOrFileList, options);
+    }
+    #isRecordingCalibrationData = false;
+    get isRecordingCalibrationData() {
+        return this.#isRecordingCalibrationData;
+    }
+    #setIsRecordingCalibrationData(newIsRecordingCalibrationData) {
+        this.#isRecordingCalibrationData = newIsRecordingCalibrationData;
+        _console$I.log({
+            isRecordingCalibrationData: this.isRecordingCalibrationData,
+        });
+        this.dispatchEvent("isRecordingPressureCalibrationData", {
+            isRecordingPressureCalibrationData: this.isRecordingCalibrationData,
+        });
+        if (this.isRecordingCalibrationData) {
+            this.dispatchEvent("pressureCalibrationDataRecordStart", {});
+        }
+        else {
+            this.dispatchEvent("pressureCalibrationDataRecordStop", {});
+        }
+    }
+    get canCalibrate() {
+        return isTensorFlowAvailable();
+    }
+    startRecordingCalibrationData() {
+        if (this.isRecordingCalibrationData) {
+            return;
+        }
+        if (!this.canCalibrate) {
+            _console$I.error("cannot calibrate pressure - tensorflow is not available");
+            return;
+        }
+        this.#centerOfPressureModel.clearData();
+        this.#setIsRecordingCalibrationData(true);
+    }
+    stopRecordingCalibrationData() {
+        if (!this.isRecordingCalibrationData) {
+            return;
+        }
+        this.#setIsRecordingCalibrationData(false);
+    }
+    toggleRecordingCalibrationData() {
+        if (this.isRecordingCalibrationData) {
+            this.stopRecordingCalibrationData();
+        }
+        else {
+            this.startRecordingCalibrationData();
+        }
+    }
+    async train() {
+        await this.#centerOfPressureModel.train();
+    }
+    #scaledSumThreshold = 0.05;
+    parseData(dataView, scalar, timestamp) {
+        const pressureData = {
             sensors: [],
             scaledSum: 0,
             normalizedSum: 0,
         };
         for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
             const rawValue = dataView.getUint16(byteOffset, true);
-            let scaledValue = (rawValue * scalar) / this.numberOfSensors;
+            const scaledValue = (rawValue * scalar) / this.numberOfSensors;
             const rangeHelper = this.#sensorRangeHelpers[index];
-            const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue, false);
+            rangeHelper.update(scaledValue);
+            const normalizedValue = rangeHelper.getNormalization(scaledValue, false);
+            const truncatedScaledValue = scaledValue - rangeHelper.min;
             const position = this.positions[index];
-            pressure.sensors[index] = {
+            pressureData.sensors[index] = {
                 rawValue,
                 scaledValue,
+                truncatedScaledValue,
                 normalizedValue,
                 position,
                 weightedValue: 0,
             };
-            pressure.scaledSum += scaledValue;
+            pressureData.scaledSum += truncatedScaledValue;
         }
-        pressure.normalizedSum =
-            this.#normalizedSumRangeHelper.updateAndGetNormalization(pressure.scaledSum, false);
-        if (pressure.scaledSum > 0) {
-            pressure.center = { x: 0, y: 0 };
-            pressure.sensors.forEach((sensor) => {
-                sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
-                pressure.center.x += sensor.position.x * sensor.weightedValue;
-                pressure.center.y += sensor.position.y * sensor.weightedValue;
+        {
+            this.#normalizedSumRangeHelper.update(pressureData.scaledSum);
+        }
+        pressureData.normalizedSum =
+            this.#normalizedSumRangeHelper.getNormalization(pressureData.scaledSum, false);
+        const isPressureAboveThreshold = pressureData.scaledSum > this.#scaledSumThreshold;
+        const hasEuler = this.#euler && Math.abs(timestamp - this.#eulerTimestamp) < 100;
+        if (hasEuler) {
+            if (isPressureAboveThreshold) {
+                if (this.isRecordingCalibrationData) {
+                    this.#eulerCenterOfPressureRangeHelper.update({
+                        x: -this.#euler.roll,
+                        y: -this.#euler.pitch,
+                    });
+                }
+                pressureData.motionCenter =
+                    this.#eulerCenterOfPressureRangeHelper.getNormalization({
+                        x: -this.#euler.roll,
+                        y: -this.#euler.pitch,
+                    }, false);
+            }
+        }
+        if (isPressureAboveThreshold) {
+            pressureData.center = { x: 0, y: 0 };
+            pressureData.sensors.forEach((sensor) => {
+                sensor.weightedValue = sensor.scaledValue / pressureData.scaledSum;
+                pressureData.center.x += sensor.position.x * sensor.weightedValue;
+                pressureData.center.y += sensor.position.y * sensor.weightedValue;
             });
-            pressure.normalizedCenter =
-                this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center, false);
+            this.#centerOfPressureHelper.update(pressureData.center);
+            pressureData.normalizedCenter =
+                this.#centerOfPressureHelper.getNormalization(pressureData.center, false);
         }
-        _console$I.log({ pressure });
-        return pressure;
+        if (this.isRecordingCalibrationData &&
+            hasEuler &&
+            isPressureAboveThreshold) {
+            this.#centerOfPressureModel.addData(pressureData, this.#euler);
+        }
+        if (isPressureAboveThreshold) {
+            pressureData.calibratedCenter =
+                this.#centerOfPressureModel.predict(pressureData);
+        }
+        return pressureData;
     }
 }
 
@@ -1316,6 +1763,18 @@ class MotionSensorDataManager {
         _console$H.log({ quaternion });
         return quaternion;
     }
+    #euler = new three.Euler(0, 0, 0, "YXZ");
+    #quaternion = new three.Quaternion();
+    quaternionToEuler(quaternion) {
+        this.#quaternion.copy(quaternion);
+        this.#euler.setFromQuaternion(this.#quaternion);
+        const { x, y, z } = this.#euler;
+        return {
+            heading: radToDeg(y),
+            pitch: radToDeg(x),
+            roll: radToDeg(z),
+        };
+    }
     parseEuler(dataView, scalar) {
         let [heading, pitch, roll] = [
             dataView.getInt16(0, true),
@@ -1324,7 +1783,7 @@ class MotionSensorDataManager {
         ].map((value) => value * scalar);
         pitch *= -1;
         heading *= -1;
-        if (heading < 0) {
+        if (heading < -180) {
             heading += 360;
         }
         const euler = { heading, pitch, roll };
@@ -2530,8 +2989,12 @@ const RequiredPressureMessageTypes = [
 const SensorDataEventTypes = [
     ...SensorDataMessageTypes,
     ...SensorTypes,
+    ...PressureSensorEventTypes,
 ];
 class SensorDataManager {
+    constructor() {
+        autoBind$1(this);
+    }
     pressureSensorDataManager = new PressureSensorDataManager();
     motionSensorDataManager = new MotionSensorDataManager();
     barometerSensorDataManager = new BarometerSensorDataManager();
@@ -2543,7 +3006,19 @@ class SensorDataManager {
         _console$C.assertTypeWithError(sensorTypeEnum, "number");
         _console$C.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
-    eventDispatcher;
+    #eventDispatcher;
+    get eventDispatcher() {
+        return this.#eventDispatcher;
+    }
+    set eventDispatcher(eventDispatcher) {
+        if (this.#eventDispatcher == eventDispatcher) {
+            return;
+        }
+        _console$C.assertWithError(!this.#eventDispatcher, "eventDispatcher already defined");
+        this.#eventDispatcher = eventDispatcher;
+        this.pressureSensorDataManager.eventDispatcher =
+            eventDispatcher;
+    }
     get dispatchEvent() {
         return this.eventDispatcher.dispatchEvent;
     }
@@ -2582,16 +3057,17 @@ class SensorDataManager {
         const timestamp = parseTimestamp(dataView, byteOffset);
         byteOffset += 2;
         const _dataView = new DataView(dataView.buffer, byteOffset);
-        parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), {
-            timestamp,
-        });
+        const context = { timestamp };
+        parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), context);
     }
-    parseDataCallback(sensorType, dataView, { timestamp }, isLast) {
+    parseDataCallback(sensorType, dataView, context, isLast) {
+        const { timestamp } = context;
         const scalar = this.#scalars.get(sensorType) || 1;
         let sensorData = null;
+        let sensorDataEuler = null;
         switch (sensorType) {
             case "pressure":
-                sensorData = this.pressureSensorDataManager.parseData(dataView, scalar);
+                sensorData = this.pressureSensorDataManager.parseData(dataView, scalar, timestamp);
                 break;
             case "acceleration":
             case "gravity":
@@ -2603,9 +3079,13 @@ class SensorDataManager {
             case "gameRotation":
             case "rotation":
                 sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
+                sensorDataEuler =
+                    this.motionSensorDataManager.quaternionToEuler(sensorData);
+                this.pressureSensorDataManager.onEuler(sensorDataEuler, timestamp);
                 break;
             case "orientation":
                 sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
+                this.pressureSensorDataManager.onEuler(sensorData, timestamp);
                 break;
             case "stepCounter":
                 sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
@@ -2635,18 +3115,17 @@ class SensorDataManager {
         }
         _console$C.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
         _console$C.log({ sensorType, sensorData });
-        this.dispatchEvent(sensorType, {
+        const message = {
             sensorType,
             [sensorType]: sensorData,
             timestamp,
             isLast: isLast,
-        });
-        this.dispatchEvent("sensorData", {
-            sensorType,
-            [sensorType]: sensorData,
-            timestamp,
-            isLast: isLast,
-        });
+        };
+        if (sensorDataEuler) {
+            message[`${sensorType}Euler`] = sensorDataEuler;
+        }
+        this.dispatchEvent(sensorType, message);
+        this.dispatchEvent("sensorData", message);
     }
 }
 
@@ -12072,6 +12551,7 @@ class Device {
         return this.#connectionManager?.isAvailable;
     }
     constructor() {
+        autoBind$1(this);
         this.#deviceInformationManager.eventDispatcher = this
             .#eventDispatcher;
         this._informationManager.sendMessage = this
@@ -12784,6 +13264,7 @@ class Device {
         _console$b.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
         this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
     }
+    #sensorDataManager = new SensorDataManager();
     #assertPressure() {
         _console$b.assertWithError(this.hasSensorType("pressure"), "pressure sensorType not included in device");
     }
@@ -12803,9 +13284,48 @@ class Device {
             return [];
         }
     }
-    #sensorDataManager = new SensorDataManager();
     resetPressureRange() {
         this.#sensorDataManager.pressureSensorDataManager.resetRange();
+    }
+    get canCalibratePressure() {
+        return this.#sensorDataManager.pressureSensorDataManager.canCalibrate;
+    }
+    get isRecordingPressureCalibrationData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .isRecordingCalibrationData;
+    }
+    get isTrainingPressureCalibrationModel() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .isTrainingCalibrationModel;
+    }
+    get startRecordingPressureCalibrationData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .startRecordingCalibrationData;
+    }
+    get stopRecordingPressureCalibrationData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .stopRecordingCalibrationData;
+    }
+    toggleRecordingPressureCalibrationData() {
+        this.#sensorDataManager.pressureSensorDataManager.toggleRecordingCalibrationData();
+    }
+    get pressureCalibrationModel() {
+        return this.#sensorDataManager.pressureSensorDataManager.calibrationModel;
+    }
+    get isPressureCalibrationModelTrained() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .isCalibrationModelTrained;
+    }
+    async trainPressureCalibrationModel() {
+        await this.#sensorDataManager.pressureSensorDataManager.train();
+    }
+    get savePressureCalibrationModel() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .saveCalibrationModel;
+    }
+    get loadPressureCalibrationModel() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .loadCalibrationModel;
     }
     get vibrationLocations() {
         return this.#vibrationManager.vibrationLocations;
@@ -13683,15 +14203,18 @@ class DevicePairPressureSensorDataManager {
                 {
                     sidePressure.sensors.forEach((sensor) => {
                         const _sensor = structuredClone(sensor);
-                        _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
+                        _sensor.weightedScaledValue =
+                            sensor.scaledValue / pressure.scaledSum;
                         let { x, y } = sensor.position;
                         x /= 2;
                         if (side == "right") {
                             x += 0.5;
                         }
                         _sensor.position = { x, y };
-                        pressure.center.x += _sensor.position.x * _sensor.weightedValue;
-                        pressure.center.y += _sensor.position.y * _sensor.weightedValue;
+                        pressure.center.x +=
+                            _sensor.position.x * _sensor.weightedScaledValue;
+                        pressure.center.y +=
+                            _sensor.position.y * _sensor.weightedScaledValue;
                         pressure.sensors[side].push(_sensor);
                     });
                 }
@@ -15342,6 +15865,7 @@ const ThrottleUtils = {
 
 exports.CameraCommands = CameraCommands;
 exports.CameraConfigurationTypes = CameraConfigurationTypes;
+exports.CenterOfPressureModel = CenterOfPressureModel;
 exports.ConnectionEventTypes = ConnectionEventTypes;
 exports.ConnectionMessageTypes = ConnectionMessageTypes;
 exports.ContinuousSensorTypes = ContinuousSensorTypes;
@@ -15408,6 +15932,7 @@ exports.getFontUnicodeRange = getFontUnicodeRange;
 exports.getMaxSpriteSheetSize = getMaxSpriteSheetSize;
 exports.hexToRGB = hexToRGB;
 exports.intersectWireframes = intersectWireframes;
+exports.isTensorFlowAvailable = isTensorFlowAvailable;
 exports.isWireframePolygon = isWireframePolygon;
 exports.maxDisplayScale = maxDisplayScale;
 exports.mergeWireframes = mergeWireframes;

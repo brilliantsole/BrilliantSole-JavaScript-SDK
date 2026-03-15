@@ -1,11 +1,31 @@
 <html>
   <head>
-    <title>Camera Hand Tracking | BrilliantSole JavaScript SDK</title>
+    <title>Wii Balance Board | BrilliantSole JavaScript SDK</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="../utils/misc/canvasInput.js"></script>
     <script type="module" src="./script.js"></script>
   </head>
-  <style></style>
+  <style>
+    #centerOfPressureVisualization {
+      border: solid;
+      display: grid;
+      width: 300px;
+      aspect-ratio: 1;
+    }
+    #centerOfPressureVisualization > * {
+      grid-row: 1;
+      grid-column: 1;
+    }
+    #pressureVisualization {
+      display: flex;
+      flex-direction: row;
+      border: solid;
+
+      width: 300px;
+      aspect-ratio: 1;
+    }
+  </style>
   <body>
     <nav>
       <a href="../../">home</a>
@@ -13,6 +33,43 @@
 
     <h1>Wii Balance Board | BrilliantSole JavaScript SDK</h1>
 
-    <button id="toggleBoardConnection">connect to wii balance board</button>
+    <button id="addDevice">add device</button>
+    <button id="toggleDevicePairPressureData" disabled>enable pressure</button>
+    <button id="toggleRecordPressureData" disabled>record pressure data</button>
+    <label>
+      <canvas
+        id="centerOfPressure"
+        width="100"
+        height="100"
+        data-min-x="-1"
+        data-max-x="1"
+        data-min-y="-1"
+        data-max-y="1"
+        data-input
+      ></canvas>
+    </label>
+    <button id="clearPressureData" disabled>clear data</button>
+    <button id="downloadPressureData" disabled>download data</button>
+    <button id="uploadPressureData">upload data</button>
+    <pre id="devicePairPressure"></pre>
+    <div id="pressureVisualization">
+      <div>
+        <canvas width="150" height="300" class="left"></canvas>
+      </div>
+      <div>
+        <canvas width="150" height="300" class="right"></canvas>
+      </div>
+    </div>
+
+    <br />
+
+    <button id="toggleWiiBalanceBoardConnection">connect to board</button>
+    <button id="tareWiiBalanceBoard">tare board</button>
+    <br />
+    <div id="centerOfPressureVisualization">
+      <canvas width="300" height="300" class="pairPressure"></canvas>
+      <canvas width="300" height="300" class="wiiBalanceBoard"></canvas>
+    </div>
+    <pre id="wiiBalanceBoardWeights"></pre>
   </body>
 </html>

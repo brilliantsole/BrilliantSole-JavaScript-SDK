@@ -108,38 +108,11 @@ export interface Euler {
   pitch: number;
   roll: number;
 }
-
-export function computeVoronoiWeights(
-  points: PressureSensorPosition[],
-  sampleCount = 100000
-) {
-  const n = points.length;
-  const counts = new Array(n).fill(0);
-
-  for (let i = 0; i < sampleCount; i++) {
-    const x = Math.random();
-    const y = Math.random();
-
-    // Find the closest input point
-    let minDist = Infinity;
-    let closestIndex = -1;
-
-    for (let j = 0; j < n; j++) {
-      const { x: px, y: py } = points[j];
-      const dist = (px - x) ** 2 + (py - y) ** 2; // Squared Euclidean distance
-      if (dist < minDist) {
-        minDist = dist;
-        closestIndex = j;
-      }
-    }
-
-    // Increment count for the closest point
-    counts[closestIndex]++;
-  }
-
-  // Convert counts to weights (sum to 1)
-  return counts.map((c) => c / sampleCount);
-}
+export const defaultEuler: Euler = {
+  heading: 0,
+  pitch: 0,
+  roll: 0,
+};
 
 export function getVector3Length(vector: Vector3) {
   const { x, y, z } = vector;
