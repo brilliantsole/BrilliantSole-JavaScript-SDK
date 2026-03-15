@@ -170,8 +170,6 @@ const cameraStreamVideo = document.getElementById("cameraStreamVideo");
 let cameraStream;
 
 let pauseXRIntervalId = setInterval(() => {
-  return;
-
   if (!XR.isPaused()) {
     XR.pause();
   } else {
@@ -549,7 +547,6 @@ window.addEventListener(deviceMotionEventType, (event) => {
   if (device.isConnected) {
     return;
   }
-  return;
 
   /** @type {DeviceMotionEventInit} */
   const deviceMotionInitData = {
@@ -574,7 +571,6 @@ window.addEventListener(deviceOrientationEventType, (event) => {
   if (device.isConnected) {
     return;
   }
-  return;
   // console.log("deviceorientation", event);
   /** @type {DeviceOrientationEventInit} */
   const deviceOrientationInitData = {
