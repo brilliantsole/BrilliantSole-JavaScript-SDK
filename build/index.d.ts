@@ -90,8 +90,8 @@ declare class RangeHelper {
     set max(newMax: number);
     reset(): void;
     update(value: number): void;
-    getNormalization(value: number, weightByRange: boolean, clampValue?: boolean): number;
-    updateAndGetNormalization(value: number, weightByRange: boolean): number;
+    getNormalization(value: number, weightByRange?: boolean, clampValue?: boolean): number;
+    updateAndGetNormalization(value: number, weightByRange?: boolean): number;
 }
 
 declare const DisplaySegmentCaps: readonly ["flat", "round"];
@@ -1014,7 +1014,45 @@ interface FirmwareEventMessages {
     };
 }
 
+type CenterOfPressureModelData = {
+    inputs: number[][];
+    outputs: number[][];
+};
+declare class CenterOfPressureModel {
+    #private;
+    constructor();
+    eventDispatcher: PressureSensorEventDispatcher;
+    get dispatchEvent(): <T extends "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: PressureSensorEventMessages[T]) => void;
+    get model(): tf.Sequential | undefined;
+    get numberOfSensors(): number;
+    set numberOfSensors(newNumberOfSensors: number);
+    get data(): CenterOfPressureModelData;
+    clearData(): void;
+    onSensorData(pressureData: PressureData, euler: Euler): void;
+    get numberOfSamples(): number;
+    addData(inputs: number[], outputs: number[]): void;
+    get isTrained(): boolean;
+    get isTraining(): boolean;
+    train(): Promise<void>;
+    predict(pressureData: PressureData): {
+        x: number;
+        y: number;
+    } | undefined;
+    saveModel(handlerOrURL: tf.io.IOHandler | string, config?: tf.io.SaveConfig): Promise<boolean>;
+    loadModel(pathOrIOHandlerOrFileList: string | tf.io.IOHandler | FileList, options?: tf.io.LoadOptions): Promise<boolean>;
+}
+
+declare class RangeHelper2 {
+    #private;
+    reset(): void;
+    update(vector2: Vector2): void;
+    getNormalization(vector2: Vector2, weightByRange?: boolean, clampValue?: boolean): Vector2;
+    updateAndGetNormalization(vector2: Vector2, weightByRange?: boolean): Vector2;
+}
+
 type CenterOfPressure = Vector2;
+
+/** NODE_START import * as tf from "@tensorflow/tfjs"; NODE_END */
 
 type PressureSensorPosition = Vector2;
 
@@ -1048,13 +1086,22 @@ interface PressureSensorEventMessages {
     };
     pressureCalibrationDataRecordStart: {};
     pressureCalibrationDataRecordStop: {};
-    pressureCalibrationDataRecordingProgress: {};
+    pressureCalibrationDataRecordingProgress: {
+        numberOfSamples: number;
+        data: CenterOfPressureModelData;
+    };
     isTrainingPressureCalibration: {
         isTrainingPressureCalibration: boolean;
     };
     pressureCalibrationTrainStart: {};
     pressureCalibrationTrainEnd: {};
-    pressureCalibrationTrainProgress: {};
+    pressureCalibrationTrainProgress: {
+        pressureCalibrationTrainProgress: number;
+        epoch: number;
+        epochs: number;
+        batchSize: number;
+        loss: number;
+    };
     calibratedPressureModel: {
         model: tf.Sequential;
         wasLoaded: boolean;
@@ -1589,6 +1636,9 @@ declare class Device {
     trainPressureCalibrationModel(): Promise<void>;
     get savePressureCalibrationModel(): (handlerOrURL: _tensorflow_tfjs_core_dist_io_types.IOHandler | string, config?: _tensorflow_tfjs_core_dist_io_types.SaveConfig) => Promise<boolean>;
     get loadPressureCalibrationModel(): (pathOrIOHandlerOrFileList: string | _tensorflow_tfjs_core_dist_io_types.IOHandler | FileList, options?: _tensorflow_tfjs_core_dist_io_types.LoadOptions) => Promise<boolean>;
+    get addPressureCalibrationModelData(): (inputs: number[], outputs: number[]) => void;
+    get clearPressureCalibrationModelData(): () => void;
+    get pressureCalibrationModelData(): CenterOfPressureModelData;
     get vibrationLocations(): ("front" | "rear")[];
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;
     get fileTypes(): ("tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | "cameraImage")[];
@@ -1809,7 +1859,13 @@ declare class Device {
     get drawDisplayClosedPath(): (curves: DisplayBezierCurve[], sendImmediately?: boolean) => Promise<void>;
 }
 
+/** NODE_START import * as tf from "@tensorflow/tfjs"; NODE_END */
 declare function isTensorFlowAvailable(): boolean;
+declare function listTensorflowModels(): Promise<{
+    [url: string]: tf.io.ModelArtifactsInfo;
+}>;
+declare function getTensorFlowModel(url: string): Promise<tf.io.ModelArtifactsInfo | undefined>;
+declare function isTensorFlowModelAvailable(url: string): Promise<boolean>;
 
 declare const DeviceManagerEventTypes: readonly ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];
 type DeviceManagerEventType = (typeof DeviceManagerEventTypes)[number];
@@ -1868,27 +1924,6 @@ declare class DeviceManager {
     _CheckDeviceAvailability(device: Device): void;
 }
 declare const _default: DeviceManager;
-
-declare class CenterOfPressureModel {
-    #private;
-    constructor();
-    eventDispatcher: PressureSensorEventDispatcher;
-    get dispatchEvent(): <T extends "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: PressureSensorEventMessages[T]) => void;
-    get model(): tf.Sequential | undefined;
-    get numberOfSensors(): number;
-    set numberOfSensors(newNumberOfSensors: number);
-    clearData(): void;
-    addData(pressureData: PressureData, euler: Euler): void;
-    get isTrained(): boolean;
-    get isTraining(): boolean;
-    train(): Promise<void>;
-    predict(pressureData: PressureData): {
-        x: number;
-        y: number;
-    } | undefined;
-    saveModel(handlerOrURL: tf.io.IOHandler | string, config?: tf.io.SaveConfig): Promise<boolean>;
-    loadModel(pathOrIOHandlerOrFileList: string | tf.io.IOHandler | FileList, options?: tf.io.LoadOptions): Promise<boolean>;
-}
 
 declare function wait(delay: number): Promise<void>;
 declare class Timer {
@@ -2458,5 +2493,5 @@ declare const ThrottleUtils: {
     debounce: typeof debounce;
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, _default as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment_d as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isValidSVG, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, _default as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment_d as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
 export type { BoundDeviceEventListeners, BoundDeviceManagerEventListeners, BoundDevicePairEventListeners, CameraCommand, CameraConfiguration, CameraConfigurationType, CenterOfPressure, ConnectionEventType, ConnectionMessageType, ContinuousSensorType, DeviceEvent, DeviceEventListenerMap, DeviceEventMap, DeviceInformation, DeviceManagerEvent, DeviceManagerEventListenerMap, DeviceManagerEventMap, DevicePairEvent, DevicePairEventListenerMap, DevicePairEventMap, DevicePairType, DeviceType, DiscoveredDevice, DisplayAlignment, DisplayBezierCurveType, DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayCanvasHelperEvent, DisplayCanvasHelperEventListenerMap, DisplayCanvasHelperEventMap, DisplayColorRGB, DisplayContextCommand, DisplayContextCommandType, DisplayDirection, DisplaySegmentCap, DisplaySize, DisplaySprite, DisplaySpriteColorPair, DisplaySpriteContextCommandType, DisplaySpriteLine, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSubLine, DisplayWireframe, DisplayWireframeEdge, Euler, FileTransferDirection, FileType, FontMetrics, FontToSpriteSheetOptions, MicrophoneBitDepth, MicrophoneCommand, MicrophoneConfiguration, MicrophoneConfigurationType, MicrophoneSampleRate, PressureData, PressureSensorPosition, PressureSensorValue, Quaternion, Range, SensorConfiguration, SensorType, Side, TfliteFileConfiguration, TfliteSensorType, TfliteTask, TxRxMessageType, Vector2, Vector3, VibrationConfiguration, VibrationLocation, VibrationType, VibrationWaveformEffect };

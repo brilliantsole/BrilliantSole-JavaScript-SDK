@@ -6,8 +6,8 @@ import { Vector2, Vector3, Quaternion, Euler } from "./utils/MathUtils.ts";
 export { Vector2, Vector3, Quaternion, Euler };
 import { default as Device, DeviceEvent, DeviceEventMap, DeviceEventListenerMap, BoundDeviceEventListeners } from "./Device.ts";
 export { Device, DeviceEvent, DeviceEventMap, DeviceEventListenerMap, BoundDeviceEventListeners, };
-import { isTensorFlowAvailable } from "./utils/Tensorflow.ts";
-export { isTensorFlowAvailable };
+import { isTensorFlowAvailable, listTensorflowModels, isTensorFlowModelAvailable, getTensorFlowModel } from "./utils/Tensorflow.ts";
+export { isTensorFlowAvailable, listTensorflowModels, isTensorFlowModelAvailable, getTensorFlowModel, };
 import { default as DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners } from "./DeviceManager.ts";
 export { DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners, };
 import { DeviceInformation } from "./DeviceInformationManager.ts";
@@ -102,3 +102,5 @@ export { WebSocketClient };
 /** BROWSER_END */
 import { default as RangeHelper, Range } from "./utils/RangeHelper.ts";
 export { RangeHelper, Range };
+import { default as RangeHelper2 } from "./utils/RangeHelper2.ts";
+export { RangeHelper2 };

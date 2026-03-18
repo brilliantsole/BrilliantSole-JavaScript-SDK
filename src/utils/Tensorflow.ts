@@ -10,4 +10,30 @@ function isTensorFlowAvailable() {
   return Boolean(tf);
 }
 
-export { isTensorFlowAvailable };
+async function listTensorflowModels() {
+  if (isTensorFlowAvailable()) {
+    return {};
+  }
+  const models = await tf.io.listModels();
+  return models;
+}
+
+async function getTensorFlowModel(url: string) {
+  const models = await listTensorflowModels();
+  const model = models[url];
+  if (model) {
+    return model;
+  }
+}
+
+async function isTensorFlowModelAvailable(url: string) {
+  const model = await getTensorFlowModel(url);
+  return Boolean(model);
+}
+
+export {
+  isTensorFlowAvailable,
+  listTensorflowModels,
+  getTensorFlowModel,
+  isTensorFlowModelAvailable,
+};

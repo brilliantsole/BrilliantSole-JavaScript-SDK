@@ -25,8 +25,18 @@ export {
   BoundDeviceEventListeners,
 };
 
-import { isTensorFlowAvailable } from "./utils/Tensorflow.ts";
-export { isTensorFlowAvailable };
+import {
+  isTensorFlowAvailable,
+  listTensorflowModels,
+  isTensorFlowModelAvailable,
+  getTensorFlowModel,
+} from "./utils/Tensorflow.ts";
+export {
+  isTensorFlowAvailable,
+  listTensorflowModels,
+  isTensorFlowModelAvailable,
+  getTensorFlowModel,
+};
 
 import {
   default as DeviceManager,
@@ -472,3 +482,6 @@ export { WebSocketClient };
 
 import { default as RangeHelper, Range } from "./utils/RangeHelper.ts";
 export { RangeHelper, Range };
+
+import { default as RangeHelper2 } from "./utils/RangeHelper2.ts";
+export { RangeHelper2 };

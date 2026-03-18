@@ -123,6 +123,9 @@ declare class Device {
     trainPressureCalibrationModel(): Promise<void>;
     get savePressureCalibrationModel(): (handlerOrURL: import("@tensorflow/tfjs-core/dist/io/types").IOHandler | string, config?: import("@tensorflow/tfjs-core/dist/io/types").SaveConfig) => Promise<boolean>;
     get loadPressureCalibrationModel(): (pathOrIOHandlerOrFileList: string | import("@tensorflow/tfjs-core/dist/io/types").IOHandler | FileList, options?: import("@tensorflow/tfjs-core/dist/io/types").LoadOptions) => Promise<boolean>;
+    get addPressureCalibrationModelData(): (inputs: number[], outputs: number[]) => void;
+    get clearPressureCalibrationModelData(): () => void;
+    get pressureCalibrationModelData(): import("./utils/CenterOfPressureModel.ts").CenterOfPressureModelData;
     get vibrationLocations(): ("front" | "rear")[];
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;
     get fileTypes(): ("tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | "cameraImage")[];

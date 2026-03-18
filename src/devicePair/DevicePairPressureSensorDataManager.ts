@@ -78,8 +78,7 @@ class DevicePairPressureSensorDataManager {
     });
     pressure.normalizedSum +=
       this.#normalizedSumRangeHelper.updateAndGetNormalization(
-        pressure.scaledSum,
-        false
+        pressure.scaledSum
       );
 
     if (pressure.scaledSum > 0) {
@@ -120,10 +119,7 @@ class DevicePairPressureSensorDataManager {
       });
 
       pressure.normalizedCenter =
-        this.#centerOfPressureHelper.updateAndGetNormalization(
-          pressure.center,
-          false
-        );
+        this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
     }
 
     _console.log({ devicePairPressure: pressure });

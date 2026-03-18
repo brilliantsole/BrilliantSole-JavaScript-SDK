@@ -5,6 +5,7 @@ export type CenterOfPressureModelData = {
     inputs: number[][];
     outputs: number[][];
 };
+export type CenterOfPressureModelDataHeatmap = {};
 declare class CenterOfPressureModel {
     #private;
     constructor();
@@ -13,8 +14,11 @@ declare class CenterOfPressureModel {
     get model(): tf.Sequential | undefined;
     get numberOfSensors(): number;
     set numberOfSensors(newNumberOfSensors: number);
+    get data(): CenterOfPressureModelData;
     clearData(): void;
-    addData(pressureData: PressureData, euler: Euler): void;
+    onSensorData(pressureData: PressureData, euler: Euler): void;
+    get numberOfSamples(): number;
+    addData(inputs: number[], outputs: number[]): void;
     get isTrained(): boolean;
     get isTraining(): boolean;
     train(): Promise<void>;

@@ -1157,7 +1157,7 @@
 	    }
 	}
 
-	class CenterOfPressureHelper {
+	class RangeHelper2 {
 	    #range = {
 	        x: new RangeHelper(),
 	        y: new RangeHelper(),
@@ -1166,21 +1166,23 @@
 	        this.#range.x.reset();
 	        this.#range.y.reset();
 	    }
-	    update(centerOfPressure) {
-	        this.#range.x.update(centerOfPressure.x);
-	        this.#range.y.update(centerOfPressure.y);
+	    update(vector2) {
+	        this.#range.x.update(vector2.x);
+	        this.#range.y.update(vector2.y);
 	    }
-	    getNormalization(centerOfPressure, weightByRange) {
+	    getNormalization(vector2, weightByRange, clampValue) {
 	        return {
-	            x: this.#range.x.getNormalization(centerOfPressure.x, weightByRange),
-	            y: this.#range.y.getNormalization(centerOfPressure.y, weightByRange),
+	            x: this.#range.x.getNormalization(vector2.x, weightByRange, clampValue),
+	            y: this.#range.y.getNormalization(vector2.y, weightByRange, clampValue),
 	        };
 	    }
-	    updateAndGetNormalization(centerOfPressure, weightByRange) {
-	        this.update(centerOfPressure);
-	        return this.getNormalization(centerOfPressure, weightByRange);
+	    updateAndGetNormalization(vector2, weightByRange) {
+	        this.update(vector2);
+	        return this.getNormalization(vector2, weightByRange);
 	    }
 	}
+
+	const CenterOfPressureHelper = RangeHelper2;
 
 	function createArray(arrayLength, objectOrCallback) {
 	    return new Array(arrayLength).fill(1).map((_, index) => {
@@ -1203,6 +1205,24 @@
 	        return Boolean(window.tf);
 	    }
 	    return Boolean(tf);
+	}
+	async function listTensorflowModels() {
+	    if (isTensorFlowAvailable()) {
+	        return {};
+	    }
+	    const models = await tf.io.listModels();
+	    return models;
+	}
+	async function getTensorFlowModel(url) {
+	    const models = await listTensorflowModels();
+	    const model = models[url];
+	    if (model) {
+	        return model;
+	    }
+	}
+	async function isTensorFlowModelAvailable(url) {
+	    const model = await getTensorFlowModel(url);
+	    return Boolean(model);
 	}
 
 	const _console$F = createConsole("CenterOfPressureModel", { log: true });
@@ -1253,7 +1273,6 @@
 	        this.#hiddenUnitScalars.forEach((hiddenUnitScalar, index) => {
 	            const isFirst = index == 0;
 	            model.add(tf.layers.dense({
-	                useBias: isFirst ? true : false,
 	                units: Math.round(this.numberOfSensors * hiddenUnitScalar),
 	                activation: "relu",
 	                inputShape: isFirst ? [this.numberOfSensors] : undefined,
@@ -1267,34 +1286,75 @@
 	        this.#model = model;
 	        _console$F.log("created model", this.#model);
 	    }
-	    #maxDataLength = 2000;
+	    #maxDataLength = 1000;
 	    #data = { inputs: [], outputs: [] };
+	    get data() {
+	        return this.#data;
+	    }
 	    clearData() {
 	        _console$F.log("clearData");
 	        this.#data.outputs.length = 0;
 	        this.#data.inputs.length = 0;
+	        this.#dispatchRecordingProgress();
+	    }
+	    #dispatchRecordingProgress() {
+	        this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
+	            numberOfSamples: this.numberOfSamples,
+	            data: this.data,
+	        });
 	    }
 	    #getInputs(pressureData) {
-	        return pressureData.sensors.map((sensor) => sensor.scaledValue);
+	        return pressureData.sensors.map((sensor) => sensor.truncatedScaledValue);
 	    }
 	    #getOutputs(euler) {
 	        return [-euler.roll, -euler.pitch];
 	    }
-	    addData(pressureData, euler) {
+	    onSensorData(pressureData, euler) {
+	        this.addData(this.#getInputs(pressureData), this.#getOutputs(euler));
+	    }
+	    get numberOfSamples() {
+	        return this.#data.inputs.length;
+	    }
+	    #areDataInputsRedundant(inputs) {
+	        return false;
+	    }
+	    #dataOutputsThreshold = 0.005;
+	    #areDataOutputsRedundant(outputs) {
+	        if (this.#data.outputs.length == 0) {
+	            return false;
+	        }
+	        return this.#data.outputs.some((_outputs) => {
+	            const differences = outputs.map((value, index) => value - _outputs[index]);
+	            let differencesSquareSum = 0;
+	            differences.forEach((difference) => {
+	                differencesSquareSum += difference ** 2;
+	            });
+	            const isRedundant = differencesSquareSum < this.#dataOutputsThreshold;
+	            return isRedundant;
+	        });
+	    }
+	    #isDataRedundant(inputs, outputs) {
+	        const areDataInputsRedundant = this.#areDataInputsRedundant(inputs);
+	        const areDataOutputsRedundant = this.#areDataOutputsRedundant(outputs);
+	        return areDataInputsRedundant || areDataOutputsRedundant;
+	    }
+	    addData(inputs, outputs) {
 	        if (!isTensorFlowAvailable()) {
 	            return;
 	        }
-	        this.#data.inputs.push(this.#getInputs(pressureData));
-	        this.#data.outputs.push(this.#getOutputs(euler));
-	        while (this.#data.inputs.length > this.#maxDataLength) {
+	        if (this.#isDataRedundant(inputs, outputs)) {
+	            return;
+	        }
+	        this.#data.inputs.push(inputs);
+	        this.#data.outputs.push(outputs);
+	        while (this.numberOfSamples > this.#maxDataLength) {
 	            this.#data.inputs.shift();
 	            this.#data.outputs.shift();
 	        }
-	        _console$F.log("addData", pressureData, euler, {
-	            dataLength: this.#data.inputs.length,
+	        _console$F.log({
+	            numberOfSamples: this.numberOfSamples,
 	        });
-	        this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
-	        });
+	        this.#dispatchRecordingProgress();
 	    }
 	    #isTrained = false;
 	    get isTrained() {
@@ -1330,13 +1390,18 @@
 	            const maxYs = ys.max();
 	            return ys.sub(minYs).div(maxYs.sub(minYs));
 	        });
+	        const epochs = 32;
+	        const batchSize = 32;
 	        this.#isTrained = false;
-	        this.dispatchEvent("pressureCalibrationTrainStart", {});
+	        this.dispatchEvent("pressureCalibrationTrainStart", {
+	            epochs,
+	            batchSize,
+	        });
 	        this.#isTraining = true;
 	        try {
 	            await this.#model.fit(xs, ys, {
-	                epochs: 32,
-	                batchSize: 32,
+	                epochs,
+	                batchSize,
 	                shuffle: true,
 	                callbacks: {
 	                    onTrainBegin: (logs) => {
@@ -1352,6 +1417,11 @@
 	                        const { loss } = logs;
 	                        _console$F.log("onEpochEnd", { epoch, loss }, logs);
 	                        this.dispatchEvent("pressureCalibrationTrainProgress", {
+	                            pressureCalibrationTrainProgress: (epoch + 1) / epochs,
+	                            epoch,
+	                            epochs,
+	                            batchSize,
+	                            loss,
 	                        });
 	                    },
 	                    onBatchBegin: (batch, logs) => {
@@ -1374,10 +1444,10 @@
 	        ys.dispose();
 	        this.#isTraining = false;
 	        _console$F.log("finished training");
-	        this.#isTrained = true;
-	        this.#dispatchCalibratedPressureModel();
+	        this.#onTrainedModel();
 	    }
-	    #dispatchCalibratedPressureModel(wasLoaded = false) {
+	    #onTrainedModel(wasLoaded = false) {
+	        this.#isTrained = true;
 	        this.dispatchEvent("calibratedPressureModel", {
 	            model: this.#model,
 	            wasLoaded,
@@ -1476,7 +1546,7 @@
 	            }
 	            this.model.setWeights(loadedModel.getWeights());
 	            _console$F.log("weights successfully loaded into model");
-	            this.#dispatchCalibratedPressureModel(true);
+	            this.#onTrainedModel(true);
 	        }
 	        catch (error) {
 	            _console$F.error("error loading model", error);
@@ -1574,6 +1644,15 @@
 	    get isTrainingCalibrationModel() {
 	        return this.#centerOfPressureModel.isTraining;
 	    }
+	    get addCalibrationModelData() {
+	        return this.#centerOfPressureModel.addData;
+	    }
+	    get clearCalibrationModelData() {
+	        return this.#centerOfPressureModel.clearData;
+	    }
+	    get calibrationModelData() {
+	        return this.#centerOfPressureModel.data;
+	    }
 	    saveCalibrationModel(handlerOrURL, config) {
 	        return this.#centerOfPressureModel.saveModel(handlerOrURL, config);
 	    }
@@ -1585,6 +1664,9 @@
 	        return this.#isRecordingCalibrationData;
 	    }
 	    #setIsRecordingCalibrationData(newIsRecordingCalibrationData) {
+	        if (this.#isRecordingCalibrationData == newIsRecordingCalibrationData) {
+	            return;
+	        }
 	        this.#isRecordingCalibrationData = newIsRecordingCalibrationData;
 	        _console$E.log({
 	            isRecordingCalibrationData: this.isRecordingCalibrationData,
@@ -1603,20 +1685,13 @@
 	        return isTensorFlowAvailable();
 	    }
 	    startRecordingCalibrationData() {
-	        if (this.isRecordingCalibrationData) {
-	            return;
-	        }
 	        if (!this.canCalibrate) {
 	            _console$E.error("cannot calibrate pressure - tensorflow is not available");
 	            return;
 	        }
-	        this.#centerOfPressureModel.clearData();
 	        this.#setIsRecordingCalibrationData(true);
 	    }
 	    stopRecordingCalibrationData() {
-	        if (!this.isRecordingCalibrationData) {
-	            return;
-	        }
 	        this.#setIsRecordingCalibrationData(false);
 	    }
 	    toggleRecordingCalibrationData() {
@@ -1628,9 +1703,12 @@
 	        }
 	    }
 	    async train() {
+	        if (this.isRecordingCalibrationData) {
+	            this.stopRecordingCalibrationData();
+	        }
 	        await this.#centerOfPressureModel.train();
 	    }
-	    #scaledSumThreshold = 0.05;
+	    #scaledSumThreshold = 0.03;
 	    parseData(dataView, scalar, timestamp) {
 	        const pressureData = {
 	            sensors: [],
@@ -1641,8 +1719,7 @@
 	            const rawValue = dataView.getUint16(byteOffset, true);
 	            const scaledValue = (rawValue * scalar) / this.numberOfSensors;
 	            const rangeHelper = this.#sensorRangeHelpers[index];
-	            rangeHelper.update(scaledValue);
-	            const normalizedValue = rangeHelper.getNormalization(scaledValue, false);
+	            const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue);
 	            const truncatedScaledValue = scaledValue - rangeHelper.min;
 	            const position = this.positions[index];
 	            pressureData.sensors[index] = {
@@ -1655,11 +1732,8 @@
 	            };
 	            pressureData.scaledSum += truncatedScaledValue;
 	        }
-	        {
-	            this.#normalizedSumRangeHelper.update(pressureData.scaledSum);
-	        }
 	        pressureData.normalizedSum =
-	            this.#normalizedSumRangeHelper.getNormalization(pressureData.scaledSum, false);
+	            this.#normalizedSumRangeHelper.updateAndGetNormalization(pressureData.scaledSum);
 	        const isPressureAboveThreshold = pressureData.scaledSum > this.#scaledSumThreshold;
 	        const hasEuler = this.#euler && Math.abs(timestamp - this.#eulerTimestamp) < 100;
 	        if (hasEuler) {
@@ -1674,26 +1748,29 @@
 	                    this.#eulerCenterOfPressureRangeHelper.getNormalization({
 	                        x: -this.#euler.roll,
 	                        y: -this.#euler.pitch,
-	                    }, false);
+	                    });
 	            }
 	        }
 	        if (isPressureAboveThreshold) {
 	            pressureData.center = { x: 0, y: 0 };
 	            pressureData.sensors.forEach((sensor) => {
-	                sensor.weightedValue = sensor.scaledValue / pressureData.scaledSum;
+	                sensor.weightedValue =
+	                    sensor.truncatedScaledValue / pressureData.scaledSum;
 	                pressureData.center.x += sensor.position.x * sensor.weightedValue;
 	                pressureData.center.y += sensor.position.y * sensor.weightedValue;
 	            });
 	            this.#centerOfPressureHelper.update(pressureData.center);
 	            pressureData.normalizedCenter =
-	                this.#centerOfPressureHelper.getNormalization(pressureData.center, false);
+	                this.#centerOfPressureHelper.getNormalization(pressureData.center);
 	        }
 	        if (this.isRecordingCalibrationData &&
 	            hasEuler &&
 	            isPressureAboveThreshold) {
-	            this.#centerOfPressureModel.addData(pressureData, this.#euler);
+	            this.#centerOfPressureModel.onSensorData(pressureData, this.#euler);
 	        }
-	        if (isPressureAboveThreshold) {
+	        if (isPressureAboveThreshold &&
+	            !this.isRecordingCalibrationData &&
+	            !this.isTrainingCalibrationModel) {
 	            pressureData.calibratedCenter =
 	                this.#centerOfPressureModel.predict(pressureData);
 	        }
@@ -35408,6 +35485,18 @@
 	        return this.#sensorDataManager.pressureSensorDataManager
 	            .loadCalibrationModel;
 	    }
+	    get addPressureCalibrationModelData() {
+	        return this.#sensorDataManager.pressureSensorDataManager
+	            .addCalibrationModelData;
+	    }
+	    get clearPressureCalibrationModelData() {
+	        return this.#sensorDataManager.pressureSensorDataManager
+	            .clearCalibrationModelData;
+	    }
+	    get pressureCalibrationModelData() {
+	        return this.#sensorDataManager.pressureSensorDataManager
+	            .calibrationModelData;
+	    }
 	    get vibrationLocations() {
 	        return this.#vibrationManager.vibrationLocations;
 	    }
@@ -39102,7 +39191,7 @@
 	            pressure.scaledSum += sidePressure.scaledSum;
 	        });
 	        pressure.normalizedSum +=
-	            this.#normalizedSumRangeHelper.updateAndGetNormalization(pressure.scaledSum, false);
+	            this.#normalizedSumRangeHelper.updateAndGetNormalization(pressure.scaledSum);
 	        if (pressure.scaledSum > 0) {
 	            pressure.center = { x: 0, y: 0 };
 	            Sides.forEach((side) => {
@@ -39127,7 +39216,7 @@
 	                }
 	            });
 	            pressure.normalizedCenter =
-	                this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center, false);
+	                this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
 	        }
 	        _console$5.log({ devicePairPressure: pressure });
 	        return pressure;
@@ -40117,6 +40206,7 @@
 	exports.MinWifiPasswordLength = MinWifiPasswordLength;
 	exports.MinWifiSSIDLength = MinWifiSSIDLength;
 	exports.RangeHelper = RangeHelper;
+	exports.RangeHelper2 = RangeHelper2;
 	exports.SensorRateStep = SensorRateStep;
 	exports.SensorTypes = SensorTypes;
 	exports.Sides = Sides;
@@ -40140,14 +40230,17 @@
 	exports.getFontUnicodeRange = getFontUnicodeRange;
 	exports.getMaxSpriteSheetSize = getMaxSpriteSheetSize;
 	exports.getSvgStringFromDataUrl = getSvgStringFromDataUrl;
+	exports.getTensorFlowModel = getTensorFlowModel;
 	exports.hexToRGB = hexToRGB;
 	exports.imageToBitmaps = imageToBitmaps;
 	exports.imageToSprite = imageToSprite;
 	exports.imageToSpriteSheet = imageToSpriteSheet;
 	exports.intersectWireframes = intersectWireframes;
 	exports.isTensorFlowAvailable = isTensorFlowAvailable;
+	exports.isTensorFlowModelAvailable = isTensorFlowModelAvailable;
 	exports.isValidSVG = isValidSVG;
 	exports.isWireframePolygon = isWireframePolygon;
+	exports.listTensorflowModels = listTensorflowModels;
 	exports.maxDisplayScale = maxDisplayScale;
 	exports.mergeWireframes = mergeWireframes;
 	exports.parseFont = parseFont;

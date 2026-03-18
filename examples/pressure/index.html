@@ -186,7 +186,7 @@
 
     .viz {
       position: relative;
-      height: 800px;
+      height: 500px;
     }
 
     .center,
@@ -278,6 +278,7 @@
           <button class="togglePressureData" disabled>
             enable pressure data
           </button>
+          <br />
           <button class="toggleGameRotation" disabled>
             enable gameRotation
           </button>
@@ -285,9 +286,19 @@
           <button class="toggleRecordingPressureCalibrationData" disabled>
             record
           </button>
+          <button class="clearPressureCalibrationModelData" disabled>
+            clear
+          </button>
+          <br />
+          <button class="loadPressureCalibratonModel" disabled>
+            load from cache
+          </button>
+          <br />
           <button class="trainPressureCalibrationModel" disabled>train</button>
           <button class="savePressureCalibrationModel" disabled>save</button>
           <button class="loadPressureCalibrationModel" disabled>load</button>
+          <br />
+          <progress value="0" class="pressureCalibrationProgress"></progress>
         </p>
         <div class="viz">
           <div class="center">

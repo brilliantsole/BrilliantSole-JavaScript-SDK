@@ -106,11 +106,17 @@ const toggleGameRotationButtons = {};
 /** @type {Object.<string, HTMLButtonElement>} */
 const toggleRecordingPressureCalibrationDataButtons = {};
 /** @type {Object.<string, HTMLButtonElement>} */
+const clearRecordingPressureCalibrationDataButtons = {};
+/** @type {Object.<string, HTMLButtonElement>} */
 const trainPressureCalibrationModelButtons = {};
+/** @type {Object.<string, HTMLButtonElement>} */
+const loadPressureCalibratonModelButtons = {};
 /** @type {Object.<string, HTMLButtonElement>} */
 const savePressureCalibrationModelButtons = {};
 /** @type {Object.<string, HTMLButtonElement>} */
 const loadPressureCalibrationModelButtons = {};
+/** @type {Object.<string, HTMLProgressElement>} */
+const pressureCalibrationProgresses = {};
 /** @type {Object.<string, HTMLElement[]>} */
 const pressureSensorElementsContainers = {};
 /** @type {Object.<string, HTMLElement>} */
@@ -150,7 +156,6 @@ devicePair.sides.forEach((side) => {
       devicePair[side].setSensorConfiguration({ pressure: 20 });
       togglePressureDataButton.innerText = "enabling pressure data...";
     }
-    togglePressureDataButton.disabled = true;
   });
   togglePressureDataButtons[side] = togglePressureDataButton;
 
@@ -168,25 +173,26 @@ devicePair.sides.forEach((side) => {
       devicePair[side].setSensorConfiguration({ gameRotation: 20 });
       toggleGameRotationButton.innerText = "enabling gameRotation...";
     }
-    toggleGameRotationButton.disabled = true;
   });
   toggleGameRotationButtons[side] = toggleGameRotationButton;
 
   /** @type {HTMLButtonElement} */
   const toggleRecordingPressureCalibrationDataButton =
     insoleContainer.querySelector(".toggleRecordingPressureCalibrationData");
-  toggleRecordingPressureCalibrationDataButton.addEventListener(
-    "click",
-    async () => {
-      devicePair[side].toggleRecordingPressureCalibrationData();
-      toggleRecordingPressureCalibrationDataButton.innerText = devicePair[side]
-        .isRecordingPressureCalibrationData
-        ? "stop recording"
-        : "record";
-    }
-  );
+  toggleRecordingPressureCalibrationDataButton.addEventListener("click", () => {
+    devicePair[side].toggleRecordingPressureCalibrationData();
+  });
   toggleRecordingPressureCalibrationDataButtons[side] =
     toggleRecordingPressureCalibrationDataButton;
+
+  /** @type {HTMLButtonElement} */
+  const clearRecordingPressureCalibrationDataButton =
+    insoleContainer.querySelector(".clearPressureCalibrationModelData");
+  clearRecordingPressureCalibrationDataButton.addEventListener("click", () => {
+    devicePair[side].clearPressureCalibrationModelData();
+  });
+  clearRecordingPressureCalibrationDataButtons[side] =
+    clearRecordingPressureCalibrationDataButton;
 
   /** @type {HTMLButtonElement} */
   const trainPressureCalibrationModelButton = insoleContainer.querySelector(
@@ -204,6 +210,18 @@ devicePair.sides.forEach((side) => {
     trainPressureCalibrationModelButton;
 
   /** @type {HTMLButtonElement} */
+  const loadPressureCalibratonModelButton = insoleContainer.querySelector(
+    ".loadPressureCalibratonModel"
+  );
+  loadPressureCalibratonModelButton.addEventListener("click", () => {
+    devicePair[side].loadPressureCalibrationModel(
+      pressureCalibrationModelIndexeddbKey
+    );
+    loadPressureCalibratonModelButton.disabled = true;
+  });
+  loadPressureCalibratonModelButtons[side] = loadPressureCalibratonModelButton;
+
+  /** @type {HTMLButtonElement} */
   const savePressureCalibrationModelButton = insoleContainer.querySelector(
     ".savePressureCalibrationModel"
   );
@@ -214,13 +232,6 @@ devicePair.sides.forEach((side) => {
   });
   savePressureCalibrationModelButtons[side] =
     savePressureCalibrationModelButton;
-  devicePair.addEventListener("deviceCalibratedPressureModel", (event) => {
-    const { device, wasLoaded } = event.message;
-    if (wasLoaded) {
-      return;
-    }
-    device.savePressureCalibrationModel(pressureCalibrationModelIndexeddbKey);
-  });
 
   /** @type {HTMLButtonElement} */
   const loadPressureCalibrationModelButton = insoleContainer.querySelector(
@@ -240,6 +251,12 @@ devicePair.sides.forEach((side) => {
   });
   loadPressureCalibrationModelButtons[side] =
     loadPressureCalibrationModelButton;
+
+  /** @type {HTMLProgressElement} */
+  const pressureCalibrationProgress = insoleContainer.querySelector(
+    ".pressureCalibrationProgress"
+  );
+  pressureCalibrationProgresses[side] = pressureCalibrationProgress;
 
   /** @type {HTMLElement[]} */
   const pressureSensorElements = Array.from(
@@ -270,9 +287,16 @@ devicePair.addEventListener("deviceIsConnected", (event) => {
     !device.isConnected;
   trainPressureCalibrationModelButtons[device.side].disabled =
     !device.isConnected;
+  loadPressureCalibrationModelButtons[device.side].disabled =
+    !device.isConnected;
+  loadPressureCalibratonModelButtons[device.side].disabled =
+    !device.isConnected;
 
   if (device.isConnected) {
-    device.loadPressureCalibrationModel(pressureCalibrationModelIndexeddbKey);
+    loadPressureCalibratonModelButtons[device.side].disabled =
+      !BS.isTensorFlowModelAvailable(pressureCalibrationModelIndexeddbKey);
+  } else {
+    pressureCalibrationProgresses[device.side].value = 0;
   }
 });
 
@@ -324,7 +348,6 @@ devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
   } else {
     togglePressureDataButton.innerText = "enable pressure data";
   }
-  togglePressureDataButton.disabled = false;
 });
 
 devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
@@ -337,7 +360,6 @@ devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
   } else {
     toggleGameRotationButton.innerText = "enable gameRotation";
   }
-  toggleGameRotationButton.disabled = false;
 });
 
 devicePair.addEventListener("devicePressure", (event) => {
@@ -437,6 +459,53 @@ devicePair.addEventListener("pressure", (event) => {
     }
   });
 });
+
+devicePair.addEventListener("deviceCalibratedPressureModel", (event) => {
+  const { device, wasLoaded } = event.message;
+
+  const savePressureCalibrationModelButton =
+    savePressureCalibrationModelButtons[device.side];
+  savePressureCalibrationModelButton.disabled = false;
+  if (wasLoaded) {
+    return;
+  }
+  device.savePressureCalibrationModel(pressureCalibrationModelIndexeddbKey);
+
+  const pressureCalibrationProgress =
+    pressureCalibrationProgresses[device.side];
+  pressureCalibrationProgress.value = 0;
+});
+
+devicePair.addEventListener(
+  "devicePressureCalibrationTrainProgress",
+  (event) => {
+    const { device, pressureCalibrationTrainProgress } = event.message;
+    const pressureCalibrationProgress =
+      pressureCalibrationProgresses[device.side];
+    pressureCalibrationProgress.value = pressureCalibrationTrainProgress;
+  }
+);
+
+devicePair.addEventListener(
+  "deviceIsRecordingPressureCalibrationData",
+  (event) => {
+    const { device, isRecordingPressureCalibrationData } = event.message;
+    const toggleRecordingPressureCalibrationDataButton =
+      toggleRecordingPressureCalibrationDataButtons[device.side];
+    toggleRecordingPressureCalibrationDataButton.innerText =
+      isRecordingPressureCalibrationData ? "stop recording" : "record";
+  }
+);
+
+devicePair.addEventListener(
+  "devicePressureCalibrationDataRecordingProgress",
+  (event) => {
+    const { device, numberOfSamples } = event.message;
+    const clearRecordingPressureCalibrationDataButton =
+      clearRecordingPressureCalibrationDataButtons[device.side];
+    clearRecordingPressureCalibrationDataButton.disabled = numberOfSamples == 0;
+  }
+);
 
 // SERVER
 

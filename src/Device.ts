@@ -1201,6 +1201,18 @@ class Device {
     return this.#sensorDataManager.pressureSensorDataManager
       .loadCalibrationModel;
   }
+  get addPressureCalibrationModelData() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .addCalibrationModelData;
+  }
+  get clearPressureCalibrationModelData() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .clearCalibrationModelData;
+  }
+  get pressureCalibrationModelData() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .calibrationModelData;
+  }
 
   // VIBRATION
   get vibrationLocations() {

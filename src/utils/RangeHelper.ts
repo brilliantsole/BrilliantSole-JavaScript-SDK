@@ -51,7 +51,7 @@ class RangeHelper {
 
   getNormalization(
     value: number,
-    weightByRange: boolean,
+    weightByRange?: boolean,
     clampValue: boolean = true
   ) {
     let normalization = getInterpolation(
@@ -70,7 +70,7 @@ class RangeHelper {
     return normalization || 0;
   }
 
-  updateAndGetNormalization(value: number, weightByRange: boolean) {
+  updateAndGetNormalization(value: number, weightByRange?: boolean) {
     this.update(value);
     return this.getNormalization(value, weightByRange);
   }

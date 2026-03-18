@@ -1241,7 +1241,7 @@
   }
 
   var _range = new WeakMap();
-  class CenterOfPressureHelper {
+  class RangeHelper2 {
     constructor() {
       _classPrivateFieldInitSpec(this, _range, {
         x: new RangeHelper(),
@@ -1252,21 +1252,23 @@
       _classPrivateFieldGet2(_range, this).x.reset();
       _classPrivateFieldGet2(_range, this).y.reset();
     }
-    update(centerOfPressure) {
-      _classPrivateFieldGet2(_range, this).x.update(centerOfPressure.x);
-      _classPrivateFieldGet2(_range, this).y.update(centerOfPressure.y);
+    update(vector2) {
+      _classPrivateFieldGet2(_range, this).x.update(vector2.x);
+      _classPrivateFieldGet2(_range, this).y.update(vector2.y);
     }
-    getNormalization(centerOfPressure, weightByRange) {
+    getNormalization(vector2, weightByRange, clampValue) {
       return {
-        x: _classPrivateFieldGet2(_range, this).x.getNormalization(centerOfPressure.x, weightByRange),
-        y: _classPrivateFieldGet2(_range, this).y.getNormalization(centerOfPressure.y, weightByRange)
+        x: _classPrivateFieldGet2(_range, this).x.getNormalization(vector2.x, weightByRange, clampValue),
+        y: _classPrivateFieldGet2(_range, this).y.getNormalization(vector2.y, weightByRange, clampValue)
       };
     }
-    updateAndGetNormalization(centerOfPressure, weightByRange) {
-      this.update(centerOfPressure);
-      return this.getNormalization(centerOfPressure, weightByRange);
+    updateAndGetNormalization(vector2, weightByRange) {
+      this.update(vector2);
+      return this.getNormalization(vector2, weightByRange);
     }
   }
+
+  const CenterOfPressureHelper = RangeHelper2;
 
   function createArray(arrayLength, objectOrCallback) {
     return new Array(arrayLength).fill(1).map((_, index) => {
@@ -1289,6 +1291,24 @@
     }
     return Boolean(tf);
   }
+  async function listTensorflowModels() {
+    if (isTensorFlowAvailable()) {
+      return {};
+    }
+    const models = await tf.io.listModels();
+    return models;
+  }
+  async function getTensorFlowModel(url) {
+    const models = await listTensorflowModels();
+    const model = models[url];
+    if (model) {
+      return model;
+    }
+  }
+  async function isTensorFlowModelAvailable(url) {
+    const model = await getTensorFlowModel(url);
+    return Boolean(model);
+  }
 
   const _console$A = createConsole("CenterOfPressureModel", {
     log: true
@@ -1299,6 +1319,7 @@
   var _CenterOfPressureModel_brand = new WeakSet();
   var _maxDataLength = new WeakMap();
   var _data = new WeakMap();
+  var _dataOutputsThreshold = new WeakMap();
   var _isTrained = new WeakMap();
   var _isTraining = new WeakMap();
   class CenterOfPressureModel {
@@ -1308,11 +1329,12 @@
       _classPrivateFieldInitSpec(this, _model, void 0);
       _classPrivateFieldInitSpec(this, _hiddenUnitScalars, [4, 2]);
       _classPrivateFieldInitSpec(this, _numberOfSensors, 0);
-      _classPrivateFieldInitSpec(this, _maxDataLength, 2000);
+      _classPrivateFieldInitSpec(this, _maxDataLength, 1000);
       _classPrivateFieldInitSpec(this, _data, {
         inputs: [],
         outputs: []
       });
+      _classPrivateFieldInitSpec(this, _dataOutputsThreshold, 0.005);
       _classPrivateFieldInitSpec(this, _isTrained, false);
       _classPrivateFieldInitSpec(this, _isTraining, false);
       autoBind(this);
@@ -1336,26 +1358,38 @@
       });
       _assertClassBrand(_CenterOfPressureModel_brand, this, _createModel).call(this);
     }
+    get data() {
+      return _classPrivateFieldGet2(_data, this);
+    }
     clearData() {
       _console$A.log("clearData");
       _classPrivateFieldGet2(_data, this).outputs.length = 0;
       _classPrivateFieldGet2(_data, this).inputs.length = 0;
+      _assertClassBrand(_CenterOfPressureModel_brand, this, _dispatchRecordingProgress).call(this);
     }
-    addData(pressureData, euler) {
+    onSensorData(pressureData, euler) {
+      this.addData(_assertClassBrand(_CenterOfPressureModel_brand, this, _getInputs).call(this, pressureData), _assertClassBrand(_CenterOfPressureModel_brand, this, _getOutputs).call(this, euler));
+    }
+    get numberOfSamples() {
+      return _classPrivateFieldGet2(_data, this).inputs.length;
+    }
+    addData(inputs, outputs) {
       if (!isTensorFlowAvailable()) {
         return;
       }
-      _classPrivateFieldGet2(_data, this).inputs.push(_assertClassBrand(_CenterOfPressureModel_brand, this, _getInputs).call(this, pressureData));
-      _classPrivateFieldGet2(_data, this).outputs.push(_assertClassBrand(_CenterOfPressureModel_brand, this, _getOutputs).call(this, euler));
-      while (_classPrivateFieldGet2(_data, this).inputs.length > _classPrivateFieldGet2(_maxDataLength, this)) {
+      if (_assertClassBrand(_CenterOfPressureModel_brand, this, _isDataRedundant).call(this, inputs, outputs)) {
+        return;
+      }
+      _classPrivateFieldGet2(_data, this).inputs.push(inputs);
+      _classPrivateFieldGet2(_data, this).outputs.push(outputs);
+      while (this.numberOfSamples > _classPrivateFieldGet2(_maxDataLength, this)) {
         _classPrivateFieldGet2(_data, this).inputs.shift();
         _classPrivateFieldGet2(_data, this).outputs.shift();
       }
-      _console$A.log("addData", pressureData, euler, {
-        dataLength: _classPrivateFieldGet2(_data, this).inputs.length
+      _console$A.log({
+        numberOfSamples: this.numberOfSamples
       });
-      this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
-      });
+      _assertClassBrand(_CenterOfPressureModel_brand, this, _dispatchRecordingProgress).call(this);
     }
     get isTrained() {
       return _classPrivateFieldGet2(_isTrained, this);
@@ -1392,13 +1426,18 @@
         const maxYs = ys.max();
         return ys.sub(minYs).div(maxYs.sub(minYs));
       });
+      const epochs = 32;
+      const batchSize = 32;
       _classPrivateFieldSet2(_isTrained, this, false);
-      this.dispatchEvent("pressureCalibrationTrainStart", {});
+      this.dispatchEvent("pressureCalibrationTrainStart", {
+        epochs,
+        batchSize
+      });
       _classPrivateFieldSet2(_isTraining, this, true);
       try {
         await _classPrivateFieldGet2(_model, this).fit(xs, ys, {
-          epochs: 32,
-          batchSize: 32,
+          epochs,
+          batchSize,
           shuffle: true,
           callbacks: {
             onTrainBegin: logs => {
@@ -1421,6 +1460,11 @@
                 loss
               }, logs);
               this.dispatchEvent("pressureCalibrationTrainProgress", {
+                pressureCalibrationTrainProgress: (epoch + 1) / epochs,
+                epoch,
+                epochs,
+                batchSize,
+                loss
               });
             },
             onBatchBegin: (batch, logs) => {
@@ -1454,8 +1498,7 @@
       ys.dispose();
       _classPrivateFieldSet2(_isTraining, this, false);
       _console$A.log("finished training");
-      _classPrivateFieldSet2(_isTrained, this, true);
-      _assertClassBrand(_CenterOfPressureModel_brand, this, _dispatchCalibratedPressureModel).call(this);
+      _assertClassBrand(_CenterOfPressureModel_brand, this, _onTrainedModel).call(this);
     }
     predict(pressureData) {
       if (!isTensorFlowAvailable()) {
@@ -1554,7 +1597,7 @@
         }
         this.model.setWeights(loadedModel.getWeights());
         _console$A.log("weights successfully loaded into model");
-        _assertClassBrand(_CenterOfPressureModel_brand, this, _dispatchCalibratedPressureModel).call(this, true);
+        _assertClassBrand(_CenterOfPressureModel_brand, this, _onTrainedModel).call(this, true);
       } catch (error) {
         var _loadedModel;
         _console$A.error("error loading model", error);
@@ -1589,7 +1632,6 @@
     _classPrivateFieldGet2(_hiddenUnitScalars, this).forEach((hiddenUnitScalar, index) => {
       const isFirst = index == 0;
       model.add(tf.layers.dense({
-        useBias: isFirst ? true : false,
         units: Math.round(this.numberOfSensors * hiddenUnitScalar),
         activation: "relu",
         inputShape: isFirst ? [this.numberOfSensors] : undefined
@@ -1605,14 +1647,43 @@
     _classPrivateFieldSet2(_model, this, model);
     _console$A.log("created model", _classPrivateFieldGet2(_model, this));
   }
+  function _dispatchRecordingProgress() {
+    this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
+      numberOfSamples: this.numberOfSamples,
+      data: this.data
+    });
+  }
   function _getInputs(pressureData) {
-    return pressureData.sensors.map(sensor => sensor.scaledValue);
+    return pressureData.sensors.map(sensor => sensor.truncatedScaledValue);
   }
   function _getOutputs(euler) {
     return [-euler.roll, -euler.pitch];
   }
-  function _dispatchCalibratedPressureModel() {
+  function _areDataInputsRedundant(inputs) {
+    return false;
+  }
+  function _areDataOutputsRedundant(outputs) {
+    if (_classPrivateFieldGet2(_data, this).outputs.length == 0) {
+      return false;
+    }
+    return _classPrivateFieldGet2(_data, this).outputs.some(_outputs => {
+      const differences = outputs.map((value, index) => value - _outputs[index]);
+      let differencesSquareSum = 0;
+      differences.forEach(difference => {
+        differencesSquareSum += difference ** 2;
+      });
+      const isRedundant = differencesSquareSum < _classPrivateFieldGet2(_dataOutputsThreshold, this);
+      return isRedundant;
+    });
+  }
+  function _isDataRedundant(inputs, outputs) {
+    const areDataInputsRedundant = _assertClassBrand(_CenterOfPressureModel_brand, this, _areDataInputsRedundant).call(this, inputs);
+    const areDataOutputsRedundant = _assertClassBrand(_CenterOfPressureModel_brand, this, _areDataOutputsRedundant).call(this, outputs);
+    return areDataInputsRedundant || areDataOutputsRedundant;
+  }
+  function _onTrainedModel() {
     let wasLoaded = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+    _classPrivateFieldSet2(_isTrained, this, true);
     this.dispatchEvent("calibratedPressureModel", {
       model: _classPrivateFieldGet2(_model, this),
       wasLoaded
@@ -1651,7 +1722,7 @@
       _classPrivateFieldInitSpec(this, _eulerCenterOfPressureRangeHelper, new CenterOfPressureHelper());
       _classPrivateFieldInitSpec(this, _centerOfPressureModel, new CenterOfPressureModel());
       _classPrivateFieldInitSpec(this, _isRecordingCalibrationData, false);
-      _classPrivateFieldInitSpec(this, _scaledSumThreshold, 0.05);
+      _classPrivateFieldInitSpec(this, _scaledSumThreshold, 0.03);
       autoBind(this);
     }
     get eventDispatcher() {
@@ -1712,6 +1783,15 @@
     get isTrainingCalibrationModel() {
       return _classPrivateFieldGet2(_centerOfPressureModel, this).isTraining;
     }
+    get addCalibrationModelData() {
+      return _classPrivateFieldGet2(_centerOfPressureModel, this).addData;
+    }
+    get clearCalibrationModelData() {
+      return _classPrivateFieldGet2(_centerOfPressureModel, this).clearData;
+    }
+    get calibrationModelData() {
+      return _classPrivateFieldGet2(_centerOfPressureModel, this).data;
+    }
     saveCalibrationModel(handlerOrURL, config) {
       return _classPrivateFieldGet2(_centerOfPressureModel, this).saveModel(handlerOrURL, config);
     }
@@ -1725,20 +1805,13 @@
       return isTensorFlowAvailable();
     }
     startRecordingCalibrationData() {
-      if (this.isRecordingCalibrationData) {
-        return;
-      }
       if (!this.canCalibrate) {
         _console$z.error("cannot calibrate pressure - tensorflow is not available");
         return;
       }
-      _classPrivateFieldGet2(_centerOfPressureModel, this).clearData();
       _assertClassBrand(_PressureSensorDataManager_brand, this, _setIsRecordingCalibrationData).call(this, true);
     }
     stopRecordingCalibrationData() {
-      if (!this.isRecordingCalibrationData) {
-        return;
-      }
       _assertClassBrand(_PressureSensorDataManager_brand, this, _setIsRecordingCalibrationData).call(this, false);
     }
     toggleRecordingCalibrationData() {
@@ -1749,6 +1822,9 @@
       }
     }
     async train() {
+      if (this.isRecordingCalibrationData) {
+        this.stopRecordingCalibrationData();
+      }
       await _classPrivateFieldGet2(_centerOfPressureModel, this).train();
     }
     parseData(dataView, scalar, timestamp) {
@@ -1761,8 +1837,7 @@
         const rawValue = dataView.getUint16(byteOffset, true);
         const scaledValue = rawValue * scalar / this.numberOfSensors;
         const rangeHelper = _classPrivateFieldGet2(_sensorRangeHelpers, this)[index];
-        rangeHelper.update(scaledValue);
-        const normalizedValue = rangeHelper.getNormalization(scaledValue, false);
+        const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue);
         const truncatedScaledValue = scaledValue - rangeHelper.min;
         const position = this.positions[index];
         pressureData.sensors[index] = {
@@ -1775,10 +1850,7 @@
         };
         pressureData.scaledSum += truncatedScaledValue;
       }
-      {
-        _classPrivateFieldGet2(_normalizedSumRangeHelper$1, this).update(pressureData.scaledSum);
-      }
-      pressureData.normalizedSum = _classPrivateFieldGet2(_normalizedSumRangeHelper$1, this).getNormalization(pressureData.scaledSum, false);
+      pressureData.normalizedSum = _classPrivateFieldGet2(_normalizedSumRangeHelper$1, this).updateAndGetNormalization(pressureData.scaledSum);
       const isPressureAboveThreshold = pressureData.scaledSum > _classPrivateFieldGet2(_scaledSumThreshold, this);
       const hasEuler = _classPrivateFieldGet2(_euler$1, this) && Math.abs(timestamp - _classPrivateFieldGet2(_eulerTimestamp, this)) < 100;
       if (hasEuler) {
@@ -1792,7 +1864,7 @@
           pressureData.motionCenter = _classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).getNormalization({
             x: -_classPrivateFieldGet2(_euler$1, this).roll,
             y: -_classPrivateFieldGet2(_euler$1, this).pitch
-          }, false);
+          });
         }
       }
       if (isPressureAboveThreshold) {
@@ -1801,23 +1873,26 @@
           y: 0
         };
         pressureData.sensors.forEach(sensor => {
-          sensor.weightedValue = sensor.scaledValue / pressureData.scaledSum;
+          sensor.weightedValue = sensor.truncatedScaledValue / pressureData.scaledSum;
           pressureData.center.x += sensor.position.x * sensor.weightedValue;
           pressureData.center.y += sensor.position.y * sensor.weightedValue;
         });
         _classPrivateFieldGet2(_centerOfPressureHelper$1, this).update(pressureData.center);
-        pressureData.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper$1, this).getNormalization(pressureData.center, false);
+        pressureData.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper$1, this).getNormalization(pressureData.center);
       }
       if (this.isRecordingCalibrationData && hasEuler && isPressureAboveThreshold) {
-        _classPrivateFieldGet2(_centerOfPressureModel, this).addData(pressureData, _classPrivateFieldGet2(_euler$1, this));
+        _classPrivateFieldGet2(_centerOfPressureModel, this).onSensorData(pressureData, _classPrivateFieldGet2(_euler$1, this));
       }
-      if (isPressureAboveThreshold) {
+      if (isPressureAboveThreshold && !this.isRecordingCalibrationData && !this.isTrainingCalibrationModel) {
         pressureData.calibratedCenter = _classPrivateFieldGet2(_centerOfPressureModel, this).predict(pressureData);
       }
       return pressureData;
     }
   }
   function _setIsRecordingCalibrationData(newIsRecordingCalibrationData) {
+    if (_classPrivateFieldGet2(_isRecordingCalibrationData, this) == newIsRecordingCalibrationData) {
+      return;
+    }
     _classPrivateFieldSet2(_isRecordingCalibrationData, this, newIsRecordingCalibrationData);
     _console$z.log({
       isRecordingCalibrationData: this.isRecordingCalibrationData
@@ -33951,6 +34026,15 @@
     get loadPressureCalibrationModel() {
       return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.loadCalibrationModel;
     }
+    get addPressureCalibrationModelData() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.addCalibrationModelData;
+    }
+    get clearPressureCalibrationModelData() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.clearCalibrationModelData;
+    }
+    get pressureCalibrationModelData() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.calibrationModelData;
+    }
     get vibrationLocations() {
       return _classPrivateFieldGet2(_vibrationManager, this).vibrationLocations;
     }
@@ -35046,7 +35130,7 @@
       const sidePressure = _classPrivateFieldGet2(_rawPressure, this)[side];
       pressure.scaledSum += sidePressure.scaledSum;
     });
-    pressure.normalizedSum += _classPrivateFieldGet2(_normalizedSumRangeHelper, this).updateAndGetNormalization(pressure.scaledSum, false);
+    pressure.normalizedSum += _classPrivateFieldGet2(_normalizedSumRangeHelper, this).updateAndGetNormalization(pressure.scaledSum);
     if (pressure.scaledSum > 0) {
       pressure.center = {
         x: 0,
@@ -35076,7 +35160,7 @@
           });
         }
       });
-      pressure.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper, this).updateAndGetNormalization(pressure.center, false);
+      pressure.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper, this).updateAndGetNormalization(pressure.center);
     }
     _console$2.log({
       devicePairPressure: pressure
@@ -35498,6 +35582,7 @@
   exports.MinWifiPasswordLength = MinWifiPasswordLength;
   exports.MinWifiSSIDLength = MinWifiSSIDLength;
   exports.RangeHelper = RangeHelper;
+  exports.RangeHelper2 = RangeHelper2;
   exports.SensorRateStep = SensorRateStep;
   exports.SensorTypes = SensorTypes;
   exports.Sides = Sides;
@@ -35516,10 +35601,13 @@
   exports.getFontMetrics = getFontMetrics;
   exports.getFontUnicodeRange = getFontUnicodeRange;
   exports.getMaxSpriteSheetSize = getMaxSpriteSheetSize;
+  exports.getTensorFlowModel = getTensorFlowModel;
   exports.hexToRGB = hexToRGB;
   exports.intersectWireframes = intersectWireframes;
   exports.isTensorFlowAvailable = isTensorFlowAvailable;
+  exports.isTensorFlowModelAvailable = isTensorFlowModelAvailable;
   exports.isWireframePolygon = isWireframePolygon;
+  exports.listTensorflowModels = listTensorflowModels;
   exports.maxDisplayScale = maxDisplayScale;
   exports.mergeWireframes = mergeWireframes;
   exports.parseFont = parseFont;

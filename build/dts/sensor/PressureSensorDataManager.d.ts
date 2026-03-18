@@ -1,4 +1,5 @@
 /** NODE_START */ import * as tf from "@tensorflow/tfjs"; /** NODE_END */
+import { CenterOfPressureModelData } from "../utils/CenterOfPressureModel.ts";
 export declare const PressureSensorTypes: readonly ["pressure"];
 export type PressureSensorType = (typeof PressureSensorTypes)[number];
 export declare const ContinuousPressureSensorTypes: readonly ["pressure"];
@@ -38,13 +39,22 @@ export interface PressureSensorEventMessages {
     };
     pressureCalibrationDataRecordStart: {};
     pressureCalibrationDataRecordStop: {};
-    pressureCalibrationDataRecordingProgress: {};
+    pressureCalibrationDataRecordingProgress: {
+        numberOfSamples: number;
+        data: CenterOfPressureModelData;
+    };
     isTrainingPressureCalibration: {
         isTrainingPressureCalibration: boolean;
     };
     pressureCalibrationTrainStart: {};
     pressureCalibrationTrainEnd: {};
-    pressureCalibrationTrainProgress: {};
+    pressureCalibrationTrainProgress: {
+        pressureCalibrationTrainProgress: number;
+        epoch: number;
+        epochs: number;
+        batchSize: number;
+        loss: number;
+    };
     calibratedPressureModel: {
         model: tf.Sequential;
         wasLoaded: boolean;
@@ -66,6 +76,9 @@ declare class PressureSensorDataManager {
     get calibrationModel(): tf.Sequential | undefined;
     get isCalibrationModelTrained(): boolean;
     get isTrainingCalibrationModel(): boolean;
+    get addCalibrationModelData(): (inputs: number[], outputs: number[]) => void;
+    get clearCalibrationModelData(): () => void;
+    get calibrationModelData(): CenterOfPressureModelData;
     saveCalibrationModel(handlerOrURL: tf.io.IOHandler | string, config?: tf.io.SaveConfig): Promise<boolean>;
     loadCalibrationModel(pathOrIOHandlerOrFileList: string | tf.io.IOHandler | FileList, options?: tf.io.LoadOptions): Promise<boolean>;
     get isRecordingCalibrationData(): boolean;
