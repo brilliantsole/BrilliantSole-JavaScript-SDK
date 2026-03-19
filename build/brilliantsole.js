@@ -10648,17 +10648,30 @@
 	        const timestamp = parseTimestamp(dataView, byteOffset);
 	        byteOffset += 2;
 	        const _dataView = new DataView(dataView.buffer, byteOffset);
-	        const context = { timestamp };
+	        const context = {
+	            timestamp,
+	            messages: [],
+	        };
 	        parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), context);
+	        context.messages.forEach(({ sensorType, message, dataView }) => {
+	            if (sensorType == "pressure") {
+	                if (context.euler) {
+	                    this.pressureSensorDataManager.onEuler(context.euler, timestamp);
+	                }
+	                const scalar = this.#scalars.get("pressure") || 1;
+	                message.pressure = this.pressureSensorDataManager.parseData(dataView, scalar, timestamp);
+	            }
+	            this.dispatchEvent(sensorType, message);
+	            this.dispatchEvent("sensorData", message);
+	        });
 	    }
 	    parseDataCallback(sensorType, dataView, context, isLast) {
-	        const { timestamp } = context;
+	        const { timestamp, messages } = context;
 	        const scalar = this.#scalars.get(sensorType) || 1;
 	        let sensorData = null;
 	        let sensorDataEuler = null;
 	        switch (sensorType) {
 	            case "pressure":
-	                sensorData = this.pressureSensorDataManager.parseData(dataView, scalar, timestamp);
 	                break;
 	            case "acceleration":
 	            case "gravity":
@@ -10672,11 +10685,9 @@
 	                sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
 	                sensorDataEuler =
 	                    this.motionSensorDataManager.quaternionToEuler(sensorData);
-	                this.pressureSensorDataManager.onEuler(sensorDataEuler, timestamp);
 	                break;
 	            case "orientation":
 	                sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
-	                this.pressureSensorDataManager.onEuler(sensorData, timestamp);
 	                break;
 	            case "stepCounter":
 	                sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
@@ -10704,7 +10715,7 @@
 	            default:
 	                _console$y.error(`uncaught sensorType "${sensorType}"`);
 	        }
-	        _console$y.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
+	        _console$y.assertWithError(sensorData != null || sensorType == "pressure", `no sensorData defined for sensorType "${sensorType}"`);
 	        _console$y.log({ sensorType, sensorData });
 	        const message = {
 	            sensorType,
@@ -10712,11 +10723,18 @@
 	            timestamp,
 	            isLast: isLast,
 	        };
+	        if (sensorType == "pressure") {
+	            message.dataView = dataView;
+	        }
 	        if (sensorDataEuler) {
 	            message[`${sensorType}Euler`] = sensorDataEuler;
+	            context.euler = sensorDataEuler;
 	        }
-	        this.dispatchEvent(sensorType, message);
-	        this.dispatchEvent("sensorData", message);
+	        messages.push({
+	            sensorType,
+	            message,
+	            dataView: sensorType == "pressure" ? dataView : undefined,
+	        });
 	    }
 	}
 
