@@ -6,10 +6,9 @@ import { createArray } from "../utils/ArrayUtils.ts";
 /** NODE_START */ import * as tf from "@tensorflow/tfjs"; /** NODE_END */
 import CenterOfPressureModel, {
   CenterOfPressureModelData,
-  CenterOfPressureModelDataHeatmap,
 } from "../utils/CenterOfPressureModel.ts";
 
-const _console = createConsole("PressureDataManager", { log: true });
+const _console = createConsole("PressureDataManager", { log: false });
 
 export const PressureSensorTypes = ["pressure"] as const;
 export type PressureSensorType = (typeof PressureSensorTypes)[number];
@@ -383,7 +382,7 @@ class PressureSensorDataManager {
       }
       pressureData.normalizedCenter =
         this.#centerOfPressureHelper.getNormalization(pressureData.center);
-      // console.log(pressureData.center);
+      // _console.log(pressureData.center);
     }
 
     if (

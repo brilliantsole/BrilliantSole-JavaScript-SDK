@@ -15,8 +15,6 @@ export type CenterOfPressureModelData = {
   outputs: number[][];
 };
 
-export type CenterOfPressureModelDataHeatmap = {};
-
 class CenterOfPressureModel {
   constructor() {
     autoBind(this);
