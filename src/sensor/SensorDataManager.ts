@@ -99,7 +99,10 @@ export type SensorDataEventDispatcher = EventDispatcher<
   SensorDataEventMessages
 >;
 
-type SensorDataParseContext = { timestamp: number };
+type SensorDataParseContext = {
+  timestamp: number;
+  messages: Partial<_SensorDataEventMessages>;
+};
 
 class SensorDataManager {
   constructor() {
@@ -191,7 +194,10 @@ class SensorDataManager {
 
     const _dataView = new DataView(dataView.buffer, byteOffset);
 
-    const context: SensorDataParseContext = { timestamp };
+    const context: SensorDataParseContext = {
+      timestamp,
+      messages: {},
+    };
     parseMessage(
       _dataView,
       SensorTypes,
@@ -206,7 +212,7 @@ class SensorDataManager {
     context: SensorDataParseContext,
     isLast?: boolean
   ) {
-    const { timestamp } = context;
+    const { timestamp, messages } = context;
 
     const scalar = this.#scalars.get(sensorType) || 1;
 

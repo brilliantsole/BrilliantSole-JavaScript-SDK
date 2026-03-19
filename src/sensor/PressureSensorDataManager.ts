@@ -51,6 +51,9 @@ export interface PressureDataEventMessages {
 }
 
 export const PressureSensorEventTypes = [
+  "pressureAutoRangeEnabled",
+  "pressureAutoRangeDisabled",
+  "pressureAutoRange",
   "isRecordingPressureCalibrationData",
   "pressureCalibrationDataRecordStart",
   "pressureCalibrationDataRecordStop",
@@ -64,6 +67,11 @@ export const PressureSensorEventTypes = [
 export type PressureSensorEventType = (typeof PressureSensorEventTypes)[number];
 
 export interface PressureSensorEventMessages {
+  pressureAutoRangeEnabled: {};
+  pressureAutoRangeDisabled: {};
+  pressureAutoRange: {
+    pressureAutoRange: boolean;
+  };
   isRecordingPressureCalibrationData: {
     isRecordingPressureCalibrationData: boolean;
   };
@@ -174,6 +182,29 @@ class PressureSensorDataManager {
     this.#eulerCenterOfPressureRangeHelper.reset();
   }
 
+  #autoRange = true;
+  get autoRange() {
+    return this.#autoRange;
+  }
+  setAutoRange(newAutoRange: boolean) {
+    if (this.#autoRange == newAutoRange) {
+      return;
+    }
+    this.#autoRange = newAutoRange;
+    _console.log({ autoRange: this.autoRange });
+    this.dispatchEvent("pressureAutoRange", {
+      pressureAutoRange: this.autoRange,
+    });
+    if (this.autoRange) {
+      this.dispatchEvent("pressureAutoRangeEnabled", {});
+    } else {
+      this.dispatchEvent("pressureAutoRangeDisabled", {});
+    }
+  }
+  toggleAutoRange() {
+    this.setAutoRange(!this.autoRange);
+  }
+
   #euler: Euler = structuredClone(defaultEuler);
   #eulerTimestamp = 0;
   #eulerCenterOfPressureRangeHelper = new CenterOfPressureHelper();
@@ -269,7 +300,7 @@ class PressureSensorDataManager {
     await this.#centerOfPressureModel.train();
   }
 
-  #scaledSumThreshold = 0.03;
+  #scaledSumThreshold = 0.05;
   parseData(
     dataView: DataView<ArrayBuffer>,
     scalar: number,
@@ -289,8 +320,10 @@ class PressureSensorDataManager {
       // _console.log({ rawValue, scalar, numberOfSensors: this.numberOfSensors });
       const scaledValue = (rawValue * scalar) / this.numberOfSensors;
       const rangeHelper = this.#sensorRangeHelpers[index];
-      const normalizedValue =
-        rangeHelper.updateAndGetNormalization(scaledValue);
+      if (this.autoRange) {
+        rangeHelper.update(scaledValue);
+      }
+      const normalizedValue = rangeHelper.getNormalization(scaledValue);
       const truncatedScaledValue = scaledValue - rangeHelper.min;
 
       const position = this.positions[index];
@@ -305,10 +338,11 @@ class PressureSensorDataManager {
 
       pressureData.scaledSum += truncatedScaledValue;
     }
+    if (this.autoRange) {
+      this.#normalizedSumRangeHelper.update(pressureData.scaledSum);
+    }
     pressureData.normalizedSum =
-      this.#normalizedSumRangeHelper.updateAndGetNormalization(
-        pressureData.scaledSum
-      );
+      this.#normalizedSumRangeHelper.getNormalization(pressureData.scaledSum);
 
     const isPressureAboveThreshold =
       pressureData.scaledSum > this.#scaledSumThreshold;
@@ -322,7 +356,7 @@ class PressureSensorDataManager {
       this.#euler && Math.abs(timestamp - this.#eulerTimestamp) < 100;
     if (hasEuler) {
       if (isPressureAboveThreshold) {
-        if (this.isRecordingCalibrationData) {
+        if (this.autoRange) {
           this.#eulerCenterOfPressureRangeHelper.update({
             x: -this.#euler.roll,
             y: -this.#euler.pitch,
@@ -344,7 +378,9 @@ class PressureSensorDataManager {
         pressureData.center!.x += sensor.position.x * sensor.weightedValue;
         pressureData.center!.y += sensor.position.y * sensor.weightedValue;
       });
-      this.#centerOfPressureHelper.update(pressureData.center);
+      if (this.autoRange) {
+        this.#centerOfPressureHelper.update(pressureData.center);
+      }
       pressureData.normalizedCenter =
         this.#centerOfPressureHelper.getNormalization(pressureData.center);
       // console.log(pressureData.center);

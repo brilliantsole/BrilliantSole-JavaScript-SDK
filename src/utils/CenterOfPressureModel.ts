@@ -88,7 +88,7 @@ class CenterOfPressureModel {
     _console.log("created model", this.#model);
   }
 
-  #maxDataLength = 1000;
+  #maxDataLength = 2000;
   #data: CenterOfPressureModelData = { inputs: [], outputs: [] };
   get data() {
     return this.#data;
@@ -121,7 +121,7 @@ class CenterOfPressureModel {
   #areDataInputsRedundant(inputs: number[]) {
     return false;
   }
-  #dataOutputsThreshold = 0.005;
+  #dataOutputsThreshold = 0.008;
   #areDataOutputsRedundant(outputs: number[]) {
     if (this.#data.outputs.length == 0) {
       return false;
@@ -200,7 +200,7 @@ class CenterOfPressureModel {
       return ys.sub(minYs).div(maxYs.sub(minYs));
     });
 
-    const epochs = 32;
+    const epochs = 64;
     const batchSize = 32;
 
     this.#isTrained = false;
@@ -225,7 +225,7 @@ class CenterOfPressureModel {
             // this.dispatchEvent("pressureCalibrationTrainEnd", {});
           },
           onEpochBegin: (epoch, logs) => {
-            _console.log("onEpochBegin", { epoch }, logs);
+            // _console.log("onEpochBegin", { epoch }, logs);
           },
           onEpochEnd: (epoch, logs) => {
             const { loss } = logs!;
@@ -240,11 +240,11 @@ class CenterOfPressureModel {
             });
           },
           onBatchBegin: (batch, logs) => {
-            _console.log("onBatchBegin", { batch }, logs);
+            // _console.log("onBatchBegin", { batch }, logs);
           },
           onBatchEnd: (batch, logs) => {
             const { size, loss } = logs!;
-            _console.log("onBatchEnd", { batch, size, loss }, logs);
+            // _console.log("onBatchEnd", { batch, size, loss }, logs);
           },
           onYield: (epoch, batch, logs) => {
             _console.log("onYield", { epoch, batch }, logs);

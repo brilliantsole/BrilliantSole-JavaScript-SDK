@@ -1292,7 +1292,7 @@
     return Boolean(tf);
   }
   async function listTensorflowModels() {
-    if (isTensorFlowAvailable()) {
+    if (!isTensorFlowAvailable()) {
       return {};
     }
     const models = await tf.io.listModels();
@@ -1329,12 +1329,12 @@
       _classPrivateFieldInitSpec(this, _model, void 0);
       _classPrivateFieldInitSpec(this, _hiddenUnitScalars, [4, 2]);
       _classPrivateFieldInitSpec(this, _numberOfSensors, 0);
-      _classPrivateFieldInitSpec(this, _maxDataLength, 1000);
+      _classPrivateFieldInitSpec(this, _maxDataLength, 2000);
       _classPrivateFieldInitSpec(this, _data, {
         inputs: [],
         outputs: []
       });
-      _classPrivateFieldInitSpec(this, _dataOutputsThreshold, 0.005);
+      _classPrivateFieldInitSpec(this, _dataOutputsThreshold, 0.008);
       _classPrivateFieldInitSpec(this, _isTrained, false);
       _classPrivateFieldInitSpec(this, _isTraining, false);
       autoBind(this);
@@ -1426,7 +1426,7 @@
         const maxYs = ys.max();
         return ys.sub(minYs).div(maxYs.sub(minYs));
       });
-      const epochs = 32;
+      const epochs = 64;
       const batchSize = 32;
       _classPrivateFieldSet2(_isTrained, this, false);
       this.dispatchEvent("pressureCalibrationTrainStart", {
@@ -1447,9 +1447,6 @@
               _console$A.log("onTrainEnd", logs);
             },
             onEpochBegin: (epoch, logs) => {
-              _console$A.log("onEpochBegin", {
-                epoch
-              }, logs);
             },
             onEpochEnd: (epoch, logs) => {
               const {
@@ -1468,20 +1465,12 @@
               });
             },
             onBatchBegin: (batch, logs) => {
-              _console$A.log("onBatchBegin", {
-                batch
-              }, logs);
             },
             onBatchEnd: (batch, logs) => {
               const {
                 size,
                 loss
               } = logs;
-              _console$A.log("onBatchEnd", {
-                batch,
-                size,
-                loss
-              }, logs);
             },
             onYield: (epoch, batch, logs) => {
               _console$A.log("onYield", {
@@ -1695,13 +1684,14 @@
   });
   const PressureSensorTypes = ["pressure"];
   const ContinuousPressureSensorTypes = PressureSensorTypes;
-  const PressureSensorEventTypes = ["isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
+  const PressureSensorEventTypes = ["pressureAutoRangeEnabled", "pressureAutoRangeDisabled", "pressureAutoRange", "isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
   const DefaultNumberOfPressureSensors = 8;
   var _eventDispatcher$3 = new WeakMap();
   var _positions = new WeakMap();
   var _sensorRangeHelpers = new WeakMap();
   var _normalizedSumRangeHelper$1 = new WeakMap();
   var _centerOfPressureHelper$1 = new WeakMap();
+  var _autoRange = new WeakMap();
   var _euler$1 = new WeakMap();
   var _eulerTimestamp = new WeakMap();
   var _eulerCenterOfPressureRangeHelper = new WeakMap();
@@ -1717,12 +1707,13 @@
       _classPrivateFieldInitSpec(this, _sensorRangeHelpers, void 0);
       _classPrivateFieldInitSpec(this, _normalizedSumRangeHelper$1, new RangeHelper());
       _classPrivateFieldInitSpec(this, _centerOfPressureHelper$1, new CenterOfPressureHelper());
+      _classPrivateFieldInitSpec(this, _autoRange, true);
       _classPrivateFieldInitSpec(this, _euler$1, structuredClone(defaultEuler));
       _classPrivateFieldInitSpec(this, _eulerTimestamp, 0);
       _classPrivateFieldInitSpec(this, _eulerCenterOfPressureRangeHelper, new CenterOfPressureHelper());
       _classPrivateFieldInitSpec(this, _centerOfPressureModel, new CenterOfPressureModel());
       _classPrivateFieldInitSpec(this, _isRecordingCalibrationData, false);
-      _classPrivateFieldInitSpec(this, _scaledSumThreshold, 0.03);
+      _classPrivateFieldInitSpec(this, _scaledSumThreshold, 0.05);
       autoBind(this);
     }
     get eventDispatcher() {
@@ -1769,6 +1760,29 @@
       _classPrivateFieldGet2(_normalizedSumRangeHelper$1, this).reset();
       Object.assign(_classPrivateFieldGet2(_euler$1, this), defaultEuler);
       _classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).reset();
+    }
+    get autoRange() {
+      return _classPrivateFieldGet2(_autoRange, this);
+    }
+    setAutoRange(newAutoRange) {
+      if (_classPrivateFieldGet2(_autoRange, this) == newAutoRange) {
+        return;
+      }
+      _classPrivateFieldSet2(_autoRange, this, newAutoRange);
+      _console$z.log({
+        autoRange: this.autoRange
+      });
+      this.dispatchEvent("pressureAutoRange", {
+        pressureAutoRange: this.autoRange
+      });
+      if (this.autoRange) {
+        this.dispatchEvent("pressureAutoRangeEnabled", {});
+      } else {
+        this.dispatchEvent("pressureAutoRangeDisabled", {});
+      }
+    }
+    toggleAutoRange() {
+      this.setAutoRange(!this.autoRange);
     }
     onEuler(euler, timestamp) {
       Object.assign(_classPrivateFieldGet2(_euler$1, this), euler);
@@ -1837,7 +1851,10 @@
         const rawValue = dataView.getUint16(byteOffset, true);
         const scaledValue = rawValue * scalar / this.numberOfSensors;
         const rangeHelper = _classPrivateFieldGet2(_sensorRangeHelpers, this)[index];
-        const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue);
+        if (this.autoRange) {
+          rangeHelper.update(scaledValue);
+        }
+        const normalizedValue = rangeHelper.getNormalization(scaledValue);
         const truncatedScaledValue = scaledValue - rangeHelper.min;
         const position = this.positions[index];
         pressureData.sensors[index] = {
@@ -1850,12 +1867,15 @@
         };
         pressureData.scaledSum += truncatedScaledValue;
       }
-      pressureData.normalizedSum = _classPrivateFieldGet2(_normalizedSumRangeHelper$1, this).updateAndGetNormalization(pressureData.scaledSum);
+      if (this.autoRange) {
+        _classPrivateFieldGet2(_normalizedSumRangeHelper$1, this).update(pressureData.scaledSum);
+      }
+      pressureData.normalizedSum = _classPrivateFieldGet2(_normalizedSumRangeHelper$1, this).getNormalization(pressureData.scaledSum);
       const isPressureAboveThreshold = pressureData.scaledSum > _classPrivateFieldGet2(_scaledSumThreshold, this);
       const hasEuler = _classPrivateFieldGet2(_euler$1, this) && Math.abs(timestamp - _classPrivateFieldGet2(_eulerTimestamp, this)) < 100;
       if (hasEuler) {
         if (isPressureAboveThreshold) {
-          if (this.isRecordingCalibrationData) {
+          if (this.autoRange) {
             _classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).update({
               x: -_classPrivateFieldGet2(_euler$1, this).roll,
               y: -_classPrivateFieldGet2(_euler$1, this).pitch
@@ -1877,7 +1897,9 @@
           pressureData.center.x += sensor.position.x * sensor.weightedValue;
           pressureData.center.y += sensor.position.y * sensor.weightedValue;
         });
-        _classPrivateFieldGet2(_centerOfPressureHelper$1, this).update(pressureData.center);
+        if (this.autoRange) {
+          _classPrivateFieldGet2(_centerOfPressureHelper$1, this).update(pressureData.center);
+        }
         pressureData.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper$1, this).getNormalization(pressureData.center);
       }
       if (this.isRecordingCalibrationData && hasEuler && isPressureAboveThreshold) {
@@ -33990,8 +34012,17 @@
         return [];
       }
     }
-    resetPressureRange() {
-      _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.resetRange();
+    get autoPressureRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.autoRange;
+    }
+    get setPressureAutoRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.setAutoRange;
+    }
+    get togglePressureAutoRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.toggleAutoRange;
+    }
+    get resetPressureRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.resetRange;
     }
     get canCalibratePressure() {
       return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.canCalibrate;
@@ -35080,6 +35111,7 @@
     log: false
   });
   var _rawPressure = new WeakMap();
+  var _pressureTimestamps = new WeakMap();
   var _centerOfPressureHelper = new WeakMap();
   var _normalizedSumRangeHelper = new WeakMap();
   var _DevicePairPressureSensorDataManager_brand = new WeakSet();
@@ -35087,6 +35119,7 @@
     constructor() {
       _classPrivateMethodInitSpec(this, _DevicePairPressureSensorDataManager_brand);
       _classPrivateFieldInitSpec(this, _rawPressure, {});
+      _classPrivateFieldInitSpec(this, _pressureTimestamps, {});
       _classPrivateFieldInitSpec(this, _centerOfPressureHelper, new CenterOfPressureHelper());
       _classPrivateFieldInitSpec(this, _normalizedSumRangeHelper, new RangeHelper());
       this.resetPressureRange();
@@ -35097,7 +35130,8 @@
     }
     onDevicePressureData(event) {
       const {
-        pressure
+        pressure,
+        timestamp
       } = event.message;
       const {
         side
@@ -35107,6 +35141,7 @@
         side
       });
       _classPrivateFieldGet2(_rawPressure, this)[side] = pressure;
+      _classPrivateFieldGet2(_pressureTimestamps, this)[side] = timestamp;
       if (_classPrivateGetter(_DevicePairPressureSensorDataManager_brand, this, _get_hasAllPressureData)) {
         return _assertClassBrand(_DevicePairPressureSensorDataManager_brand, this, _updatePressureData).call(this);
       } else {
@@ -35115,10 +35150,13 @@
     }
   }
   function _get_hasAllPressureData(_this) {
-    return Sides.every(side => side in _classPrivateFieldGet2(_rawPressure, _this));
+    const now = Date.now();
+    const hasBothSides = Sides.every(side => side in _classPrivateFieldGet2(_rawPressure, _this));
+    const bothSidesAreRecent = Sides.every(side => now - _classPrivateFieldGet2(_pressureTimestamps, _this)[side] < 500);
+    return hasBothSides && bothSidesAreRecent;
   }
   function _updatePressureData() {
-    const pressure = {
+    const pressureData = {
       scaledSum: 0,
       normalizedSum: 0,
       sensors: {
@@ -35128,44 +35166,55 @@
     };
     Sides.forEach(side => {
       const sidePressure = _classPrivateFieldGet2(_rawPressure, this)[side];
-      pressure.scaledSum += sidePressure.scaledSum;
+      pressureData.sensors[side].push(...sidePressure.sensors);
     });
-    pressure.normalizedSum += _classPrivateFieldGet2(_normalizedSumRangeHelper, this).updateAndGetNormalization(pressure.scaledSum);
-    if (pressure.scaledSum > 0) {
-      pressure.center = {
+    let numberOfSidesWithCenter = 0;
+    Sides.forEach(side => {
+      const sidePressureData = _classPrivateFieldGet2(_rawPressure, this)[side];
+      if (sidePressureData.center) {
+        numberOfSidesWithCenter++;
+      }
+    });
+    Sides.forEach(side => {
+      const sidePressure = _classPrivateFieldGet2(_rawPressure, this)[side];
+      pressureData.scaledSum += sidePressure.scaledSum;
+    });
+    pressureData.normalizedSum += _classPrivateFieldGet2(_normalizedSumRangeHelper, this).updateAndGetNormalization(pressureData.scaledSum);
+    if (numberOfSidesWithCenter > 0) {
+      pressureData.center = {
         x: 0,
         y: 0
       };
       Sides.forEach(side => {
-        const sidePressure = _classPrivateFieldGet2(_rawPressure, this)[side];
-        {
-          sidePressure.sensors.forEach(sensor => {
-            const _sensor = structuredClone(sensor);
-            _sensor.weightedScaledValue = sensor.scaledValue / pressure.scaledSum;
-            let {
-              x,
-              y
-            } = sensor.position;
-            x /= 2;
-            if (side == "right") {
-              x += 0.5;
+        const sidePressureData = _classPrivateFieldGet2(_rawPressure, this)[side];
+        let centerOfPressure;
+        if (sidePressureData.calibratedCenter) {
+          centerOfPressure = sidePressureData.calibratedCenter;
+        } else if (sidePressureData.motionCenter) {
+          centerOfPressure = sidePressureData.motionCenter;
+        }
+        const sidePressureWeight = sidePressureData.scaledSum / pressureData.scaledSum;
+        if (sidePressureWeight > 0) {
+          if (centerOfPressure) {
+            pressureData.center.x += centerOfPressure.x * (1 / 2);
+            pressureData.center.y += centerOfPressure.y * (1 / 2);
+          } else {
+            var _sidePressureData$nor;
+            if (((_sidePressureData$nor = sidePressureData.normalizedCenter) === null || _sidePressureData$nor === void 0 ? void 0 : _sidePressureData$nor.y) != undefined) {
+              pressureData.center.y += sidePressureData.normalizedCenter.y * sidePressureWeight;
             }
-            _sensor.position = {
-              x,
-              y
-            };
-            pressure.center.x += _sensor.position.x * _sensor.weightedScaledValue;
-            pressure.center.y += _sensor.position.y * _sensor.weightedScaledValue;
-            pressure.sensors[side].push(_sensor);
-          });
+            if (side == "right") {
+              pressureData.center.x = sidePressureWeight;
+            }
+          }
         }
       });
-      pressure.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper, this).updateAndGetNormalization(pressure.center);
+      pressureData.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper, this).updateAndGetNormalization(pressureData.center);
     }
     _console$2.log({
-      devicePairPressure: pressure
+      devicePairPressureData: pressureData
     });
-    return pressure;
+    return pressureData;
   }
 
   const _console$1 = createConsole("DevicePairSensorDataManager", {
@@ -35348,16 +35397,31 @@
       }
     }
     resetPressureRange() {
-      Sides.forEach(side => {
-        var _this$side4;
-        return (_this$side4 = this[side]) === null || _this$side4 === void 0 ? void 0 : _this$side4.resetPressureRange();
-      });
+      let resetSides = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+      if (resetSides) {
+        Sides.forEach(side => {
+          var _this$side4;
+          return (_this$side4 = this[side]) === null || _this$side4 === void 0 ? void 0 : _this$side4.resetPressureRange();
+        });
+      }
       _classPrivateFieldGet2(_sensorDataManager, this).resetPressureRange();
+    }
+    setPressureAutoRange(newPressureAutoRange) {
+      Sides.forEach(side => {
+        var _this$side5;
+        return (_this$side5 = this[side]) === null || _this$side5 === void 0 ? void 0 : _this$side5.setPressureAutoRange(newPressureAutoRange);
+      });
+    }
+    togglePressureAutoRange() {
+      Sides.forEach(side => {
+        var _this$side6;
+        return (_this$side6 = this[side]) === null || _this$side6 === void 0 ? void 0 : _this$side6.togglePressureAutoRange();
+      });
     }
     async triggerVibration(vibrationConfigurations, sendImmediately) {
       const promises = Sides.map(side => {
-        var _this$side5;
-        return (_this$side5 = this[side]) === null || _this$side5 === void 0 ? void 0 : _this$side5.triggerVibration(vibrationConfigurations, sendImmediately);
+        var _this$side7;
+        return (_this$side7 = this[side]) === null || _this$side7 === void 0 ? void 0 : _this$side7.triggerVibration(vibrationConfigurations, sendImmediately);
       }).filter(Boolean);
       return Promise.allSettled(promises);
     }

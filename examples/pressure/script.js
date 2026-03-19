@@ -85,9 +85,12 @@ devicePair.addEventListener("isConnected", () => {
 window.devicePair = devicePair;
 
 // TF MODEL
-const pressureCalibrationModelKey = "bs.centerOfPressure.model";
-const pressureCalibrationModelIndexeddbKey = `indexeddb://${pressureCalibrationModelKey}`;
-const pressureCalibrationModelDownloadsKey = `downloads://${pressureCalibrationModelKey}`;
+const getBasePressureCalibrationModelKey = (side) =>
+  `bs.${side}.centerOfPressure.model`;
+const getPressureCalibrationModelIndexeddbKey = (side) =>
+  `indexeddb://${getBasePressureCalibrationModelKey(side)}`;
+const getPressureCalibrationModelDownloadsKey = (side) =>
+  `downloads://${getBasePressureCalibrationModelKey(side)}`;
 
 // PRESSURE VIZUALIZATION
 
@@ -103,6 +106,10 @@ const toggleConnectionButtons = {};
 const togglePressureDataButtons = {};
 /** @type {Object.<string, HTMLButtonElement>} */
 const toggleGameRotationButtons = {};
+/** @type {Object.<string, HTMLButtonElement>} */
+const resetPressureButtons = {};
+/** @type {Object.<string, HTMLButtonElement>} */
+const toggleAutoRangeButtons = {};
 /** @type {Object.<string, HTMLButtonElement>} */
 const toggleRecordingPressureCalibrationDataButtons = {};
 /** @type {Object.<string, HTMLButtonElement>} */
@@ -160,6 +167,21 @@ devicePair.sides.forEach((side) => {
   togglePressureDataButtons[side] = togglePressureDataButton;
 
   /** @type {HTMLButtonElement} */
+  const resetPressureButton = insoleContainer.querySelector(".resetPressure");
+  resetPressureButton.addEventListener("click", () => {
+    devicePair[side].resetPressureRange();
+  });
+  resetPressureButtons[side] = resetPressureButton;
+
+  /** @type {HTMLButtonElement} */
+  const toggleAutoRangeButton =
+    insoleContainer.querySelector(".toggleAutoRange");
+  toggleAutoRangeButton.addEventListener("click", () => {
+    devicePair[side].togglePressureAutoRange();
+  });
+  toggleAutoRangeButtons[side] = toggleAutoRangeButton;
+
+  /** @type {HTMLButtonElement} */
   const toggleGameRotationButton = insoleContainer.querySelector(
     ".toggleGameRotation"
   );
@@ -215,7 +237,7 @@ devicePair.sides.forEach((side) => {
   );
   loadPressureCalibratonModelButton.addEventListener("click", () => {
     devicePair[side].loadPressureCalibrationModel(
-      pressureCalibrationModelIndexeddbKey
+      getPressureCalibrationModelIndexeddbKey(side)
     );
     loadPressureCalibratonModelButton.disabled = true;
   });
@@ -227,7 +249,7 @@ devicePair.sides.forEach((side) => {
   );
   savePressureCalibrationModelButton.addEventListener("click", async () => {
     devicePair[side].savePressureCalibrationModel(
-      pressureCalibrationModelDownloadsKey
+      getPressureCalibrationModelDownloadsKey
     );
   });
   savePressureCalibrationModelButtons[side] =
@@ -270,7 +292,7 @@ devicePair.sides.forEach((side) => {
     insoleContainer.querySelector(".devicePairCenter");
 });
 
-devicePair.addEventListener("deviceIsConnected", (event) => {
+devicePair.addEventListener("deviceIsConnected", async (event) => {
   const { device } = event.message;
 
   const toggleConnectionButton = toggleConnectionButtons[device.side];
@@ -282,6 +304,8 @@ devicePair.addEventListener("deviceIsConnected", (event) => {
     : "reconnect";
 
   togglePressureDataButtons[device.side].disabled = !device.isConnected;
+  resetPressureButtons[device.side].disabled = !device.isConnected;
+  toggleAutoRangeButtons[device.side].disabled = !device.isConnected;
   toggleGameRotationButtons[device.side].disabled = !device.isConnected;
   toggleRecordingPressureCalibrationDataButtons[device.side].disabled =
     !device.isConnected;
@@ -293,8 +317,11 @@ devicePair.addEventListener("deviceIsConnected", (event) => {
     !device.isConnected;
 
   if (device.isConnected) {
+    console.log(getPressureCalibrationModelIndexeddbKey(device.side));
     loadPressureCalibratonModelButtons[device.side].disabled =
-      !BS.isTensorFlowModelAvailable(pressureCalibrationModelIndexeddbKey);
+      !(await BS.isTensorFlowModelAvailable(
+        getPressureCalibrationModelIndexeddbKey(device.side)
+      ));
   } else {
     pressureCalibrationProgresses[device.side].value = 0;
   }
@@ -347,6 +374,17 @@ devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
     togglePressureDataButton.innerText = "disable pressure data";
   } else {
     togglePressureDataButton.innerText = "enable pressure data";
+  }
+});
+
+devicePair.addEventListener("devicePressureAutoRange", (event) => {
+  const { device, pressureAutoRange } = event.message;
+
+  const toggleAutoRangeButton = toggleAutoRangeButtons[device.side];
+  if (pressureAutoRange) {
+    toggleAutoRangeButton.innerText = "disable autoRange";
+  } else {
+    toggleAutoRangeButton.innerText = "enable autoRange";
   }
 });
 
@@ -431,16 +469,10 @@ devicePair.addEventListener("pressure", (event) => {
   var center;
   switch (centerOfPressureVisualizationMode) {
     case "center":
-      center = pressure.center;
-      break;
     case "normalizedCenter":
-      center = pressure.normalizedCenter;
-      break;
     case "motionCenter":
-      center = pressure.motionCenter;
-      break;
     case "calibratedCenter":
-      center = pressure.calibratedCenter;
+      center = pressure.normalizedCenter;
       break;
   }
   var side;
@@ -469,7 +501,9 @@ devicePair.addEventListener("deviceCalibratedPressureModel", (event) => {
   if (wasLoaded) {
     return;
   }
-  device.savePressureCalibrationModel(pressureCalibrationModelIndexeddbKey);
+  device.savePressureCalibrationModel(
+    getPressureCalibrationModelIndexeddbKey(device.side)
+  );
 
   const pressureCalibrationProgress =
     pressureCalibrationProgresses[device.side];
@@ -571,7 +605,7 @@ const centerOfPressureVisualizationModes = [
   "motionCenter",
   "calibratedCenter",
 ];
-let centerOfPressureVisualizationMode = "normalizedCenter";
+let centerOfPressureVisualizationMode = "motionCenter";
 
 /** @type {HTMLSelectElement} */
 const centerOfPressureVisualizationModeSelect = document.getElementById(

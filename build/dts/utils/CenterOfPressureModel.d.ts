@@ -10,7 +10,7 @@ declare class CenterOfPressureModel {
     #private;
     constructor();
     eventDispatcher: PressureSensorEventDispatcher;
-    get dispatchEvent(): <T extends "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: import("../sensor/PressureSensorDataManager.ts").PressureSensorEventMessages[T]) => void;
+    get dispatchEvent(): <T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: import("../sensor/PressureSensorDataManager.ts").PressureSensorEventMessages[T]) => void;
     get model(): tf.Sequential | undefined;
     get numberOfSensors(): number;
     set numberOfSensors(newNumberOfSensors: number);

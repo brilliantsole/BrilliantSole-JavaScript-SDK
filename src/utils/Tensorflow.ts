@@ -11,7 +11,7 @@ function isTensorFlowAvailable() {
 }
 
 async function listTensorflowModels() {
-  if (isTensorFlowAvailable()) {
+  if (!isTensorFlowAvailable()) {
     return {};
   }
   const models = await tf.io.listModels();

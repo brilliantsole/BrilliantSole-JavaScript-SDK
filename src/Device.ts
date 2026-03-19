@@ -1158,8 +1158,17 @@ class Device {
       return [];
     }
   }
-  resetPressureRange() {
-    this.#sensorDataManager.pressureSensorDataManager.resetRange();
+  get autoPressureRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.autoRange;
+  }
+  get setPressureAutoRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.setAutoRange;
+  }
+  get togglePressureAutoRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.toggleAutoRange;
+  }
+  get resetPressureRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.resetRange;
   }
   get canCalibratePressure() {
     return this.#sensorDataManager.pressureSensorDataManager.canCalibrate;
