@@ -19,7 +19,7 @@ var fitCurve = require('fit-curve');
 require('svgson');
 require('svg-pathdata');
 var os = require('os');
-var noble = require('@abandonware/noble');
+var noble = require('@stoprocent/noble');
 var three = require('three');
 var dgram = require('dgram');
 

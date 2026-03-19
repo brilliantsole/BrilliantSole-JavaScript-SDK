@@ -20,7 +20,7 @@ const _console = createConsole("NobleConnectionManager", { log: false });
 let filterUUIDs = true;
 
 /** NODE_START */
-import type * as noble from "@abandonware/noble";
+import type * as noble from "@stoprocent/noble";
 import os from "os";
 const isLinux = os.platform() == "linux";
 filterUUIDs = !isLinux;

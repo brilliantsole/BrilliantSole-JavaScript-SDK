@@ -21,7 +21,7 @@ const filterServiceUuid = (serviceUUIDs[0] as string).replaceAll("-", "");
 
 let isLinux = false;
 /** NODE_START */
-import noble from "@abandonware/noble";
+import noble from "@stoprocent/noble";
 import { DeviceTypes } from "../InformationManager.ts";
 import DeviceManager from "../DeviceManager.ts";
 import { ClientConnectionType } from "../connection/BaseConnectionManager.ts";

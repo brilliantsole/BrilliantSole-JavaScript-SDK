@@ -17,7 +17,7 @@ import fitCurve from 'fit-curve';
 import 'svgson';
 import 'svg-pathdata';
 import os from 'os';
-import noble from '@abandonware/noble';
+import noble from '@stoprocent/noble';
 import { Euler, Quaternion } from 'three';
 import * as dgram from 'dgram';
 

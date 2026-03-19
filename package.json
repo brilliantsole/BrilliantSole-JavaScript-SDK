@@ -90,7 +90,7 @@
     "ws": "^8.16.0"
   },
   "dependencies": {
-    "@abandonware/noble": "^1.9.2-24",
+    "@stoprocent/noble": "^2.3.17",
     "@tensorflow/tfjs": "^4.22.0",
     "alawmulaw": "^6.0.0",
     "auto-bind": "^5.0.1",
