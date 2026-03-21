@@ -4,13 +4,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
     <script type="module" src="./script.js"></script>
+    <script src="../utils/misc/canvasInput.js"></script>
   </head>
 
   <style>
     #balanceContainer {
       width: 500px;
       height: 80%;
-      margin: 1rem auto;
+      margin: 1rem;
       display: flex;
       flex-direction: row;
       justify-content: space-evenly;
@@ -84,7 +85,7 @@
     }
     #balanceContainer.hover .balanceSide .target .ring {
       animation-name: shrink;
-      animation-duration: 3s;
+      animation-duration: 2s;
       animation-timing-function: linear;
     }
   </style>
@@ -122,8 +123,23 @@
       <button id="togglePressureAutoRange" disabled>
         disable pressure autoRange
       </button>
+      <button id="togglePressureMotionAutoRange" disabled>
+        enable motion pressure autoRange
+      </button>
       <button id="toggleGameRotation" disabled>enable gameRotation</button>
       <button id="toggleGame">start game</button>
+      <label>
+        <canvas
+          id="centerOfPressureInput"
+          width="100"
+          height="100"
+          data-min-x="0"
+          data-max-x="1"
+          data-min-y="0"
+          data-max-y="1"
+          data-input
+        ></canvas>
+      </label>
     </div>
 
     <div id="balanceContainer">

@@ -111,6 +111,8 @@ const resetPressureButtons = {};
 /** @type {Object.<string, HTMLButtonElement>} */
 const toggleAutoRangeButtons = {};
 /** @type {Object.<string, HTMLButtonElement>} */
+const toggleMotionAutoRangeButtons = {};
+/** @type {Object.<string, HTMLButtonElement>} */
 const toggleRecordingPressureCalibrationDataButtons = {};
 /** @type {Object.<string, HTMLButtonElement>} */
 const clearRecordingPressureCalibrationDataButtons = {};
@@ -180,6 +182,15 @@ devicePair.sides.forEach((side) => {
     devicePair[side].togglePressureAutoRange();
   });
   toggleAutoRangeButtons[side] = toggleAutoRangeButton;
+
+  /** @type {HTMLButtonElement} */
+  const toggleMotionAutoRangeButton = insoleContainer.querySelector(
+    ".toggleMotionAutoRange"
+  );
+  toggleMotionAutoRangeButton.addEventListener("click", () => {
+    devicePair[side].togglePressureMotionAutoRange();
+  });
+  toggleMotionAutoRangeButtons[side] = toggleMotionAutoRangeButton;
 
   /** @type {HTMLButtonElement} */
   const toggleGameRotationButton = insoleContainer.querySelector(
@@ -306,6 +317,7 @@ devicePair.addEventListener("deviceIsConnected", async (event) => {
   togglePressureDataButtons[device.side].disabled = !device.isConnected;
   resetPressureButtons[device.side].disabled = !device.isConnected;
   toggleAutoRangeButtons[device.side].disabled = !device.isConnected;
+  toggleMotionAutoRangeButtons[device.side].disabled = !device.isConnected;
   toggleGameRotationButtons[device.side].disabled = !device.isConnected;
   toggleRecordingPressureCalibrationDataButtons[device.side].disabled =
     !device.isConnected;
@@ -385,6 +397,17 @@ devicePair.addEventListener("devicePressureAutoRange", (event) => {
     toggleAutoRangeButton.innerText = "disable autoRange";
   } else {
     toggleAutoRangeButton.innerText = "enable autoRange";
+  }
+});
+
+devicePair.addEventListener("devicePressureMotionAutoRange", (event) => {
+  const { device, pressureMotionAutoRange } = event.message;
+
+  const toggleMotionAutoRangeButton = toggleMotionAutoRangeButtons[device.side];
+  if (pressureMotionAutoRange) {
+    toggleMotionAutoRangeButton.innerText = "disable motion autoRange";
+  } else {
+    toggleMotionAutoRangeButton.innerText = "enable motion autoRange";
   }
 });
 

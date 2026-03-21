@@ -1557,13 +1557,16 @@
 	    }
 	}
 
-	const _console$E = createConsole("PressureDataManager", { log: true });
+	const _console$E = createConsole("PressureDataManager", { log: false });
 	const PressureSensorTypes = ["pressure"];
 	const ContinuousPressureSensorTypes = PressureSensorTypes;
 	const PressureSensorEventTypes = [
 	    "pressureAutoRangeEnabled",
 	    "pressureAutoRangeDisabled",
 	    "pressureAutoRange",
+	    "pressureMotionAutoRangeEnabled",
+	    "pressureMotionAutoRangeDisabled",
+	    "pressureMotionAutoRange",
 	    "isRecordingPressureCalibrationData",
 	    "pressureCalibrationDataRecordStart",
 	    "pressureCalibrationDataRecordStop",
@@ -1649,6 +1652,29 @@
 	    }
 	    toggleAutoRange() {
 	        this.setAutoRange(!this.autoRange);
+	    }
+	    #motionAutoRange = false;
+	    get motionAutoRange() {
+	        return this.#motionAutoRange;
+	    }
+	    setMotionAutoRange(newMotionAutoRange) {
+	        if (this.#motionAutoRange == newMotionAutoRange) {
+	            return;
+	        }
+	        this.#motionAutoRange = newMotionAutoRange;
+	        _console$E.log({ motionAutoRange: this.motionAutoRange });
+	        this.dispatchEvent("pressureMotionAutoRange", {
+	            pressureMotionAutoRange: this.motionAutoRange,
+	        });
+	        if (this.motionAutoRange) {
+	            this.dispatchEvent("pressureMotionAutoRangeEnabled", {});
+	        }
+	        else {
+	            this.dispatchEvent("pressureMotionAutoRangeDisabled", {});
+	        }
+	    }
+	    toggleMotionAutoRange() {
+	        this.setMotionAutoRange(!this.motionAutoRange);
 	    }
 	    #euler = structuredClone(defaultEuler);
 	    #eulerTimestamp = 0;
@@ -1767,7 +1793,7 @@
 	        const hasEuler = this.#euler && Math.abs(timestamp - this.#eulerTimestamp) < 100;
 	        if (hasEuler) {
 	            if (isPressureAboveThreshold) {
-	                if (this.autoRange) {
+	                if (this.motionAutoRange) {
 	                    this.#eulerCenterOfPressureRangeHelper.update({
 	                        x: -this.#euler.roll,
 	                        y: -this.#euler.pitch,
@@ -35500,6 +35526,16 @@
 	    get togglePressureAutoRange() {
 	        return this.#sensorDataManager.pressureSensorDataManager.toggleAutoRange;
 	    }
+	    get autoPressureMotionRange() {
+	        return this.#sensorDataManager.pressureSensorDataManager.motionAutoRange;
+	    }
+	    get setPressureMotionAutoRange() {
+	        return this.#sensorDataManager.pressureSensorDataManager.setMotionAutoRange;
+	    }
+	    get togglePressureMotionAutoRange() {
+	        return this.#sensorDataManager.pressureSensorDataManager
+	            .toggleMotionAutoRange;
+	    }
 	    get resetPressureRange() {
 	        return this.#sensorDataManager.pressureSensorDataManager.resetRange;
 	    }
@@ -39266,7 +39302,7 @@
 	        });
 	        pressureData.normalizedSum +=
 	            this.#normalizedSumRangeHelper.updateAndGetNormalization(pressureData.scaledSum);
-	        if (numberOfSidesWithCenter > 0) {
+	        if (numberOfSidesWithCenter == 2) {
 	            pressureData.center = { x: 0, y: 0 };
 	            Sides.forEach((side) => {
 	                const sidePressureData = this.#rawPressure[side];
@@ -39280,8 +39316,8 @@
 	                const sidePressureWeight = sidePressureData.scaledSum / pressureData.scaledSum;
 	                if (sidePressureWeight > 0) {
 	                    if (centerOfPressure) {
-	                        pressureData.center.x += centerOfPressure.x * (1 / 2);
-	                        pressureData.center.y += centerOfPressure.y * (1 / 2);
+	                        pressureData.center.x += centerOfPressure.x * 0.5;
+	                        pressureData.center.y += centerOfPressure.y * 0.5;
 	                    }
 	                    else {
 	                        if (sidePressureData.normalizedCenter?.y != undefined) {
@@ -39535,6 +39571,12 @@
 	    }
 	    togglePressureAutoRange() {
 	        Sides.forEach((side) => this[side]?.togglePressureAutoRange());
+	    }
+	    setPressureMotionAutoRange(newPressureMotionAutoRange) {
+	        Sides.forEach((side) => this[side]?.setPressureMotionAutoRange(newPressureMotionAutoRange));
+	    }
+	    togglePressureMotionAutoRange() {
+	        Sides.forEach((side) => this[side]?.togglePressureMotionAutoRange());
 	    }
 	    async triggerVibration(vibrationConfigurations, sendImmediately) {
 	        const promises = Sides.map((side) => {

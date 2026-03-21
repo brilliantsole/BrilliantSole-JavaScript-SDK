@@ -20,7 +20,11 @@ const _console = createConsole("NobleConnectionManager", { log: false });
 let filterUUIDs = true;
 
 /** NODE_START */
-import type * as noble from "@stoprocent/noble";
+import * as noble from "@stoprocent/noble";
+noble.withBindings("default", {
+  extended: true, // enable BLE 5 extended features
+  userChannel: true, // use user channel instead of raw
+});
 import os from "os";
 const isLinux = os.platform() == "linux";
 filterUUIDs = !isLinux;

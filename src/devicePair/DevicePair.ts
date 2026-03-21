@@ -330,6 +330,15 @@ class DevicePair {
     Sides.forEach((side) => this[side]?.togglePressureAutoRange());
   }
 
+  setPressureMotionAutoRange(newPressureMotionAutoRange: boolean) {
+    Sides.forEach((side) =>
+      this[side]?.setPressureMotionAutoRange(newPressureMotionAutoRange)
+    );
+  }
+  togglePressureMotionAutoRange() {
+    Sides.forEach((side) => this[side]?.togglePressureMotionAutoRange());
+  }
+
   // VIBRATION
   async triggerVibration(
     vibrationConfigurations: VibrationConfiguration[],

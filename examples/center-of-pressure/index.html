@@ -4,6 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
     <script type="module" src="./script.js"></script>
+    <script src="../utils/misc/canvasInput.js"></script>
   </head>
 
   <style>
@@ -24,19 +25,29 @@
       position: relative;
     }
 
+    #centerOfPressureRange2 {
+      width: calc(100% - 1rem);
+      height: calc(100% - 1rem);
+      margin: auto;
+      top: 0.5rem;
+      position: relative;
+    }
+
     #centerOfPressure {
       position: absolute;
+      width: 1rem;
+      height: 1rem;
+      transform: translate(-50%, -50%);
+      z-index: 1;
     }
 
     #centerOfPressure .visual {
       border-radius: 50%;
       background-color: red;
-      width: 1rem;
-      height: 1rem;
-      left: -1rem;
-      top: -1rem;
+      width: 100%;
+      height: 100%;
+
       position: relative;
-      z-index: 1;
     }
 
     #target {
@@ -80,8 +91,12 @@
 
     #target.hover .ring {
       animation-name: shrink;
-      animation-duration: 3s;
+      animation-duration: 2s;
       animation-timing-function: linear;
+    }
+
+    #glassesDisplay {
+      background-color: black;
     }
   </style>
 
@@ -113,17 +128,37 @@
       <button id="addDevice">add device</button>
       <button id="togglePressureData" disabled>enable pressure data</button>
       <button id="resetPressureRange" disabled>reset pressure range</button>
+      <button id="toggleGameRotation" disabled>enable gameRotation</button>
+      <br />
       <button id="togglePressureAutoRange" disabled>
         disable pressure autoRange
       </button>
-      <button id="toggleGameRotation" disabled>enable gameRotation</button>
+      <button id="togglePressureMotionAutoRange" disabled>
+        enable motion pressure autoRange
+      </button>
+      <br />
       <button id="toggleGame">start game</button>
+      <label>
+        <canvas
+          id="centerOfPressureInput"
+          width="20"
+          height="20"
+          data-radius="3"
+          data-min-x="0"
+          data-max-x="1"
+          data-min-y="0"
+          data-max-y="1"
+          data-input
+        ></canvas>
+      </label>
     </div>
 
     <div id="centerOfPressureContainer">
       <div id="centerOfPressureRange">
-        <div id="centerOfPressure">
-          <div class="visual"></div>
+        <div id="centerOfPressureRange2">
+          <div id="centerOfPressure">
+            <div class="visual"></div>
+          </div>
         </div>
         <div id="target">
           <div class="visual">
@@ -131,6 +166,23 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <br />
+    <div>
+      <button id="toggleGlassesConnection">connect</button>
+      <label>
+        file transfer progress: <span></span>
+        <progress value="0" id="glassesFileTransferProgress"></progress>
+      </label>
+      <label class="verticalLabel">
+        <span>brightness</span>
+        <select id="setGlassesDisplayBrightness">
+          <optgroup label="select brightness"></optgroup>
+        </select>
+      </label>
+      <br />
+      <canvas id="glassesDisplay" width="640" height="400"></canvas>
     </div>
   </body>
 </html>

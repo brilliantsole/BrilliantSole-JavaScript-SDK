@@ -1167,6 +1167,16 @@ class Device {
   get togglePressureAutoRange() {
     return this.#sensorDataManager.pressureSensorDataManager.toggleAutoRange;
   }
+  get autoPressureMotionRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.motionAutoRange;
+  }
+  get setPressureMotionAutoRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.setMotionAutoRange;
+  }
+  get togglePressureMotionAutoRange() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .toggleMotionAutoRange;
+  }
   get resetPressureRange() {
     return this.#sensorDataManager.pressureSensorDataManager.resetRange;
   }

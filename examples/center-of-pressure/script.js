@@ -126,6 +126,22 @@ togglePressureAutoRangeButton.addEventListener("click", () => {
     : "enable pressure autoRange";
 });
 
+let pressureMotionAutoRange = false;
+/** @type {HTMLButtonElement} */
+const togglePressureMotionAutoRangeButton = document.getElementById(
+  "togglePressureMotionAutoRange"
+);
+devicePair.addEventListener("isConnected", () => {
+  togglePressureMotionAutoRangeButton.disabled = !devicePair.isConnected;
+});
+togglePressureMotionAutoRangeButton.addEventListener("click", () => {
+  pressureMotionAutoRange = !pressureMotionAutoRange;
+  devicePair.setPressureMotionAutoRange(pressureMotionAutoRange);
+  togglePressureMotionAutoRangeButton.innerText = pressureMotionAutoRange
+    ? "disable pressureMotion autoRange"
+    : "enable pressureMotion autoRange";
+});
+
 // GAME ROTATION
 let isGameRotationDataEnabled = false;
 
@@ -145,10 +161,9 @@ toggleGameRotationButton.addEventListener("click", () => {
 });
 
 const centerOfPressureElement = document.getElementById("centerOfPressure");
-/** @param {BS.CenterOfPressure} center  */
-function updateCenterOfPressureElement(center) {
-  centerOfPressureElement.style.left = `${center.x * 100}%`;
-  centerOfPressureElement.style.top = `${(1 - center.y) * 100}%`;
+function updateCenterOfPressureElement() {
+  centerOfPressureElement.style.left = `${currentCenter.x * 100}%`;
+  centerOfPressureElement.style.top = `${(1 - currentCenter.y) * 100}%`;
 }
 window.updateCenterOfPressureElement = updateCenterOfPressureElement;
 
@@ -168,6 +183,7 @@ toggleGameButton.addEventListener("click", () => {
   } else {
     target.element.style.display = "none";
   }
+  drawGlassesDisplay();
 });
 
 /**
@@ -187,17 +203,19 @@ const target = {
   bottom: 0,
   element: document.getElementById("target"),
 
-  /** @param {BS.CenterOfPressure} center  */
-  isInside(center) {
+  get isInside() {
     return (
-      center.x >= this.left &&
-      center.x <= this.left + this.width &&
-      center.y <= this.bottom &&
-      center.y >= this.bottom - this.height
+      currentCenter.x >= this.left &&
+      currentCenter.x <= this.left + this.width &&
+      currentCenter.y <= this.bottom &&
+      currentCenter.y >= this.bottom - this.height
     );
   },
 
   reset() {
+    clearTimeout(insideTargetTimeoutId);
+    insideTargetTimeoutId = undefined;
+
     this.element.classList.remove("hover");
 
     this.width = randomValueBetween(0.2, 0.3);
@@ -214,6 +232,8 @@ const target = {
 
     this.element.style.left = `${this.left * 100}%`;
     this.element.style.top = `${this.top * 100}%`;
+
+    drawGlassesDisplay();
   },
 };
 
@@ -230,19 +250,25 @@ devicePair.addEventListener("pressure", (event) => {
   }
 });
 
+/** @type {BS.CenterOfPressure} */
+let currentCenter = { x: 0, y: 0 };
+let isInsideStartTime = 0;
+const insideTimeDuration = 1500;
 /** @param {BS.CenterOfPressure} center */
 function onCenterOfPressure(center) {
-  updateCenterOfPressureElement(center);
+  currentCenter = center;
+  updateCenterOfPressureElement();
 
   if (isPlayingGame) {
-    isCenterOfPressureInsideTarget = target.isInside(center);
-    console.log({ isCenterOfPressureInsideTarget });
+    isCenterOfPressureInsideTarget = target.isInside;
+    // console.log({ isCenterOfPressureInsideTarget });
     if (isCenterOfPressureInsideTarget) {
       if (insideTargetTimeoutId == undefined) {
+        isInsideStartTime = Date.now();
         target.element.classList.add("hover");
         insideTargetTimeoutId = setTimeout(() => {
           target.reset();
-        }, 2000);
+        }, insideTimeDuration);
       }
     } else {
       if (insideTargetTimeoutId != undefined) {
@@ -252,5 +278,279 @@ function onCenterOfPressure(center) {
       }
     }
   }
+  drawGlassesDisplay();
 }
-window.onCenterOfPressure = onCenterOfPressure; // for manual testing
+window.onCenterOfPressure = onCenterOfPressure;
+
+/** @type {HTMLInputElement} */
+const centerOfPressureInput = document.getElementById("centerOfPressureInput");
+centerOfPressureInput.addEventListener("input", () => {
+  onCenterOfPressure(centerOfPressureInput.value);
+});
+
+// GLASSES START
+const glassesDisplayTargetColors = ["yellow", "limegreen"];
+const glassesDisplayCanvasHelper = new BS.DisplayCanvasHelper();
+glassesDisplayCanvasHelper.setColor(1, "white");
+glassesDisplayCanvasHelper.setColor(2, "red");
+glassesDisplayCanvasHelper.setColor(3, glassesDisplayTargetColors[0]);
+glassesDisplayCanvasHelper.setColor(4, "blue");
+const glassesDisplayCanvas = document.getElementById("glassesDisplay");
+glassesDisplayCanvasHelper.canvas = glassesDisplayCanvas;
+window.glassesDisplayCanvasHelper = glassesDisplayCanvasHelper;
+
+const glassesDevice = new BS.Device();
+const toggleGlassesConnectionButton = document.getElementById(
+  "toggleGlassesConnection"
+);
+toggleGlassesConnectionButton.addEventListener("click", () => {
+  glassesDevice.toggleConnection(false);
+});
+glassesDevice.addEventListener("connectionStatus", (event) => {
+  const { connectionStatus } = event.message;
+  let innerText = connectionStatus;
+  switch (connectionStatus) {
+    case "notConnected":
+      innerText = "connect";
+      break;
+    case "connected":
+      innerText = "disconnect";
+      break;
+  }
+  toggleGlassesConnectionButton.innerText = innerText;
+});
+glassesDevice.addEventListener("connected", () => {
+  if (!glassesDevice.isGlasses || !glassesDevice.isDisplayAvailable) {
+    glassesDevice.disconnect();
+  }
+  glassesDisplayCanvasHelper.device = glassesDevice;
+});
+
+/** @type {HTMLProgressElement} */
+const glassesFileTransferProgress = document.getElementById(
+  "glassesFileTransferProgress"
+);
+glassesDevice.addEventListener("fileTransferProgress", (event) => {
+  const progress = event.message.progress;
+  //console.log({ progress });
+  glassesFileTransferProgress.value = progress == 1 ? 0 : progress;
+});
+glassesDevice.addEventListener("fileTransferStatus", () => {
+  if (glassesDevice.fileTransferStatus == "ready") {
+    glassesFileTransferProgress.value = 0;
+  }
+});
+
+glassesDisplayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadStart",
+  () => {
+    isUploadingToGlasses = true;
+  }
+);
+glassesDisplayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadComplete",
+  () => {
+    isUploadingToGlasses = false;
+  }
+);
+glassesDisplayCanvasHelper.addEventListener("deviceUpdated", () => {
+  drawGlassesDisplay();
+});
+
+let isUploadingToGlasses = false;
+let isDrawingToGlassesDisplay = false;
+let isWaitingToRedrawToGlassesDisplay = false;
+
+const drawGlassesParams = {
+  offset: {
+    x: 640 / 2,
+    y: 400 / 2,
+  },
+  size: {
+    width: 200,
+    height: 200,
+  },
+  padding: {
+    x: 40,
+    y: 40,
+  },
+};
+
+let drawGlassesDisplay = async () => {
+  if (isUploadingToGlasses) {
+    return;
+  }
+  if (isDrawingToGlassesDisplay) {
+    //console.warn("busy drawing");
+    isWaitingToRedrawToGlassesDisplay = true;
+    return;
+  }
+  isDrawingToGlassesDisplay = true;
+
+  // console.log("drawGlassesDisplay");
+  const displayCanvasHelper = glassesDisplayCanvasHelper;
+
+  const { offset, size, padding } = drawGlassesParams;
+
+  const width = size.width - padding.x;
+  const height = size.height - padding.y;
+
+  const width2 = size.width - padding.x / 2;
+  const height2 = size.height - padding.y / 2;
+
+  await displayCanvasHelper.setHorizontalAlignment("center");
+  await displayCanvasHelper.setVerticalAlignment("center");
+
+  await displayCanvasHelper.setIgnoreFill(true);
+  await displayCanvasHelper.setIgnoreLine(false);
+  await displayCanvasHelper.setLineWidth(8);
+  await displayCanvasHelper.selectFillColor(1);
+  await displayCanvasHelper.drawRoundRect(
+    offset.x,
+    offset.y,
+    size.width,
+    size.height,
+    20
+  );
+
+  if (isPlayingGame) {
+    await glassesDisplayCanvasHelper.setColor(
+      3,
+      glassesDisplayTargetColors[target.isInside ? 1 : 0]
+    );
+    await displayCanvasHelper.selectSpriteColor(1, 3);
+    await displayCanvasHelper.selectSpriteColor(2, 4);
+    if (false) {
+      await displayCanvasHelper.setFillBackground(true);
+      await displayCanvasHelper.selectBackgroundColor(2);
+    }
+    await displayCanvasHelper.setVerticalAlignment("start");
+    await displayCanvasHelper.setHorizontalAlignment("start");
+    await displayCanvasHelper.startSprite(
+      offset.x - width2 * 0.5 + width2 * target.left,
+      offset.y - height2 * 0.5 + height2 * target.top,
+      width2 * target.width,
+      height2 * target.height
+    );
+
+    await displayCanvasHelper.setLineWidth(0);
+    await displayCanvasHelper.setVerticalAlignment("center");
+    await displayCanvasHelper.setHorizontalAlignment("center");
+    await displayCanvasHelper.selectFillColor(1);
+    await displayCanvasHelper.selectLineColor(2);
+    await displayCanvasHelper.drawRoundRect(
+      0,
+      0,
+      target.width * width2,
+      target.height * height2,
+      10
+    );
+
+    if (target.isInside) {
+      const now = Date.now();
+      let interpolation =
+        (now - isInsideStartTime) / (insideTimeDuration + 100);
+      interpolation = Math.max(0, Math.min(1, interpolation));
+      // console.log({ interpolation });
+      await displayCanvasHelper.setLineWidth(5);
+      await displayCanvasHelper.setIgnoreFill(true);
+      await displayCanvasHelper.drawRoundRect(
+        0,
+        0,
+        target.width * width2 * (1 - interpolation),
+        target.height * height2 * (1 - interpolation),
+        10 + interpolation * 10
+      );
+    }
+
+    await displayCanvasHelper.endSprite();
+    await displayCanvasHelper.setFillBackground(false);
+  }
+
+  await displayCanvasHelper.setLineWidth(0);
+  await displayCanvasHelper.setHorizontalAlignment("center");
+  await displayCanvasHelper.setVerticalAlignment("center");
+  await displayCanvasHelper.setIgnoreFill(false);
+  await displayCanvasHelper.setIgnoreLine(true);
+  await displayCanvasHelper.selectFillColor(2);
+  await displayCanvasHelper.drawCircle(
+    offset.x + width * (currentCenter.x - 0.5),
+    offset.y - height * (currentCenter.y - 0.5),
+    8
+  );
+
+  await displayCanvasHelper.show();
+};
+window.draw = drawGlassesDisplay;
+
+glassesDisplayCanvasHelper.addEventListener("ready", () => {
+  isDrawingToGlassesDisplay = false;
+  if (isWaitingToRedrawToGlassesDisplay || target.isInside) {
+    isWaitingToRedrawToGlassesDisplay = false;
+    drawGlassesDisplay();
+  }
+});
+if (false) {
+  const fontSize = 42;
+  /** @type {BS.DisplaySpriteSheet} */
+  let englishSpriteSheet;
+  let englishFontLineHeight = 0;
+
+  const fontName = "roboto.ttf";
+  const fontSpriteSheetLocalStorageKey = `fontSpriteSheet.${fontName}.${fontSize}`;
+  console.log({ fontSpriteSheetLocalStorageKey });
+  try {
+    const fontSpriteSheetString = localStorage.getItem(
+      fontSpriteSheetLocalStorageKey
+    );
+    if (fontSpriteSheetString) {
+      englishSpriteSheet = JSON.parse(fontSpriteSheetString);
+    } else {
+      const response = await fetch(`../../assets/font/${fontName}`);
+      const arrayBuffer = await response.arrayBuffer();
+      const englishFont = await BS.parseFont(arrayBuffer);
+
+      englishSpriteSheet = await BS.fontToSpriteSheet(
+        englishFont,
+        fontSize,
+        "english"
+      );
+      localStorage.setItem(
+        fontSpriteSheetLocalStorageKey,
+        JSON.stringify(englishSpriteSheet)
+      );
+    }
+    console.log("englishSpriteSheet", englishSpriteSheet);
+
+    englishFontLineHeight = englishSpriteSheet.sprites[0].height;
+    //console.log({ englishFontLineHeight });
+
+    await glassesDisplayCanvasHelper.uploadSpriteSheet(englishSpriteSheet);
+    await glassesDisplayCanvasHelper.selectSpriteSheet(englishSpriteSheet.name);
+    await glassesDisplayCanvasHelper.setSpritesLineHeight(
+      englishFontLineHeight
+    );
+    await drawGlassesDisplay();
+  } catch (error) {
+    console.error("error parsing font", error);
+  }
+}
+
+/** @type {HTMLSelectElement} */
+const setGlassesDisplayBrightnessSelect = document.getElementById(
+  "setGlassesDisplayBrightness"
+);
+
+/** @type {HTMLOptGroupElement} */
+const setGlassesDisplayBrightnessOptgroup =
+  setGlassesDisplayBrightnessSelect.querySelector("optgroup");
+BS.DisplayBrightnesses.forEach((displayBrightness) => {
+  setGlassesDisplayBrightnessOptgroup.appendChild(
+    new Option(displayBrightness)
+  );
+});
+setGlassesDisplayBrightnessSelect.addEventListener("input", (event) => {
+  glassesDisplayCanvasHelper.setBrightness(event.target.value);
+});
+setGlassesDisplayBrightnessSelect.value = glassesDisplayCanvasHelper.brightness;
+// GLASSES END

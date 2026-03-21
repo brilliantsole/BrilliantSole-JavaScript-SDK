@@ -53,6 +53,9 @@ export const PressureSensorEventTypes = [
   "pressureAutoRangeEnabled",
   "pressureAutoRangeDisabled",
   "pressureAutoRange",
+  "pressureMotionAutoRangeEnabled",
+  "pressureMotionAutoRangeDisabled",
+  "pressureMotionAutoRange",
   "isRecordingPressureCalibrationData",
   "pressureCalibrationDataRecordStart",
   "pressureCalibrationDataRecordStop",
@@ -71,6 +74,13 @@ export interface PressureSensorEventMessages {
   pressureAutoRange: {
     pressureAutoRange: boolean;
   };
+
+  pressureMotionAutoRangeEnabled: {};
+  pressureMotionAutoRangeDisabled: {};
+  pressureMotionAutoRange: {
+    pressureMotionAutoRange: boolean;
+  };
+
   isRecordingPressureCalibrationData: {
     isRecordingPressureCalibrationData: boolean;
   };
@@ -202,6 +212,29 @@ class PressureSensorDataManager {
   }
   toggleAutoRange() {
     this.setAutoRange(!this.autoRange);
+  }
+
+  #motionAutoRange = false;
+  get motionAutoRange() {
+    return this.#motionAutoRange;
+  }
+  setMotionAutoRange(newMotionAutoRange: boolean) {
+    if (this.#motionAutoRange == newMotionAutoRange) {
+      return;
+    }
+    this.#motionAutoRange = newMotionAutoRange;
+    _console.log({ motionAutoRange: this.motionAutoRange });
+    this.dispatchEvent("pressureMotionAutoRange", {
+      pressureMotionAutoRange: this.motionAutoRange,
+    });
+    if (this.motionAutoRange) {
+      this.dispatchEvent("pressureMotionAutoRangeEnabled", {});
+    } else {
+      this.dispatchEvent("pressureMotionAutoRangeDisabled", {});
+    }
+  }
+  toggleMotionAutoRange() {
+    this.setMotionAutoRange(!this.motionAutoRange);
   }
 
   #euler: Euler = structuredClone(defaultEuler);
@@ -355,7 +388,7 @@ class PressureSensorDataManager {
       this.#euler && Math.abs(timestamp - this.#eulerTimestamp) < 100;
     if (hasEuler) {
       if (isPressureAboveThreshold) {
-        if (this.autoRange) {
+        if (this.motionAutoRange) {
           this.#eulerCenterOfPressureRangeHelper.update({
             x: -this.#euler.roll,
             y: -this.#euler.pitch,

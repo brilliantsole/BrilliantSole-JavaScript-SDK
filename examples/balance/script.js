@@ -145,6 +145,22 @@ togglePressureAutoRangeButton.addEventListener("click", () => {
     : "enable pressure autoRange";
 });
 
+let pressureMotionAutoRange = false;
+/** @type {HTMLButtonElement} */
+const togglePressureMotionAutoRangeButton = document.getElementById(
+  "togglePressureMotionAutoRange"
+);
+devicePair.addEventListener("isConnected", () => {
+  togglePressureMotionAutoRangeButton.disabled = !devicePair.isConnected;
+});
+togglePressureMotionAutoRangeButton.addEventListener("click", () => {
+  pressureMotionAutoRange = !pressureMotionAutoRange;
+  devicePair.setPressureMotionAutoRange(pressureMotionAutoRange);
+  togglePressureMotionAutoRangeButton.innerText = pressureMotionAutoRange
+    ? "disable pressureMotion autoRange"
+    : "enable pressureMotion autoRange";
+});
+
 // GAME ROTATION
 let isGameRotationDataEnabled = false;
 
@@ -249,13 +265,13 @@ function onCenterOfPressure(center) {
 
   if (isPlayingGame) {
     isCenterOfPressureInsideTarget = target.isInside(center);
-    console.log({ isCenterOfPressureInsideTarget });
+    // console.log({ isCenterOfPressureInsideTarget });
     if (isCenterOfPressureInsideTarget) {
       if (insideTargetTimeoutId == undefined) {
         balanceContainer.classList.add("hover");
         insideTargetTimeoutId = setTimeout(() => {
           target.reset();
-        }, 3000);
+        }, 1750);
       }
     } else {
       if (insideTargetTimeoutId != undefined) {
@@ -296,4 +312,10 @@ websocketClient.addEventListener("connectionStatus", () => {
       break;
   }
   toggleServerConnectionButton.disabled = disabled;
+});
+
+/** @type {HTMLInputElement} */
+const centerOfPressureInput = document.getElementById("centerOfPressureInput");
+centerOfPressureInput.addEventListener("input", () => {
+  onCenterOfPressure(centerOfPressureInput.value);
 });

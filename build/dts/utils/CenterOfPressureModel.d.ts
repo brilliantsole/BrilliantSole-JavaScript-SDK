@@ -5,12 +5,11 @@ export type CenterOfPressureModelData = {
     inputs: number[][];
     outputs: number[][];
 };
-export type CenterOfPressureModelDataHeatmap = {};
 declare class CenterOfPressureModel {
     #private;
     constructor();
     eventDispatcher: PressureSensorEventDispatcher;
-    get dispatchEvent(): <T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: import("../sensor/PressureSensorDataManager.ts").PressureSensorEventMessages[T]) => void;
+    get dispatchEvent(): <T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "pressureMotionAutoRangeEnabled" | "pressureMotionAutoRangeDisabled" | "pressureMotionAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: import("../sensor/PressureSensorDataManager.ts").PressureSensorEventMessages[T]) => void;
     get model(): tf.Sequential | undefined;
     get numberOfSensors(): number;
     set numberOfSensors(newNumberOfSensors: number);

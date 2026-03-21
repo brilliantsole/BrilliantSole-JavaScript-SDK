@@ -18,8 +18,8 @@ var simplify = require('simplify-js');
 var fitCurve = require('fit-curve');
 require('svgson');
 require('svg-pathdata');
-var os = require('os');
 var noble = require('@stoprocent/noble');
+var os = require('os');
 var three = require('three');
 var dgram = require('dgram');
 
@@ -43,6 +43,7 @@ function _interopNamespaceDefault(e) {
 var tf__namespace = /*#__PURE__*/_interopNamespaceDefault(tf);
 var webbluetooth__namespace = /*#__PURE__*/_interopNamespaceDefault(webbluetooth);
 var _alawmulaw__namespace = /*#__PURE__*/_interopNamespaceDefault(_alawmulaw);
+var noble__namespace = /*#__PURE__*/_interopNamespaceDefault(noble);
 var dgram__namespace = /*#__PURE__*/_interopNamespaceDefault(dgram);
 
 const isInProduction =
@@ -1556,13 +1557,16 @@ class CenterOfPressureModel {
     }
 }
 
-const _console$I = createConsole("PressureDataManager", { log: true });
+const _console$I = createConsole("PressureDataManager", { log: false });
 const PressureSensorTypes = ["pressure"];
 const ContinuousPressureSensorTypes = PressureSensorTypes;
 const PressureSensorEventTypes = [
     "pressureAutoRangeEnabled",
     "pressureAutoRangeDisabled",
     "pressureAutoRange",
+    "pressureMotionAutoRangeEnabled",
+    "pressureMotionAutoRangeDisabled",
+    "pressureMotionAutoRange",
     "isRecordingPressureCalibrationData",
     "pressureCalibrationDataRecordStart",
     "pressureCalibrationDataRecordStop",
@@ -1648,6 +1652,29 @@ class PressureSensorDataManager {
     }
     toggleAutoRange() {
         this.setAutoRange(!this.autoRange);
+    }
+    #motionAutoRange = false;
+    get motionAutoRange() {
+        return this.#motionAutoRange;
+    }
+    setMotionAutoRange(newMotionAutoRange) {
+        if (this.#motionAutoRange == newMotionAutoRange) {
+            return;
+        }
+        this.#motionAutoRange = newMotionAutoRange;
+        _console$I.log({ motionAutoRange: this.motionAutoRange });
+        this.dispatchEvent("pressureMotionAutoRange", {
+            pressureMotionAutoRange: this.motionAutoRange,
+        });
+        if (this.motionAutoRange) {
+            this.dispatchEvent("pressureMotionAutoRangeEnabled", {});
+        }
+        else {
+            this.dispatchEvent("pressureMotionAutoRangeDisabled", {});
+        }
+    }
+    toggleMotionAutoRange() {
+        this.setMotionAutoRange(!this.motionAutoRange);
     }
     #euler = structuredClone(defaultEuler);
     #eulerTimestamp = 0;
@@ -1766,7 +1793,7 @@ class PressureSensorDataManager {
         const hasEuler = this.#euler && Math.abs(timestamp - this.#eulerTimestamp) < 100;
         if (hasEuler) {
             if (isPressureAboveThreshold) {
-                if (this.autoRange) {
+                if (this.motionAutoRange) {
                     this.#eulerCenterOfPressureRangeHelper.update({
                         x: -this.#euler.roll,
                         y: -this.#euler.pitch,
@@ -13419,6 +13446,16 @@ class Device {
     get togglePressureAutoRange() {
         return this.#sensorDataManager.pressureSensorDataManager.toggleAutoRange;
     }
+    get autoPressureMotionRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.motionAutoRange;
+    }
+    get setPressureMotionAutoRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.setMotionAutoRange;
+    }
+    get togglePressureMotionAutoRange() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .toggleMotionAutoRange;
+    }
     get resetPressureRange() {
         return this.#sensorDataManager.pressureSensorDataManager.resetRange;
     }
@@ -14359,7 +14396,7 @@ class DevicePairPressureSensorDataManager {
         });
         pressureData.normalizedSum +=
             this.#normalizedSumRangeHelper.updateAndGetNormalization(pressureData.scaledSum);
-        if (numberOfSidesWithCenter > 0) {
+        if (numberOfSidesWithCenter == 2) {
             pressureData.center = { x: 0, y: 0 };
             Sides.forEach((side) => {
                 const sidePressureData = this.#rawPressure[side];
@@ -14373,8 +14410,8 @@ class DevicePairPressureSensorDataManager {
                 const sidePressureWeight = sidePressureData.scaledSum / pressureData.scaledSum;
                 if (sidePressureWeight > 0) {
                     if (centerOfPressure) {
-                        pressureData.center.x += centerOfPressure.x * (1 / 2);
-                        pressureData.center.y += centerOfPressure.y * (1 / 2);
+                        pressureData.center.x += centerOfPressure.x * 0.5;
+                        pressureData.center.y += centerOfPressure.y * 0.5;
                     }
                     else {
                         if (sidePressureData.normalizedCenter?.y != undefined) {
@@ -14629,6 +14666,12 @@ class DevicePair {
     togglePressureAutoRange() {
         Sides.forEach((side) => this[side]?.togglePressureAutoRange());
     }
+    setPressureMotionAutoRange(newPressureMotionAutoRange) {
+        Sides.forEach((side) => this[side]?.setPressureMotionAutoRange(newPressureMotionAutoRange));
+    }
+    togglePressureMotionAutoRange() {
+        Sides.forEach((side) => this[side]?.togglePressureMotionAutoRange());
+    }
     async triggerVibration(vibrationConfigurations, sendImmediately) {
         const promises = Sides.map((side) => {
             return this[side]?.triggerVibration(vibrationConfigurations, sendImmediately);
@@ -14876,6 +14919,10 @@ _a$1 = BaseScanner;
 
 const _console$6 = createConsole("NobleConnectionManager", { log: false });
 let filterUUIDs = true;
+noble__namespace.withBindings("default", {
+    extended: true,
+    userChannel: true,
+});
 const isLinux$1 = os.platform() == "linux";
 filterUUIDs = !isLinux$1;
 class NobleConnectionManager extends BluetoothConnectionManager {

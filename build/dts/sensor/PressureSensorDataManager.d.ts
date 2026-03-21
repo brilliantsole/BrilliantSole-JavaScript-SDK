@@ -31,13 +31,18 @@ export interface PressureDataEventMessages {
         pressure: PressureData;
     };
 }
-export declare const PressureSensorEventTypes: readonly ["pressureAutoRangeEnabled", "pressureAutoRangeDisabled", "pressureAutoRange", "isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
+export declare const PressureSensorEventTypes: readonly ["pressureAutoRangeEnabled", "pressureAutoRangeDisabled", "pressureAutoRange", "pressureMotionAutoRangeEnabled", "pressureMotionAutoRangeDisabled", "pressureMotionAutoRange", "isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
 export type PressureSensorEventType = (typeof PressureSensorEventTypes)[number];
 export interface PressureSensorEventMessages {
     pressureAutoRangeEnabled: {};
     pressureAutoRangeDisabled: {};
     pressureAutoRange: {
         pressureAutoRange: boolean;
+    };
+    pressureMotionAutoRangeEnabled: {};
+    pressureMotionAutoRangeDisabled: {};
+    pressureMotionAutoRange: {
+        pressureMotionAutoRange: boolean;
     };
     isRecordingPressureCalibrationData: {
         isRecordingPressureCalibrationData: boolean;
@@ -72,7 +77,7 @@ declare class PressureSensorDataManager {
     constructor();
     get eventDispatcher(): PressureSensorEventDispatcher;
     set eventDispatcher(eventDispatcher: PressureSensorEventDispatcher);
-    get dispatchEvent(): <T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: PressureSensorEventMessages[T]) => void;
+    get dispatchEvent(): <T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "pressureMotionAutoRangeEnabled" | "pressureMotionAutoRangeDisabled" | "pressureMotionAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: PressureSensorEventMessages[T]) => void;
     get positions(): Vector2[];
     get numberOfSensors(): number;
     parsePositions(dataView: DataView<ArrayBuffer>): void;
@@ -80,6 +85,9 @@ declare class PressureSensorDataManager {
     get autoRange(): boolean;
     setAutoRange(newAutoRange: boolean): void;
     toggleAutoRange(): void;
+    get motionAutoRange(): boolean;
+    setMotionAutoRange(newMotionAutoRange: boolean): void;
+    toggleMotionAutoRange(): void;
     onEuler(euler: Euler, timestamp: number): void;
     get calibrationModel(): tf.Sequential | undefined;
     get isCalibrationModelTrained(): boolean;

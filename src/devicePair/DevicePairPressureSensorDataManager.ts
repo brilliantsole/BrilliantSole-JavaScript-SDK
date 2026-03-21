@@ -99,7 +99,7 @@ class DevicePairPressureSensorDataManager {
         pressureData.scaledSum
       );
 
-    if (numberOfSidesWithCenter > 0) {
+    if (numberOfSidesWithCenter == 2) {
       pressureData.center = { x: 0, y: 0 };
       Sides.forEach((side) => {
         const sidePressureData = this.#rawPressure[side]!;
@@ -116,8 +116,8 @@ class DevicePairPressureSensorDataManager {
         if (sidePressureWeight > 0) {
           if (centerOfPressure) {
             // simple average
-            pressureData.center!.x += centerOfPressure.x * (1 / 2);
-            pressureData.center!.y += centerOfPressure.y * (1 / 2);
+            pressureData.center!.x += centerOfPressure.x * 0.5;
+            pressureData.center!.y += centerOfPressure.y * 0.5;
           } else if (true) {
             // average across pressureData
             if (sidePressureData.normalizedCenter?.y != undefined) {

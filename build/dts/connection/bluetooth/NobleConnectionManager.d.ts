@@ -1,6 +1,6 @@
 import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 /** NODE_START */
-import type * as noble from "@stoprocent/noble";
+import * as noble from "@stoprocent/noble";
 /** NODE_END */
 import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs.ts";
 import { ConnectionType } from "../BaseConnectionManager.ts";

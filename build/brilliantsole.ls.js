@@ -1680,11 +1680,11 @@
   }
 
   const _console$z = createConsole("PressureDataManager", {
-    log: true
+    log: false
   });
   const PressureSensorTypes = ["pressure"];
   const ContinuousPressureSensorTypes = PressureSensorTypes;
-  const PressureSensorEventTypes = ["pressureAutoRangeEnabled", "pressureAutoRangeDisabled", "pressureAutoRange", "isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
+  const PressureSensorEventTypes = ["pressureAutoRangeEnabled", "pressureAutoRangeDisabled", "pressureAutoRange", "pressureMotionAutoRangeEnabled", "pressureMotionAutoRangeDisabled", "pressureMotionAutoRange", "isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
   const DefaultNumberOfPressureSensors = 8;
   var _eventDispatcher$3 = new WeakMap();
   var _positions = new WeakMap();
@@ -1692,6 +1692,7 @@
   var _normalizedSumRangeHelper$1 = new WeakMap();
   var _centerOfPressureHelper$1 = new WeakMap();
   var _autoRange = new WeakMap();
+  var _motionAutoRange = new WeakMap();
   var _euler$1 = new WeakMap();
   var _eulerTimestamp = new WeakMap();
   var _eulerCenterOfPressureRangeHelper = new WeakMap();
@@ -1708,6 +1709,7 @@
       _classPrivateFieldInitSpec(this, _normalizedSumRangeHelper$1, new RangeHelper());
       _classPrivateFieldInitSpec(this, _centerOfPressureHelper$1, new CenterOfPressureHelper());
       _classPrivateFieldInitSpec(this, _autoRange, true);
+      _classPrivateFieldInitSpec(this, _motionAutoRange, false);
       _classPrivateFieldInitSpec(this, _euler$1, structuredClone(defaultEuler));
       _classPrivateFieldInitSpec(this, _eulerTimestamp, 0);
       _classPrivateFieldInitSpec(this, _eulerCenterOfPressureRangeHelper, new CenterOfPressureHelper());
@@ -1783,6 +1785,29 @@
     }
     toggleAutoRange() {
       this.setAutoRange(!this.autoRange);
+    }
+    get motionAutoRange() {
+      return _classPrivateFieldGet2(_motionAutoRange, this);
+    }
+    setMotionAutoRange(newMotionAutoRange) {
+      if (_classPrivateFieldGet2(_motionAutoRange, this) == newMotionAutoRange) {
+        return;
+      }
+      _classPrivateFieldSet2(_motionAutoRange, this, newMotionAutoRange);
+      _console$z.log({
+        motionAutoRange: this.motionAutoRange
+      });
+      this.dispatchEvent("pressureMotionAutoRange", {
+        pressureMotionAutoRange: this.motionAutoRange
+      });
+      if (this.motionAutoRange) {
+        this.dispatchEvent("pressureMotionAutoRangeEnabled", {});
+      } else {
+        this.dispatchEvent("pressureMotionAutoRangeDisabled", {});
+      }
+    }
+    toggleMotionAutoRange() {
+      this.setMotionAutoRange(!this.motionAutoRange);
     }
     onEuler(euler, timestamp) {
       Object.assign(_classPrivateFieldGet2(_euler$1, this), euler);
@@ -1875,7 +1900,7 @@
       const hasEuler = _classPrivateFieldGet2(_euler$1, this) && Math.abs(timestamp - _classPrivateFieldGet2(_eulerTimestamp, this)) < 100;
       if (hasEuler) {
         if (isPressureAboveThreshold) {
-          if (this.autoRange) {
+          if (this.motionAutoRange) {
             _classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).update({
               x: -_classPrivateFieldGet2(_euler$1, this).roll,
               y: -_classPrivateFieldGet2(_euler$1, this).pitch
@@ -34043,6 +34068,15 @@
     get togglePressureAutoRange() {
       return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.toggleAutoRange;
     }
+    get autoPressureMotionRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.motionAutoRange;
+    }
+    get setPressureMotionAutoRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.setMotionAutoRange;
+    }
+    get togglePressureMotionAutoRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.toggleMotionAutoRange;
+    }
     get resetPressureRange() {
       return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.resetRange;
     }
@@ -35202,7 +35236,7 @@
       pressureData.scaledSum += sidePressure.scaledSum;
     });
     pressureData.normalizedSum += _classPrivateFieldGet2(_normalizedSumRangeHelper, this).updateAndGetNormalization(pressureData.scaledSum);
-    if (numberOfSidesWithCenter > 0) {
+    if (numberOfSidesWithCenter == 2) {
       pressureData.center = {
         x: 0,
         y: 0
@@ -35218,8 +35252,8 @@
         const sidePressureWeight = sidePressureData.scaledSum / pressureData.scaledSum;
         if (sidePressureWeight > 0) {
           if (centerOfPressure) {
-            pressureData.center.x += centerOfPressure.x * (1 / 2);
-            pressureData.center.y += centerOfPressure.y * (1 / 2);
+            pressureData.center.x += centerOfPressure.x * 0.5;
+            pressureData.center.y += centerOfPressure.y * 0.5;
           } else {
             var _sidePressureData$nor;
             if (((_sidePressureData$nor = sidePressureData.normalizedCenter) === null || _sidePressureData$nor === void 0 ? void 0 : _sidePressureData$nor.y) != undefined) {
@@ -35440,10 +35474,22 @@
         return (_this$side6 = this[side]) === null || _this$side6 === void 0 ? void 0 : _this$side6.togglePressureAutoRange();
       });
     }
+    setPressureMotionAutoRange(newPressureMotionAutoRange) {
+      Sides.forEach(side => {
+        var _this$side7;
+        return (_this$side7 = this[side]) === null || _this$side7 === void 0 ? void 0 : _this$side7.setPressureMotionAutoRange(newPressureMotionAutoRange);
+      });
+    }
+    togglePressureMotionAutoRange() {
+      Sides.forEach(side => {
+        var _this$side8;
+        return (_this$side8 = this[side]) === null || _this$side8 === void 0 ? void 0 : _this$side8.togglePressureMotionAutoRange();
+      });
+    }
     async triggerVibration(vibrationConfigurations, sendImmediately) {
       const promises = Sides.map(side => {
-        var _this$side7;
-        return (_this$side7 = this[side]) === null || _this$side7 === void 0 ? void 0 : _this$side7.triggerVibration(vibrationConfigurations, sendImmediately);
+        var _this$side9;
+        return (_this$side9 = this[side]) === null || _this$side9 === void 0 ? void 0 : _this$side9.triggerVibration(vibrationConfigurations, sendImmediately);
       }).filter(Boolean);
       return Promise.allSettled(promises);
     }
