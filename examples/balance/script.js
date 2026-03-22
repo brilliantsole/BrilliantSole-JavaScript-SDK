@@ -179,10 +179,9 @@ toggleGameRotationButton.addEventListener("click", () => {
   });
 });
 
-/** @param {BS.CenterOfPressure} center  */
-function updateUIOnCenterOfPressure(center) {
+function updateUIOnCenterOfPressure() {
   devicePair.sides.forEach((side) => {
-    let height = center.x;
+    let height = currentCenter.x;
     if (side == "left") {
       height = 1 - height;
     }
@@ -208,6 +207,7 @@ toggleGameButton.addEventListener("click", () => {
   } else {
     balanceContainer.classList.remove("game");
   }
+  drawGlassesDisplay();
 });
 
 /**
@@ -223,15 +223,27 @@ const target = {
   height: 0,
   start: 0,
 
-  /** @param {BS.CenterOfPressure} center  */
-  isInside(center) {
-    console.log(center, this);
-    return center.x >= this.start && center.x <= this.start + this.height;
+  get isInside() {
+    // console.log(currentCenter, this);
+    return !this.isBelow && !this.isAbove;
+  },
+  get isBelow() {
+    return currentCenter.x < this.start;
+  },
+  get isAbove() {
+    return currentCenter.x > this.start + this.height;
+  },
+  get insideInterpolation() {
+    if (!this.isInside) {
+      return 0;
+    }
+    return (currentCenter.x - this.start) / this.height;
   },
 
   reset() {
-    balanceContainer.classList.remove("hover");
+    clearTimeout(insideTargetTimeoutId);
     insideTargetTimeoutId = undefined;
+    balanceContainer.classList.remove("hover");
 
     this.height = randomValueBetween(0.1, 0.2);
     this.start = randomValueBetween(0, 1 - this.height);
@@ -244,6 +256,8 @@ const target = {
       balanceSideElements[side].target.style.bottom = `${bottom * 100}%`;
       balanceSideElements[side].target.style.height = `${this.height * 100}%`;
     });
+
+    drawGlassesDisplay();
   },
 };
 
@@ -259,15 +273,22 @@ devicePair.addEventListener("pressure", (event) => {
   }
 });
 
+/** @type {BS.CenterOfPressure} */
+let currentCenter = { x: 0, y: 0 };
+let isInsideStartTime = 0;
+const insideTimeDuration = 1500;
+
 /** @param {BS.CenterOfPressure} center */
 function onCenterOfPressure(center) {
-  updateUIOnCenterOfPressure(center);
+  currentCenter = center;
+  updateUIOnCenterOfPressure();
 
   if (isPlayingGame) {
-    isCenterOfPressureInsideTarget = target.isInside(center);
+    isCenterOfPressureInsideTarget = target.isInside;
     // console.log({ isCenterOfPressureInsideTarget });
     if (isCenterOfPressureInsideTarget) {
       if (insideTargetTimeoutId == undefined) {
+        isInsideStartTime = Date.now();
         balanceContainer.classList.add("hover");
         insideTargetTimeoutId = setTimeout(() => {
           target.reset();
@@ -281,6 +302,7 @@ function onCenterOfPressure(center) {
       }
     }
   }
+  drawGlassesDisplay();
 }
 window.onCenterOfPressure = onCenterOfPressure; // for manual testing
 
@@ -319,3 +341,297 @@ const centerOfPressureInput = document.getElementById("centerOfPressureInput");
 centerOfPressureInput.addEventListener("input", () => {
   onCenterOfPressure(centerOfPressureInput.value);
 });
+
+// GLASSES START
+const glassesDisplayTargetColors = ["yellow", "limegreen"];
+const glassesDisplayCanvasHelper = new BS.DisplayCanvasHelper();
+glassesDisplayCanvasHelper.setColor(1, "white");
+glassesDisplayCanvasHelper.setColor(2, "red");
+glassesDisplayCanvasHelper.setColor(3, glassesDisplayTargetColors[0]);
+glassesDisplayCanvasHelper.setColor(4, "blue");
+glassesDisplayCanvasHelper.flushContextCommands();
+const glassesDisplayCanvas = document.getElementById("glassesDisplay");
+glassesDisplayCanvasHelper.canvas = glassesDisplayCanvas;
+window.glassesDisplayCanvasHelper = glassesDisplayCanvasHelper;
+
+const glassesDevice = new BS.Device();
+const toggleGlassesConnectionButton = document.getElementById(
+  "toggleGlassesConnection"
+);
+toggleGlassesConnectionButton.addEventListener("click", () => {
+  glassesDevice.toggleConnection(false);
+});
+glassesDevice.addEventListener("connectionStatus", (event) => {
+  const { connectionStatus } = event.message;
+  let innerText = connectionStatus;
+  switch (connectionStatus) {
+    case "notConnected":
+      innerText = "connect";
+      break;
+    case "connected":
+      innerText = "disconnect";
+      break;
+  }
+  toggleGlassesConnectionButton.innerText = innerText;
+});
+glassesDevice.addEventListener("connected", () => {
+  if (!glassesDevice.isGlasses || !glassesDevice.isDisplayAvailable) {
+    glassesDevice.disconnect();
+  }
+  glassesDisplayCanvasHelper.device = glassesDevice;
+});
+
+/** @type {HTMLProgressElement} */
+const glassesFileTransferProgress = document.getElementById(
+  "glassesFileTransferProgress"
+);
+glassesDevice.addEventListener("fileTransferProgress", (event) => {
+  const progress = event.message.progress;
+  //console.log({ progress });
+  glassesFileTransferProgress.value = progress == 1 ? 0 : progress;
+});
+glassesDevice.addEventListener("fileTransferStatus", () => {
+  if (glassesDevice.fileTransferStatus == "ready") {
+    glassesFileTransferProgress.value = 0;
+  }
+});
+
+glassesDisplayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadStart",
+  () => {
+    isUploadingToGlasses = true;
+  }
+);
+glassesDisplayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadComplete",
+  () => {
+    isUploadingToGlasses = false;
+  }
+);
+glassesDisplayCanvasHelper.addEventListener("deviceUpdated", () => {
+  drawGlassesDisplay();
+});
+
+let isUploadingToGlasses = false;
+let isDrawingToGlassesDisplay = false;
+let isWaitingToRedrawToGlassesDisplay = false;
+
+const drawGlassesParams = {
+  offset: {
+    x: 640 / 2,
+    y: 400 / 2,
+  },
+  size: {
+    width: 60,
+    height: 200,
+  },
+  padding: 30,
+  innerPadding: 0,
+  lineWidth: 7,
+  lineWidth2: 3,
+  borderRadius: 12,
+  borderRadius2: 5,
+};
+
+let drawGlassesDisplay = async () => {
+  if (isUploadingToGlasses) {
+    return;
+  }
+  if (isDrawingToGlassesDisplay) {
+    //console.warn("busy drawing");
+    isWaitingToRedrawToGlassesDisplay = true;
+    return;
+  }
+  isDrawingToGlassesDisplay = true;
+
+  // console.log("drawGlassesDisplay");
+  const displayCanvasHelper = glassesDisplayCanvasHelper;
+
+  const {
+    offset,
+    size,
+    padding,
+    lineWidth,
+    lineWidth2,
+    borderRadius,
+    borderRadius2,
+    innerPadding,
+  } = drawGlassesParams;
+
+  const innerWidth = size.width - innerPadding;
+
+  await displayCanvasHelper.setHorizontalAlignment("center");
+  await displayCanvasHelper.setVerticalAlignment("center");
+
+  const interpolation = currentCenter.x;
+
+  await glassesDisplayCanvasHelper.setColor(
+    3,
+    glassesDisplayTargetColors[target.isInside ? 1 : 0]
+  );
+
+  for (let i = 0; i < 2; i++) {
+    const side = i == 0 ? "left" : "right";
+
+    if (false) {
+      await displayCanvasHelper.setFillBackground(true);
+      await displayCanvasHelper.selectBackgroundColor(2);
+    }
+
+    await displayCanvasHelper.setVerticalAlignment("center");
+
+    let xOffset = (size.width + padding) / 2;
+    if (side == "left") {
+      xOffset *= -1;
+    }
+    const x = offset.x + xOffset;
+    await displayCanvasHelper.selectSpriteColor(1, 1);
+    await displayCanvasHelper.selectSpriteColor(2, 2);
+    await displayCanvasHelper.startSprite(
+      x,
+      offset.y,
+      size.width + lineWidth,
+      size.height + lineWidth
+    );
+
+    let yInterpolation = interpolation;
+    if (side == "left") {
+      yInterpolation = 1 - yInterpolation;
+    }
+
+    await displayCanvasHelper.setLineWidth(0);
+    await displayCanvasHelper.selectFillColor(2);
+    await displayCanvasHelper.setIgnoreFill(false);
+    await displayCanvasHelper.setVerticalAlignment("end");
+    await displayCanvasHelper.drawRect(
+      0,
+      size.height / 2 - lineWidth / 2,
+      innerWidth,
+      (size.height - lineWidth) * yInterpolation
+    );
+
+    await displayCanvasHelper.setVerticalAlignment("center");
+    await displayCanvasHelper.setLineWidth(lineWidth);
+    await displayCanvasHelper.selectLineColor(1);
+    await displayCanvasHelper.setIgnoreFill(true);
+    await displayCanvasHelper.drawRoundRect(
+      0,
+      0,
+      innerWidth,
+      size.height,
+      borderRadius
+    );
+
+    await displayCanvasHelper.endSprite();
+
+    if (isPlayingGame) {
+      let targetY = size.height / 2;
+      targetY += -size.height * target.start;
+      if (side == "left") {
+        targetY *= -1;
+      }
+      targetY += offset.y;
+
+      await displayCanvasHelper.setVerticalAlignment(
+        side == "left" ? "start" : "end"
+      );
+
+      await displayCanvasHelper.selectSpriteColor(1, 2);
+      await displayCanvasHelper.selectSpriteColor(2, 3);
+      await displayCanvasHelper.selectSpriteColor(3, 4);
+      await displayCanvasHelper.startSprite(
+        x,
+        targetY,
+        size.width + 20,
+        size.height * target.height
+      );
+
+      await displayCanvasHelper.setLineWidth(0);
+      await displayCanvasHelper.selectFillColor(2);
+      await displayCanvasHelper.drawRoundRect(
+        0,
+        0,
+        size.width + 20,
+        size.height * target.height,
+        borderRadius2
+      );
+
+      let targetInterpolation = 0;
+      if (target.isInside) {
+        targetInterpolation = target.insideInterpolation;
+        if (side == "left") {
+          targetInterpolation = 1 - targetInterpolation;
+        }
+      } else {
+        if (target.isAbove) {
+          targetInterpolation = side == "left" ? 0 : 1;
+        } else {
+          targetInterpolation = side == "left" ? 1 : 0;
+        }
+      }
+
+      await displayCanvasHelper.setIgnoreFill(false);
+      await displayCanvasHelper.setLineWidth(0);
+      await displayCanvasHelper.setVerticalAlignment("end");
+      await displayCanvasHelper.selectFillColor(1);
+      await displayCanvasHelper.drawRect(
+        0,
+        (target.height * size.height) / 2,
+        size.width - Math.floor(padding / 4),
+        target.height * size.height * targetInterpolation
+      );
+
+      if (target.isInside) {
+        const now = Date.now();
+        let timeInterpolation =
+          (now - isInsideStartTime) / (insideTimeDuration + 100);
+        timeInterpolation = Math.max(0, Math.min(1, timeInterpolation));
+        console.log({ timeInterpolation });
+
+        await displayCanvasHelper.setVerticalAlignment("center");
+        await displayCanvasHelper.setLineWidth(lineWidth);
+        await displayCanvasHelper.selectLineColor(3);
+        await displayCanvasHelper.setIgnoreFill(true);
+        await displayCanvasHelper.drawRoundRect(
+          0,
+          0,
+          (size.width + 20) * (1 - timeInterpolation),
+          size.height * target.height * (1 - timeInterpolation),
+          0.5 * borderRadius2 * (1 + timeInterpolation * 1)
+        );
+      }
+
+      await displayCanvasHelper.endSprite();
+    }
+  }
+
+  await displayCanvasHelper.show();
+};
+window.draw = drawGlassesDisplay;
+
+glassesDisplayCanvasHelper.addEventListener("ready", () => {
+  isDrawingToGlassesDisplay = false;
+  if (isWaitingToRedrawToGlassesDisplay || (isPlayingGame && target.isInside)) {
+    isWaitingToRedrawToGlassesDisplay = false;
+    drawGlassesDisplay();
+  }
+});
+
+/** @type {HTMLSelectElement} */
+const setGlassesDisplayBrightnessSelect = document.getElementById(
+  "setGlassesDisplayBrightness"
+);
+
+/** @type {HTMLOptGroupElement} */
+const setGlassesDisplayBrightnessOptgroup =
+  setGlassesDisplayBrightnessSelect.querySelector("optgroup");
+BS.DisplayBrightnesses.forEach((displayBrightness) => {
+  setGlassesDisplayBrightnessOptgroup.appendChild(
+    new Option(displayBrightness)
+  );
+});
+setGlassesDisplayBrightnessSelect.addEventListener("input", (event) => {
+  glassesDisplayCanvasHelper.setBrightness(event.target.value);
+});
+setGlassesDisplayBrightnessSelect.value = glassesDisplayCanvasHelper.brightness;
+// GLASSES END

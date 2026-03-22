@@ -631,6 +631,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     for (const [index, color] of this.colors.entries()) {
+      _console.log("updating color", { index, color });
       await this.device?.setDisplayColor(index, color, false);
     }
     if (sendImmediately) {

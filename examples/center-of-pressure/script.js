@@ -295,11 +295,13 @@ glassesDisplayCanvasHelper.setColor(1, "white");
 glassesDisplayCanvasHelper.setColor(2, "red");
 glassesDisplayCanvasHelper.setColor(3, glassesDisplayTargetColors[0]);
 glassesDisplayCanvasHelper.setColor(4, "blue");
+glassesDisplayCanvasHelper.flushContextCommands();
 const glassesDisplayCanvas = document.getElementById("glassesDisplay");
 glassesDisplayCanvasHelper.canvas = glassesDisplayCanvas;
 window.glassesDisplayCanvasHelper = glassesDisplayCanvasHelper;
 
 const glassesDevice = new BS.Device();
+window.glassesDevice = glassesDevice;
 const toggleGlassesConnectionButton = document.getElementById(
   "toggleGlassesConnection"
 );
@@ -402,7 +404,6 @@ let drawGlassesDisplay = async () => {
   await displayCanvasHelper.setVerticalAlignment("center");
 
   await displayCanvasHelper.setIgnoreFill(true);
-  await displayCanvasHelper.setIgnoreLine(false);
   await displayCanvasHelper.setLineWidth(8);
   await displayCanvasHelper.selectFillColor(1);
   await displayCanvasHelper.drawRoundRect(
@@ -448,22 +449,23 @@ let drawGlassesDisplay = async () => {
 
     if (target.isInside) {
       const now = Date.now();
-      let interpolation =
+      let timeInterpolation =
         (now - isInsideStartTime) / (insideTimeDuration + 100);
-      interpolation = Math.max(0, Math.min(1, interpolation));
-      // console.log({ interpolation });
+      timeInterpolation = Math.max(0, Math.min(1, timeInterpolation));
+      // console.log({ timeInterpolation });
       await displayCanvasHelper.setLineWidth(5);
       await displayCanvasHelper.setIgnoreFill(true);
       await displayCanvasHelper.drawRoundRect(
         0,
         0,
-        target.width * width2 * (1 - interpolation),
-        target.height * height2 * (1 - interpolation),
-        10 + interpolation * 10
+        target.width * width2 * (1 - timeInterpolation),
+        target.height * height2 * (1 - timeInterpolation),
+        10 + timeInterpolation * 10
       );
     }
 
     await displayCanvasHelper.endSprite();
+
     await displayCanvasHelper.setFillBackground(false);
   }
 
@@ -471,7 +473,6 @@ let drawGlassesDisplay = async () => {
   await displayCanvasHelper.setHorizontalAlignment("center");
   await displayCanvasHelper.setVerticalAlignment("center");
   await displayCanvasHelper.setIgnoreFill(false);
-  await displayCanvasHelper.setIgnoreLine(true);
   await displayCanvasHelper.selectFillColor(2);
   await displayCanvasHelper.drawCircle(
     offset.x + width * (currentCenter.x - 0.5),
@@ -485,7 +486,7 @@ window.draw = drawGlassesDisplay;
 
 glassesDisplayCanvasHelper.addEventListener("ready", () => {
   isDrawingToGlassesDisplay = false;
-  if (isWaitingToRedrawToGlassesDisplay || target.isInside) {
+  if (isWaitingToRedrawToGlassesDisplay || (isPlayingGame && target.isInside)) {
     isWaitingToRedrawToGlassesDisplay = false;
     drawGlassesDisplay();
   }

@@ -36413,7 +36413,7 @@ class Device {
 }
 _a$1 = Device;
 
-const _console$6 = createConsole("DisplayCanvasHelper", { log: false });
+const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
     "numberOfColors",
@@ -36730,6 +36730,7 @@ class DisplayCanvasHelper {
             return;
         }
         for (const [index, color] of this.colors.entries()) {
+            _console$6.log("updating color", { index, color });
             await this.device?.setDisplayColor(index, color, false);
         }
         if (sendImmediately) {
