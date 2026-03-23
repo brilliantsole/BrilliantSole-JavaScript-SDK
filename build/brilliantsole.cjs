@@ -1106,6 +1106,10 @@ function pointInPolygon(pt, polygon) {
 
 const initialRange = { min: Infinity, max: -Infinity, span: 0 };
 class RangeHelper {
+    #updatedAtLeastOnce = false;
+    get updatedAtLeastOnce() {
+        return this.#updatedAtLeastOnce;
+    }
     #range = structuredClone(initialRange);
     get min() {
         return this.#range.min;
@@ -1134,11 +1138,13 @@ class RangeHelper {
     }
     reset() {
         Object.assign(this.#range, initialRange);
+        this.#updatedAtLeastOnce = false;
     }
     update(value) {
         this.#range.min = Math.min(value, this.#range.min);
         this.#range.max = Math.max(value, this.#range.max);
         this.#updateSpan();
+        this.#updatedAtLeastOnce = true;
     }
     getNormalization(value, weightByRange, clampValue = true) {
         let normalization = getInterpolation(value, this.#range.min, this.#range.max, this.#range.span);
@@ -1162,13 +1168,19 @@ class RangeHelper2 {
         x: new RangeHelper(),
         y: new RangeHelper(),
     };
+    #updatedAtLeastOnce = false;
+    get updatedAtLeastOnce() {
+        return this.#updatedAtLeastOnce;
+    }
     reset() {
         this.#range.x.reset();
         this.#range.y.reset();
+        this.#updatedAtLeastOnce = false;
     }
     update(vector2) {
         this.#range.x.update(vector2.x);
         this.#range.y.update(vector2.y);
+        this.#updatedAtLeastOnce = true;
     }
     getNormalization(vector2, weightByRange, clampValue) {
         return {
@@ -1799,11 +1811,13 @@ class PressureSensorDataManager {
                         y: -this.#euler.pitch,
                     });
                 }
-                pressureData.motionCenter =
-                    this.#eulerCenterOfPressureRangeHelper.getNormalization({
-                        x: -this.#euler.roll,
-                        y: -this.#euler.pitch,
-                    });
+                if (this.#eulerCenterOfPressureRangeHelper.updatedAtLeastOnce) {
+                    pressureData.motionCenter =
+                        this.#eulerCenterOfPressureRangeHelper.getNormalization({
+                            x: -this.#euler.roll,
+                            y: -this.#euler.pitch,
+                        });
+                }
             }
         }
         if (isPressureAboveThreshold) {

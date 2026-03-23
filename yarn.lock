@@ -1557,6 +1557,13 @@
     "@sigstore/protobuf-specs" "^0.2.0"
     tuf-js "^1.1.7"
 
+"@sparkjsdev/spark@^0.1.10":
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/@sparkjsdev/spark/-/spark-0.1.10.tgz#645e299138e7f3f9fa5be5b276c50cb1a9329de3"
+  integrity sha512-CiijdZQuj7KPDUqIZPiEqyUkJCYo1JqR05vq/V+ElxMwqR7L70ZuZDyIKcasjZHSiPB8pGRMH8HZGqUKO9aRPQ==
+  dependencies:
+    fflate "^0.8.2"
+
 "@stoprocent/bluetooth-hci-socket@^2.2.6":
   version "2.2.6"
   resolved "https://registry.yarnpkg.com/@stoprocent/bluetooth-hci-socket/-/bluetooth-hci-socket-2.2.6.tgz#1db93204db2275d64a6c55641daedc0871f1cbda"
@@ -1571,10 +1578,9 @@
   optionalDependencies:
     usb "^2.14.0"
 
-"@stoprocent/noble@^2.3.17":
-  version "2.3.17"
-  resolved "https://registry.yarnpkg.com/@stoprocent/noble/-/noble-2.3.17.tgz#771f0ce7777a5ae64c60a52402a95b3926c52e0c"
-  integrity sha512-m1BP+B+8sYCzsnJDBeoZYQGDdGanXXXIPx3hVKBbR4tWcJFQ0RK8GM1PcavEuYW4+xkmf75MvodM/b9vT25F7A==
+"@stoprocent/noble@github:zakaton/noble":
+  version "1.12.0"
+  resolved "https://codeload.github.com/zakaton/noble/tar.gz/2eb1c08b8ab197181162ab42b7c2aa9fb4ebd2b2"
   dependencies:
     debug "^4.3.7"
     node-addon-api "^8.1.0"
@@ -2965,7 +2971,7 @@ fastq@^1.6.0:
   dependencies:
     reusify "^1.0.4"
 
-fflate@~0.8.2:
+fflate@^0.8.2, fflate@~0.8.2:
   version "0.8.2"
   resolved "https://registry.yarnpkg.com/fflate/-/fflate-0.8.2.tgz#fc8631f5347812ad6028bbe4a2308b2792aa1dea"
   integrity sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==

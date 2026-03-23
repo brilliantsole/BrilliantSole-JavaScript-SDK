@@ -394,11 +394,13 @@ class PressureSensorDataManager {
             y: -this.#euler.pitch,
           });
         }
-        pressureData.motionCenter =
-          this.#eulerCenterOfPressureRangeHelper.getNormalization({
-            x: -this.#euler.roll,
-            y: -this.#euler.pitch,
-          });
+        if (this.#eulerCenterOfPressureRangeHelper.updatedAtLeastOnce) {
+          pressureData.motionCenter =
+            this.#eulerCenterOfPressureRangeHelper.getNormalization({
+              x: -this.#euler.roll,
+              y: -this.#euler.pitch,
+            });
+        }
       }
     }
 

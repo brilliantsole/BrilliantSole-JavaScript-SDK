@@ -9,6 +9,11 @@ export interface Range {
 const initialRange: Range = { min: Infinity, max: -Infinity, span: 0 };
 
 class RangeHelper {
+  #updatedAtLeastOnce = false;
+  get updatedAtLeastOnce() {
+    return this.#updatedAtLeastOnce;
+  }
+
   #range: Range = structuredClone(initialRange);
   get min() {
     return this.#range.min;
@@ -41,12 +46,14 @@ class RangeHelper {
 
   reset() {
     Object.assign(this.#range, initialRange);
+    this.#updatedAtLeastOnce = false;
   }
 
   update(value: number) {
     this.#range.min = Math.min(value, this.#range.min);
     this.#range.max = Math.max(value, this.#range.max);
     this.#updateSpan();
+    this.#updatedAtLeastOnce = true;
   }
 
   getNormalization(

@@ -84,6 +84,7 @@ interface Range {
 }
 declare class RangeHelper {
     #private;
+    get updatedAtLeastOnce(): boolean;
     get min(): number;
     get max(): number;
     get span(): number;
@@ -1046,6 +1047,7 @@ declare class CenterOfPressureModel {
 
 declare class RangeHelper2 {
     #private;
+    get updatedAtLeastOnce(): boolean;
     reset(): void;
     update(vector2: Vector2): void;
     getNormalization(vector2: Vector2, weightByRange?: boolean, clampValue?: boolean): Vector2;

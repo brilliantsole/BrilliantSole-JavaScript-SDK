@@ -5,6 +5,7 @@ export interface Range {
 }
 declare class RangeHelper {
     #private;
+    get updatedAtLeastOnce(): boolean;
     get min(): number;
     get max(): number;
     get span(): number;

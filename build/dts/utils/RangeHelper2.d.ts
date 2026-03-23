@@ -1,6 +1,7 @@
 import { Vector2 } from "./MathUtils.ts";
 declare class RangeHelper2 {
     #private;
+    get updatedAtLeastOnce(): boolean;
     reset(): void;
     update(vector2: Vector2): void;
     getNormalization(vector2: Vector2, weightByRange?: boolean, clampValue?: boolean): Vector2;

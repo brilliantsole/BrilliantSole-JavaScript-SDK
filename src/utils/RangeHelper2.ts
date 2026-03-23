@@ -6,14 +6,21 @@ class RangeHelper2 {
     x: new RangeHelper(),
     y: new RangeHelper(),
   };
+  #updatedAtLeastOnce = false;
+  get updatedAtLeastOnce() {
+    return this.#updatedAtLeastOnce;
+  }
+
   reset() {
     this.#range.x.reset();
     this.#range.y.reset();
+    this.#updatedAtLeastOnce = false;
   }
 
   update(vector2: Vector2) {
     this.#range.x.update(vector2.x);
     this.#range.y.update(vector2.y);
+    this.#updatedAtLeastOnce = true;
   }
   getNormalization(
     vector2: Vector2,

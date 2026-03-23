@@ -1182,12 +1182,17 @@
     max: -Infinity,
     span: 0
   };
+  var _updatedAtLeastOnce$1 = new WeakMap();
   var _range$1 = new WeakMap();
   var _RangeHelper_brand = new WeakSet();
   class RangeHelper {
     constructor() {
       _classPrivateMethodInitSpec(this, _RangeHelper_brand);
+      _classPrivateFieldInitSpec(this, _updatedAtLeastOnce$1, false);
       _classPrivateFieldInitSpec(this, _range$1, structuredClone(initialRange));
+    }
+    get updatedAtLeastOnce() {
+      return _classPrivateFieldGet2(_updatedAtLeastOnce$1, this);
     }
     get min() {
       return _classPrivateFieldGet2(_range$1, this).min;
@@ -1213,11 +1218,13 @@
     }
     reset() {
       Object.assign(_classPrivateFieldGet2(_range$1, this), initialRange);
+      _classPrivateFieldSet2(_updatedAtLeastOnce$1, this, false);
     }
     update(value) {
       _classPrivateFieldGet2(_range$1, this).min = Math.min(value, _classPrivateFieldGet2(_range$1, this).min);
       _classPrivateFieldGet2(_range$1, this).max = Math.max(value, _classPrivateFieldGet2(_range$1, this).max);
       _assertClassBrand(_RangeHelper_brand, this, _updateSpan).call(this);
+      _classPrivateFieldSet2(_updatedAtLeastOnce$1, this, true);
     }
     getNormalization(value, weightByRange) {
       let clampValue = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
@@ -1241,20 +1248,27 @@
   }
 
   var _range = new WeakMap();
+  var _updatedAtLeastOnce = new WeakMap();
   class RangeHelper2 {
     constructor() {
       _classPrivateFieldInitSpec(this, _range, {
         x: new RangeHelper(),
         y: new RangeHelper()
       });
+      _classPrivateFieldInitSpec(this, _updatedAtLeastOnce, false);
+    }
+    get updatedAtLeastOnce() {
+      return _classPrivateFieldGet2(_updatedAtLeastOnce, this);
     }
     reset() {
       _classPrivateFieldGet2(_range, this).x.reset();
       _classPrivateFieldGet2(_range, this).y.reset();
+      _classPrivateFieldSet2(_updatedAtLeastOnce, this, false);
     }
     update(vector2) {
       _classPrivateFieldGet2(_range, this).x.update(vector2.x);
       _classPrivateFieldGet2(_range, this).y.update(vector2.y);
+      _classPrivateFieldSet2(_updatedAtLeastOnce, this, true);
     }
     getNormalization(vector2, weightByRange, clampValue) {
       return {
@@ -1906,10 +1920,12 @@
               y: -_classPrivateFieldGet2(_euler$1, this).pitch
             });
           }
-          pressureData.motionCenter = _classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).getNormalization({
-            x: -_classPrivateFieldGet2(_euler$1, this).roll,
-            y: -_classPrivateFieldGet2(_euler$1, this).pitch
-          });
+          if (_classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).updatedAtLeastOnce) {
+            pressureData.motionCenter = _classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).getNormalization({
+              x: -_classPrivateFieldGet2(_euler$1, this).roll,
+              y: -_classPrivateFieldGet2(_euler$1, this).pitch
+            });
+          }
         }
       }
       if (isPressureAboveThreshold) {
