@@ -9,6 +9,9 @@ export type DevicePairPressureTimestamps = {
     [side in Side]: number;
 };
 export interface DevicePairPressureData {
+    sides: {
+        [key in Side]: PressureData;
+    };
     sensors: {
         [key in Side]: PressureSensorValue[];
     };

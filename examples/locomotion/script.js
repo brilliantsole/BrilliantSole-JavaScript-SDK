@@ -2,8 +2,81 @@ import * as BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
 //BS.setAllConsoleLevelFlags({ log: true });
 
+// THREE START
+/** @type {import("three")} */
+const THREE = window.THREE;
+/** @typedef {import("three").Object3D} Object3D */
+// THREE END
+
+// GET DEVICES
+
+/** @type {HTMLTemplateElement} */
+const availableDeviceTemplate = document.getElementById(
+  "availableDeviceTemplate"
+);
+const availableDevicesContainer = document.getElementById("availableDevices");
+/** @param {BS.Device[]} availableDevices */
+function onAvailableDevices(availableDevices) {
+  availableDevicesContainer.innerHTML = "";
+  if (availableDevices.length == 0) {
+    availableDevicesContainer.innerText = "no devices available";
+  } else {
+    availableDevices.forEach((availableDevice) => {
+      let availableDeviceContainer = availableDeviceTemplate.content
+        .cloneNode(true)
+        .querySelector(".availableDevice");
+      availableDeviceContainer.querySelector(".name").innerText =
+        availableDevice.name;
+      availableDeviceContainer.querySelector(".type").innerText =
+        availableDevice.type;
+
+      /** @type {HTMLButtonElement} */
+      const toggleConnectionButton =
+        availableDeviceContainer.querySelector(".toggleConnection");
+      toggleConnectionButton.addEventListener("click", () => {
+        availableDevice.toggleConnection();
+      });
+      const onConnectionStatusUpdate = () => {
+        switch (availableDevice.connectionStatus) {
+          case "connected":
+          case "notConnected":
+            toggleConnectionButton.disabled = false;
+            toggleConnectionButton.innerText = availableDevice.isConnected
+              ? "disconnect"
+              : "connect";
+            break;
+          case "connecting":
+          case "disconnecting":
+            toggleConnectionButton.disabled = true;
+            toggleConnectionButton.innerText = availableDevice.connectionStatus;
+            break;
+        }
+      };
+      availableDevice.addEventListener("connectionStatus", () =>
+        onConnectionStatusUpdate()
+      );
+      onConnectionStatusUpdate();
+      availableDevicesContainer.appendChild(availableDeviceContainer);
+    });
+  }
+}
+async function getDevices() {
+  const availableDevices = await BS.DeviceManager.GetDevices();
+  if (!availableDevices) {
+    return;
+  }
+  onAvailableDevices(availableDevices);
+}
+
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+  const devices = event.message.availableDevices;
+  onAvailableDevices(devices);
+});
+getDevices();
+
 // CONNECTION START
 const devicePair = BS.DevicePair.insoles;
+window.devicePair = devicePair;
 
 /** @type {HTMLButtonElement} */
 const addDeviceButton = document.getElementById("addDevice");
@@ -18,6 +91,9 @@ addDeviceButton.addEventListener("click", () => {
 // PRESSURE START
 let isPressureDataEnabled = false;
 
+const sensorRate = 20;
+const sensorRateScalar = sensorRate / 1000;
+
 /** @type {HTMLButtonElement} */
 const togglePressureDataButton = document.getElementById("togglePressureData");
 devicePair.addEventListener("isConnected", () => {
@@ -30,7 +106,7 @@ togglePressureDataButton.addEventListener("click", () => {
     ? "disable pressure data"
     : "enable pressure data";
   devicePair.setSensorConfiguration({
-    pressure: isPressureDataEnabled ? 20 : 0,
+    pressure: isPressureDataEnabled ? sensorRate : 0,
   });
 });
 
@@ -90,7 +166,7 @@ toggleGameRotationButton.addEventListener("click", () => {
     ? "disable gameRotation"
     : "enable gameRotation";
   devicePair.setSensorConfiguration({
-    gameRotation: isGameRotationDataEnabled ? 20 : 0,
+    gameRotation: isGameRotationDataEnabled ? sensorRate : 0,
   });
 });
 // GAME ROTATION END
@@ -131,20 +207,34 @@ AFRAME.registerSystem("splat", {
 // SPARK END
 
 // LOCOMOTION START
-/** @typedef {"centerOfPressure" | "stepping" | "sitStepping" | "sitSliding"} LocomotionMode */
+let useStrafing = true;
+const setUseStrafing = (newUseStrafing) => {
+  useStrafing = newUseStrafing;
+  console.log({ useStrafing });
+  useStrafingCheckbox.checked = useStrafing;
+};
+const useStrafingCheckbox = document.getElementById("useStrafing");
+useStrafingCheckbox.addEventListener("input", () => {
+  setUseStrafing(useStrafingCheckbox.checked);
+});
+
+/** @typedef {"none" | "centerOfPressure" | "stepping" | "toePivot"} LocomotionMode */
 /** @type {LocomotionMode[]} */
-const locomotionModes = [
-  "centerOfPressure",
-  "stepping",
-  "sitStepping",
-  "sitSliding",
-];
+const locomotionModes = ["none", "centerOfPressure", "stepping", "toePivot"];
 /** @type {LocomotionMode} */
-let locomotionMode = "centerOfPressure";
+let locomotionMode = "none";
+/** @type {LocomotionMode?} */
+let _locomotionMode;
 /** @param {LocomotionMode} newLocomotionMode */
 const setLocomotionMode = (newLocomotionMode) => {
+  if (newLocomotionMode == "none") {
+    _locomotionMode = locomotionMode;
+  } else {
+    _locomotionMode = undefined;
+  }
   locomotionMode = newLocomotionMode;
   console.log({ locomotionMode });
+  locomotionModeSelect.value = locomotionMode;
 };
 const locomotionModeSelect = document.getElementById("locomotionMode");
 const locomotionModeOptgroup = locomotionModeSelect.querySelector("optgroup");
@@ -154,39 +244,307 @@ locomotionModes.forEach((locomotionMode) => {
 locomotionModeSelect.addEventListener("input", (event) => {
   setLocomotionMode(event.target.value);
 });
+setLocomotionMode("none");
 
-/** @param {BS.CenterOfPressure} centerOfPressure */
-const onCenterOfPressure = (centerOfPressure) => {
-  //console.log("onCenterOfPressure", centerOfPressure);
-  centerOfPressureInput.value = centerOfPressure;
-  // FILL
+const toggleNone = () => {
+  if (_locomotionMode) {
+    setLocomotionMode(_locomotionMode);
+  } else {
+    setLocomotionMode("none");
+  }
 };
 
+let centerOfPressureOffset = {
+  x: 0.5,
+  y: 0.5,
+};
+let centerOfPressureOffsets = {
+  left: {
+    x: 0.5,
+    y: 0.5,
+  },
+  right: {
+    x: 0.5,
+    y: 0.5,
+  },
+};
+/** @type {BS.CenterOfPressure?}  */
+let latestCenterOfPressure;
+/** @type {Record<BS.Side, BS.CenterOfPressure>?}  */
+let latestCentersOfPressure;
+const setCenterOfPressureOffset = async () => {
+  console.log("setCenterOfPressureOffset");
+  if (!latestCenterOfPressure || !latestCentersOfPressure) {
+    return;
+  }
+  setCenterOfPressureOffsetButton.disabled = true;
+  for (let i = 3; i > 0; i--) {
+    setCenterOfPressureOffsetButton.innerText = i;
+    await BS.wait(1000);
+  }
+  setCenterOfPressureOffsetButton.innerText = "set centerOfPressure offset";
+
+  centerOfPressureOffset = latestCenterOfPressure;
+  centerOfPressureOffsets = latestCentersOfPressure;
+
+  setCenterOfPressureOffsetButton.disabled = false;
+};
+const setCenterOfPressureOffsetButton = document.getElementById(
+  "setCenterOfPressureOffset"
+);
+devicePair.addEventListener("isConnected", () => {
+  setCenterOfPressureOffsetButton.disabled = !devicePair.isConnected;
+});
+setCenterOfPressureOffsetButton.addEventListener("click", () => {
+  setCenterOfPressureOffset();
+});
 /**
  * @param {BS.CenterOfPressure} centerOfPressure
- * @param {BS.Side} side
+ * @param {BS.CenterOfPressure} offset
  */
-const onSideCenterOfPressure = (centerOfPressure, side) => {
-  //console.log("onSideCenterOfPressure", centerOfPressure, { side });
-  centerOfPressureInputs[side].value = centerOfPressure;
-  // FILL
+const applyCenterOfPressureOffset = (
+  centerOfPressure,
+  offset,
+  normalize = true
+) => {
+  const _centerOfPressure = {
+    x: centerOfPressure.x - offset.x,
+    y: centerOfPressure.y - offset.y,
+  };
+  if (normalize) {
+    const offsetScalars = {
+      x: [offset.x, 1 - offset.x],
+      y: [offset.y, 1 - offset.y],
+    };
+    const offsetScalar = {
+      x: 1 / offsetScalars.x[_centerOfPressure.x < offset.x ? 0 : 1],
+      y: 1 / offsetScalars.y[_centerOfPressure.y < offset.y ? 0 : 1],
+    };
+    //console.log("offsetScalar", offsetScalar);
+    _centerOfPressure.x *= offsetScalar.x;
+    _centerOfPressure.y *= offsetScalar.y;
+    // console.log("_centerOfPressure", _centerOfPressure);
+  }
+  return _centerOfPressure;
+};
+/** @param {BS.CenterOfPressure} */
+const getCenterOfPressureAngle = (centerOfPressure, useDegrees = true) => {
+  let angle = Math.atan2(centerOfPressure.y, centerOfPressure.x);
+  angle -= Math.PI / 2;
+  while (angle < Math.PI) {
+    angle += 2 * Math.PI;
+  }
+  while (angle > Math.PI) {
+    angle -= 2 * Math.PI;
+  }
+  if (useDegrees) {
+    angle = THREE.MathUtils.radToDeg(angle);
+  }
+  return angle;
+};
+/** @param {BS.CenterOfPressure} centerOfPressure */
+const getCenterOfPressureMagnitude = (centerOfPressure) => {
+  const { x, y } = centerOfPressure;
+  const magnitude = Math.sqrt(x ** 2 + y ** 2);
+  return magnitude;
+};
+/** @typedef {{angle: number, magnitude: number, centerOfPressure: BS.CenterOfPressure}} PolarCenterOfPressure */
+/**
+ * @param {BS.CenterOfPressure} centerOfPressure
+ * @param {BS.Side?} side
+ */
+const getPolarCenterOfPressure = (centerOfPressure, side) => {
+  centerOfPressure = applyCenterOfPressureOffset(
+    centerOfPressure,
+    centerOfPressureOffsets[side] ?? centerOfPressureOffset
+  );
+  return {
+    angle: getCenterOfPressureAngle(centerOfPressure),
+    magnitude: getCenterOfPressureMagnitude(centerOfPressure),
+    centerOfPressure,
+  };
+};
+
+const locomotionParams = {
+  angleDifferenceThreshold: { min: 120, max: 120 },
+  magnitudeThreshold: 0.3,
+  offsetScalar: {
+    x: 1,
+    y: 1,
+  },
+  turnScalar: 1.2,
+  turnScalar2: 0.5,
+};
+window.locomotionParams = locomotionParams;
+/**
+ * @param {BS.CenterOfPressure} centerOfPressure
+ * @param {Record<BS.Side, BS.CenterOfPressure>} centersOfPressure
+ */
+const onCenterOfPressure = (centerOfPressure, centersOfPressure) => {
+  // console.log("onCenterOfPressure", centerOfPressure, centersOfPressure);
+  centerOfPressureInput.value = centerOfPressure;
+  BS.Sides.forEach((side) => {
+    centerOfPressureInputs[side].value = centersOfPressure[side];
+  });
+
+  latestCenterOfPressure = centerOfPressure;
+  latestCentersOfPressure = centersOfPressure;
+
+  const polarCenterOfPressure = getPolarCenterOfPressure(centerOfPressure);
+  /** @type {Record<BS.Side, PolarCenterOfPressure>} */
+  const polarCentersOfPressure = {};
+  BS.Sides.forEach((side) => {
+    polarCentersOfPressure[side] = getPolarCenterOfPressure(
+      centersOfPressure[side],
+      side
+    );
+  });
+
+  // console.log("polarCenterOfPressure", polarCenterOfPressure);
+
+  if (locomotionMode == "centerOfPressure") {
+    let angleDifference = Math.abs(
+      polarCentersOfPressure.left.angle - polarCentersOfPressure.right.angle
+    );
+    angleDifference = Math.min(angleDifference, 360 - angleDifference);
+    // console.log({ angleDifference });
+
+    const areCentersAligned =
+      angleDifference < locomotionParams.angleDifferenceThreshold.min;
+    const areCentersOpposed =
+      angleDifference > locomotionParams.angleDifferenceThreshold.max;
+    const isMagnitudePositive =
+      polarCenterOfPressure.magnitude > locomotionParams.magnitudeThreshold;
+
+    const areMagnitudesPositive = BS.Sides.every((side) => {
+      return (
+        polarCentersOfPressure[side].magnitude >
+        locomotionParams.magnitudeThreshold
+      );
+    });
+
+    // console.log({
+    //   areCentersAligned,
+    //   isMagnitudePositive,
+    //   areMagnitudesPositive,
+    // });
+
+    if (areCentersAligned && isMagnitudePositive && areMagnitudesPositive) {
+      const x =
+        polarCenterOfPressure.centerOfPressure.x *
+        locomotionParams.offsetScalar.x *
+        sensorRateScalar;
+      const y =
+        polarCenterOfPressure.centerOfPressure.y *
+        locomotionParams.offsetScalar.y *
+        sensorRateScalar;
+
+      if (useStrafing) {
+        applyCameraOffset(x, y);
+      } else {
+        let yaw = -x;
+        yaw *= locomotionParams.turnScalar;
+        // FIX - tweak yaw
+        applyCameraYaw(yaw);
+        applyCameraOffset(0, y);
+      }
+    }
+    // console.log({ areCentersOpposed, areMagnitudesPositive, useStrafing });
+    if (areCentersOpposed && areMagnitudesPositive && useStrafing) {
+      let yaw = 0;
+      // FIX - tweak yaw
+      BS.Sides.forEach((side) => {
+        const scalar = side == "left" ? -1 : 1;
+        const { centerOfPressure, magnitude } = polarCentersOfPressure[side];
+        yaw +=
+          centerOfPressure.y *
+          scalar *
+          magnitude *
+          locomotionParams.turnScalar2 *
+          sensorRateScalar;
+      });
+      // console.log({ yaw });
+      applyCameraYaw(yaw);
+    }
+  }
 };
 
 devicePair.addEventListener("pressure", (event) => {
-  const { normalizedCenter } = event.message.pressure;
+  const { normalizedCenter, sides } = event.message.pressure;
   if (!normalizedCenter) {
     return;
   }
-  onCenterOfPressure(normalizedCenter);
+
+  const normalizedCenters = {
+    left: sides.left.normalizedCenter,
+    right: sides.right.normalizedCenter,
+  };
+
+  BS.Sides.forEach((side) => {
+    const { normalizedCenter, motionCenter, calibratedCenter } = sides[side];
+    normalizedCenters[side] =
+      calibratedCenter ?? motionCenter ?? normalizedCenter;
+  });
+  onCenterOfPressure(normalizedCenter, normalizedCenters);
 });
-devicePair.addEventListener("devicePressure", (event) => {
-  const { side, pressure } = event.message;
-  const { normalizedCenter } = pressure;
-  if (!normalizedCenter) {
-    return;
+
+/**
+ * @param {BS.Euler} euler
+ * @param {BS.Side} side
+ */
+const onSideEuler = (euler, side) => {
+  //console.log("onSideEuler", euler, { side });
+  gameRotationInputs[side].value = {
+    x: -euler.roll,
+    y: -euler.pitch,
+  };
+  if (locomotionMode == "stepping") {
+    // FILL
+  } else if (locomotionMode == "toePivot") {
+    // FILL
   }
-  onSideCenterOfPressure(normalizedCenter, side);
+};
+
+devicePair.addEventListener("deviceGameRotation", (event) => {
+  const { side, gameRotationEuler } = event.message;
+  onSideEuler(gameRotationEuler, side);
 });
+
+const cameraQuaternion = new THREE.Quaternion();
+const cameraEuler = new THREE.Euler(0, 0, 0, "YXZ");
+const cameraOffsetVector = new THREE.Vector3();
+/**
+ * @param {number} x
+ * @param {number} y
+ */
+const applyCameraOffset = (x, y, isRelative = true) => {
+  // console.log("applyCameraOffset", { x, y });
+  /** @type {Object3D} */
+  const object3D = cameraRigEntity.object3D;
+  const { position } = object3D;
+
+  cameraOffsetVector.set(x, 0, -y);
+  if (isRelative) {
+    cameraEntity.object3D.getWorldQuaternion(cameraQuaternion);
+    cameraEuler.setFromQuaternion(cameraQuaternion);
+    cameraEuler.x = cameraEuler.z = 0;
+    cameraOffsetVector.applyEuler(cameraEuler);
+  }
+  position.add(cameraOffsetVector);
+};
+window.applyCameraOffset = applyCameraOffset;
+
+/** @param {number} yaw */
+const applyCameraYaw = (yaw, isDegrees = false) => {
+  /** @type {Object3D} */
+  const object3D = cameraRigEntity.object3D;
+  const { rotation } = object3D;
+  if (isDegrees) {
+    yaw = THREE.MathUtils.degToRad(yaw);
+  }
+  rotation.y += yaw;
+};
+window.applyCameraYaw = applyCameraYaw;
 // LOCOMOTION END
 
 // MODELS START
@@ -239,12 +597,6 @@ const selectModel = (model) => {
 };
 
 // MODELS END
-
-// THREE START
-/** @type {import("three")} */
-const THREE = window.THREE;
-/** @typedef {import("three").Object3D} Object3D */
-// THREE END
 
 // AFRAME START
 const sceneEntity = document.getElementById("scene");
@@ -468,24 +820,24 @@ loadFromLocalStorage();
 
 // CANVAS INPUT START
 const centerOfPressureInput = document.getElementById("centerOfPressureInput");
-centerOfPressureInput.addEventListener("input", () => {
-  onCenterOfPressure(centerOfPressureInput.value);
-});
 const leftCenterOfPressureInput = document.getElementById(
   "leftCenterOfPressureInput"
 );
-centerOfPressureInput.addEventListener("input", () => {
-  onSideCenterOfPressure(leftCenterOfPressureInput.value, "left");
-});
 const rightCenterOfPressureInput = document.getElementById(
   "rightCenterOfPressureInput"
 );
-centerOfPressureInput.addEventListener("input", () => {
-  onSideCenterOfPressure(rightCenterOfPressureInput.value, "right");
-});
 const centerOfPressureInputs = {
   left: leftCenterOfPressureInput,
   right: rightCenterOfPressureInput,
+};
+
+const leftGameRotationInput = document.getElementById("leftGameRotationInput");
+const rightGameRotationInput = document.getElementById(
+  "rightGameRotationInput"
+);
+const gameRotationInputs = {
+  left: leftGameRotationInput,
+  right: rightGameRotationInput,
 };
 // CANVAS INPUT END
 
@@ -511,6 +863,7 @@ window.addEventListener("gamepadtick", (event) => {
   }
   const { thumbsticks } = event.detail;
   const centerOfPressure = { x: 0, y: 0 };
+  const centersOfPressure = {};
   thumbsticks.forEach((thumbstick, index) => {
     const { x, y, angle, magnitude } = thumbstick;
     const side = index == 0 ? "left" : "right";
@@ -519,12 +872,13 @@ window.addEventListener("gamepadtick", (event) => {
       x: (x + 1) / 2,
       y: (y + 1) / 2,
     };
-    onSideCenterOfPressure(sideCenterOfPressure, side);
+    centersOfPressure[side] = sideCenterOfPressure;
 
     centerOfPressure.x += sideCenterOfPressure.x / 2;
     centerOfPressure.y += sideCenterOfPressure.y / 2;
   });
-  onCenterOfPressure(centerOfPressure);
+
+  onCenterOfPressure(centerOfPressure, centersOfPressure);
 });
 window.addEventListener("gamepadbuttonchange", (event) => {
   const { buttonChange } = event.detail;
@@ -536,6 +890,14 @@ window.addEventListener("gamepadbuttonchange", (event) => {
       if (pressed) {
         toggleUseGamepad();
       }
+      break;
+    case 1: // O
+      if (pressed) {
+        toggleNone();
+      }
+      break;
+    default:
+      console.log("uncaught button", { index, pressed });
       break;
   }
 });

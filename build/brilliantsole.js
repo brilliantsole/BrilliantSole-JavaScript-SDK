@@ -1073,6 +1073,7 @@
 	    heading: 0,
 	    pitch: 0,
 	    roll: 0,
+	    absolute: false,
 	};
 	function getVector3Length(vector) {
 	    const { x, y, z } = vector;
@@ -9253,7 +9254,7 @@
 	    }
 	    #euler = new Euler(0, 0, 0, "YXZ");
 	    #quaternion = new Quaternion();
-	    quaternionToEuler(quaternion) {
+	    quaternionToEuler(quaternion, absolute) {
 	        this.#quaternion.copy(quaternion);
 	        this.#euler.setFromQuaternion(this.#quaternion);
 	        const { x, y, z } = this.#euler;
@@ -9261,9 +9262,10 @@
 	            heading: radToDeg(y),
 	            pitch: radToDeg(x),
 	            roll: radToDeg(z),
+	            absolute,
 	        };
 	    }
-	    parseEuler(dataView, scalar) {
+	    parseEuler(dataView, scalar, absolute) {
 	        let [heading, pitch, roll] = [
 	            dataView.getInt16(0, true),
 	            dataView.getInt16(2, true),
@@ -9274,7 +9276,7 @@
 	        if (heading < -180) {
 	            heading += 360;
 	        }
-	        const euler = { heading, pitch, roll };
+	        const euler = { heading, pitch, roll, absolute };
 	        _console$D.log({ euler });
 	        return euler;
 	    }
@@ -10723,11 +10725,10 @@
 	            case "gameRotation":
 	            case "rotation":
 	                sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
-	                sensorDataEuler =
-	                    this.motionSensorDataManager.quaternionToEuler(sensorData);
+	                sensorDataEuler = this.motionSensorDataManager.quaternionToEuler(sensorData, sensorType == "rotation");
 	                break;
 	            case "orientation":
-	                sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
+	                sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar, true);
 	                break;
 	            case "stepCounter":
 	                sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
@@ -39299,6 +39300,7 @@
 	            scaledSum: 0,
 	            normalizedSum: 0,
 	            sensors: { left: [], right: [] },
+	            sides: { left: this.#rawPressure.left, right: this.#rawPressure.right },
 	        };
 	        Sides.forEach((side) => {
 	            const sidePressure = this.#rawPressure[side];

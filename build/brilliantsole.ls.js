@@ -1139,7 +1139,8 @@
   const defaultEuler = {
     heading: 0,
     pitch: 0,
-    roll: 0
+    roll: 0,
+    absolute: false
   };
   function getVector3Length(vector) {
     const {
@@ -9348,7 +9349,7 @@
       });
       return quaternion;
     }
-    quaternionToEuler(quaternion) {
+    quaternionToEuler(quaternion, absolute) {
       _classPrivateFieldGet2(_quaternion, this).copy(quaternion);
       _classPrivateFieldGet2(_euler, this).setFromQuaternion(_classPrivateFieldGet2(_quaternion, this));
       const {
@@ -9359,10 +9360,11 @@
       return {
         heading: radToDeg(y),
         pitch: radToDeg(x),
-        roll: radToDeg(z)
+        roll: radToDeg(z),
+        absolute
       };
     }
-    parseEuler(dataView, scalar) {
+    parseEuler(dataView, scalar, absolute) {
       let [heading, pitch, roll] = [dataView.getInt16(0, true), dataView.getInt16(2, true), dataView.getInt16(4, true)].map(value => value * scalar);
       pitch *= -1;
       heading *= -1;
@@ -9372,7 +9374,8 @@
       const euler = {
         heading,
         pitch,
-        roll
+        roll,
+        absolute
       };
       _console$y.log({
         euler
@@ -10862,10 +10865,10 @@
         case "gameRotation":
         case "rotation":
           sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
-          sensorDataEuler = this.motionSensorDataManager.quaternionToEuler(sensorData);
+          sensorDataEuler = this.motionSensorDataManager.quaternionToEuler(sensorData, sensorType == "rotation");
           break;
         case "orientation":
-          sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
+          sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar, true);
           break;
         case "stepCounter":
           sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
@@ -35234,6 +35237,10 @@
       sensors: {
         left: [],
         right: []
+      },
+      sides: {
+        left: _classPrivateFieldGet2(_rawPressure, this).left,
+        right: _classPrivateFieldGet2(_rawPressure, this).right
       }
     };
     Sides.forEach(side => {

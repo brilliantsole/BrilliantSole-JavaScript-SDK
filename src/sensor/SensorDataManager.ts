@@ -261,11 +261,17 @@ class SensorDataManager {
           dataView,
           scalar
         );
-        sensorDataEuler =
-          this.motionSensorDataManager.quaternionToEuler(sensorData);
+        sensorDataEuler = this.motionSensorDataManager.quaternionToEuler(
+          sensorData,
+          sensorType == "rotation"
+        );
         break;
       case "orientation":
-        sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
+        sensorData = this.motionSensorDataManager.parseEuler(
+          dataView,
+          scalar,
+          true
+        );
         break;
       case "stepCounter":
         sensorData = this.motionSensorDataManager.parseStepCounter(dataView);

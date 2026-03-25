@@ -107,11 +107,13 @@ export interface Euler {
   heading: number;
   pitch: number;
   roll: number;
+  absolute?: boolean;
 }
 export const defaultEuler: Euler = {
   heading: 0,
   pitch: 0,
   roll: 0,
+  absolute: false,
 };
 
 export function getVector3Length(vector: Vector3) {

@@ -73,6 +73,7 @@ interface Euler {
     heading: number;
     pitch: number;
     roll: number;
+    absolute?: boolean;
 }
 
 interface Range {
@@ -2277,6 +2278,9 @@ declare function hexToRGB(hex: string): DisplayColorRGB;
 declare function rgbToHex({ r, g, b }: DisplayColorRGB): string;
 
 interface DevicePairPressureData {
+    sides: {
+        [key in Side]: PressureData;
+    };
     sensors: {
         [key in Side]: PressureSensorValue[];
     };

@@ -27,6 +27,7 @@ export interface Euler {
     heading: number;
     pitch: number;
     roll: number;
+    absolute?: boolean;
 }
 export declare const defaultEuler: Euler;
 export declare function getVector3Length(vector: Vector3): number;

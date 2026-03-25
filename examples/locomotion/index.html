@@ -48,6 +48,23 @@
     <h1>Locomotion | BrilliantSole JavaScript SDK</h1>
 
     <div>
+      <h2>available devices</h2>
+      <div id="availableDevices">
+        <template id="availableDeviceTemplate">
+          <div class="availableDevice">
+            <ul>
+              <li><b>name: </b> <span class="name"></span></li>
+              <li><b>type: </b> <span class="type"></span></li>
+              <li><button class="toggleConnection">connect</button></li>
+            </ul>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <br />
+
+    <div>
       <button id="addDevice">add device</button>
       <button id="togglePressureData" disabled>enable pressure data</button>
       <button id="resetPressureRange" disabled>reset pressure range</button>
@@ -59,10 +76,17 @@
       <button id="togglePressureMotionAutoRange" disabled>
         enable motion pressure autoRange
       </button>
+      <button id="setCenterOfPressureOffset" disabled>
+        set centerOfPressure offset
+      </button>
       <br />
       <label>
         use gamepad
         <input type="checkbox" id="useGamepad" checked />
+      </label>
+      <label>
+        use strafing
+        <input type="checkbox" id="useStrafing" checked />
       </label>
       <label>
         locomotion mode
@@ -100,6 +124,29 @@
           data-input
         ></canvas>
       </label>
+
+      <label>
+        <canvas
+          id="leftGameRotationInput"
+          width="30"
+          height="30"
+          data-radius="3"
+          data-input
+          data-min="-30"
+          data-max="30"
+        ></canvas>
+      </label>
+      <label>
+        <canvas
+          id="rightGameRotationInput"
+          width="30"
+          height="30"
+          data-radius="3"
+          data-input
+          data-min="-30"
+          data-max="30"
+        ></canvas>
+      </label>
     </div>
 
     <br />
@@ -118,17 +165,12 @@
       <a-scene id="scene" embedded xr-mode-ui="enabled: false;">
         <a-assets></a-assets>
 
-        <a-entity
-          id="cameraRig"
-          wasd-controls="acceleration: 3;"
-          look-controls
-          position="0 1.6 0"
-        >
+        <a-entity id="cameraRig" position="0 1.6 0">
           <a-camera
             id="camera"
             position="0 0 0"
-            look-controls="enabled: false;"
-            wasd-controls="enabled: false;"
+            wasd-controls="acceleration: 3;"
+            look-controls
             camera=""
           >
           </a-camera>
