@@ -219,7 +219,7 @@ const sensorRateScalar = sensorRate / 1000;
 /** @type {HTMLButtonElement} */
 const togglePressureDataButton = document.getElementById("togglePressureData");
 devicePair.addEventListener("isConnected", () => {
-  togglePressureDataButton.disabled = !devicePair.isConnected;
+  togglePressureDataButton.disabled = !devicePair.isHalfConnected;
 });
 togglePressureDataButton.addEventListener("click", () => {
   isPressureDataEnabled = !isPressureDataEnabled;
@@ -235,7 +235,7 @@ togglePressureDataButton.addEventListener("click", () => {
 /** @type {HTMLButtonElement} */
 const resetPressureRangeButton = document.getElementById("resetPressureRange");
 devicePair.addEventListener("isConnected", () => {
-  resetPressureRangeButton.disabled = !devicePair.isConnected;
+  resetPressureRangeButton.disabled = !devicePair.isHalfConnected;
 });
 resetPressureRangeButton.addEventListener("click", () => {
   devicePair.resetPressureRange();
@@ -247,7 +247,7 @@ const togglePressureAutoRangeButton = document.getElementById(
   "togglePressureAutoRange"
 );
 devicePair.addEventListener("isConnected", () => {
-  togglePressureAutoRangeButton.disabled = !devicePair.isConnected;
+  togglePressureAutoRangeButton.disabled = !devicePair.isHalfConnected;
 });
 togglePressureAutoRangeButton.addEventListener("click", () => {
   pressureAutoRange = !pressureAutoRange;
@@ -263,7 +263,7 @@ const togglePressureMotionAutoRangeButton = document.getElementById(
   "togglePressureMotionAutoRange"
 );
 devicePair.addEventListener("isConnected", () => {
-  togglePressureMotionAutoRangeButton.disabled = !devicePair.isConnected;
+  togglePressureMotionAutoRangeButton.disabled = !devicePair.isHalfConnected;
 });
 togglePressureMotionAutoRangeButton.addEventListener("click", () => {
   pressureMotionAutoRange = !pressureMotionAutoRange;
@@ -280,7 +280,7 @@ let isGameRotationDataEnabled = false;
 /** @type {HTMLButtonElement} */
 const toggleGameRotationButton = document.getElementById("toggleGameRotation");
 devicePair.addEventListener("isConnected", () => {
-  toggleGameRotationButton.disabled = !devicePair.isConnected;
+  toggleGameRotationButton.disabled = !devicePair.isHalfConnected;
 });
 toggleGameRotationButton.addEventListener("click", () => {
   isGameRotationDataEnabled = !isGameRotationDataEnabled;
@@ -340,6 +340,127 @@ useStrafingCheckbox.addEventListener("input", () => {
   setUseStrafing(useStrafingCheckbox.checked);
 });
 
+const didStep = {
+  left: true,
+  right: true,
+  /**
+   * @param {boolean} newDidStep
+   * @param {BS.Side} side
+   */
+  set(newDidStep, side) {
+    if (this[side] == newDidStep) {
+      return;
+    }
+    this[side] = newDidStep;
+    if (this[side]) {
+      this.takeStep(side);
+    }
+  },
+  stepOffset: {
+    left: new THREE.Vector2(),
+    right: new THREE.Vector2(),
+  },
+  latestStepTime: {
+    left: 0,
+    right: 0,
+  },
+  /** @param {BS.Side} side */
+  async takeStep(side) {
+    const now = Date.now();
+    this.latestStepTime[side] = now;
+    console.log("takeStep", { side });
+    const stepOffset = this.stepOffset[side];
+    stepOffset.set(0, locomotionParams.stepLength);
+    if (moveRelativeToInsoles && isGameRotationDataEnabled) {
+      const relativeYaw = this.getRelativeYaw(side);
+      stepOffset.rotateAround(
+        { x: 0, y: 0 },
+        THREE.MathUtils.degToRad(relativeYaw)
+      );
+    }
+
+    if (this.applyStepImpulse) {
+      stepOffset.y *= 0.5;
+      while (stepOffset.length() > 0.001 && this.latestStepTime[side] == now) {
+        const { x, y } = stepOffset;
+        applyCameraOffset(x, y);
+        stepOffset.multiplyScalar(0.9);
+        await BS.wait(10);
+      }
+    } else {
+      const { x, y } = stepOffset;
+      applyCameraOffset(x, y);
+    }
+  },
+  applyStepImpulse: true,
+  offsetYaw: {
+    left: 0,
+    right: 0,
+  },
+  latestYaw: {
+    left: 0,
+    right: 0,
+  },
+  didSetYawOnce: {
+    left: false,
+    right: false,
+  },
+  /** @param {BS.Side} side */
+  getRelativeYaw(side) {
+    return this.latestYaw[side] - this.offsetYaw[side];
+  },
+  /**
+   * @param {number} yaw
+   * @param {BS.Side} side
+   */
+  setYaw(yaw, side) {
+    this.latestYaw[side] = yaw;
+    if (!this.didSetYawOnce[side]) {
+      this.didSetYawOnce[side] = true;
+      this.tareYaw(side);
+    }
+  },
+  /** @param {BS.Side?} side */
+  tareYaw(side) {
+    console.log("tareYaw");
+    BS.Sides.forEach((_side) => {
+      if (side && side != _side) {
+        return;
+      }
+      this.offsetYaw[_side] = this.latestYaw[_side];
+    });
+  },
+  /** @param {BS.Side?} side */
+  tarePitch(side) {
+    console.log("tarePitch");
+    BS.Sides.forEach((_side) => {
+      if (side && side != _side) {
+        return;
+      }
+      this.pitchThreshold[_side] = this.latestPitch[_side];
+    });
+  },
+  latestPitch: { left: 0, right: 0 },
+  pitchThreshold: { left: -2, right: -2 },
+  reset() {
+    this.left = this.right = true;
+    this.didSetYawOnce.left = this.didSetYawOnce.right = false;
+    this.offsetYaw.left = this.offsetYaw.right = 0;
+    this.offsetYaw.left = this.offsetYaw.right = 0;
+  },
+};
+window.didStep = didStep;
+
+const tarePitchButton = document.getElementById("tarePitch");
+tarePitchButton.addEventListener("click", () => {
+  didStep.tarePitch();
+});
+
+const tareYawButton = document.getElementById("tareYaw");
+tareYawButton.addEventListener("click", () => {
+  didStep.tareYaw();
+});
+
 /** @typedef {"none" | "centerOfPressure" | "pressureStepping" | "pitchStepping"} LocomotionMode */
 /** @type {LocomotionMode[]} */
 const locomotionModes = [
@@ -359,7 +480,7 @@ const setLocomotionMode = (newLocomotionMode) => {
   } else {
     _locomotionMode = undefined;
   }
-  didStep.left = didStep.right = false;
+  didStep.reset();
   locomotionMode = newLocomotionMode;
   console.log({ locomotionMode });
   locomotionModeSelect.value = locomotionMode;
@@ -421,7 +542,7 @@ const setCenterOfPressureOffsetButton = document.getElementById(
   "setCenterOfPressureOffset"
 );
 devicePair.addEventListener("isConnected", () => {
-  setCenterOfPressureOffsetButton.disabled = !devicePair.isConnected;
+  setCenterOfPressureOffsetButton.disabled = !devicePair.isHalfConnected;
 });
 setCenterOfPressureOffsetButton.addEventListener("click", () => {
   setCenterOfPressureOffset();
@@ -502,6 +623,8 @@ const locomotionParams = {
   },
   turnScalar: 1.2,
   turnScalar2: 0.5,
+  stepLength: 0.2,
+  scaledSumThreshold: 0.05,
 };
 window.locomotionParams = locomotionParams;
 /**
@@ -629,39 +752,24 @@ moveRelativeToInsolesCheckbox.addEventListener("input", () => {
   setMoveRelativeToInsoles(moveRelativeToInsolesCheckbox.checked);
 });
 
-const didStep = {
-  left: false,
-  right: false,
-  /**
-   * @param {boolean} newDidStep
-   * @param {BS.Side} side
-   */
-  set(newDidStep, side) {
-    if (this[side] == newDidStep) {
-      return;
-    }
-    this[side] = newDidStep;
-    if (this[side]) {
-      // FILL - take step
-    }
-  },
-};
 devicePair.addEventListener("devicePressure", (event) => {
   const { side, pressure } = event.message;
 
   if (locomotionMode == "pressureStepping") {
-    const isFootDown = false; // FILL - is pressure above/below threshold
+    const isFootDown = pressure.scaledSum > locomotionParams.scaledSumThreshold;
+    // console.log("pressure", pressure.scaledSum, { side, isFootDown });
     didStep.set(isFootDown, side);
   }
 });
 devicePair.addEventListener("deviceGameRotation", (event) => {
   const { side, gameRotationEuler } = event.message;
 
+  didStep.latestYaw[side] = gameRotationEuler.heading;
+  didStep.latestPitch[side] = gameRotationEuler.pitch;
+
   if (locomotionMode == "pitchStepping") {
-    const isFootDown = false; // FILL - is above/below pitch
-    if (moveRelativeToInsoles) {
-      // FILL
-    }
+    const isFootDown = gameRotationEuler.pitch > didStep.pitchThreshold[side];
+    // console.log("pitch", gameRotationEuler.pitch, { side, isFootDown });
     didStep.set(isFootDown, side);
   }
 });
