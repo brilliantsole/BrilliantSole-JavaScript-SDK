@@ -9948,7 +9948,7 @@
       timeoutInterval
     });
     _classPrivateFieldSet2(_buildImageTimeout, this, setTimeout(() => {
-      console.log("buildImageTimeout");
+      _console$v.log("buildImageTimeout");
       _assertClassBrand(_CameraManager_brand, this, _buildImage).call(this);
       _classPrivateFieldSet2(_buildImageTimeout, this, undefined);
     }, timeoutInterval));

@@ -9545,7 +9545,7 @@ class CameraManager {
         const timeoutInterval = Math.max(2 * this.sensorRate, 40);
         _console$A.log("setBuildImageTimeout", { timeoutInterval });
         this.#buildImageTimeout = setTimeout(() => {
-            console.log("buildImageTimeout");
+            _console$A.log("buildImageTimeout");
             this.#buildImage();
             this.#buildImageTimeout = undefined;
         }, timeoutInterval);
