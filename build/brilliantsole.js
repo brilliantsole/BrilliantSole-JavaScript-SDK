@@ -9520,12 +9520,45 @@
 	        this.#assertIsAsleep();
 	        await this.#sendCameraCommand("wake");
 	    }
+	    #sensorRate = 0;
+	    get sensorRate() {
+	        return this.#sensorRate;
+	    }
+	    set sensorRate(newSensorRate) {
+	        if (this.#sensorRate == newSensorRate) {
+	            return;
+	        }
+	        this.#sensorRate = newSensorRate;
+	        _console$A.log({ sensorRate: this.sensorRate });
+	    }
 	    #parseCameraData(dataView) {
 	        _console$A.log("parsing camera data", dataView);
 	        parseMessage(dataView, CameraDataTypes, this.#onCameraData.bind(this), null, true);
 	    }
+	    #buildImageTimeout;
+	    #clearBuildImageTimeout() {
+	        if (this.#buildImageTimeout == undefined) {
+	            return;
+	        }
+	        _console$A.log("clearBuildImageTimeout", this.#buildImageTimeout);
+	        clearTimeout(this.#buildImageTimeout);
+	        this.#buildImageTimeout = undefined;
+	    }
+	    #setBuildImageTimeout() {
+	        if (this.sensorRate == 0) {
+	            return;
+	        }
+	        const timeoutInterval = Math.max(2 * this.sensorRate, 40);
+	        _console$A.log("setBuildImageTimeout", { timeoutInterval });
+	        this.#buildImageTimeout = setTimeout(() => {
+	            console.log("buildImageTimeout");
+	            this.#buildImage();
+	            this.#buildImageTimeout = undefined;
+	        }, timeoutInterval);
+	    }
 	    #onCameraData(cameraDataType, dataView) {
 	        _console$A.log({ cameraDataType, dataView });
+	        this.#clearBuildImageTimeout();
 	        switch (cameraDataType) {
 	            case "headerSize":
 	                this.#headerSize = dataView.getUint16(0, true);
@@ -9567,6 +9600,9 @@
 	                    if (this.#headerProgress == 1 && this.#footerProgress == 1) {
 	                        this.#buildImage();
 	                    }
+	                }
+	                else {
+	                    this.#setBuildImageTimeout();
 	                }
 	                break;
 	            case "footerSize":
@@ -10011,6 +10047,8 @@
 	        this.#headerProgress = 0;
 	        this.#imageProgress = 0;
 	        this.#footerProgress = 0;
+	        this.#sensorRate = 0;
+	        this.#clearBuildImageTimeout();
 	        if (this.isRecording) {
 	            this.stopRecording();
 	        }
@@ -34887,6 +34925,10 @@
 	            else {
 	                _console$7.log("don't need to request microphone infomration");
 	            }
+	        });
+	        this.addEventListener("getSensorConfiguration", (event) => {
+	            const { sensorConfiguration } = event.message;
+	            this.#cameraManager.sensorRate = sensorConfiguration.camera ?? 0;
 	        });
 	        this.addEventListener("getFileTypes", () => {
 	            if (this.connectionStatus != "connecting") {

@@ -341,6 +341,10 @@ class Device {
         _console.log("don't need to request microphone infomration");
       }
     });
+    this.addEventListener("getSensorConfiguration", (event) => {
+      const { sensorConfiguration } = event.message;
+      this.#cameraManager.sensorRate = sensorConfiguration.camera ?? 0;
+    });
     this.addEventListener("getFileTypes", () => {
       if (this.connectionStatus != "connecting") {
         return;

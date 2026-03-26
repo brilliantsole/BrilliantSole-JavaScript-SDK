@@ -261,6 +261,17 @@ class CameraManager {
   }
 
   // CAMERA DATA
+  #sensorRate = 0;
+  get sensorRate() {
+    return this.#sensorRate;
+  }
+  set sensorRate(newSensorRate) {
+    if (this.#sensorRate == newSensorRate) {
+      return;
+    }
+    this.#sensorRate = newSensorRate;
+    _console.log({ sensorRate: this.sensorRate });
+  }
   #parseCameraData(dataView: DataView<ArrayBuffer>) {
     _console.log("parsing camera data", dataView);
     parseMessage(
@@ -271,11 +282,33 @@ class CameraManager {
       true
     );
   }
+  #buildImageTimeout: ReturnType<typeof setTimeout> | undefined;
+  #clearBuildImageTimeout() {
+    if (this.#buildImageTimeout == undefined) {
+      return;
+    }
+    _console.log("clearBuildImageTimeout", this.#buildImageTimeout);
+    clearTimeout(this.#buildImageTimeout);
+    this.#buildImageTimeout = undefined;
+  }
+  #setBuildImageTimeout() {
+    if (this.sensorRate == 0) {
+      return;
+    }
+    const timeoutInterval = Math.max(2 * this.sensorRate, 40);
+    _console.log("setBuildImageTimeout", { timeoutInterval });
+    this.#buildImageTimeout = setTimeout(() => {
+      console.log("buildImageTimeout");
+      this.#buildImage();
+      this.#buildImageTimeout = undefined;
+    }, timeoutInterval);
+  }
   #onCameraData(
     cameraDataType: CameraDataType,
     dataView: DataView<ArrayBuffer>
   ) {
     _console.log({ cameraDataType, dataView });
+    this.#clearBuildImageTimeout();
     switch (cameraDataType) {
       case "headerSize":
         this.#headerSize = dataView.getUint16(0, true);
@@ -317,6 +350,8 @@ class CameraManager {
           if (this.#headerProgress == 1 && this.#footerProgress == 1) {
             this.#buildImage();
           }
+        } else {
+          this.#setBuildImageTimeout();
         }
         break;
       case "footerSize":
@@ -866,6 +901,8 @@ class CameraManager {
     this.#imageProgress = 0;
     this.#footerProgress = 0;
     //this.autoPicture = false;
+    this.#sensorRate = 0;
+    this.#clearBuildImageTimeout();
     if (this.isRecording) {
       this.stopRecording();
     }

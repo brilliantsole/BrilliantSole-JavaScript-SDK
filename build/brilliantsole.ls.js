@@ -9496,6 +9496,8 @@
   var _CameraManager_brand = new WeakSet();
   var _cameraStatus = new WeakMap();
   var _latestTakingPictureTimestamp = new WeakMap();
+  var _sensorRate = new WeakMap();
+  var _buildImageTimeout = new WeakMap();
   var _headerSize = new WeakMap();
   var _headerData = new WeakMap();
   var _headerProgress = new WeakMap();
@@ -9525,6 +9527,8 @@
       _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _cameraStatus, void 0);
       _classPrivateFieldInitSpec(this, _latestTakingPictureTimestamp, 0);
+      _classPrivateFieldInitSpec(this, _sensorRate, 0);
+      _classPrivateFieldInitSpec(this, _buildImageTimeout, void 0);
       _classPrivateFieldInitSpec(this, _headerSize, 0);
       _classPrivateFieldInitSpec(this, _headerData, void 0);
       _classPrivateFieldInitSpec(this, _headerProgress, 0);
@@ -9646,6 +9650,18 @@
     async wake() {
       _assertClassBrand(_CameraManager_brand, this, _assertIsAsleep).call(this);
       await _assertClassBrand(_CameraManager_brand, this, _sendCameraCommand).call(this, "wake");
+    }
+    get sensorRate() {
+      return _classPrivateFieldGet2(_sensorRate, this);
+    }
+    set sensorRate(newSensorRate) {
+      if (_classPrivateFieldGet2(_sensorRate, this) == newSensorRate) {
+        return;
+      }
+      _classPrivateFieldSet2(_sensorRate, this, newSensorRate);
+      _console$v.log({
+        sensorRate: this.sensorRate
+      });
     }
     buildCameraData() {
       const cameraData = [_assertClassBrand(_CameraManager_brand, this, _buildHeaderCameraData).call(this), _assertClassBrand(_CameraManager_brand, this, _buildFooterCameraData).call(this)];
@@ -9858,6 +9874,8 @@
       _classPrivateFieldSet2(_headerProgress, this, 0);
       _classPrivateFieldSet2(_imageProgress, this, 0);
       _classPrivateFieldSet2(_footerProgress, this, 0);
+      _classPrivateFieldSet2(_sensorRate, this, 0);
+      _assertClassBrand(_CameraManager_brand, this, _clearBuildImageTimeout).call(this);
       if (this.isRecording) {
         this.stopRecording();
       }
@@ -9913,12 +9931,35 @@
     _console$v.log("parsing camera data", dataView);
     parseMessage(dataView, CameraDataTypes, _assertClassBrand(_CameraManager_brand, this, _onCameraData).bind(this), null, true);
   }
+  function _clearBuildImageTimeout() {
+    if (_classPrivateFieldGet2(_buildImageTimeout, this) == undefined) {
+      return;
+    }
+    _console$v.log("clearBuildImageTimeout", _classPrivateFieldGet2(_buildImageTimeout, this));
+    clearTimeout(_classPrivateFieldGet2(_buildImageTimeout, this));
+    _classPrivateFieldSet2(_buildImageTimeout, this, undefined);
+  }
+  function _setBuildImageTimeout() {
+    if (this.sensorRate == 0) {
+      return;
+    }
+    const timeoutInterval = Math.max(2 * this.sensorRate, 40);
+    _console$v.log("setBuildImageTimeout", {
+      timeoutInterval
+    });
+    _classPrivateFieldSet2(_buildImageTimeout, this, setTimeout(() => {
+      console.log("buildImageTimeout");
+      _assertClassBrand(_CameraManager_brand, this, _buildImage).call(this);
+      _classPrivateFieldSet2(_buildImageTimeout, this, undefined);
+    }, timeoutInterval));
+  }
   function _onCameraData(cameraDataType, dataView) {
     var _classPrivateFieldGet8, _classPrivateFieldGet9, _classPrivateFieldGet0;
     _console$v.log({
       cameraDataType,
       dataView
     });
+    _assertClassBrand(_CameraManager_brand, this, _clearBuildImageTimeout).call(this);
     switch (cameraDataType) {
       case "headerSize":
         _classPrivateFieldSet2(_headerSize, this, dataView.getUint16(0, true));
@@ -9972,6 +10013,8 @@
           if (_classPrivateFieldGet2(_headerProgress, this) == 1 && _classPrivateFieldGet2(_footerProgress, this) == 1) {
             _assertClassBrand(_CameraManager_brand, this, _buildImage).call(this);
           }
+        } else {
+          _assertClassBrand(_CameraManager_brand, this, _setBuildImageTimeout).call(this);
         }
         break;
       case "footerSize":
@@ -33652,6 +33695,13 @@
         } else {
           _console$3.log("don't need to request microphone infomration");
         }
+      });
+      this.addEventListener("getSensorConfiguration", event => {
+        var _sensorConfiguration$;
+        const {
+          sensorConfiguration
+        } = event.message;
+        _classPrivateFieldGet2(_cameraManager, this).sensorRate = (_sensorConfiguration$ = sensorConfiguration.camera) !== null && _sensorConfiguration$ !== void 0 ? _sensorConfiguration$ : 0;
       });
       this.addEventListener("getFileTypes", () => {
         if (this.connectionStatus != "connecting") {
