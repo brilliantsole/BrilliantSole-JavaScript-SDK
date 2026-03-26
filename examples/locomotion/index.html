@@ -48,6 +48,22 @@
     <h1>Locomotion | BrilliantSole JavaScript SDK</h1>
 
     <div>
+      <label>
+        webSocket url
+        <input id="webSocketUrl" type="url" placeholder="localhost" />
+      </label>
+      <button id="toggleConnection">connect</button>
+    </div>
+
+    <div>
+      <label>
+        is scanning available?
+        <input id="isScanningAvailable" type="checkbox" readonly disabled />
+      </label>
+      <button id="toggleScan" disabled>scan</button>
+    </div>
+
+    <div>
       <h2>available devices</h2>
       <div id="availableDevices">
         <template id="availableDeviceTemplate">
@@ -87,6 +103,14 @@
       <label>
         use strafing
         <input type="checkbox" id="useStrafing" checked />
+      </label>
+      <label>
+        move relative to camera
+        <input type="checkbox" id="moveRelativeToCamera" checked />
+      </label>
+      <label>
+        move relative to insoles
+        <input type="checkbox" id="moveRelativeToInsoles" />
       </label>
       <label>
         locomotion mode
@@ -132,8 +156,8 @@
           height="30"
           data-radius="3"
           data-input
-          data-min="-30"
-          data-max="30"
+          data-min="-20"
+          data-max="20"
         ></canvas>
       </label>
       <label>
@@ -143,8 +167,8 @@
           height="30"
           data-radius="3"
           data-input
-          data-min="-30"
-          data-max="30"
+          data-min="-20"
+          data-max="20"
         ></canvas>
       </label>
     </div>
@@ -162,14 +186,14 @@
       <input type="file" id="modelFile" multiple="false"
     /></label>
     <div id="sceneContainer">
-      <a-scene id="scene" embedded xr-mode-ui="enabled: false;">
+      <a-scene id="scene" embedded xr-mode-ui="enabled: true; XRMode: vr;">
         <a-assets></a-assets>
 
         <a-entity id="cameraRig" position="0 1.6 0">
           <a-camera
             id="camera"
             position="0 0 0"
-            wasd-controls="acceleration: 3;"
+            wasd-controls="acceleration: 20;"
             look-controls
             camera=""
           >

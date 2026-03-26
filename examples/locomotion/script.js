@@ -8,6 +8,128 @@ const THREE = window.THREE;
 /** @typedef {import("three").Object3D} Object3D */
 // THREE END
 
+// CLIENT
+const client = new BS.WebSocketClient();
+console.log({ client });
+
+window.client = client;
+
+// WEBSOCKET URL SEARCH PARAMS
+
+const url = new URL(location);
+function setUrlParam(key, value) {
+  if (history.pushState) {
+    let searchParams = new URLSearchParams(window.location.search);
+    if (value) {
+      searchParams.set(key, value);
+    } else {
+      searchParams.delete(key);
+    }
+    let newUrl =
+      window.location.protocol +
+      "//" +
+      window.location.host +
+      window.location.pathname +
+      "?" +
+      searchParams.toString();
+    window.history.pushState({ path: newUrl }, "", newUrl);
+  }
+}
+client.addEventListener("isConnected", () => {
+  if (client.isConnected) {
+    setUrlParam("webSocketUrl", client.webSocket.url);
+    webSocketUrlInput.value = client.webSocket.url;
+    webSocketUrlInput.dispatchEvent(new Event("input"));
+  } else {
+    setUrlParam("webSocketUrl");
+  }
+});
+
+// WEBSOCKET SERVER URL
+
+/** @type {HTMLInputElement} */
+const webSocketUrlInput = document.getElementById("webSocketUrl");
+webSocketUrlInput.value = url.searchParams.get("webSocketUrl") || "";
+webSocketUrlInput.dispatchEvent(new Event("input"));
+
+// WEBSOCKET CONNECTION
+
+/** @type {HTMLButtonElement} */
+const toggleConnectionButton = document.getElementById("toggleConnection");
+toggleConnectionButton.addEventListener("click", () => {
+  if (client.isConnected) {
+    client.disconnect();
+  } else {
+    /** @type {string?} */
+    let webSocketUrl;
+    if (webSocketUrlInput.value.length > 0) {
+      webSocketUrl = webSocketUrlInput.value;
+    }
+    client.connect(webSocketUrl);
+  }
+});
+client.addEventListener("connectionStatus", () => {
+  switch (client.connectionStatus) {
+    case "connected":
+    case "notConnected":
+      toggleConnectionButton.disabled = false;
+      toggleConnectionButton.innerText = client.isConnected
+        ? "disconnect"
+        : "connect";
+      break;
+    case "connecting":
+    case "disconnecting":
+      toggleConnectionButton.innerText = client.connectionStatus;
+      toggleConnectionButton.disabled = true;
+      break;
+  }
+});
+
+// SCANNER
+
+/** @type {HTMLInputElement} */
+const isScanningAvailableCheckbox = document.getElementById(
+  "isScanningAvailable"
+);
+client.addEventListener("isScanningAvailable", () => {
+  isScanningAvailableCheckbox.checked = client.isScanningAvailable;
+});
+
+/** @type {HTMLButtonElement} */
+const toggleScanButton = document.getElementById("toggleScan");
+toggleScanButton.addEventListener("click", () => {
+  client.toggleScan();
+});
+client.addEventListener("isScanningAvailable", () => {
+  toggleScanButton.disabled = !client.isScanningAvailable;
+});
+client.addEventListener("isScanning", () => {
+  toggleScanButton.innerText = client.isScanning ? "stop scanning" : "scan";
+});
+
+client.addEventListener("discoveredDevice", (event) => {
+  if (devicePair.isConnected) {
+    return;
+  }
+  const { discoveredDevice } = event.message;
+  console.log("discoveredDevice", discoveredDevice);
+  if (
+    discoveredDevice.deviceType == "leftInsole" &&
+    !devicePair.left?.isConnected
+  ) {
+    console.log("connecting to left insole");
+    client.connectToDevice(discoveredDevice.bluetoothId);
+  }
+  if (
+    discoveredDevice.deviceType == "rightInsole" &&
+    !devicePair.right?.isConnected
+  ) {
+    console.log("connecting to right insole");
+    client.connectToDevice(discoveredDevice.bluetoothId);
+  }
+});
+BS.DeviceManager.AddEventListener("deviceConnected", (e) => console.log(e));
+
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
@@ -218,9 +340,14 @@ useStrafingCheckbox.addEventListener("input", () => {
   setUseStrafing(useStrafingCheckbox.checked);
 });
 
-/** @typedef {"none" | "centerOfPressure" | "stepping" | "toePivot"} LocomotionMode */
+/** @typedef {"none" | "centerOfPressure" | "pressureStepping" | "pitchStepping"} LocomotionMode */
 /** @type {LocomotionMode[]} */
-const locomotionModes = ["none", "centerOfPressure", "stepping", "toePivot"];
+const locomotionModes = [
+  "none",
+  "centerOfPressure",
+  "pressureStepping",
+  "pitchStepping",
+];
 /** @type {LocomotionMode} */
 let locomotionMode = "none";
 /** @type {LocomotionMode?} */
@@ -232,6 +359,7 @@ const setLocomotionMode = (newLocomotionMode) => {
   } else {
     _locomotionMode = undefined;
   }
+  didStep.left = didStep.right = false;
   locomotionMode = newLocomotionMode;
   console.log({ locomotionMode });
   locomotionModeSelect.value = locomotionMode;
@@ -488,6 +616,56 @@ devicePair.addEventListener("pressure", (event) => {
   onCenterOfPressure(normalizedCenter, normalizedCenters);
 });
 
+let moveRelativeToInsoles = false;
+const setMoveRelativeToInsoles = (newMoveRelativeToInsoles) => {
+  moveRelativeToInsoles = newMoveRelativeToInsoles;
+  console.log({ moveRelativeToInsoles });
+  moveRelativeToInsolesCheckbox.checked = moveRelativeToInsoles;
+};
+const moveRelativeToInsolesCheckbox = document.getElementById(
+  "moveRelativeToInsoles"
+);
+moveRelativeToInsolesCheckbox.addEventListener("input", () => {
+  setMoveRelativeToInsoles(moveRelativeToInsolesCheckbox.checked);
+});
+
+const didStep = {
+  left: false,
+  right: false,
+  /**
+   * @param {boolean} newDidStep
+   * @param {BS.Side} side
+   */
+  set(newDidStep, side) {
+    if (this[side] == newDidStep) {
+      return;
+    }
+    this[side] = newDidStep;
+    if (this[side]) {
+      // FILL - take step
+    }
+  },
+};
+devicePair.addEventListener("devicePressure", (event) => {
+  const { side, pressure } = event.message;
+
+  if (locomotionMode == "pressureStepping") {
+    const isFootDown = false; // FILL - is pressure above/below threshold
+    didStep.set(isFootDown, side);
+  }
+});
+devicePair.addEventListener("deviceGameRotation", (event) => {
+  const { side, gameRotationEuler } = event.message;
+
+  if (locomotionMode == "pitchStepping") {
+    const isFootDown = false; // FILL - is above/below pitch
+    if (moveRelativeToInsoles) {
+      // FILL
+    }
+    didStep.set(isFootDown, side);
+  }
+});
+
 /**
  * @param {BS.Euler} euler
  * @param {BS.Side} side
@@ -498,16 +676,24 @@ const onSideEuler = (euler, side) => {
     x: -euler.roll,
     y: -euler.pitch,
   };
-  if (locomotionMode == "stepping") {
-    // FILL
-  } else if (locomotionMode == "toePivot") {
-    // FILL
-  }
 };
 
 devicePair.addEventListener("deviceGameRotation", (event) => {
   const { side, gameRotationEuler } = event.message;
   onSideEuler(gameRotationEuler, side);
+});
+
+let moveRelativeToCamera = true;
+const setMoveRelativeToCamera = (newMoveRelativeToCamera) => {
+  moveRelativeToCamera = newMoveRelativeToCamera;
+  console.log({ moveRelativeToCamera });
+  moveRelativeToCameraCheckbox.checked = moveRelativeToCamera;
+};
+const moveRelativeToCameraCheckbox = document.getElementById(
+  "moveRelativeToCamera"
+);
+moveRelativeToCameraCheckbox.addEventListener("click", () => {
+  setMoveRelativeToCamera(moveRelativeToCameraCheckbox.checked);
 });
 
 const cameraQuaternion = new THREE.Quaternion();
@@ -517,19 +703,25 @@ const cameraOffsetVector = new THREE.Vector3();
  * @param {number} x
  * @param {number} y
  */
-const applyCameraOffset = (x, y, isRelative = true) => {
+const applyCameraOffset = (x, y) => {
   // console.log("applyCameraOffset", { x, y });
   /** @type {Object3D} */
-  const object3D = cameraRigEntity.object3D;
-  const { position } = object3D;
+  const cameraRig = cameraRigEntity.object3D;
+  const { position } = cameraRig;
+
+  /** @type {Object3D} */
+  const camera = cameraEntity.object3D;
 
   cameraOffsetVector.set(x, 0, -y);
-  if (isRelative) {
-    cameraEntity.object3D.getWorldQuaternion(cameraQuaternion);
-    cameraEuler.setFromQuaternion(cameraQuaternion);
-    cameraEuler.x = cameraEuler.z = 0;
-    cameraOffsetVector.applyEuler(cameraEuler);
+  if (moveRelativeToCamera) {
+    camera.getWorldQuaternion(cameraQuaternion);
+  } else {
+    cameraRig.getWorldQuaternion(cameraQuaternion);
   }
+
+  cameraEuler.setFromQuaternion(cameraQuaternion);
+  cameraEuler.x = cameraEuler.z = 0;
+  cameraOffsetVector.applyEuler(cameraEuler);
   position.add(cameraOffsetVector);
 };
 window.applyCameraOffset = applyCameraOffset;
@@ -537,8 +729,8 @@ window.applyCameraOffset = applyCameraOffset;
 /** @param {number} yaw */
 const applyCameraYaw = (yaw, isDegrees = false) => {
   /** @type {Object3D} */
-  const object3D = cameraRigEntity.object3D;
-  const { rotation } = object3D;
+  const cameraRig = cameraRigEntity.object3D;
+  const { rotation } = cameraRig;
   if (isDegrees) {
     yaw = THREE.MathUtils.degToRad(yaw);
   }
@@ -842,7 +1034,10 @@ const gameRotationInputs = {
 // CANVAS INPUT END
 
 // GAMEPAD START
-const gamepadScalar = 5;
+const gamepadScalar = {
+  yaw: 2,
+  offset: 0.05,
+};
 let useGamepad = true;
 /** @param {boolean} newUseGamepad */
 const setUseGamepad = (newUseGamepad) => {
@@ -879,6 +1074,23 @@ window.addEventListener("gamepadtick", (event) => {
   });
 
   onCenterOfPressure(centerOfPressure, centersOfPressure);
+});
+window.addEventListener("gamepadtick", (event) => {
+  if (useGamepad) {
+    return;
+  }
+  const { thumbsticks } = event.detail;
+  thumbsticks.forEach((thumbstick, index) => {
+    const { x, y, angle, magnitude } = thumbstick;
+    const side = index == 0 ? "left" : "right";
+    if (magnitude > 0) {
+      if (side == "right") {
+        applyCameraYaw(-x * gamepadScalar.yaw, true);
+      } else {
+        applyCameraOffset(x * gamepadScalar.offset, y * gamepadScalar.offset);
+      }
+    }
+  });
 });
 window.addEventListener("gamepadbuttonchange", (event) => {
   const { buttonChange } = event.detail;

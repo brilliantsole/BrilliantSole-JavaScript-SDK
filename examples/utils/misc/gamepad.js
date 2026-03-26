@@ -44,7 +44,7 @@
 
   const axisDifferenceThreshold = 0.0001;
   const axisThreshold = 0.02;
-  const thumbstickMagnitudeThreshold = 0.03;
+  const thumbstickMagnitudeThreshold = 0.05;
   const thumbstickMagnitudeDifferenceThreshold = 0.001;
   const thumbstickAngleDifferenceThreshold = 0.001;
   const buttonValueDifferenceThreshold = 0.0;
