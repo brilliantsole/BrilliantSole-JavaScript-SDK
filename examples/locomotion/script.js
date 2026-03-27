@@ -219,7 +219,7 @@ const sensorRateScalar = sensorRate / 1000;
 /** @type {HTMLButtonElement} */
 const togglePressureDataButton = document.getElementById("togglePressureData");
 devicePair.addEventListener("isConnected", () => {
-  togglePressureDataButton.disabled = !devicePair.isHalfConnected;
+  togglePressureDataButton.disabled = !devicePair.isPartiallyConnected;
 });
 togglePressureDataButton.addEventListener("click", () => {
   isPressureDataEnabled = !isPressureDataEnabled;
@@ -235,7 +235,7 @@ togglePressureDataButton.addEventListener("click", () => {
 /** @type {HTMLButtonElement} */
 const resetPressureRangeButton = document.getElementById("resetPressureRange");
 devicePair.addEventListener("isConnected", () => {
-  resetPressureRangeButton.disabled = !devicePair.isHalfConnected;
+  resetPressureRangeButton.disabled = !devicePair.isPartiallyConnected;
 });
 resetPressureRangeButton.addEventListener("click", () => {
   devicePair.resetPressureRange();
@@ -247,7 +247,7 @@ const togglePressureAutoRangeButton = document.getElementById(
   "togglePressureAutoRange"
 );
 devicePair.addEventListener("isConnected", () => {
-  togglePressureAutoRangeButton.disabled = !devicePair.isHalfConnected;
+  togglePressureAutoRangeButton.disabled = !devicePair.isPartiallyConnected;
 });
 togglePressureAutoRangeButton.addEventListener("click", () => {
   pressureAutoRange = !pressureAutoRange;
@@ -263,7 +263,8 @@ const togglePressureMotionAutoRangeButton = document.getElementById(
   "togglePressureMotionAutoRange"
 );
 devicePair.addEventListener("isConnected", () => {
-  togglePressureMotionAutoRangeButton.disabled = !devicePair.isHalfConnected;
+  togglePressureMotionAutoRangeButton.disabled =
+    !devicePair.isPartiallyConnected;
 });
 togglePressureMotionAutoRangeButton.addEventListener("click", () => {
   pressureMotionAutoRange = !pressureMotionAutoRange;
@@ -280,7 +281,7 @@ let isGameRotationDataEnabled = false;
 /** @type {HTMLButtonElement} */
 const toggleGameRotationButton = document.getElementById("toggleGameRotation");
 devicePair.addEventListener("isConnected", () => {
-  toggleGameRotationButton.disabled = !devicePair.isHalfConnected;
+  toggleGameRotationButton.disabled = !devicePair.isPartiallyConnected;
 });
 toggleGameRotationButton.addEventListener("click", () => {
   isGameRotationDataEnabled = !isGameRotationDataEnabled;
@@ -446,7 +447,6 @@ const didStep = {
     this.left = this.right = true;
     this.didSetYawOnce.left = this.didSetYawOnce.right = false;
     this.offsetYaw.left = this.offsetYaw.right = 0;
-    this.offsetYaw.left = this.offsetYaw.right = 0;
   },
 };
 window.didStep = didStep;
@@ -461,13 +461,14 @@ tareYawButton.addEventListener("click", () => {
   didStep.tareYaw();
 });
 
-/** @typedef {"none" | "centerOfPressure" | "pressureStepping" | "pitchStepping"} LocomotionMode */
+/** @typedef {"none" | "centerOfPressure" | "pressureStepping" | "pitchStepping" | "pedals"} LocomotionMode */
 /** @type {LocomotionMode[]} */
 const locomotionModes = [
   "none",
   "centerOfPressure",
   "pressureStepping",
   "pitchStepping",
+  "pedals",
 ];
 /** @type {LocomotionMode} */
 let locomotionMode = "none";
@@ -542,7 +543,7 @@ const setCenterOfPressureOffsetButton = document.getElementById(
   "setCenterOfPressureOffset"
 );
 devicePair.addEventListener("isConnected", () => {
-  setCenterOfPressureOffsetButton.disabled = !devicePair.isHalfConnected;
+  setCenterOfPressureOffsetButton.disabled = !devicePair.isPartiallyConnected;
 });
 setCenterOfPressureOffsetButton.addEventListener("click", () => {
   setCenterOfPressureOffset();
@@ -616,7 +617,7 @@ const getPolarCenterOfPressure = (centerOfPressure, side) => {
 
 const locomotionParams = {
   angleDifferenceThreshold: { min: 120, max: 120 },
-  magnitudeThreshold: 0.3,
+  magnitudeThreshold: 0.4,
   offsetScalar: {
     x: 1,
     y: 1,
@@ -752,13 +753,60 @@ moveRelativeToInsolesCheckbox.addEventListener("input", () => {
   setMoveRelativeToInsoles(moveRelativeToInsolesCheckbox.checked);
 });
 
+const rightFootDominantCheckbox = document.getElementById("rightFootDominant");
+rightFootDominantCheckbox.addEventListener("input", () => {
+  setDominantFoot(rightFootDominantCheckbox.checked ? "right" : "left");
+});
+/** @param {BS.Side} side */
+const setDominantFoot = (side) => {
+  pedalsParams.dominantFoot = side;
+  rightFootDominantCheckbox.checked = side == "right";
+  console.log("pedalsParams.dominantFoot", pedalsParams.dominantFoot);
+};
+
+const pedalsParams = {
+  /** @type {BS.Side} */
+  dominantFoot: "right",
+  scalar: {
+    y: 1,
+    x: 1,
+    yaw: 50,
+  },
+};
+window.pedalsParams = pedalsParams;
 devicePair.addEventListener("devicePressure", (event) => {
   const { side, pressure } = event.message;
+
+  const { normalizedCenter, motionCenter, calibratedCenter } = pressure;
+  const center = calibratedCenter ?? motionCenter ?? normalizedCenter;
 
   if (locomotionMode == "pressureStepping") {
     const isFootDown = pressure.scaledSum > locomotionParams.scaledSumThreshold;
     // console.log("pressure", pressure.scaledSum, { side, isFootDown });
     didStep.set(isFootDown, side);
+  } else if (locomotionMode == "pedals") {
+    if (center) {
+      const polarCenterOfPressure = getPolarCenterOfPressure(center, side);
+      if (
+        polarCenterOfPressure.magnitude > locomotionParams.magnitudeThreshold
+      ) {
+        let offset = polarCenterOfPressure.centerOfPressure.y;
+        offset *= sensorRateScalar;
+        const isDominant = pedalsParams.dominantFoot == side;
+        if (isDominant) {
+          offset *= pedalsParams.scalar.y;
+          applyCameraOffset(0, offset);
+        } else {
+          if (useStrafing) {
+            offset *= pedalsParams.scalar.x;
+            applyCameraOffset(offset, 0);
+          } else {
+            offset *= pedalsParams.scalar.yaw;
+            applyCameraYaw(offset, true);
+          }
+        }
+      }
+    }
   }
 });
 devicePair.addEventListener("deviceGameRotation", (event) => {
@@ -897,6 +945,14 @@ const selectModel = (model) => {
 };
 
 // MODELS END
+
+// META TOUCH CONTROLS START
+const controllers = {
+  left: document.getElementById("leftController"),
+  right: document.getElementById("rightController"),
+};
+console.log("controllers", controllers);
+// META TOUCH CONTROLS END
 
 // AFRAME START
 const sceneEntity = document.getElementById("scene");

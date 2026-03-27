@@ -15,6 +15,7 @@
     <script type="module" src="./script.js"></script>
     <script src="../utils/misc/canvasInput.js"></script>
     <script src="../utils/misc/gamepad.js"></script>
+    <script src="../utils/aframe/meta-touch-controls-ui.js" defer></script>
   </head>
 
   <style>
@@ -115,6 +116,10 @@
         <input type="checkbox" id="moveRelativeToInsoles" />
       </label>
       <label>
+        right foot dominant?
+        <input type="checkbox" id="rightFootDominant" checked />
+      </label>
+      <label>
         locomotion mode
         <select id="locomotionMode">
           <optgroup label="select locomotion mode"></optgroup>
@@ -200,6 +205,50 @@
             camera=""
           >
           </a-camera>
+
+          <a-entity
+            id="leftController"
+            meta-touch-controls="hand: left"
+            meta-touch-controls-ui
+          >
+            <a-entity class="text" scale="0.1 0.1 0.1" rotation="-110 0 0">
+              <a-text
+                value=""
+                align="right"
+                baseline="top"
+                color="black"
+              ></a-text>
+              <a-plane
+                color="white"
+                opacity="0.7"
+                position="-1.005 -0.450 -0.01"
+                width="2"
+                height="1"
+              ></a-plane>
+            </a-entity>
+          </a-entity>
+
+          <a-entity
+            id="rightController"
+            meta-touch-controls="hand: right"
+            meta-touch-controls-ui
+          >
+            <a-entity class="text" scale="0.1 0.1 0.1" rotation="-110 0 0">
+              <a-text
+                value=""
+                align="left"
+                baseline="top"
+                color="black"
+              ></a-text>
+              <a-plane
+                color="white"
+                opacity="0.7"
+                position="1.005 -0.450 -0.01"
+                width="2"
+                height="1"
+              ></a-plane>
+            </a-entity>
+          </a-entity>
         </a-entity>
 
         <a-entity id="model" position="0 0 0"></a-entity>
