@@ -336,6 +336,9 @@ const setUseStrafing = (newUseStrafing) => {
   console.log({ useStrafing });
   useStrafingCheckbox.checked = useStrafing;
 };
+const toggleUseStrafing = () => {
+  setUseStrafing(!useStrafing);
+};
 const useStrafingCheckbox = document.getElementById("useStrafing");
 useStrafingCheckbox.addEventListener("input", () => {
   setUseStrafing(useStrafingCheckbox.checked);
@@ -486,6 +489,14 @@ const setLocomotionMode = (newLocomotionMode) => {
   console.log({ locomotionMode });
   locomotionModeSelect.value = locomotionMode;
 };
+const cycleLocomotionMode = () => {
+  // console.log("cycleLocomotionMode");
+  let index = locomotionModes.indexOf(locomotionMode);
+  index++;
+  index %= locomotionModes.length;
+  setLocomotionMode(locomotionModes[index]);
+};
+window.cycleLocomotionMode = cycleLocomotionMode;
 const locomotionModeSelect = document.getElementById("locomotionMode");
 const locomotionModeOptgroup = locomotionModeSelect.querySelector("optgroup");
 locomotionModes.forEach((locomotionMode) => {
@@ -746,6 +757,9 @@ const setMoveRelativeToInsoles = (newMoveRelativeToInsoles) => {
   console.log({ moveRelativeToInsoles });
   moveRelativeToInsolesCheckbox.checked = moveRelativeToInsoles;
 };
+const toggleMoveRelativeToInsoles = () => {
+  setMoveRelativeToInsoles(!moveRelativeToInsoles);
+};
 const moveRelativeToInsolesCheckbox = document.getElementById(
   "moveRelativeToInsoles"
 );
@@ -845,6 +859,9 @@ const setMoveRelativeToCamera = (newMoveRelativeToCamera) => {
   console.log({ moveRelativeToCamera });
   moveRelativeToCameraCheckbox.checked = moveRelativeToCamera;
 };
+const toggleMoveRelativeToCamera = () => {
+  setMoveRelativeToCamera(!moveRelativeToCamera);
+};
 const moveRelativeToCameraCheckbox = document.getElementById(
   "moveRelativeToCamera"
 );
@@ -943,16 +960,7 @@ const selectModel = (model) => {
   modelsSelect.value = model.src;
   onFileURL(model.src);
 };
-
 // MODELS END
-
-// META TOUCH CONTROLS START
-const controllers = {
-  left: document.getElementById("leftController"),
-  right: document.getElementById("rightController"),
-};
-console.log("controllers", controllers);
-// META TOUCH CONTROLS END
 
 // AFRAME START
 const sceneEntity = document.getElementById("scene");
@@ -977,6 +985,224 @@ document.addEventListener("keydown", (event) => {
   }
 });
 // AFRAME END
+
+// META TOUCH CONTROLS START
+const controllers = {
+  left: document.getElementById("leftController"),
+  right: document.getElementById("rightController"),
+};
+/** @typedef {"dominant" | "nonDominant"} MetaTouchControlSide */
+/** @typedef {"upperButton" | "lowerButton" | "grip" | "trigger"} MetaTouchControlType */
+/** @type {MetaTouchControlType[]} */
+const metaTouchControlTypes = ["trigger", "upperButton", "lowerButton", "grip"];
+/** @typedef {{callback: () => boolean, string: string | () => string}} MetaTouchControl */
+/** @typedef {"tarePitch" | "tareYaw" | "setCenterOfPressureOffset" | "toggleMoveRelativeToCamera" | "toggleMoveRelativeToInsoles" | "toggleUseStrafing" | "toggleNone" | "cycleLocomotionMode"} MetaTouchControlName */
+/** @type {Record<MetaTouchControlName, MetaTouchControl>} */
+const controlMaps = {
+  tarePitch: {
+    callback: () => {
+      didStep.tarePitch();
+    },
+    string: "tare pitch",
+  },
+  tareYaw: {
+    callback: () => {
+      didStep.tareYaw();
+    },
+    string: "tare yaw",
+  },
+  setCenterOfPressureOffset: {
+    callback: () => {
+      setCenterOfPressureOffset();
+    },
+    string: "offset cop",
+  },
+  toggleMoveRelativeToCamera: {
+    callback: () => {
+      toggleMoveRelativeToCamera();
+      return true;
+    },
+    string: () => {
+      return moveRelativeToCamera ? "~cameraForward" : "cameraForward";
+    },
+  },
+  toggleMoveRelativeToInsoles: {
+    callback: () => {
+      toggleMoveRelativeToInsoles();
+      return true;
+    },
+    string: () => {
+      return moveRelativeToInsoles ? "~insolesForward" : "insolesForward";
+    },
+  },
+  toggleUseStrafing: {
+    callback: () => {
+      toggleUseStrafing();
+      return true;
+    },
+    string: () => {
+      return useStrafing ? "~strafing" : "strafing";
+    },
+  },
+  toggleNone: {
+    callback: () => {
+      toggleNone();
+      return true;
+    },
+    string: () => {
+      return locomotionMode == "none" ? "resume" : "pause";
+    },
+  },
+  cycleLocomotionMode: {
+    callback: () => {
+      cycleLocomotionMode();
+      return true;
+    },
+    string: () => {
+      return locomotionMode;
+    },
+  },
+};
+/** @typedef {Record<MetaTouchControlType, MetaTouchControl>} MetaTouchControlMap */
+const controls = {
+  /** @type {Record<"true"|"false", MetaTouchControlMap>} */
+  maps: {
+    true: {
+      trigger: controlMaps.toggleMoveRelativeToCamera,
+      upperButton: controlMaps.toggleUseStrafing,
+      lowerButton: controlMaps.setCenterOfPressureOffset,
+      grip: controlMaps.toggleMoveRelativeToInsoles,
+    },
+    false: {
+      trigger: controlMaps.cycleLocomotionMode,
+      upperButton: controlMaps.tarePitch,
+      lowerButton: controlMaps.tareYaw,
+      grip: controlMaps.toggleNone,
+    },
+  },
+  /**
+   * @param {MetaTouchControlType} type
+   * @param {boolean} isDominant
+   */
+  onControl(type, isDominant) {
+    const string = isDominant ? "true" : "false";
+    console.log("onControl", { type, isDominant });
+    const shouldUpdateEntity = this.maps[string][type]?.callback();
+    if (shouldUpdateEntity) {
+      this.updateEntity();
+    }
+  },
+  /**
+   * @param {MetaTouchControlType} type
+   * @param {boolean} isDominant
+   */
+  getPrefix(type, isDominant) {
+    const side = this.getSide(isDominant);
+    switch (type) {
+      case "upperButton":
+        return side == "left" ? "Y" : "B";
+      case "lowerButton":
+        return side == "left" ? "X" : "A";
+      case "grip":
+        return "G";
+      case "trigger":
+        return "T";
+    }
+  },
+  /** @type {BS.Side} */
+  dominantSide: "right",
+  get nonDominantSide() {
+    return this.dominantSide == "right" ? "left" : "right";
+  },
+  /** @param {boolean} isDominant */
+  getSide(isDominant) {
+    return isDominant ? this.dominantSide : this.nonDominantSide;
+  },
+  /** @param {boolean} isDominant */
+  toString(isDominant) {
+    const map = this.maps[isDominant];
+    const strings = [];
+    metaTouchControlTypes
+      .filter((type) => map[type])
+      .forEach((type) => {
+        let { string } = map[type];
+        if (typeof string == "function") {
+          string = string();
+        }
+        if (string) {
+          const prefix = this.getPrefix(type, isDominant);
+          if (prefix) {
+            string = [prefix, string].join(": ");
+          }
+          strings.push(string);
+        } else {
+          console.warn("no string found for control", { isDominant, type });
+        }
+      });
+    console.log({ isDominant }, strings);
+    const string = strings.join("\n");
+    return string;
+  },
+  updateEntity() {
+    sceneEntity.setAttribute("meta-touch-controls-ui", {
+      dominantText: this.toString(true),
+      nonDominantText: this.toString(false),
+      dominantSide: this.dominantSide,
+    });
+  },
+};
+sceneEntity.addEventListener("loaded", () => {
+  controls.updateEntity();
+});
+console.log("controllers", controllers);
+sceneEntity.addEventListener("controller-button", (event) => {
+  const { isDominant, side, pressed, isUpper } = event.detail;
+  if (!pressed) {
+    return;
+  }
+  if (isUpper) {
+    controls.onControl("upperButton", isDominant);
+  } else {
+    controls.onControl("lowerButton", isDominant);
+  }
+});
+sceneEntity.addEventListener("controller-trigger", (event) => {
+  const { isDominant, side, pressed } = event.detail;
+  if (!pressed) {
+    return;
+  }
+  controls.onControl("trigger", isDominant);
+});
+sceneEntity.addEventListener("controller-grip", (event) => {
+  const { isDominant, side, pressed } = event.detail;
+  if (!pressed) {
+    return;
+  }
+  controls.onControl("grip", isDominant);
+});
+const thumbstickScalars = {
+  x: 100,
+  y: -100,
+  yaw: -100,
+};
+window.thumbstickScalars = thumbstickScalars;
+sceneEntity.addEventListener("controller-thumbstick-tick", (event) => {
+  let { isDominant, side, x, y, timeDelta } = event.detail;
+  const timeDeltaScaler = timeDelta / 1000;
+  x *= timeDeltaScaler;
+  y *= timeDeltaScaler;
+
+  if (isDominant) {
+    const yaw = x * thumbstickScalars.yaw;
+    applyCameraYaw(yaw);
+  } else {
+    x *= thumbstickScalars.x;
+    y *= thumbstickScalars.y;
+    applyCameraOffset(x, y);
+  }
+});
+
+// META TOUCH CONTROLS END
 
 // AFRAME INSPECTOR START
 const getIsInspectorOpen = () => {
@@ -1162,7 +1388,11 @@ const loadModelFileUrl = (fileUrlString, modelType, isUrl = false) => {
 
 const localStorageKey = "bs.locomotion";
 const saveToLocalStorage = (urlString) => {
-  localStorage.setItem(localStorageKey, urlString);
+  if (urlString) {
+    localStorage.setItem(localStorageKey, urlString);
+  } else {
+    localStorage.removeItem(localStorageKey);
+  }
 };
 const loadFromLocalStorage = () => {
   const urlString = localStorage.getItem(localStorageKey);
