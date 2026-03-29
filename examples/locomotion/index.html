@@ -196,14 +196,12 @@
       <a-scene id="scene" embedded xr-mode-ui="enabled: true; XRMode: xr;">
         <a-assets></a-assets>
 
-        <a-entity id="cameraRig" position="0 1.6 0">
-          <a-camera
-            id="camera"
-            position="0 0 0"
-            wasd-controls="acceleration: 20;"
-            look-controls
-            camera=""
-          >
+        <a-entity
+          id="cameraRig"
+          position="0 1.6 0"
+          wasd-controls="acceleration: 20;"
+        >
+          <a-camera id="camera" position="0 0 0" look-controls camera="">
           </a-camera>
 
           <a-entity

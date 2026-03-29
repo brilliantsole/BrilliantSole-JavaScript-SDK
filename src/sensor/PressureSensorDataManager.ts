@@ -8,7 +8,7 @@ import CenterOfPressureModel, {
   CenterOfPressureModelData,
 } from "../utils/CenterOfPressureModel.ts";
 
-const _console = createConsole("PressureDataManager", { log: false });
+const _console = createConsole("PressureSensorDataManager", { log: false });
 
 export const PressureSensorTypes = ["pressure"] as const;
 export type PressureSensorType = (typeof PressureSensorTypes)[number];

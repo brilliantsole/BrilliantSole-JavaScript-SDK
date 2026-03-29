@@ -534,14 +534,16 @@ let latestCenterOfPressure;
 /** @type {Record<BS.Side, BS.CenterOfPressure>?}  */
 let latestCentersOfPressure;
 const setCenterOfPressureOffset = async () => {
-  console.log("setCenterOfPressureOffset");
   if (!latestCenterOfPressure || !latestCentersOfPressure) {
     return;
   }
+  console.log("setCenterOfPressureOffset");
   setCenterOfPressureOffsetButton.disabled = true;
-  for (let i = 3; i > 0; i--) {
-    setCenterOfPressureOffsetButton.innerText = i;
-    await BS.wait(1000);
+  if (false) {
+    for (let i = 3; i > 0; i--) {
+      setCenterOfPressureOffsetButton.innerText = i;
+      await BS.wait(1000);
+    }
   }
   setCenterOfPressureOffsetButton.innerText = "set centerOfPressure offset";
 
@@ -634,9 +636,9 @@ const locomotionParams = {
     y: 1,
   },
   turnScalar: 1.2,
-  turnScalar2: 0.5,
+  turnScalar2: 0.3,
   stepLength: 0.2,
-  scaledSumThreshold: 0.05,
+  scaledSumThreshold: 0.06,
 };
 window.locomotionParams = locomotionParams;
 /**
@@ -782,8 +784,8 @@ const pedalsParams = {
   /** @type {BS.Side} */
   dominantFoot: "right",
   scalar: {
-    y: 1,
-    x: 1,
+    y: 3,
+    x: 3,
     yaw: 50,
   },
 };
@@ -1059,7 +1061,7 @@ const controlMaps = {
       return true;
     },
     string: () => {
-      return locomotionMode;
+      return `mode: ${locomotionMode}`;
     },
   },
 };
@@ -1183,7 +1185,7 @@ sceneEntity.addEventListener("controller-grip", (event) => {
 const thumbstickScalars = {
   x: 100,
   y: -100,
-  yaw: -100,
+  yaw: -50,
 };
 window.thumbstickScalars = thumbstickScalars;
 sceneEntity.addEventListener("controller-thumbstick-tick", (event) => {
