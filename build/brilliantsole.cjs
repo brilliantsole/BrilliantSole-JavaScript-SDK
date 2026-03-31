@@ -1570,7 +1570,7 @@ class CenterOfPressureModel {
     }
 }
 
-const _console$I = createConsole("PressureDataManager", { log: false });
+const _console$I = createConsole("PressureSensorDataManager", { log: false });
 const PressureSensorTypes = ["pressure"];
 const ContinuousPressureSensorTypes = PressureSensorTypes;
 const PressureSensorEventTypes = [
@@ -14521,8 +14521,16 @@ class DevicePairSensorDataManager {
         }
         if (value) {
             const timestamps = Object.assign({}, this.#timestamps[sensorType]);
-            this.dispatchEvent(sensorType, { sensorType, timestamps, [sensorType]: value });
-            this.dispatchEvent("sensorData", { sensorType, timestamps, [sensorType]: value });
+            this.dispatchEvent(sensorType, {
+                sensorType,
+                timestamps,
+                [sensorType]: value,
+            });
+            this.dispatchEvent("sensorData", {
+                sensorType,
+                timestamps,
+                [sensorType]: value,
+            });
         }
         else {
             _console$9.log("no value received");
@@ -15330,7 +15338,7 @@ class NobleScanner extends BaseScanner {
                 this.#isBusy = true;
                 _noblePeripheral.shouldConnect = false;
                 _console$5.log("noblePeripheral.connectAsync");
-                await _noblePeripheral.connectAsync();
+                await _noblePeripheral.connectAsync({ mtu: 512 });
                 _console$5.log("noblePeripheral.connectAsync done");
                 this.#isBusy = false;
             }

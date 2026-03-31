@@ -1694,7 +1694,7 @@
     });
   }
 
-  const _console$z = createConsole("PressureDataManager", {
+  const _console$z = createConsole("PressureSensorDataManager", {
     log: false
   });
   const PressureSensorTypes = ["pressure"];

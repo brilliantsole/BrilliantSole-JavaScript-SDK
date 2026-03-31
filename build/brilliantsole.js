@@ -1570,7 +1570,7 @@
 	    }
 	}
 
-	const _console$E = createConsole("PressureDataManager", { log: false });
+	const _console$E = createConsole("PressureSensorDataManager", { log: false });
 	const PressureSensorTypes = ["pressure"];
 	const ContinuousPressureSensorTypes = PressureSensorTypes;
 	const PressureSensorEventTypes = [
@@ -39428,8 +39428,16 @@
 	        }
 	        if (value) {
 	            const timestamps = Object.assign({}, this.#timestamps[sensorType]);
-	            this.dispatchEvent(sensorType, { sensorType, timestamps, [sensorType]: value });
-	            this.dispatchEvent("sensorData", { sensorType, timestamps, [sensorType]: value });
+	            this.dispatchEvent(sensorType, {
+	                sensorType,
+	                timestamps,
+	                [sensorType]: value,
+	            });
+	            this.dispatchEvent("sensorData", {
+	                sensorType,
+	                timestamps,
+	                [sensorType]: value,
+	            });
 	        }
 	        else {
 	            _console$4.log("no value received");

@@ -3,6 +3,7 @@
     <title>Locomotion | BrilliantSole JavaScript SDK</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script type="importmap">
       {
         "imports": {
@@ -79,9 +80,8 @@
       </div>
     </div>
 
-    <br />
-
     <div>
+      <h2>controls</h2>
       <button id="addDevice">add device</button>
       <button id="togglePressureData" disabled>enable pressure data</button>
       <button id="resetPressureRange" disabled>reset pressure range</button>
@@ -98,10 +98,15 @@
       <button id="setCenterOfPressureOffset" disabled>
         set centerOfPressure offset
       </button>
+      <button id="loadPressureCalibratonModel" disabled>load model</button>
       <br />
       <label>
         use gamepad
         <input type="checkbox" id="useGamepad" checked />
+      </label>
+      <label>
+        use VRChat
+        <input type="checkbox" id="useVRChat" />
       </label>
       <label>
         use strafing
@@ -182,6 +187,39 @@
 
     <br />
 
+    <div id="vrChat" hidden>
+      <h2>VRChat</h2>
+      <label>
+        address
+        <input id="vrChatAddress" type="url" placeholder="192.168.1.1" />
+      </label>
+
+      <label>
+        <canvas
+          id="vrChat2D"
+          width="30"
+          height="30"
+          data-radius="3"
+          data-input
+          data-min="-1"
+          data-max="1"
+        ></canvas>
+      </label>
+      <label>
+        look horizontal
+        <input
+          id="vrChatLookHorizontal"
+          type="range"
+          min="-1"
+          max="1"
+          value="0"
+          step="0.01"
+        />
+      </label>
+    </div>
+
+    <br />
+
     <label>
       select model
       <select id="models">
@@ -254,6 +292,5 @@
       </a-scene>
     </div>
     <button id="openInspector">open inspector</button>
-    <br />
   </body>
 </html>

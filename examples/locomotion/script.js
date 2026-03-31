@@ -383,20 +383,15 @@ const didStep = {
       );
     }
 
-    if (this.applyStepImpulse) {
-      stepOffset.y *= 0.5;
-      while (stepOffset.length() > 0.001 && this.latestStepTime[side] == now) {
-        const { x, y } = stepOffset;
-        applyCameraOffset(x, y);
-        stepOffset.multiplyScalar(0.9);
-        await BS.wait(10);
-      }
-    } else {
+    stepOffset.y *= 0.5;
+    while (stepOffset.length() > 0.001 && this.latestStepTime[side] == now) {
       const { x, y } = stepOffset;
       applyCameraOffset(x, y);
+      stepOffset.multiplyScalar(0.9);
+      await BS.wait(10);
     }
+    applyCameraOffset(0, 0);
   },
-  applyStepImpulse: true,
   offsetYaw: {
     left: 0,
     right: 0,
@@ -635,10 +630,10 @@ const locomotionParams = {
     x: 1,
     y: 1,
   },
-  turnScalar: 1.2,
-  turnScalar2: 0.3,
+  turnScalar: 0.8,
+  turnScalar2: 0.4,
   stepLength: 0.2,
-  scaledSumThreshold: 0.06,
+  scaledSumThreshold: { left: 0.1, right: 0.1 },
 };
 window.locomotionParams = locomotionParams;
 /**
@@ -666,6 +661,10 @@ const onCenterOfPressure = (centerOfPressure, centersOfPressure) => {
   });
 
   // console.log("polarCenterOfPressure", polarCenterOfPressure);
+
+  let yaw = 0;
+  let x = 0;
+  let y = 0;
 
   if (locomotionMode == "centerOfPressure") {
     let angleDifference = Math.abs(
@@ -695,28 +694,25 @@ const onCenterOfPressure = (centerOfPressure, centersOfPressure) => {
     // });
 
     if (areCentersAligned && isMagnitudePositive && areMagnitudesPositive) {
-      const x =
+      x =
         polarCenterOfPressure.centerOfPressure.x *
         locomotionParams.offsetScalar.x *
         sensorRateScalar;
-      const y =
+      y =
         polarCenterOfPressure.centerOfPressure.y *
         locomotionParams.offsetScalar.y *
         sensorRateScalar;
 
-      if (useStrafing) {
-        applyCameraOffset(x, y);
-      } else {
-        let yaw = -x;
+      if (!useStrafing) {
+        yaw = -x;
         yaw *= locomotionParams.turnScalar;
         // FIX - tweak yaw
-        applyCameraYaw(yaw);
-        applyCameraOffset(0, y);
+        x = 0;
       }
     }
     // console.log({ areCentersOpposed, areMagnitudesPositive, useStrafing });
     if (areCentersOpposed && areMagnitudesPositive && useStrafing) {
-      let yaw = 0;
+      yaw = 0;
       // FIX - tweak yaw
       BS.Sides.forEach((side) => {
         const scalar = side == "left" ? -1 : 1;
@@ -728,10 +724,12 @@ const onCenterOfPressure = (centerOfPressure, centersOfPressure) => {
           locomotionParams.turnScalar2 *
           sensorRateScalar;
       });
-      // console.log({ yaw });
-      applyCameraYaw(yaw);
     }
   }
+
+  // console.log({ yaw,x,y });
+  applyCameraYaw(yaw);
+  applyCameraOffset(x, y);
 };
 
 devicePair.addEventListener("pressure", (event) => {
@@ -796,8 +794,13 @@ devicePair.addEventListener("devicePressure", (event) => {
   const { normalizedCenter, motionCenter, calibratedCenter } = pressure;
   const center = calibratedCenter ?? motionCenter ?? normalizedCenter;
 
+  let yaw = 0;
+  let x = 0;
+  let y = 0;
+
   if (locomotionMode == "pressureStepping") {
-    const isFootDown = pressure.scaledSum > locomotionParams.scaledSumThreshold;
+    const isFootDown =
+      pressure.scaledSum > locomotionParams.scaledSumThreshold[side];
     // console.log("pressure", pressure.scaledSum, { side, isFootDown });
     didStep.set(isFootDown, side);
   } else if (locomotionMode == "pedals") {
@@ -811,19 +814,22 @@ devicePair.addEventListener("devicePressure", (event) => {
         const isDominant = pedalsParams.dominantFoot == side;
         if (isDominant) {
           offset *= pedalsParams.scalar.y;
-          applyCameraOffset(0, offset);
+          y = offset;
         } else {
           if (useStrafing) {
             offset *= pedalsParams.scalar.x;
-            applyCameraOffset(offset, 0);
+            x = offset;
           } else {
             offset *= pedalsParams.scalar.yaw;
-            applyCameraYaw(offset, true);
+            yaw = offset;
           }
         }
       }
     }
   }
+
+  applyCameraYaw(yaw, true);
+  applyCameraOffset(x, y);
 });
 devicePair.addEventListener("deviceGameRotation", (event) => {
   const { side, gameRotationEuler } = event.message;
@@ -880,36 +886,59 @@ const cameraOffsetVector = new THREE.Vector3();
  */
 const applyCameraOffset = (x, y) => {
   // console.log("applyCameraOffset", { x, y });
-  /** @type {Object3D} */
-  const cameraRig = cameraRigEntity.object3D;
-  const { position } = cameraRig;
-
-  /** @type {Object3D} */
-  const camera = cameraEntity.object3D;
-
-  cameraOffsetVector.set(x, 0, -y);
-  if (moveRelativeToCamera) {
-    camera.getWorldQuaternion(cameraQuaternion);
+  if (useVRChat) {
+    x /= sensorRateScalar;
+    y /= sensorRateScalar;
+    setVrChat2DInput(x, y);
   } else {
-    cameraRig.getWorldQuaternion(cameraQuaternion);
-  }
+    if (x == 0 && y == 0) {
+      return;
+    }
+    /** @type {Object3D} */
+    const cameraRig = cameraRigEntity.object3D;
+    const { position } = cameraRig;
 
-  cameraEuler.setFromQuaternion(cameraQuaternion);
-  cameraEuler.x = cameraEuler.z = 0;
-  cameraOffsetVector.applyEuler(cameraEuler);
-  position.add(cameraOffsetVector);
+    /** @type {Object3D} */
+    const camera = cameraEntity.object3D;
+
+    cameraOffsetVector.set(x, 0, -y);
+    if (moveRelativeToCamera) {
+      camera.getWorldQuaternion(cameraQuaternion);
+    } else {
+      cameraRig.getWorldQuaternion(cameraQuaternion);
+    }
+
+    cameraEuler.setFromQuaternion(cameraQuaternion);
+    cameraEuler.x = cameraEuler.z = 0;
+    cameraOffsetVector.applyEuler(cameraEuler);
+    position.add(cameraOffsetVector);
+  }
 };
 window.applyCameraOffset = applyCameraOffset;
 
+const vrChatScalars = {
+  yaw: 1.0,
+};
+window.vrChatScalars = vrChatScalars;
 /** @param {number} yaw */
 const applyCameraYaw = (yaw, isDegrees = false) => {
-  /** @type {Object3D} */
-  const cameraRig = cameraRigEntity.object3D;
-  const { rotation } = cameraRig;
-  if (isDegrees) {
-    yaw = THREE.MathUtils.degToRad(yaw);
+  if (useVRChat) {
+    yaw /= sensorRateScalar;
+    yaw *= -1;
+    yaw *= vrChatScalars.yaw;
+    setVrChatLookHorizontal(yaw);
+  } else {
+    if (yaw == 0) {
+      return;
+    }
+    /** @type {Object3D} */
+    const cameraRig = cameraRigEntity.object3D;
+    const { rotation } = cameraRig;
+    if (isDegrees) {
+      yaw = THREE.MathUtils.degToRad(yaw);
+    }
+    rotation.y += yaw;
   }
-  rotation.y += yaw;
 };
 window.applyCameraYaw = applyCameraYaw;
 // LOCOMOTION END
@@ -1141,7 +1170,7 @@ const controls = {
           console.warn("no string found for control", { isDominant, type });
         }
       });
-    console.log({ isDominant }, strings);
+    // console.log({ isDominant }, strings);
     const string = strings.join("\n");
     return string;
   },
@@ -1156,7 +1185,7 @@ const controls = {
 sceneEntity.addEventListener("loaded", () => {
   controls.updateEntity();
 });
-console.log("controllers", controllers);
+// console.log("controllers", controllers);
 sceneEntity.addEventListener("controller-button", (event) => {
   const { isDominant, side, pressed, isUpper } = event.detail;
   if (!pressed) {
@@ -1448,46 +1477,48 @@ useGamepadCheckbox.addEventListener("input", () => {
   setUseGamepad(useGamepadCheckbox.checked);
 });
 
-window.addEventListener("gamepadtick", (event) => {
+let onGamepadTick = (event) => {
+  const { thumbsticks } = event.detail;
+
   if (!useGamepad) {
-    return;
-  }
-  const { thumbsticks } = event.detail;
-  const centerOfPressure = { x: 0, y: 0 };
-  const centersOfPressure = {};
-  thumbsticks.forEach((thumbstick, index) => {
-    const { x, y, angle, magnitude } = thumbstick;
-    const side = index == 0 ? "left" : "right";
-    // console.log({ side, x, y, magnitude, angle });
-    const sideCenterOfPressure = {
-      x: (x + 1) / 2,
-      y: (y + 1) / 2,
-    };
-    centersOfPressure[side] = sideCenterOfPressure;
-
-    centerOfPressure.x += sideCenterOfPressure.x / 2;
-    centerOfPressure.y += sideCenterOfPressure.y / 2;
-  });
-
-  onCenterOfPressure(centerOfPressure, centersOfPressure);
-});
-window.addEventListener("gamepadtick", (event) => {
-  if (useGamepad) {
-    return;
-  }
-  const { thumbsticks } = event.detail;
-  thumbsticks.forEach((thumbstick, index) => {
-    const { x, y, angle, magnitude } = thumbstick;
-    const side = index == 0 ? "left" : "right";
-    if (magnitude > 0) {
-      if (side == "right") {
-        applyCameraYaw(-x * gamepadScalar.yaw, true);
+    thumbsticks.forEach((thumbstick, index) => {
+      const { x, y, angle, magnitude } = thumbstick;
+      const side = index == 0 ? "left" : "right";
+      if (magnitude > 0) {
+        if (side == "right") {
+          applyCameraYaw(-x * gamepadScalar.yaw, true);
+        } else {
+          applyCameraOffset(x * gamepadScalar.offset, y * gamepadScalar.offset);
+        }
       } else {
-        applyCameraOffset(x * gamepadScalar.offset, y * gamepadScalar.offset);
+        applyCameraYaw(0);
+        applyCameraOffset(0, 0);
       }
-    }
-  });
-});
+    });
+  }
+
+  if (useGamepad) {
+    const centerOfPressure = { x: 0, y: 0 };
+    const centersOfPressure = {};
+    thumbsticks.forEach((thumbstick, index) => {
+      const { x, y, angle, magnitude } = thumbstick;
+      const side = index == 0 ? "left" : "right";
+      // console.log({ side, x, y, magnitude, angle });
+      const sideCenterOfPressure = {
+        x: (x + 1) / 2,
+        y: (y + 1) / 2,
+      };
+      centersOfPressure[side] = sideCenterOfPressure;
+
+      centerOfPressure.x += sideCenterOfPressure.x / 2;
+      centerOfPressure.y += sideCenterOfPressure.y / 2;
+    });
+
+    onCenterOfPressure(centerOfPressure, centersOfPressure);
+  }
+};
+onGamepadTick = BS.ThrottleUtils.throttle(onGamepadTick, sensorRate);
+window.addEventListener("gamepadtick", onGamepadTick);
 window.addEventListener("gamepadbuttonchange", (event) => {
   const { buttonChange } = event.detail;
   //console.log("buttonChange", buttonChange);
@@ -1510,3 +1541,239 @@ window.addEventListener("gamepadbuttonchange", (event) => {
   }
 });
 // GAMEPAD END
+
+// VRCHAT START
+const vrChatContainer = document.getElementById("vrChat");
+
+let useVRChat = false;
+const setUseVRChat = (newUseVRChat) => {
+  useVRChat = newUseVRChat;
+  console.log({ useVRChat });
+  useVRChatCheckbox.checked = useVRChat;
+  if (useVRChat) {
+    vrChatContainer.removeAttribute("hidden");
+  } else {
+    vrChatContainer.setAttribute("hidden", "");
+  }
+};
+const useVRChatCheckbox = document.getElementById("useVRChat");
+useVRChatCheckbox.addEventListener("input", () => {
+  setUseVRChat(useVRChatCheckbox.checked);
+});
+
+let vrChatAddress = "";
+const setVrChatAddress = (newVrChatAddress, isVrChatMessageResponse) => {
+  if (vrChatAddress == newVrChatAddress) {
+    return;
+  }
+  if (isVrChatMessageResponse) {
+    // setUseVRChat(true);
+  }
+  vrChatAddress = newVrChatAddress;
+  console.log({ vrChatAddress });
+  vrChatAddressInput.value = vrChatAddress;
+  if (!isVrChatMessageResponse) {
+    sendVrChatMessage({
+      type: "setAddress",
+      message: { address: vrChatAddress },
+    });
+  }
+};
+const vrChatAddressInput = document.getElementById("vrChatAddress");
+vrChatAddressInput.addEventListener("focusout", () => {
+  setVrChatAddress(vrChatAddressInput.value);
+});
+
+const vrChatControls = {
+  vertical: 0,
+  horizontal: 0,
+  lookHorizontal: 0,
+};
+
+const vrChat2DInput = document.getElementById("vrChat2D");
+vrChat2DInput.addEventListener("input", () => {
+  const { x: horizontal, y: vertical } = vrChat2DInput.value;
+  setVrChat2DInput(horizontal, vertical);
+});
+vrChat2DInput.addEventListener("change", () => {
+  setVrChat2DInput(0, 0);
+});
+const throttledSetVrChat2DInput = BS.ThrottleUtils.throttle(
+  (horizontal, vertical) =>
+    sendVrChatMessage({
+      type: "set2DInput",
+      message: { horizontal, vertical },
+    }),
+  sensorRate,
+  true
+);
+const setVrChat2DInput = (horizontal, vertical, isVrChatMessageResponse) => {
+  Object.assign(vrChatControls, { horizontal, vertical });
+  // console.log("setVrChat2DInput", {
+  //   horizontal,
+  //   vertical,
+  //   isVrChatMessageResponse,
+  // });
+  vrChat2DInput.value = { x: horizontal, y: vertical };
+  if (!isVrChatMessageResponse) {
+    if (horizontal == 0 && vertical == 0) {
+      sendVrChatMessage({
+        type: "set2DInput",
+        message: { horizontal, vertical },
+      });
+    } else {
+      throttledSetVrChat2DInput(horizontal, vertical);
+    }
+  }
+};
+
+const vrChatLookHorizontalInput = document.getElementById(
+  "vrChatLookHorizontal"
+);
+vrChatLookHorizontalInput.addEventListener("input", () => {
+  const lookHorizontal = +vrChatLookHorizontalInput.value;
+  setVrChatLookHorizontal(lookHorizontal);
+});
+vrChatLookHorizontalInput.addEventListener("change", () => {
+  setVrChatLookHorizontal(0);
+});
+const throttledSetVrChatLookHorizontal = BS.ThrottleUtils.throttle(
+  (lookHorizontal) =>
+    sendVrChatMessage({
+      type: "setLookHorizontal",
+      message: { lookHorizontal },
+    }),
+  sensorRate,
+  true
+);
+const setVrChatLookHorizontal = (lookHorizontal, isVrChatMessageResponse) => {
+  Object.assign(vrChatControls, { lookHorizontal });
+  // console.log("setVrChatLookHorizontal", {
+  //   lookHorizontal,
+  //   isVrChatMessageResponse,
+  // });
+  vrChatLookHorizontalInput.value = lookHorizontal;
+  if (!isVrChatMessageResponse) {
+    if (lookHorizontal == 0) {
+      sendVrChatMessage({
+        type: "setLookHorizontal",
+        message: { lookHorizontal },
+      });
+    } else {
+      throttledSetVrChatLookHorizontal(lookHorizontal);
+    }
+  }
+};
+
+/** @typedef {{type: "getAddress"}} GetAddressVRChatMessage */
+/** @typedef {{type: "setAddress", message: {address: string}}} SetAddressVRChatMessage */
+/** @typedef {{type: "getLookHorizontal"}} GetLookHorizontalVRChatMessage */
+/** @typedef {{type: "setLookHorizontal", message: {lookHorizontal: number}}} SetLookHorizontalVRChatMessage */
+/** @typedef {{type: "get2DInput"}} Get2DInputVRChatMessage */
+/** @typedef {{type: "set2DInput", message: {vertical?: number, horizontal?: number}}} Set2DInputVRChatMessage */
+/** @typedef { GetAddressVRChatMessage | SetAddressVRChatMessage | GetLookHorizontalVRChatMessage | SetLookHorizontalVRChatMessage | Get2DInputVRChatMessage | Set2DInputVRChatMessage } VRChatMessage */
+
+/** @typedef {VRChatMessage["type"]} VRChatMessageType */
+/** @typedef {{type: VRChatMessageType, error?: string}} VRChatMessageResponse */
+
+/** @param {VRChatMessage} sendVrChatMessage */
+const sendVrChatMessage = async (sendVrChatMessage) => {
+  // console.log("sendVrChatMessage", sendVrChatMessage);
+  const response = await fetch("https://localhost/vrchat/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(sendVrChatMessage),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    console.error(error);
+    return;
+  }
+
+  /** @type {VRChatMessageResponse} */
+  const json = await response.json();
+  // console.log("json", json);
+  switch (json.type) {
+    case "getAddress":
+      {
+        const { address } = json.message;
+        setVrChatAddress(address, true);
+      }
+      break;
+    case "get2DInput":
+      {
+        const { horizontal, vertical } = json.message;
+        setVrChat2DInput(horizontal, vertical, true);
+      }
+      break;
+    case "getLookHorizontal":
+      {
+        const { lookHorizontal } = json.message;
+        setVrChatLookHorizontal(lookHorizontal, true);
+      }
+      break;
+    default:
+      break;
+  }
+};
+window.sendVrChatMessage = sendVrChatMessage;
+sendVrChatMessage({
+  type: "getAddress",
+});
+sendVrChatMessage({
+  type: "get2DInput",
+});
+sendVrChatMessage({
+  type: "getLookHorizontal",
+});
+// VRCHAT END
+
+// TF MODEL
+const getBasePressureCalibrationModelKey = (side) =>
+  `bs.${side}.centerOfPressure.model`;
+const getPressureCalibrationModelIndexeddbKey = (side) =>
+  `indexeddb://${getBasePressureCalibrationModelKey(side)}`;
+
+devicePair.addEventListener("deviceIsConnected", async (event) => {
+  const { device, side } = event.message;
+
+  if (device.isConnected) {
+    const isTensorFlowModelAvailable = await BS.isTensorFlowModelAvailable(
+      getPressureCalibrationModelIndexeddbKey(side)
+    );
+    console.log({ isTensorFlowModelAvailable, side });
+    if (isTensorFlowModelAvailable) {
+      loadPressureCalibratonModelButton.disabled = false;
+    }
+  }
+});
+
+const loadPressureCalibratonModelButton = document.getElementById(
+  "loadPressureCalibratonModel"
+);
+loadPressureCalibratonModelButton.addEventListener("click", () => {
+  loadPressureCalibratonModel();
+});
+const loadPressureCalibratonModel = async () => {
+  console.log("loadPressureCalibratonModel");
+  loadPressureCalibratonModelButton.disabled = true;
+  for (const side of devicePair.sides) {
+    console.log({ side }, !devicePair[side]?.isConnected);
+    if (!devicePair[side]?.isConnected) {
+      continue;
+    }
+    const isTensorFlowModelAvailable = await BS.isTensorFlowModelAvailable(
+      getPressureCalibrationModelIndexeddbKey(side)
+    );
+    console.log({ isTensorFlowModelAvailable, side });
+    if (isTensorFlowModelAvailable) {
+      const didLoad = await devicePair[side].loadPressureCalibrationModel(
+        getPressureCalibrationModelIndexeddbKey(side)
+      );
+      console.log({ didLoad, side });
+    }
+  }
+};

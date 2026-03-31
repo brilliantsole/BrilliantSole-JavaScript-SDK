@@ -129,7 +129,8 @@ class NobleScanner extends BaseScanner {
         this.#isBusy = true;
         _noblePeripheral.shouldConnect = false;
         _console.log("noblePeripheral.connectAsync");
-        await _noblePeripheral.connectAsync();
+        // https://github.com/stoprocent/noble/pull/75
+        await _noblePeripheral.connectAsync({ mtu: 512 });
         _console.log("noblePeripheral.connectAsync done");
         this.#isBusy = false;
       }

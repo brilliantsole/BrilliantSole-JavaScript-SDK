@@ -126,10 +126,10 @@
           this.getIsDominantHand() ? "dominantText" : "nonDominantText"
         ];
 
-      console.log("updateText\n", string, {
-        side: this.side,
-        isDominantHand: this.getIsDominantHand(),
-      });
+      // console.log("updateText\n", string, {
+      //   side: this.side,
+      //   isDominantHand: this.getIsDominantHand(),
+      // });
       this.textEntity.setAttribute("value", string);
     },
 
