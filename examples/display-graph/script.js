@@ -420,7 +420,7 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  //console.log("drawing...");
+  // console.log("drawing...");
 
   {
     await displayCanvasHelper.setVerticalAlignment("start");

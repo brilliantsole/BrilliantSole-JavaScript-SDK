@@ -5,6 +5,6 @@ declare class DisplayContextStateHelper {
     get isSegmentUniform(): boolean;
     diff(other: PartialDisplayContextState): (keyof DisplayContextState)[];
     update(newState: PartialDisplayContextState): (keyof DisplayContextState)[];
-    reset(): void;
+    reset(numberOfColors: number, keepColorIndices?: boolean, keepSpriteColorIndices?: boolean): void;
 }
 export default DisplayContextStateHelper;

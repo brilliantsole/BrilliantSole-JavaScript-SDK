@@ -12680,8 +12680,22 @@ class DisplayContextStateHelper {
         });
         return differences;
     }
-    reset() {
+    reset(numberOfColors, keepColorIndices, keepSpriteColorIndices) {
+        const spriteColorIndices = this.#state.spriteColorIndices.slice();
+        const { fillColorIndex, lineColorIndex, backgroundColorIndex } = this.#state;
         Object.assign(this.#state, DefaultDisplayContextState);
+        if (keepColorIndices) {
+            this.#state.fillColorIndex = fillColorIndex;
+            this.#state.lineColorIndex = lineColorIndex;
+            this.#state.backgroundColorIndex = backgroundColorIndex;
+        }
+        if (keepSpriteColorIndices) {
+            this.#state.spriteColorIndices = spriteColorIndices;
+        }
+        else {
+            this.#state.spriteColorIndices = new Array(numberOfColors).fill(0);
+        }
+        this.#state.bitmapColorIndices = new Array(numberOfColors).fill(0);
     }
 }
 
@@ -13814,6 +13828,7 @@ const DisplayContextCommandTypes = [
     "drawSprites",
     "startSprite",
     "endSprite",
+    "clearContext",
 ];
 const DisplaySpriteContextCommandTypes = [
     "selectFillColor",
@@ -13891,6 +13906,7 @@ function serializeContextCommand(displayManager, command) {
         case "resetSpriteScale":
         case "resetAlignment":
         case "endSprite":
+        case "clearContext":
             break;
         case "setColor":
             {
@@ -30389,6 +30405,9 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
         case "endSprite":
             await displayManager.endSprite(sendImmediately);
             break;
+        case "clearContext":
+            await displayManager.clearContext(sendImmediately);
+            break;
     }
 }
 async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
@@ -30627,6 +30646,13 @@ class DisplayManager {
     get contextState() {
         return this.#contextStateHelper.state;
     }
+    #resetContextState(keepColorIndices, keepSpriteColorIndices) {
+        _console$j.log("resetContextState", {
+            keepColorIndices,
+            keepSpriteColorIndices,
+        });
+        this.#contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
+    }
     #onContextStateUpdate(differences) {
         this.#dispatchEvent("displayContextState", {
             displayContextState: structuredClone(this.contextState),
@@ -30860,7 +30886,7 @@ class DisplayManager {
         }
     }
     get numberOfColors() {
-        return 2 ** Number(this.pixelDepth);
+        return 2 ** Number(this.pixelDepth ?? 0);
     }
     #displayInformation;
     get displayInformation() {
@@ -31066,26 +31092,38 @@ class DisplayManager {
         this.#dispatchEvent("displayOpacity", { opacity });
     }
     #contextStack = [];
-    #saveContext(sendImmediately) {
+    async #saveContext(sendImmediately) {
         this.#contextStack.push(structuredClone(this.contextState));
     }
-    #restoreContext(sendImmediately) {
+    async saveContext(sendImmediately) {
+        {
+            await this.#saveContext(sendImmediately);
+        }
+    }
+    async #restoreContext(sendImmediately) {
         const contextState = this.#contextStack.pop();
         if (!contextState) {
             _console$j.warn("#contextStack empty");
             return;
         }
-        this.setContextState(contextState, sendImmediately);
-    }
-    async saveContext(sendImmediately) {
-        {
-            this.#saveContext(sendImmediately);
-        }
+        await this.setContextState(contextState, sendImmediately);
     }
     async restoreContext(sendImmediately) {
         {
-            this.#restoreContext(sendImmediately);
+            await this.#restoreContext(sendImmediately);
         }
+    }
+    async #clearContext(sendImmediately) {
+        const contextState = this.#contextStack.pop();
+        if (!contextState) {
+            _console$j.warn("#contextStack empty");
+            return;
+        }
+        await this.setContextState(contextState, sendImmediately);
+    }
+    async clearContext(sendImmediately) {
+        await this.#clearContext(sendImmediately);
+        await this.#sendContextCommand("clearContext", undefined, sendImmediately);
     }
     async selectFillColor(fillColorIndex, sendImmediately) {
         this.assertValidColorIndex(fillColorIndex);
@@ -32502,9 +32540,7 @@ class DisplayManager {
         _console$j.assertWithError(!this.#isDrawingBlankSprite, `already drawing blank sprite`);
         this.#isDrawingBlankSprite = true;
         this.#saveContext(sendImmediately);
-        this.#contextStateHelper.reset();
-        this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-        this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
+        this.#resetContextState();
         const commandType = "startSprite";
         const dataView = serializeContextCommand(this, {
             type: commandType,
@@ -32532,7 +32568,7 @@ class DisplayManager {
         this.#brightness = undefined;
         this.#contextCommandBuffers = [];
         this.#isAvailable = false;
-        this.#contextStateHelper.reset();
+        this.#resetContextState();
         this.#colors.length = 0;
         this.#opacities.length = 0;
         this.#isReady = true;
@@ -36839,10 +36875,12 @@ class DisplayCanvasHelper {
             differences,
         });
     }
-    #resetContextState() {
-        this.#contextStateHelper.reset();
-        this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-        this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
+    #resetContextState(keepColorIndices, keepSpriteColorIndices) {
+        _console$6.log("resetContextState", {
+            keepColorIndices,
+            keepSpriteColorIndices,
+        });
+        this.#contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
     }
     async #updateDeviceContextState(sendImmediately) {
         if (!this.device?.isConnected) {
@@ -36949,6 +36987,14 @@ class DisplayCanvasHelper {
     #contextStack = [];
     async #saveContext(sendImmediately) {
         this.#contextStack.push(structuredClone(this.contextState));
+        if (!this.#ignoreDevice) {
+            await this.#updateDeviceContextState(sendImmediately);
+        }
+    }
+    async saveContext(sendImmediately) {
+        {
+            await this.#saveContext(sendImmediately);
+        }
     }
     async #restoreContext(sendImmediately) {
         const contextState = this.#contextStack.pop();
@@ -36961,11 +37007,20 @@ class DisplayCanvasHelper {
             await this.#updateDeviceContextState(sendImmediately);
         }
     }
-    async saveContext(sendImmediately) {
-        await this.#saveContext(sendImmediately);
-    }
     async restoreContext(sendImmediately) {
-        await this.#restoreContext(sendImmediately);
+        {
+            await this.#restoreContext(sendImmediately);
+        }
+    }
+    async #clearContext(sendImmediately) {
+        this.#resetContextState(true, !this.#isDrawingSprite && !this.#isDrawingBlankSprite
+        );
+    }
+    async clearContext(sendImmediately) {
+        await this.#clearContext(sendImmediately);
+        if (this.device?.isConnected && !this.#ignoreDevice) {
+            await this.deviceDisplayManager.clearContext(sendImmediately);
+        }
     }
     async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
         this.assertValidColorIndex(backgroundColorIndex);
@@ -39139,10 +39194,8 @@ class DisplayCanvasHelper {
         if ("name" in sprite) {
             _console$6.assertWithError(!this.#spriteStack.includes(sprite), `cyclical sprite ${sprite.name} found in stack`);
         }
-        const spriteColorIndices = contextState.spriteColorIndices.slice();
         this.#spriteContextStack.push(contextState);
-        this.#resetContextState();
-        this.contextState.spriteColorIndices = spriteColorIndices;
+        this.#resetContextState(true, true);
     }
     #restoreContextForSprite() {
         this.#resetCanvasContextTransform();

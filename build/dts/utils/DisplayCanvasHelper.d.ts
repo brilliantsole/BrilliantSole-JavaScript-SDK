@@ -132,6 +132,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
     saveContext(sendImmediately?: boolean): Promise<void>;
     restoreContext(sendImmediately?: boolean): Promise<void>;
+    clearContext(sendImmediately?: boolean): Promise<void>;
     selectBackgroundColor(backgroundColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;

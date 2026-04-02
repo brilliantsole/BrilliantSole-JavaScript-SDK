@@ -12801,8 +12801,25 @@
       });
       return differences;
     }
-    reset() {
+    reset(numberOfColors, keepColorIndices, keepSpriteColorIndices) {
+      const spriteColorIndices = _classPrivateFieldGet2(_state, this).spriteColorIndices.slice();
+      const {
+        fillColorIndex,
+        lineColorIndex,
+        backgroundColorIndex
+      } = _classPrivateFieldGet2(_state, this);
       Object.assign(_classPrivateFieldGet2(_state, this), DefaultDisplayContextState);
+      if (keepColorIndices) {
+        _classPrivateFieldGet2(_state, this).fillColorIndex = fillColorIndex;
+        _classPrivateFieldGet2(_state, this).lineColorIndex = lineColorIndex;
+        _classPrivateFieldGet2(_state, this).backgroundColorIndex = backgroundColorIndex;
+      }
+      if (keepSpriteColorIndices) {
+        _classPrivateFieldGet2(_state, this).spriteColorIndices = spriteColorIndices;
+      } else {
+        _classPrivateFieldGet2(_state, this).spriteColorIndices = new Array(numberOfColors).fill(0);
+      }
+      _classPrivateFieldGet2(_state, this).bitmapColorIndices = new Array(numberOfColors).fill(0);
     }
   }
 
@@ -13909,7 +13926,7 @@
   const _console$j = createConsole("DisplayContextCommand", {
     log: false
   });
-  const DisplayContextCommandTypes = ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setIgnoreFill", "setIgnoreLine", "setFillBackground", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesLineHeight", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlignment", "setSpritesLineAlignment", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites", "startSprite", "endSprite"];
+  const DisplayContextCommandTypes = ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setIgnoreFill", "setIgnoreLine", "setFillBackground", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesLineHeight", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlignment", "setSpritesLineAlignment", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites", "startSprite", "endSprite", "clearContext"];
   const DisplaySpriteContextCommandTypes = ["selectFillColor", "selectLineColor",
   "setIgnoreFill", "setIgnoreLine",
   "setLineWidth", "setRotation", "clearRotation", "setVerticalAlignment", "setHorizontalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "drawSprite"];
@@ -13928,6 +13945,7 @@
       case "resetSpriteScale":
       case "resetAlignment":
       case "endSprite":
+      case "clearContext":
         break;
       case "setColor":
         {
@@ -29063,6 +29081,9 @@
       case "endSprite":
         await displayManager.endSprite(sendImmediately);
         break;
+      case "clearContext":
+        await displayManager.clearContext(sendImmediately);
+        break;
     }
   }
   async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
@@ -29475,7 +29496,8 @@
       }
     }
     get numberOfColors() {
-      return 2 ** Number(this.pixelDepth);
+      var _this$pixelDepth;
+      return 2 ** Number((_this$pixelDepth = this.pixelDepth) !== null && _this$pixelDepth !== void 0 ? _this$pixelDepth : 0);
     }
     get displayInformation() {
       return _classPrivateFieldGet2(_displayInformation, this);
@@ -29608,13 +29630,17 @@
     }
     async saveContext(sendImmediately) {
       {
-        _assertClassBrand(_DisplayManager_brand, this, _saveContext).call(this, sendImmediately);
+        await _assertClassBrand(_DisplayManager_brand, this, _saveContext).call(this, sendImmediately);
       }
     }
     async restoreContext(sendImmediately) {
       {
-        _assertClassBrand(_DisplayManager_brand, this, _restoreContext).call(this, sendImmediately);
+        await _assertClassBrand(_DisplayManager_brand, this, _restoreContext).call(this, sendImmediately);
       }
+    }
+    async clearContext(sendImmediately) {
+      await _assertClassBrand(_DisplayManager_brand, this, _clearContext).call(this, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, "clearContext", undefined, sendImmediately);
     }
     async selectFillColor(fillColorIndex, sendImmediately) {
       this.assertValidColorIndex(fillColorIndex);
@@ -31003,9 +31029,7 @@
       _console$f.assertWithError(!_classPrivateFieldGet2(_isDrawingBlankSprite, this), `already drawing blank sprite`);
       _classPrivateFieldSet2(_isDrawingBlankSprite, this, true);
       _assertClassBrand(_DisplayManager_brand, this, _saveContext).call(this, sendImmediately);
-      _classPrivateFieldGet2(_contextStateHelper, this).reset();
-      this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-      this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
+      _assertClassBrand(_DisplayManager_brand, this, _resetContextState).call(this);
       const commandType = "startSprite";
       const dataView = serializeContextCommand(this, {
         type: commandType,
@@ -31033,7 +31057,7 @@
       _classPrivateFieldSet2(_brightness, this, undefined);
       _classPrivateFieldSet2(_contextCommandBuffers, this, []);
       _classPrivateFieldSet2(_isAvailable, this, false);
-      _classPrivateFieldGet2(_contextStateHelper, this).reset();
+      _assertClassBrand(_DisplayManager_brand, this, _resetContextState).call(this);
       _classPrivateFieldGet2(_colors, this).length = 0;
       _classPrivateFieldGet2(_opacities, this).length = 0;
       _classPrivateFieldSet2(_isReady, this, true);
@@ -31078,6 +31102,13 @@
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "isDisplayAvailable", {
       isDisplayAvailable: _classPrivateFieldGet2(_isAvailable, this)
     });
+  }
+  function _resetContextState(keepColorIndices, keepSpriteColorIndices) {
+    _console$f.log("resetContextState", {
+      keepColorIndices,
+      keepSpriteColorIndices
+    });
+    _classPrivateFieldGet2(_contextStateHelper, this).reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
   }
   function _onContextStateUpdate(differences) {
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayContextState", {
@@ -31216,16 +31247,24 @@
     }], true);
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayContextCommands", {});
   }
-  function _saveContext(sendImmediately) {
+  async function _saveContext(sendImmediately) {
     _classPrivateFieldGet2(_contextStack, this).push(structuredClone(this.contextState));
   }
-  function _restoreContext(sendImmediately) {
+  async function _restoreContext(sendImmediately) {
     const contextState = _classPrivateFieldGet2(_contextStack, this).pop();
     if (!contextState) {
       _console$f.warn("#contextStack empty");
       return;
     }
-    this.setContextState(contextState, sendImmediately);
+    await this.setContextState(contextState, sendImmediately);
+  }
+  async function _clearContext(sendImmediately) {
+    const contextState = _classPrivateFieldGet2(_contextStack, this).pop();
+    if (!contextState) {
+      _console$f.warn("#contextStack empty");
+      return;
+    }
+    await this.setContextState(contextState, sendImmediately);
   }
   function _assertValidBitmapSize(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
