@@ -292,26 +292,34 @@ export function getFontMetrics(
       glyphs.push(glyph);
     }
 
-    // _console.log({
-    //   fontName: font.getEnglishName("fullName"),
-    //   minSpriteY,
-    //   maxSpriteY,
-    // });
+    _console.log({
+      fontName: font.getEnglishName("fullName"),
+      minSpriteY,
+      maxSpriteY,
+    });
   }
 
   minSpriteY = options.minSpriteY ?? minSpriteY;
   maxSpriteY = options.maxSpriteY ?? maxSpriteY;
 
+  if (minSpriteY == Infinity) {
+    minSpriteY = 0;
+  }
+  if (maxSpriteY == -Infinity) {
+    maxSpriteY = 0;
+  }
+
   let maxSpriteHeight =
     options.maxSpriteHeight ?? maxSpriteY - minSpriteY + strokeWidth;
 
-  // if (options.maxSpriteHeight) {
-  //   if (options.overrideMaxSpriteHeight) {
-  //     maxSpriteHeight = options.maxSpriteHeight;
-  //   } else {
-  //     maxSpriteHeight = Math.max(options.maxSpriteHeight, maxSpriteHeight);
-  //   }
-  // }
+  if (options.maxSpriteHeight) {
+    if (options.overrideMaxSpriteHeight) {
+      maxSpriteHeight = options.maxSpriteHeight;
+    } else {
+      maxSpriteHeight = Math.max(options.maxSpriteHeight, maxSpriteHeight);
+    }
+  }
+  _console.log({ maxSpriteHeight, minSpriteY, maxSpriteY }, options);
   return { maxSpriteHeight, maxSpriteY, minSpriteY };
 }
 
@@ -342,6 +350,7 @@ export async function fontToSpriteSheet(
     fontSize,
     options
   );
+  // _console.log({ maxSpriteHeight, maxSpriteY, minSpriteY });
   const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
 
   let string = options.string;
@@ -533,11 +542,13 @@ export async function fontToSpriteSheet(
           }
         });
 
-        // allCurves.sort((a, b) => {
-        //   const aPoints = getCurvesPoints(a);
-        //   const bPoints = getCurvesPoints(b);
-        //   return contourArea(bPoints) - contourArea(aPoints);
-        // });
+        _console.log("allCurves", allCurves);
+        allCurves.sort((a, b) => {
+          const aPoints = getCurvesPoints(a);
+          const bPoints = getCurvesPoints(b);
+          return contourArea(bPoints) - contourArea(aPoints);
+        });
+        _console.log("sorted allCurves", allCurves);
 
         allCurves.forEach((curves) => {
           let controlPoints = curves.flatMap((c) => c.controlPoints);
@@ -903,6 +914,7 @@ export function stringToSpriteLines(
 export function getFontMaxHeight(font: Font, fontSize: number) {
   const scale = (1 / font.unitsPerEm) * fontSize;
   const maxHeight = (font.ascender - font.descender) * scale;
+  _console.log({ font: font.getEnglishName("fullName"), maxHeight, fontSize });
   return maxHeight;
 }
 export function getMaxSpriteSheetSize(spriteSheet: DisplaySpriteSheet) {

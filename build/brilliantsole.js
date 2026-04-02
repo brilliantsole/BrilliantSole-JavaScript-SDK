@@ -1238,7 +1238,7 @@
 	    return Boolean(model);
 	}
 
-	const _console$F = createConsole("CenterOfPressureModel", { log: true });
+	const _console$F = createConsole("CenterOfPressureModel", { log: false });
 	class CenterOfPressureModel {
 	    constructor() {
 	        autoBind(this);
@@ -28869,6 +28869,16 @@
 	function calculateSpriteSheetHeaderLength(numberOfSprites) {
 	    return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
 	}
+	function getCurvesPoints(curves) {
+	    const curvePoints = [];
+	    curves.forEach((curve, index) => {
+	        if (index == 0) {
+	            curvePoints.push(curve.controlPoints[0]);
+	        }
+	        curvePoints.push(curve.controlPoints.at(-1));
+	    });
+	    return curvePoints;
+	}
 	function serializeSpriteSheet(displayManager, spriteSheet) {
 	    const { name, sprites } = spriteSheet;
 	    _console$m.log(`serializing ${name} spriteSheet`, spriteSheet);
@@ -28995,10 +29005,30 @@
 	            minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
 	            maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
 	        }
+	        _console$m.log({
+	            fontName: font.getEnglishName("fullName"),
+	            minSpriteY,
+	            maxSpriteY,
+	        });
 	    }
 	    minSpriteY = options.minSpriteY ?? minSpriteY;
 	    maxSpriteY = options.maxSpriteY ?? maxSpriteY;
+	    if (minSpriteY == Infinity) {
+	        minSpriteY = 0;
+	    }
+	    if (maxSpriteY == -Infinity) {
+	        maxSpriteY = 0;
+	    }
 	    let maxSpriteHeight = options.maxSpriteHeight ?? maxSpriteY - minSpriteY + strokeWidth;
+	    if (options.maxSpriteHeight) {
+	        if (options.overrideMaxSpriteHeight) {
+	            maxSpriteHeight = options.maxSpriteHeight;
+	        }
+	        else {
+	            maxSpriteHeight = Math.max(options.maxSpriteHeight, maxSpriteHeight);
+	        }
+	    }
+	    _console$m.log({ maxSpriteHeight, minSpriteY, maxSpriteY }, options);
 	    return { maxSpriteHeight, maxSpriteY, minSpriteY };
 	}
 	async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
@@ -29158,6 +29188,13 @@
 	                            break;
 	                    }
 	                });
+	                _console$m.log("allCurves", allCurves);
+	                allCurves.sort((a, b) => {
+	                    const aPoints = getCurvesPoints(a);
+	                    const bPoints = getCurvesPoints(b);
+	                    return contourArea(bPoints) - contourArea(aPoints);
+	                });
+	                _console$m.log("sorted allCurves", allCurves);
 	                allCurves.forEach((curves) => {
 	                    let controlPoints = curves.flatMap((c) => c.controlPoints);
 	                    const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
@@ -29430,6 +29467,7 @@
 	function getFontMaxHeight(font, fontSize) {
 	    const scale = (1 / font.unitsPerEm) * fontSize;
 	    const maxHeight = (font.ascender - font.descender) * scale;
+	    _console$m.log({ font: font.getEnglishName("fullName"), maxHeight, fontSize });
 	    return maxHeight;
 	}
 	function getMaxSpriteSheetSize(spriteSheet) {

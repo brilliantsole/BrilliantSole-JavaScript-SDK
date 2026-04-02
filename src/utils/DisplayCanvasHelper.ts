@@ -2761,6 +2761,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   #generateQuadraticCurvePoints(controlPoints: Vector2[]) {
     assertValidNumberOfControlPoints("quadratic", controlPoints);
+    // _console.log("generateQuadraticCurvePoints", controlPoints, { depth });
     const [p0, p1, p2] = controlPoints;
     if (false) {
       const c1: Vector2 = {

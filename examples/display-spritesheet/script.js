@@ -326,6 +326,7 @@ let selectedPaletteIndex = -1;
 let selectedPalette;
 const addPalette = () => {
   //console.log("addPalette");
+  spriteSheet.palettes = spriteSheet.paletteSwaps ?? [];
   spriteSheet.palettes.push({
     name: `myPalette ${Object.keys(spriteSheet.palettes).length}`,
     numberOfColors: 0,
@@ -365,7 +366,7 @@ selectPaletteSelect.addEventListener("input", () => {
 const updateSelectPaletteSelect = () => {
   selectPaletteOptgroup.innerHTML = "";
   selectPaletteOptgroup.appendChild(new Option("none", -1));
-  spriteSheet.palettes.forEach((palette, index) => {
+  spriteSheet.palettes?.forEach((palette, index) => {
     selectPaletteOptgroup.appendChild(new Option(palette.name, index));
   });
   selectPaletteSelect.value = selectedPaletteIndex;

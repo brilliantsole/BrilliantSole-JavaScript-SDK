@@ -8,7 +8,7 @@ import { clamp } from "./MathUtils.ts";
 import { PressureSensorEventDispatcher } from "../sensor/PressureSensorDataManager.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("CenterOfPressureModel", { log: true });
+const _console = createConsole("CenterOfPressureModel", { log: false });
 
 export type CenterOfPressureModelData = {
   inputs: number[][];

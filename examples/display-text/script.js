@@ -199,7 +199,7 @@ const draw = async () => {
         {
           englishOnly: false,
           string: newNonEnglishCharacters.join(""),
-          usePath: true,
+          usePath,
           ...fontMetrics,
         }
       );
@@ -748,7 +748,6 @@ const addFont = async (font) => {
         fontOptions
       );
     }
-
     englishFontSpriteSheets[fullName] = spriteSheet;
     //console.log(`added english font spriteSheet "${fullName}"`, spriteSheet);
     await updateFontSelect();
@@ -776,9 +775,10 @@ selectFontSelect.addEventListener("input", async () => {
 /** @type {BS.Font?} */
 let selectedFont;
 let fontMetrics;
+const usePath = true;
 /** @type {BS.FontToSpriteSheetOptions} */
 const fontOptions = {
-  usePath: true,
+  usePath,
   englishOnly: true,
 };
 /** @type {BS.Font[]?} */
@@ -829,14 +829,17 @@ const selectFont = async (newFontName) => {
       fontSize,
       vietnameseFontOptions
     );
-    fontMetrics = BS.getFontMetrics(selectedFont, fontSize, {
-      ...fontOptions,
-      maxSpriteHeight,
-      overrideMaxSpriteHeight: false,
-    });
+    if (maxSpriteHeight != 0) {
+      fontMetrics = BS.getFontMetrics(selectedFont, fontSize, {
+        ...fontOptions,
+        maxSpriteHeight,
+        overrideMaxSpriteHeight: false,
+      });
+    }
   } else {
     fontMetrics = BS.getFontMetrics(selectedFont, fontSize, fontOptions);
   }
+  console.log("fontMetrics", fontMetrics);
   drawSpriteParams.spritesLineHeight = spriteSheetLineHeight;
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await draw();
