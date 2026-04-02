@@ -5,6 +5,7 @@ export interface Range {
 }
 declare class RangeHelper {
     #private;
+    get updatedAtLeastOnce(): boolean;
     get min(): number;
     get max(): number;
     get span(): number;
@@ -13,7 +14,7 @@ declare class RangeHelper {
     set max(newMax: number);
     reset(): void;
     update(value: number): void;
-    getNormalization(value: number, weightByRange: boolean, clampValue?: boolean): number;
-    updateAndGetNormalization(value: number, weightByRange: boolean): number;
+    getNormalization(value: number, weightByRange?: boolean, clampValue?: boolean): number;
+    updateAndGetNormalization(value: number, weightByRange?: boolean): number;
 }
 export default RangeHelper;

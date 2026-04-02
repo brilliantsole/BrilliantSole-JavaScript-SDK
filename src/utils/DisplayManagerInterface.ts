@@ -581,6 +581,7 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
   endSprite(sendImmediately?: boolean): Promise<void>;
+  clearContext(sendImmediately?: boolean): Promise<void>;
 }
 
 export async function runDisplayContextCommand(
@@ -1241,6 +1242,9 @@ export async function runDisplayContextCommand(
       break;
     case "endSprite":
       await displayManager.endSprite(sendImmediately);
+      break;
+    case "clearContext":
+      await displayManager.clearContext(sendImmediately);
       break;
   }
 }

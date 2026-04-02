@@ -3,8 +3,8 @@
     <title>Pressure | BrilliantSole JavaScript SDK</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-    <script type="module" src="./script.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script type="module" src="./script.js"></script>
   </head>
   <style>
     #insoles {
@@ -186,7 +186,7 @@
 
     .viz {
       position: relative;
-      height: 800px;
+      height: 500px;
     }
 
     .center,
@@ -278,16 +278,35 @@
           <button class="togglePressureData" disabled>
             enable pressure data
           </button>
+          <br />
           <button class="toggleGameRotation" disabled>
             enable gameRotation
+          </button>
+          <br />
+          <button class="resetPressure" disabled>reset pressure</button>
+          <br />
+          <button class="toggleAutoRange" disabled>disable autoRange</button>
+          <br />
+          <button class="toggleMotionAutoRange" disabled>
+            enable motion autoRange
           </button>
           <br />
           <button class="toggleRecordingPressureCalibrationData" disabled>
             record
           </button>
+          <button class="clearPressureCalibrationModelData" disabled>
+            clear
+          </button>
+          <br />
+          <button class="loadPressureCalibratonModel" disabled>
+            load from cache
+          </button>
+          <br />
           <button class="trainPressureCalibrationModel" disabled>train</button>
           <button class="savePressureCalibrationModel" disabled>save</button>
           <button class="loadPressureCalibrationModel" disabled>load</button>
+          <br />
+          <progress value="0" class="pressureCalibrationProgress"></progress>
         </p>
         <div class="viz">
           <div class="center">

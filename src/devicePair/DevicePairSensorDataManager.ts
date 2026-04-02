@@ -7,7 +7,11 @@ import { SensorType } from "../sensor/SensorDataManager.ts";
 import { DeviceEventMap } from "../Device.ts";
 import EventDispatcher from "../utils/EventDispatcher.ts";
 import DevicePair from "./DevicePair.ts";
-import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
+import {
+  AddKeysAsPropertyToInterface,
+  ExtendInterfaceValues,
+  ValueOf,
+} from "../utils/TypeScriptUtils.ts";
 
 const _console = createConsole("DevicePairSensorDataManager", { log: false });
 
@@ -15,7 +19,8 @@ export const DevicePairSensorTypes = ["pressure", "sensorData"] as const;
 export type DevicePairSensorType = (typeof DevicePairSensorTypes)[number];
 
 export const DevicePairSensorDataEventTypes = DevicePairSensorTypes;
-export type DevicePairSensorDataEventType = (typeof DevicePairSensorDataEventTypes)[number];
+export type DevicePairSensorDataEventType =
+  (typeof DevicePairSensorDataEventTypes)[number];
 
 export type DevicePairSensorDataTimestamps = { [side in Side]: number };
 
@@ -23,18 +28,23 @@ interface BaseDevicePairSensorDataEventMessage {
   timestamps: DevicePairSensorDataTimestamps;
 }
 
-type BaseDevicePairSensorDataEventMessages = DevicePairPressureDataEventMessages;
+type BaseDevicePairSensorDataEventMessages =
+  DevicePairPressureDataEventMessages;
 type _DevicePairSensorDataEventMessages = ExtendInterfaceValues<
-  AddKeysAsPropertyToInterface<BaseDevicePairSensorDataEventMessages, "sensorType">,
+  AddKeysAsPropertyToInterface<
+    BaseDevicePairSensorDataEventMessages,
+    "sensorType"
+  >,
   BaseDevicePairSensorDataEventMessage
 >;
 
-export type DevicePairSensorDataEventMessage = ValueOf<_DevicePairSensorDataEventMessages>;
+export type DevicePairSensorDataEventMessage =
+  ValueOf<_DevicePairSensorDataEventMessages>;
 interface AnyDevicePairSensorDataEventMessages {
   sensorData: DevicePairSensorDataEventMessage;
 }
-export type DevicePairSensorDataEventMessages = _DevicePairSensorDataEventMessages &
-  AnyDevicePairSensorDataEventMessages;
+export type DevicePairSensorDataEventMessages =
+  _DevicePairSensorDataEventMessages & AnyDevicePairSensorDataEventMessages;
 
 export type DevicePairSensorDataEventDispatcher = EventDispatcher<
   DevicePair,
@@ -48,7 +58,9 @@ class DevicePairSensorDataManager {
     return this.eventDispatcher.dispatchEvent;
   }
 
-  #timestamps: { [sensorType in SensorType]?: Partial<DevicePairSensorDataTimestamps> } = {};
+  #timestamps: {
+    [sensorType in SensorType]?: Partial<DevicePairSensorDataTimestamps>;
+  } = {};
 
   pressureSensorDataManager = new DevicePairPressureSensorDataManager();
   resetPressureRange() {
@@ -68,7 +80,9 @@ class DevicePairSensorDataManager {
     let value;
     switch (sensorType) {
       case "pressure":
-        value = this.pressureSensorDataManager.onDevicePressureData(event as unknown as DeviceEventMap["pressure"]);
+        value = this.pressureSensorDataManager.onDevicePressureData(
+          event as unknown as DeviceEventMap["pressure"]
+        );
         break;
       default:
         _console.log(`uncaught sensorType "${sensorType}"`);
@@ -76,11 +90,22 @@ class DevicePairSensorDataManager {
     }
 
     if (value) {
-      const timestamps = Object.assign({}, this.#timestamps[sensorType]) as DevicePairSensorDataTimestamps;
+      const timestamps = Object.assign(
+        {},
+        this.#timestamps[sensorType]
+      ) as DevicePairSensorDataTimestamps;
       // @ts-expect-error
-      this.dispatchEvent(sensorType as DevicePairSensorDataEventType, { sensorType, timestamps, [sensorType]: value });
+      this.dispatchEvent(sensorType as DevicePairSensorDataEventType, {
+        sensorType,
+        timestamps,
+        [sensorType]: value,
+      });
       // @ts-expect-error
-      this.dispatchEvent("sensorData", { sensorType, timestamps, [sensorType]: value });
+      this.dispatchEvent("sensorData", {
+        sensorType,
+        timestamps,
+        [sensorType]: value,
+      });
     } else {
       _console.log("no value received");
     }

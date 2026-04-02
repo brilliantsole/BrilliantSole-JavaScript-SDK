@@ -3,6 +3,7 @@
     <title>Device Pair | BrilliantSole JavaScript SDK</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
     <script type="module" src="./script.js"></script>
   </head>
 
@@ -44,8 +45,12 @@
 
     <div>
       <button id="addDevice">add device</button>
-      <button id="togglePressureData" disabled>enable pressure data</button>
-      <button id="resetPressureRange" disabled>recalibrate</button>
+      <button id="togglePressure" disabled>enable pressure</button>
+      <button id="resetPressureRange" disabled>reset pressure range</button>
+      <button id="togglePressureAutoRange" disabled>
+        disable pressure autoRange
+      </button>
+      <button id="toggleGameRotation" disabled>enable gameRotation</button>
     </div>
 
     <div id="devicePair">

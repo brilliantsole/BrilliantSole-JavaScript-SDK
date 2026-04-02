@@ -116,7 +116,7 @@ class MotionSensorDataManager {
   }
   #euler = new TEuler(0, 0, 0, "YXZ");
   #quaternion = new TQuaternion();
-  quaternionToEuler(quaternion: Quaternion): Euler {
+  quaternionToEuler(quaternion: Quaternion, absolute?: boolean): Euler {
     this.#quaternion.copy(quaternion);
     this.#euler.setFromQuaternion(this.#quaternion);
     const { x, y, z } = this.#euler;
@@ -124,10 +124,15 @@ class MotionSensorDataManager {
       heading: radToDeg(y),
       pitch: radToDeg(x),
       roll: radToDeg(z),
+      absolute,
     };
   }
 
-  parseEuler(dataView: DataView<ArrayBuffer>, scalar: number): Euler {
+  parseEuler(
+    dataView: DataView<ArrayBuffer>,
+    scalar: number,
+    absolute?: boolean
+  ): Euler {
     let [heading, pitch, roll] = [
       dataView.getInt16(0, true),
       dataView.getInt16(2, true),
@@ -140,7 +145,7 @@ class MotionSensorDataManager {
       heading += 360;
     }
 
-    const euler: Euler = { heading, pitch, roll };
+    const euler: Euler = { heading, pitch, roll, absolute };
 
     _console.log({ euler });
     return euler;

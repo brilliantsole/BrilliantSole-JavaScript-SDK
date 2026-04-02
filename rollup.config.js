@@ -84,7 +84,7 @@ const nodeExternal = [
   "webbluetooth",
   "debounce",
   "ws",
-  "@abandonware/noble",
+  "@stoprocent/noble",
   "auto-bind",
   "dgram",
   "rgbquant",

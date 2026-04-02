@@ -164,6 +164,8 @@ export const DisplayContextCommandTypes = [
 
   "startSprite",
   "endSprite",
+
+  "clearContext",
 ] as const;
 export type DisplayContextCommandType =
   (typeof DisplayContextCommandTypes)[number];
@@ -270,7 +272,8 @@ export interface SimpleDisplayCommand extends BaseDisplayContextCommand {
     | "resetSpriteColors"
     | "resetSpriteScale"
     | "resetAlignment"
-    | "endSprite";
+    | "endSprite"
+    | "clearContext";
 }
 
 export interface SetDisplayColorCommand extends BaseDisplayContextCommand {
@@ -728,6 +731,7 @@ export function serializeContextCommand(
     case "resetSpriteScale":
     case "resetAlignment":
     case "endSprite":
+    case "clearContext":
       break;
     case "setColor":
       {

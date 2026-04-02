@@ -341,6 +341,10 @@ class Device {
         _console.log("don't need to request microphone infomration");
       }
     });
+    this.addEventListener("getSensorConfiguration", (event) => {
+      const { sensorConfiguration } = event.message;
+      this.#cameraManager.sensorRate = sensorConfiguration.camera ?? 0;
+    });
     this.addEventListener("getFileTypes", () => {
       if (this.connectionStatus != "connecting") {
         return;
@@ -1158,8 +1162,27 @@ class Device {
       return [];
     }
   }
-  resetPressureRange() {
-    this.#sensorDataManager.pressureSensorDataManager.resetRange();
+  get autoPressureRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.autoRange;
+  }
+  get setPressureAutoRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.setAutoRange;
+  }
+  get togglePressureAutoRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.toggleAutoRange;
+  }
+  get autoPressureMotionRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.motionAutoRange;
+  }
+  get setPressureMotionAutoRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.setMotionAutoRange;
+  }
+  get togglePressureMotionAutoRange() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .toggleMotionAutoRange;
+  }
+  get resetPressureRange() {
+    return this.#sensorDataManager.pressureSensorDataManager.resetRange;
   }
   get canCalibratePressure() {
     return this.#sensorDataManager.pressureSensorDataManager.canCalibrate;
@@ -1200,6 +1223,18 @@ class Device {
   get loadPressureCalibrationModel() {
     return this.#sensorDataManager.pressureSensorDataManager
       .loadCalibrationModel;
+  }
+  get addPressureCalibrationModelData() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .addCalibrationModelData;
+  }
+  get clearPressureCalibrationModelData() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .clearCalibrationModelData;
+  }
+  get pressureCalibrationModelData() {
+    return this.#sensorDataManager.pressureSensorDataManager
+      .calibrationModelData;
   }
 
   // VIBRATION

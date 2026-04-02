@@ -273,7 +273,7 @@ let draw = async () => {
   }
   isDrawing = true;
 
-  console.log("drawing");
+  // console.log("drawing");
 
   if (shouldDrawSheet) {
     const spriteSheet = abcSpriteSheets[currentSystemIndex];
@@ -330,14 +330,12 @@ let draw = async () => {
 
       //const hasDash = isOffStaff(downFrequency);
       const hasDash = ["C4", "C#4"].includes(downFrequency.toNote());
-      let spriteIndex = hasDash ? 2 : 4;
-      if (!isCorrect) {
-        spriteIndex++;
-      }
+      let spriteIndex = hasDash ? 0 : 1;
       if (isPitchDetectionFrequency) {
-        spriteIndex = overlaySpriteSheet.sprites.findIndex(
-          (sprite) => sprite.name == "pitchHighlightedNote"
-        );
+        spriteIndex = 1;
+        await displayCanvasHelper.selectFillColor(5);
+      } else {
+        await displayCanvasHelper.selectFillColor(isCorrect ? 3 : 4);
       }
 
       const sprite = overlaySpriteSheet.sprites[spriteIndex];
@@ -379,11 +377,12 @@ let draw = async () => {
 
       let drawSharp = downFrequency.toNote().includes("#");
       if (drawSharp) {
-        let sharpSprite = overlaySpriteSheet.sprites.at(isCorrect ? -3 : -2);
+        let sharpSprite = overlaySpriteSheet.sprites[2];
+
         if (isPitchDetectionFrequency) {
-          sharpSprite = overlaySpriteSheet.sprites.find(
-            (sprite) => sprite.name == "pitchHighlightedSharp"
-          );
+          await displayCanvasHelper.selectFillColor(5);
+        } else {
+          await displayCanvasHelper.selectFillColor(isCorrect ? 3 : 4);
         }
         await displayCanvasHelper.drawSprite(
           2 * x - width / 2 - 0.037064552307128906 - 21,
@@ -1320,24 +1319,19 @@ const svgToSpriteSheet = async (svg, spriteSheetName, spriteName) => {
 
   if (spriteSheetName == "overlay") {
     console.log("sprite", sprite, spriteSheet, spriteName);
-    sprite.commands.forEach((command) => {
+    sprite.commands = sprite.commands.filter((command) => {
       switch (command.type) {
         case "selectFillColor":
-          if (command.fillColorIndex != 0) {
-            command.fillColorIndex = 2;
-          }
-          break;
         case "selectLineColor":
-          if (command.lineColorIndex != 0) {
-            command.lineColorIndex = 2;
-          }
-          break;
+          return false;
+        default:
+          return true;
       }
     });
   }
 
   systemSvg.remove();
-  //console.log("spriteSheet", spriteSheet);
+  console.log("spriteSheet", spriteSheet);
   abcSpriteSheets[spriteSheetName] = spriteSheet;
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
@@ -1373,69 +1367,7 @@ const renderAbcOverlay = async () => {
 
   const spriteSheet = abcSpriteSheets["overlay"];
 
-  const noteWithDashSprite = spriteSheet.sprites[0];
-  const noteWithoutDashSprite = spriteSheet.sprites[1];
-
-  const spriteSheetIndex = displayCanvasHelper.spriteSheetIndices["overlay"];
-
-  /**
-   * @param {boolean} isCorrect
-   * @param {boolean} hasDash
-   * @param {number|undefined} colorIndexOverride
-   * @returns {BS.DisplayContextCommand[]}
-   */
-  const createCommands = (isCorrect, hasDash, colorIndexOverride) => {
-    const comamnds = spriteSheet.sprites[hasDash ? 0 : 1].commands.filter(
-      (command) => {
-        switch (command.type) {
-          case "selectFillColor":
-          case "selectLineColor":
-            return false;
-          default:
-            return true;
-        }
-      }
-    );
-    return [
-      {
-        type: "selectFillColor",
-        fillColorIndex: colorIndexOverride ?? (isCorrect ? 3 : 4),
-      },
-      {
-        type: "selectLineColor",
-        lineColorIndex: colorIndexOverride ?? (isCorrect ? 3 : 4),
-      },
-      // { type: "drawRect", x: 0, y: 0, width: 20, height: 17 },
-      ...comamnds,
-    ];
-  };
-
-  const correctNoteWithDashSprite = { ...noteWithDashSprite };
-  correctNoteWithDashSprite.name = "correctNoteWithDash";
-  correctNoteWithDashSprite.commands = createCommands(true, true);
-  const incorrectNoteWithDashSprite = { ...noteWithDashSprite };
-  incorrectNoteWithDashSprite.name = "incorrectNoteWithDash";
-  incorrectNoteWithDashSprite.commands = createCommands(false, true);
-
-  const correctNoteWithoutDashSprite = { ...noteWithoutDashSprite };
-  correctNoteWithoutDashSprite.name = "correctNoteWithoutDash";
-  correctNoteWithoutDashSprite.commands = createCommands(true, false);
-  const incorrectNoteWithoutDashSprite = { ...noteWithoutDashSprite };
-  incorrectNoteWithoutDashSprite.name = "incorrectNoteWithoutDash";
-  incorrectNoteWithoutDashSprite.commands = createCommands(false, false);
-  spriteSheet.sprites.push(
-    correctNoteWithDashSprite,
-    incorrectNoteWithDashSprite,
-    correctNoteWithoutDashSprite,
-    incorrectNoteWithoutDashSprite
-  );
-
-  const pitchHighlightedNote = { ...noteWithoutDashSprite };
-  pitchHighlightedNote.name = "pitchHighlightedNote";
-  pitchHighlightedNote.commands = createCommands(true, false, 5);
-  spriteSheet.sprites.push(pitchHighlightedNote);
-
-  console.log("overlay", spriteSheet);
+  // console.log("overlay", spriteSheet);
 
   await renderAbcOverlaySymbols();
 
@@ -1466,57 +1398,6 @@ const renderAbcOverlaySymbols = async () => {
   svg.querySelector(".abcjs-ledger").remove();
   svg.querySelector(".abcjs-notehead").remove();
   await svgToSpriteSheet(svg, "overlay", "sharp");
-
-  const spriteSheet = abcSpriteSheets["overlay"];
-  const sharpSprite = spriteSheet.sprites.at(-1);
-
-  /**
-   * @param {boolean} isCorrect
-   * @param {number|undefined} colorIndexOverride
-   * @returns {BS.DisplayContextCommand[]}
-   */
-  const createCommands = (isCorrect, colorIndexOverride) => {
-    const comamnds = sharpSprite.commands.filter((command, index) => {
-      switch (command.type) {
-        case "selectFillColor":
-          return command.fillColorIndex == 0;
-          break;
-        case "selectLineColor":
-          return command.lineColorIndex == 0;
-        default:
-          return true;
-      }
-    });
-    return [
-      {
-        type: "selectFillColor",
-        fillColorIndex: colorIndexOverride ?? (isCorrect ? 3 : 4),
-      },
-      {
-        type: "selectLineColor",
-        lineColorIndex: colorIndexOverride ?? (isCorrect ? 3 : 4),
-      },
-      // { type: "drawRect", x: 0, y: 0, width: 20, height: 17 },
-      ...comamnds,
-    ];
-  };
-
-  const correctSharpSprite = { ...sharpSprite };
-  correctSharpSprite.name = "correctSharp";
-  correctSharpSprite.commands = createCommands(true);
-  const incorrectSharpSprite = { ...sharpSprite };
-  incorrectSharpSprite.name = "incorrectSharp";
-  incorrectSharpSprite.commands = createCommands(false);
-
-  const pitchHighlightedSharp = { ...sharpSprite };
-  pitchHighlightedSharp.name = "pitchHighlightedSharp";
-  pitchHighlightedSharp.commands = createCommands(false, 5);
-
-  spriteSheet.sprites.push(
-    correctSharpSprite,
-    incorrectSharpSprite,
-    pitchHighlightedSharp
-  );
 };
 await renderAbcOverlay();
 

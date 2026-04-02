@@ -49,8 +49,36 @@ class DisplayContextStateHelper {
     });
     return differences;
   }
-  reset() {
+  reset(
+    numberOfColors: number,
+    keepColorIndices?: boolean,
+    keepSpriteColorIndices?: boolean
+  ) {
+    // _console.log("reset", {
+    //   numberOfColors,
+    //   keepColorIndices,
+    //   keepSpriteColorIndices,
+    // });
+
+    const spriteColorIndices = this.#state.spriteColorIndices.slice();
+    const { fillColorIndex, lineColorIndex, backgroundColorIndex } =
+      this.#state;
+
     Object.assign(this.#state, DefaultDisplayContextState);
+
+    if (keepColorIndices) {
+      this.#state.fillColorIndex = fillColorIndex;
+      this.#state.lineColorIndex = lineColorIndex;
+      this.#state.backgroundColorIndex = backgroundColorIndex;
+    }
+
+    if (keepSpriteColorIndices) {
+      this.#state.spriteColorIndices = spriteColorIndices;
+    } else {
+      this.#state.spriteColorIndices = new Array(numberOfColors).fill(0);
+    }
+
+    this.#state.bitmapColorIndices = new Array(numberOfColors).fill(0);
   }
 }
 

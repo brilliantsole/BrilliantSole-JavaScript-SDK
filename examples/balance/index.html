@@ -4,13 +4,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
     <script type="module" src="./script.js"></script>
+    <script src="../utils/misc/canvasInput.js"></script>
   </head>
 
   <style>
     #balanceContainer {
-      width: 500px;
-      height: 80%;
-      margin: 1rem auto;
+      width: 300px;
+      height: 400px;
+      margin: 1rem;
       display: flex;
       flex-direction: row;
       justify-content: space-evenly;
@@ -27,7 +28,7 @@
     .balanceSide .meter {
       height: 100%;
       width: 100%;
-      border-radius: 40px;
+      border-radius: 30px;
       border: solid black thick;
       overflow: hidden;
       box-sizing: border-box;
@@ -84,8 +85,12 @@
     }
     #balanceContainer.hover .balanceSide .target .ring {
       animation-name: shrink;
-      animation-duration: 3s;
+      animation-duration: 2s;
       animation-timing-function: linear;
+    }
+
+    #glassesDisplay {
+      background-color: black;
     }
   </style>
 
@@ -118,8 +123,30 @@
     <div>
       <button id="addDevice">add device</button>
       <button id="togglePressureData" disabled>enable pressure data</button>
-      <button id="resetPressureRange" disabled>recalibrate</button>
+      <button id="resetPressureRange" disabled>reset pressure range</button>
+      <button id="toggleGameRotation" disabled>enable gameRotation</button>
+      <br />
+      <button id="togglePressureAutoRange" disabled>
+        disable pressure autoRange
+      </button>
+      <button id="togglePressureMotionAutoRange" disabled>
+        enable motion pressure autoRange
+      </button>
+      <br />
       <button id="toggleGame">start game</button>
+      <label>
+        <canvas
+          id="centerOfPressureInput"
+          width="20"
+          height="20"
+          data-radius="3"
+          data-min-x="0"
+          data-max-x="1"
+          data-min-y="0"
+          data-max-y="1"
+          data-input
+        ></canvas>
+      </label>
     </div>
 
     <div id="balanceContainer">
@@ -133,6 +160,23 @@
           </div>
         </div>
       </template>
+    </div>
+
+    <br />
+    <div>
+      <button id="toggleGlassesConnection">connect</button>
+      <label>
+        file transfer progress: <span></span>
+        <progress value="0" id="glassesFileTransferProgress"></progress>
+      </label>
+      <label class="verticalLabel">
+        <span>brightness</span>
+        <select id="setGlassesDisplayBrightness">
+          <optgroup label="select brightness"></optgroup>
+        </select>
+      </label>
+      <br />
+      <canvas id="glassesDisplay" width="640" height="400"></canvas>
     </div>
   </body>
 </html>

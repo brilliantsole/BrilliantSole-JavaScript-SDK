@@ -745,7 +745,7 @@ function svgJsonToCanvasCommands(svgJson: INode): CanvasCommand[] {
         const p = applyTransform(x, y, nodeTransform);
         const strokeWidth = parseFloat(node.attributes["stroke-width"] || "0");
 
-        // console.log(node.attributes);
+        // _console.log(node.attributes);
 
         const {
           "font-family": fontFamily,

@@ -9,12 +9,15 @@ declare class CenterOfPressureModel {
     #private;
     constructor();
     eventDispatcher: PressureSensorEventDispatcher;
-    get dispatchEvent(): <T extends "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: import("../sensor/PressureSensorDataManager.ts").PressureSensorEventMessages[T]) => void;
+    get dispatchEvent(): <T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "pressureMotionAutoRangeEnabled" | "pressureMotionAutoRangeDisabled" | "pressureMotionAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: import("../sensor/PressureSensorDataManager.ts").PressureSensorEventMessages[T]) => void;
     get model(): tf.Sequential | undefined;
     get numberOfSensors(): number;
     set numberOfSensors(newNumberOfSensors: number);
+    get data(): CenterOfPressureModelData;
     clearData(): void;
-    addData(pressureData: PressureData, euler: Euler): void;
+    onSensorData(pressureData: PressureData, euler: Euler): void;
+    get numberOfSamples(): number;
+    addData(inputs: number[], outputs: number[]): void;
     get isTrained(): boolean;
     get isTraining(): boolean;
     train(): Promise<void>;

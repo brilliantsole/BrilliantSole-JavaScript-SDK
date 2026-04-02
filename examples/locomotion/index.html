@@ -1,0 +1,296 @@
+<html>
+  <head>
+    <title>Locomotion | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/super-three@0.177.0/build/three.module.js",
+          "aframe": "https://aframe.io/releases/1.7.1/aframe.module.min.js",
+          "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.8/spark.module.js"
+        }
+      }
+    </script>
+    <script type="module" src="./script.js"></script>
+    <script src="../utils/misc/canvasInput.js"></script>
+    <script src="../utils/misc/gamepad.js"></script>
+    <script src="../utils/aframe/meta-touch-controls-ui.js" defer></script>
+  </head>
+
+  <style>
+    .aframe-inspector-opened a-scene,
+    .aframe-inspector-opened a-scene canvas {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 9999;
+    }
+
+    #sceneContainer {
+      display: grid;
+      aspect-ratio: 1.3;
+      height: 500px;
+    }
+    #sceneContainer > * {
+      width: 100%;
+      height: 100%;
+      grid-area: 1 / 1;
+    }
+  </style>
+
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Locomotion | BrilliantSole JavaScript SDK</h1>
+
+    <div>
+      <label>
+        webSocket url
+        <input id="webSocketUrl" type="url" placeholder="localhost" />
+      </label>
+      <button id="toggleConnection">connect</button>
+    </div>
+
+    <div>
+      <label>
+        is scanning available?
+        <input id="isScanningAvailable" type="checkbox" readonly disabled />
+      </label>
+      <button id="toggleScan" disabled>scan</button>
+    </div>
+
+    <div>
+      <h2>available devices</h2>
+      <div id="availableDevices">
+        <template id="availableDeviceTemplate">
+          <div class="availableDevice">
+            <ul>
+              <li><b>name: </b> <span class="name"></span></li>
+              <li><b>type: </b> <span class="type"></span></li>
+              <li><button class="toggleConnection">connect</button></li>
+            </ul>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div>
+      <h2>controls</h2>
+      <button id="addDevice">add device</button>
+      <button id="togglePressureData" disabled>enable pressure data</button>
+      <button id="resetPressureRange" disabled>reset pressure range</button>
+      <button id="toggleGameRotation" disabled>enable gameRotation</button>
+      <button id="tareYaw">tare yaw</button>
+      <button id="tarePitch">tare pitch</button>
+      <br />
+      <button id="togglePressureAutoRange" disabled>
+        disable pressure autoRange
+      </button>
+      <button id="togglePressureMotionAutoRange" disabled>
+        enable motion pressure autoRange
+      </button>
+      <button id="setCenterOfPressureOffset" disabled>
+        set centerOfPressure offset
+      </button>
+      <button id="loadPressureCalibratonModel" disabled>load model</button>
+      <br />
+      <label>
+        use gamepad
+        <input type="checkbox" id="useGamepad" checked />
+      </label>
+      <label>
+        use VRChat
+        <input type="checkbox" id="useVRChat" />
+      </label>
+      <label>
+        use strafing
+        <input type="checkbox" id="useStrafing" checked />
+      </label>
+      <label>
+        move relative to camera
+        <input type="checkbox" id="moveRelativeToCamera" checked />
+      </label>
+      <label>
+        move relative to insoles
+        <input type="checkbox" id="moveRelativeToInsoles" />
+      </label>
+      <label>
+        right foot dominant?
+        <input type="checkbox" id="rightFootDominant" checked />
+      </label>
+      <label>
+        locomotion mode
+        <select id="locomotionMode">
+          <optgroup label="select locomotion mode"></optgroup>
+        </select>
+      </label>
+    </div>
+
+    <div>
+      <label>
+        <canvas
+          id="leftCenterOfPressureInput"
+          width="30"
+          height="30"
+          data-radius="3"
+          data-input
+        ></canvas>
+      </label>
+      <label>
+        <canvas
+          id="centerOfPressureInput"
+          width="30"
+          height="30"
+          data-radius="3"
+          data-input
+        ></canvas>
+      </label>
+      <label>
+        <canvas
+          id="rightCenterOfPressureInput"
+          width="30"
+          height="30"
+          data-radius="3"
+          data-input
+        ></canvas>
+      </label>
+
+      <label>
+        <canvas
+          id="leftGameRotationInput"
+          width="30"
+          height="30"
+          data-radius="3"
+          data-input
+          data-min="-20"
+          data-max="20"
+        ></canvas>
+      </label>
+      <label>
+        <canvas
+          id="rightGameRotationInput"
+          width="30"
+          height="30"
+          data-radius="3"
+          data-input
+          data-min="-20"
+          data-max="20"
+        ></canvas>
+      </label>
+    </div>
+
+    <br />
+
+    <div id="vrChat" hidden>
+      <h2>VRChat</h2>
+      <label>
+        address
+        <input id="vrChatAddress" type="url" placeholder="192.168.1.1" />
+      </label>
+
+      <label>
+        <canvas
+          id="vrChat2D"
+          width="30"
+          height="30"
+          data-radius="3"
+          data-input
+          data-min="-1"
+          data-max="1"
+        ></canvas>
+      </label>
+      <label>
+        look horizontal
+        <input
+          id="vrChatLookHorizontal"
+          type="range"
+          min="-1"
+          max="1"
+          value="0"
+          step="0.01"
+        />
+      </label>
+    </div>
+
+    <br />
+
+    <label>
+      select model
+      <select id="models">
+        <optgroup label="select model"></optgroup>
+      </select>
+    </label>
+    <label>
+      load model
+      <input type="file" id="modelFile" multiple="false"
+    /></label>
+    <div id="sceneContainer">
+      <a-scene id="scene" embedded xr-mode-ui="enabled: true; XRMode: xr;">
+        <a-assets></a-assets>
+
+        <a-entity
+          id="cameraRig"
+          position="0 1.6 0"
+          wasd-controls="acceleration: 20;"
+        >
+          <a-camera id="camera" position="0 0 0" look-controls camera="">
+          </a-camera>
+
+          <a-entity
+            id="leftController"
+            meta-touch-controls="hand: left"
+            meta-touch-controls-ui
+          >
+            <a-entity class="text" scale="0.1 0.1 0.1" rotation="-110 0 0">
+              <a-text
+                value=""
+                align="right"
+                baseline="top"
+                color="black"
+              ></a-text>
+              <a-plane
+                color="white"
+                opacity="0.7"
+                position="-1.005 -0.450 -0.01"
+                width="2"
+                height="1"
+              ></a-plane>
+            </a-entity>
+          </a-entity>
+
+          <a-entity
+            id="rightController"
+            meta-touch-controls="hand: right"
+            meta-touch-controls-ui
+          >
+            <a-entity class="text" scale="0.1 0.1 0.1" rotation="-110 0 0">
+              <a-text
+                value=""
+                align="left"
+                baseline="top"
+                color="black"
+              ></a-text>
+              <a-plane
+                color="white"
+                opacity="0.7"
+                position="1.005 -0.450 -0.01"
+                width="2"
+                height="1"
+              ></a-plane>
+            </a-entity>
+          </a-entity>
+        </a-entity>
+
+        <a-entity id="model" position="0 0 0"></a-entity>
+        <a-sky color="#ECECEC" hide-on-enter-ar></a-sky>
+      </a-scene>
+    </div>
+    <button id="openInspector">open inspector</button>
+  </body>
+</html>

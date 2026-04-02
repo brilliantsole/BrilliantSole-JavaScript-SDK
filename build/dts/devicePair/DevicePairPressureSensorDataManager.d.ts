@@ -5,7 +5,13 @@ import { DeviceEventMap } from "../Device.ts";
 export type DevicePairRawPressureData = {
     [side in Side]: PressureData;
 };
+export type DevicePairPressureTimestamps = {
+    [side in Side]: number;
+};
 export interface DevicePairPressureData {
+    sides: {
+        [key in Side]: PressureData;
+    };
     sensors: {
         [key in Side]: PressureSensorValue[];
     };

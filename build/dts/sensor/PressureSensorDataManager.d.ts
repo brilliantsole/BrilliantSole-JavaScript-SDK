@@ -1,4 +1,5 @@
 /** NODE_START */ import * as tf from "@tensorflow/tfjs"; /** NODE_END */
+import { CenterOfPressureModelData } from "../utils/CenterOfPressureModel.ts";
 export declare const PressureSensorTypes: readonly ["pressure"];
 export type PressureSensorType = (typeof PressureSensorTypes)[number];
 export declare const ContinuousPressureSensorTypes: readonly ["pressure"];
@@ -30,21 +31,40 @@ export interface PressureDataEventMessages {
         pressure: PressureData;
     };
 }
-export declare const PressureSensorEventTypes: readonly ["isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
+export declare const PressureSensorEventTypes: readonly ["pressureAutoRangeEnabled", "pressureAutoRangeDisabled", "pressureAutoRange", "pressureMotionAutoRangeEnabled", "pressureMotionAutoRangeDisabled", "pressureMotionAutoRange", "isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
 export type PressureSensorEventType = (typeof PressureSensorEventTypes)[number];
 export interface PressureSensorEventMessages {
+    pressureAutoRangeEnabled: {};
+    pressureAutoRangeDisabled: {};
+    pressureAutoRange: {
+        pressureAutoRange: boolean;
+    };
+    pressureMotionAutoRangeEnabled: {};
+    pressureMotionAutoRangeDisabled: {};
+    pressureMotionAutoRange: {
+        pressureMotionAutoRange: boolean;
+    };
     isRecordingPressureCalibrationData: {
         isRecordingPressureCalibrationData: boolean;
     };
     pressureCalibrationDataRecordStart: {};
     pressureCalibrationDataRecordStop: {};
-    pressureCalibrationDataRecordingProgress: {};
+    pressureCalibrationDataRecordingProgress: {
+        numberOfSamples: number;
+        data: CenterOfPressureModelData;
+    };
     isTrainingPressureCalibration: {
         isTrainingPressureCalibration: boolean;
     };
     pressureCalibrationTrainStart: {};
     pressureCalibrationTrainEnd: {};
-    pressureCalibrationTrainProgress: {};
+    pressureCalibrationTrainProgress: {
+        pressureCalibrationTrainProgress: number;
+        epoch: number;
+        epochs: number;
+        batchSize: number;
+        loss: number;
+    };
     calibratedPressureModel: {
         model: tf.Sequential;
         wasLoaded: boolean;
@@ -57,15 +77,24 @@ declare class PressureSensorDataManager {
     constructor();
     get eventDispatcher(): PressureSensorEventDispatcher;
     set eventDispatcher(eventDispatcher: PressureSensorEventDispatcher);
-    get dispatchEvent(): <T extends "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: PressureSensorEventMessages[T]) => void;
+    get dispatchEvent(): <T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "pressureMotionAutoRangeEnabled" | "pressureMotionAutoRangeDisabled" | "pressureMotionAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel">(type: T, message: PressureSensorEventMessages[T]) => void;
     get positions(): Vector2[];
     get numberOfSensors(): number;
     parsePositions(dataView: DataView<ArrayBuffer>): void;
     resetRange(): void;
+    get autoRange(): boolean;
+    setAutoRange(newAutoRange: boolean): void;
+    toggleAutoRange(): void;
+    get motionAutoRange(): boolean;
+    setMotionAutoRange(newMotionAutoRange: boolean): void;
+    toggleMotionAutoRange(): void;
     onEuler(euler: Euler, timestamp: number): void;
     get calibrationModel(): tf.Sequential | undefined;
     get isCalibrationModelTrained(): boolean;
     get isTrainingCalibrationModel(): boolean;
+    get addCalibrationModelData(): (inputs: number[], outputs: number[]) => void;
+    get clearCalibrationModelData(): () => void;
+    get calibrationModelData(): CenterOfPressureModelData;
     saveCalibrationModel(handlerOrURL: tf.io.IOHandler | string, config?: tf.io.SaveConfig): Promise<boolean>;
     loadCalibrationModel(pathOrIOHandlerOrFileList: string | tf.io.IOHandler | FileList, options?: tf.io.LoadOptions): Promise<boolean>;
     get isRecordingCalibrationData(): boolean;

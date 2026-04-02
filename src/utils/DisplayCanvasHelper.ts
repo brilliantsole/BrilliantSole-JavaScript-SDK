@@ -631,6 +631,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     for (const [index, color] of this.colors.entries()) {
+      _console.log("updating color", { index, color });
       await this.device?.setDisplayColor(index, color, false);
     }
     if (sendImmediately) {
@@ -687,13 +688,18 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       differences,
     });
   }
-  #resetContextState() {
-    this.#contextStateHelper.reset();
-    this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(
-      0
-    );
-    this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(
-      0
+  #resetContextState(
+    keepColorIndices?: boolean,
+    keepSpriteColorIndices?: boolean
+  ) {
+    _console.log("resetContextState", {
+      keepColorIndices,
+      keepSpriteColorIndices,
+    });
+    this.#contextStateHelper.reset(
+      this.numberOfColors,
+      keepColorIndices,
+      keepSpriteColorIndices
     );
   }
   async #updateDeviceContextState(sendImmediately?: boolean) {
@@ -840,11 +846,22 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   // CONTEXT COMMANDS
   #contextStack: DisplayContextState[] = [];
   async #saveContext(sendImmediately?: boolean) {
-    //_console.log("saveContext");
     this.#contextStack.push(structuredClone(this.contextState));
+    if (!this.#ignoreDevice) {
+      await this.#updateDeviceContextState(sendImmediately);
+    }
+  }
+  async saveContext(sendImmediately?: boolean) {
+    //_console.log("saveContext");
+    if (true) {
+      await this.#saveContext(sendImmediately);
+    } else {
+      if (this.device?.isConnected && !this.#ignoreDevice) {
+        await this.deviceDisplayManager!.saveContext(sendImmediately);
+      }
+    }
   }
   async #restoreContext(sendImmediately?: boolean) {
-    //_console.log("restoreContext");
     const contextState = this.#contextStack.pop();
     if (!contextState) {
       _console.warn("#contextStack empty");
@@ -855,18 +872,35 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.#updateDeviceContextState(sendImmediately);
     }
   }
-  async saveContext(sendImmediately?: boolean) {
-    await this.#saveContext(sendImmediately);
-    // if (this.device?.isConnected && !this.#ignoreDevice) {
-    //   await this.deviceDisplayManager!.saveContext(sendImmediately);
-    // }
-  }
   async restoreContext(sendImmediately?: boolean) {
-    await this.#restoreContext(sendImmediately);
-    // if (this.device?.isConnected && !this.#ignoreDevice) {
-    //   await this.deviceDisplayManager!.restoreContext(sendImmediately);
-    // }
+    //_console.log("restoreContext");
+    if (true) {
+      await this.#restoreContext(sendImmediately);
+    } else {
+      if (this.device?.isConnected && !this.#ignoreDevice) {
+        await this.deviceDisplayManager!.restoreContext(sendImmediately);
+      }
+    }
   }
+  async #clearContext(sendImmediately?: boolean) {
+    this.#resetContextState(
+      true,
+      !this.#isDrawingSprite && !this.#isDrawingBlankSprite // FIX?
+    );
+    if (false) {
+      if (!this.#ignoreDevice) {
+        await this.#updateDeviceContextState(sendImmediately);
+      }
+    }
+  }
+  async clearContext(sendImmediately?: boolean) {
+    //_console.log("clearContext");
+    await this.#clearContext(sendImmediately);
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.clearContext(sendImmediately);
+    }
+  }
+
   async selectBackgroundColor(
     backgroundColorIndex: number,
     sendImmediately?: boolean
@@ -2727,6 +2761,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   #generateQuadraticCurvePoints(controlPoints: Vector2[]) {
     assertValidNumberOfControlPoints("quadratic", controlPoints);
+    // _console.log("generateQuadraticCurvePoints", controlPoints, { depth });
     const [p0, p1, p2] = controlPoints;
     if (false) {
       const c1: Vector2 = {
@@ -4302,10 +4337,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
 
-    const spriteColorIndices = contextState.spriteColorIndices.slice();
     this.#spriteContextStack.push(contextState);
-    this.#resetContextState();
-    this.contextState.spriteColorIndices = spriteColorIndices;
+    this.#resetContextState(true, true);
     //_console.log("_saveContextForSprite", this.contextState);
   }
   #restoreContextForSprite() {

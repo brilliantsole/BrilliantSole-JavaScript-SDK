@@ -1067,6 +1067,7 @@ const defaultEuler = {
     heading: 0,
     pitch: 0,
     roll: 0,
+    absolute: false,
 };
 function getVector3Length(vector) {
     const { x, y, z } = vector;
@@ -1100,6 +1101,10 @@ function pointInPolygon(pt, polygon) {
 
 const initialRange = { min: Infinity, max: -Infinity, span: 0 };
 class RangeHelper {
+    #updatedAtLeastOnce = false;
+    get updatedAtLeastOnce() {
+        return this.#updatedAtLeastOnce;
+    }
     #range = structuredClone(initialRange);
     get min() {
         return this.#range.min;
@@ -1128,11 +1133,13 @@ class RangeHelper {
     }
     reset() {
         Object.assign(this.#range, initialRange);
+        this.#updatedAtLeastOnce = false;
     }
     update(value) {
         this.#range.min = Math.min(value, this.#range.min);
         this.#range.max = Math.max(value, this.#range.max);
         this.#updateSpan();
+        this.#updatedAtLeastOnce = true;
     }
     getNormalization(value, weightByRange, clampValue = true) {
         let normalization = getInterpolation(value, this.#range.min, this.#range.max, this.#range.span);
@@ -1151,30 +1158,38 @@ class RangeHelper {
     }
 }
 
-class CenterOfPressureHelper {
+class RangeHelper2 {
     #range = {
         x: new RangeHelper(),
         y: new RangeHelper(),
     };
+    #updatedAtLeastOnce = false;
+    get updatedAtLeastOnce() {
+        return this.#updatedAtLeastOnce;
+    }
     reset() {
         this.#range.x.reset();
         this.#range.y.reset();
+        this.#updatedAtLeastOnce = false;
     }
-    update(centerOfPressure) {
-        this.#range.x.update(centerOfPressure.x);
-        this.#range.y.update(centerOfPressure.y);
+    update(vector2) {
+        this.#range.x.update(vector2.x);
+        this.#range.y.update(vector2.y);
+        this.#updatedAtLeastOnce = true;
     }
-    getNormalization(centerOfPressure, weightByRange) {
+    getNormalization(vector2, weightByRange, clampValue) {
         return {
-            x: this.#range.x.getNormalization(centerOfPressure.x, weightByRange),
-            y: this.#range.y.getNormalization(centerOfPressure.y, weightByRange),
+            x: this.#range.x.getNormalization(vector2.x, weightByRange, clampValue),
+            y: this.#range.y.getNormalization(vector2.y, weightByRange, clampValue),
         };
     }
-    updateAndGetNormalization(centerOfPressure, weightByRange) {
-        this.update(centerOfPressure);
-        return this.getNormalization(centerOfPressure, weightByRange);
+    updateAndGetNormalization(vector2, weightByRange) {
+        this.update(vector2);
+        return this.getNormalization(vector2, weightByRange);
     }
 }
+
+const CenterOfPressureHelper = RangeHelper2;
 
 function createArray(arrayLength, objectOrCallback) {
     return new Array(arrayLength).fill(1).map((_, index) => {
@@ -1198,8 +1213,26 @@ function isTensorFlowAvailable() {
     }
     return Boolean(tf);
 }
+async function listTensorflowModels() {
+    if (!isTensorFlowAvailable()) {
+        return {};
+    }
+    const models = await tf.io.listModels();
+    return models;
+}
+async function getTensorFlowModel(url) {
+    const models = await listTensorflowModels();
+    const model = models[url];
+    if (model) {
+        return model;
+    }
+}
+async function isTensorFlowModelAvailable(url) {
+    const model = await getTensorFlowModel(url);
+    return Boolean(model);
+}
 
-const _console$F = createConsole("CenterOfPressureModel", { log: true });
+const _console$F = createConsole("CenterOfPressureModel", { log: false });
 class CenterOfPressureModel {
     constructor() {
         autoBind(this);
@@ -1247,7 +1280,6 @@ class CenterOfPressureModel {
         this.#hiddenUnitScalars.forEach((hiddenUnitScalar, index) => {
             const isFirst = index == 0;
             model.add(tf.layers.dense({
-                useBias: isFirst ? true : false,
                 units: Math.round(this.numberOfSensors * hiddenUnitScalar),
                 activation: "relu",
                 inputShape: isFirst ? [this.numberOfSensors] : undefined,
@@ -1263,32 +1295,73 @@ class CenterOfPressureModel {
     }
     #maxDataLength = 2000;
     #data = { inputs: [], outputs: [] };
+    get data() {
+        return this.#data;
+    }
     clearData() {
         _console$F.log("clearData");
         this.#data.outputs.length = 0;
         this.#data.inputs.length = 0;
+        this.#dispatchRecordingProgress();
+    }
+    #dispatchRecordingProgress() {
+        this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
+            numberOfSamples: this.numberOfSamples,
+            data: this.data,
+        });
     }
     #getInputs(pressureData) {
-        return pressureData.sensors.map((sensor) => sensor.scaledValue);
+        return pressureData.sensors.map((sensor) => sensor.truncatedScaledValue);
     }
     #getOutputs(euler) {
         return [-euler.roll, -euler.pitch];
     }
-    addData(pressureData, euler) {
+    onSensorData(pressureData, euler) {
+        this.addData(this.#getInputs(pressureData), this.#getOutputs(euler));
+    }
+    get numberOfSamples() {
+        return this.#data.inputs.length;
+    }
+    #areDataInputsRedundant(inputs) {
+        return false;
+    }
+    #dataOutputsThreshold = 0.008;
+    #areDataOutputsRedundant(outputs) {
+        if (this.#data.outputs.length == 0) {
+            return false;
+        }
+        return this.#data.outputs.some((_outputs) => {
+            const differences = outputs.map((value, index) => value - _outputs[index]);
+            let differencesSquareSum = 0;
+            differences.forEach((difference) => {
+                differencesSquareSum += difference ** 2;
+            });
+            const isRedundant = differencesSquareSum < this.#dataOutputsThreshold;
+            return isRedundant;
+        });
+    }
+    #isDataRedundant(inputs, outputs) {
+        const areDataInputsRedundant = this.#areDataInputsRedundant(inputs);
+        const areDataOutputsRedundant = this.#areDataOutputsRedundant(outputs);
+        return areDataInputsRedundant || areDataOutputsRedundant;
+    }
+    addData(inputs, outputs) {
         if (!isTensorFlowAvailable()) {
             return;
         }
-        this.#data.inputs.push(this.#getInputs(pressureData));
-        this.#data.outputs.push(this.#getOutputs(euler));
-        while (this.#data.inputs.length > this.#maxDataLength) {
+        if (this.#isDataRedundant(inputs, outputs)) {
+            return;
+        }
+        this.#data.inputs.push(inputs);
+        this.#data.outputs.push(outputs);
+        while (this.numberOfSamples > this.#maxDataLength) {
             this.#data.inputs.shift();
             this.#data.outputs.shift();
         }
-        _console$F.log("addData", pressureData, euler, {
-            dataLength: this.#data.inputs.length,
+        _console$F.log({
+            numberOfSamples: this.numberOfSamples,
         });
-        this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
-        });
+        this.#dispatchRecordingProgress();
     }
     #isTrained = false;
     get isTrained() {
@@ -1324,13 +1397,18 @@ class CenterOfPressureModel {
             const maxYs = ys.max();
             return ys.sub(minYs).div(maxYs.sub(minYs));
         });
+        const epochs = 64;
+        const batchSize = 32;
         this.#isTrained = false;
-        this.dispatchEvent("pressureCalibrationTrainStart", {});
+        this.dispatchEvent("pressureCalibrationTrainStart", {
+            epochs,
+            batchSize,
+        });
         this.#isTraining = true;
         try {
             await this.#model.fit(xs, ys, {
-                epochs: 32,
-                batchSize: 32,
+                epochs,
+                batchSize,
                 shuffle: true,
                 callbacks: {
                     onTrainBegin: (logs) => {
@@ -1340,20 +1418,22 @@ class CenterOfPressureModel {
                         _console$F.log("onTrainEnd", logs);
                     },
                     onEpochBegin: (epoch, logs) => {
-                        _console$F.log("onEpochBegin", { epoch }, logs);
                     },
                     onEpochEnd: (epoch, logs) => {
                         const { loss } = logs;
                         _console$F.log("onEpochEnd", { epoch, loss }, logs);
                         this.dispatchEvent("pressureCalibrationTrainProgress", {
+                            pressureCalibrationTrainProgress: (epoch + 1) / epochs,
+                            epoch,
+                            epochs,
+                            batchSize,
+                            loss,
                         });
                     },
                     onBatchBegin: (batch, logs) => {
-                        _console$F.log("onBatchBegin", { batch }, logs);
                     },
                     onBatchEnd: (batch, logs) => {
                         const { size, loss } = logs;
-                        _console$F.log("onBatchEnd", { batch, size, loss }, logs);
                     },
                     onYield: (epoch, batch, logs) => {
                         _console$F.log("onYield", { epoch, batch }, logs);
@@ -1368,10 +1448,10 @@ class CenterOfPressureModel {
         ys.dispose();
         this.#isTraining = false;
         _console$F.log("finished training");
-        this.#isTrained = true;
-        this.#dispatchCalibratedPressureModel();
+        this.#onTrainedModel();
     }
-    #dispatchCalibratedPressureModel(wasLoaded = false) {
+    #onTrainedModel(wasLoaded = false) {
+        this.#isTrained = true;
         this.dispatchEvent("calibratedPressureModel", {
             model: this.#model,
             wasLoaded,
@@ -1470,7 +1550,7 @@ class CenterOfPressureModel {
             }
             this.model.setWeights(loadedModel.getWeights());
             _console$F.log("weights successfully loaded into model");
-            this.#dispatchCalibratedPressureModel(true);
+            this.#onTrainedModel(true);
         }
         catch (error) {
             _console$F.error("error loading model", error);
@@ -1484,10 +1564,16 @@ class CenterOfPressureModel {
     }
 }
 
-const _console$E = createConsole("PressureDataManager", { log: true });
+const _console$E = createConsole("PressureSensorDataManager", { log: false });
 const PressureSensorTypes = ["pressure"];
 const ContinuousPressureSensorTypes = PressureSensorTypes;
 const PressureSensorEventTypes = [
+    "pressureAutoRangeEnabled",
+    "pressureAutoRangeDisabled",
+    "pressureAutoRange",
+    "pressureMotionAutoRangeEnabled",
+    "pressureMotionAutoRangeDisabled",
+    "pressureMotionAutoRange",
     "isRecordingPressureCalibrationData",
     "pressureCalibrationDataRecordStart",
     "pressureCalibrationDataRecordStop",
@@ -1551,6 +1637,52 @@ class PressureSensorDataManager {
         Object.assign(this.#euler, defaultEuler);
         this.#eulerCenterOfPressureRangeHelper.reset();
     }
+    #autoRange = true;
+    get autoRange() {
+        return this.#autoRange;
+    }
+    setAutoRange(newAutoRange) {
+        if (this.#autoRange == newAutoRange) {
+            return;
+        }
+        this.#autoRange = newAutoRange;
+        _console$E.log({ autoRange: this.autoRange });
+        this.dispatchEvent("pressureAutoRange", {
+            pressureAutoRange: this.autoRange,
+        });
+        if (this.autoRange) {
+            this.dispatchEvent("pressureAutoRangeEnabled", {});
+        }
+        else {
+            this.dispatchEvent("pressureAutoRangeDisabled", {});
+        }
+    }
+    toggleAutoRange() {
+        this.setAutoRange(!this.autoRange);
+    }
+    #motionAutoRange = false;
+    get motionAutoRange() {
+        return this.#motionAutoRange;
+    }
+    setMotionAutoRange(newMotionAutoRange) {
+        if (this.#motionAutoRange == newMotionAutoRange) {
+            return;
+        }
+        this.#motionAutoRange = newMotionAutoRange;
+        _console$E.log({ motionAutoRange: this.motionAutoRange });
+        this.dispatchEvent("pressureMotionAutoRange", {
+            pressureMotionAutoRange: this.motionAutoRange,
+        });
+        if (this.motionAutoRange) {
+            this.dispatchEvent("pressureMotionAutoRangeEnabled", {});
+        }
+        else {
+            this.dispatchEvent("pressureMotionAutoRangeDisabled", {});
+        }
+    }
+    toggleMotionAutoRange() {
+        this.setMotionAutoRange(!this.motionAutoRange);
+    }
     #euler = structuredClone(defaultEuler);
     #eulerTimestamp = 0;
     #eulerCenterOfPressureRangeHelper = new CenterOfPressureHelper();
@@ -1568,6 +1700,15 @@ class PressureSensorDataManager {
     get isTrainingCalibrationModel() {
         return this.#centerOfPressureModel.isTraining;
     }
+    get addCalibrationModelData() {
+        return this.#centerOfPressureModel.addData;
+    }
+    get clearCalibrationModelData() {
+        return this.#centerOfPressureModel.clearData;
+    }
+    get calibrationModelData() {
+        return this.#centerOfPressureModel.data;
+    }
     saveCalibrationModel(handlerOrURL, config) {
         return this.#centerOfPressureModel.saveModel(handlerOrURL, config);
     }
@@ -1579,6 +1720,9 @@ class PressureSensorDataManager {
         return this.#isRecordingCalibrationData;
     }
     #setIsRecordingCalibrationData(newIsRecordingCalibrationData) {
+        if (this.#isRecordingCalibrationData == newIsRecordingCalibrationData) {
+            return;
+        }
         this.#isRecordingCalibrationData = newIsRecordingCalibrationData;
         _console$E.log({
             isRecordingCalibrationData: this.isRecordingCalibrationData,
@@ -1597,20 +1741,13 @@ class PressureSensorDataManager {
         return isTensorFlowAvailable();
     }
     startRecordingCalibrationData() {
-        if (this.isRecordingCalibrationData) {
-            return;
-        }
         if (!this.canCalibrate) {
             _console$E.error("cannot calibrate pressure - tensorflow is not available");
             return;
         }
-        this.#centerOfPressureModel.clearData();
         this.#setIsRecordingCalibrationData(true);
     }
     stopRecordingCalibrationData() {
-        if (!this.isRecordingCalibrationData) {
-            return;
-        }
         this.#setIsRecordingCalibrationData(false);
     }
     toggleRecordingCalibrationData() {
@@ -1622,6 +1759,9 @@ class PressureSensorDataManager {
         }
     }
     async train() {
+        if (this.isRecordingCalibrationData) {
+            this.stopRecordingCalibrationData();
+        }
         await this.#centerOfPressureModel.train();
     }
     #scaledSumThreshold = 0.05;
@@ -1635,8 +1775,10 @@ class PressureSensorDataManager {
             const rawValue = dataView.getUint16(byteOffset, true);
             const scaledValue = (rawValue * scalar) / this.numberOfSensors;
             const rangeHelper = this.#sensorRangeHelpers[index];
-            rangeHelper.update(scaledValue);
-            const normalizedValue = rangeHelper.getNormalization(scaledValue, false);
+            if (this.autoRange) {
+                rangeHelper.update(scaledValue);
+            }
+            const normalizedValue = rangeHelper.getNormalization(scaledValue);
             const truncatedScaledValue = scaledValue - rangeHelper.min;
             const position = this.positions[index];
             pressureData.sensors[index] = {
@@ -1649,45 +1791,52 @@ class PressureSensorDataManager {
             };
             pressureData.scaledSum += truncatedScaledValue;
         }
-        {
+        if (this.autoRange) {
             this.#normalizedSumRangeHelper.update(pressureData.scaledSum);
         }
         pressureData.normalizedSum =
-            this.#normalizedSumRangeHelper.getNormalization(pressureData.scaledSum, false);
+            this.#normalizedSumRangeHelper.getNormalization(pressureData.scaledSum);
         const isPressureAboveThreshold = pressureData.scaledSum > this.#scaledSumThreshold;
         const hasEuler = this.#euler && Math.abs(timestamp - this.#eulerTimestamp) < 100;
         if (hasEuler) {
             if (isPressureAboveThreshold) {
-                if (this.isRecordingCalibrationData) {
+                if (this.motionAutoRange) {
                     this.#eulerCenterOfPressureRangeHelper.update({
                         x: -this.#euler.roll,
                         y: -this.#euler.pitch,
                     });
                 }
-                pressureData.motionCenter =
-                    this.#eulerCenterOfPressureRangeHelper.getNormalization({
-                        x: -this.#euler.roll,
-                        y: -this.#euler.pitch,
-                    }, false);
+                if (this.#eulerCenterOfPressureRangeHelper.updatedAtLeastOnce) {
+                    pressureData.motionCenter =
+                        this.#eulerCenterOfPressureRangeHelper.getNormalization({
+                            x: -this.#euler.roll,
+                            y: -this.#euler.pitch,
+                        });
+                }
             }
         }
         if (isPressureAboveThreshold) {
             pressureData.center = { x: 0, y: 0 };
             pressureData.sensors.forEach((sensor) => {
-                sensor.weightedValue = sensor.scaledValue / pressureData.scaledSum;
+                sensor.weightedValue =
+                    sensor.truncatedScaledValue / pressureData.scaledSum;
                 pressureData.center.x += sensor.position.x * sensor.weightedValue;
                 pressureData.center.y += sensor.position.y * sensor.weightedValue;
             });
-            this.#centerOfPressureHelper.update(pressureData.center);
+            if (this.autoRange) {
+                this.#centerOfPressureHelper.update(pressureData.center);
+            }
             pressureData.normalizedCenter =
-                this.#centerOfPressureHelper.getNormalization(pressureData.center, false);
+                this.#centerOfPressureHelper.getNormalization(pressureData.center);
         }
         if (this.isRecordingCalibrationData &&
             hasEuler &&
             isPressureAboveThreshold) {
-            this.#centerOfPressureModel.addData(pressureData, this.#euler);
+            this.#centerOfPressureModel.onSensorData(pressureData, this.#euler);
         }
-        if (isPressureAboveThreshold) {
+        if (isPressureAboveThreshold &&
+            !this.isRecordingCalibrationData &&
+            !this.isTrainingCalibrationModel) {
             pressureData.calibratedCenter =
                 this.#centerOfPressureModel.predict(pressureData);
         }
@@ -9099,7 +9248,7 @@ class MotionSensorDataManager {
     }
     #euler = new Euler(0, 0, 0, "YXZ");
     #quaternion = new Quaternion();
-    quaternionToEuler(quaternion) {
+    quaternionToEuler(quaternion, absolute) {
         this.#quaternion.copy(quaternion);
         this.#euler.setFromQuaternion(this.#quaternion);
         const { x, y, z } = this.#euler;
@@ -9107,9 +9256,10 @@ class MotionSensorDataManager {
             heading: radToDeg(y),
             pitch: radToDeg(x),
             roll: radToDeg(z),
+            absolute,
         };
     }
-    parseEuler(dataView, scalar) {
+    parseEuler(dataView, scalar, absolute) {
         let [heading, pitch, roll] = [
             dataView.getInt16(0, true),
             dataView.getInt16(2, true),
@@ -9120,7 +9270,7 @@ class MotionSensorDataManager {
         if (heading < -180) {
             heading += 360;
         }
-        const euler = { heading, pitch, roll };
+        const euler = { heading, pitch, roll, absolute };
         _console$D.log({ euler });
         return euler;
     }
@@ -9364,12 +9514,45 @@ class CameraManager {
         this.#assertIsAsleep();
         await this.#sendCameraCommand("wake");
     }
+    #sensorRate = 0;
+    get sensorRate() {
+        return this.#sensorRate;
+    }
+    set sensorRate(newSensorRate) {
+        if (this.#sensorRate == newSensorRate) {
+            return;
+        }
+        this.#sensorRate = newSensorRate;
+        _console$A.log({ sensorRate: this.sensorRate });
+    }
     #parseCameraData(dataView) {
         _console$A.log("parsing camera data", dataView);
         parseMessage(dataView, CameraDataTypes, this.#onCameraData.bind(this), null, true);
     }
+    #buildImageTimeout;
+    #clearBuildImageTimeout() {
+        if (this.#buildImageTimeout == undefined) {
+            return;
+        }
+        _console$A.log("clearBuildImageTimeout", this.#buildImageTimeout);
+        clearTimeout(this.#buildImageTimeout);
+        this.#buildImageTimeout = undefined;
+    }
+    #setBuildImageTimeout() {
+        if (this.sensorRate == 0) {
+            return;
+        }
+        const timeoutInterval = Math.max(2 * this.sensorRate, 40);
+        _console$A.log("setBuildImageTimeout", { timeoutInterval });
+        this.#buildImageTimeout = setTimeout(() => {
+            _console$A.log("buildImageTimeout");
+            this.#buildImage();
+            this.#buildImageTimeout = undefined;
+        }, timeoutInterval);
+    }
     #onCameraData(cameraDataType, dataView) {
         _console$A.log({ cameraDataType, dataView });
+        this.#clearBuildImageTimeout();
         switch (cameraDataType) {
             case "headerSize":
                 this.#headerSize = dataView.getUint16(0, true);
@@ -9411,6 +9594,9 @@ class CameraManager {
                     if (this.#headerProgress == 1 && this.#footerProgress == 1) {
                         this.#buildImage();
                     }
+                }
+                else {
+                    this.#setBuildImageTimeout();
                 }
                 break;
             case "footerSize":
@@ -9855,6 +10041,8 @@ class CameraManager {
         this.#headerProgress = 0;
         this.#imageProgress = 0;
         this.#footerProgress = 0;
+        this.#sensorRate = 0;
+        this.#clearBuildImageTimeout();
         if (this.isRecording) {
             this.stopRecording();
         }
@@ -10534,17 +10722,30 @@ class SensorDataManager {
         const timestamp = parseTimestamp(dataView, byteOffset);
         byteOffset += 2;
         const _dataView = new DataView(dataView.buffer, byteOffset);
-        const context = { timestamp };
+        const context = {
+            timestamp,
+            messages: [],
+        };
         parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), context);
+        context.messages.forEach(({ sensorType, message, dataView }) => {
+            if (sensorType == "pressure") {
+                if (context.euler) {
+                    this.pressureSensorDataManager.onEuler(context.euler, timestamp);
+                }
+                const scalar = this.#scalars.get("pressure") || 1;
+                message.pressure = this.pressureSensorDataManager.parseData(dataView, scalar, timestamp);
+            }
+            this.dispatchEvent(sensorType, message);
+            this.dispatchEvent("sensorData", message);
+        });
     }
     parseDataCallback(sensorType, dataView, context, isLast) {
-        const { timestamp } = context;
+        const { timestamp, messages } = context;
         const scalar = this.#scalars.get(sensorType) || 1;
         let sensorData = null;
         let sensorDataEuler = null;
         switch (sensorType) {
             case "pressure":
-                sensorData = this.pressureSensorDataManager.parseData(dataView, scalar, timestamp);
                 break;
             case "acceleration":
             case "gravity":
@@ -10556,13 +10757,10 @@ class SensorDataManager {
             case "gameRotation":
             case "rotation":
                 sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
-                sensorDataEuler =
-                    this.motionSensorDataManager.quaternionToEuler(sensorData);
-                this.pressureSensorDataManager.onEuler(sensorDataEuler, timestamp);
+                sensorDataEuler = this.motionSensorDataManager.quaternionToEuler(sensorData, sensorType == "rotation");
                 break;
             case "orientation":
-                sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
-                this.pressureSensorDataManager.onEuler(sensorData, timestamp);
+                sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar, true);
                 break;
             case "stepCounter":
                 sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
@@ -10590,7 +10788,7 @@ class SensorDataManager {
             default:
                 _console$y.error(`uncaught sensorType "${sensorType}"`);
         }
-        _console$y.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
+        _console$y.assertWithError(sensorData != null || sensorType == "pressure", `no sensorData defined for sensorType "${sensorType}"`);
         _console$y.log({ sensorType, sensorData });
         const message = {
             sensorType,
@@ -10598,11 +10796,18 @@ class SensorDataManager {
             timestamp,
             isLast: isLast,
         };
+        if (sensorType == "pressure") {
+            message.dataView = dataView;
+        }
         if (sensorDataEuler) {
             message[`${sensorType}Euler`] = sensorDataEuler;
+            context.euler = sensorDataEuler;
         }
-        this.dispatchEvent(sensorType, message);
-        this.dispatchEvent("sensorData", message);
+        messages.push({
+            sensorType,
+            message,
+            dataView: sensorType == "pressure" ? dataView : undefined,
+        });
     }
 }
 
@@ -12475,8 +12680,22 @@ class DisplayContextStateHelper {
         });
         return differences;
     }
-    reset() {
+    reset(numberOfColors, keepColorIndices, keepSpriteColorIndices) {
+        const spriteColorIndices = this.#state.spriteColorIndices.slice();
+        const { fillColorIndex, lineColorIndex, backgroundColorIndex } = this.#state;
         Object.assign(this.#state, DefaultDisplayContextState);
+        if (keepColorIndices) {
+            this.#state.fillColorIndex = fillColorIndex;
+            this.#state.lineColorIndex = lineColorIndex;
+            this.#state.backgroundColorIndex = backgroundColorIndex;
+        }
+        if (keepSpriteColorIndices) {
+            this.#state.spriteColorIndices = spriteColorIndices;
+        }
+        else {
+            this.#state.spriteColorIndices = new Array(numberOfColors).fill(0);
+        }
+        this.#state.bitmapColorIndices = new Array(numberOfColors).fill(0);
     }
 }
 
@@ -13609,6 +13828,7 @@ const DisplayContextCommandTypes = [
     "drawSprites",
     "startSprite",
     "endSprite",
+    "clearContext",
 ];
 const DisplaySpriteContextCommandTypes = [
     "selectFillColor",
@@ -13686,6 +13906,7 @@ function serializeContextCommand(displayManager, command) {
         case "resetSpriteScale":
         case "resetAlignment":
         case "endSprite":
+        case "clearContext":
             break;
         case "setColor":
             {
@@ -28642,6 +28863,16 @@ const spriteHeaderLength = 3 * 2;
 function calculateSpriteSheetHeaderLength(numberOfSprites) {
     return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
 }
+function getCurvesPoints(curves) {
+    const curvePoints = [];
+    curves.forEach((curve, index) => {
+        if (index == 0) {
+            curvePoints.push(curve.controlPoints[0]);
+        }
+        curvePoints.push(curve.controlPoints.at(-1));
+    });
+    return curvePoints;
+}
 function serializeSpriteSheet(displayManager, spriteSheet) {
     const { name, sprites } = spriteSheet;
     _console$m.log(`serializing ${name} spriteSheet`, spriteSheet);
@@ -28768,10 +28999,30 @@ function getFontMetrics(font, fontSize, options) {
             minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
             maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
         }
+        _console$m.log({
+            fontName: font.getEnglishName("fullName"),
+            minSpriteY,
+            maxSpriteY,
+        });
     }
     minSpriteY = options.minSpriteY ?? minSpriteY;
     maxSpriteY = options.maxSpriteY ?? maxSpriteY;
+    if (minSpriteY == Infinity) {
+        minSpriteY = 0;
+    }
+    if (maxSpriteY == -Infinity) {
+        maxSpriteY = 0;
+    }
     let maxSpriteHeight = options.maxSpriteHeight ?? maxSpriteY - minSpriteY + strokeWidth;
+    if (options.maxSpriteHeight) {
+        if (options.overrideMaxSpriteHeight) {
+            maxSpriteHeight = options.maxSpriteHeight;
+        }
+        else {
+            maxSpriteHeight = Math.max(options.maxSpriteHeight, maxSpriteHeight);
+        }
+    }
+    _console$m.log({ maxSpriteHeight, minSpriteY, maxSpriteY }, options);
     return { maxSpriteHeight, maxSpriteY, minSpriteY };
 }
 async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
@@ -28931,6 +29182,13 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                             break;
                     }
                 });
+                _console$m.log("allCurves", allCurves);
+                allCurves.sort((a, b) => {
+                    const aPoints = getCurvesPoints(a);
+                    const bPoints = getCurvesPoints(b);
+                    return contourArea(bPoints) - contourArea(aPoints);
+                });
+                _console$m.log("sorted allCurves", allCurves);
                 allCurves.forEach((curves) => {
                     let controlPoints = curves.flatMap((c) => c.controlPoints);
                     const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
@@ -29203,6 +29461,7 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
 function getFontMaxHeight(font, fontSize) {
     const scale = (1 / font.unitsPerEm) * fontSize;
     const maxHeight = (font.ascender - font.descender) * scale;
+    _console$m.log({ font: font.getEnglishName("fullName"), maxHeight, fontSize });
     return maxHeight;
 }
 function getMaxSpriteSheetSize(spriteSheet) {
@@ -30184,6 +30443,9 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
         case "endSprite":
             await displayManager.endSprite(sendImmediately);
             break;
+        case "clearContext":
+            await displayManager.clearContext(sendImmediately);
+            break;
     }
 }
 async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
@@ -30422,6 +30684,13 @@ class DisplayManager {
     get contextState() {
         return this.#contextStateHelper.state;
     }
+    #resetContextState(keepColorIndices, keepSpriteColorIndices) {
+        _console$j.log("resetContextState", {
+            keepColorIndices,
+            keepSpriteColorIndices,
+        });
+        this.#contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
+    }
     #onContextStateUpdate(differences) {
         this.#dispatchEvent("displayContextState", {
             displayContextState: structuredClone(this.contextState),
@@ -30655,7 +30924,7 @@ class DisplayManager {
         }
     }
     get numberOfColors() {
-        return 2 ** Number(this.pixelDepth);
+        return 2 ** Number(this.pixelDepth ?? 0);
     }
     #displayInformation;
     get displayInformation() {
@@ -30861,26 +31130,38 @@ class DisplayManager {
         this.#dispatchEvent("displayOpacity", { opacity });
     }
     #contextStack = [];
-    #saveContext(sendImmediately) {
+    async #saveContext(sendImmediately) {
         this.#contextStack.push(structuredClone(this.contextState));
     }
-    #restoreContext(sendImmediately) {
+    async saveContext(sendImmediately) {
+        {
+            await this.#saveContext(sendImmediately);
+        }
+    }
+    async #restoreContext(sendImmediately) {
         const contextState = this.#contextStack.pop();
         if (!contextState) {
             _console$j.warn("#contextStack empty");
             return;
         }
-        this.setContextState(contextState, sendImmediately);
-    }
-    async saveContext(sendImmediately) {
-        {
-            this.#saveContext(sendImmediately);
-        }
+        await this.setContextState(contextState, sendImmediately);
     }
     async restoreContext(sendImmediately) {
         {
-            this.#restoreContext(sendImmediately);
+            await this.#restoreContext(sendImmediately);
         }
+    }
+    async #clearContext(sendImmediately) {
+        const contextState = this.#contextStack.pop();
+        if (!contextState) {
+            _console$j.warn("#contextStack empty");
+            return;
+        }
+        await this.setContextState(contextState, sendImmediately);
+    }
+    async clearContext(sendImmediately) {
+        await this.#clearContext(sendImmediately);
+        await this.#sendContextCommand("clearContext", undefined, sendImmediately);
     }
     async selectFillColor(fillColorIndex, sendImmediately) {
         this.assertValidColorIndex(fillColorIndex);
@@ -32297,9 +32578,7 @@ class DisplayManager {
         _console$j.assertWithError(!this.#isDrawingBlankSprite, `already drawing blank sprite`);
         this.#isDrawingBlankSprite = true;
         this.#saveContext(sendImmediately);
-        this.#contextStateHelper.reset();
-        this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-        this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
+        this.#resetContextState();
         const commandType = "startSprite";
         const dataView = serializeContextCommand(this, {
             type: commandType,
@@ -32327,7 +32606,7 @@ class DisplayManager {
         this.#brightness = undefined;
         this.#contextCommandBuffers = [];
         this.#isAvailable = false;
-        this.#contextStateHelper.reset();
+        this.#resetContextState();
         this.#colors.length = 0;
         this.#opacities.length = 0;
         this.#isReady = true;
@@ -34715,6 +34994,10 @@ class Device {
                 _console$7.log("don't need to request microphone infomration");
             }
         });
+        this.addEventListener("getSensorConfiguration", (event) => {
+            const { sensorConfiguration } = event.message;
+            this.#cameraManager.sensorRate = sensorConfiguration.camera ?? 0;
+        });
         this.addEventListener("getFileTypes", () => {
             if (this.connectionStatus != "connecting") {
                 return;
@@ -35359,8 +35642,27 @@ class Device {
             return [];
         }
     }
-    resetPressureRange() {
-        this.#sensorDataManager.pressureSensorDataManager.resetRange();
+    get autoPressureRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.autoRange;
+    }
+    get setPressureAutoRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.setAutoRange;
+    }
+    get togglePressureAutoRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.toggleAutoRange;
+    }
+    get autoPressureMotionRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.motionAutoRange;
+    }
+    get setPressureMotionAutoRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.setMotionAutoRange;
+    }
+    get togglePressureMotionAutoRange() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .toggleMotionAutoRange;
+    }
+    get resetPressureRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.resetRange;
     }
     get canCalibratePressure() {
         return this.#sensorDataManager.pressureSensorDataManager.canCalibrate;
@@ -35401,6 +35703,18 @@ class Device {
     get loadPressureCalibrationModel() {
         return this.#sensorDataManager.pressureSensorDataManager
             .loadCalibrationModel;
+    }
+    get addPressureCalibrationModelData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .addCalibrationModelData;
+    }
+    get clearPressureCalibrationModelData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .clearCalibrationModelData;
+    }
+    get pressureCalibrationModelData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .calibrationModelData;
     }
     get vibrationLocations() {
         return this.#vibrationManager.vibrationLocations;
@@ -36547,6 +36861,7 @@ class DisplayCanvasHelper {
             return;
         }
         for (const [index, color] of this.colors.entries()) {
+            _console$6.log("updating color", { index, color });
             await this.device?.setDisplayColor(index, color, false);
         }
         if (sendImmediately) {
@@ -36598,10 +36913,12 @@ class DisplayCanvasHelper {
             differences,
         });
     }
-    #resetContextState() {
-        this.#contextStateHelper.reset();
-        this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-        this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
+    #resetContextState(keepColorIndices, keepSpriteColorIndices) {
+        _console$6.log("resetContextState", {
+            keepColorIndices,
+            keepSpriteColorIndices,
+        });
+        this.#contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
     }
     async #updateDeviceContextState(sendImmediately) {
         if (!this.device?.isConnected) {
@@ -36708,6 +37025,14 @@ class DisplayCanvasHelper {
     #contextStack = [];
     async #saveContext(sendImmediately) {
         this.#contextStack.push(structuredClone(this.contextState));
+        if (!this.#ignoreDevice) {
+            await this.#updateDeviceContextState(sendImmediately);
+        }
+    }
+    async saveContext(sendImmediately) {
+        {
+            await this.#saveContext(sendImmediately);
+        }
     }
     async #restoreContext(sendImmediately) {
         const contextState = this.#contextStack.pop();
@@ -36720,11 +37045,20 @@ class DisplayCanvasHelper {
             await this.#updateDeviceContextState(sendImmediately);
         }
     }
-    async saveContext(sendImmediately) {
-        await this.#saveContext(sendImmediately);
-    }
     async restoreContext(sendImmediately) {
-        await this.#restoreContext(sendImmediately);
+        {
+            await this.#restoreContext(sendImmediately);
+        }
+    }
+    async #clearContext(sendImmediately) {
+        this.#resetContextState(true, !this.#isDrawingSprite && !this.#isDrawingBlankSprite
+        );
+    }
+    async clearContext(sendImmediately) {
+        await this.#clearContext(sendImmediately);
+        if (this.device?.isConnected && !this.#ignoreDevice) {
+            await this.deviceDisplayManager.clearContext(sendImmediately);
+        }
     }
     async selectBackgroundColor(backgroundColorIndex, sendImmediately) {
         this.assertValidColorIndex(backgroundColorIndex);
@@ -38898,10 +39232,8 @@ class DisplayCanvasHelper {
         if ("name" in sprite) {
             _console$6.assertWithError(!this.#spriteStack.includes(sprite), `cyclical sprite ${sprite.name} found in stack`);
         }
-        const spriteColorIndices = contextState.spriteColorIndices.slice();
         this.#spriteContextStack.push(contextState);
-        this.#resetContextState();
-        this.contextState.spriteColorIndices = spriteColorIndices;
+        this.#resetContextState(true, true);
     }
     #restoreContextForSprite() {
         this.#resetCanvasContextTransform();
@@ -39061,6 +39393,7 @@ const _console$5 = createConsole("DevicePairPressureSensorDataManager", {
 });
 class DevicePairPressureSensorDataManager {
     #rawPressure = {};
+    #pressureTimestamps = {};
     #centerOfPressureHelper = new CenterOfPressureHelper();
     #normalizedSumRangeHelper = new RangeHelper();
     constructor() {
@@ -39071,10 +39404,11 @@ class DevicePairPressureSensorDataManager {
         this.#normalizedSumRangeHelper.reset();
     }
     onDevicePressureData(event) {
-        const { pressure } = event.message;
+        const { pressure, timestamp } = event.message;
         const { side } = event.target;
         _console$5.log({ pressure, side });
         this.#rawPressure[side] = pressure;
+        this.#pressureTimestamps[side] = timestamp;
         if (this.#hasAllPressureData) {
             return this.#updatePressureData();
         }
@@ -39083,48 +39417,68 @@ class DevicePairPressureSensorDataManager {
         }
     }
     get #hasAllPressureData() {
-        return Sides.every((side) => side in this.#rawPressure);
+        const now = Date.now();
+        const hasBothSides = Sides.every((side) => side in this.#rawPressure);
+        const bothSidesAreRecent = Sides.every((side) => now - this.#pressureTimestamps[side] < 500);
+        return hasBothSides && bothSidesAreRecent;
     }
     #updatePressureData() {
-        const pressure = {
+        const pressureData = {
             scaledSum: 0,
             normalizedSum: 0,
             sensors: { left: [], right: [] },
+            sides: { left: this.#rawPressure.left, right: this.#rawPressure.right },
         };
         Sides.forEach((side) => {
             const sidePressure = this.#rawPressure[side];
-            pressure.scaledSum += sidePressure.scaledSum;
+            pressureData.sensors[side].push(...sidePressure.sensors);
         });
-        pressure.normalizedSum +=
-            this.#normalizedSumRangeHelper.updateAndGetNormalization(pressure.scaledSum, false);
-        if (pressure.scaledSum > 0) {
-            pressure.center = { x: 0, y: 0 };
+        let numberOfSidesWithCenter = 0;
+        Sides.forEach((side) => {
+            const sidePressureData = this.#rawPressure[side];
+            if (sidePressureData.center) {
+                numberOfSidesWithCenter++;
+            }
+        });
+        Sides.forEach((side) => {
+            const sidePressure = this.#rawPressure[side];
+            pressureData.scaledSum += sidePressure.scaledSum;
+        });
+        pressureData.normalizedSum +=
+            this.#normalizedSumRangeHelper.updateAndGetNormalization(pressureData.scaledSum);
+        if (numberOfSidesWithCenter == 2) {
+            pressureData.center = { x: 0, y: 0 };
             Sides.forEach((side) => {
-                const sidePressure = this.#rawPressure[side];
-                {
-                    sidePressure.sensors.forEach((sensor) => {
-                        const _sensor = structuredClone(sensor);
-                        _sensor.weightedScaledValue =
-                            sensor.scaledValue / pressure.scaledSum;
-                        let { x, y } = sensor.position;
-                        x /= 2;
-                        if (side == "right") {
-                            x += 0.5;
+                const sidePressureData = this.#rawPressure[side];
+                let centerOfPressure;
+                if (sidePressureData.calibratedCenter) {
+                    centerOfPressure = sidePressureData.calibratedCenter;
+                }
+                else if (sidePressureData.motionCenter) {
+                    centerOfPressure = sidePressureData.motionCenter;
+                }
+                const sidePressureWeight = sidePressureData.scaledSum / pressureData.scaledSum;
+                if (sidePressureWeight > 0) {
+                    if (centerOfPressure) {
+                        pressureData.center.x += centerOfPressure.x * 0.5;
+                        pressureData.center.y += centerOfPressure.y * 0.5;
+                    }
+                    else {
+                        if (sidePressureData.normalizedCenter?.y != undefined) {
+                            pressureData.center.y +=
+                                sidePressureData.normalizedCenter.y * sidePressureWeight;
                         }
-                        _sensor.position = { x, y };
-                        pressure.center.x +=
-                            _sensor.position.x * _sensor.weightedScaledValue;
-                        pressure.center.y +=
-                            _sensor.position.y * _sensor.weightedScaledValue;
-                        pressure.sensors[side].push(_sensor);
-                    });
+                        if (side == "right") {
+                            pressureData.center.x = sidePressureWeight;
+                        }
+                    }
                 }
             });
-            pressure.normalizedCenter =
-                this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center, false);
+            pressureData.normalizedCenter =
+                this.#centerOfPressureHelper.updateAndGetNormalization(pressureData.center);
         }
-        _console$5.log({ devicePairPressure: pressure });
-        return pressure;
+        _console$5.log({ devicePairPressureData: pressureData });
+        return pressureData;
     }
 }
 
@@ -39159,8 +39513,16 @@ class DevicePairSensorDataManager {
         }
         if (value) {
             const timestamps = Object.assign({}, this.#timestamps[sensorType]);
-            this.dispatchEvent(sensorType, { sensorType, timestamps, [sensorType]: value });
-            this.dispatchEvent("sensorData", { sensorType, timestamps, [sensorType]: value });
+            this.dispatchEvent(sensorType, {
+                sensorType,
+                timestamps,
+                [sensorType]: value,
+            });
+            this.dispatchEvent("sensorData", {
+                sensorType,
+                timestamps,
+                [sensorType]: value,
+            });
         }
         else {
             _console$4.log("no value received");
@@ -39350,9 +39712,23 @@ class DevicePair {
             this.#sensorDataManager.onDeviceSensorData(deviceEvent);
         }
     }
-    resetPressureRange() {
-        Sides.forEach((side) => this[side]?.resetPressureRange());
+    resetPressureRange(resetSides = true) {
+        if (resetSides) {
+            Sides.forEach((side) => this[side]?.resetPressureRange());
+        }
         this.#sensorDataManager.resetPressureRange();
+    }
+    setPressureAutoRange(newPressureAutoRange) {
+        Sides.forEach((side) => this[side]?.setPressureAutoRange(newPressureAutoRange));
+    }
+    togglePressureAutoRange() {
+        Sides.forEach((side) => this[side]?.togglePressureAutoRange());
+    }
+    setPressureMotionAutoRange(newPressureMotionAutoRange) {
+        Sides.forEach((side) => this[side]?.setPressureMotionAutoRange(newPressureMotionAutoRange));
+    }
+    togglePressureMotionAutoRange() {
+        Sides.forEach((side) => this[side]?.togglePressureMotionAutoRange());
     }
     async triggerVibration(vibrationConfigurations, sendImmediately) {
         const promises = Sides.map((side) => {
@@ -39832,11 +40208,13 @@ class BaseClient {
         this.assertConnection();
         _console$1.assertTypeWithError(bluetoothId, "string");
         const device = this.#getOrCreateDevice(bluetoothId);
-        if (connectionType) {
-            device.connect({ type: "client", subType: connectionType });
-        }
-        else {
-            device.connect();
+        if (device.connectionStatus == "notConnected") {
+            if (connectionType) {
+                device.connect({ type: "client", subType: connectionType });
+            }
+            else {
+                device.connect();
+            }
         }
         return device;
     }
@@ -40062,5 +40440,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isValidSVG, isWireframePolygon, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

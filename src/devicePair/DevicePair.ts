@@ -315,9 +315,28 @@ class DevicePair {
       this.#sensorDataManager.onDeviceSensorData(deviceEvent);
     }
   }
-  resetPressureRange() {
-    Sides.forEach((side) => this[side]?.resetPressureRange());
+  resetPressureRange(resetSides = true) {
+    if (resetSides) {
+      Sides.forEach((side) => this[side]?.resetPressureRange());
+    }
     this.#sensorDataManager.resetPressureRange();
+  }
+  setPressureAutoRange(newPressureAutoRange: boolean) {
+    Sides.forEach((side) =>
+      this[side]?.setPressureAutoRange(newPressureAutoRange)
+    );
+  }
+  togglePressureAutoRange() {
+    Sides.forEach((side) => this[side]?.togglePressureAutoRange());
+  }
+
+  setPressureMotionAutoRange(newPressureMotionAutoRange: boolean) {
+    Sides.forEach((side) =>
+      this[side]?.setPressureMotionAutoRange(newPressureMotionAutoRange)
+    );
+  }
+  togglePressureMotionAutoRange() {
+    Sides.forEach((side) => this[side]?.togglePressureMotionAutoRange());
   }
 
   // VIBRATION

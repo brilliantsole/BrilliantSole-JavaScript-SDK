@@ -431,10 +431,12 @@ abstract class BaseClient {
     this.assertConnection();
     _console.assertTypeWithError(bluetoothId, "string");
     const device = this.#getOrCreateDevice(bluetoothId);
-    if (connectionType) {
-      device.connect({ type: "client", subType: connectionType });
-    } else {
-      device.connect();
+    if (device.connectionStatus == "notConnected") {
+      if (connectionType) {
+        device.connect({ type: "client", subType: connectionType });
+      } else {
+        device.connect();
+      }
     }
     return device;
   }

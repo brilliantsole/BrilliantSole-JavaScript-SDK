@@ -1,5 +1,5 @@
 import { createConsole } from "../utils/Console.ts";
-import { parseTimestamp } from "../utils/MathUtils.ts";
+import { Euler, parseTimestamp } from "../utils/MathUtils.ts";
 import PressureSensorDataManager, {
   PressureDataEventMessages,
   PressureSensorEventDispatcher,
@@ -99,7 +99,17 @@ export type SensorDataEventDispatcher = EventDispatcher<
   SensorDataEventMessages
 >;
 
-type SensorDataParseContext = { timestamp: number };
+type SensorDataParseContext = {
+  timestamp: number;
+  euler?: Euler;
+  messages: {
+    [T in keyof _SensorDataEventMessages]: {
+      sensorType: T;
+      message: _SensorDataEventMessages[T];
+      dataView?: DataView<ArrayBuffer>;
+    };
+  }[keyof _SensorDataEventMessages][];
+};
 
 class SensorDataManager {
   constructor() {
@@ -191,13 +201,32 @@ class SensorDataManager {
 
     const _dataView = new DataView(dataView.buffer, byteOffset);
 
-    const context: SensorDataParseContext = { timestamp };
+    const context: SensorDataParseContext = {
+      timestamp,
+      messages: [],
+    };
     parseMessage(
       _dataView,
       SensorTypes,
       this.parseDataCallback.bind(this),
       context
     );
+    context.messages.forEach(({ sensorType, message, dataView }) => {
+      if (sensorType == "pressure") {
+        if (context.euler) {
+          this.pressureSensorDataManager.onEuler(context.euler, timestamp);
+        }
+        const scalar = this.#scalars.get("pressure") || 1;
+        message.pressure = this.pressureSensorDataManager.parseData(
+          dataView!,
+          scalar,
+          timestamp
+        );
+      }
+
+      this.dispatchEvent(sensorType, message);
+      this.dispatchEvent("sensorData", message);
+    });
   }
 
   private parseDataCallback(
@@ -206,7 +235,7 @@ class SensorDataManager {
     context: SensorDataParseContext,
     isLast?: boolean
   ) {
-    const { timestamp } = context;
+    const { timestamp, messages } = context;
 
     const scalar = this.#scalars.get(sensorType) || 1;
 
@@ -214,11 +243,7 @@ class SensorDataManager {
     let sensorDataEuler = null;
     switch (sensorType) {
       case "pressure":
-        sensorData = this.pressureSensorDataManager.parseData(
-          dataView,
-          scalar,
-          timestamp
-        );
+        // parse afterward in case euler is parsed
         break;
       case "acceleration":
       case "gravity":
@@ -236,13 +261,17 @@ class SensorDataManager {
           dataView,
           scalar
         );
-        sensorDataEuler =
-          this.motionSensorDataManager.quaternionToEuler(sensorData);
-        this.pressureSensorDataManager.onEuler(sensorDataEuler, timestamp);
+        sensorDataEuler = this.motionSensorDataManager.quaternionToEuler(
+          sensorData,
+          sensorType == "rotation"
+        );
         break;
       case "orientation":
-        sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
-        this.pressureSensorDataManager.onEuler(sensorData, timestamp);
+        sensorData = this.motionSensorDataManager.parseEuler(
+          dataView,
+          scalar,
+          true
+        );
         break;
       case "stepCounter":
         sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
@@ -277,7 +306,7 @@ class SensorDataManager {
     }
 
     _console.assertWithError(
-      sensorData != null,
+      sensorData != null || sensorType == "pressure",
       `no sensorData defined for sensorType "${sensorType}"`
     );
 
@@ -289,13 +318,20 @@ class SensorDataManager {
       timestamp,
       isLast: isLast!,
     };
+    if (sensorType == "pressure") {
+      message.dataView = dataView;
+    }
     if (sensorDataEuler) {
       message[`${sensorType}Euler`] = sensorDataEuler;
+      context.euler = sensorDataEuler;
     }
-    // @ts-expect-error
-    this.dispatchEvent(sensorType, message);
-    // @ts-expect-error
-    this.dispatchEvent("sensorData", message);
+
+    messages.push({
+      sensorType,
+      // @ts-expect-error
+      message,
+      dataView: sensorType == "pressure" ? dataView : undefined,
+    });
   }
 }
 

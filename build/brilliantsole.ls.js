@@ -1139,7 +1139,8 @@
   const defaultEuler = {
     heading: 0,
     pitch: 0,
-    roll: 0
+    roll: 0,
+    absolute: false
   };
   function getVector3Length(vector) {
     const {
@@ -1182,12 +1183,17 @@
     max: -Infinity,
     span: 0
   };
+  var _updatedAtLeastOnce$1 = new WeakMap();
   var _range$1 = new WeakMap();
   var _RangeHelper_brand = new WeakSet();
   class RangeHelper {
     constructor() {
       _classPrivateMethodInitSpec(this, _RangeHelper_brand);
+      _classPrivateFieldInitSpec(this, _updatedAtLeastOnce$1, false);
       _classPrivateFieldInitSpec(this, _range$1, structuredClone(initialRange));
+    }
+    get updatedAtLeastOnce() {
+      return _classPrivateFieldGet2(_updatedAtLeastOnce$1, this);
     }
     get min() {
       return _classPrivateFieldGet2(_range$1, this).min;
@@ -1213,11 +1219,13 @@
     }
     reset() {
       Object.assign(_classPrivateFieldGet2(_range$1, this), initialRange);
+      _classPrivateFieldSet2(_updatedAtLeastOnce$1, this, false);
     }
     update(value) {
       _classPrivateFieldGet2(_range$1, this).min = Math.min(value, _classPrivateFieldGet2(_range$1, this).min);
       _classPrivateFieldGet2(_range$1, this).max = Math.max(value, _classPrivateFieldGet2(_range$1, this).max);
       _assertClassBrand(_RangeHelper_brand, this, _updateSpan).call(this);
+      _classPrivateFieldSet2(_updatedAtLeastOnce$1, this, true);
     }
     getNormalization(value, weightByRange) {
       let clampValue = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
@@ -1241,32 +1249,41 @@
   }
 
   var _range = new WeakMap();
-  class CenterOfPressureHelper {
+  var _updatedAtLeastOnce = new WeakMap();
+  class RangeHelper2 {
     constructor() {
       _classPrivateFieldInitSpec(this, _range, {
         x: new RangeHelper(),
         y: new RangeHelper()
       });
+      _classPrivateFieldInitSpec(this, _updatedAtLeastOnce, false);
+    }
+    get updatedAtLeastOnce() {
+      return _classPrivateFieldGet2(_updatedAtLeastOnce, this);
     }
     reset() {
       _classPrivateFieldGet2(_range, this).x.reset();
       _classPrivateFieldGet2(_range, this).y.reset();
+      _classPrivateFieldSet2(_updatedAtLeastOnce, this, false);
     }
-    update(centerOfPressure) {
-      _classPrivateFieldGet2(_range, this).x.update(centerOfPressure.x);
-      _classPrivateFieldGet2(_range, this).y.update(centerOfPressure.y);
+    update(vector2) {
+      _classPrivateFieldGet2(_range, this).x.update(vector2.x);
+      _classPrivateFieldGet2(_range, this).y.update(vector2.y);
+      _classPrivateFieldSet2(_updatedAtLeastOnce, this, true);
     }
-    getNormalization(centerOfPressure, weightByRange) {
+    getNormalization(vector2, weightByRange, clampValue) {
       return {
-        x: _classPrivateFieldGet2(_range, this).x.getNormalization(centerOfPressure.x, weightByRange),
-        y: _classPrivateFieldGet2(_range, this).y.getNormalization(centerOfPressure.y, weightByRange)
+        x: _classPrivateFieldGet2(_range, this).x.getNormalization(vector2.x, weightByRange, clampValue),
+        y: _classPrivateFieldGet2(_range, this).y.getNormalization(vector2.y, weightByRange, clampValue)
       };
     }
-    updateAndGetNormalization(centerOfPressure, weightByRange) {
-      this.update(centerOfPressure);
-      return this.getNormalization(centerOfPressure, weightByRange);
+    updateAndGetNormalization(vector2, weightByRange) {
+      this.update(vector2);
+      return this.getNormalization(vector2, weightByRange);
     }
   }
+
+  const CenterOfPressureHelper = RangeHelper2;
 
   function createArray(arrayLength, objectOrCallback) {
     return new Array(arrayLength).fill(1).map((_, index) => {
@@ -1289,9 +1306,27 @@
     }
     return Boolean(tf);
   }
+  async function listTensorflowModels() {
+    if (!isTensorFlowAvailable()) {
+      return {};
+    }
+    const models = await tf.io.listModels();
+    return models;
+  }
+  async function getTensorFlowModel(url) {
+    const models = await listTensorflowModels();
+    const model = models[url];
+    if (model) {
+      return model;
+    }
+  }
+  async function isTensorFlowModelAvailable(url) {
+    const model = await getTensorFlowModel(url);
+    return Boolean(model);
+  }
 
   const _console$A = createConsole("CenterOfPressureModel", {
-    log: true
+    log: false
   });
   var _model = new WeakMap();
   var _hiddenUnitScalars = new WeakMap();
@@ -1299,6 +1334,7 @@
   var _CenterOfPressureModel_brand = new WeakSet();
   var _maxDataLength = new WeakMap();
   var _data = new WeakMap();
+  var _dataOutputsThreshold = new WeakMap();
   var _isTrained = new WeakMap();
   var _isTraining = new WeakMap();
   class CenterOfPressureModel {
@@ -1313,6 +1349,7 @@
         inputs: [],
         outputs: []
       });
+      _classPrivateFieldInitSpec(this, _dataOutputsThreshold, 0.008);
       _classPrivateFieldInitSpec(this, _isTrained, false);
       _classPrivateFieldInitSpec(this, _isTraining, false);
       autoBind(this);
@@ -1336,26 +1373,38 @@
       });
       _assertClassBrand(_CenterOfPressureModel_brand, this, _createModel).call(this);
     }
+    get data() {
+      return _classPrivateFieldGet2(_data, this);
+    }
     clearData() {
       _console$A.log("clearData");
       _classPrivateFieldGet2(_data, this).outputs.length = 0;
       _classPrivateFieldGet2(_data, this).inputs.length = 0;
+      _assertClassBrand(_CenterOfPressureModel_brand, this, _dispatchRecordingProgress).call(this);
     }
-    addData(pressureData, euler) {
+    onSensorData(pressureData, euler) {
+      this.addData(_assertClassBrand(_CenterOfPressureModel_brand, this, _getInputs).call(this, pressureData), _assertClassBrand(_CenterOfPressureModel_brand, this, _getOutputs).call(this, euler));
+    }
+    get numberOfSamples() {
+      return _classPrivateFieldGet2(_data, this).inputs.length;
+    }
+    addData(inputs, outputs) {
       if (!isTensorFlowAvailable()) {
         return;
       }
-      _classPrivateFieldGet2(_data, this).inputs.push(_assertClassBrand(_CenterOfPressureModel_brand, this, _getInputs).call(this, pressureData));
-      _classPrivateFieldGet2(_data, this).outputs.push(_assertClassBrand(_CenterOfPressureModel_brand, this, _getOutputs).call(this, euler));
-      while (_classPrivateFieldGet2(_data, this).inputs.length > _classPrivateFieldGet2(_maxDataLength, this)) {
+      if (_assertClassBrand(_CenterOfPressureModel_brand, this, _isDataRedundant).call(this, inputs, outputs)) {
+        return;
+      }
+      _classPrivateFieldGet2(_data, this).inputs.push(inputs);
+      _classPrivateFieldGet2(_data, this).outputs.push(outputs);
+      while (this.numberOfSamples > _classPrivateFieldGet2(_maxDataLength, this)) {
         _classPrivateFieldGet2(_data, this).inputs.shift();
         _classPrivateFieldGet2(_data, this).outputs.shift();
       }
-      _console$A.log("addData", pressureData, euler, {
-        dataLength: _classPrivateFieldGet2(_data, this).inputs.length
+      _console$A.log({
+        numberOfSamples: this.numberOfSamples
       });
-      this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
-      });
+      _assertClassBrand(_CenterOfPressureModel_brand, this, _dispatchRecordingProgress).call(this);
     }
     get isTrained() {
       return _classPrivateFieldGet2(_isTrained, this);
@@ -1392,13 +1441,18 @@
         const maxYs = ys.max();
         return ys.sub(minYs).div(maxYs.sub(minYs));
       });
+      const epochs = 64;
+      const batchSize = 32;
       _classPrivateFieldSet2(_isTrained, this, false);
-      this.dispatchEvent("pressureCalibrationTrainStart", {});
+      this.dispatchEvent("pressureCalibrationTrainStart", {
+        epochs,
+        batchSize
+      });
       _classPrivateFieldSet2(_isTraining, this, true);
       try {
         await _classPrivateFieldGet2(_model, this).fit(xs, ys, {
-          epochs: 32,
-          batchSize: 32,
+          epochs,
+          batchSize,
           shuffle: true,
           callbacks: {
             onTrainBegin: logs => {
@@ -1408,9 +1462,6 @@
               _console$A.log("onTrainEnd", logs);
             },
             onEpochBegin: (epoch, logs) => {
-              _console$A.log("onEpochBegin", {
-                epoch
-              }, logs);
             },
             onEpochEnd: (epoch, logs) => {
               const {
@@ -1421,23 +1472,20 @@
                 loss
               }, logs);
               this.dispatchEvent("pressureCalibrationTrainProgress", {
+                pressureCalibrationTrainProgress: (epoch + 1) / epochs,
+                epoch,
+                epochs,
+                batchSize,
+                loss
               });
             },
             onBatchBegin: (batch, logs) => {
-              _console$A.log("onBatchBegin", {
-                batch
-              }, logs);
             },
             onBatchEnd: (batch, logs) => {
               const {
                 size,
                 loss
               } = logs;
-              _console$A.log("onBatchEnd", {
-                batch,
-                size,
-                loss
-              }, logs);
             },
             onYield: (epoch, batch, logs) => {
               _console$A.log("onYield", {
@@ -1454,8 +1502,7 @@
       ys.dispose();
       _classPrivateFieldSet2(_isTraining, this, false);
       _console$A.log("finished training");
-      _classPrivateFieldSet2(_isTrained, this, true);
-      _assertClassBrand(_CenterOfPressureModel_brand, this, _dispatchCalibratedPressureModel).call(this);
+      _assertClassBrand(_CenterOfPressureModel_brand, this, _onTrainedModel).call(this);
     }
     predict(pressureData) {
       if (!isTensorFlowAvailable()) {
@@ -1554,7 +1601,7 @@
         }
         this.model.setWeights(loadedModel.getWeights());
         _console$A.log("weights successfully loaded into model");
-        _assertClassBrand(_CenterOfPressureModel_brand, this, _dispatchCalibratedPressureModel).call(this, true);
+        _assertClassBrand(_CenterOfPressureModel_brand, this, _onTrainedModel).call(this, true);
       } catch (error) {
         var _loadedModel;
         _console$A.error("error loading model", error);
@@ -1589,7 +1636,6 @@
     _classPrivateFieldGet2(_hiddenUnitScalars, this).forEach((hiddenUnitScalar, index) => {
       const isFirst = index == 0;
       model.add(tf.layers.dense({
-        useBias: isFirst ? true : false,
         units: Math.round(this.numberOfSensors * hiddenUnitScalar),
         activation: "relu",
         inputShape: isFirst ? [this.numberOfSensors] : undefined
@@ -1605,32 +1651,63 @@
     _classPrivateFieldSet2(_model, this, model);
     _console$A.log("created model", _classPrivateFieldGet2(_model, this));
   }
+  function _dispatchRecordingProgress() {
+    this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
+      numberOfSamples: this.numberOfSamples,
+      data: this.data
+    });
+  }
   function _getInputs(pressureData) {
-    return pressureData.sensors.map(sensor => sensor.scaledValue);
+    return pressureData.sensors.map(sensor => sensor.truncatedScaledValue);
   }
   function _getOutputs(euler) {
     return [-euler.roll, -euler.pitch];
   }
-  function _dispatchCalibratedPressureModel() {
+  function _areDataInputsRedundant(inputs) {
+    return false;
+  }
+  function _areDataOutputsRedundant(outputs) {
+    if (_classPrivateFieldGet2(_data, this).outputs.length == 0) {
+      return false;
+    }
+    return _classPrivateFieldGet2(_data, this).outputs.some(_outputs => {
+      const differences = outputs.map((value, index) => value - _outputs[index]);
+      let differencesSquareSum = 0;
+      differences.forEach(difference => {
+        differencesSquareSum += difference ** 2;
+      });
+      const isRedundant = differencesSquareSum < _classPrivateFieldGet2(_dataOutputsThreshold, this);
+      return isRedundant;
+    });
+  }
+  function _isDataRedundant(inputs, outputs) {
+    const areDataInputsRedundant = _assertClassBrand(_CenterOfPressureModel_brand, this, _areDataInputsRedundant).call(this, inputs);
+    const areDataOutputsRedundant = _assertClassBrand(_CenterOfPressureModel_brand, this, _areDataOutputsRedundant).call(this, outputs);
+    return areDataInputsRedundant || areDataOutputsRedundant;
+  }
+  function _onTrainedModel() {
     let wasLoaded = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+    _classPrivateFieldSet2(_isTrained, this, true);
     this.dispatchEvent("calibratedPressureModel", {
       model: _classPrivateFieldGet2(_model, this),
       wasLoaded
     });
   }
 
-  const _console$z = createConsole("PressureDataManager", {
-    log: true
+  const _console$z = createConsole("PressureSensorDataManager", {
+    log: false
   });
   const PressureSensorTypes = ["pressure"];
   const ContinuousPressureSensorTypes = PressureSensorTypes;
-  const PressureSensorEventTypes = ["isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
+  const PressureSensorEventTypes = ["pressureAutoRangeEnabled", "pressureAutoRangeDisabled", "pressureAutoRange", "pressureMotionAutoRangeEnabled", "pressureMotionAutoRangeDisabled", "pressureMotionAutoRange", "isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
   const DefaultNumberOfPressureSensors = 8;
   var _eventDispatcher$3 = new WeakMap();
   var _positions = new WeakMap();
   var _sensorRangeHelpers = new WeakMap();
   var _normalizedSumRangeHelper$1 = new WeakMap();
   var _centerOfPressureHelper$1 = new WeakMap();
+  var _autoRange = new WeakMap();
+  var _motionAutoRange = new WeakMap();
   var _euler$1 = new WeakMap();
   var _eulerTimestamp = new WeakMap();
   var _eulerCenterOfPressureRangeHelper = new WeakMap();
@@ -1646,6 +1723,8 @@
       _classPrivateFieldInitSpec(this, _sensorRangeHelpers, void 0);
       _classPrivateFieldInitSpec(this, _normalizedSumRangeHelper$1, new RangeHelper());
       _classPrivateFieldInitSpec(this, _centerOfPressureHelper$1, new CenterOfPressureHelper());
+      _classPrivateFieldInitSpec(this, _autoRange, true);
+      _classPrivateFieldInitSpec(this, _motionAutoRange, false);
       _classPrivateFieldInitSpec(this, _euler$1, structuredClone(defaultEuler));
       _classPrivateFieldInitSpec(this, _eulerTimestamp, 0);
       _classPrivateFieldInitSpec(this, _eulerCenterOfPressureRangeHelper, new CenterOfPressureHelper());
@@ -1699,6 +1778,52 @@
       Object.assign(_classPrivateFieldGet2(_euler$1, this), defaultEuler);
       _classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).reset();
     }
+    get autoRange() {
+      return _classPrivateFieldGet2(_autoRange, this);
+    }
+    setAutoRange(newAutoRange) {
+      if (_classPrivateFieldGet2(_autoRange, this) == newAutoRange) {
+        return;
+      }
+      _classPrivateFieldSet2(_autoRange, this, newAutoRange);
+      _console$z.log({
+        autoRange: this.autoRange
+      });
+      this.dispatchEvent("pressureAutoRange", {
+        pressureAutoRange: this.autoRange
+      });
+      if (this.autoRange) {
+        this.dispatchEvent("pressureAutoRangeEnabled", {});
+      } else {
+        this.dispatchEvent("pressureAutoRangeDisabled", {});
+      }
+    }
+    toggleAutoRange() {
+      this.setAutoRange(!this.autoRange);
+    }
+    get motionAutoRange() {
+      return _classPrivateFieldGet2(_motionAutoRange, this);
+    }
+    setMotionAutoRange(newMotionAutoRange) {
+      if (_classPrivateFieldGet2(_motionAutoRange, this) == newMotionAutoRange) {
+        return;
+      }
+      _classPrivateFieldSet2(_motionAutoRange, this, newMotionAutoRange);
+      _console$z.log({
+        motionAutoRange: this.motionAutoRange
+      });
+      this.dispatchEvent("pressureMotionAutoRange", {
+        pressureMotionAutoRange: this.motionAutoRange
+      });
+      if (this.motionAutoRange) {
+        this.dispatchEvent("pressureMotionAutoRangeEnabled", {});
+      } else {
+        this.dispatchEvent("pressureMotionAutoRangeDisabled", {});
+      }
+    }
+    toggleMotionAutoRange() {
+      this.setMotionAutoRange(!this.motionAutoRange);
+    }
     onEuler(euler, timestamp) {
       Object.assign(_classPrivateFieldGet2(_euler$1, this), euler);
       _classPrivateFieldSet2(_eulerTimestamp, this, timestamp);
@@ -1711,6 +1836,15 @@
     }
     get isTrainingCalibrationModel() {
       return _classPrivateFieldGet2(_centerOfPressureModel, this).isTraining;
+    }
+    get addCalibrationModelData() {
+      return _classPrivateFieldGet2(_centerOfPressureModel, this).addData;
+    }
+    get clearCalibrationModelData() {
+      return _classPrivateFieldGet2(_centerOfPressureModel, this).clearData;
+    }
+    get calibrationModelData() {
+      return _classPrivateFieldGet2(_centerOfPressureModel, this).data;
     }
     saveCalibrationModel(handlerOrURL, config) {
       return _classPrivateFieldGet2(_centerOfPressureModel, this).saveModel(handlerOrURL, config);
@@ -1725,20 +1859,13 @@
       return isTensorFlowAvailable();
     }
     startRecordingCalibrationData() {
-      if (this.isRecordingCalibrationData) {
-        return;
-      }
       if (!this.canCalibrate) {
         _console$z.error("cannot calibrate pressure - tensorflow is not available");
         return;
       }
-      _classPrivateFieldGet2(_centerOfPressureModel, this).clearData();
       _assertClassBrand(_PressureSensorDataManager_brand, this, _setIsRecordingCalibrationData).call(this, true);
     }
     stopRecordingCalibrationData() {
-      if (!this.isRecordingCalibrationData) {
-        return;
-      }
       _assertClassBrand(_PressureSensorDataManager_brand, this, _setIsRecordingCalibrationData).call(this, false);
     }
     toggleRecordingCalibrationData() {
@@ -1749,6 +1876,9 @@
       }
     }
     async train() {
+      if (this.isRecordingCalibrationData) {
+        this.stopRecordingCalibrationData();
+      }
       await _classPrivateFieldGet2(_centerOfPressureModel, this).train();
     }
     parseData(dataView, scalar, timestamp) {
@@ -1761,8 +1891,10 @@
         const rawValue = dataView.getUint16(byteOffset, true);
         const scaledValue = rawValue * scalar / this.numberOfSensors;
         const rangeHelper = _classPrivateFieldGet2(_sensorRangeHelpers, this)[index];
-        rangeHelper.update(scaledValue);
-        const normalizedValue = rangeHelper.getNormalization(scaledValue, false);
+        if (this.autoRange) {
+          rangeHelper.update(scaledValue);
+        }
+        const normalizedValue = rangeHelper.getNormalization(scaledValue);
         const truncatedScaledValue = scaledValue - rangeHelper.min;
         const position = this.positions[index];
         pressureData.sensors[index] = {
@@ -1775,24 +1907,26 @@
         };
         pressureData.scaledSum += truncatedScaledValue;
       }
-      {
+      if (this.autoRange) {
         _classPrivateFieldGet2(_normalizedSumRangeHelper$1, this).update(pressureData.scaledSum);
       }
-      pressureData.normalizedSum = _classPrivateFieldGet2(_normalizedSumRangeHelper$1, this).getNormalization(pressureData.scaledSum, false);
+      pressureData.normalizedSum = _classPrivateFieldGet2(_normalizedSumRangeHelper$1, this).getNormalization(pressureData.scaledSum);
       const isPressureAboveThreshold = pressureData.scaledSum > _classPrivateFieldGet2(_scaledSumThreshold, this);
       const hasEuler = _classPrivateFieldGet2(_euler$1, this) && Math.abs(timestamp - _classPrivateFieldGet2(_eulerTimestamp, this)) < 100;
       if (hasEuler) {
         if (isPressureAboveThreshold) {
-          if (this.isRecordingCalibrationData) {
+          if (this.motionAutoRange) {
             _classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).update({
               x: -_classPrivateFieldGet2(_euler$1, this).roll,
               y: -_classPrivateFieldGet2(_euler$1, this).pitch
             });
           }
-          pressureData.motionCenter = _classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).getNormalization({
-            x: -_classPrivateFieldGet2(_euler$1, this).roll,
-            y: -_classPrivateFieldGet2(_euler$1, this).pitch
-          }, false);
+          if (_classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).updatedAtLeastOnce) {
+            pressureData.motionCenter = _classPrivateFieldGet2(_eulerCenterOfPressureRangeHelper, this).getNormalization({
+              x: -_classPrivateFieldGet2(_euler$1, this).roll,
+              y: -_classPrivateFieldGet2(_euler$1, this).pitch
+            });
+          }
         }
       }
       if (isPressureAboveThreshold) {
@@ -1801,23 +1935,28 @@
           y: 0
         };
         pressureData.sensors.forEach(sensor => {
-          sensor.weightedValue = sensor.scaledValue / pressureData.scaledSum;
+          sensor.weightedValue = sensor.truncatedScaledValue / pressureData.scaledSum;
           pressureData.center.x += sensor.position.x * sensor.weightedValue;
           pressureData.center.y += sensor.position.y * sensor.weightedValue;
         });
-        _classPrivateFieldGet2(_centerOfPressureHelper$1, this).update(pressureData.center);
-        pressureData.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper$1, this).getNormalization(pressureData.center, false);
+        if (this.autoRange) {
+          _classPrivateFieldGet2(_centerOfPressureHelper$1, this).update(pressureData.center);
+        }
+        pressureData.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper$1, this).getNormalization(pressureData.center);
       }
       if (this.isRecordingCalibrationData && hasEuler && isPressureAboveThreshold) {
-        _classPrivateFieldGet2(_centerOfPressureModel, this).addData(pressureData, _classPrivateFieldGet2(_euler$1, this));
+        _classPrivateFieldGet2(_centerOfPressureModel, this).onSensorData(pressureData, _classPrivateFieldGet2(_euler$1, this));
       }
-      if (isPressureAboveThreshold) {
+      if (isPressureAboveThreshold && !this.isRecordingCalibrationData && !this.isTrainingCalibrationModel) {
         pressureData.calibratedCenter = _classPrivateFieldGet2(_centerOfPressureModel, this).predict(pressureData);
       }
       return pressureData;
     }
   }
   function _setIsRecordingCalibrationData(newIsRecordingCalibrationData) {
+    if (_classPrivateFieldGet2(_isRecordingCalibrationData, this) == newIsRecordingCalibrationData) {
+      return;
+    }
     _classPrivateFieldSet2(_isRecordingCalibrationData, this, newIsRecordingCalibrationData);
     _console$z.log({
       isRecordingCalibrationData: this.isRecordingCalibrationData
@@ -9210,7 +9349,7 @@
       });
       return quaternion;
     }
-    quaternionToEuler(quaternion) {
+    quaternionToEuler(quaternion, absolute) {
       _classPrivateFieldGet2(_quaternion, this).copy(quaternion);
       _classPrivateFieldGet2(_euler, this).setFromQuaternion(_classPrivateFieldGet2(_quaternion, this));
       const {
@@ -9221,10 +9360,11 @@
       return {
         heading: radToDeg(y),
         pitch: radToDeg(x),
-        roll: radToDeg(z)
+        roll: radToDeg(z),
+        absolute
       };
     }
-    parseEuler(dataView, scalar) {
+    parseEuler(dataView, scalar, absolute) {
       let [heading, pitch, roll] = [dataView.getInt16(0, true), dataView.getInt16(2, true), dataView.getInt16(4, true)].map(value => value * scalar);
       pitch *= -1;
       heading *= -1;
@@ -9234,7 +9374,8 @@
       const euler = {
         heading,
         pitch,
-        roll
+        roll,
+        absolute
       };
       _console$y.log({
         euler
@@ -9355,6 +9496,8 @@
   var _CameraManager_brand = new WeakSet();
   var _cameraStatus = new WeakMap();
   var _latestTakingPictureTimestamp = new WeakMap();
+  var _sensorRate = new WeakMap();
+  var _buildImageTimeout = new WeakMap();
   var _headerSize = new WeakMap();
   var _headerData = new WeakMap();
   var _headerProgress = new WeakMap();
@@ -9384,6 +9527,8 @@
       _defineProperty$1(this, "eventDispatcher", void 0);
       _classPrivateFieldInitSpec(this, _cameraStatus, void 0);
       _classPrivateFieldInitSpec(this, _latestTakingPictureTimestamp, 0);
+      _classPrivateFieldInitSpec(this, _sensorRate, 0);
+      _classPrivateFieldInitSpec(this, _buildImageTimeout, void 0);
       _classPrivateFieldInitSpec(this, _headerSize, 0);
       _classPrivateFieldInitSpec(this, _headerData, void 0);
       _classPrivateFieldInitSpec(this, _headerProgress, 0);
@@ -9505,6 +9650,18 @@
     async wake() {
       _assertClassBrand(_CameraManager_brand, this, _assertIsAsleep).call(this);
       await _assertClassBrand(_CameraManager_brand, this, _sendCameraCommand).call(this, "wake");
+    }
+    get sensorRate() {
+      return _classPrivateFieldGet2(_sensorRate, this);
+    }
+    set sensorRate(newSensorRate) {
+      if (_classPrivateFieldGet2(_sensorRate, this) == newSensorRate) {
+        return;
+      }
+      _classPrivateFieldSet2(_sensorRate, this, newSensorRate);
+      _console$v.log({
+        sensorRate: this.sensorRate
+      });
     }
     buildCameraData() {
       const cameraData = [_assertClassBrand(_CameraManager_brand, this, _buildHeaderCameraData).call(this), _assertClassBrand(_CameraManager_brand, this, _buildFooterCameraData).call(this)];
@@ -9717,6 +9874,8 @@
       _classPrivateFieldSet2(_headerProgress, this, 0);
       _classPrivateFieldSet2(_imageProgress, this, 0);
       _classPrivateFieldSet2(_footerProgress, this, 0);
+      _classPrivateFieldSet2(_sensorRate, this, 0);
+      _assertClassBrand(_CameraManager_brand, this, _clearBuildImageTimeout).call(this);
       if (this.isRecording) {
         this.stopRecording();
       }
@@ -9772,12 +9931,35 @@
     _console$v.log("parsing camera data", dataView);
     parseMessage(dataView, CameraDataTypes, _assertClassBrand(_CameraManager_brand, this, _onCameraData).bind(this), null, true);
   }
+  function _clearBuildImageTimeout() {
+    if (_classPrivateFieldGet2(_buildImageTimeout, this) == undefined) {
+      return;
+    }
+    _console$v.log("clearBuildImageTimeout", _classPrivateFieldGet2(_buildImageTimeout, this));
+    clearTimeout(_classPrivateFieldGet2(_buildImageTimeout, this));
+    _classPrivateFieldSet2(_buildImageTimeout, this, undefined);
+  }
+  function _setBuildImageTimeout() {
+    if (this.sensorRate == 0) {
+      return;
+    }
+    const timeoutInterval = Math.max(2 * this.sensorRate, 40);
+    _console$v.log("setBuildImageTimeout", {
+      timeoutInterval
+    });
+    _classPrivateFieldSet2(_buildImageTimeout, this, setTimeout(() => {
+      _console$v.log("buildImageTimeout");
+      _assertClassBrand(_CameraManager_brand, this, _buildImage).call(this);
+      _classPrivateFieldSet2(_buildImageTimeout, this, undefined);
+    }, timeoutInterval));
+  }
   function _onCameraData(cameraDataType, dataView) {
     var _classPrivateFieldGet8, _classPrivateFieldGet9, _classPrivateFieldGet0;
     _console$v.log({
       cameraDataType,
       dataView
     });
+    _assertClassBrand(_CameraManager_brand, this, _clearBuildImageTimeout).call(this);
     switch (cameraDataType) {
       case "headerSize":
         _classPrivateFieldSet2(_headerSize, this, dataView.getUint16(0, true));
@@ -9831,6 +10013,8 @@
           if (_classPrivateFieldGet2(_headerProgress, this) == 1 && _classPrivateFieldGet2(_footerProgress, this) == 1) {
             _assertClassBrand(_CameraManager_brand, this, _buildImage).call(this);
           }
+        } else {
+          _assertClassBrand(_CameraManager_brand, this, _setBuildImageTimeout).call(this);
         }
         break;
       case "footerSize":
@@ -10682,20 +10866,37 @@
       byteOffset += 2;
       const _dataView = new DataView(dataView.buffer, byteOffset);
       const context = {
-        timestamp
+        timestamp,
+        messages: []
       };
       parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), context);
+      context.messages.forEach(_ref => {
+        let {
+          sensorType,
+          message,
+          dataView
+        } = _ref;
+        if (sensorType == "pressure") {
+          if (context.euler) {
+            this.pressureSensorDataManager.onEuler(context.euler, timestamp);
+          }
+          const scalar = _classPrivateFieldGet2(_scalars, this).get("pressure") || 1;
+          message.pressure = this.pressureSensorDataManager.parseData(dataView, scalar, timestamp);
+        }
+        this.dispatchEvent(sensorType, message);
+        this.dispatchEvent("sensorData", message);
+      });
     }
     parseDataCallback(sensorType, dataView, context, isLast) {
       const {
-        timestamp
+        timestamp,
+        messages
       } = context;
       const scalar = _classPrivateFieldGet2(_scalars, this).get(sensorType) || 1;
       let sensorData = null;
       let sensorDataEuler = null;
       switch (sensorType) {
         case "pressure":
-          sensorData = this.pressureSensorDataManager.parseData(dataView, scalar, timestamp);
           break;
         case "acceleration":
         case "gravity":
@@ -10707,12 +10908,10 @@
         case "gameRotation":
         case "rotation":
           sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
-          sensorDataEuler = this.motionSensorDataManager.quaternionToEuler(sensorData);
-          this.pressureSensorDataManager.onEuler(sensorDataEuler, timestamp);
+          sensorDataEuler = this.motionSensorDataManager.quaternionToEuler(sensorData, sensorType == "rotation");
           break;
         case "orientation":
-          sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
-          this.pressureSensorDataManager.onEuler(sensorData, timestamp);
+          sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar, true);
           break;
         case "stepCounter":
           sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
@@ -10739,7 +10938,7 @@
         default:
           _console$t.error(`uncaught sensorType "${sensorType}"`);
       }
-      _console$t.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
+      _console$t.assertWithError(sensorData != null || sensorType == "pressure", `no sensorData defined for sensorType "${sensorType}"`);
       _console$t.log({
         sensorType,
         sensorData
@@ -10750,11 +10949,18 @@
         timestamp,
         isLast: isLast
       };
+      if (sensorType == "pressure") {
+        message.dataView = dataView;
+      }
       if (sensorDataEuler) {
         message[`${sensorType}Euler`] = sensorDataEuler;
+        context.euler = sensorDataEuler;
       }
-      this.dispatchEvent(sensorType, message);
-      this.dispatchEvent("sensorData", message);
+      messages.push({
+        sensorType,
+        message,
+        dataView: sensorType == "pressure" ? dataView : undefined
+      });
     }
   }
 
@@ -12595,8 +12801,25 @@
       });
       return differences;
     }
-    reset() {
+    reset(numberOfColors, keepColorIndices, keepSpriteColorIndices) {
+      const spriteColorIndices = _classPrivateFieldGet2(_state, this).spriteColorIndices.slice();
+      const {
+        fillColorIndex,
+        lineColorIndex,
+        backgroundColorIndex
+      } = _classPrivateFieldGet2(_state, this);
       Object.assign(_classPrivateFieldGet2(_state, this), DefaultDisplayContextState);
+      if (keepColorIndices) {
+        _classPrivateFieldGet2(_state, this).fillColorIndex = fillColorIndex;
+        _classPrivateFieldGet2(_state, this).lineColorIndex = lineColorIndex;
+        _classPrivateFieldGet2(_state, this).backgroundColorIndex = backgroundColorIndex;
+      }
+      if (keepSpriteColorIndices) {
+        _classPrivateFieldGet2(_state, this).spriteColorIndices = spriteColorIndices;
+      } else {
+        _classPrivateFieldGet2(_state, this).spriteColorIndices = new Array(numberOfColors).fill(0);
+      }
+      _classPrivateFieldGet2(_state, this).bitmapColorIndices = new Array(numberOfColors).fill(0);
     }
   }
 
@@ -13703,7 +13926,7 @@
   const _console$j = createConsole("DisplayContextCommand", {
     log: false
   });
-  const DisplayContextCommandTypes = ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setIgnoreFill", "setIgnoreLine", "setFillBackground", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesLineHeight", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlignment", "setSpritesLineAlignment", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites", "startSprite", "endSprite"];
+  const DisplayContextCommandTypes = ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setIgnoreFill", "setIgnoreLine", "setFillBackground", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesLineHeight", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlignment", "setSpritesLineAlignment", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites", "startSprite", "endSprite", "clearContext"];
   const DisplaySpriteContextCommandTypes = ["selectFillColor", "selectLineColor",
   "setIgnoreFill", "setIgnoreLine",
   "setLineWidth", "setRotation", "clearRotation", "setVerticalAlignment", "setHorizontalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "drawSprite"];
@@ -13722,6 +13945,7 @@
       case "resetSpriteScale":
       case "resetAlignment":
       case "endSprite":
+      case "clearContext":
         break;
       case "setColor":
         {
@@ -27255,6 +27479,16 @@
     log: false
   });
   const spriteHeaderLength = 3 * 2;
+  function getCurvesPoints(curves) {
+    const curvePoints = [];
+    curves.forEach((curve, index) => {
+      if (index == 0) {
+        curvePoints.push(curve.controlPoints[0]);
+      }
+      curvePoints.push(curve.controlPoints.at(-1));
+    });
+    return curvePoints;
+  }
   function serializeSpriteSheet(displayManager, spriteSheet) {
     const {
       name,
@@ -27380,10 +27614,33 @@
         minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
         maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
       }
+      _console$i.log({
+        fontName: font.getEnglishName("fullName"),
+        minSpriteY,
+        maxSpriteY
+      });
     }
     minSpriteY = (_options$minSpriteY = options.minSpriteY) !== null && _options$minSpriteY !== void 0 ? _options$minSpriteY : minSpriteY;
     maxSpriteY = (_options$maxSpriteY = options.maxSpriteY) !== null && _options$maxSpriteY !== void 0 ? _options$maxSpriteY : maxSpriteY;
+    if (minSpriteY == Infinity) {
+      minSpriteY = 0;
+    }
+    if (maxSpriteY == -Infinity) {
+      maxSpriteY = 0;
+    }
     let maxSpriteHeight = (_options$maxSpriteHei = options.maxSpriteHeight) !== null && _options$maxSpriteHei !== void 0 ? _options$maxSpriteHei : maxSpriteY - minSpriteY + strokeWidth;
+    if (options.maxSpriteHeight) {
+      if (options.overrideMaxSpriteHeight) {
+        maxSpriteHeight = options.maxSpriteHeight;
+      } else {
+        maxSpriteHeight = Math.max(options.maxSpriteHeight, maxSpriteHeight);
+      }
+    }
+    _console$i.log({
+      maxSpriteHeight,
+      minSpriteY,
+      maxSpriteY
+    }, options);
     return {
       maxSpriteHeight,
       maxSpriteY,
@@ -27583,6 +27840,13 @@
                 break;
             }
           });
+          _console$i.log("allCurves", allCurves);
+          allCurves.sort((a, b) => {
+            const aPoints = getCurvesPoints(a);
+            const bPoints = getCurvesPoints(b);
+            return contourArea(bPoints) - contourArea(aPoints);
+          });
+          _console$i.log("sorted allCurves", allCurves);
           allCurves.forEach(curves => {
             let controlPoints = curves.flatMap(c => c.controlPoints);
             const isHole = classifySubpath(controlPoints, parsedPaths);
@@ -27856,6 +28120,11 @@
   function getFontMaxHeight(font, fontSize) {
     const scale = 1 / font.unitsPerEm * fontSize;
     const maxHeight = (font.ascender - font.descender) * scale;
+    _console$i.log({
+      font: font.getEnglishName("fullName"),
+      maxHeight,
+      fontSize
+    });
     return maxHeight;
   }
   function getMaxSpriteSheetSize(spriteSheet) {
@@ -28857,6 +29126,9 @@
       case "endSprite":
         await displayManager.endSprite(sendImmediately);
         break;
+      case "clearContext":
+        await displayManager.clearContext(sendImmediately);
+        break;
     }
   }
   async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
@@ -29269,7 +29541,8 @@
       }
     }
     get numberOfColors() {
-      return 2 ** Number(this.pixelDepth);
+      var _this$pixelDepth;
+      return 2 ** Number((_this$pixelDepth = this.pixelDepth) !== null && _this$pixelDepth !== void 0 ? _this$pixelDepth : 0);
     }
     get displayInformation() {
       return _classPrivateFieldGet2(_displayInformation, this);
@@ -29402,13 +29675,17 @@
     }
     async saveContext(sendImmediately) {
       {
-        _assertClassBrand(_DisplayManager_brand, this, _saveContext).call(this, sendImmediately);
+        await _assertClassBrand(_DisplayManager_brand, this, _saveContext).call(this, sendImmediately);
       }
     }
     async restoreContext(sendImmediately) {
       {
-        _assertClassBrand(_DisplayManager_brand, this, _restoreContext).call(this, sendImmediately);
+        await _assertClassBrand(_DisplayManager_brand, this, _restoreContext).call(this, sendImmediately);
       }
+    }
+    async clearContext(sendImmediately) {
+      await _assertClassBrand(_DisplayManager_brand, this, _clearContext).call(this, sendImmediately);
+      await _assertClassBrand(_DisplayManager_brand, this, _sendContextCommand).call(this, "clearContext", undefined, sendImmediately);
     }
     async selectFillColor(fillColorIndex, sendImmediately) {
       this.assertValidColorIndex(fillColorIndex);
@@ -30797,9 +31074,7 @@
       _console$f.assertWithError(!_classPrivateFieldGet2(_isDrawingBlankSprite, this), `already drawing blank sprite`);
       _classPrivateFieldSet2(_isDrawingBlankSprite, this, true);
       _assertClassBrand(_DisplayManager_brand, this, _saveContext).call(this, sendImmediately);
-      _classPrivateFieldGet2(_contextStateHelper, this).reset();
-      this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-      this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
+      _assertClassBrand(_DisplayManager_brand, this, _resetContextState).call(this);
       const commandType = "startSprite";
       const dataView = serializeContextCommand(this, {
         type: commandType,
@@ -30827,7 +31102,7 @@
       _classPrivateFieldSet2(_brightness, this, undefined);
       _classPrivateFieldSet2(_contextCommandBuffers, this, []);
       _classPrivateFieldSet2(_isAvailable, this, false);
-      _classPrivateFieldGet2(_contextStateHelper, this).reset();
+      _assertClassBrand(_DisplayManager_brand, this, _resetContextState).call(this);
       _classPrivateFieldGet2(_colors, this).length = 0;
       _classPrivateFieldGet2(_opacities, this).length = 0;
       _classPrivateFieldSet2(_isReady, this, true);
@@ -30872,6 +31147,13 @@
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "isDisplayAvailable", {
       isDisplayAvailable: _classPrivateFieldGet2(_isAvailable, this)
     });
+  }
+  function _resetContextState(keepColorIndices, keepSpriteColorIndices) {
+    _console$f.log("resetContextState", {
+      keepColorIndices,
+      keepSpriteColorIndices
+    });
+    _classPrivateFieldGet2(_contextStateHelper, this).reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
   }
   function _onContextStateUpdate(differences) {
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayContextState", {
@@ -31010,16 +31292,24 @@
     }], true);
     _classPrivateGetter(_DisplayManager_brand, this, _get_dispatchEvent$3).call(this, "displayContextCommands", {});
   }
-  function _saveContext(sendImmediately) {
+  async function _saveContext(sendImmediately) {
     _classPrivateFieldGet2(_contextStack, this).push(structuredClone(this.contextState));
   }
-  function _restoreContext(sendImmediately) {
+  async function _restoreContext(sendImmediately) {
     const contextState = _classPrivateFieldGet2(_contextStack, this).pop();
     if (!contextState) {
       _console$f.warn("#contextStack empty");
       return;
     }
-    this.setContextState(contextState, sendImmediately);
+    await this.setContextState(contextState, sendImmediately);
+  }
+  async function _clearContext(sendImmediately) {
+    const contextState = _classPrivateFieldGet2(_contextStack, this).pop();
+    if (!contextState) {
+      _console$f.warn("#contextStack empty");
+      return;
+    }
+    await this.setContextState(contextState, sendImmediately);
   }
   function _assertValidBitmapSize(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -33490,6 +33780,13 @@
           _console$3.log("don't need to request microphone infomration");
         }
       });
+      this.addEventListener("getSensorConfiguration", event => {
+        var _sensorConfiguration$;
+        const {
+          sensorConfiguration
+        } = event.message;
+        _classPrivateFieldGet2(_cameraManager, this).sensorRate = (_sensorConfiguration$ = sensorConfiguration.camera) !== null && _sensorConfiguration$ !== void 0 ? _sensorConfiguration$ : 0;
+      });
       this.addEventListener("getFileTypes", () => {
         if (this.connectionStatus != "connecting") {
           return;
@@ -33915,8 +34212,26 @@
         return [];
       }
     }
-    resetPressureRange() {
-      _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.resetRange();
+    get autoPressureRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.autoRange;
+    }
+    get setPressureAutoRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.setAutoRange;
+    }
+    get togglePressureAutoRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.toggleAutoRange;
+    }
+    get autoPressureMotionRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.motionAutoRange;
+    }
+    get setPressureMotionAutoRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.setMotionAutoRange;
+    }
+    get togglePressureMotionAutoRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.toggleMotionAutoRange;
+    }
+    get resetPressureRange() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.resetRange;
     }
     get canCalibratePressure() {
       return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.canCalibrate;
@@ -33950,6 +34265,15 @@
     }
     get loadPressureCalibrationModel() {
       return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.loadCalibrationModel;
+    }
+    get addPressureCalibrationModelData() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.addCalibrationModelData;
+    }
+    get clearPressureCalibrationModelData() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.clearCalibrationModelData;
+    }
+    get pressureCalibrationModelData() {
+      return _classPrivateFieldGet2(_sensorDataManager$1, this).pressureSensorDataManager.calibrationModelData;
     }
     get vibrationLocations() {
       return _classPrivateFieldGet2(_vibrationManager, this).vibrationLocations;
@@ -34996,6 +35320,7 @@
     log: false
   });
   var _rawPressure = new WeakMap();
+  var _pressureTimestamps = new WeakMap();
   var _centerOfPressureHelper = new WeakMap();
   var _normalizedSumRangeHelper = new WeakMap();
   var _DevicePairPressureSensorDataManager_brand = new WeakSet();
@@ -35003,6 +35328,7 @@
     constructor() {
       _classPrivateMethodInitSpec(this, _DevicePairPressureSensorDataManager_brand);
       _classPrivateFieldInitSpec(this, _rawPressure, {});
+      _classPrivateFieldInitSpec(this, _pressureTimestamps, {});
       _classPrivateFieldInitSpec(this, _centerOfPressureHelper, new CenterOfPressureHelper());
       _classPrivateFieldInitSpec(this, _normalizedSumRangeHelper, new RangeHelper());
       this.resetPressureRange();
@@ -35013,7 +35339,8 @@
     }
     onDevicePressureData(event) {
       const {
-        pressure
+        pressure,
+        timestamp
       } = event.message;
       const {
         side
@@ -35023,6 +35350,7 @@
         side
       });
       _classPrivateFieldGet2(_rawPressure, this)[side] = pressure;
+      _classPrivateFieldGet2(_pressureTimestamps, this)[side] = timestamp;
       if (_classPrivateGetter(_DevicePairPressureSensorDataManager_brand, this, _get_hasAllPressureData)) {
         return _assertClassBrand(_DevicePairPressureSensorDataManager_brand, this, _updatePressureData).call(this);
       } else {
@@ -35031,57 +35359,75 @@
     }
   }
   function _get_hasAllPressureData(_this) {
-    return Sides.every(side => side in _classPrivateFieldGet2(_rawPressure, _this));
+    const now = Date.now();
+    const hasBothSides = Sides.every(side => side in _classPrivateFieldGet2(_rawPressure, _this));
+    const bothSidesAreRecent = Sides.every(side => now - _classPrivateFieldGet2(_pressureTimestamps, _this)[side] < 500);
+    return hasBothSides && bothSidesAreRecent;
   }
   function _updatePressureData() {
-    const pressure = {
+    const pressureData = {
       scaledSum: 0,
       normalizedSum: 0,
       sensors: {
         left: [],
         right: []
+      },
+      sides: {
+        left: _classPrivateFieldGet2(_rawPressure, this).left,
+        right: _classPrivateFieldGet2(_rawPressure, this).right
       }
     };
     Sides.forEach(side => {
       const sidePressure = _classPrivateFieldGet2(_rawPressure, this)[side];
-      pressure.scaledSum += sidePressure.scaledSum;
+      pressureData.sensors[side].push(...sidePressure.sensors);
     });
-    pressure.normalizedSum += _classPrivateFieldGet2(_normalizedSumRangeHelper, this).updateAndGetNormalization(pressure.scaledSum, false);
-    if (pressure.scaledSum > 0) {
-      pressure.center = {
+    let numberOfSidesWithCenter = 0;
+    Sides.forEach(side => {
+      const sidePressureData = _classPrivateFieldGet2(_rawPressure, this)[side];
+      if (sidePressureData.center) {
+        numberOfSidesWithCenter++;
+      }
+    });
+    Sides.forEach(side => {
+      const sidePressure = _classPrivateFieldGet2(_rawPressure, this)[side];
+      pressureData.scaledSum += sidePressure.scaledSum;
+    });
+    pressureData.normalizedSum += _classPrivateFieldGet2(_normalizedSumRangeHelper, this).updateAndGetNormalization(pressureData.scaledSum);
+    if (numberOfSidesWithCenter == 2) {
+      pressureData.center = {
         x: 0,
         y: 0
       };
       Sides.forEach(side => {
-        const sidePressure = _classPrivateFieldGet2(_rawPressure, this)[side];
-        {
-          sidePressure.sensors.forEach(sensor => {
-            const _sensor = structuredClone(sensor);
-            _sensor.weightedScaledValue = sensor.scaledValue / pressure.scaledSum;
-            let {
-              x,
-              y
-            } = sensor.position;
-            x /= 2;
-            if (side == "right") {
-              x += 0.5;
+        const sidePressureData = _classPrivateFieldGet2(_rawPressure, this)[side];
+        let centerOfPressure;
+        if (sidePressureData.calibratedCenter) {
+          centerOfPressure = sidePressureData.calibratedCenter;
+        } else if (sidePressureData.motionCenter) {
+          centerOfPressure = sidePressureData.motionCenter;
+        }
+        const sidePressureWeight = sidePressureData.scaledSum / pressureData.scaledSum;
+        if (sidePressureWeight > 0) {
+          if (centerOfPressure) {
+            pressureData.center.x += centerOfPressure.x * 0.5;
+            pressureData.center.y += centerOfPressure.y * 0.5;
+          } else {
+            var _sidePressureData$nor;
+            if (((_sidePressureData$nor = sidePressureData.normalizedCenter) === null || _sidePressureData$nor === void 0 ? void 0 : _sidePressureData$nor.y) != undefined) {
+              pressureData.center.y += sidePressureData.normalizedCenter.y * sidePressureWeight;
             }
-            _sensor.position = {
-              x,
-              y
-            };
-            pressure.center.x += _sensor.position.x * _sensor.weightedScaledValue;
-            pressure.center.y += _sensor.position.y * _sensor.weightedScaledValue;
-            pressure.sensors[side].push(_sensor);
-          });
+            if (side == "right") {
+              pressureData.center.x = sidePressureWeight;
+            }
+          }
         }
       });
-      pressure.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper, this).updateAndGetNormalization(pressure.center, false);
+      pressureData.normalizedCenter = _classPrivateFieldGet2(_centerOfPressureHelper, this).updateAndGetNormalization(pressureData.center);
     }
     _console$2.log({
-      devicePairPressure: pressure
+      devicePairPressureData: pressureData
     });
-    return pressure;
+    return pressureData;
   }
 
   const _console$1 = createConsole("DevicePairSensorDataManager", {
@@ -35264,16 +35610,43 @@
       }
     }
     resetPressureRange() {
-      Sides.forEach(side => {
-        var _this$side4;
-        return (_this$side4 = this[side]) === null || _this$side4 === void 0 ? void 0 : _this$side4.resetPressureRange();
-      });
+      let resetSides = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+      if (resetSides) {
+        Sides.forEach(side => {
+          var _this$side4;
+          return (_this$side4 = this[side]) === null || _this$side4 === void 0 ? void 0 : _this$side4.resetPressureRange();
+        });
+      }
       _classPrivateFieldGet2(_sensorDataManager, this).resetPressureRange();
+    }
+    setPressureAutoRange(newPressureAutoRange) {
+      Sides.forEach(side => {
+        var _this$side5;
+        return (_this$side5 = this[side]) === null || _this$side5 === void 0 ? void 0 : _this$side5.setPressureAutoRange(newPressureAutoRange);
+      });
+    }
+    togglePressureAutoRange() {
+      Sides.forEach(side => {
+        var _this$side6;
+        return (_this$side6 = this[side]) === null || _this$side6 === void 0 ? void 0 : _this$side6.togglePressureAutoRange();
+      });
+    }
+    setPressureMotionAutoRange(newPressureMotionAutoRange) {
+      Sides.forEach(side => {
+        var _this$side7;
+        return (_this$side7 = this[side]) === null || _this$side7 === void 0 ? void 0 : _this$side7.setPressureMotionAutoRange(newPressureMotionAutoRange);
+      });
+    }
+    togglePressureMotionAutoRange() {
+      Sides.forEach(side => {
+        var _this$side8;
+        return (_this$side8 = this[side]) === null || _this$side8 === void 0 ? void 0 : _this$side8.togglePressureMotionAutoRange();
+      });
     }
     async triggerVibration(vibrationConfigurations, sendImmediately) {
       const promises = Sides.map(side => {
-        var _this$side5;
-        return (_this$side5 = this[side]) === null || _this$side5 === void 0 ? void 0 : _this$side5.triggerVibration(vibrationConfigurations, sendImmediately);
+        var _this$side9;
+        return (_this$side9 = this[side]) === null || _this$side9 === void 0 ? void 0 : _this$side9.triggerVibration(vibrationConfigurations, sendImmediately);
       }).filter(Boolean);
       return Promise.allSettled(promises);
     }
@@ -35498,6 +35871,7 @@
   exports.MinWifiPasswordLength = MinWifiPasswordLength;
   exports.MinWifiSSIDLength = MinWifiSSIDLength;
   exports.RangeHelper = RangeHelper;
+  exports.RangeHelper2 = RangeHelper2;
   exports.SensorRateStep = SensorRateStep;
   exports.SensorTypes = SensorTypes;
   exports.Sides = Sides;
@@ -35516,10 +35890,13 @@
   exports.getFontMetrics = getFontMetrics;
   exports.getFontUnicodeRange = getFontUnicodeRange;
   exports.getMaxSpriteSheetSize = getMaxSpriteSheetSize;
+  exports.getTensorFlowModel = getTensorFlowModel;
   exports.hexToRGB = hexToRGB;
   exports.intersectWireframes = intersectWireframes;
   exports.isTensorFlowAvailable = isTensorFlowAvailable;
+  exports.isTensorFlowModelAvailable = isTensorFlowModelAvailable;
   exports.isWireframePolygon = isWireframePolygon;
+  exports.listTensorflowModels = listTensorflowModels;
   exports.maxDisplayScale = maxDisplayScale;
   exports.mergeWireframes = mergeWireframes;
   exports.parseFont = parseFont;

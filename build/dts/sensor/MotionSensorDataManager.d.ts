@@ -67,8 +67,8 @@ declare class MotionSensorDataManager {
     #private;
     parseVector3(dataView: DataView<ArrayBuffer>, scalar: number): Vector3;
     parseQuaternion(dataView: DataView<ArrayBuffer>, scalar: number): Quaternion;
-    quaternionToEuler(quaternion: Quaternion): Euler;
-    parseEuler(dataView: DataView<ArrayBuffer>, scalar: number): Euler;
+    quaternionToEuler(quaternion: Quaternion, absolute?: boolean): Euler;
+    parseEuler(dataView: DataView<ArrayBuffer>, scalar: number, absolute?: boolean): Euler;
     parseStepCounter(dataView: DataView<ArrayBuffer>): number;
     parseActivity(dataView: DataView<ArrayBuffer>): Activity;
     parseDeviceOrientation(dataView: DataView<ArrayBuffer>): "portraitUpright" | "landscapeLeft" | "portraitUpsideDown" | "landscapeRight" | "unknown";

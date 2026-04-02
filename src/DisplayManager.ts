@@ -363,6 +363,20 @@ class DisplayManager implements DisplayManagerInterface {
   get contextState() {
     return this.#contextStateHelper.state;
   }
+  #resetContextState(
+    keepColorIndices?: boolean,
+    keepSpriteColorIndices?: boolean
+  ) {
+    _console.log("resetContextState", {
+      keepColorIndices,
+      keepSpriteColorIndices,
+    });
+    this.#contextStateHelper.reset(
+      this.numberOfColors,
+      keepColorIndices,
+      keepSpriteColorIndices
+    );
+  }
   #onContextStateUpdate(differences: DisplayContextStateKey[]) {
     this.#dispatchEvent("displayContextState", {
       displayContextState: structuredClone(this.contextState),
@@ -636,7 +650,7 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   get numberOfColors() {
-    return 2 ** Number(this.pixelDepth!);
+    return 2 ** Number(this.pixelDepth ?? 0);
   }
 
   // INFORMATION
@@ -932,42 +946,47 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   #contextStack: DisplayContextState[] = [];
-  #saveContext(sendImmediately?: boolean) {
+  async #saveContext(sendImmediately?: boolean) {
     this.#contextStack.push(structuredClone(this.contextState));
   }
-  #restoreContext(sendImmediately?: boolean) {
+  async saveContext(sendImmediately?: boolean) {
+    if (true) {
+      await this.#saveContext(sendImmediately);
+    } else {
+      await this.#sendContextCommand("saveContext", undefined, sendImmediately);
+    }
+  }
+  async #restoreContext(sendImmediately?: boolean) {
     const contextState = this.#contextStack.pop();
     if (!contextState) {
       _console.warn("#contextStack empty");
       return;
     }
-    this.setContextState(contextState, sendImmediately);
-  }
-  async saveContext(sendImmediately?: boolean) {
-    if (true) {
-      this.#saveContext(sendImmediately);
-    } else {
-      // const commandType: DisplayContextCommandType = "saveContext";
-      // const dataView = serializeContextCommand(this, { type: commandType });
-      // await this.#sendDisplayContextCommand(
-      //   commandType,
-      //   dataView?.buffer,
-      //   sendImmediately
-      // );
-    }
+    await this.setContextState(contextState, sendImmediately);
   }
   async restoreContext(sendImmediately?: boolean) {
     if (true) {
-      this.#restoreContext(sendImmediately);
+      await this.#restoreContext(sendImmediately);
     } else {
-      // const commandType: DisplayContextCommandType = "restoreContext";
-      // const dataView = serializeContextCommand(this, { type: commandType });
-      // await this.#sendDisplayContextCommand(
-      //   commandType,
-      //   dataView?.buffer,
-      //   sendImmediately
-      // );
+      await this.#sendContextCommand(
+        "restoreContext",
+        undefined,
+        sendImmediately
+      );
     }
+  }
+  async #clearContext(sendImmediately?: boolean) {
+    const contextState = this.#contextStack.pop();
+    if (!contextState) {
+      _console.warn("#contextStack empty");
+      return;
+    }
+    // FILL
+    await this.setContextState(contextState, sendImmediately);
+  }
+  async clearContext(sendImmediately?: boolean) {
+    await this.#clearContext(sendImmediately);
+    await this.#sendContextCommand("clearContext", undefined, sendImmediately);
   }
 
   async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
@@ -3174,13 +3193,7 @@ class DisplayManager implements DisplayManagerInterface {
     );
     this.#isDrawingBlankSprite = true;
     this.#saveContext(sendImmediately);
-    this.#contextStateHelper.reset();
-    this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(
-      0
-    );
-    this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(
-      0
-    );
+    this.#resetContextState();
 
     const commandType: DisplayContextCommandType = "startSprite";
     const dataView = serializeContextCommand(this, {
@@ -3223,7 +3236,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.#contextCommandBuffers = [];
     this.#isAvailable = false;
 
-    this.#contextStateHelper.reset();
+    this.#resetContextState();
     this.#colors.length = 0;
     this.#opacities.length = 0;
 

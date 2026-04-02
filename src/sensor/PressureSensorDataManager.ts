@@ -4,9 +4,11 @@ import RangeHelper from "../utils/RangeHelper.ts";
 import { createArray } from "../utils/ArrayUtils.ts";
 
 /** NODE_START */ import * as tf from "@tensorflow/tfjs"; /** NODE_END */
-import CenterOfPressureModel from "../utils/CenterOfPressureModel.ts";
+import CenterOfPressureModel, {
+  CenterOfPressureModelData,
+} from "../utils/CenterOfPressureModel.ts";
 
-const _console = createConsole("PressureDataManager", { log: true });
+const _console = createConsole("PressureSensorDataManager", { log: false });
 
 export const PressureSensorTypes = ["pressure"] as const;
 export type PressureSensorType = (typeof PressureSensorTypes)[number];
@@ -48,6 +50,12 @@ export interface PressureDataEventMessages {
 }
 
 export const PressureSensorEventTypes = [
+  "pressureAutoRangeEnabled",
+  "pressureAutoRangeDisabled",
+  "pressureAutoRange",
+  "pressureMotionAutoRangeEnabled",
+  "pressureMotionAutoRangeDisabled",
+  "pressureMotionAutoRange",
   "isRecordingPressureCalibrationData",
   "pressureCalibrationDataRecordStart",
   "pressureCalibrationDataRecordStop",
@@ -61,13 +69,26 @@ export const PressureSensorEventTypes = [
 export type PressureSensorEventType = (typeof PressureSensorEventTypes)[number];
 
 export interface PressureSensorEventMessages {
+  pressureAutoRangeEnabled: {};
+  pressureAutoRangeDisabled: {};
+  pressureAutoRange: {
+    pressureAutoRange: boolean;
+  };
+
+  pressureMotionAutoRangeEnabled: {};
+  pressureMotionAutoRangeDisabled: {};
+  pressureMotionAutoRange: {
+    pressureMotionAutoRange: boolean;
+  };
+
   isRecordingPressureCalibrationData: {
     isRecordingPressureCalibrationData: boolean;
   };
   pressureCalibrationDataRecordStart: {};
   pressureCalibrationDataRecordStop: {};
   pressureCalibrationDataRecordingProgress: {
-    // FILL - area covered, etc
+    numberOfSamples: number;
+    data: CenterOfPressureModelData;
   };
   isTrainingPressureCalibration: {
     isTrainingPressureCalibration: boolean;
@@ -75,7 +96,11 @@ export interface PressureSensorEventMessages {
   pressureCalibrationTrainStart: {};
   pressureCalibrationTrainEnd: {};
   pressureCalibrationTrainProgress: {
-    // FILL - epoch, etc
+    pressureCalibrationTrainProgress: number;
+    epoch: number;
+    epochs: number;
+    batchSize: number;
+    loss: number;
   };
   calibratedPressureModel: {
     model: tf.Sequential;
@@ -166,6 +191,52 @@ class PressureSensorDataManager {
     this.#eulerCenterOfPressureRangeHelper.reset();
   }
 
+  #autoRange = true;
+  get autoRange() {
+    return this.#autoRange;
+  }
+  setAutoRange(newAutoRange: boolean) {
+    if (this.#autoRange == newAutoRange) {
+      return;
+    }
+    this.#autoRange = newAutoRange;
+    _console.log({ autoRange: this.autoRange });
+    this.dispatchEvent("pressureAutoRange", {
+      pressureAutoRange: this.autoRange,
+    });
+    if (this.autoRange) {
+      this.dispatchEvent("pressureAutoRangeEnabled", {});
+    } else {
+      this.dispatchEvent("pressureAutoRangeDisabled", {});
+    }
+  }
+  toggleAutoRange() {
+    this.setAutoRange(!this.autoRange);
+  }
+
+  #motionAutoRange = false;
+  get motionAutoRange() {
+    return this.#motionAutoRange;
+  }
+  setMotionAutoRange(newMotionAutoRange: boolean) {
+    if (this.#motionAutoRange == newMotionAutoRange) {
+      return;
+    }
+    this.#motionAutoRange = newMotionAutoRange;
+    _console.log({ motionAutoRange: this.motionAutoRange });
+    this.dispatchEvent("pressureMotionAutoRange", {
+      pressureMotionAutoRange: this.motionAutoRange,
+    });
+    if (this.motionAutoRange) {
+      this.dispatchEvent("pressureMotionAutoRangeEnabled", {});
+    } else {
+      this.dispatchEvent("pressureMotionAutoRangeDisabled", {});
+    }
+  }
+  toggleMotionAutoRange() {
+    this.setMotionAutoRange(!this.motionAutoRange);
+  }
+
   #euler: Euler = structuredClone(defaultEuler);
   #eulerTimestamp = 0;
   #eulerCenterOfPressureRangeHelper = new CenterOfPressureHelper();
@@ -184,6 +255,15 @@ class PressureSensorDataManager {
   }
   get isTrainingCalibrationModel() {
     return this.#centerOfPressureModel.isTraining;
+  }
+  get addCalibrationModelData() {
+    return this.#centerOfPressureModel.addData;
+  }
+  get clearCalibrationModelData() {
+    return this.#centerOfPressureModel.clearData;
+  }
+  get calibrationModelData() {
+    return this.#centerOfPressureModel.data;
   }
 
   saveCalibrationModel(
@@ -207,6 +287,9 @@ class PressureSensorDataManager {
     return this.#isRecordingCalibrationData;
   }
   #setIsRecordingCalibrationData(newIsRecordingCalibrationData: boolean) {
+    if (this.#isRecordingCalibrationData == newIsRecordingCalibrationData) {
+      return;
+    }
     this.#isRecordingCalibrationData = newIsRecordingCalibrationData;
     _console.log({
       isRecordingCalibrationData: this.isRecordingCalibrationData,
@@ -225,20 +308,13 @@ class PressureSensorDataManager {
     return isTensorFlowAvailable();
   }
   startRecordingCalibrationData() {
-    if (this.isRecordingCalibrationData) {
-      return;
-    }
     if (!this.canCalibrate) {
       _console.error("cannot calibrate pressure - tensorflow is not available");
       return;
     }
-    this.#centerOfPressureModel.clearData();
     this.#setIsRecordingCalibrationData(true);
   }
   stopRecordingCalibrationData() {
-    if (!this.isRecordingCalibrationData) {
-      return;
-    }
     this.#setIsRecordingCalibrationData(false);
   }
   toggleRecordingCalibrationData() {
@@ -250,6 +326,9 @@ class PressureSensorDataManager {
   }
 
   async train() {
+    if (this.isRecordingCalibrationData) {
+      this.stopRecordingCalibrationData();
+    }
     await this.#centerOfPressureModel.train();
   }
 
@@ -273,8 +352,10 @@ class PressureSensorDataManager {
       // _console.log({ rawValue, scalar, numberOfSensors: this.numberOfSensors });
       const scaledValue = (rawValue * scalar) / this.numberOfSensors;
       const rangeHelper = this.#sensorRangeHelpers[index];
-      rangeHelper.update(scaledValue);
-      const normalizedValue = rangeHelper.getNormalization(scaledValue, false);
+      if (this.autoRange) {
+        rangeHelper.update(scaledValue);
+      }
+      const normalizedValue = rangeHelper.getNormalization(scaledValue);
       const truncatedScaledValue = scaledValue - rangeHelper.min;
 
       const position = this.positions[index];
@@ -288,16 +369,12 @@ class PressureSensorDataManager {
       };
 
       pressureData.scaledSum += truncatedScaledValue;
-      //pressureData.normalizedSum += normalizedValue;
     }
-    if (true || this.isRecordingCalibrationData) {
+    if (this.autoRange) {
       this.#normalizedSumRangeHelper.update(pressureData.scaledSum);
     }
     pressureData.normalizedSum =
-      this.#normalizedSumRangeHelper.getNormalization(
-        pressureData.scaledSum,
-        false
-      );
+      this.#normalizedSumRangeHelper.getNormalization(pressureData.scaledSum);
 
     const isPressureAboveThreshold =
       pressureData.scaledSum > this.#scaledSumThreshold;
@@ -311,37 +388,36 @@ class PressureSensorDataManager {
       this.#euler && Math.abs(timestamp - this.#eulerTimestamp) < 100;
     if (hasEuler) {
       if (isPressureAboveThreshold) {
-        if (this.isRecordingCalibrationData) {
+        if (this.motionAutoRange) {
           this.#eulerCenterOfPressureRangeHelper.update({
             x: -this.#euler.roll,
             y: -this.#euler.pitch,
           });
         }
-        pressureData.motionCenter =
-          this.#eulerCenterOfPressureRangeHelper.getNormalization(
-            {
+        if (this.#eulerCenterOfPressureRangeHelper.updatedAtLeastOnce) {
+          pressureData.motionCenter =
+            this.#eulerCenterOfPressureRangeHelper.getNormalization({
               x: -this.#euler.roll,
               y: -this.#euler.pitch,
-            },
-            false
-          );
+            });
+        }
       }
     }
 
     if (isPressureAboveThreshold) {
       pressureData.center = { x: 0, y: 0 };
       pressureData.sensors.forEach((sensor) => {
-        sensor.weightedValue = sensor.scaledValue / pressureData.scaledSum;
+        sensor.weightedValue =
+          sensor.truncatedScaledValue / pressureData.scaledSum;
         pressureData.center!.x += sensor.position.x * sensor.weightedValue;
         pressureData.center!.y += sensor.position.y * sensor.weightedValue;
       });
-      this.#centerOfPressureHelper.update(pressureData.center);
+      if (this.autoRange) {
+        this.#centerOfPressureHelper.update(pressureData.center);
+      }
       pressureData.normalizedCenter =
-        this.#centerOfPressureHelper.getNormalization(
-          pressureData.center,
-          false
-        );
-      // console.log(pressureData.center);
+        this.#centerOfPressureHelper.getNormalization(pressureData.center);
+      // _console.log(pressureData.center);
     }
 
     if (
@@ -349,10 +425,14 @@ class PressureSensorDataManager {
       hasEuler &&
       isPressureAboveThreshold
     ) {
-      this.#centerOfPressureModel.addData(pressureData, this.#euler);
+      this.#centerOfPressureModel.onSensorData(pressureData, this.#euler);
     }
 
-    if (isPressureAboveThreshold) {
+    if (
+      isPressureAboveThreshold &&
+      !this.isRecordingCalibrationData &&
+      !this.isTrainingCalibrationModel
+    ) {
       pressureData.calibratedCenter =
         this.#centerOfPressureModel.predict(pressureData);
     }

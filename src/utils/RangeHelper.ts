@@ -9,6 +9,11 @@ export interface Range {
 const initialRange: Range = { min: Infinity, max: -Infinity, span: 0 };
 
 class RangeHelper {
+  #updatedAtLeastOnce = false;
+  get updatedAtLeastOnce() {
+    return this.#updatedAtLeastOnce;
+  }
+
   #range: Range = structuredClone(initialRange);
   get min() {
     return this.#range.min;
@@ -41,17 +46,19 @@ class RangeHelper {
 
   reset() {
     Object.assign(this.#range, initialRange);
+    this.#updatedAtLeastOnce = false;
   }
 
   update(value: number) {
     this.#range.min = Math.min(value, this.#range.min);
     this.#range.max = Math.max(value, this.#range.max);
     this.#updateSpan();
+    this.#updatedAtLeastOnce = true;
   }
 
   getNormalization(
     value: number,
-    weightByRange: boolean,
+    weightByRange?: boolean,
     clampValue: boolean = true
   ) {
     let normalization = getInterpolation(
@@ -70,7 +77,7 @@ class RangeHelper {
     return normalization || 0;
   }
 
-  updateAndGetNormalization(value: number, weightByRange: boolean) {
+  updateAndGetNormalization(value: number, weightByRange?: boolean) {
     this.update(value);
     return this.getNormalization(value, weightByRange);
   }

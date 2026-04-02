@@ -8,7 +8,7 @@ import { clamp } from "./MathUtils.ts";
 import { PressureSensorEventDispatcher } from "../sensor/PressureSensorDataManager.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("CenterOfPressureModel", { log: true });
+const _console = createConsole("CenterOfPressureModel", { log: false });
 
 export type CenterOfPressureModelData = {
   inputs: number[][];
@@ -69,7 +69,6 @@ class CenterOfPressureModel {
       // first layer is sensor inputs, fully connected second layer
       model.add(
         tf.layers.dense({
-          useBias: isFirst ? true : false,
           units: Math.round(this.numberOfSensors * hiddenUnitScalar),
           activation: "relu",
           inputShape: isFirst ? [this.numberOfSensors] : undefined,
@@ -89,35 +88,80 @@ class CenterOfPressureModel {
 
   #maxDataLength = 2000;
   #data: CenterOfPressureModelData = { inputs: [], outputs: [] };
+  get data() {
+    return this.#data;
+  }
 
   clearData() {
     _console.log("clearData");
     this.#data.outputs.length = 0;
     this.#data.inputs.length = 0;
+    this.#dispatchRecordingProgress();
+  }
+  #dispatchRecordingProgress() {
+    this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
+      numberOfSamples: this.numberOfSamples,
+      data: this.data,
+    });
   }
   #getInputs(pressureData: PressureData) {
-    return pressureData.sensors.map((sensor) => sensor.scaledValue);
+    return pressureData.sensors.map((sensor) => sensor.truncatedScaledValue);
   }
   #getOutputs(euler: Euler) {
     return [-euler.roll, -euler.pitch];
   }
-  addData(pressureData: PressureData, euler: Euler) {
+  onSensorData(pressureData: PressureData, euler: Euler) {
+    this.addData(this.#getInputs(pressureData), this.#getOutputs(euler));
+  }
+  get numberOfSamples() {
+    return this.#data.inputs.length;
+  }
+  #areDataInputsRedundant(inputs: number[]) {
+    return false;
+  }
+  #dataOutputsThreshold = 0.008;
+  #areDataOutputsRedundant(outputs: number[]) {
+    if (this.#data.outputs.length == 0) {
+      return false;
+    }
+    return this.#data.outputs.some((_outputs) => {
+      const differences = outputs.map(
+        (value, index) => value - _outputs[index]
+      );
+      let differencesSquareSum = 0;
+      differences.forEach((difference) => {
+        differencesSquareSum += difference ** 2;
+      });
+      const isRedundant = differencesSquareSum < this.#dataOutputsThreshold;
+      return isRedundant;
+    });
+  }
+  #isDataRedundant(inputs: number[], outputs: number[]) {
+    const areDataInputsRedundant = this.#areDataInputsRedundant(inputs);
+    const areDataOutputsRedundant = this.#areDataOutputsRedundant(outputs);
+    //_console.log({ areDataInputsRedundant, areDataOutputsRedundant });
+    return areDataInputsRedundant || areDataOutputsRedundant;
+  }
+  addData(inputs: number[], outputs: number[]) {
     if (!isTensorFlowAvailable()) {
       return;
     }
-    this.#data.inputs.push(this.#getInputs(pressureData));
-    this.#data.outputs.push(this.#getOutputs(euler));
+    // _console.log("addData", inputs, outputs);
+    if (this.#isDataRedundant(inputs, outputs)) {
+      // _console.log("data is redundant");
+      return;
+    }
+    this.#data.inputs.push(inputs);
+    this.#data.outputs.push(outputs);
 
-    while (this.#data.inputs.length > this.#maxDataLength) {
+    while (this.numberOfSamples > this.#maxDataLength) {
       this.#data.inputs.shift();
       this.#data.outputs.shift();
     }
-    _console.log("addData", pressureData, euler, {
-      dataLength: this.#data.inputs.length,
+    _console.log({
+      numberOfSamples: this.numberOfSamples,
     });
-    this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
-      // FILL
-    });
+    this.#dispatchRecordingProgress();
   }
   #isTrained = false;
   get isTrained() {
@@ -154,13 +198,19 @@ class CenterOfPressureModel {
       return ys.sub(minYs).div(maxYs.sub(minYs));
     });
 
+    const epochs = 64;
+    const batchSize = 32;
+
     this.#isTrained = false;
-    this.dispatchEvent("pressureCalibrationTrainStart", {});
+    this.dispatchEvent("pressureCalibrationTrainStart", {
+      epochs,
+      batchSize,
+    });
     this.#isTraining = true;
     try {
       await this.#model.fit(xs, ys, {
-        epochs: 32,
-        batchSize: 32,
+        epochs,
+        batchSize,
         shuffle: true,
 
         callbacks: {
@@ -173,21 +223,26 @@ class CenterOfPressureModel {
             // this.dispatchEvent("pressureCalibrationTrainEnd", {});
           },
           onEpochBegin: (epoch, logs) => {
-            _console.log("onEpochBegin", { epoch }, logs);
+            // _console.log("onEpochBegin", { epoch }, logs);
           },
           onEpochEnd: (epoch, logs) => {
             const { loss } = logs!;
             _console.log("onEpochEnd", { epoch, loss }, logs);
+
             this.dispatchEvent("pressureCalibrationTrainProgress", {
-              // FILL - epoch, loss, etc
+              pressureCalibrationTrainProgress: (epoch + 1) / epochs,
+              epoch,
+              epochs,
+              batchSize,
+              loss,
             });
           },
           onBatchBegin: (batch, logs) => {
-            _console.log("onBatchBegin", { batch }, logs);
+            // _console.log("onBatchBegin", { batch }, logs);
           },
           onBatchEnd: (batch, logs) => {
             const { size, loss } = logs!;
-            _console.log("onBatchEnd", { batch, size, loss }, logs);
+            // _console.log("onBatchEnd", { batch, size, loss }, logs);
           },
           onYield: (epoch, batch, logs) => {
             _console.log("onYield", { epoch, batch }, logs);
@@ -203,10 +258,10 @@ class CenterOfPressureModel {
     this.#isTraining = false;
 
     _console.log("finished training");
-    this.#isTrained = true;
-    this.#dispatchCalibratedPressureModel();
+    this.#onTrainedModel();
   }
-  #dispatchCalibratedPressureModel(wasLoaded = false) {
+  #onTrainedModel(wasLoaded = false) {
+    this.#isTrained = true;
     this.dispatchEvent("calibratedPressureModel", {
       model: this.#model!,
       wasLoaded,
@@ -328,7 +383,7 @@ class CenterOfPressureModel {
       this.model.setWeights(loadedModel.getWeights());
 
       _console.log("weights successfully loaded into model");
-      this.#dispatchCalibratedPressureModel(true);
+      this.#onTrainedModel(true);
     } catch (error) {
       _console.error("error loading model", error);
       loadedModel?.dispose();

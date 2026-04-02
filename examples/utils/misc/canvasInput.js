@@ -188,6 +188,9 @@ window.addEventListener("load", () => {
       }
       isMouseDown = newIsMouseDown;
       //console.log({ isMouseDown });
+      if (!isMouseDown) {
+        canvas.dispatchEvent(new Event("change"));
+      }
     };
     const dispatchEvent = () => {
       canvas.dispatchEvent(new Event("input"));

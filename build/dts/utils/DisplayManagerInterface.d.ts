@@ -156,6 +156,7 @@ export interface DisplayManagerInterface {
     serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
     startSprite(offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     endSprite(sendImmediately?: boolean): Promise<void>;
+    clearContext(sendImmediately?: boolean): Promise<void>;
 }
 export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
 export declare function runDisplayContextCommands(displayManager: DisplayManagerInterface, commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;

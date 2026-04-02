@@ -21,7 +21,7 @@ const filterServiceUuid = (serviceUUIDs[0] as string).replaceAll("-", "");
 
 let isLinux = false;
 /** NODE_START */
-import noble from "@abandonware/noble";
+import noble from "@stoprocent/noble";
 import { DeviceTypes } from "../InformationManager.ts";
 import DeviceManager from "../DeviceManager.ts";
 import { ClientConnectionType } from "../connection/BaseConnectionManager.ts";
@@ -129,7 +129,8 @@ class NobleScanner extends BaseScanner {
         this.#isBusy = true;
         _noblePeripheral.shouldConnect = false;
         _console.log("noblePeripheral.connectAsync");
-        await _noblePeripheral.connectAsync();
+        // https://github.com/stoprocent/noble/pull/75
+        await _noblePeripheral.connectAsync({ mtu: 512 });
         _console.log("noblePeripheral.connectAsync done");
         this.#isBusy = false;
       }
