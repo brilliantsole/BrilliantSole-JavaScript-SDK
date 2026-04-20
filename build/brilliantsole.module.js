@@ -9539,13 +9539,21 @@ class CameraManager {
         this.#buildImageTimeout = undefined;
     }
     #setBuildImageTimeout() {
+        this.#clearBuildImageTimeout();
         if (this.sensorRate == 0) {
             return;
         }
-        const timeoutInterval = Math.max(2 * this.sensorRate, 40);
-        _console$A.log("setBuildImageTimeout", { timeoutInterval });
+        const timeoutInterval = Math.max(5 * this.sensorRate, 40);
+        _console$A.log("setBuildImageTimeout", {
+            timeoutInterval,
+        });
+        const now = Date.now();
         this.#buildImageTimeout = setTimeout(() => {
-            _console$A.log("buildImageTimeout");
+            const _now = Date.now();
+            _console$A.log("buildImageTimeout triggered", {
+                now: _now,
+                span: _now - now,
+            });
             this.#buildImage();
             this.#buildImageTimeout = undefined;
         }, timeoutInterval);
@@ -10230,8 +10238,18 @@ const alawmulaw = _alawmulaw;
 const { mulaw } = alawmulaw;
 const _console$z = createConsole("MicrophoneManager", { log: false });
 const MicrophoneSensorTypes = ["microphone"];
-const MicrophoneCommands = ["start", "stop", "vad"];
-const MicrophoneStatuses = ["idle", "streaming", "vad"];
+const MicrophoneCommands = [
+    "start",
+    "stop",
+    "vad",
+    "inferencing",
+];
+const MicrophoneStatuses = [
+    "idle",
+    "streaming",
+    "vad",
+    "inferencing",
+];
 const MicrophoneConfigurationTypes = ["sampleRate", "bitDepth"];
 const MicrophoneSampleRates = ["8000", "16000"];
 const MicrophoneBitDepths = ["8", "16"];

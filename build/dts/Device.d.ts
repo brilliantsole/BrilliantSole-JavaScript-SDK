@@ -212,7 +212,7 @@ declare class Device {
     get stopRecordingCamera(): () => Promise<void>;
     get toggleCameraRecording(): (audioStream?: MediaStream) => void;
     get hasMicrophone(): boolean;
-    get microphoneStatus(): "idle" | "vad" | "streaming";
+    get microphoneStatus(): "idle" | "vad" | "inferencing" | "streaming";
     startMicrophone(sensorRate?: number): Promise<void>;
     stopMicrophone(): Promise<void>;
     enableMicrophoneVad(): Promise<void>;

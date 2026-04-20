@@ -292,13 +292,22 @@ class CameraManager {
     this.#buildImageTimeout = undefined;
   }
   #setBuildImageTimeout() {
+    this.#clearBuildImageTimeout();
     if (this.sensorRate == 0) {
       return;
     }
-    const timeoutInterval = Math.max(2 * this.sensorRate, 40);
-    _console.log("setBuildImageTimeout", { timeoutInterval });
+    const timeoutInterval = Math.max(5 * this.sensorRate, 40);
+    _console.log("setBuildImageTimeout", {
+      timeoutInterval,
+    });
+
+    const now = Date.now();
     this.#buildImageTimeout = setTimeout(() => {
-      _console.log("buildImageTimeout");
+      const _now = Date.now();
+      _console.log("buildImageTimeout triggered", {
+        now: _now,
+        span: _now - now,
+      });
       this.#buildImage();
       this.#buildImageTimeout = undefined;
     }, timeoutInterval);

@@ -888,9 +888,9 @@ declare function isWireframePolygon({ points, edges, }: DisplayWireframe): Vecto
 declare function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe): DisplayWireframe;
 declare function intersectWireframes(a: DisplayWireframe, b: DisplayWireframe, ignoreDirection?: boolean): DisplayWireframe;
 
-declare const MicrophoneCommands: readonly ["start", "stop", "vad"];
+declare const MicrophoneCommands: readonly ["start", "stop", "vad", "inferencing"];
 type MicrophoneCommand = (typeof MicrophoneCommands)[number];
-declare const MicrophoneStatuses: readonly ["idle", "streaming", "vad"];
+declare const MicrophoneStatuses: readonly ["idle", "streaming", "vad", "inferencing"];
 type MicrophoneStatus = (typeof MicrophoneStatuses)[number];
 declare const MicrophoneConfigurationTypes: readonly ["sampleRate", "bitDepth"];
 type MicrophoneConfigurationType = (typeof MicrophoneConfigurationTypes)[number];
@@ -1739,7 +1739,7 @@ declare class Device {
     get stopRecordingCamera(): () => Promise<void>;
     get toggleCameraRecording(): (audioStream?: MediaStream) => void;
     get hasMicrophone(): boolean;
-    get microphoneStatus(): "idle" | "vad" | "streaming";
+    get microphoneStatus(): "idle" | "vad" | "inferencing" | "streaming";
     startMicrophone(sensorRate?: number): Promise<void>;
     stopMicrophone(): Promise<void>;
     enableMicrophoneVad(): Promise<void>;
