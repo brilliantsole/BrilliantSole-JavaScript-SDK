@@ -17,10 +17,20 @@ const _console = createConsole("MicrophoneManager", { log: false });
 export const MicrophoneSensorTypes = ["microphone"] as const;
 export type MicrophoneSensorType = (typeof MicrophoneSensorTypes)[number];
 
-export const MicrophoneCommands = ["start", "stop", "vad"] as const;
+export const MicrophoneCommands = [
+  "start",
+  "stop",
+  "vad",
+  "inferencing",
+] as const;
 export type MicrophoneCommand = (typeof MicrophoneCommands)[number];
 
-export const MicrophoneStatuses = ["idle", "streaming", "vad"] as const;
+export const MicrophoneStatuses = [
+  "idle",
+  "streaming",
+  "vad",
+  "inferencing",
+] as const;
 export type MicrophoneStatus = (typeof MicrophoneStatuses)[number];
 
 export const MicrophoneConfigurationTypes = ["sampleRate", "bitDepth"] as const;
@@ -199,6 +209,7 @@ class MicrophoneManager {
       _console.log("microphone is already idle");
       return;
     }
+    // TODO: - stop recording?
     await this.#sendMicrophoneCommand("stop");
   }
   async vad() {
