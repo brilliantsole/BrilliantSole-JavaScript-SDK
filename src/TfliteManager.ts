@@ -292,10 +292,17 @@ class TfliteManager {
     newSensorTypes.forEach((sensorType) => {
       TfliteManager.AssertValidSensorType(sensorType);
     });
+    newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
+
+    if (newSensorTypes.length == this.sensorTypes.length) {
+      if (this.sensorTypes.every((value) => newSensorTypes.includes(value))) {
+        _console.log(`redundant tflite sensorTypes`, newSensorTypes);
+        return;
+      }
+    }
 
     const promise = this.waitForEvent("getTfliteSensorTypes");
 
-    newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
     const newSensorTypeEnums = newSensorTypes
       .map((sensorType) => SensorTypes.indexOf(sensorType))
       .sort();
@@ -588,7 +595,6 @@ class TfliteManager {
       classes,
     } = this.configuration;
     this.setClasses(classes);
-    this.setName(name, false);
     this.setTask(task, false);
     if (captureDelay != undefined) {
       this.setCaptureDelay(captureDelay, false);
@@ -597,7 +603,8 @@ class TfliteManager {
     if (threshold != undefined) {
       this.setThreshold(threshold, false);
     }
-    this.setSensorTypes(sensorTypes, sendImmediately);
+    this.setSensorTypes(sensorTypes, false);
+    this.setName(name, sendImmediately);
   }
 
   clear() {

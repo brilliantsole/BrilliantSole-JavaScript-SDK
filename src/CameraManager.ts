@@ -296,7 +296,7 @@ class CameraManager {
     if (this.sensorRate == 0) {
       return;
     }
-    const timeoutInterval = Math.max(5 * this.sensorRate, 40);
+    const timeoutInterval = Math.max(5 * this.sensorRate, 200);
     _console.log("setBuildImageTimeout", {
       timeoutInterval,
     });

@@ -37,11 +37,13 @@ displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
 device.addEventListener("connected", () => {
+  if (!device.isGlasses) {
+    console.error("device isn't glasses");
+    device.disconnect();
+    return;
+  }
   if (device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
   }
 });
 
@@ -485,7 +487,10 @@ device.addEventListener("cameraImageProgress", (event) => {
 device.addEventListener("connected", async () => {
   if (device.hasCamera) {
     console.log("setting camera configuration");
-    await device.setCameraConfiguration({ resolution: imageHeight });
+    await device.setCameraConfiguration({
+      resolution: imageHeight,
+      qualityFactor: 100,
+    });
   }
 });
 
@@ -814,7 +819,9 @@ let promptAvailability = await LanguageModel.availability();
 console.log({ promptAvailability });
 
 let isThinking = false;
-const createPrompt = async () => {
+/** @type {LanguageModel?} */
+let session;
+const createPrompt = async (promptText, continueSession = true) => {
   isThinking = true;
   draw();
   try {
@@ -822,10 +829,31 @@ const createPrompt = async () => {
     if (includePicture) {
       expectedInputs.push({ type: "image" });
     }
-    const session = await LanguageModel.create({
-      expectedInputs,
-    });
-    const prompt = `${textarea.value}`;
+    if (session && !continueSession) {
+      console.log("destroying session");
+      session.destroy();
+      session = undefined;
+    }
+
+    if (!session) {
+      session = await LanguageModel.create({
+        expectedInputs,
+        initialPrompts: [
+          {
+            role: "system",
+            content:
+              "You are a helpful and friendly assistant whose responses appear in smart glasses. Your response must be a single paragraph (no emojis) containing no more than 200 characters (including spaces), no emojis.",
+          },
+        ],
+      });
+      session.addEventListener("contextoverflow", () => {
+        console.log(
+          "We've gone past the context window, and some inputs will be dropped!"
+        );
+      });
+      console.log("created session", session);
+    }
+    const prompt = promptText ?? `${textarea.value}`;
 
     const content = [{ type: "text", value: prompt }];
     if (includePicture) {
@@ -834,31 +862,73 @@ const createPrompt = async () => {
 
     const stream = session.promptStreaming([
       {
-        role: "system",
-        content:
-          "You are a helpful and friendly assistant whose responses appear in smart glasses. Your response must be a single paragraph (no emojis) containing max 200 characters (including spaces).",
-      },
-      {
         role: "user",
         content: content,
       },
     ]);
-    let didDrawFirstChunk = false;
-    for await (let chunk of stream) {
-      chunk = chunk.replaceAll("\n", "");
-      if (!didDrawFirstChunk) {
-        isThinking = false;
-        textarea.value = "";
-        didDrawFirstChunk = true;
+
+    if (useTTS) {
+      const sentenceEndRegex = /([.!?]+[\s\n]+)/g;
+
+      let pendingSentence = "";
+
+      let didDrawFirstSentence = false;
+
+      for await (let chunk of stream) {
+        // console.log({ chunk });
+        chunk = chunk.replaceAll("\n", "");
+
+        pendingSentence += chunk;
+
+        let lastIndex = 0;
+        let match;
+
+        while ((match = sentenceEndRegex.exec(pendingSentence)) !== null) {
+          const endIndex = match.index + match[0].length;
+          const sentence = pendingSentence.slice(lastIndex, endIndex).trim();
+
+          if (sentence) {
+            if (!didDrawFirstSentence) {
+              isThinking = false;
+              textarea.value = "";
+              didDrawFirstSentence = true;
+            }
+            console.log({ sentence });
+            speak(sentence);
+          }
+
+          lastIndex = endIndex;
+        }
+
+        pendingSentence = pendingSentence.slice(lastIndex);
+        sentenceEndRegex.lastIndex = 0;
       }
-      textarea.value += chunk;
-      draw();
+
+      const finalSentence = pendingSentence.trim();
+      if (finalSentence.length > 0) {
+        console.log({ finalSentence });
+        speak(finalSentence);
+      }
+    } else {
+      let didDrawFirstChunk = false;
+      for await (let chunk of stream) {
+        // console.log({ chunk });
+        chunk = chunk.replaceAll("\n", "");
+        if (!didDrawFirstChunk) {
+          isThinking = false;
+          textarea.value = "";
+          didDrawFirstChunk = true;
+        }
+        textarea.value += chunk;
+        draw();
+      }
     }
   } catch (error) {
     console.error(error);
   }
   isThinking = false;
 };
+window.createPrompt = createPrompt;
 
 device.addEventListener("connected", () => {
   device.setSensorConfiguration({ tapDetector: 40 });
@@ -1136,6 +1206,8 @@ const updateMicrophoneSources = async () => {
 /** @type {MediaStream?} */
 let microphoneStream;
 const selectMicrophone = async (deviceId) => {
+  console.log("selectMicrophone", { deviceId });
+
   stopMicrophoneStream();
   if (deviceId == "none") {
     await stopTranscribing();
@@ -1170,7 +1242,9 @@ const selectMicrophone = async (deviceId) => {
 const stopMicrophoneStream = () => {
   if (microphoneStream) {
     console.log("stopping microphoneStream");
-    microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    if (microphoneStream != device?.microphoneMediaStreamDestination?.stream) {
+      microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    }
   }
   microphoneStream = undefined;
   microphoneAudio.srcObject = undefined;
@@ -1284,7 +1358,7 @@ const loadModel = async () => {
 
 let latestLowercaseString;
 let latestStringRepetition = 0;
-let latestStringRepetitionThreshold = 5;
+let latestStringRepetitionThreshold = 3;
 let transcription = "";
 let formattedTranscription = "";
 let ignoreString = true;
@@ -1297,6 +1371,9 @@ const startTranscribing = async () => {
   }
   if (mediaRecorder) {
     await stopTranscribing();
+  }
+  if (useTTS && selectMicrophoneSelect.value == "none") {
+    await selectMicrophone("device");
   }
   latestLowercaseString = undefined;
   formattedTranscription = "";
@@ -1433,6 +1510,13 @@ const stopTranscribing = async () => {
   mediaRecorder = undefined;
   updateToggleTranscriptionButton();
   updateTogglePromptButton();
+
+  if (
+    useTTS &&
+    microphoneStream == device.microphoneMediaStreamDestination.stream
+  ) {
+    selectMicrophone("none");
+  }
 };
 
 // AUDIO CONTEXT
@@ -1460,5 +1544,365 @@ checkAudioContextState();
 
 device.audioContext = audioContext;
 device.microphoneGainNode.gain.value = 10;
+
+// TTS
+import {
+  KokoroTTS,
+  TextSplitterStream,
+} from "https://unpkg.com/kokoro-js@1.2.1/dist/kokoro.web.js";
+console.log("KokoroTTS", KokoroTTS);
+
+// FILL - use TTS checkbox and voice dropdown
+let useTTS = false;
+/** @param {boolean} newUseTTS  */
+const setUseTTS = (newUseTTS) => {
+  useTTS = newUseTTS;
+  console.log({ useTTS });
+  setUseTTSCheckbox.checked = useTTS;
+  document.querySelectorAll(".useTTS").forEach((element) => {
+    if (useTTS) {
+      element.classList.remove("hidden");
+    } else {
+      element.classList.add("hidden");
+    }
+  });
+};
+const setUseTTSCheckbox = document.getElementById("setUseTTS");
+setUseTTSCheckbox.addEventListener("input", () => {
+  setUseTTS(setUseTTSCheckbox.checked);
+});
+
+const setTTSVoiceSelect = document.getElementById("setTTSVoice");
+const setTTSVoiceOptgroup = setTTSVoiceSelect.querySelector("optgroup");
+
+/** @type {string => void} */
+let speak;
+
+const ttsAudio = new Audio();
+
+{
+  const useWebGpu = true && Boolean(navigator.gpu);
+  console.log({ useWebGpu });
+  const model_id = "onnx-community/Kokoro-82M-v1.0-ONNX";
+  const tts = await KokoroTTS.from_pretrained(model_id, {
+    dtype: useWebGpu ? "fp32" : "q4", // Options: "fp32", "fp16", "q8", "q4", "q4f16"
+    device: useWebGpu ? "webgpu" : "wasm", // Options: "wasm", "webgpu" (web) or "cpu" (node). If using "webgpu", we recommend using dtype="fp32".
+  });
+
+  window.tts = tts;
+  window.voiceSpeed = 1.1;
+
+  let selectedVoiceName;
+  Object.keys(tts.voices)
+    .sort()
+    .forEach((voiceName) => {
+      const { name, language, gender, traits, targetQuality, overallGrade } =
+        tts.voices[voiceName];
+      setTTSVoiceOptgroup.appendChild(
+        new Option(`${name} (${language})`, voiceName)
+      );
+    });
+  selectedVoiceName = setTTSVoiceSelect.value;
+
+  setTTSVoiceSelect.addEventListener("input", () => {
+    setTTSVoice(setTTSVoiceSelect.value);
+  });
+  const setTTSVoice = (newVoiceName) => {
+    selectedVoiceName = newVoiceName;
+    console.log({ selectedVoiceName });
+    setTTSVoiceSelect.value = selectedVoiceName;
+  };
+  setTTSVoice("am_santa");
+
+  /** @typedef {{blob: Blob, text: string, phonemes: string}} TTSResult */
+  /** @type {TTSResult[]} */
+  const ttsResults = [];
+  let isTTSPlaying = false;
+
+  let maxTextAreaLength = {
+    true: 200,
+    false: 250,
+  };
+
+  /** @param {TTSResult} ttsResult */
+  const playTTSResult = async (ttsResult) => {
+    // console.log("playBlob", ttsResult);
+    if (isTTSPlaying) {
+      ttsResults.push(ttsResult);
+      // console.log("pushing for later");
+      return;
+    }
+    isTTSPlaying = true;
+
+    // console.log("playing audio", ttsResult);
+
+    const blobUrl = URL.createObjectURL(ttsResult.blob);
+    ttsAudio.src = blobUrl;
+    try {
+      ttsAudio.play();
+      if (textarea.value != 0) {
+        if (
+          textarea.value.length + ttsResult.text.length <
+          maxTextAreaLength[includePicture]
+        ) {
+          textarea.value += " ";
+        } else {
+          textarea.value = "";
+        }
+      }
+      textarea.value += ttsResult.text;
+      draw();
+    } catch (error) {
+      reject(error);
+    }
+  };
+  ttsAudio.onended = () => {
+    // console.log("audio ended");
+    URL.revokeObjectURL(ttsAudio.src);
+    isTTSPlaying = false;
+
+    if (ttsResults.length) {
+      const ttsResult = ttsResults.shift();
+      playTTSResult(ttsResult);
+    } else {
+      console.log("finished audio");
+
+      if (useTTS) {
+        if (device.tfliteIsReady) {
+          device.enableTfliteInferencing();
+        }
+      }
+    }
+  };
+
+  const onAudio = async ({ audio, text, phonemes }) => {
+    /** @type {Blob} */
+    const blob = audio.toBlob();
+    playTTSResult({ blob, text, phonemes });
+  };
+
+  // First, set up the stream
+
+  // Next, add text to the stream. Note that the text can be added at different times.
+  // For this example, let's pretend we're consuming text from an LLM, one word at a time.
+  const text =
+    "Kokoro is an open-weight TTS model with 82 million parameters. Despite its lightweight architecture, it delivers comparable quality to larger models while being significantly faster and more cost-efficient. With Apache-licensed weights, Kokoro can be deployed anywhere from production environments to personal projects. It can even run 100% locally in your browser, powered by Transformers.js!";
+
+  speak = (text) => {
+    const splitter = new TextSplitterStream();
+    const stream = tts.stream(splitter, {
+      voice: selectedVoiceName,
+      speed: voiceSpeed,
+    });
+    (async () => {
+      for await (const { text, phonemes, audio } of stream) {
+        console.log({ text, phonemes });
+        // audio.save(`audio-${i++}.wav`);
+        onAudio({ audio, text, phonemes });
+      }
+    })();
+
+    console.log("speaking", { text });
+    const tokens = text.match(/\s*\S+/g);
+    for (const token of tokens) {
+      splitter.push(token);
+    }
+
+    // Finally, close the stream to signal that no more text will be added.
+    splitter.close();
+
+    // Alternatively, if you'd like to keep the stream open, but flush any remaining text, you can use the `flush` method.
+    // splitter.flush();
+  };
+
+  window.speak = speak;
+  //speak(text);
+
+  setUseTTSCheckbox.closest("label").classList.remove("hidden");
+}
+setUseTTS(true);
+
+// SFX
+/** @typedef {"microphoneRecordStart" | "microphoneRecordStop" | "cameraRecordStart" | "cameraRecordStop" | "cameraSnapshot" | "sendFile" | "receiveFile" | "pop" | "start" | "stop"} SFXName */
+/** @type {SFXName[]} */
+const sfxNames = [
+  "microphoneRecordStart",
+  "microphoneRecordStop",
+  "cameraRecordStart",
+  "cameraRecordStop",
+  "cameraSnapshot",
+  "sendFile",
+  "receiveFile",
+  "pop",
+  "start",
+  "stop",
+];
+
+/** @type {Record<SFXName, HTMLAudioElement} */
+const sfxAudios = {};
+sfxNames.forEach((sfxName) => {
+  const audio = new Audio(`/assets/audio/${sfxName}.wav`);
+  sfxAudios[sfxName] = audio;
+});
+
+/** @param {SFXName} sfxName */
+const playSfx = async (sfxName) => {
+  console.log({ sfxName });
+  return new Promise((resolve, reject) => {
+    try {
+      const audio = sfxAudios[sfxName];
+      if (!audio) {
+        console.error(`no audio found for sfx "${sfxName}"`);
+        reject();
+        return;
+      }
+      if (!audio.paused) {
+        audio.currentTime = 0;
+      }
+      audio.addEventListener("ended", () => resolve(), { once: true });
+      audio.play();
+    } catch (error) {
+      console.error(error);
+      reject();
+    }
+  });
+};
+window.playSfx = playSfx;
+
+device.addEventListener("cameraStatus", (event) => {
+  if (event.message.cameraStatus == "takingPicture") {
+    playSfx("cameraSnapshot");
+  }
+});
+device.addEventListener("cameraImage", (event) => {
+  playSfx("receiveFile");
+});
+device.addEventListener("microphoneStatus", (event) => {
+  const { microphoneStatus, previousMicrophoneStatus } = event.message;
+  console.log({ microphoneStatus, previousMicrophoneStatus });
+  switch (microphoneStatus) {
+    case "idle":
+      switch (previousMicrophoneStatus) {
+        case "streaming":
+          playSfx("microphoneRecordStop");
+          break;
+        case "inferencing":
+          //playSfx("stop");
+          break;
+      }
+      break;
+    case "streaming":
+      playSfx("microphoneRecordStart");
+      break;
+    case "inferencing":
+      playSfx("start");
+      break;
+  }
+});
+
+// SPEECH DETECTION
+let useSpeechDetection = false;
+const setUseSpeechDetection = (newUseSpeechDetection) => {
+  useSpeechDetection = newUseSpeechDetection;
+  console.log({ useSpeechDetection });
+  setUseSpeechDetectionCheckbox.checked = useSpeechDetection;
+
+  document.querySelectorAll(".speechDetection").forEach((element) => {
+    if (useSpeechDetection) {
+      element.classList.remove("hidden");
+    } else {
+      element.classList.add("hidden");
+    }
+  });
+};
+const setUseSpeechDetectionCheckbox = document.getElementById(
+  "setUseSpeechDetection"
+);
+setUseSpeechDetectionCheckbox.addEventListener("input", () => {
+  setUseSpeechDetection(setUseSpeechDetectionCheckbox.checked);
+});
+
+/** @type {BS.TfliteFileConfiguration} */
+const speechDetectionTfliteConfiguration = {
+  name: "promptCommands2_st=m_pt=mc_sr=16_fl=512_fd=25_fsd=20_lf=80_mb=32_pec=98_mc=13_mcw=151",
+  task: "classification",
+  sensorTypes: ["microphone"],
+  sampleRate: 10,
+  captureDelay: 1000,
+  threshold: 0.92,
+  classes: ["idle", "lookAtThat", "question"],
+  file: "./promptCommands2_st=m_pt=mc_sr=16_fl=512_fd=25_fsd=20_lf=80_mb=32_pec=98_mc=13_mcw=151.tflite",
+};
+const uploadSpeechDetectionModel = () => {
+  console.log("uploadSpeechDetectionModel");
+  device.sendTfliteConfiguration(speechDetectionTfliteConfiguration);
+  uploadSpeechDetectionModelButton.disabled;
+};
+const uploadSpeechDetectionModelButton = document.getElementById(
+  "uploadSpeechDetectionModel"
+);
+uploadSpeechDetectionModelButton.addEventListener("click", () => {
+  uploadSpeechDetectionModel();
+});
+device.addEventListener("isConnected", () => {
+  const enabled = device.isConnected;
+  uploadSpeechDetectionModelButton.disabled = !enabled;
+});
+
+const toggleSpeechDetection = () => {
+  device.toggleTfliteInferencing();
+};
+const toggleSpeechDetectionButton = document.getElementById(
+  "toggleSpeechDetection"
+);
+toggleSpeechDetectionButton.addEventListener("click", () => {
+  toggleSpeechDetection();
+});
+device.addEventListener("getTfliteInferencingEnabled", (event) => {
+  const { tfliteInferencingEnabled } = event.message;
+  console.log({ tfliteInferencingEnabled });
+  toggleSpeechDetectionButton.innerText = tfliteInferencingEnabled
+    ? "disable speech detection"
+    : "enable speech detection";
+});
+device.addEventListener("notConnected", () => {
+  toggleSpeechDetectionButton.disabled = true;
+});
+device.addEventListener("tfliteIsReady", (event) => {
+  const { tfliteIsReady } = event.message;
+  console.log({ tfliteIsReady });
+  toggleSpeechDetectionButton.disabled = !tfliteIsReady;
+});
+
+device.addEventListener("tfliteInference", (event) => {
+  const { maxClass, maxIndex } = event.message.tfliteInference;
+
+  const onCommand = async () => {
+    await device.setTfliteInferencingEnabled(false);
+    startPrompting();
+  };
+
+  switch (maxIndex) {
+    case 1:
+      setIncludePicture(true);
+      onCommand();
+      break;
+    case 2:
+      setIncludePicture(false);
+      onCommand();
+      break;
+    default:
+      console.error(`uncaught tfliteInference maxIndex ${maxIndex}`);
+      break;
+  }
+});
+
+setUseSpeechDetection(true);
+
+{
+  const throwawaySession = await LanguageModel.create({});
+  throwawaySession.destroy();
+  console.log("destroyed session");
+}
 
 didLoad = true;

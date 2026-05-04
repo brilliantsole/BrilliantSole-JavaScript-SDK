@@ -9543,7 +9543,7 @@ class CameraManager {
         if (this.sensorRate == 0) {
             return;
         }
-        const timeoutInterval = Math.max(5 * this.sensorRate, 40);
+        const timeoutInterval = Math.max(5 * this.sensorRate, 200);
         _console$A.log("setBuildImageTimeout", {
             timeoutInterval,
         });
@@ -11185,8 +11185,14 @@ class TfliteManager {
         newSensorTypes.forEach((sensorType) => {
             TfliteManager.AssertValidSensorType(sensorType);
         });
-        const promise = this.waitForEvent("getTfliteSensorTypes");
         newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
+        if (newSensorTypes.length == this.sensorTypes.length) {
+            if (this.sensorTypes.every((value) => newSensorTypes.includes(value))) {
+                _console$w.log(`redundant tflite sensorTypes`, newSensorTypes);
+                return;
+            }
+        }
+        const promise = this.waitForEvent("getTfliteSensorTypes");
         const newSensorTypeEnums = newSensorTypes
             .map((sensorType) => SensorTypes.indexOf(sensorType))
             .sort();
@@ -11416,7 +11422,6 @@ class TfliteManager {
         }
         const { name, task, captureDelay, sampleRate, threshold, sensorTypes, classes, } = this.configuration;
         this.setClasses(classes);
-        this.setName(name, false);
         this.setTask(task, false);
         if (captureDelay != undefined) {
             this.setCaptureDelay(captureDelay, false);
@@ -11425,7 +11430,8 @@ class TfliteManager {
         if (threshold != undefined) {
             this.setThreshold(threshold, false);
         }
-        this.setSensorTypes(sensorTypes, sendImmediately);
+        this.setSensorTypes(sensorTypes, false);
+        this.setName(name, sendImmediately);
     }
     clear() {
         this.#classes = undefined;
@@ -12257,7 +12263,9 @@ class WifiManager {
             return;
         }
         _console$s.assertTypeWithError(newWifiSSID, "string");
-        _console$s.assertRangeWithError("wifiSSID", newWifiSSID.length, MinWifiSSIDLength, MaxWifiSSIDLength);
+        if (newWifiSSID.length > 0) {
+            _console$s.assertRangeWithError("wifiSSID", newWifiSSID.length, MinWifiSSIDLength, MaxWifiSSIDLength);
+        }
         const setWifiSSIDData = textEncoder.encode(newWifiSSID);
         _console$s.log({ setWifiSSIDData });
         const promise = this.waitForEvent("getWifiSSID");

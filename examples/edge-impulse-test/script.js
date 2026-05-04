@@ -32,6 +32,29 @@ function classify(features) {
       4
     );
     console.log(res);
+    let maxValue = 0.8;
+    let maxIndex = -1;
+    let maxLabel = "";
+    res.results.forEach(({ label, value }, index) => {
+      if (value > maxValue) {
+        maxValue = value;
+        maxIndex = index;
+        maxLabel = label;
+      }
+    });
+    if (maxIndex > 0 && maxLabel != "8_b") {
+      console.log({ maxLabel });
+      document.querySelector("#maxResult").textContent = JSON.stringify(
+        {
+          maxIndex,
+          maxValue,
+          maxLabel,
+          now: Date.now(),
+        },
+        null,
+        4
+      );
+    }
     return res;
   } catch (ex) {
     alert("Failed to classify: " + (ex.message || ex.toString()));

@@ -117,12 +117,14 @@ class WifiManager {
       return;
     }
     _console.assertTypeWithError(newWifiSSID, "string");
-    _console.assertRangeWithError(
-      "wifiSSID",
-      newWifiSSID.length,
-      MinWifiSSIDLength,
-      MaxWifiSSIDLength
-    );
+    if (newWifiSSID.length > 0) {
+      _console.assertRangeWithError(
+        "wifiSSID",
+        newWifiSSID.length,
+        MinWifiSSIDLength,
+        MaxWifiSSIDLength
+      );
+    }
 
     const setWifiSSIDData = textEncoder.encode(newWifiSSID);
     _console.log({ setWifiSSIDData });
