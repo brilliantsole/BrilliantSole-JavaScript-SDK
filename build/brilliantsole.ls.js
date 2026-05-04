@@ -9944,7 +9944,7 @@
     if (this.sensorRate == 0) {
       return;
     }
-    const timeoutInterval = Math.max(5 * this.sensorRate, 40);
+    const timeoutInterval = Math.max(5 * this.sensorRate, 200);
     _console$v.log("setBuildImageTimeout", {
       timeoutInterval
     });
@@ -11272,8 +11272,14 @@
       newSensorTypes.forEach(sensorType => {
         TfliteManager.AssertValidSensorType(sensorType);
       });
-      const promise = this.waitForEvent("getTfliteSensorTypes");
       newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
+      if (newSensorTypes.length == this.sensorTypes.length) {
+        if (this.sensorTypes.every(value => newSensorTypes.includes(value))) {
+          _console$r.log(`redundant tflite sensorTypes`, newSensorTypes);
+          return;
+        }
+      }
+      const promise = this.waitForEvent("getTfliteSensorTypes");
       const newSensorTypeEnums = newSensorTypes.map(sensorType => SensorTypes.indexOf(sensorType)).sort();
       _console$r.log(newSensorTypes, newSensorTypeEnums);
       this.sendMessage([{
@@ -11424,7 +11430,6 @@
         classes
       } = this.configuration;
       this.setClasses(classes);
-      this.setName(name, false);
       this.setTask(task, false);
       if (captureDelay != undefined) {
         this.setCaptureDelay(captureDelay, false);
@@ -11433,7 +11438,8 @@
       if (threshold != undefined) {
         this.setThreshold(threshold, false);
       }
-      this.setSensorTypes(sensorTypes, sendImmediately);
+      this.setSensorTypes(sensorTypes, false);
+      this.setName(name, sendImmediately);
     }
     clear() {
       _classPrivateFieldSet2(_classes, this, undefined);
@@ -12410,7 +12416,9 @@
         return;
       }
       _console$n.assertTypeWithError(newWifiSSID, "string");
-      _console$n.assertRangeWithError("wifiSSID", newWifiSSID.length, MinWifiSSIDLength, MaxWifiSSIDLength);
+      if (newWifiSSID.length > 0) {
+        _console$n.assertRangeWithError("wifiSSID", newWifiSSID.length, MinWifiSSIDLength, MaxWifiSSIDLength);
+      }
       const setWifiSSIDData = textEncoder.encode(newWifiSSID);
       _console$n.log({
         setWifiSSIDData

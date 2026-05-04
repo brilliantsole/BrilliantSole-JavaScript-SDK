@@ -148,10 +148,39 @@
 
     <button id="togglePrompt" disabled>prompt</button>
 
-    <label
-      >include picture
+    <label>
+      include picture
       <input id="toggleIncludePicture" type="checkbox" disabled />
     </label>
+
+    <label class="hidden">
+      use tts
+      <input id="setUseTTS" type="checkbox" />
+    </label>
+
+    <label class="hidden useTTS">
+      <span>tts voice</span>
+      <select id="setTTSVoice">
+        <optgroup label="select voice"></optgroup>
+      </select>
+    </label>
+
+    <label>
+      use speech detection
+      <input id="setUseSpeechDetection" type="checkbox" />
+    </label>
+
+    <button
+      id="uploadSpeechDetectionModel"
+      class="hidden speechDetection"
+      disabled
+    >
+      upload speech detection model
+    </button>
+
+    <button id="toggleSpeechDetection" class="hidden speechDetection" disabled>
+      enable speech detection
+    </button>
 
     <br />
 
@@ -168,7 +197,7 @@
     <br />
 
     <canvas id="display" width="640" height="400"></canvas>
-    <textarea id="textarea"></textarea>
+    <textarea id="textarea" class="hidden"></textarea>
 
     <video hidden id="cameraVideo" autoplay playsinline width="640"></video>
     <img id="cameraImage" />
