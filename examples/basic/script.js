@@ -1814,6 +1814,7 @@ const updateMicrophoneSources = async () => {
   const audioDevices = devices.filter((device) => device.kind == "audioinput");
   selectMicrophoneOptgroup.innerHTML = "";
   selectMicrophoneOptgroup.appendChild(new Option("none"));
+  selectMicrophoneOptgroup.appendChild(new Option("device"));
   audioDevices.forEach((audioInputDevice) => {
     selectMicrophoneOptgroup.appendChild(
       new Option(audioInputDevice.label, audioInputDevice.deviceId)
@@ -1828,6 +1829,8 @@ const selectMicrophone = async (deviceId) => {
   stopMicrophoneStream();
   if (deviceId == "none") {
     microphoneAudio.setAttribute("hidden", "");
+  } else if (deviceId == "device") {
+    microphoneStream = device.microphoneMediaStreamDestination.stream;
   } else {
     microphoneStream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -1845,7 +1848,9 @@ const selectMicrophone = async (deviceId) => {
 const stopMicrophoneStream = () => {
   if (microphoneStream) {
     console.log("stopping microphoneStream");
-    microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    if (microphoneStream != device.microphoneMediaStreamDestination.stream) {
+      microphoneStream.getAudioTracks().forEach((track) => track.stop());
+    }
     microphoneStream = undefined;
   }
   microphoneAudio.srcObject = undefined;
