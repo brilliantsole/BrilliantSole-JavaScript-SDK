@@ -1741,7 +1741,7 @@ const sfxNames = [
 /** @type {Record<SFXName, HTMLAudioElement} */
 const sfxAudios = {};
 sfxNames.forEach((sfxName) => {
-  const audio = new Audio(`/assets/audio/${sfxName}.wav`);
+  const audio = new Audio(`../../assets/audio/${sfxName}.wav`);
   sfxAudios[sfxName] = audio;
 });
 
