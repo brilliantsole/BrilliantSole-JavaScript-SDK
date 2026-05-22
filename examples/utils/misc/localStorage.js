@@ -1,13 +1,14 @@
 /**
  * @param {string} key
- * @param {() => any} getValue
- * @param {any => void} onValue
- * @param {any => boolean} didValueUpdate
+ * @param {() => (any)} getValue
+ * @param {(any) => void} onValue
  */
-const setupLocalStorage = (key, getValue, onValue, didValueUpdate) => {
+const setupLocalStorage = (key, getValue, onValue) => {
+  let originalValueString;
   const load = () => {
     const valueString = localStorage.getItem(key);
-    //console.log({ valueString });
+    originalValueString = valueString;
+    console.log({ valueString });
     if (!valueString) {
       return;
     }
@@ -18,14 +19,16 @@ const setupLocalStorage = (key, getValue, onValue, didValueUpdate) => {
       console.error(`failed to parse ${key} value ${valueString}`, error);
     }
   };
-  let didUploadValue = false;
   const save = () => {
-    if (!didValueUpdate() && !didUploadValue) {
+    const string = JSON.stringify(getValue());
+    console.log({ string, originalValueString });
+    if (string == originalValueString) {
       return;
     }
-    localStorage.setItem(key, JSON.stringify(getValue()));
+    localStorage.setItem(key, string);
   };
-  window.addEventListener("beforeunload", (event) => {
+  window.addEventListener("pagehide", (event) => {
+    event.preventDefault();
     try {
       save();
     } catch (error) {
@@ -47,7 +50,7 @@ const setupLocalStorage = (key, getValue, onValue, didValueUpdate) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "pressure";
+    a.download = "download";
 
     document.body.appendChild(a);
     a.click();
@@ -66,7 +69,6 @@ const setupLocalStorage = (key, getValue, onValue, didValueUpdate) => {
       } else {
         onValue(_value);
       }
-      didUploadValue = true;
     } catch (error) {
       console.error("failed to upload file", error);
     }

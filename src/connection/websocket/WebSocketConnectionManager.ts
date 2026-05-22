@@ -48,9 +48,9 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   defaultMtu = 2 ** 10;
 
   constructor(
-    ipAddress: string,
+    ipAddress: string = "192.168.4.1",
     isSecure: boolean = false,
-    bluetoothId?: string
+    bluetoothId?: string,
   ) {
     super();
     this.ipAddress = ipAddress;
@@ -235,16 +235,16 @@ class WebSocketConnectionManager extends BaseConnectionManager {
       WebSocketMessageTypes,
       this.#onMessage.bind(this),
       null,
-      true
+      true,
     );
   }
 
   #onMessage(
     messageType: WebSocketMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     _console.log(
-      `received "${messageType}" message (${dataView.byteLength} bytes)`
+      `received "${messageType}" message (${dataView.byteLength} bytes)`,
     );
     switch (messageType) {
       case "ping":
@@ -261,7 +261,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
           DeviceInformationTypes,
           (deviceInformationType, dataView) => {
             this.onMessageReceived!(deviceInformationType, dataView);
-          }
+          },
         );
         break;
       case "message":

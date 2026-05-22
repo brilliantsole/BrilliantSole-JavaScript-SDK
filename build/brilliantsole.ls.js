@@ -228,7 +228,7 @@
     Console.setAllLevelFlags(levelFlags);
   }
 
-  const _console$F = createConsole("EventDispatcher", {
+  const _console$G = createConsole("EventDispatcher", {
     log: false
   });
   let EventDispatcher$1 = class EventDispatcher {
@@ -252,7 +252,7 @@
       if (!this.listeners[type]) return;
       this.listeners[type] = this.listeners[type].filter(listenerObj => {
         if (listenerObj.shouldRemove) {
-          _console$F.log(`removing "${type}" eventListener`, listenerObj);
+          _console$G.log(`removing "${type}" eventListener`, listenerObj);
         }
         return !listenerObj.shouldRemove;
       });
@@ -266,32 +266,32 @@
       }
       if (!this.listeners[type]) {
         this.listeners[type] = [];
-        _console$F.log(`creating "${type}" listeners array`, this.listeners[type]);
+        _console$G.log(`creating "${type}" listeners array`, this.listeners[type]);
       }
       const alreadyAdded = this.listeners[type].find(listenerObject => {
         return listenerObject.listener == listener && listenerObject.once == options.once;
       });
       if (alreadyAdded) {
-        _console$F.log("already added listener");
+        _console$G.log("already added listener");
         return;
       }
-      _console$F.log(`adding "${type}" listener`, listener, options);
+      _console$G.log(`adding "${type}" listener`, listener, options);
       this.listeners[type].push({
         listener,
         once: options.once
       });
-      _console$F.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
+      _console$G.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
     }
     removeEventListener(type, listener) {
       if (!this.isValidEventType(type)) {
         throw new Error(`Invalid event type: ${type}`);
       }
       if (!this.listeners[type]) return;
-      _console$F.log(`removing "${type}" listener...`, listener);
+      _console$G.log(`removing "${type}" listener...`, listener);
       this.listeners[type].forEach(listenerObj => {
         const isListenerToRemove = listenerObj.listener === listener;
         if (isListenerToRemove) {
-          _console$F.log(`flagging "${type}" listener`, listener);
+          _console$G.log(`flagging "${type}" listener`, listener);
           listenerObj.shouldRemove = true;
         }
       });
@@ -302,11 +302,11 @@
         throw new Error(`Invalid event type: ${type}`);
       }
       if (!this.listeners[type]) return;
-      _console$F.log(`removing "${type}" listeners...`);
+      _console$G.log(`removing "${type}" listeners...`);
       this.listeners[type] = [];
     }
     removeAllEventListeners() {
-      _console$F.log(`removing listeners...`);
+      _console$G.log(`removing listeners...`);
       this.listeners = {};
     }
     dispatchEvent(type, message) {
@@ -319,7 +319,7 @@
         if (listenerObj.shouldRemove) {
           return;
         }
-        _console$F.log(`dispatching "${type}" listener`, listenerObj);
+        _console$G.log(`dispatching "${type}" listener`, listenerObj);
         try {
           listenerObj.listener({
             type,
@@ -330,7 +330,7 @@
           console.error(error);
         }
         if (listenerObj.once) {
-          _console$F.log(`flagging "${type}" listener`, listenerObj);
+          _console$G.log(`flagging "${type}" listener`, listenerObj);
           listenerObj.shouldRemove = true;
         }
       });
@@ -348,11 +348,11 @@
     }
   };
 
-  const _console$E = createConsole("Timer", {
+  const _console$F = createConsole("Timer", {
     log: false
   });
   async function wait(delay) {
-    _console$E.log(`waiting for ${delay}ms`);
+    _console$F.log(`waiting for ${delay}ms`);
     return new Promise(resolve => {
       setTimeout(() => resolve(), delay);
     });
@@ -365,8 +365,8 @@
       return _classPrivateFieldGet2(_callback, this);
     }
     set callback(newCallback) {
-      _console$E.assertTypeWithError(newCallback, "function");
-      _console$E.log({
+      _console$F.assertTypeWithError(newCallback, "function");
+      _console$F.log({
         newCallback
       });
       _classPrivateFieldSet2(_callback, this, newCallback);
@@ -378,9 +378,9 @@
       return _classPrivateFieldGet2(_interval, this);
     }
     set interval(newInterval) {
-      _console$E.assertTypeWithError(newInterval, "number");
-      _console$E.assertWithError(newInterval > 0, "interval must be above 0");
-      _console$E.log({
+      _console$F.assertTypeWithError(newInterval, "number");
+      _console$F.assertWithError(newInterval > 0, "interval must be above 0");
+      _console$F.log({
         newInterval
       });
       _classPrivateFieldSet2(_interval, this, newInterval);
@@ -401,10 +401,10 @@
     start() {
       let immediately = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
       if (this.isRunning) {
-        _console$E.log("interval already running");
+        _console$F.log("interval already running");
         return;
       }
-      _console$E.log(`starting interval every ${_classPrivateFieldGet2(_interval, this)}ms`);
+      _console$F.log(`starting interval every ${_classPrivateFieldGet2(_interval, this)}ms`);
       _classPrivateFieldSet2(_intervalId, this, setInterval(_classPrivateFieldGet2(_callback, this), _classPrivateFieldGet2(_interval, this)));
       if (immediately) {
         _classPrivateFieldGet2(_callback, this).call(this);
@@ -412,10 +412,10 @@
     }
     stop() {
       if (!this.isRunning) {
-        _console$E.log("interval already not running");
+        _console$F.log("interval already not running");
         return;
       }
-      _console$E.log("stopping interval");
+      _console$F.log("stopping interval");
       clearInterval(_classPrivateFieldGet2(_intervalId, this));
       _classPrivateFieldSet2(_intervalId, this, undefined);
     }
@@ -479,7 +479,7 @@
   const textEncoder = new _TextEncoder();
   const textDecoder = new _TextDecoder();
 
-  const _console$D = createConsole("ArrayBufferUtils", {
+  const _console$E = createConsole("ArrayBufferUtils", {
     log: false
   });
   function concatenateArrayBuffers() {
@@ -537,7 +537,7 @@
     if (length != undefined) {
       end = dataView.byteOffset + begin + length;
     }
-    _console$D.log({
+    _console$E.log({
       dataView,
       begin,
       end,
@@ -605,7 +605,7 @@
   }
 
   var _a$4;
-  const _console$C = createConsole("FileTransferManager", {
+  const _console$D = createConsole("FileTransferManager", {
     log: false
   });
   const FileTransferMessageTypes = ["getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred"];
@@ -677,7 +677,7 @@
       return _classPrivateFieldGet2(_status$2, this);
     }
     parseMessage(messageType, dataView) {
-      _console$C.log({
+      _console$D.log({
         messageType
       });
       switch (messageType) {
@@ -723,13 +723,13 @@
       _assertClassBrand(_FileTransferManager_brand, this, _assertValidLength).call(this, fileLength);
       if (!override) {
         if (type != this.type) {
-          _console$C.log("different fileTypes - sending");
+          _console$D.log("different fileTypes - sending");
         } else if (fileLength != this.length) {
-          _console$C.log("different fileLengths - sending");
+          _console$D.log("different fileLengths - sending");
         } else if (checksum != this.checksum) {
-          _console$C.log("different fileChecksums - sending");
+          _console$D.log("different fileChecksums - sending");
         } else {
-          _console$C.log("already sent file");
+          _console$D.log("already sent file");
           return false;
         }
       }
@@ -760,7 +760,7 @@
     }
     async cancel() {
       _assertClassBrand(_FileTransferManager_brand, this, _assertIsNotIdle).call(this);
-      _console$C.log("cancelling file transfer...");
+      _console$D.log("cancelling file transfer...");
       _classPrivateFieldSet2(_isCancelling, this, true);
       await _assertClassBrand(_FileTransferManager_brand, this, _setCommand).call(this, "cancel");
     }
@@ -769,16 +769,16 @@
     }
     set isServerSide(newIsServerSide) {
       if (_classPrivateFieldGet2(_isServerSide$2, this) == newIsServerSide) {
-        _console$C.log("redundant isServerSide assignment");
+        _console$D.log("redundant isServerSide assignment");
         return;
       }
-      _console$C.log({
+      _console$D.log({
         newIsServerSide
       });
       _classPrivateFieldSet2(_isServerSide$2, this, newIsServerSide);
     }
     requestRequiredInformation() {
-      _console$C.log("requesting required fileTransfer information");
+      _console$D.log("requesting required fileTransfer information");
       const messages = RequiredFileTransferMessageTypes.map(messageType => ({
         type: messageType
       }));
@@ -803,33 +803,33 @@
     return _this.eventDispatcher.dispatchEvent;
   }
   function _assertValidType(type) {
-    _console$C.assertEnumWithError(type, FileTypes);
+    _console$D.assertEnumWithError(type, FileTypes);
   }
   function _assertValidTypeEnum(typeEnum) {
-    _console$C.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
+    _console$D.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
   }
   function _assertValidStatusEnum(statusEnum) {
-    _console$C.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
+    _console$D.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
   }
   function _assertValidCommand(command) {
-    _console$C.assertEnumWithError(command, FileTransferCommands);
+    _console$D.assertEnumWithError(command, FileTransferCommands);
   }
   function _parseFileTypes(dataView) {
     const fileTypes = Array.from(new Uint8Array(dataView.buffer)).map(index => FileTypes[index]).filter(Boolean);
     _classPrivateFieldSet2(_fileTypes, this, fileTypes);
-    _console$C.log("fileTypes", fileTypes);
+    _console$D.log("fileTypes", fileTypes);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "getFileTypes", {
       fileTypes: _classPrivateFieldGet2(_fileTypes, this)
     });
   }
   function _parseMaxLength(dataView) {
-    _console$C.log("parseFileMaxLength", dataView);
+    _console$D.log("parseFileMaxLength", dataView);
     const maxLength = dataView.getUint32(0, true);
-    _console$C.log(`maxLength: ${maxLength / 1024}kB`);
+    _console$D.log(`maxLength: ${maxLength / 1024}kB`);
     _assertClassBrand(_FileTransferManager_brand, this, _updateMaxLength).call(this, maxLength);
   }
   function _updateMaxLength(maxLength) {
-    _console$C.log({
+    _console$D.log({
       maxLength
     });
     _classPrivateFieldSet2(_maxLength, this, maxLength);
@@ -838,17 +838,17 @@
     });
   }
   function _assertValidLength(length) {
-    _console$C.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
+    _console$D.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
   }
   function _parseType(dataView) {
-    _console$C.log("parseFileType", dataView);
+    _console$D.log("parseFileType", dataView);
     const typeEnum = dataView.getUint8(0);
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidTypeEnum).call(this, typeEnum);
     const type = FileTypes[typeEnum];
     _assertClassBrand(_FileTransferManager_brand, this, _updateType).call(this, type);
   }
   function _updateType(type) {
-    _console$C.log({
+    _console$D.log({
       fileTransferType: type
     });
     _classPrivateFieldSet2(_type$2, this, type);
@@ -859,7 +859,7 @@
   async function _setType(newType, sendImmediately) {
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidType).call(this, newType);
     if (this.type == newType) {
-      _console$C.log(`redundant type assignment ${newType}`);
+      _console$D.log(`redundant type assignment ${newType}`);
       return;
     }
     const promise = this.waitForEvent("getFileType");
@@ -871,22 +871,22 @@
     await promise;
   }
   function _parseLength(dataView) {
-    _console$C.log("parseFileLength", dataView);
+    _console$D.log("parseFileLength", dataView);
     const length = dataView.getUint32(0, true);
     _assertClassBrand(_FileTransferManager_brand, this, _updateLength).call(this, length);
   }
   function _updateLength(length) {
-    _console$C.log(`length: ${length / 1024}kB (${length} bytes)`);
+    _console$D.log(`length: ${length / 1024}kB (${length} bytes)`);
     _classPrivateFieldSet2(_length, this, length);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "getFileLength", {
       fileLength: length
     });
   }
   async function _setLength(newLength, sendImmediately) {
-    _console$C.assertTypeWithError(newLength, "number");
+    _console$D.assertTypeWithError(newLength, "number");
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidLength).call(this, newLength);
     if (this.length == newLength) {
-      _console$C.log(`redundant length assignment ${newLength}`);
+      _console$D.log(`redundant length assignment ${newLength}`);
       return;
     }
     const promise = this.waitForEvent("getFileLength");
@@ -899,12 +899,12 @@
     await promise;
   }
   function _parseChecksum(dataView) {
-    _console$C.log("checksum", dataView);
+    _console$D.log("checksum", dataView);
     const checksum = dataView.getUint32(0, true);
     _assertClassBrand(_FileTransferManager_brand, this, _updateChecksum).call(this, checksum);
   }
   function _updateChecksum(checksum) {
-    _console$C.log({
+    _console$D.log({
       checksum
     });
     _classPrivateFieldSet2(_checksum, this, checksum);
@@ -913,9 +913,9 @@
     });
   }
   async function _setChecksum(newChecksum, sendImmediately) {
-    _console$C.assertTypeWithError(newChecksum, "number");
+    _console$D.assertTypeWithError(newChecksum, "number");
     if (this.checksum == newChecksum) {
-      _console$C.log(`redundant checksum assignment ${newChecksum}`);
+      _console$D.log(`redundant checksum assignment ${newChecksum}`);
       return;
     }
     const promise = this.waitForEvent("getFileChecksum");
@@ -930,7 +930,7 @@
   async function _setCommand(command, sendImmediately) {
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidCommand).call(this, command);
     const promise = this.waitForEvent("fileTransferStatus");
-    _console$C.log(`setting command ${command}`);
+    _console$D.log(`setting command ${command}`);
     const commandEnum = FileTransferCommands.indexOf(command);
     this.sendMessage([{
       type: "setFileTransferCommand",
@@ -939,14 +939,14 @@
     await promise;
   }
   function _parseStatus(dataView) {
-    _console$C.log("parseFileStatus", dataView);
+    _console$D.log("parseFileStatus", dataView);
     const statusEnum = dataView.getUint8(0);
     _assertClassBrand(_FileTransferManager_brand, this, _assertValidStatusEnum).call(this, statusEnum);
     const status = FileTransferStatuses[statusEnum];
     _assertClassBrand(_FileTransferManager_brand, this, _updateStatus$1).call(this, status);
   }
   function _updateStatus$1(status) {
-    _console$C.log({
+    _console$D.log({
       status
     });
     _classPrivateFieldSet2(_status$2, this, status);
@@ -960,17 +960,17 @@
     });
   }
   function _assertIsIdle() {
-    _console$C.assertWithError(_classPrivateFieldGet2(_status$2, this) == "idle", "status is not idle");
+    _console$D.assertWithError(_classPrivateFieldGet2(_status$2, this) == "idle", "status is not idle");
   }
   function _assertIsNotIdle() {
-    _console$C.assertWithError(_classPrivateFieldGet2(_status$2, this) != "idle", "status is idle");
+    _console$D.assertWithError(_classPrivateFieldGet2(_status$2, this) != "idle", "status is idle");
   }
   async function _parseBlock(dataView) {
-    _console$C.log("parseFileBlock", dataView);
+    _console$D.log("parseFileBlock", dataView);
     _classPrivateFieldGet2(_receivedBlocks, this).push(dataView.buffer);
     const bytesReceived = _classPrivateFieldGet2(_receivedBlocks, this).reduce((sum, arrayBuffer) => sum += arrayBuffer.byteLength, 0);
     const progress = bytesReceived / _classPrivateFieldGet2(_length, this);
-    _console$C.log(`received ${bytesReceived}/${_classPrivateFieldGet2(_length, this)} bytes (${progress * 100}%) - ${_classPrivateFieldGet2(_length, this) - bytesReceived} bytes remaining`);
+    _console$D.log(`received ${bytesReceived}/${_classPrivateFieldGet2(_length, this)} bytes (${progress * 100}%) - ${_classPrivateFieldGet2(_length, this) - bytesReceived} bytes remaining`);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "fileTransferProgress", {
       progress,
       fileType: this.type
@@ -987,7 +987,7 @@
       }]);
       return;
     }
-    _console$C.log("file transfer complete");
+    _console$D.log("file transfer complete");
     let fileName = new Date().toLocaleString();
     switch (this.type) {
       case "tflite":
@@ -1008,14 +1008,14 @@
     }
     const arrayBuffer = await file.arrayBuffer();
     const checksum = crc32(arrayBuffer);
-    _console$C.log({
+    _console$D.log({
       checksum
     });
     if (checksum != _classPrivateFieldGet2(_checksum, this)) {
-      _console$C.error(`wrong checksum - expected ${_classPrivateFieldGet2(_checksum, this)}, got ${checksum}`);
+      _console$D.error(`wrong checksum - expected ${_classPrivateFieldGet2(_checksum, this)}, got ${checksum}`);
       return;
     }
-    _console$C.log("received file", file);
+    _console$D.log("received file", file);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "getFileBlock", {
       fileTransferBlock: dataView
     });
@@ -1037,33 +1037,33 @@
       return;
     }
     if (_classPrivateFieldGet2(_isCancelling, this)) {
-      _console$C.error("not sending block - busy cancelling");
+      _console$D.error("not sending block - busy cancelling");
       return;
     }
     if (!_classPrivateFieldGet2(_buffer, this)) {
       if (!this.isServerSide) {
-        _console$C.error("no buffer defined");
+        _console$D.error("no buffer defined");
       }
       return;
     }
     const buffer = _classPrivateFieldGet2(_buffer, this);
     let offset = _classPrivateFieldGet2(_bytesTransferred, this);
-    _console$C.log("sending block", {
+    _console$D.log("sending block", {
       buffer,
       offset,
       mtu: this.mtu
     });
     const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
-    _console$C.log("slicedBuffer", slicedBuffer);
+    _console$D.log("slicedBuffer", slicedBuffer);
     const bytesLeft = buffer.byteLength - offset;
     const progress = 1 - bytesLeft / buffer.byteLength;
-    _console$C.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
+    _console$D.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
     _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "fileTransferProgress", {
       progress,
       fileType: this.type
     });
     if (slicedBuffer.byteLength == 0) {
-      _console$C.log("finished sending buffer");
+      _console$D.log("finished sending buffer");
       _classPrivateGetter(_FileTransferManager_brand, this, _get_dispatchEvent$c).call(this, "fileTransferComplete", {
         direction: "sending",
         fileType: this.type
@@ -1077,17 +1077,17 @@
     }
   }
   async function _parseBytesTransferred(dataView) {
-    _console$C.log("parseBytesTransferred", dataView);
+    _console$D.log("parseBytesTransferred", dataView);
     const bytesTransferred = dataView.getUint32(0, true);
-    _console$C.log({
+    _console$D.log({
       bytesTransferred
     });
     if (this.status != "sending") {
-      _console$C.error(`not currently sending file`);
+      _console$D.error(`not currently sending file`);
       return;
     }
     if (!this.isServerSide && _classPrivateFieldGet2(_bytesTransferred, this) != bytesTransferred) {
-      _console$C.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${_classPrivateFieldGet2(_bytesTransferred, this)}`);
+      _console$D.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${_classPrivateFieldGet2(_bytesTransferred, this)}`);
       this.cancel();
       return;
     }
@@ -1098,7 +1098,7 @@
   };
   _a$4 = FileTransferManager;
 
-  const _console$B = createConsole("MathUtils", {
+  const _console$C = createConsole("MathUtils", {
     log: false
   });
   function getInterpolation(value, min, max, span) {
@@ -1121,10 +1121,10 @@
     let timestamp = nowWithoutLower2Bytes + lower2Bytes;
     const timestampDifference = Math.abs(now - timestamp);
     if (timestampDifference > timestampThreshold) {
-      _console$B.log("correcting timestamp delta");
+      _console$C.log("correcting timestamp delta");
       timestamp += Uint16Max * Math.sign(now - timestamp);
     }
-    _console$B.log({
+    _console$C.log({
       now,
       nowWithoutLower2Bytes,
       lower2Bytes,
@@ -1325,7 +1325,7 @@
     return Boolean(model);
   }
 
-  const _console$A = createConsole("CenterOfPressureModel", {
+  const _console$B = createConsole("CenterOfPressureModel", {
     log: false
   });
   var _model = new WeakMap();
@@ -1368,7 +1368,7 @@
         return;
       }
       _classPrivateFieldSet2(_numberOfSensors, this, newNumberOfSensors);
-      _console$A.log({
+      _console$B.log({
         numberOfSensors: this.numberOfSensors
       });
       _assertClassBrand(_CenterOfPressureModel_brand, this, _createModel).call(this);
@@ -1377,7 +1377,7 @@
       return _classPrivateFieldGet2(_data, this);
     }
     clearData() {
-      _console$A.log("clearData");
+      _console$B.log("clearData");
       _classPrivateFieldGet2(_data, this).outputs.length = 0;
       _classPrivateFieldGet2(_data, this).inputs.length = 0;
       _assertClassBrand(_CenterOfPressureModel_brand, this, _dispatchRecordingProgress).call(this);
@@ -1401,7 +1401,7 @@
         _classPrivateFieldGet2(_data, this).inputs.shift();
         _classPrivateFieldGet2(_data, this).outputs.shift();
       }
-      _console$A.log({
+      _console$B.log({
         numberOfSamples: this.numberOfSamples
       });
       _assertClassBrand(_CenterOfPressureModel_brand, this, _dispatchRecordingProgress).call(this);
@@ -1417,11 +1417,11 @@
         return;
       }
       if (!_classPrivateFieldGet2(_model, this)) {
-        _console$A.error("no model defined");
+        _console$B.error("no model defined");
         return;
       }
       if (this.isTraining) {
-        _console$A.warn("already training");
+        _console$B.warn("already training");
         return;
       }
       await tf.nextFrame();
@@ -1430,10 +1430,10 @@
         outputs
       } = _classPrivateFieldGet2(_data, this);
       if (inputs.length == 0) {
-        _console$A.log("no data to train on");
+        _console$B.log("no data to train on");
         return;
       }
-      _console$A.log("train");
+      _console$B.log("train");
       const xs = tf.tensor2d(inputs);
       const ys = tf.tidy(() => {
         const ys = tf.tensor2d(outputs);
@@ -1456,10 +1456,10 @@
           shuffle: true,
           callbacks: {
             onTrainBegin: logs => {
-              _console$A.log("onTrainBegin", logs);
+              _console$B.log("onTrainBegin", logs);
             },
             onTrainEnd: logs => {
-              _console$A.log("onTrainEnd", logs);
+              _console$B.log("onTrainEnd", logs);
             },
             onEpochBegin: (epoch, logs) => {
             },
@@ -1467,7 +1467,7 @@
               const {
                 loss
               } = logs;
-              _console$A.log("onEpochEnd", {
+              _console$B.log("onEpochEnd", {
                 epoch,
                 loss
               }, logs);
@@ -1488,7 +1488,7 @@
               } = logs;
             },
             onYield: (epoch, batch, logs) => {
-              _console$A.log("onYield", {
+              _console$B.log("onYield", {
                 epoch,
                 batch
               }, logs);
@@ -1496,12 +1496,12 @@
           }
         });
       } catch (error) {
-        _console$A.error("error training", error);
+        _console$B.error("error training", error);
       }
       xs.dispose();
       ys.dispose();
       _classPrivateFieldSet2(_isTraining, this, false);
-      _console$A.log("finished training");
+      _console$B.log("finished training");
       _assertClassBrand(_CenterOfPressureModel_brand, this, _onTrainedModel).call(this);
     }
     predict(pressureData) {
@@ -1509,18 +1509,18 @@
         return;
       }
       if (!_classPrivateFieldGet2(_model, this)) {
-        _console$A.log("no model defined");
+        _console$B.log("no model defined");
         return;
       }
       if (!_classPrivateFieldGet2(_isTrained, this)) {
         return;
       }
       const inputs = _assertClassBrand(_CenterOfPressureModel_brand, this, _getInputs).call(this, pressureData);
-      _console$A.log("predict", inputs);
+      _console$B.log("predict", inputs);
       const input = tf.tensor2d([inputs]);
       const prediction = _classPrivateFieldGet2(_model, this).predict(input);
       const [x, y] = prediction.dataSync().map(value => clamp$1(value, 0, 1));
-      _console$A.log({
+      _console$B.log({
         x,
         y
       });
@@ -1537,17 +1537,17 @@
       }
       await tf.ready();
       if (!this.model) {
-        _console$A.error("model not found");
+        _console$B.error("model not found");
         return false;
       }
       if (!this.isTrained) {
-        _console$A.error("model not trained");
+        _console$B.error("model not trained");
         return false;
       }
       try {
         await this.model.save(handlerOrURL, config);
       } catch (error) {
-        _console$A.error("failed to save model", error);
+        _console$B.error("failed to save model", error);
         return false;
       }
       return true;
@@ -1558,7 +1558,7 @@
       }
       await tf.ready();
       if (!this.model) {
-        _console$A.error("model not found");
+        _console$B.error("model not found");
         return false;
       }
       let pathOrIOHandler;
@@ -1567,11 +1567,11 @@
         const jsonFile = fileList.find(f => f.name.endsWith(".json"));
         const weightsFile = fileList.find(f => f.name.endsWith(".bin"));
         if (!jsonFile) {
-          _console$A.error("no model.json found");
+          _console$B.error("no model.json found");
           return false;
         }
         if (!weightsFile) {
-          _console$A.error("no weights.bin found");
+          _console$B.error("no weights.bin found");
           return false;
         }
         pathOrIOHandler = tf.io.browserFiles([jsonFile, weightsFile]);
@@ -1581,7 +1581,7 @@
       let loadedModel;
       try {
         loadedModel = await tf.loadLayersModel(pathOrIOHandler, options);
-        _console$A.log("loadedModel", loadedModel);
+        _console$B.log("loadedModel", loadedModel);
         if (this.model.layers.length != loadedModel.layers.length) {
           throw Error("layer count mismatch");
         }
@@ -1600,11 +1600,11 @@
           }
         }
         this.model.setWeights(loadedModel.getWeights());
-        _console$A.log("weights successfully loaded into model");
+        _console$B.log("weights successfully loaded into model");
         _assertClassBrand(_CenterOfPressureModel_brand, this, _onTrainedModel).call(this, true);
       } catch (error) {
         var _loadedModel;
-        _console$A.error("error loading model", error);
+        _console$B.error("error loading model", error);
         (_loadedModel = loadedModel) === null || _loadedModel === void 0 ? void 0 : _loadedModel.dispose();
         return false;
       } finally {
@@ -1616,18 +1616,18 @@
   }
   async function _createModel() {
     if (!isTensorFlowAvailable()) {
-      _console$A.warn("tensorflow is not available");
+      _console$B.warn("tensorflow is not available");
       return;
     }
     if (_classPrivateFieldGet2(_model, this)) {
-      _console$A.log("disposing model", _classPrivateFieldGet2(_model, this));
+      _console$B.log("disposing model", _classPrivateFieldGet2(_model, this));
       _classPrivateFieldGet2(_model, this).dispose();
       _classPrivateFieldGet2(_data, this).inputs.length = _classPrivateFieldGet2(_data, this).outputs.length = 0;
       _classPrivateFieldSet2(_model, this, undefined);
       _classPrivateFieldGet2(_isTrained, this);
     }
     if (this.numberOfSensors == 0) {
-      _console$A.log("zero numberOfSensors - no model needed");
+      _console$B.log("zero numberOfSensors - no model needed");
       return;
     }
     await tf.ready();
@@ -1649,7 +1649,7 @@
       loss: "meanSquaredError"
     });
     _classPrivateFieldSet2(_model, this, model);
-    _console$A.log("created model", _classPrivateFieldGet2(_model, this));
+    _console$B.log("created model", _classPrivateFieldGet2(_model, this));
   }
   function _dispatchRecordingProgress() {
     this.dispatchEvent("pressureCalibrationDataRecordingProgress", {
@@ -1694,7 +1694,7 @@
     });
   }
 
-  const _console$z = createConsole("PressureSensorDataManager", {
+  const _console$A = createConsole("PressureSensorDataManager", {
     log: false
   });
   const PressureSensorTypes = ["pressure"];
@@ -1740,7 +1740,7 @@
       if (_classPrivateFieldGet2(_eventDispatcher$3, this) == eventDispatcher) {
         return;
       }
-      _console$z.assertWithError(!_classPrivateFieldGet2(_eventDispatcher$3, this), "eventDispatcher already defined");
+      _console$A.assertWithError(!_classPrivateFieldGet2(_eventDispatcher$3, this), "eventDispatcher already defined");
       _classPrivateFieldSet2(_eventDispatcher$3, this, eventDispatcher);
       _classPrivateFieldGet2(_centerOfPressureModel, this).eventDispatcher = eventDispatcher;
     }
@@ -1761,7 +1761,7 @@
           y: dataView.getUint8(byteOffset + 1) / 2 ** 8
         });
       }
-      _console$z.log({
+      _console$A.log({
         positions
       });
       _classPrivateFieldSet2(_positions, this, positions);
@@ -1786,7 +1786,7 @@
         return;
       }
       _classPrivateFieldSet2(_autoRange, this, newAutoRange);
-      _console$z.log({
+      _console$A.log({
         autoRange: this.autoRange
       });
       this.dispatchEvent("pressureAutoRange", {
@@ -1809,7 +1809,7 @@
         return;
       }
       _classPrivateFieldSet2(_motionAutoRange, this, newMotionAutoRange);
-      _console$z.log({
+      _console$A.log({
         motionAutoRange: this.motionAutoRange
       });
       this.dispatchEvent("pressureMotionAutoRange", {
@@ -1860,7 +1860,7 @@
     }
     startRecordingCalibrationData() {
       if (!this.canCalibrate) {
-        _console$z.error("cannot calibrate pressure - tensorflow is not available");
+        _console$A.error("cannot calibrate pressure - tensorflow is not available");
         return;
       }
       _assertClassBrand(_PressureSensorDataManager_brand, this, _setIsRecordingCalibrationData).call(this, true);
@@ -1958,7 +1958,7 @@
       return;
     }
     _classPrivateFieldSet2(_isRecordingCalibrationData, this, newIsRecordingCalibrationData);
-    _console$z.log({
+    _console$A.log({
       isRecordingCalibrationData: this.isRecordingCalibrationData
     });
     this.dispatchEvent("isRecordingPressureCalibrationData", {
@@ -9310,7 +9310,7 @@
   new Vector3();
   new Matrix4();
 
-  const _console$y = createConsole("MotionSensorDataManager", {
+  const _console$z = createConsole("MotionSensorDataManager", {
     log: false
   });
   const MotionSensorTypes = ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector"];
@@ -9331,7 +9331,7 @@
         y,
         z
       };
-      _console$y.log({
+      _console$z.log({
         vector
       });
       return vector;
@@ -9344,7 +9344,7 @@
         z,
         w
       };
-      _console$y.log({
+      _console$z.log({
         quaternion
       });
       return quaternion;
@@ -9377,36 +9377,36 @@
         roll,
         absolute
       };
-      _console$y.log({
+      _console$z.log({
         euler
       });
       return euler;
     }
     parseStepCounter(dataView) {
-      _console$y.log("parseStepCounter", dataView);
+      _console$z.log("parseStepCounter", dataView);
       const stepCount = dataView.getUint32(0, true);
-      _console$y.log({
+      _console$z.log({
         stepCount
       });
       return stepCount;
     }
     parseActivity(dataView) {
-      _console$y.log("parseActivity", dataView);
+      _console$z.log("parseActivity", dataView);
       const activity = {};
       const activityBitfield = dataView.getUint8(0);
-      _console$y.log("activityBitfield", activityBitfield.toString(2));
+      _console$z.log("activityBitfield", activityBitfield.toString(2));
       ActivityTypes.forEach((activityType, index) => {
         activity[activityType] = Boolean(activityBitfield & 1 << index);
       });
-      _console$y.log("activity", activity);
+      _console$z.log("activity", activity);
       return activity;
     }
     parseDeviceOrientation(dataView) {
-      _console$y.log("parseDeviceOrientation", dataView);
+      _console$z.log("parseDeviceOrientation", dataView);
       const index = dataView.getUint8(0);
       const deviceOrientation = DeviceOrientations[index];
-      _console$y.assertWithError(deviceOrientation, "undefined deviceOrientation");
-      _console$y.log({
+      _console$z.assertWithError(deviceOrientation, "undefined deviceOrientation");
+      _console$z.log({
         deviceOrientation
       });
       return deviceOrientation;
@@ -9415,7 +9415,7 @@
 
   const BarometerSensorTypes = ["barometer"];
   const ContinuousBarometerSensorTypes = BarometerSensorTypes;
-  const _console$x = createConsole("BarometerSensorDataManager", {
+  const _console$y = createConsole("BarometerSensorDataManager", {
     log: false
   });
   var _BarometerSensorDataManager_brand = new WeakSet();
@@ -9426,7 +9426,7 @@
     parseData(dataView, scalar) {
       const pressure = dataView.getUint32(0, true) * scalar;
       const altitude = _assertClassBrand(_BarometerSensorDataManager_brand, this, _calculcateAltitude).call(this, pressure);
-      _console$x.log({
+      _console$y.log({
         pressure,
         altitude
       });
@@ -9447,7 +9447,7 @@
     return h;
   }
 
-  const _console$w = createConsole("ParseUtils", {
+  const _console$x = createConsole("ParseUtils", {
     log: false
   });
   function parseMessage(dataView, messageTypes, callback, context) {
@@ -9455,7 +9455,7 @@
     let byteOffset = 0;
     while (byteOffset < dataView.byteLength) {
       const messageTypeEnum = dataView.getUint8(byteOffset++);
-      _console$w.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
+      _console$x.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
       const messageType = messageTypes[messageTypeEnum];
       let messageLength;
       if (parseMessageLengthAsUint16) {
@@ -9464,7 +9464,7 @@
       } else {
         messageLength = dataView.getUint8(byteOffset++);
       }
-      _console$w.log({
+      _console$x.log({
         messageTypeEnum,
         messageType,
         messageLength,
@@ -9472,12 +9472,34 @@
         byteOffset
       });
       const _dataView = sliceDataView(dataView, byteOffset, messageLength);
-      _console$w.log({
+      _console$x.log({
         _dataView
       });
       byteOffset += messageLength;
       const isLast = byteOffset >= dataView.byteLength;
       callback(messageType, _dataView, context, isLast);
+    }
+  }
+
+  const ButtonSensorTypes = ["button"];
+  const _console$w = createConsole("ButtonSensorDataManager", {
+    log: true
+  });
+  class ButtonSensorDataManager {
+    parseData(dataView) {
+      const index = dataView.getUint8(0);
+      const value = dataView.getUint8(1);
+      const isPressed = value > 0;
+      _console$w.log({
+        index,
+        isPressed,
+        value
+      });
+      return {
+        index,
+        isPressed,
+        value
+      };
     }
   }
 
@@ -9621,12 +9643,12 @@
     get waitForEvent() {
       return this.eventDispatcher.waitForEvent;
     }
-    requestRequiredInformation() {
+    requestRequiredInformation(sendImmediately) {
       _console$v.log("requesting required camera information");
       const messages = RequiredCameraMessageTypes.map(messageType => ({
         type: messageType
       }));
-      this.sendMessage(messages, false);
+      this.sendMessage(messages, sendImmediately);
     }
     get cameraStatus() {
       return _classPrivateFieldGet2(_cameraStatus, this);
@@ -9676,7 +9698,7 @@
     get cameraConfigurationRanges() {
       return _classPrivateFieldGet2(_cameraConfigurationRanges, this);
     }
-    async setCameraConfiguration(newCameraConfiguration) {
+    async setCameraConfiguration(newCameraConfiguration, sendImmediately) {
       _console$v.log({
         newCameraConfiguration
       });
@@ -9692,7 +9714,7 @@
       this.sendMessage([{
         type: "setCameraConfiguration",
         data: setCameraConfigurationData.buffer
-      }]);
+      }], sendImmediately);
       await promise;
     }
     static AssertValidCameraConfigurationType(cameraConfigurationType) {
@@ -9944,7 +9966,7 @@
     if (this.sensorRate == 0) {
       return;
     }
-    const timeoutInterval = Math.max(5 * this.sensorRate, 200);
+    const timeoutInterval = Math.max(4 * this.sensorRate, 300);
     _console$v.log("setBuildImageTimeout", {
       timeoutInterval
     });
@@ -10794,7 +10816,7 @@
   const _console$t = createConsole("SensorDataManager", {
     log: false
   });
-  const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes, ...CameraSensorTypes, ...MicrophoneSensorTypes];
+  const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes, ...CameraSensorTypes, ...MicrophoneSensorTypes, ...ButtonSensorTypes];
   const ContinuousSensorTypes = [...ContinuousPressureSensorTypes, ...ContinuousMotionTypes, ...ContinuousBarometerSensorTypes];
   const SensorDataMessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"];
   const RequiredPressureMessageTypes = ["getPressurePositions"];
@@ -10806,6 +10828,7 @@
       _defineProperty$1(this, "pressureSensorDataManager", new PressureSensorDataManager());
       _defineProperty$1(this, "motionSensorDataManager", new MotionSensorDataManager());
       _defineProperty$1(this, "barometerSensorDataManager", new BarometerSensorDataManager());
+      _defineProperty$1(this, "buttonSensorDataManager", new ButtonSensorDataManager());
       _classPrivateFieldInitSpec(this, _scalars, new Map());
       _classPrivateFieldInitSpec(this, _eventDispatcher$2, void 0);
       autoBind(this);
@@ -10936,6 +10959,9 @@
           break;
         case "barometer":
           sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
+          break;
+        case "button":
+          sensorData = this.buttonSensorDataManager.parseData(dataView);
           break;
         case "camera":
           return;
@@ -12099,7 +12125,7 @@
   const _console$o = createConsole("VibrationManager", {
     log: false
   });
-  const VibrationLocations = ["front", "rear"];
+  const VibrationLocations = ["front", "rear", "left", "right"];
   const VibrationTypes = ["waveformEffect", "waveform"];
   const VibrationMessageTypes = ["getVibrationLocations", "triggerVibration"];
   const VibrationEventTypes = VibrationMessageTypes;
@@ -33468,7 +33494,8 @@
       var _classPrivateFieldGet2$1;
       return (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_bluetoothId, this)) !== null && _classPrivateFieldGet2$1 !== void 0 ? _classPrivateFieldGet2$1 : "";
     }
-    constructor(ipAddress) {
+    constructor() {
+      let ipAddress = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "192.168.4.1";
       let isSecure = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       let bluetoothId = arguments.length > 2 ? arguments[2] : undefined;
       super();

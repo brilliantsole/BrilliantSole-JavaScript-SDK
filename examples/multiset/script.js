@@ -7,7 +7,7 @@ window.device = device;
 // CONNECTION START
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -29,7 +29,7 @@ device.addEventListener("connectionStatus", () => {
 const setupMultiSetValueInput = (object, datasetName) => {
   return (name) => {
     const input = document.querySelector(
-      `[data-multiset-${datasetName}="${name}"]`
+      `[data-multiset-${datasetName}="${name}"]`,
     );
     // console.log(name, input);
     object[`${name}Input`] = input;
@@ -175,7 +175,7 @@ const multiSetDeviceCameraConfig = {
 };
 const setupMultiSetDeviceCameraInput = setupMultiSetValueInput(
   multiSetDeviceCameraConfig,
-  "devicecamera"
+  "devicecamera",
 );
 window.addEventListener("load", () => {
   setupMultiSetDeviceCameraInput("auto");
@@ -201,7 +201,7 @@ window.multiSetCredentials = multiSetCredentials;
 
 const setupMultiSetCredentialsInput = setupMultiSetValueInput(
   multiSetCredentials,
-  "credential"
+  "credential",
 );
 window.addEventListener("load", () => {
   setupMultiSetCredentialsInput("clientId");
@@ -251,7 +251,7 @@ const saveMultiSetTokenToLocalStorage = () => {
 const loadMultiSetTokenFromLocalStorage = () => {
   // console.log("loadMultiSetTokenFromLocalStorage");
   const multiSetTokenString = localStorage.getItem(
-    multiSetTokenLocalStorageKey
+    multiSetTokenLocalStorageKey,
   );
   // console.log("multiSetTokenString", multiSetTokenString);
   if (!multiSetTokenString) {
@@ -306,7 +306,7 @@ const generateMultiSetToken = async () => {
 window.generateMultiSetToken = generateMultiSetToken;
 
 const generateMultiSetTokenButton = document.getElementById(
-  "generateMultiSetToken"
+  "generateMultiSetToken",
 );
 const updateGenerateMultiSetTokenButton = () => {
   const enabled =
@@ -364,7 +364,7 @@ window.multiSetConfig = multiSetConfig;
 
 const setupMultiSetConfigType = setupMultiSetValueInput(
   multiSetConfig,
-  "config"
+  "config",
 );
 window.addEventListener("load", () => {
   setupMultiSetConfigType("type");
@@ -429,7 +429,7 @@ const multiSetGrabVideoFrameConfig = {
 };
 const setupMultiSetGrabVideoFrameInput = setupMultiSetValueInput(
   multiSetGrabVideoFrameConfig,
-  "grabvideoframe"
+  "grabvideoframe",
 );
 window.addEventListener("load", () => {
   setupMultiSetGrabVideoFrameInput("auto");
@@ -448,7 +448,7 @@ window.multiSetCameraIntrinsics = multiSetCameraIntrinsics;
 
 const setupMultiSetCameraIntrinsicInput = setupMultiSetValueInput(
   multiSetCameraIntrinsics,
-  "camera-intrinsic"
+  "camera-intrinsic",
 );
 window.addEventListener("load", () => {
   setupMultiSetCameraIntrinsicInput("fx");
@@ -508,7 +508,7 @@ const queryMultiSet = async (image) => {
   context.drawImage(image, 0, 0);
 
   const imageBlob = await new Promise((resolve) =>
-    canvas.toBlob(resolve, "image/png")
+    canvas.toBlob(resolve, "image/png"),
   );
 
   /** @type {MultiSetBaseQuery} */
@@ -550,7 +550,7 @@ const queryMultiSetObject = async (query) => {
   query.objectCode = multiSetConfig.objectCode;
   await fetchMultiSetQuery(
     query,
-    "https://api.multiset.ai/v1/vps/object/query"
+    "https://api.multiset.ai/v1/vps/object/query",
   );
 };
 /** @param {MultiSetMapQuery} query */
@@ -560,7 +560,7 @@ const queryMultiSetMap = async (query) => {
   query.convertToGeoCoordinates = false;
   await fetchMultiSetQuery(
     query,
-    "https://api.multiset.ai/v1/vps/map/query-form"
+    "https://api.multiset.ai/v1/vps/map/query-form",
   );
 };
 /** @param {MultiSetMapMultiQuery} query */
@@ -578,7 +578,7 @@ const queryMultiSetMapMulti = async (query) => {
     // FILL - append to query
     await fetchMultiSetQuery(
       query,
-      "https://api.multiset.ai/v1/vps/map/multi-image-query"
+      "https://api.multiset.ai/v1/vps/map/multi-image-query",
     );
   }
 };

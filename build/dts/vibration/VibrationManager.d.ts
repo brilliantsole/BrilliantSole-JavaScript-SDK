@@ -1,7 +1,7 @@
 import { VibrationWaveformEffect } from "./VibrationWaveformEffects.ts";
 import Device, { SendMessageCallback } from "../Device.ts";
 import EventDispatcher from "../utils/EventDispatcher.ts";
-export declare const VibrationLocations: readonly ["front", "rear"];
+export declare const VibrationLocations: readonly ["front", "rear", "left", "right"];
 export type VibrationLocation = (typeof VibrationLocations)[number];
 export declare const VibrationTypes: readonly ["waveformEffect", "waveform"];
 export type VibrationType = (typeof VibrationTypes)[number];
@@ -56,7 +56,7 @@ declare class VibrationManager {
         message: VibrationEventMessages[T];
     }>;
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;
-    get vibrationLocations(): ("front" | "rear")[];
+    get vibrationLocations(): ("left" | "right" | "front" | "rear")[];
     parseMessage(messageType: VibrationMessageType, dataView: DataView<ArrayBuffer>): void;
 }
 export default VibrationManager;

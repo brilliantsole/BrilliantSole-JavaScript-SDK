@@ -37,7 +37,7 @@ window.addEventListener("load", () => {
       });
     };
     Object.entries(properties).forEach(([name, defaultValue]) =>
-      addProperty(name, defaultValue, true)
+      addProperty(name, defaultValue, true),
     );
 
     const optgroup = document.createElement("optgroup");
@@ -45,6 +45,9 @@ window.addEventListener("load", () => {
     optgroup.label = "select microphone";
 
     const getDevices = async () => {
+      if (!navigator.mediaDevices) {
+        return [];
+      }
       let devices = await navigator.mediaDevices.enumerateDevices();
       devices = devices.filter((device) => device.kind == "videoinput");
       //console.log("devices", devices);
@@ -68,6 +71,9 @@ window.addEventListener("load", () => {
       if (deviceId == "none") {
         return;
       }
+      if (!navigator.mediaDevices) {
+        return;
+      }
       stream = await navigator.mediaDevices.getUserMedia({
         target: select,
         video: {
@@ -78,7 +84,7 @@ window.addEventListener("load", () => {
       select.dispatchEvent(
         new CustomEvent("microphoneStreamStart", {
           detail: { microphoneStream: stream, deviceId },
-        })
+        }),
       );
     };
 
@@ -94,7 +100,7 @@ window.addEventListener("load", () => {
       select.dispatchEvent(
         new CustomEvent("microphoneDevices", {
           detail: { microphoneDevices: devices },
-        })
+        }),
       );
       //getStream(select.value);
     };
@@ -109,7 +115,7 @@ window.addEventListener("load", () => {
       }
     });
 
-    navigator.mediaDevices.addEventListener("devicechange", () => {
+    navigator.mediaDevices?.addEventListener("devicechange", () => {
       updateMicrophoneSources();
     });
 
