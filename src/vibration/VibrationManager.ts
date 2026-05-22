@@ -10,7 +10,7 @@ import EventDispatcher from "../utils/EventDispatcher.ts";
 
 const _console = createConsole("VibrationManager", { log: false });
 
-export const VibrationLocations = ["front", "rear"] as const;
+export const VibrationLocations = ["front", "rear", "left", "right"] as const;
 export type VibrationLocation = (typeof VibrationLocations)[number];
 
 export const VibrationTypes = ["waveformEffect", "waveform"] as const;
@@ -52,15 +52,13 @@ interface BaseVibrationConfiguration {
   locations?: VibrationLocation[];
 }
 
-export interface VibrationWaveformEffectConfiguration
-  extends BaseVibrationConfiguration {
+export interface VibrationWaveformEffectConfiguration extends BaseVibrationConfiguration {
   type: "waveformEffect";
   segments: VibrationWaveformEffectSegment[];
   loopCount?: number;
 }
 
-export interface VibrationWaveformConfiguration
-  extends BaseVibrationConfiguration {
+export interface VibrationWaveformConfiguration extends BaseVibrationConfiguration {
   type: "waveform";
   segments: VibrationWaveformSegment[];
 }
@@ -96,7 +94,7 @@ class VibrationManager {
     _console.assertTypeWithError(location, "string");
     _console.assertWithError(
       VibrationLocations.includes(location),
-      `invalid location "${location}"`
+      `invalid location "${location}"`,
     );
   }
   #verifyLocations(locations: VibrationLocation[]) {
@@ -116,7 +114,7 @@ class VibrationManager {
     _console.log({ locationsBitmask });
     _console.assertWithError(
       locationsBitmask > 0,
-      `locationsBitmask must not be zero`
+      `locationsBitmask must not be zero`,
     );
     return locationsBitmask;
   }
@@ -129,12 +127,12 @@ class VibrationManager {
   #verifyWaveformEffect(waveformEffect: VibrationWaveformEffect) {
     _console.assertWithError(
       VibrationWaveformEffects.includes(waveformEffect),
-      `invalid waveformEffect "${waveformEffect}"`
+      `invalid waveformEffect "${waveformEffect}"`,
     );
   }
 
   #verifyWaveformEffectSegment(
-    waveformEffectSegment: VibrationWaveformEffectSegment
+    waveformEffectSegment: VibrationWaveformEffectSegment,
   ) {
     if (waveformEffectSegment.effect != undefined) {
       const waveformEffect = waveformEffectSegment.effect;
@@ -143,11 +141,11 @@ class VibrationManager {
       const { delay } = waveformEffectSegment;
       _console.assertWithError(
         delay >= 0,
-        `delay must be 0ms or greater (got ${delay})`
+        `delay must be 0ms or greater (got ${delay})`,
       );
       _console.assertWithError(
         delay <= MaxVibrationWaveformEffectSegmentDelay,
-        `delay must be ${MaxVibrationWaveformEffectSegmentDelay}ms or less (got ${delay})`
+        `delay must be ${MaxVibrationWaveformEffectSegmentDelay}ms or less (got ${delay})`,
       );
     } else {
       throw Error("no effect or delay found in waveformEffectSegment");
@@ -160,28 +158,28 @@ class VibrationManager {
   }
 
   #verifyWaveformEffectSegmentLoopCount(
-    waveformEffectSegmentLoopCount: number
+    waveformEffectSegmentLoopCount: number,
   ) {
     _console.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
     _console.assertWithError(
       waveformEffectSegmentLoopCount >= 0,
-      `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`
+      `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`,
     );
     _console.assertWithError(
       waveformEffectSegmentLoopCount <=
         MaxVibrationWaveformEffectSegmentLoopCount,
-      `waveformEffectSegmentLoopCount must be ${MaxVibrationWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`
+      `waveformEffectSegmentLoopCount must be ${MaxVibrationWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`,
     );
   }
 
   #verifyWaveformEffectSegments(
-    waveformEffectSegments: VibrationWaveformEffectSegment[]
+    waveformEffectSegments: VibrationWaveformEffectSegment[],
   ) {
     this.#assertNonEmptyArray(waveformEffectSegments);
     _console.assertWithError(
       waveformEffectSegments.length <=
         MaxNumberOfVibrationWaveformEffectSegments,
-      `must have ${MaxNumberOfVibrationWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`
+      `must have ${MaxNumberOfVibrationWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`,
     );
     waveformEffectSegments.forEach((waveformEffectSegment) => {
       this.#verifyWaveformEffectSegment(waveformEffectSegment);
@@ -189,17 +187,17 @@ class VibrationManager {
   }
 
   #verifyWaveformEffectSequenceLoopCount(
-    waveformEffectSequenceLoopCount: number
+    waveformEffectSequenceLoopCount: number,
   ) {
     _console.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
     _console.assertWithError(
       waveformEffectSequenceLoopCount >= 0,
-      `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`
+      `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`,
     );
     _console.assertWithError(
       waveformEffectSequenceLoopCount <=
         MaxVibrationWaveformEffectSequenceLoopCount,
-      `waveformEffectSequenceLoopCount must be ${MaxVibrationWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`
+      `waveformEffectSequenceLoopCount must be ${MaxVibrationWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`,
     );
   }
 
@@ -207,21 +205,21 @@ class VibrationManager {
     _console.assertTypeWithError(waveformSegment.amplitude, "number");
     _console.assertWithError(
       waveformSegment.amplitude >= 0,
-      `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`
+      `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`,
     );
     _console.assertWithError(
       waveformSegment.amplitude <= 1,
-      `amplitude must be 1 or less (got ${waveformSegment.amplitude})`
+      `amplitude must be 1 or less (got ${waveformSegment.amplitude})`,
     );
 
     _console.assertTypeWithError(waveformSegment.duration, "number");
     _console.assertWithError(
       waveformSegment.duration > 0,
-      `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`
+      `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`,
     );
     _console.assertWithError(
       waveformSegment.duration <= MaxVibrationWaveformSegmentDuration,
-      `duration must be ${MaxVibrationWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
+      `duration must be ${MaxVibrationWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`,
     );
   }
 
@@ -229,7 +227,7 @@ class VibrationManager {
     this.#assertNonEmptyArray(waveformSegments);
     _console.assertWithError(
       waveformSegments.length <= MaxNumberOfVibrationWaveformSegments,
-      `must have ${MaxNumberOfVibrationWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`
+      `must have ${MaxNumberOfVibrationWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`,
     );
     waveformSegments.forEach((waveformSegment) => {
       this.#verifyWaveformSegment(waveformSegment);
@@ -239,11 +237,11 @@ class VibrationManager {
   #createWaveformEffectsData(
     locations: VibrationLocation[],
     waveformEffectSegments: VibrationWaveformEffectSegment[],
-    waveformEffectSequenceLoopCount: number = 0
+    waveformEffectSequenceLoopCount: number = 0,
   ) {
     this.#verifyWaveformEffectSegments(waveformEffectSegments);
     this.#verifyWaveformEffectSequenceLoopCount(
-      waveformEffectSequenceLoopCount
+      waveformEffectSequenceLoopCount,
     );
 
     let dataArray = [];
@@ -311,7 +309,7 @@ class VibrationManager {
   }
   #createWaveformData(
     locations: VibrationLocation[],
-    waveformSegments: VibrationWaveformSegment[]
+    waveformSegments: VibrationWaveformSegment[],
   ) {
     this.#verifyWaveformSegments(waveformSegments);
     const dataView = new DataView(new ArrayBuffer(waveformSegments.length * 2));
@@ -319,7 +317,7 @@ class VibrationManager {
       dataView.setUint8(index * 2, Math.floor(waveformSegment.amplitude * 127));
       dataView.setUint8(
         index * 2 + 1,
-        Math.floor(waveformSegment.duration / 10)
+        Math.floor(waveformSegment.duration / 10),
       );
     });
     _console.log({ dataView });
@@ -330,14 +328,14 @@ class VibrationManager {
     _console.assertTypeWithError(vibrationType, "string");
     _console.assertWithError(
       VibrationTypes.includes(vibrationType),
-      `invalid vibrationType "${vibrationType}"`
+      `invalid vibrationType "${vibrationType}"`,
     );
   }
 
   #createData(
     locations: VibrationLocation[],
     vibrationType: VibrationType,
-    dataView: DataView
+    dataView: DataView,
   ) {
     _console.assertWithError(dataView?.byteLength > 0, "no data received");
     const locationsBitmask = this.#createLocationsBitmask(locations);
@@ -348,7 +346,7 @@ class VibrationManager {
       locationsBitmask,
       vibrationTypeIndex,
       dataView.byteLength,
-      dataView
+      dataView,
     );
     _console.log({ data });
     return data;
@@ -356,7 +354,7 @@ class VibrationManager {
 
   async triggerVibration(
     vibrationConfigurations: VibrationConfiguration[],
-    sendImmediately: boolean = true
+    sendImmediately: boolean = true,
   ) {
     let triggerVibrationData!: ArrayBuffer;
     vibrationConfigurations.forEach((vibrationConfiguration) => {
@@ -365,7 +363,7 @@ class VibrationManager {
       let { locations } = vibrationConfiguration;
       locations = locations || this.vibrationLocations.slice();
       locations = locations.filter((location) =>
-        this.vibrationLocations.includes(location)
+        this.vibrationLocations.includes(location),
       );
 
       let arrayBuffer: ArrayBuffer;
@@ -377,7 +375,7 @@ class VibrationManager {
             arrayBuffer = this.#createWaveformEffectsData(
               locations,
               segments,
-              loopCount
+              loopCount,
             );
           }
           break;
@@ -393,12 +391,12 @@ class VibrationManager {
       _console.log({ type, arrayBuffer });
       triggerVibrationData = concatenateArrayBuffers(
         triggerVibrationData,
-        arrayBuffer
+        arrayBuffer,
       );
     });
     await this.sendMessage(
       [{ type: "triggerVibration", data: triggerVibrationData }],
-      sendImmediately
+      sendImmediately,
     );
   }
 
@@ -417,7 +415,7 @@ class VibrationManager {
   // MESSAGE
   parseMessage(
     messageType: VibrationMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     _console.log({ messageType });
 

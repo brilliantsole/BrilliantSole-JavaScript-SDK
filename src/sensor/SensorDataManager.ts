@@ -26,6 +26,10 @@ import {
   BarometerSensorTypes,
   ContinuousBarometerSensorTypes,
 } from "./BarometerSensorDataManager.ts";
+import ButtonSensorDataManager, {
+  ButtonSensorDataEventMessages,
+  ButtonSensorTypes,
+} from "./ButtonSensorDataManager.ts";
 import Device from "../Device.ts";
 import {
   AddKeysAsPropertyToInterface,
@@ -44,6 +48,7 @@ export const SensorTypes = [
   ...BarometerSensorTypes,
   ...CameraSensorTypes,
   ...MicrophoneSensorTypes,
+  ...ButtonSensorTypes,
 ] as const;
 export type SensorType = (typeof SensorTypes)[number];
 
@@ -79,7 +84,8 @@ interface BaseSensorDataEventMessage {
 
 type BaseSensorDataEventMessages = BarometerSensorDataEventMessages &
   MotionSensorDataEventMessages &
-  PressureDataEventMessages;
+  PressureDataEventMessages &
+  ButtonSensorDataEventMessages;
 type _SensorDataEventMessages = ExtendInterfaceValues<
   AddKeysAsPropertyToInterface<BaseSensorDataEventMessages, "sensorType">,
   BaseSensorDataEventMessage
@@ -89,9 +95,9 @@ interface AnySensorDataEventMessages {
   sensorData: SensorDataEventMessage;
   isLast: boolean;
 }
-export type SensorDataEventMessages =
-  | (_SensorDataEventMessages & AnySensorDataEventMessages) &
-      PressureSensorEventMessages;
+export type SensorDataEventMessages = (_SensorDataEventMessages &
+  AnySensorDataEventMessages) &
+  PressureSensorEventMessages;
 
 export type SensorDataEventDispatcher = EventDispatcher<
   Device,
@@ -119,6 +125,7 @@ class SensorDataManager {
   pressureSensorDataManager = new PressureSensorDataManager();
   motionSensorDataManager = new MotionSensorDataManager();
   barometerSensorDataManager = new BarometerSensorDataManager();
+  buttonSensorDataManager = new ButtonSensorDataManager();
 
   #scalars: Map<SensorType, number> = new Map();
 
@@ -129,7 +136,7 @@ class SensorDataManager {
     _console.assertTypeWithError(sensorTypeEnum, "number");
     _console.assertWithError(
       sensorTypeEnum in SensorTypes,
-      `invalid sensorTypeEnum ${sensorTypeEnum}`
+      `invalid sensorTypeEnum ${sensorTypeEnum}`,
     );
   }
 
@@ -143,7 +150,7 @@ class SensorDataManager {
     }
     _console.assertWithError(
       !this.#eventDispatcher,
-      "eventDispatcher already defined"
+      "eventDispatcher already defined",
     );
     this.#eventDispatcher = eventDispatcher;
     this.pressureSensorDataManager.eventDispatcher =
@@ -155,7 +162,7 @@ class SensorDataManager {
 
   parseMessage(
     messageType: SensorDataMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     _console.log({ messageType });
 
@@ -209,7 +216,7 @@ class SensorDataManager {
       _dataView,
       SensorTypes,
       this.parseDataCallback.bind(this),
-      context
+      context,
     );
     context.messages.forEach(({ sensorType, message, dataView }) => {
       if (sensorType == "pressure") {
@@ -220,7 +227,7 @@ class SensorDataManager {
         message.pressure = this.pressureSensorDataManager.parseData(
           dataView!,
           scalar,
-          timestamp
+          timestamp,
         );
       }
 
@@ -233,7 +240,7 @@ class SensorDataManager {
     sensorType: SensorType,
     dataView: DataView<ArrayBuffer>,
     context: SensorDataParseContext,
-    isLast?: boolean
+    isLast?: boolean,
   ) {
     const { timestamp, messages } = context;
 
@@ -252,25 +259,25 @@ class SensorDataManager {
       case "magnetometer":
         sensorData = this.motionSensorDataManager.parseVector3(
           dataView,
-          scalar
+          scalar,
         );
         break;
       case "gameRotation":
       case "rotation":
         sensorData = this.motionSensorDataManager.parseQuaternion(
           dataView,
-          scalar
+          scalar,
         );
         sensorDataEuler = this.motionSensorDataManager.quaternionToEuler(
           sensorData,
-          sensorType == "rotation"
+          sensorType == "rotation",
         );
         break;
       case "orientation":
         sensorData = this.motionSensorDataManager.parseEuler(
           dataView,
           scalar,
-          true
+          true,
         );
         break;
       case "stepCounter":
@@ -292,8 +299,11 @@ class SensorDataManager {
       case "barometer":
         sensorData = this.barometerSensorDataManager.parseData(
           dataView,
-          scalar
+          scalar,
         );
+        break;
+      case "button":
+        sensorData = this.buttonSensorDataManager.parseData(dataView);
         break;
       case "camera":
         // we parse camera data using CameraManager
@@ -307,7 +317,7 @@ class SensorDataManager {
 
     _console.assertWithError(
       sensorData != null || sensorType == "pressure",
-      `no sensorData defined for sensorType "${sensorType}"`
+      `no sensorData defined for sensorType "${sensorType}"`,
     );
 
     _console.log({ sensorType, sensorData });

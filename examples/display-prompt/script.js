@@ -9,7 +9,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -50,7 +50,7 @@ device.addEventListener("connected", () => {
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -75,7 +75,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -154,7 +154,7 @@ const uploadPictureSpriteSheet = async () => {
     drawnImageWidth,
     drawnImageWidth / aspectRatio,
     getImageNumberOfColors(),
-    cameraImageName
+    cameraImageName,
   );
   cameraImageSpriteSheet.palettes[0].colors[0] = "black";
   console.log("cameraImageSpriteSheet", cameraImageSpriteSheet);
@@ -198,13 +198,13 @@ const draw = async () => {
     await displayCanvasHelper.selectSpriteSheetPalette(
       cameraImageName,
       0,
-      true
+      true,
     );
     await displayCanvasHelper.setSpriteScale(cameraImageScale);
     await displayCanvasHelper.drawSprite(
       displayCanvasHelper.width,
       0,
-      cameraImageName
+      cameraImageName,
     );
     await displayCanvasHelper.selectSpriteSheetPalette(cameraImageName, 0);
     await displayCanvasHelper.restoreContext();
@@ -216,11 +216,11 @@ const draw = async () => {
     await displayCanvasHelper.setSpriteScale(fontScale);
     await displayCanvasHelper.selectSpriteColor(
       0,
-      getTextBackgroundColorIndex()
+      getTextBackgroundColorIndex(),
     );
     await displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
     await displayCanvasHelper.selectBackgroundColor(
-      getTextBackgroundColorIndex()
+      getTextBackgroundColorIndex(),
     );
     await displayCanvasHelper.setFillBackground(true);
     await displayCanvasHelper.setHorizontalAlignment("start");
@@ -245,7 +245,9 @@ const draw = async () => {
       text,
       false,
       displayCanvasHelper.width -
-        (includePicture ? drawnImageWidth * cameraImageScale + imagePadding : 0)
+        (includePicture
+          ? drawnImageWidth * cameraImageScale + imagePadding
+          : 0),
     );
     await displayCanvasHelper.restoreContext();
   }
@@ -425,7 +427,7 @@ const updateCameraSources = async () => {
     .filter((device) => device.kind == "videoinput")
     .forEach((videoInputDevice) => {
       cameraInputOptgroup.appendChild(
-        new Option(videoInputDevice.label, videoInputDevice.deviceId)
+        new Option(videoInputDevice.label, videoInputDevice.deviceId),
       );
     });
   cameraInput.value = "none";
@@ -463,7 +465,7 @@ const stopCameraStream = () => {
   setIncludePicture(device.isConnected);
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateCameraSources()
+  updateCameraSources(),
 );
 updateCameraSources();
 
@@ -574,7 +576,7 @@ device.addEventListener("cameraStatus", (event) => {
 
 /** @type {HTMLTemplateElement} */
 const cameraConfigurationTypeTemplate = document.getElementById(
-  "cameraConfigurationTypeTemplate"
+  "cameraConfigurationTypeTemplate",
 );
 
 BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
@@ -599,7 +601,7 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
 
   cameraConfigurationTypeTemplate.parentNode.insertBefore(
     cameraConfigurationTypeContainer,
-    cameraConfigurationTypeTemplate.nextSibling
+    cameraConfigurationTypeTemplate.nextSibling,
   );
 
   /** @type {HTMLInputElement} */
@@ -664,9 +666,9 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
       device.addEventListener(
         "getCameraConfiguration",
         () => {
-          setTimeout(() => device.takePicture()), 100;
+          (setTimeout(() => device.takePicture()), 100);
         },
-        { once: true }
+        { once: true },
       );
     }
   });
@@ -766,7 +768,7 @@ const setIncludePicture = (newIncludePicture) => {
   toggleIncludePictureCheckbox.checked = includePicture;
 };
 const toggleIncludePictureCheckbox = document.getElementById(
-  "toggleIncludePicture"
+  "toggleIncludePicture",
 );
 toggleIncludePictureCheckbox.addEventListener("input", () => {
   setIncludePicture(toggleIncludePictureCheckbox.checked);
@@ -848,7 +850,7 @@ const createPrompt = async (promptText, continueSession = true) => {
       });
       session.addEventListener("contextoverflow", () => {
         console.log(
-          "We've gone past the context window, and some inputs will be dropped!"
+          "We've gone past the context window, and some inputs will be dropped!",
         );
       });
       console.log("created session", session);
@@ -1109,7 +1111,7 @@ const addFont = async (font) => {
       font,
       fontSize,
       "english",
-      fontOptions
+      fontOptions,
     );
     fontSpriteSheets[fullName] = spriteSheet;
     await updateFontSelect();
@@ -1197,7 +1199,7 @@ const updateMicrophoneSources = async () => {
   }
   audioDevices.forEach((audioInputDevice) => {
     selectMicrophoneOptgroup.appendChild(
-      new Option(audioInputDevice.label, audioInputDevice.deviceId)
+      new Option(audioInputDevice.label, audioInputDevice.deviceId),
     );
   });
   selectMicrophoneSelect.value = "none";
@@ -1253,7 +1255,7 @@ const stopMicrophoneStream = () => {
   updateTogglePromptButton();
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateMicrophoneSources()
+  updateMicrophoneSources(),
 );
 device.addEventListener("isConnected", () => {
   updateMicrophoneSources();
@@ -1264,7 +1266,7 @@ updateMicrophoneSources();
 const microphoneAudio = document.getElementById("microphoneAudio");
 
 const toggleTranscriptionButton = document.getElementById(
-  "toggleTranscription"
+  "toggleTranscription",
 );
 toggleTranscriptionButton.addEventListener("click", async () => {
   if (mediaRecorder) {
@@ -1363,7 +1365,7 @@ let transcription = "";
 let formattedTranscription = "";
 let ignoreString = true;
 const ignoreStrings = ["[BLANK_AUDIO]", "[inaudible]"].map((string) =>
-  string.toLowerCase()
+  string.toLowerCase(),
 );
 const startTranscribing = async () => {
   if (!loadedModel) {
@@ -1443,7 +1445,7 @@ const startTranscribing = async () => {
           formattedTranscription = transcription;
           const lowercaseTranscription = transcription.toLowerCase();
           ignoreString = ignoreStrings.some((string) =>
-            lowercaseTranscription.includes(string)
+            lowercaseTranscription.includes(string),
           );
           if (
             (!ignoreString &&
@@ -1599,7 +1601,7 @@ const ttsAudio = new Audio();
       const { name, language, gender, traits, targetQuality, overallGrade } =
         tts.voices[voiceName];
       setTTSVoiceOptgroup.appendChild(
-        new Option(`${name} (${language})`, voiceName)
+        new Option(`${name} (${language})`, voiceName),
       );
     });
   selectedVoiceName = setTTSVoiceSelect.value;
@@ -1816,7 +1818,7 @@ const setUseSpeechDetection = (newUseSpeechDetection) => {
   });
 };
 const setUseSpeechDetectionCheckbox = document.getElementById(
-  "setUseSpeechDetection"
+  "setUseSpeechDetection",
 );
 setUseSpeechDetectionCheckbox.addEventListener("input", () => {
   setUseSpeechDetection(setUseSpeechDetectionCheckbox.checked);
@@ -1839,7 +1841,7 @@ const uploadSpeechDetectionModel = () => {
   uploadSpeechDetectionModelButton.disabled;
 };
 const uploadSpeechDetectionModelButton = document.getElementById(
-  "uploadSpeechDetectionModel"
+  "uploadSpeechDetectionModel",
 );
 uploadSpeechDetectionModelButton.addEventListener("click", () => {
   uploadSpeechDetectionModel();
@@ -1853,7 +1855,7 @@ const toggleSpeechDetection = () => {
   device.toggleTfliteInferencing();
 };
 const toggleSpeechDetectionButton = document.getElementById(
-  "toggleSpeechDetection"
+  "toggleSpeechDetection",
 );
 toggleSpeechDetectionButton.addEventListener("click", () => {
   toggleSpeechDetection();

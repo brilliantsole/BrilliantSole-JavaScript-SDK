@@ -160,12 +160,12 @@ class CameraManager {
     return this.eventDispatcher.waitForEvent;
   }
 
-  requestRequiredInformation() {
+  requestRequiredInformation(sendImmediately?: boolean) {
     _console.log("requesting required camera information");
     const messages = RequiredCameraMessageTypes.map((messageType) => ({
       type: messageType,
     }));
-    this.sendMessage(messages, false);
+    this.sendMessage(messages, sendImmediately);
   }
 
   // CAMERA STATUS
@@ -222,7 +222,7 @@ class CameraManager {
           data: UInt8ByteBuffer(commandEnum),
         },
       ],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -230,13 +230,13 @@ class CameraManager {
   #assertIsAsleep() {
     _console.assertWithError(
       this.#cameraStatus == "asleep",
-      `camera is not asleep - currently ${this.#cameraStatus}`
+      `camera is not asleep - currently ${this.#cameraStatus}`,
     );
   }
   #assertIsAwake() {
     _console.assertWithError(
       this.#cameraStatus != "asleep",
-      `camera is not awake - currently ${this.#cameraStatus}`
+      `camera is not awake - currently ${this.#cameraStatus}`,
     );
   }
   async focus() {
@@ -279,7 +279,7 @@ class CameraManager {
       CameraDataTypes,
       this.#onCameraData.bind(this),
       null,
-      true
+      true,
     );
   }
   #buildImageTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -296,7 +296,7 @@ class CameraManager {
     if (this.sensorRate == 0) {
       return;
     }
-    const timeoutInterval = Math.max(5 * this.sensorRate, 200);
+    const timeoutInterval = Math.max(4 * this.sensorRate, 300);
     _console.log("setBuildImageTimeout", {
       timeoutInterval,
     });
@@ -314,7 +314,7 @@ class CameraManager {
   }
   #onCameraData(
     cameraDataType: CameraDataType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     _console.log({ cameraDataType, dataView });
     this.#clearBuildImageTimeout();
@@ -409,7 +409,7 @@ class CameraManager {
     const imageData = concatenateArrayBuffers(
       this.#headerData,
       this.#imageData,
-      this.#footerData
+      this.#footerData,
     );
     _console.log({ imageData });
     this.#didBuildImage = true;
@@ -455,12 +455,12 @@ class CameraManager {
               0,
               0,
               width,
-              height
+              height,
             );
           });
         } else {
           _console.error(
-            "camera recording failed - recording image/canvas/context not found"
+            "camera recording failed - recording image/canvas/context not found",
           );
           this.stopRecording();
         }
@@ -549,7 +549,7 @@ class CameraManager {
         CameraConfigurationTypes[cameraConfigurationTypeIndex];
       _console.assertWithError(
         cameraConfigurationType,
-        `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`
+        `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`,
       );
 
       _console.log({ cameraConfigurationType });
@@ -577,7 +577,7 @@ class CameraManager {
 
     _console.log({ parsedCameraConfiguration });
     this.#availableCameraConfigurationTypes = Object.keys(
-      parsedCameraConfiguration
+      parsedCameraConfiguration,
     ) as CameraConfigurationType[];
     this.#cameraConfiguration = parsedCameraConfiguration;
     this.#dispatchEvent("getCameraConfiguration", {
@@ -587,7 +587,7 @@ class CameraManager {
 
   #isCameraConfigurationRedundant(cameraConfiguration: CameraConfiguration) {
     let cameraConfigurationTypes = Object.keys(
-      cameraConfiguration
+      cameraConfiguration,
     ) as CameraConfigurationType[];
     return cameraConfigurationTypes.every((cameraConfigurationType) => {
       return (
@@ -596,7 +596,10 @@ class CameraManager {
       );
     });
   }
-  async setCameraConfiguration(newCameraConfiguration: CameraConfiguration) {
+  async setCameraConfiguration(
+    newCameraConfiguration: CameraConfiguration,
+    sendImmediately?: boolean,
+  ) {
     _console.log({ newCameraConfiguration });
     if (this.#isCameraConfigurationRedundant(newCameraConfiguration)) {
       _console.log("redundant camera configuration");
@@ -606,67 +609,70 @@ class CameraManager {
     _console.log({ setCameraConfigurationData });
 
     const promise = this.waitForEvent("getCameraConfiguration");
-    this.sendMessage([
-      {
-        type: "setCameraConfiguration",
-        data: setCameraConfigurationData.buffer,
-      },
-    ]);
+    this.sendMessage(
+      [
+        {
+          type: "setCameraConfiguration",
+          data: setCameraConfigurationData.buffer,
+        },
+      ],
+      sendImmediately,
+    );
     await promise;
   }
 
   #assertAvailableCameraConfigurationType(
-    cameraConfigurationType: CameraConfigurationType
+    cameraConfigurationType: CameraConfigurationType,
   ) {
     _console.assertWithError(
       this.#availableCameraConfigurationTypes,
-      "must get initial cameraConfiguration"
+      "must get initial cameraConfiguration",
     );
     const isCameraConfigurationTypeAvailable =
       this.#availableCameraConfigurationTypes?.includes(
-        cameraConfigurationType
+        cameraConfigurationType,
       );
     _console.assertWithError(
       isCameraConfigurationTypeAvailable,
-      `unavailable camera configuration type "${cameraConfigurationType}"`
+      `unavailable camera configuration type "${cameraConfigurationType}"`,
     );
     return isCameraConfigurationTypeAvailable;
   }
 
   static AssertValidCameraConfigurationType(
-    cameraConfigurationType: CameraConfigurationType
+    cameraConfigurationType: CameraConfigurationType,
   ) {
     _console.assertEnumWithError(
       cameraConfigurationType,
-      CameraConfigurationTypes
+      CameraConfigurationTypes,
     );
   }
   static AssertValidCameraConfigurationTypeEnum(
-    cameraConfigurationTypeEnum: number
+    cameraConfigurationTypeEnum: number,
   ) {
     _console.assertTypeWithError(cameraConfigurationTypeEnum, "number");
     _console.assertWithError(
       cameraConfigurationTypeEnum in CameraConfigurationTypes,
-      `invalid cameraConfigurationTypeEnum ${cameraConfigurationTypeEnum}`
+      `invalid cameraConfigurationTypeEnum ${cameraConfigurationTypeEnum}`,
     );
   }
 
   #createData(cameraConfiguration: CameraConfiguration) {
     let cameraConfigurationTypes = Object.keys(
-      cameraConfiguration
+      cameraConfiguration,
     ) as CameraConfigurationType[];
     cameraConfigurationTypes = cameraConfigurationTypes.filter(
       (cameraConfigurationType) =>
-        this.#assertAvailableCameraConfigurationType(cameraConfigurationType)
+        this.#assertAvailableCameraConfigurationType(cameraConfigurationType),
     );
 
     const dataView = new DataView(
-      new ArrayBuffer(cameraConfigurationTypes.length * 3)
+      new ArrayBuffer(cameraConfigurationTypes.length * 3),
     );
     cameraConfigurationTypes.forEach((cameraConfigurationType, index) => {
       CameraManager.AssertValidCameraConfigurationType(cameraConfigurationType);
       const cameraConfigurationTypeEnum = CameraConfigurationTypes.indexOf(
-        cameraConfigurationType
+        cameraConfigurationType,
       );
       dataView.setUint8(index * 3, cameraConfigurationTypeEnum);
 
@@ -819,7 +825,7 @@ class CameraManager {
 
             const frames = Math.max(
               1,
-              Math.round(Math.max(0, imageFrame.duration) / (1000 / fps))
+              Math.round(Math.max(0, imageFrame.duration) / (1000 / fps)),
             );
             for (let j = 0; j < frames; j++) {
               ffmpeg.stdin.write(rawRGBA);
@@ -882,7 +888,7 @@ class CameraManager {
   // MESSAGE
   parseMessage(
     messageType: CameraMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     _console.log({ messageType, dataView });
 

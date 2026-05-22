@@ -75,7 +75,7 @@ declare class CameraManager {
         target: Device;
         message: CameraEventMessages[T];
     }>;
-    requestRequiredInformation(): void;
+    requestRequiredInformation(sendImmediately?: boolean): void;
     get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
     focus(): Promise<void>;
     takePicture(): Promise<void>;
@@ -88,7 +88,7 @@ declare class CameraManager {
     get cameraConfiguration(): CameraConfiguration;
     get availableCameraConfigurationTypes(): ("resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "brightness" | "saturation" | "contrast" | "sharpness")[];
     get cameraConfigurationRanges(): CameraConfigurationRanges;
-    setCameraConfiguration(newCameraConfiguration: CameraConfiguration): Promise<void>;
+    setCameraConfiguration(newCameraConfiguration: CameraConfiguration, sendImmediately?: boolean): Promise<void>;
     static AssertValidCameraConfigurationType(cameraConfigurationType: CameraConfigurationType): void;
     static AssertValidCameraConfigurationTypeEnum(cameraConfigurationTypeEnum: number): void;
     get isRecording(): boolean;
