@@ -2,30 +2,31 @@ import PressureSensorDataManager, { PressureDataEventMessages, PressureSensorEve
 import MotionSensorDataManager, { MotionSensorDataEventMessages } from "./MotionSensorDataManager.ts";
 import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./BarometerSensorDataManager.ts";
 import EventDispatcher from "../utils/EventDispatcher.ts";
-import ButtonSensorDataManager, { ButtonSensorDataEventMessages } from "./ButtonSensorDataManager.ts";
+import ButtonSensorDataManager, { ButtonSensorDataEventMessages, ButtonSensorEventMessages } from "./ButtonSensorDataManager.ts";
+import TouchSensorDataManager, { TouchSensorDataEventMessages, TouchSensorEventMessages } from "./TouchSensorDataManager.ts";
 import Device from "../Device.ts";
 import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
-export declare const SensorTypes: readonly ["pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera", "microphone", "button"];
+export declare const SensorTypes: readonly ["pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera", "microphone", "buttons", "touches"];
 export type SensorType = (typeof SensorTypes)[number];
 export declare const ContinuousSensorTypes: readonly ["pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "barometer"];
 export type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];
 export declare const SensorDataMessageTypes: readonly ["getPressurePositions", "getSensorScalars", "sensorData"];
 export type SensorDataMessageType = (typeof SensorDataMessageTypes)[number];
 export declare const RequiredPressureMessageTypes: SensorDataMessageType[];
-export declare const SensorDataEventTypes: readonly ["getPressurePositions", "getSensorScalars", "sensorData", "pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera", "microphone", "button", "pressureAutoRangeEnabled", "pressureAutoRangeDisabled", "pressureAutoRange", "pressureMotionAutoRangeEnabled", "pressureMotionAutoRangeDisabled", "pressureMotionAutoRange", "isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel"];
+export declare const SensorDataEventTypes: readonly ["getPressurePositions", "getSensorScalars", "sensorData", "pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera", "microphone", "buttons", "touches", "pressureAutoRangeEnabled", "pressureAutoRangeDisabled", "pressureAutoRange", "pressureMotionAutoRangeEnabled", "pressureMotionAutoRangeDisabled", "pressureMotionAutoRange", "isRecordingPressureCalibrationData", "pressureCalibrationDataRecordStart", "pressureCalibrationDataRecordStop", "pressureCalibrationDataRecordingProgress", "isTrainingPressureCalibration", "pressureCalibrationTrainStart", "pressureCalibrationTrainEnd", "pressureCalibrationTrainProgress", "calibratedPressureModel", "numberOfButtons", "button", "buttonDown", "buttonUp", "numberOfTouches", "touch", "touchDown", "touchUp"];
 export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 interface BaseSensorDataEventMessage {
     timestamp: number;
     isLast: boolean;
 }
-type BaseSensorDataEventMessages = BarometerSensorDataEventMessages & MotionSensorDataEventMessages & PressureDataEventMessages & ButtonSensorDataEventMessages;
+type BaseSensorDataEventMessages = BarometerSensorDataEventMessages & MotionSensorDataEventMessages & PressureDataEventMessages & ButtonSensorDataEventMessages & TouchSensorDataEventMessages;
 type _SensorDataEventMessages = ExtendInterfaceValues<AddKeysAsPropertyToInterface<BaseSensorDataEventMessages, "sensorType">, BaseSensorDataEventMessage>;
 export type SensorDataEventMessage = ValueOf<_SensorDataEventMessages>;
 interface AnySensorDataEventMessages {
     sensorData: SensorDataEventMessage;
     isLast: boolean;
 }
-export type SensorDataEventMessages = (_SensorDataEventMessages & AnySensorDataEventMessages) & PressureSensorEventMessages;
+export type SensorDataEventMessages = (_SensorDataEventMessages & AnySensorDataEventMessages) & PressureSensorEventMessages & ButtonSensorEventMessages & TouchSensorEventMessages;
 export type SensorDataEventDispatcher = EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;
 declare class SensorDataManager {
     #private;
@@ -34,14 +35,16 @@ declare class SensorDataManager {
     motionSensorDataManager: MotionSensorDataManager;
     barometerSensorDataManager: BarometerSensorDataManager;
     buttonSensorDataManager: ButtonSensorDataManager;
+    touchSensorDataManager: TouchSensorDataManager;
     static AssertValidSensorType(sensorType: SensorType): void;
     static AssertValidSensorTypeEnum(sensorTypeEnum: number): void;
     get eventDispatcher(): SensorDataEventDispatcher;
     set eventDispatcher(eventDispatcher: SensorDataEventDispatcher);
-    get dispatchEvent(): <T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "pressureMotionAutoRangeEnabled" | "pressureMotionAutoRangeDisabled" | "pressureMotionAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "button" | "camera" | "microphone" | "pressure" | "getPressurePositions" | "getSensorScalars" | "sensorData">(type: T, message: SensorDataEventMessages[T]) => void;
+    get dispatchEvent(): <T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "pressureMotionAutoRangeEnabled" | "pressureMotionAutoRangeDisabled" | "pressureMotionAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "buttons" | "numberOfButtons" | "button" | "buttonDown" | "buttonUp" | "touches" | "numberOfTouches" | "touch" | "touchDown" | "touchUp" | "camera" | "microphone" | "pressure" | "getPressurePositions" | "getSensorScalars" | "sensorData">(type: T, message: SensorDataEventMessages[T]) => void;
     parseMessage(messageType: SensorDataMessageType, dataView: DataView<ArrayBuffer>): void;
     parseScalars(dataView: DataView<ArrayBuffer>): void;
     private parseData;
     private parseDataCallback;
+    clear(): void;
 }
 export default SensorDataManager;

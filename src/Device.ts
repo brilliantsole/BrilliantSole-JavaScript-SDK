@@ -163,7 +163,8 @@ export const DeviceEventTypes = [
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
 
 export interface DeviceEventMessages
-  extends ConnectionStatusEventMessages,
+  extends
+    ConnectionStatusEventMessages,
     DeviceInformationEventMessages,
     InformationEventMessages,
     SensorDataEventMessages,
@@ -184,7 +185,7 @@ export interface DeviceEventMessages
 
 export type SendMessageCallback<MessageType extends string> = (
   messages?: { type: MessageType; data?: ArrayBuffer }[],
-  sendImmediately?: boolean
+  sendImmediately?: boolean,
 ) => Promise<void>;
 
 export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
@@ -450,7 +451,7 @@ class Device {
 
   #eventDispatcher: DeviceEventDispatcher = new EventDispatcher(
     this as Device,
-    DeviceEventTypes
+    DeviceEventTypes,
   );
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
@@ -542,7 +543,7 @@ class Device {
               this.connectionManager = new WebSocketConnectionManager(
                 options.ipAddress,
                 options.isWifiSecure,
-                this.bluetoothId
+                this.bluetoothId,
               );
             }
           }
@@ -564,7 +565,7 @@ class Device {
             if (createConnectionManager) {
               this.connectionManager = new UDPConnectionManager(
                 options.ipAddress,
-                this.bluetoothId
+                this.bluetoothId,
               );
             }
           }
@@ -579,7 +580,7 @@ class Device {
     if (options?.type == "client") {
       _console.assertWithError(
         this.connectionType == "client",
-        "expected clientConnectionManager"
+        "expected clientConnectionManager",
       );
       const clientConnectionManager = this
         .connectionManager as ClientConnectionManager;
@@ -610,41 +611,41 @@ class Device {
   }
   get #hasRequiredInformation() {
     let hasRequiredInformation = this.#didReceiveMessageTypes(
-      RequiredInformationConnectionMessages
+      RequiredInformationConnectionMessages,
     );
     if (hasRequiredInformation && this.sensorTypes.includes("pressure")) {
       hasRequiredInformation = this.#didReceiveMessageTypes(
-        RequiredPressureMessageTypes
+        RequiredPressureMessageTypes,
       );
     }
     if (hasRequiredInformation && this.isWifiAvailable) {
       hasRequiredInformation = this.#didReceiveMessageTypes(
-        RequiredWifiMessageTypes
+        RequiredWifiMessageTypes,
       );
     }
     if (hasRequiredInformation && this.fileTypes.length > 0) {
       hasRequiredInformation = this.#didReceiveMessageTypes(
-        RequiredFileTransferMessageTypes
+        RequiredFileTransferMessageTypes,
       );
     }
     if (hasRequiredInformation && this.fileTypes.includes("tflite")) {
       hasRequiredInformation = this.#didReceiveMessageTypes(
-        RequiredTfliteMessageTypes
+        RequiredTfliteMessageTypes,
       );
     }
     if (hasRequiredInformation && this.hasCamera) {
       hasRequiredInformation = this.#didReceiveMessageTypes(
-        RequiredCameraMessageTypes
+        RequiredCameraMessageTypes,
       );
     }
     if (hasRequiredInformation && this.hasMicrophone) {
       hasRequiredInformation = this.#didReceiveMessageTypes(
-        RequiredMicrophoneMessageTypes
+        RequiredMicrophoneMessageTypes,
       );
     }
     if (hasRequiredInformation && this.isDisplayAvailable) {
       hasRequiredInformation = this.#didReceiveMessageTypes(
-        RequiredDisplayMessageTypes
+        RequiredDisplayMessageTypes,
       );
     }
     return hasRequiredInformation;
@@ -654,7 +655,7 @@ class Device {
     const messages: TxMessage[] = RequiredInformationConnectionMessages.map(
       (messageType) => ({
         type: messageType,
-      })
+      }),
     );
     this.#sendTxMessages(messages);
   }
@@ -730,7 +731,7 @@ class Device {
         () => {
           this.reconnectOnDisconnection = true;
         },
-        { once: true }
+        { once: true },
       );
     }
     return this.connectionManager!.disconnect();
@@ -865,6 +866,7 @@ class Device {
     this.#wifiManager.clear();
     this.#cameraManager.clear();
     this.#microphoneManager.clear();
+    this.#sensorDataManager.clear();
     this.#sensorConfigurationManager.clear();
     this.#displayManager.reset();
     this.#isServerSide = false;
@@ -877,7 +879,7 @@ class Device {
 
   #onConnectionMessageReceived(
     messageType: ConnectionMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     _console.log({ messageType, dataView });
     switch (messageType) {
@@ -890,91 +892,91 @@ class Device {
       default:
         if (
           FileTransferMessageTypes.includes(
-            messageType as FileTransferMessageType
+            messageType as FileTransferMessageType,
           )
         ) {
           this.#fileTransferManager.parseMessage(
             messageType as FileTransferMessageType,
-            dataView
+            dataView,
           );
         } else if (
           TfliteMessageTypes.includes(messageType as TfliteMessageType)
         ) {
           this.#tfliteManager.parseMessage(
             messageType as TfliteMessageType,
-            dataView
+            dataView,
           );
         } else if (
           SensorDataMessageTypes.includes(messageType as SensorDataMessageType)
         ) {
           this.#sensorDataManager.parseMessage(
             messageType as SensorDataMessageType,
-            dataView
+            dataView,
           );
         } else if (
           FirmwareMessageTypes.includes(messageType as FirmwareMessageType)
         ) {
           this.#firmwareManager.parseMessage(
             messageType as FirmwareMessageType,
-            dataView
+            dataView,
           );
         } else if (
           DeviceInformationTypes.includes(messageType as DeviceInformationType)
         ) {
           this.#deviceInformationManager.parseMessage(
             messageType as DeviceInformationType,
-            dataView
+            dataView,
           );
         } else if (
           InformationMessageTypes.includes(
-            messageType as InformationMessageType
+            messageType as InformationMessageType,
           )
         ) {
           this._informationManager.parseMessage(
             messageType as InformationMessageType,
-            dataView
+            dataView,
           );
         } else if (
           SensorConfigurationMessageTypes.includes(
-            messageType as SensorConfigurationMessageType
+            messageType as SensorConfigurationMessageType,
           )
         ) {
           this.#sensorConfigurationManager.parseMessage(
             messageType as SensorConfigurationMessageType,
-            dataView
+            dataView,
           );
         } else if (
           VibrationMessageTypes.includes(messageType as VibrationMessageType)
         ) {
           this.#vibrationManager.parseMessage(
             messageType as VibrationMessageType,
-            dataView
+            dataView,
           );
         } else if (WifiMessageTypes.includes(messageType as WifiMessageType)) {
           this.#wifiManager.parseMessage(
             messageType as WifiMessageType,
-            dataView
+            dataView,
           );
         } else if (
           CameraMessageTypes.includes(messageType as CameraMessageType)
         ) {
           this.#cameraManager.parseMessage(
             messageType as CameraMessageType,
-            dataView
+            dataView,
           );
         } else if (
           MicrophoneMessageTypes.includes(messageType as MicrophoneMessageType)
         ) {
           this.#microphoneManager.parseMessage(
             messageType as MicrophoneMessageType,
-            dataView
+            dataView,
           );
         } else if (
           DisplayMessageTypes.includes(messageType as DisplayMessageType)
         ) {
           this.#displayManager.parseMessage(
             messageType as DisplayMessageType,
-            dataView
+            dataView,
           );
         } else {
           throw Error(`uncaught messageType ${messageType}`);
@@ -986,7 +988,7 @@ class Device {
       this.latestConnectionMessages.set(
         // @ts-expect-error
         messageType.replace("set", "get"),
-        dataView
+        dataView,
       );
     }
     this.#dispatchEvent("connectionMessage", { messageType, dataView });
@@ -1086,7 +1088,7 @@ class Device {
   }
   get continuousSensorTypes() {
     return ContinuousSensorTypes.filter((sensorType) =>
-      this.sensorTypes.includes(sensorType)
+      this.sensorTypes.includes(sensorType),
     );
   }
 
@@ -1123,7 +1125,7 @@ class Device {
     return this.#ClearSensorConfigurationOnLeave;
   }
   static set ClearSensorConfigurationOnLeave(
-    newClearSensorConfigurationOnLeave
+    newClearSensorConfigurationOnLeave,
   ) {
     _console.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
     this.#ClearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
@@ -1145,7 +1147,7 @@ class Device {
   #assertPressure() {
     _console.assertWithError(
       this.hasSensorType("pressure"),
-      "pressure sensorType not included in device"
+      "pressure sensorType not included in device",
     );
   }
   get numberOfPressureSensors() {
@@ -1237,6 +1239,22 @@ class Device {
       .calibrationModelData;
   }
 
+  // BUTTONS
+  get hasButtons() {
+    return this.numberOfButtons > 0;
+  }
+  get numberOfButtons() {
+    return this.#sensorDataManager.buttonSensorDataManager.numberOfButtons;
+  }
+
+  // TOUCHES
+  get hasTouches() {
+    return this.numberOfTouches > 0;
+  }
+  get numberOfTouches() {
+    return this.#sensorDataManager.touchSensorDataManager.numberOfTouches;
+  }
+
   // VIBRATION
   get vibrationLocations() {
     return this.#vibrationManager.vibrationLocations;
@@ -1245,11 +1263,11 @@ class Device {
   #vibrationManager = new VibrationManager();
   async triggerVibration(
     vibrationConfigurations: VibrationConfiguration[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ) {
     this.#vibrationManager.triggerVibration(
       vibrationConfigurations,
-      sendImmediately
+      sendImmediately,
     );
   }
 
@@ -1274,7 +1292,7 @@ class Device {
   async sendFile(fileType: FileType, file: FileLike) {
     _console.assertWithError(
       this.validFileTypes.includes(fileType),
-      `invalid fileType ${fileType}`
+      `invalid fileType ${fileType}`,
     );
     const promise = this.waitForEvent("fileTransferComplete");
     this.#fileTransferManager.send(fileType, file);
@@ -1312,7 +1330,7 @@ class Device {
     this.#tfliteManager.sendConfiguration(configuration, false);
     const didSendFile = await this.#fileTransferManager.send(
       configuration.type,
-      configuration.file
+      configuration.file,
     );
     _console.log({ didSendFile });
     if (!didSendFile) {
@@ -1350,7 +1368,7 @@ class Device {
   }
   get allowedTfliteSensorTypes() {
     return this.sensorTypes.filter((sensorType) =>
-      TfliteSensorTypes.includes(sensorType as TfliteSensorType)
+      TfliteSensorTypes.includes(sensorType as TfliteSensorType),
     ) as TfliteSensorType[];
   }
   get setTfliteSensorTypes() {
@@ -1420,7 +1438,7 @@ class Device {
   async reset() {
     _console.assertWithError(
       this.canReset,
-      "reset is not enabled for this device"
+      "reset is not enabled for this device",
     );
     await this.#firmwareManager.reset();
     return this.#connectionManager!.disconnect();
@@ -1516,7 +1534,7 @@ class Device {
     _console.assertWithError(this.isWifiConnected, "wifi is not connected");
     _console.assertWithError(
       this.connectionType != "webSocket",
-      "already connected via webSockets"
+      "already connected via webSockets",
     );
     _console.assertTypeWithError(this.ipAddress, "string");
     _console.log("reconnecting via websockets...");
@@ -1533,7 +1551,7 @@ class Device {
     _console.assertWithError(this.isWifiConnected, "wifi is not connected");
     _console.assertWithError(
       this.connectionType != "udp",
-      "already connected via udp"
+      "already connected via udp",
     );
     _console.assertTypeWithError(this.ipAddress, "string");
     _console.log("reconnecting via udp...");

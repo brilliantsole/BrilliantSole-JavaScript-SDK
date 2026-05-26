@@ -28,8 +28,18 @@ import {
 } from "./BarometerSensorDataManager.ts";
 import ButtonSensorDataManager, {
   ButtonSensorDataEventMessages,
+  ButtonSensorEventDispatcher,
+  ButtonSensorEventMessages,
+  ButtonSensorEventTypes,
   ButtonSensorTypes,
 } from "./ButtonSensorDataManager.ts";
+import TouchSensorDataManager, {
+  TouchSensorDataEventMessages,
+  TouchSensorEventDispatcher,
+  TouchSensorEventMessages,
+  TouchSensorEventTypes,
+  TouchSensorTypes,
+} from "./TouchSensorDataManager.ts";
 import Device from "../Device.ts";
 import {
   AddKeysAsPropertyToInterface,
@@ -49,6 +59,7 @@ export const SensorTypes = [
   ...CameraSensorTypes,
   ...MicrophoneSensorTypes,
   ...ButtonSensorTypes,
+  ...TouchSensorTypes,
 ] as const;
 export type SensorType = (typeof SensorTypes)[number];
 
@@ -74,6 +85,8 @@ export const SensorDataEventTypes = [
   ...SensorDataMessageTypes,
   ...SensorTypes,
   ...PressureSensorEventTypes,
+  ...ButtonSensorEventTypes,
+  ...TouchSensorEventTypes,
 ] as const;
 export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 
@@ -85,7 +98,8 @@ interface BaseSensorDataEventMessage {
 type BaseSensorDataEventMessages = BarometerSensorDataEventMessages &
   MotionSensorDataEventMessages &
   PressureDataEventMessages &
-  ButtonSensorDataEventMessages;
+  ButtonSensorDataEventMessages &
+  TouchSensorDataEventMessages;
 type _SensorDataEventMessages = ExtendInterfaceValues<
   AddKeysAsPropertyToInterface<BaseSensorDataEventMessages, "sensorType">,
   BaseSensorDataEventMessage
@@ -97,7 +111,9 @@ interface AnySensorDataEventMessages {
 }
 export type SensorDataEventMessages = (_SensorDataEventMessages &
   AnySensorDataEventMessages) &
-  PressureSensorEventMessages;
+  PressureSensorEventMessages &
+  ButtonSensorEventMessages &
+  TouchSensorEventMessages;
 
 export type SensorDataEventDispatcher = EventDispatcher<
   Device,
@@ -126,6 +142,7 @@ class SensorDataManager {
   motionSensorDataManager = new MotionSensorDataManager();
   barometerSensorDataManager = new BarometerSensorDataManager();
   buttonSensorDataManager = new ButtonSensorDataManager();
+  touchSensorDataManager = new TouchSensorDataManager();
 
   #scalars: Map<SensorType, number> = new Map();
 
@@ -155,6 +172,10 @@ class SensorDataManager {
     this.#eventDispatcher = eventDispatcher;
     this.pressureSensorDataManager.eventDispatcher =
       eventDispatcher as PressureSensorEventDispatcher;
+    this.buttonSensorDataManager.eventDispatcher =
+      eventDispatcher as ButtonSensorEventDispatcher;
+    this.touchSensorDataManager.eventDispatcher =
+      eventDispatcher as TouchSensorEventDispatcher;
   }
   get dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
@@ -302,8 +323,11 @@ class SensorDataManager {
           scalar,
         );
         break;
-      case "button":
+      case "buttons":
         sensorData = this.buttonSensorDataManager.parseData(dataView);
+        break;
+      case "touches":
+        sensorData = this.touchSensorDataManager.parseData(dataView);
         break;
       case "camera":
         // we parse camera data using CameraManager
@@ -342,6 +366,13 @@ class SensorDataManager {
       message,
       dataView: sensorType == "pressure" ? dataView : undefined,
     });
+  }
+
+  clear() {
+    _console.log("clear");
+    // this.pressureSensorDataManager.resetRange();
+    this.buttonSensorDataManager.clear();
+    this.touchSensorDataManager.clear();
   }
 }
 

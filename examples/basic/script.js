@@ -12,7 +12,7 @@ window.device = device;
 // GET DEVICES
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate"
+  "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
@@ -111,7 +111,7 @@ connectIpAddressInput.addEventListener("input", () => {
 });
 /** @type {HTMLButtonElement} */
 const connectViaIpAddressButton = document.getElementById(
-  "connectViaIpAddress"
+  "connectViaIpAddress",
 );
 connectViaIpAddressButton.addEventListener("click", () => {
   connectViaIpAddressButton.disabled = true;
@@ -125,7 +125,7 @@ device.addEventListener("isConnected", () => {
 
 /** @type {HTMLInputElement} */
 const reconnectOnDisconnectionCheckbox = document.getElementById(
-  "reconnectOnDisconnection"
+  "reconnectOnDisconnection",
 );
 reconnectOnDisconnectionCheckbox.addEventListener("input", () => {
   device.reconnectOnDisconnection = reconnectOnDisconnectionCheckbox.checked;
@@ -148,7 +148,7 @@ device.addEventListener("deviceInformation", () => {
   deviceInformationPre.textContent = JSON.stringify(
     device.deviceInformation,
     null,
-    2
+    2,
   );
 });
 
@@ -189,7 +189,7 @@ device.addEventListener("getBatteryCurrent", () => {
 
 /** @type {HTMLButtonElement} */
 const updateBatteryCurrentButton = document.getElementById(
-  "updateBatteryCurrent"
+  "updateBatteryCurrent",
 );
 device.addEventListener("isConnected", () => {
   updateBatteryCurrentButton.disabled = !device.isConnected;
@@ -275,19 +275,19 @@ setTypeButton.addEventListener("click", () => {
 
 /** @type {HTMLPreElement} */
 const sensorConfigurationPre = document.getElementById(
-  "sensorConfigurationPre"
+  "sensorConfigurationPre",
 );
 device.addEventListener("getSensorConfiguration", () => {
   sensorConfigurationPre.textContent = JSON.stringify(
     device.sensorConfiguration,
     null,
-    2
+    2,
   );
 });
 
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById(
-  "sensorTypeConfigurationTemplate"
+  "sensorTypeConfigurationTemplate",
 );
 BS.SensorTypes.forEach((sensorType) => {
   /** @type {HTMLElement} */
@@ -319,21 +319,21 @@ BS.SensorTypes.forEach((sensorType) => {
   });
 
   sensorTypeConfigurationTemplate.parentElement.appendChild(
-    sensorTypeConfigurationContainer
+    sensorTypeConfigurationContainer,
   );
   sensorTypeConfigurationContainer.dataset.sensorType = sensorType;
 });
 device.addEventListener("getSensorConfiguration", () => {
   for (const sensorType in device.sensorConfiguration) {
     document.querySelector(
-      `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`
+      `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`,
     ).value = device.sensorConfiguration[sensorType];
   }
 });
 device.addEventListener("isConnected", () => {
   for (const sensorType in device.sensorConfiguration) {
     document.querySelector(
-      `[data-sensor-type="${sensorType}"] .input`
+      `[data-sensor-type="${sensorType}"] .input`,
     ).disabled = !device.isConnected;
   }
 });
@@ -350,7 +350,7 @@ resetPressureRangeButton.addEventListener("click", () => {
 
 /** @type {HTMLTemplateElement} */
 const sensorTypeDataTemplate = document.getElementById(
-  "sensorTypeDataTemplate"
+  "sensorTypeDataTemplate",
 );
 BS.SensorTypes.forEach((sensorType) => {
   const sensorTypeDataContainer = sensorTypeDataTemplate.content
@@ -376,19 +376,19 @@ const vibrationTemplate = document.getElementById("vibrationTemplate");
   /** @type {HTMLInputElement} */
   const waveformEffectSequenceLoopCountInput =
     vibrationTemplate.content.querySelector(
-      ".waveformEffect .sequenceLoopCount"
+      ".waveformEffect .sequenceLoopCount",
     );
   waveformEffectSequenceLoopCountInput.max =
     BS.MaxVibrationWaveformEffectSequenceLoopCount;
 }
 /** @type {HTMLTemplateElement} */
 const vibrationLocationTemplate = document.getElementById(
-  "vibrationLocationTemplate"
+  "vibrationLocationTemplate",
 );
 
 /** @type {HTMLTemplateElement} */
 const waveformEffectSegmentTemplate = document.getElementById(
-  "waveformEffectSegmentTemplate"
+  "waveformEffectSegmentTemplate",
 );
 {
   /** @type {HTMLSelectElement} */
@@ -414,7 +414,7 @@ const waveformEffectSegmentTemplate = document.getElementById(
 
 /** @type {HTMLTemplateElement} */
 const waveformSegmentTemplate = document.getElementById(
-  "waveformSegmentTemplate"
+  "waveformSegmentTemplate",
 );
 {
   /** @type {HTMLInputElement} */
@@ -448,7 +448,7 @@ addVibrationButton.addEventListener("click", () => {
     vibrationLocationContainer.querySelector("span").innerText =
       vibrationLocation;
     vibrationLocationContainer.querySelector(
-      "input"
+      "input",
     ).dataset.vibrationLocation = vibrationLocation;
     vibrationLocationsContainer.appendChild(vibrationLocationContainer);
   });
@@ -494,7 +494,7 @@ addVibrationButton.addEventListener("click", () => {
           break;
         default:
           throw Error(
-            `uncaught waveformEffectTypeSelect value "${waveformEffectTypeSelect.value}"`
+            `uncaught waveformEffectTypeSelect value "${waveformEffectTypeSelect.value}"`,
           );
       }
 
@@ -589,7 +589,7 @@ triggerVibrationsButton.addEventListener("click", () => {
   Array.from(vibrationTemplate.parentElement.querySelectorAll(".vibration"))
     .filter(
       (vibrationContainer) =>
-        vibrationContainer.querySelector(".shouldTrigger").checked
+        vibrationContainer.querySelector(".shouldTrigger").checked,
     )
     .forEach((vibrationContainer) => {
       /** @type {BS.VibrationConfiguration} */
@@ -597,12 +597,12 @@ triggerVibrationsButton.addEventListener("click", () => {
         locations: [],
       };
       Array.from(
-        vibrationContainer.querySelectorAll(`[data-vibration-location]`)
+        vibrationContainer.querySelectorAll(`[data-vibration-location]`),
       )
         .filter((input) => input.checked)
         .forEach((input) => {
           vibrationConfiguration.locations.push(
-            input.dataset.vibrationLocation
+            input.dataset.vibrationLocation,
           );
         });
       if (vibrationConfiguration.locations.length == 0) {
@@ -615,13 +615,14 @@ triggerVibrationsButton.addEventListener("click", () => {
         case "waveformEffect":
           vibrationConfiguration.segments = Array.from(
             vibrationContainer.querySelectorAll(
-              ".waveformEffect .waveformEffectSegment"
-            )
+              ".waveformEffect .waveformEffectSegment",
+            ),
           ).map((waveformEffectSegmentContainer) => {
             /** @type {BS.VibrationWaveformEffectSegment} */
             const waveformEffectSegment = {
               loopCount: Number(
-                waveformEffectSegmentContainer.querySelector(".loopCount").value
+                waveformEffectSegmentContainer.querySelector(".loopCount")
+                  .value,
               ),
             };
             if (
@@ -632,27 +633,27 @@ triggerVibrationsButton.addEventListener("click", () => {
                 waveformEffectSegmentContainer.querySelector(".effect").value;
             } else {
               waveformEffectSegment.delay = Number(
-                waveformEffectSegmentContainer.querySelector(".delay").value
+                waveformEffectSegmentContainer.querySelector(".delay").value,
               );
             }
             return waveformEffectSegment;
           });
           vibrationConfiguration.loopCount = Number(
             vibrationContainer.querySelector(
-              ".waveformEffect .sequenceLoopCount"
-            ).value
+              ".waveformEffect .sequenceLoopCount",
+            ).value,
           );
           break;
         case "waveform":
           vibrationConfiguration.segments = Array.from(
-            vibrationContainer.querySelectorAll(".waveform .waveformSegment")
+            vibrationContainer.querySelectorAll(".waveform .waveformSegment"),
           ).map((waveformSegmentContainer) => {
             return {
               amplitude: Number(
-                waveformSegmentContainer.querySelector(".amplitude").value
+                waveformSegmentContainer.querySelector(".amplitude").value,
               ),
               duration: Number(
-                waveformSegmentContainer.querySelector(".duration").value
+                waveformSegmentContainer.querySelector(".duration").value,
               ),
             };
           });
@@ -799,7 +800,7 @@ device.addEventListener("fileTransferStatus", () => {
 let fileTransferDirection;
 /** @type {HTMLSelectElement} */
 const fileTransferDirectionSelect = document.getElementById(
-  "fileTransferDirection"
+  "fileTransferDirection",
 );
 fileTransferDirectionSelect.addEventListener("input", () => {
   fileTransferDirection = fileTransferDirectionSelect.value;
@@ -910,11 +911,11 @@ device.addEventListener("getTfliteInferencingEnabled", () => {
 const tfliteSampleRateSpan = document.getElementById("tfliteSampleRate");
 /** @type {HTMLInputElement} */
 const setTfliteSampleRateInput = document.getElementById(
-  "setTfliteSampleRateInput"
+  "setTfliteSampleRateInput",
 );
 /** @type {HTMLButtonElement} */
 const setTfliteSampleRateButton = document.getElementById(
-  "setTfliteSampleRateButton"
+  "setTfliteSampleRateButton",
 );
 
 device.addEventListener("isConnected", () => {
@@ -948,7 +949,7 @@ device.addEventListener("getTfliteInferencingEnabled", () => {
 const tfliteSensorTypesContainer = document.getElementById("tfliteSensorTypes");
 /** @type {HTMLTemplateElement} */
 const tfliteSensorTypeTemplate = document.getElementById(
-  "tfliteSensorTypeTemplate"
+  "tfliteSensorTypeTemplate",
 );
 /** @type {Object.<string, HTMLElement>} */
 const tfliteSensorTypeContainers = {};
@@ -956,7 +957,7 @@ const tfliteSensorTypeContainers = {};
 let tfliteSensorTypes = [];
 /** @type {HTMLButtonElement} */
 const setTfliteSensorTypesButton = document.getElementById(
-  "setTfliteSensorTypes"
+  "setTfliteSensorTypes",
 );
 
 BS.TfliteSensorTypes.forEach((sensorType) => {
@@ -1023,11 +1024,11 @@ device.addEventListener("tfliteIsReady", () => {
 const tfliteThresholdSpan = document.getElementById("tfliteThreshold");
 /** @type {HTMLInputElement} */
 const setTfliteThresholdInput = document.getElementById(
-  "setTfliteThresholdInput"
+  "setTfliteThresholdInput",
 );
 /** @type {HTMLButtonElement} */
 const setTfliteThresholdButton = document.getElementById(
-  "setTfliteThresholdButton"
+  "setTfliteThresholdButton",
 );
 
 device.addEventListener("isConnected", () => {
@@ -1059,11 +1060,11 @@ setTfliteThresholdButton.addEventListener("click", () => {
 const tfliteCaptureDelaySpan = document.getElementById("tfliteCaptureDelay");
 /** @type {HTMLInputElement} */
 const setTfliteCaptureDelayInput = document.getElementById(
-  "setTfliteCaptureDelayInput"
+  "setTfliteCaptureDelayInput",
 );
 /** @type {HTMLButtonElement} */
 const setTfliteCaptureDelayButton = document.getElementById(
-  "setTfliteCaptureDelayButton"
+  "setTfliteCaptureDelayButton",
 );
 
 device.addEventListener("isConnected", () => {
@@ -1093,11 +1094,11 @@ setTfliteCaptureDelayButton.addEventListener("click", () => {
 
 /** @type {HTMLInputElement} */
 const tfliteInferencingEnabledInput = document.getElementById(
-  "tfliteInferencingEnabled"
+  "tfliteInferencingEnabled",
 );
 /** @type {HTMLButtonElement} */
 const toggleTfliteInferencingEnabledButton = document.getElementById(
-  "toggleTfliteInferencingEnabled"
+  "toggleTfliteInferencingEnabled",
 );
 
 device.addEventListener("tfliteIsReady", () => {
@@ -1147,9 +1148,12 @@ device.addEventListener("tfliteInference", (event) => {
   clearTimeout(topInferenceClassTimeoutId);
   if (device.tfliteTask == "classification") {
     topInferenceClassElement.innerText = tfliteInference.maxClass ?? "";
-    topInferenceClassTimeoutId = setTimeout(() => {
-      topInferenceClassElement.innerText = "";
-    }, Math.max(device.tfliteCaptureDelay, 500));
+    topInferenceClassTimeoutId = setTimeout(
+      () => {
+        topInferenceClassElement.innerText = "";
+      },
+      Math.max(device.tfliteCaptureDelay, 500),
+    );
   }
 });
 
@@ -1166,7 +1170,7 @@ firmwareInput.addEventListener("input", () => {
 });
 /** @type {HTMLButtonElement} */
 const toggleFirmwareUploadButton = document.getElementById(
-  "toggleFirmwareUpload"
+  "toggleFirmwareUpload",
 );
 toggleFirmwareUploadButton.addEventListener("click", () => {
   device.uploadFirmware(firmware);
@@ -1181,17 +1185,17 @@ device.addEventListener("isConnected", () => {
 
 /** @type {HTMLProgressElement} */
 const firmwareUploadProgress = document.getElementById(
-  "firmwareUploadProgress"
+  "firmwareUploadProgress",
 );
 /** @type {HTMLSpanElement} */
 const firmwareUploadProgressPercentageSpan = document.getElementById(
-  "firmwareUploadProgressPercentage"
+  "firmwareUploadProgressPercentage",
 );
 device.addEventListener("firmwareUploadProgress", (event) => {
   const progress = event.message.progress;
   firmwareUploadProgress.value = progress;
   firmwareUploadProgressPercentageSpan.innerText = `${Math.floor(
-    100 * progress
+    100 * progress,
   )}%`;
 });
 device.addEventListener("firmwareUploadComplete", () => {
@@ -1210,7 +1214,7 @@ device.addEventListener("firmwareImages", () => {
   firmwareImagesPre.textContent = JSON.stringify(
     device.firmwareImages,
     (key, value) => (key == "hash" ? Array.from(value).join(",") : value),
-    2
+    2,
   );
 });
 
@@ -1256,7 +1260,7 @@ const updateTestFirmwareImageButton = () => {
 
 /** @type {HTMLButtonElement} */
 const confirmFirmwareImageButton = document.getElementById(
-  "confirmFirmwareImage"
+  "confirmFirmwareImage",
 );
 confirmFirmwareImageButton.addEventListener("click", () => {
   device.confirmFirmwareImage(selectedImageIndex);
@@ -1286,7 +1290,7 @@ device.addEventListener("firmwareImages", () => {
   device.firmwareImages.forEach((firmwareImage, index) => {
     const option = new Option(
       `${firmwareImage.version} (slot ${index})`,
-      index
+      index,
     );
     option.disabled = firmwareImage.empty;
     imageSelectionOptGroup.appendChild(option);
@@ -1400,7 +1404,7 @@ device.addEventListener("getWifiConnectionEnabled", () => {
 
 /** @type {HTMLSpanElement} */
 const wifiConnectionEnabledSpan = document.getElementById(
-  "wifiConnectionEnabled"
+  "wifiConnectionEnabled",
 );
 device.addEventListener("getWifiConnectionEnabled", (event) => {
   wifiConnectionEnabledSpan.innerText = event.message.wifiConnectionEnabled;
@@ -1420,7 +1424,7 @@ device.addEventListener("ipAddress", (event) => {
 
 /** @type {HTMLButtonElement} */
 const toggleWifiConnectionButton = document.getElementById(
-  "toggleWifiConnection"
+  "toggleWifiConnection",
 );
 toggleWifiConnectionButton.addEventListener("click", async () => {
   toggleWifiConnectionButton.disabled = true;
@@ -1435,7 +1439,7 @@ device.addEventListener("getWifiConnectionEnabled", (event) => {
 
 /** @type {HTMLButtonElement} */
 const connectViaWebSocketsButton = document.getElementById(
-  "connectViaWebSockets"
+  "connectViaWebSockets",
 );
 connectViaWebSocketsButton.addEventListener("click", async () => {
   toggleWifiConnectionButton.disabled = true;
@@ -1450,10 +1454,10 @@ const updateConnectViaWebSocketsButton = () => {
   connectViaWebSocketsButton.disabled = !enabled;
 };
 device.addEventListener("isWifiConnected", () =>
-  updateConnectViaWebSocketsButton()
+  updateConnectViaWebSocketsButton(),
 );
 device.addEventListener("isConnected", () =>
-  updateConnectViaWebSocketsButton()
+  updateConnectViaWebSocketsButton(),
 );
 
 // CAMERA
@@ -1583,22 +1587,22 @@ device.addEventListener("autoPicture", () => {
 
 /** @type {HTMLPreElement} */
 const cameraConfigurationPre = document.getElementById(
-  "cameraConfigurationPre"
+  "cameraConfigurationPre",
 );
 device.addEventListener("getCameraConfiguration", () => {
   cameraConfigurationPre.textContent = JSON.stringify(
     device.cameraConfiguration,
     null,
-    2
+    2,
   );
 });
 
 const cameraConfigurationContainer = document.getElementById(
-  "cameraConfiguration"
+  "cameraConfiguration",
 );
 /** @type {HTMLTemplateElement} */
 const cameraConfigurationTypeTemplate = document.getElementById(
-  "cameraConfigurationTypeTemplate"
+  "cameraConfigurationTypeTemplate",
 );
 BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   const cameraConfigurationTypeContainer =
@@ -1666,9 +1670,9 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
       device.addEventListener(
         "getCameraConfiguration",
         () => {
-          setTimeout(() => device.takePicture()), 100;
+          (setTimeout(() => device.takePicture()), 100);
         },
-        { once: true }
+        { once: true },
       );
     }
   });
@@ -1676,7 +1680,7 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
 
 /** @type {HTMLInputElement} */
 const takePictureAfterUpdateCheckbox = document.getElementById(
-  "takePictureAfterUpdate"
+  "takePictureAfterUpdate",
 );
 let takePictureAfterUpdate = false;
 takePictureAfterUpdateCheckbox.addEventListener("input", () => {
@@ -1698,14 +1702,14 @@ const updateWhiteBalance = BS.ThrottleUtils.throttle(
       device.addEventListener(
         "getCameraConfiguration",
         () => {
-          setTimeout(() => device.takePicture()), 100;
+          (setTimeout(() => device.takePicture()), 100);
         },
-        { once: true }
+        { once: true },
       );
     }
   },
   200,
-  true
+  true,
 );
 cameraWhiteBalanceInput.addEventListener("input", () => {
   let [redGain, greenGain, blueGain] = cameraWhiteBalanceInput.value
@@ -1746,7 +1750,7 @@ device.addEventListener("getCameraConfiguration", () => {
 const cameraRecordingVideoElement = document.getElementById("cameraRecording");
 /** @type {HTMLInputElement} */
 const autoPlayCameraRecordingCheckbox = document.getElementById(
-  "autoPlayCameraRecording"
+  "autoPlayCameraRecording",
 );
 let autoPlayCameraRecording = autoPlayCameraRecordingCheckbox.checked;
 autoPlayCameraRecordingCheckbox.addEventListener("input", () => {
@@ -1763,7 +1767,7 @@ device.addEventListener("cameraRecording", (event) => {
 
 /** @type {HTMLButtonElement} */
 const toggleCameraRecordingButton = document.getElementById(
-  "toggleCameraRecording"
+  "toggleCameraRecording",
 );
 toggleCameraRecordingButton.addEventListener("click", () => {
   device.toggleCameraRecording(microphoneStream);
@@ -1817,7 +1821,7 @@ const updateMicrophoneSources = async () => {
   selectMicrophoneOptgroup.appendChild(new Option("device"));
   audioDevices.forEach((audioInputDevice) => {
     selectMicrophoneOptgroup.appendChild(
-      new Option(audioInputDevice.label, audioInputDevice.deviceId)
+      new Option(audioInputDevice.label, audioInputDevice.deviceId),
     );
   });
   selectMicrophoneSelect.value = "none";
@@ -1857,7 +1861,7 @@ const stopMicrophoneStream = () => {
   microphoneAudio.setAttribute("hidden", "");
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateMicrophoneSources()
+  updateMicrophoneSources(),
 );
 updateMicrophoneSources();
 
@@ -1875,7 +1879,7 @@ microphoneAudio.addEventListener("emptied", () => {
 
 /** @type {HTMLSpanElement} */
 const isMicrophoneAvailableSpan = document.getElementById(
-  "isMicrophoneAvailable"
+  "isMicrophoneAvailable",
 );
 device.addEventListener("connected", () => {
   isMicrophoneAvailableSpan.innerText = device.hasMicrophone;
@@ -1889,22 +1893,22 @@ device.addEventListener("microphoneStatus", () => {
 
 /** @type {HTMLPreElement} */
 const microphoneConfigurationPre = document.getElementById(
-  "microphoneConfigurationPre"
+  "microphoneConfigurationPre",
 );
 device.addEventListener("getMicrophoneConfiguration", () => {
   microphoneConfigurationPre.textContent = JSON.stringify(
     device.microphoneConfiguration,
     null,
-    2
+    2,
   );
 });
 
 const microphoneConfigurationContainer = document.getElementById(
-  "microphoneConfiguration"
+  "microphoneConfiguration",
 );
 /** @type {HTMLTemplateElement} */
 const microphoneConfigurationTypeTemplate = document.getElementById(
-  "microphoneConfigurationTypeTemplate"
+  "microphoneConfigurationTypeTemplate",
 );
 BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
   const microphoneConfigurationTypeContainer =
@@ -1913,7 +1917,7 @@ BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
       .querySelector(".microphoneConfigurationType");
 
   microphoneConfigurationContainer.appendChild(
-    microphoneConfigurationTypeContainer
+    microphoneConfigurationTypeContainer,
   );
 
   microphoneConfigurationTypeContainer.querySelector(".type").innerText =
@@ -1928,7 +1932,7 @@ BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
   BS.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
     (value) => {
       optgroup.appendChild(new Option(value));
-    }
+    },
   );
 
   /** @type {HTMLSpanElement} */
@@ -2016,7 +2020,7 @@ stopMicrophoneButton.addEventListener("click", () => {
 });
 /** @type {HTMLButtonElement} */
 const enableMicrophoneVadButton = document.getElementById(
-  "enableMicrophoneVad"
+  "enableMicrophoneVad",
 );
 enableMicrophoneVadButton.addEventListener("click", () => {
   device.enableMicrophoneVad();
@@ -2069,11 +2073,11 @@ microphoneStreamAudioElement.srcObject =
 
 /** @type {HTMLAudioElement} */
 const microphoneRecordingAudioElement = document.getElementById(
-  "microphoneRecording"
+  "microphoneRecording",
 );
 /** @type {HTMLInputElement} */
 const autoPlayMicrophoneRecordingCheckbox = document.getElementById(
-  "autoPlayMicrophoneRecording"
+  "autoPlayMicrophoneRecording",
 );
 let autoPlayMicrophoneRecording = autoPlayMicrophoneRecordingCheckbox.checked;
 console.log("autoPlayMicrophoneRecording", autoPlayMicrophoneRecording);
@@ -2090,7 +2094,7 @@ device.addEventListener("microphoneRecording", (event) => {
 
 /** @type {HTMLButtonElement} */
 const toggleMicrophoneRecordingButton = document.getElementById(
-  "toggleMicrophoneRecording"
+  "toggleMicrophoneRecording",
 );
 toggleMicrophoneRecordingButton.addEventListener("click", () => {
   device.toggleMicrophoneRecording();
@@ -2174,13 +2178,13 @@ device.addEventListener("displayInformation", () => {
   displayInformationPre.textContent = JSON.stringify(
     device.displayInformation,
     null,
-    2
+    2,
   );
 });
 
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -2212,7 +2216,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     updateBitmapCanvas();
   },
   100,
-  true
+  true,
 );
 device.addEventListener("notConnected", () => {
   displayColorsContainer.innerHTML = "";
@@ -2243,7 +2247,7 @@ device.addEventListener("connected", () => {
         }
 
         const bitmapColorIndexContainers = Array.from(
-          bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex")
+          bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex"),
         );
 
         bitmapColorIndexContainers.forEach(
@@ -2266,7 +2270,7 @@ device.addEventListener("connected", () => {
             if (bitmapColorIndex == currentBitmapColorIndex) {
               currentBitmapColorIndexColorInput.value = displayColorInput.value;
             }
-          }
+          },
         );
       });
       displayColorsContainer.appendChild(displayColorContainer);
@@ -2282,10 +2286,10 @@ device.addEventListener("displayColor", (event) => {
 
 /** @type {HTMLTemplateElement} */
 const displayColorOpacityTemplate = document.getElementById(
-  "displayColorOpacityTemplate"
+  "displayColorOpacityTemplate",
 );
 const displayColorOpacitiesContainer = document.getElementById(
-  "displayColorOpacities"
+  "displayColorOpacities",
 );
 const setDisplayColorOpacity = BS.ThrottleUtils.throttle(
   (colorIndex, opacity) => {
@@ -2293,7 +2297,7 @@ const setDisplayColorOpacity = BS.ThrottleUtils.throttle(
     device.setDisplayColorOpacity(colorIndex, opacity, true);
   },
   100,
-  true
+  true,
 );
 device.addEventListener("notConnected", () => {
   displayColorOpacitiesContainer.innerHTML = "";
@@ -2337,7 +2341,7 @@ const setDisplayOpacity = BS.ThrottleUtils.throttle(
     device.setDisplayOpacity(opacity, true);
   },
   100,
-  true
+  true,
 );
 displayOpacityInput.addEventListener("input", () => {
   const opacity = Number(displayOpacityInput.value);
@@ -2560,7 +2564,7 @@ const drawShape = (updatedParams) => {
           drawY,
           drawWidth,
           drawHeight,
-          drawBorderRadius
+          drawBorderRadius,
         );
         break;
       case "drawCircle":
@@ -2574,7 +2578,7 @@ const drawShape = (updatedParams) => {
           drawX,
           drawY,
           drawRadius,
-          drawNumberOfSides
+          drawNumberOfSides,
         );
         break;
       case "drawSegment":
@@ -2586,7 +2590,7 @@ const drawShape = (updatedParams) => {
           drawY,
           drawRadius,
           drawStartAngle,
-          drawAngleOffset
+          drawAngleOffset,
         );
         break;
       case "drawArcEllipse":
@@ -2596,7 +2600,7 @@ const drawShape = (updatedParams) => {
           drawWidth,
           drawHeight,
           drawStartAngle,
-          drawAngleOffset
+          drawAngleOffset,
         );
         break;
       case "drawBitmap":
@@ -2642,7 +2646,7 @@ rotationInput.addEventListener("input", () => {
 });
 
 const horizontalAlignmentContainer = document.getElementById(
-  "horizontalAlignment"
+  "horizontalAlignment",
 );
 const horizontalAlignmentSelect =
   horizontalAlignmentContainer.querySelector("select");
@@ -2714,7 +2718,7 @@ segmentEndCapSelect.addEventListener("input", () => {
 });
 
 const drawSegmentStartRadiusContainer = document.getElementById(
-  "drawSegmentStartRadius"
+  "drawSegmentStartRadius",
 );
 const drawSegmentStartRadiusInput =
   drawSegmentStartRadiusContainer.querySelector("input");
@@ -2730,7 +2734,7 @@ drawSegmentStartRadiusInput.addEventListener("input", () => {
 });
 
 const drawSegmentEndRadiusContainer = document.getElementById(
-  "drawSegmentEndRadius"
+  "drawSegmentEndRadius",
 );
 const drawSegmentEndRadiusInput =
   drawSegmentEndRadiusContainer.querySelector("input");
@@ -2794,7 +2798,7 @@ drawCropLeftInput.addEventListener("input", () => {
 });
 
 const drawRotationCropTopContainer = document.getElementById(
-  "drawRotationCropTop"
+  "drawRotationCropTop",
 );
 const drawRotationCropTopInput =
   drawRotationCropTopContainer.querySelector("input");
@@ -2810,7 +2814,7 @@ drawRotationCropTopInput.addEventListener("input", () => {
 });
 
 const drawRotationCropRightContainer = document.getElementById(
-  "drawRotationCropRight"
+  "drawRotationCropRight",
 );
 const drawRotationCropRightInput =
   drawRotationCropRightContainer.querySelector("input");
@@ -2826,7 +2830,7 @@ drawRotationCropRightInput.addEventListener("input", () => {
 });
 
 const drawRotationCropBottomContainer = document.getElementById(
-  "drawRotationCropBottom"
+  "drawRotationCropBottom",
 );
 const drawRotationCropBottomInput =
   drawRotationCropBottomContainer.querySelector("input");
@@ -2842,7 +2846,7 @@ drawRotationCropBottomInput.addEventListener("input", () => {
 });
 
 const drawRotationCropLeftContainer = document.getElementById(
-  "drawRotationCropLeft"
+  "drawRotationCropLeft",
 );
 const drawRotationCropLeftInput =
   drawRotationCropLeftContainer.querySelector("input");
@@ -3065,7 +3069,7 @@ device.addEventListener("connected", () => {
 
   drawRadiusInput.max = Math.min(
     device.displayInformation.height / 2,
-    device.displayInformation.width / 2
+    device.displayInformation.width / 2,
   );
 });
 
@@ -3196,7 +3200,7 @@ const setBitmapPixel = (offsetX, offsetY) => {
 };
 
 const bitmapNumberOfColorsContainer = document.getElementById(
-  "bitmapNumberOfColors"
+  "bitmapNumberOfColors",
 );
 const bitmapNumberOfColorsInput =
   bitmapNumberOfColorsContainer.querySelector("input");
@@ -3219,7 +3223,7 @@ const bitmapColorIndicesContainer =
   document.getElementById("bitmapColorIndices");
 /** @type {HTMLTemplateElement} */
 const bitmapColorIndexTemplate = document.getElementById(
-  "bitmapColorIndexTemplate"
+  "bitmapColorIndexTemplate",
 );
 const updateBitmapColorIndicesContainer = () => {
   bitmapColorIndicesContainer.innerHTML = "";
@@ -3272,7 +3276,7 @@ const updateBitmapColorIndicesContainer = () => {
       }
       console.log(
         "bitmapColorIndices",
-        device.displayContextState.bitmapColorIndices
+        device.displayContextState.bitmapColorIndices,
       );
       updateBitmapCanvas();
     });
@@ -3285,7 +3289,7 @@ device.addEventListener("isConnected", () => {
 });
 
 const currentBitmapColorIndexContainer = document.getElementById(
-  "currentBitmapColorIndex"
+  "currentBitmapColorIndex",
 );
 let currentBitmapColorIndex = 0;
 const currentBitmapColorIndexSelect =
@@ -3332,7 +3336,7 @@ bitmapImageInput.addEventListener("input", () => {
 });
 /** @type {HTMLButtonElement} */
 const quantizeBitmapImageButton = document.getElementById(
-  "quantizeBitmapImage"
+  "quantizeBitmapImage",
 );
 quantizeBitmapImageButton.addEventListener("click", () => {
   quantizeBitmapImage();
@@ -3361,7 +3365,7 @@ bitmapImage.addEventListener("load", async () => {
       bitmapImage,
       bitmapWidth,
       bitmapHeight,
-      bitmapNumberOfColors
+      bitmapNumberOfColors,
     );
 
     quantizedBitmapImage.width = bitmapWidth;
@@ -3380,7 +3384,7 @@ bitmapImage.addEventListener("load", async () => {
       bitmapImage,
       bitmapWidth,
       bitmapHeight,
-      bitmapNumberOfColors
+      bitmapNumberOfColors,
     );
 
     quantizedBitmapImage.width = bitmapWidth;
@@ -3397,7 +3401,7 @@ device.addEventListener("displayContextState", (event) => {
   const { differences } = event.message;
   if (differences.includes("bitmapColorIndices")) {
     const bitmapColorIndexContainers = Array.from(
-      bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex")
+      bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex"),
     );
 
     device.displayBitmapColorIndices.forEach((colorIndex, bitmapColorIndex) => {
@@ -3414,7 +3418,7 @@ device.addEventListener("displayContextState", (event) => {
 });
 
 const toggleQuantizeOverrideDisplayColorsCheckbox = document.getElementById(
-  "toggleQuantizeOverrideDisplayColors"
+  "toggleQuantizeOverrideDisplayColors",
 );
 let quantizeOverrideDisplayColors =
   toggleQuantizeOverrideDisplayColorsCheckbox.checked;

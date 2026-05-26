@@ -168,18 +168,18 @@ class Console {
   assertTypeWithError(value: any, type: string) {
     this.assertWithError(
       typeof value == type,
-      `value ${value} of type "${typeof value}" not of type "${type}"`
+      `value ${value} of type "${typeof value}" not of type "${type}"`,
     );
   }
 
   /** @throws {Error} if value's type doesn't match */
   assertEnumWithError<T extends string | number>(
     value: T,
-    enumeration: readonly T[]
+    enumeration: readonly T[],
   ) {
     this.assertWithError(
       enumeration.includes(value),
-      `invalid enum "${value}"`
+      `invalid enum "${value}"`,
     );
   }
 
@@ -187,14 +187,14 @@ class Console {
   assertRangeWithError(name: string, value: number, min: number, max: number) {
     this.assertWithError(
       value >= min && value <= max,
-      `${name} ${value} must be within ${min}-${max}`
+      `${name} ${value} must be within [${min}, ${max}]`,
     );
   }
 }
 
 export function createConsole(
   type: string,
-  levelFlags?: ConsoleLevelFlags
+  levelFlags?: ConsoleLevelFlags,
 ): Console {
   return Console.create(type, levelFlags);
 }
@@ -202,7 +202,7 @@ export function createConsole(
 /** @throws {Error} if no console with type is found */
 export function setConsoleLevelFlagsForType(
   type: string,
-  levelFlags: ConsoleLevelFlags
+  levelFlags: ConsoleLevelFlags,
 ) {
   Console.setLevelFlagsForType(type, levelFlags);
 }
