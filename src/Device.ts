@@ -145,6 +145,13 @@ import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 /** NODE_END */
 
 import autoBind from "auto-bind";
+import LedManager, {
+  LedEventDispatcher,
+  LedEventTypes,
+  LedMessageType,
+  LEDMessageTypes,
+  SendLedMessageCallback,
+} from "./led/LEDManager.ts";
 
 const _console = createConsole("Device", { log: false });
 
@@ -165,6 +172,7 @@ export const DeviceEventTypes = [
   ...MicrophoneEventTypes,
   ...DisplayEventTypes,
   ...SensorMetaDataEventTypes,
+  ...LedEventTypes,
   ...FirmwareEventTypes,
 ] as const;
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
@@ -305,6 +313,11 @@ class Device {
     this.#displayManager.sendFile = this.#fileTransferManager
       .send as SendFileCallback;
 
+    this.#ledManager.sendMessage = this
+      .sendTxMessages as SendLedMessageCallback;
+    this.#ledManager.eventDispatcher = this
+      .#eventDispatcher as LedEventDispatcher;
+
     this.#firmwareManager.sendMessage = this
       .sendSmpMessage as SendSmpMessageCallback;
     this.#firmwareManager.eventDispatcher = this
@@ -364,6 +377,15 @@ class Device {
         this.sendTxMessages(messages, false);
       } else {
         _console.log("don't need to request number of buttons/touches");
+      }
+    });
+    this.addEventListener("deviceInformation", (event) => {
+      // TODO: - add to RequiredInformationConnectionMessages later on
+      if (this.deviceInformation.modelNumber == "PMSG") {
+        _console.log("requesting led information");
+        this.sendTxMessages([{ type: "getLEDInformation" }], false);
+      } else {
+        _console.log("don't need to request led information");
       }
     });
     this.addEventListener("getSensorConfiguration", (event) => {
@@ -893,6 +915,7 @@ class Device {
     this.#sensorDataManager.clear();
     this.#sensorConfigurationManager.clear();
     this.#displayManager.reset();
+    this.#ledManager.clear();
     this.#isServerSide = false;
     this.#batteryLevel = undefined;
   }
@@ -1009,6 +1032,11 @@ class Device {
         ) {
           this.#displayManager.parseMessage(
             messageType as DisplayMessageType,
+            dataView,
+          );
+        } else if (LEDMessageTypes.includes(messageType as LedMessageType)) {
+          this.#ledManager.parseMessage(
+            messageType as LedMessageType,
             dataView,
           );
         } else {
@@ -2221,6 +2249,17 @@ class Device {
   get drawDisplayClosedPath() {
     return this.#displayManager.drawClosedPath;
   }
+
+  // LED
+  #ledManager = new LedManager();
+
+  get leds() {
+    return this.#ledManager.leds;
+  }
+  get hasLeds() {
+    return this.leds.length > 0;
+  }
+  // FILL
 }
 
 export default Device;

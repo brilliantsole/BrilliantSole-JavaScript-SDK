@@ -63,7 +63,7 @@ declare class MicrophoneManager {
         message: MicrophoneEventMessages[T];
     }>;
     requestRequiredInformation(): void;
-    get microphoneStatus(): "idle" | "vad" | "inferencing" | "streaming";
+    get microphoneStatus(): "idle" | "streaming" | "vad" | "inferencing";
     start(): Promise<void>;
     stop(): Promise<void>;
     vad(): Promise<void>;

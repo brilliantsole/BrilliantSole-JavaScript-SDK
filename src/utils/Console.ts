@@ -185,6 +185,7 @@ class Console {
 
   /** @throws {Error} if value is not within some range */
   assertRangeWithError(name: string, value: number, min: number, max: number) {
+    this.assertTypeWithError(value, "number");
     this.assertWithError(
       value >= min && value <= max,
       `${name} ${value} must be within [${min}, ${max}]`,
