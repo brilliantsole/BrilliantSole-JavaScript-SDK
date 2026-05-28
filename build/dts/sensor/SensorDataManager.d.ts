@@ -28,6 +28,14 @@ interface AnySensorDataEventMessages {
 }
 export type SensorDataEventMessages = (_SensorDataEventMessages & AnySensorDataEventMessages) & PressureSensorEventMessages & ButtonSensorEventMessages & TouchSensorEventMessages;
 export type SensorDataEventDispatcher = EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;
+export declare const SensorMetaDataMessageTypes: readonly ["getSensorCounts"];
+export type SensorMetaDataMessageType = (typeof SensorMetaDataMessageTypes)[number];
+export declare const RequiredSensorMetaDataMessageTypes: SensorMetaDataMessageType[];
+export declare const SensorMetaDataEventTypes: readonly ["getSensorCounts"];
+export type SensorMetaDataEventType = (typeof SensorMetaDataEventTypes)[number];
+export interface SensorMetaDataEventMessages {
+}
+export type SensorMetaDataEventDispatcher = EventDispatcher<Device, SensorMetaDataEventType, SensorMetaDataEventMessages>;
 declare class SensorDataManager {
     #private;
     constructor();
@@ -38,11 +46,12 @@ declare class SensorDataManager {
     touchSensorDataManager: TouchSensorDataManager;
     static AssertValidSensorType(sensorType: SensorType): void;
     static AssertValidSensorTypeEnum(sensorTypeEnum: number): void;
-    get eventDispatcher(): SensorDataEventDispatcher;
-    set eventDispatcher(eventDispatcher: SensorDataEventDispatcher);
-    get dispatchEvent(): <T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "pressureMotionAutoRangeEnabled" | "pressureMotionAutoRangeDisabled" | "pressureMotionAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "buttons" | "numberOfButtons" | "button" | "buttonDown" | "buttonUp" | "touches" | "numberOfTouches" | "touch" | "touchDown" | "touchUp" | "camera" | "microphone" | "pressure" | "getPressurePositions" | "getSensorScalars" | "sensorData">(type: T, message: SensorDataEventMessages[T]) => void;
-    parseMessage(messageType: SensorDataMessageType, dataView: DataView<ArrayBuffer>): void;
+    get eventDispatcher(): SensorDataEventDispatcher & SensorMetaDataEventDispatcher;
+    set eventDispatcher(eventDispatcher: SensorDataEventDispatcher & SensorMetaDataEventDispatcher);
+    get dispatchEvent(): (<T extends "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "pressureMotionAutoRangeEnabled" | "pressureMotionAutoRangeDisabled" | "pressureMotionAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "buttons" | "numberOfButtons" | "button" | "buttonDown" | "buttonUp" | "touches" | "numberOfTouches" | "touch" | "touchDown" | "touchUp" | "camera" | "microphone" | "pressure" | "getPressurePositions" | "getSensorScalars" | "sensorData">(type: T, message: SensorDataEventMessages[T]) => void) & (<T extends "getSensorCounts">(type: T, message: SensorMetaDataEventMessages[T]) => void);
+    parseMessage(messageType: SensorDataMessageType | SensorMetaDataMessageType, dataView: DataView<ArrayBuffer>): void;
     parseScalars(dataView: DataView<ArrayBuffer>): void;
+    parseCounts(dataView: DataView<ArrayBuffer>): void;
     private parseData;
     private parseDataCallback;
     clear(): void;

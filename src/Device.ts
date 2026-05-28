@@ -36,6 +36,12 @@ import SensorDataManager, {
   ContinuousSensorTypes,
   SensorDataEventDispatcher,
   RequiredPressureMessageTypes,
+  SensorMetaDataEventDispatcher,
+  SensorMetaDataMessageTypes,
+  SensorMetaDataMessageType,
+  SensorMetaDataEventTypes,
+  SensorMetaDataEventMessages,
+  RequiredSensorMetaDataMessageTypes,
 } from "./sensor/SensorDataManager.ts";
 import VibrationManager, {
   SendVibrationMessageCallback,
@@ -158,6 +164,7 @@ export const DeviceEventTypes = [
   ...CameraEventTypes,
   ...MicrophoneEventTypes,
   ...DisplayEventTypes,
+  ...SensorMetaDataEventTypes,
   ...FirmwareEventTypes,
 ] as const;
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
@@ -175,6 +182,7 @@ export interface DeviceEventMessages
     CameraEventMessages,
     MicrophoneEventMessages,
     DisplayEventMessages,
+    SensorMetaDataEventMessages,
     FirmwareEventMessages {
   batteryLevel: { batteryLevel: number };
   connectionMessage: {
@@ -257,7 +265,8 @@ class Device {
       .#eventDispatcher as SensorConfigurationEventDispatcher;
 
     this.#sensorDataManager.eventDispatcher = this
-      .#eventDispatcher as SensorDataEventDispatcher;
+      .#eventDispatcher as SensorDataEventDispatcher &
+      SensorMetaDataEventDispatcher;
 
     this.#vibrationManager.sendMessage = this
       .sendTxMessages as SendVibrationMessageCallback;
@@ -340,6 +349,21 @@ class Device {
         this.sendTxMessages(messages, false);
       } else {
         _console.log("don't need to request microphone infomration");
+      }
+
+      if (
+        this.sensorTypes.includes("buttons") ||
+        this.sensorTypes.includes("touches")
+      ) {
+        _console.log("requesting number of buttons/touches");
+        const messages = RequiredSensorMetaDataMessageTypes.map(
+          (messageType) => ({
+            type: messageType,
+          }),
+        );
+        this.sendTxMessages(messages, false);
+      } else {
+        _console.log("don't need to request number of buttons/touches");
       }
     });
     this.addEventListener("getSensorConfiguration", (event) => {
@@ -911,6 +935,15 @@ class Device {
         ) {
           this.#sensorDataManager.parseMessage(
             messageType as SensorDataMessageType,
+            dataView,
+          );
+        } else if (
+          SensorMetaDataMessageTypes.includes(
+            messageType as SensorMetaDataMessageType,
+          )
+        ) {
+          this.#sensorDataManager.parseMessage(
+            messageType as SensorMetaDataMessageType,
             dataView,
           );
         } else if (

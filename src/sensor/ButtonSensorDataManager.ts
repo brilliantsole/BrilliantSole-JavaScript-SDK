@@ -41,7 +41,7 @@ export type ButtonSensorEventDispatcher = EventDispatcher<
   ButtonSensorEventMessages
 >;
 
-const _console = createConsole("ButtonSensorDataManager", { log: true });
+const _console = createConsole("ButtonSensorDataManager", { log: false });
 
 class ButtonSensorDataManager {
   constructor() {
@@ -116,13 +116,16 @@ class ButtonSensorDataManager {
       value: 0,
       isDown: false,
     }));
+
+    this.dispatchEvent("numberOfButtons", {
+      numberOfButtons: this.numberOfButtons,
+    });
   }
 
   buttons: InternalButton[] = [];
 
   clear() {
     _console.log("clear");
-    this.numberOfButtons = 1; // FIX
   }
 }
 

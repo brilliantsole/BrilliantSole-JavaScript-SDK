@@ -9367,7 +9367,7 @@ const ButtonSensorEventTypes = [
     "buttonDown",
     "buttonUp",
 ];
-const _console$C = createConsole("ButtonSensorDataManager", { log: true });
+const _console$C = createConsole("ButtonSensorDataManager", { log: false });
 class ButtonSensorDataManager {
     constructor() {
         autoBind(this);
@@ -9427,11 +9427,13 @@ class ButtonSensorDataManager {
             value: 0,
             isDown: false,
         }));
+        this.dispatchEvent("numberOfButtons", {
+            numberOfButtons: this.numberOfButtons,
+        });
     }
     buttons = [];
     clear() {
         _console$C.log("clear");
-        this.numberOfButtons = 1;
     }
 }
 
@@ -9442,7 +9444,7 @@ const TouchSensorEventTypes = [
     "touchDown",
     "touchUp",
 ];
-const _console$B = createConsole("TouchSensorDataManager", { log: true });
+const _console$B = createConsole("TouchSensorDataManager", { log: false });
 class TouchSensorDataManager {
     constructor() {
         autoBind(this);
@@ -9502,11 +9504,13 @@ class TouchSensorDataManager {
             value: 0,
             isDown: false,
         }));
+        this.dispatchEvent("numberOfTouches", {
+            numberOfTouches: this.numberOfTouches,
+        });
     }
     touches = [];
     clear() {
         _console$B.log("clear");
-        this.numberOfTouches = 1;
     }
 }
 
@@ -10828,6 +10832,13 @@ const SensorDataEventTypes = [
     ...ButtonSensorEventTypes,
     ...TouchSensorEventTypes,
 ];
+const SensorMetaDataMessageTypes = ["getSensorCounts"];
+const RequiredSensorMetaDataMessageTypes = [
+    "getSensorCounts",
+];
+const SensorMetaDataEventTypes = [
+    ...SensorMetaDataMessageTypes,
+];
 class SensorDataManager {
     constructor() {
         autoBind(this);
@@ -10838,6 +10849,7 @@ class SensorDataManager {
     buttonSensorDataManager = new ButtonSensorDataManager();
     touchSensorDataManager = new TouchSensorDataManager();
     #scalars = new Map();
+    #counts = new Map();
     static AssertValidSensorType(sensorType) {
         _console$y.assertEnumWithError(sensorType, SensorTypes);
     }
@@ -10877,6 +10889,9 @@ class SensorDataManager {
             case "sensorData":
                 this.parseData(dataView);
                 break;
+            case "getSensorCounts":
+                this.parseCounts(dataView);
+                break;
             default:
                 throw Error(`uncaught messageType ${messageType}`);
         }
@@ -10892,6 +10907,30 @@ class SensorDataManager {
             const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
             _console$y.log({ sensorType, sensorScalar });
             this.#scalars.set(sensorType, sensorScalar);
+        }
+    }
+    parseCounts(dataView) {
+        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 2) {
+            const sensorTypeIndex = dataView.getUint8(byteOffset);
+            const sensorType = SensorTypes[sensorTypeIndex];
+            if (!sensorType) {
+                _console$y.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                continue;
+            }
+            const sensorCount = dataView.getUint8(byteOffset + 1);
+            _console$y.log({ sensorType, sensorCount });
+            this.#counts.set(sensorType, sensorCount);
+            switch (sensorType) {
+                case "buttons":
+                    this.buttonSensorDataManager.numberOfButtons = sensorCount;
+                    break;
+                case "touches":
+                    this.touchSensorDataManager.numberOfTouches = sensorCount;
+                    break;
+                default:
+                    _console$y.warn(`uncaught count for sensorType "${sensorType}"`);
+                    break;
+            }
         }
     }
     parseData(dataView) {
@@ -32864,6 +32903,7 @@ const TxRxMessageTypes = [
     ...CameraMessageTypes,
     ...MicrophoneMessageTypes,
     ...DisplayMessageTypes,
+    ...SensorMetaDataMessageTypes,
 ];
 const SMPMessageTypes = ["smp"];
 const BatteryLevelMessageTypes = ["batteryLevel"];
@@ -35078,6 +35118,7 @@ const DeviceEventTypes = [
     ...CameraEventTypes,
     ...MicrophoneEventTypes,
     ...DisplayEventTypes,
+    ...SensorMetaDataEventTypes,
     ...FirmwareEventTypes,
 ];
 const RequiredInformationConnectionMessages = [
@@ -35189,6 +35230,17 @@ class Device {
             }
             else {
                 _console$7.log("don't need to request microphone infomration");
+            }
+            if (this.sensorTypes.includes("buttons") ||
+                this.sensorTypes.includes("touches")) {
+                _console$7.log("requesting number of buttons/touches");
+                const messages = RequiredSensorMetaDataMessageTypes.map((messageType) => ({
+                    type: messageType,
+                }));
+                this.sendTxMessages(messages, false);
+            }
+            else {
+                _console$7.log("don't need to request number of buttons/touches");
             }
         });
         this.addEventListener("getSensorConfiguration", (event) => {
@@ -35664,6 +35716,9 @@ class Device {
                     this.#tfliteManager.parseMessage(messageType, dataView);
                 }
                 else if (SensorDataMessageTypes.includes(messageType)) {
+                    this.#sensorDataManager.parseMessage(messageType, dataView);
+                }
+                else if (SensorMetaDataMessageTypes.includes(messageType)) {
                     this.#sensorDataManager.parseMessage(messageType, dataView);
                 }
                 else if (FirmwareMessageTypes.includes(messageType)) {

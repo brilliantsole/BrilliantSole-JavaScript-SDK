@@ -133,6 +133,29 @@ type SensorDataParseContext = {
   }[keyof _SensorDataEventMessages][];
 };
 
+export const SensorMetaDataMessageTypes = ["getSensorCounts"] as const;
+export type SensorMetaDataMessageType =
+  (typeof SensorMetaDataMessageTypes)[number];
+
+export const RequiredSensorMetaDataMessageTypes: SensorMetaDataMessageType[] = [
+  "getSensorCounts",
+] as const;
+
+export const SensorMetaDataEventTypes = [
+  ...SensorMetaDataMessageTypes,
+] as const;
+export type SensorMetaDataEventType = (typeof SensorMetaDataEventTypes)[number];
+
+export interface SensorMetaDataEventMessages {
+  // getSensorCounts: { sensorCounts: Partial<Record<SensorType, number>> };
+}
+
+export type SensorMetaDataEventDispatcher = EventDispatcher<
+  Device,
+  SensorMetaDataEventType,
+  SensorMetaDataEventMessages
+>;
+
 class SensorDataManager {
   constructor() {
     autoBind(this);
@@ -145,6 +168,7 @@ class SensorDataManager {
   touchSensorDataManager = new TouchSensorDataManager();
 
   #scalars: Map<SensorType, number> = new Map();
+  #counts: Map<SensorType, number> = new Map();
 
   static AssertValidSensorType(sensorType: SensorType) {
     _console.assertEnumWithError(sensorType, SensorTypes);
@@ -157,7 +181,7 @@ class SensorDataManager {
     );
   }
 
-  #eventDispatcher!: SensorDataEventDispatcher;
+  #eventDispatcher!: SensorDataEventDispatcher & SensorMetaDataEventDispatcher;
   get eventDispatcher() {
     return this.#eventDispatcher;
   }
@@ -177,12 +201,13 @@ class SensorDataManager {
     this.touchSensorDataManager.eventDispatcher =
       eventDispatcher as TouchSensorEventDispatcher;
   }
+
   get dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }
 
   parseMessage(
-    messageType: SensorDataMessageType,
+    messageType: SensorDataMessageType | SensorMetaDataMessageType,
     dataView: DataView<ArrayBuffer>,
   ) {
     _console.log({ messageType });
@@ -196,6 +221,9 @@ class SensorDataManager {
         break;
       case "sensorData":
         this.parseData(dataView);
+        break;
+      case "getSensorCounts":
+        this.parseCounts(dataView);
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
@@ -217,6 +245,36 @@ class SensorDataManager {
       const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
       _console.log({ sensorType, sensorScalar });
       this.#scalars.set(sensorType, sensorScalar);
+    }
+  }
+
+  parseCounts(dataView: DataView<ArrayBuffer>) {
+    for (
+      let byteOffset = 0;
+      byteOffset < dataView.byteLength;
+      byteOffset += 2
+    ) {
+      const sensorTypeIndex = dataView.getUint8(byteOffset);
+      const sensorType = SensorTypes[sensorTypeIndex];
+      if (!sensorType) {
+        _console.warn(`unknown sensorType index ${sensorTypeIndex}`);
+        continue;
+      }
+      const sensorCount = dataView.getUint8(byteOffset + 1);
+      _console.log({ sensorType, sensorCount });
+      this.#counts.set(sensorType, sensorCount);
+
+      switch (sensorType) {
+        case "buttons":
+          this.buttonSensorDataManager.numberOfButtons = sensorCount;
+          break;
+        case "touches":
+          this.touchSensorDataManager.numberOfTouches = sensorCount;
+          break;
+        default:
+          _console.warn(`uncaught count for sensorType "${sensorType}"`);
+          break;
+      }
     }
   }
 

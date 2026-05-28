@@ -41,7 +41,7 @@ export type TouchSensorEventDispatcher = EventDispatcher<
   TouchSensorEventMessages
 >;
 
-const _console = createConsole("TouchSensorDataManager", { log: true });
+const _console = createConsole("TouchSensorDataManager", { log: false });
 
 class TouchSensorDataManager {
   constructor() {
@@ -116,13 +116,15 @@ class TouchSensorDataManager {
       value: 0,
       isDown: false,
     }));
+    this.dispatchEvent("numberOfTouches", {
+      numberOfTouches: this.numberOfTouches,
+    });
   }
 
   touches: InternalTouch[] = [];
 
   clear() {
     _console.log("clear");
-    this.numberOfTouches = 1; // FIX
   }
 }
 

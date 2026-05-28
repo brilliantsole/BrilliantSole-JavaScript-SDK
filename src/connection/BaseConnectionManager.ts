@@ -8,7 +8,10 @@ import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
 import { InformationMessageTypes } from "../InformationManager.ts";
 import { VibrationMessageTypes } from "../vibration/VibrationManager.ts";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager.ts";
-import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
+import {
+  SensorDataMessageTypes,
+  SensorMetaDataMessageTypes,
+} from "../sensor/SensorDataManager.ts";
 import { WifiMessageTypes } from "../WifiManager.ts";
 import { CameraMessageTypes } from "../CameraManager.ts";
 import { MicrophoneMessageTypes } from "../MicrophoneManager.ts";
@@ -96,6 +99,7 @@ export const TxRxMessageTypes = [
   ...CameraMessageTypes,
   ...MicrophoneMessageTypes,
   ...DisplayMessageTypes,
+  ...SensorMetaDataMessageTypes,
 ] as const;
 export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
 
@@ -121,7 +125,7 @@ export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
 export type MessageReceivedCallback = (
   messageType: ConnectionMessageType,
-  dataView: DataView<ArrayBuffer>
+  dataView: DataView<ArrayBuffer>,
 ) => void;
 export type MessagesReceivedCallback = () => void;
 
@@ -173,7 +177,7 @@ abstract class BaseConnectionManager {
     _console.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
     if (this.#status == newConnectionStatus) {
       _console.log(
-        `tried to assign same connection status "${newConnectionStatus}"`
+        `tried to assign same connection status "${newConnectionStatus}"`,
       );
       return;
     }
@@ -208,7 +212,7 @@ abstract class BaseConnectionManager {
   #assertIsNotConnecting() {
     _console.assertWithError(
       this.status != "connecting",
-      "device is already connecting"
+      "device is already connecting",
     );
   }
   /** @throws {Error} if not connected */
@@ -219,7 +223,7 @@ abstract class BaseConnectionManager {
   #assertIsNotDisconnecting() {
     _console.assertWithError(
       this.status != "disconnecting",
-      "device is already disconnecting"
+      "device is already disconnecting",
     );
   }
   /** @throws {Error} if not connected or is disconnecting */
@@ -290,7 +294,7 @@ abstract class BaseConnectionManager {
   #isSendingMessages = false;
   async sendTxMessages(
     messages: TxMessage[] | undefined,
-    sendImmediately: boolean = true
+    sendImmediately: boolean = true,
   ) {
     this.assertIsConnectedAndNotDisconnecting();
 
@@ -329,7 +333,7 @@ abstract class BaseConnectionManager {
       while (arrayBuffers.length > 0) {
         if (
           arrayBuffers.every(
-            (arrayBuffer) => arrayBuffer.byteLength > this.mtu! - 3
+            (arrayBuffer) => arrayBuffer.byteLength > this.mtu! - 3,
           )
         ) {
           _console.error("every arrayBuffer is too big to send");
@@ -341,12 +345,12 @@ abstract class BaseConnectionManager {
         arrayBuffers.some((arrayBuffer) => {
           if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu! - 3) {
             _console.log(
-              `stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`
+              `stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`,
             );
             return true;
           }
           _console.log(
-            `allowing arrayBuffer with length ${arrayBuffer.byteLength}`
+            `allowing arrayBuffer with length ${arrayBuffer.byteLength}`,
           );
           arrayBufferCount++;
           arrayBufferByteLength += arrayBuffer.byteLength;
@@ -383,7 +387,7 @@ abstract class BaseConnectionManager {
       TxRxMessageTypes,
       this.#onRxMessage.bind(this),
       null,
-      true
+      true,
     );
     this.onMessagesReceived!();
   }
