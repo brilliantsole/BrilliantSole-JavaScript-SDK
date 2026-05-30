@@ -16,7 +16,7 @@ import {
 } from "../utils/ColorUtils.ts";
 import { clamp } from "../utils/MathUtils.ts";
 
-const _console = createConsole("LedManager", { log: true });
+const _console = createConsole("LedManager", { log: false });
 
 export const LedTypes = [
   "digitalSingle",
@@ -167,7 +167,7 @@ class LedManager {
           if (true) {
             return value;
           } else {
-            return scaleColor(color, value);
+            return scaleColor(color, value / 255);
           }
         }
         break;
@@ -242,7 +242,7 @@ class LedManager {
 
       let newColor = value;
       if (typeof newColor == "number") {
-        newColor = scaleColor(led.maxColor, newColor);
+        newColor = scaleColor(led.maxColor, newColor / 255);
       }
 
       _console.log(`led.index ${led.index} newColor:`, newColor);

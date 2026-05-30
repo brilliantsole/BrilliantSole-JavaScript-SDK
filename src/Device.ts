@@ -147,6 +147,7 @@ import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 import autoBind from "auto-bind";
 import LedManager, {
   LedEventDispatcher,
+  LedEventMessages,
   LedEventTypes,
   LedMessageType,
   LedMessageTypes,
@@ -191,6 +192,7 @@ export interface DeviceEventMessages
     MicrophoneEventMessages,
     DisplayEventMessages,
     SensorMetaDataEventMessages,
+    LedEventMessages,
     FirmwareEventMessages {
   batteryLevel: { batteryLevel: number };
   connectionMessage: {

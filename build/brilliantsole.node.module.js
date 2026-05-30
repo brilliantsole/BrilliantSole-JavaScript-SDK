@@ -10,7 +10,7 @@ import { spawn } from 'child_process';
 import fs from 'fs/promises';
 import * as _alawmulaw from 'alawmulaw';
 import RGBQuant from 'rgbquant';
-import opentype from 'opentype.js';
+import { parse } from 'opentype.js';
 import { decompress } from 'woff2-encoder';
 import simplify from 'simplify-js';
 import fitCurve from 'fit-curve';
@@ -22,10 +22,9 @@ import os from 'os';
 import { Euler, Quaternion } from 'three';
 import * as dgram from 'dgram';
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 const isInProduction =
-__BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+"__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -158,9 +157,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -5214,9 +5210,9 @@ function projectColor(color, maxColor) {
 function scaleColor(color, scalar) {
     const { r, g, b } = color;
     return {
-        r: r * scalar,
-        g: g * scalar,
-        b: b * scalar,
+        r: Math.round(r * scalar),
+        g: Math.round(g * scalar),
+        b: Math.round(b * scalar),
     };
 }
 function areColorsEqual(A, B) {
@@ -7005,7 +7001,7 @@ async function parseFont(arrayBuffer) {
         const result = await decompress(arrayBuffer);
         arrayBuffer = result.buffer;
     }
-    const font = opentype.parse(arrayBuffer);
+    const font = parse(arrayBuffer);
     return font;
 }
 function getFontUnicodeRange(font) {
@@ -10506,7 +10502,7 @@ class DisplayManager {
     }
 }
 
-const _console$o = createConsole("LedManager", { log: true });
+const _console$o = createConsole("LedManager", { log: false });
 const LedTypes = [
     "digitalSingle",
     "analogSingle",
@@ -10641,7 +10637,7 @@ class LedManager {
             }
             let newColor = value;
             if (typeof newColor == "number") {
-                newColor = scaleColor(led.maxColor, newColor);
+                newColor = scaleColor(led.maxColor, newColor / 255);
             }
             _console$o.log(`led.index ${led.index} newColor:`, newColor);
             const isColorRedundant = areColorsEqual(led.color, newColor);
@@ -12376,7 +12372,7 @@ const DeviceManagerEventTypes = [
     "availableDevices",
     "connectedDevices",
 ];
-let DeviceManager$1 = class DeviceManager {
+class DeviceManager {
     static shared = new DeviceManager();
     constructor() {
         if (DeviceManager.shared && this != DeviceManager.shared) {
@@ -12646,8 +12642,8 @@ let DeviceManager$1 = class DeviceManager {
             connectedDevices: this.ConnectedDevices,
         });
     }
-};
-var DeviceManager = DeviceManager$1.shared;
+}
+var DeviceManager$1 = DeviceManager.shared;
 
 const _console$f = createConsole("ServerUtils", { log: false });
 const ServerMessageTypes = [
@@ -13453,7 +13449,7 @@ class Device {
                     break;
             }
         });
-        DeviceManager.onDevice(this);
+        DeviceManager$1.onDevice(this);
         if (isInBrowser) {
             window.addEventListener("beforeunload", () => {
                 if (this.isConnected && this.clearSensorConfigurationOnLeave) {
@@ -13786,7 +13782,7 @@ class Device {
                 this.#requestRequiredInformation();
             }
         }
-        DeviceManager.OnDeviceConnectionStatusUpdated(this, connectionStatus);
+        DeviceManager$1.OnDeviceConnectionStatusUpdated(this, connectionStatus);
     }
     #dispatchConnectionEvents(includeIsConnected = false) {
         this.#dispatchEvent("connectionStatus", {
@@ -15324,7 +15320,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager.AddEventListener("deviceConnected", (event) => {
+        DeviceManager$1.AddEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -16014,7 +16010,7 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$5.log("connecting to discoveredDevice...", deviceId);
-        let device = DeviceManager.AvailableDevices.filter((device) => device.connectionType == "noble").find((device) => device.bluetoothId == deviceId);
+        let device = DeviceManager$1.AvailableDevices.filter((device) => device.connectionType == "noble").find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
         if (!device) {
             _console$5.log("creating device for discoveredDevice...", deviceId);
@@ -16044,7 +16040,7 @@ class NobleScanner extends BaseScanner {
     async disconnectFromDevice(deviceId) {
         super.disconnectFromDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
-        let device = DeviceManager.AvailableDevices.filter((device) => device.connectionType == "noble").find((device) => device.bluetoothId == deviceId);
+        let device = DeviceManager$1.AvailableDevices.filter((device) => device.connectionType == "noble").find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
         if (device) {
             await device.disconnect();
@@ -16060,15 +16056,15 @@ class NobleScanner extends BaseScanner {
 }
 
 const _console$4 = createConsole("Scanner", { log: false });
-let scanner$1;
+let scanner;
 if (NobleScanner.isSupported) {
     _console$4.log("using NobleScanner");
-    scanner$1 = new NobleScanner();
+    scanner = new NobleScanner();
 }
 else {
     _console$4.log("Scanner not available");
 }
-var scanner = scanner$1;
+var scanner$1 = scanner;
 
 var _a;
 const RequiredDeviceInformationMessageTypes = [
@@ -16096,9 +16092,9 @@ class BaseServer {
         return this.eventDispatcher.waitForEvent;
     }
     constructor() {
-        _console$3.assertWithError(scanner, "no scanner defined");
-        addEventListeners(scanner, this.#boundScannerListeners);
-        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        _console$3.assertWithError(scanner$1, "no scanner defined");
+        addEventListeners(scanner$1, this.#boundScannerListeners);
+        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
     }
     get numberOfClients() {
@@ -16133,7 +16129,7 @@ class BaseServer {
         _console$3.log("onClientDisconnected");
         if (this.numberOfClients == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager.ConnectedDevices.forEach((device) => {
+            DeviceManager$1.ConnectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -16154,7 +16150,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner.isScanningAvailable,
+            data: scanner$1.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -16163,7 +16159,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner.isScanning,
+            data: scanner$1.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -16189,9 +16185,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner.discoveredDevicesArray
+        const serverMessages = scanner$1.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager.ConnectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -16203,7 +16199,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager.ConnectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager$1.ConnectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -16286,10 +16282,10 @@ class BaseServer {
                 responseMessages.push(this.#isScanningMessage);
                 break;
             case "startScan":
-                scanner.startScan();
+                scanner$1.startScan();
                 break;
             case "stopScan":
-                scanner.stopScan();
+                scanner$1.stopScan();
                 break;
             case "discoveredDevices":
                 responseMessages.push(this.#discoveredDevicesMessage);
@@ -16305,14 +16301,14 @@ class BaseServer {
                     else {
                         _console$3.log(`connecting to device with id ${deviceId}...`);
                     }
-                    scanner.connectToDevice(deviceId, connectionType);
+                    scanner$1.connectToDevice(deviceId, connectionType);
                 }
                 break;
             case "disconnectFromDevice":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    let device = DeviceManager.AvailableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner.devices[deviceId];
+                    let device = DeviceManager$1.AvailableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner$1.devices[deviceId];
                     if (!device) {
                         _console$3.error(`no device found with id ${deviceId}`);
                         break;
@@ -16330,7 +16326,7 @@ class BaseServer {
             case "deviceMessage":
                 {
                     const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-                    const device = DeviceManager.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$3.error(`no device found with id ${deviceId}`);
                         break;
@@ -16345,7 +16341,7 @@ class BaseServer {
             case "requiredDeviceInformation":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    const device = DeviceManager.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$3.error(`no device found with id ${deviceId}`);
                         break;
@@ -16723,5 +16719,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, scanner as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wait };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.node.module.js.map

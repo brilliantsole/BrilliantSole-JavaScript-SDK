@@ -51,6 +51,21 @@
     #cameraRecording {
       min-height: 300px;
     }
+
+    #setLeds {
+      display: flex;
+      flex-direction: column;
+    }
+    setLeds > div {
+    }
+    .analogSingleLed {
+    }
+    .digitalSingleLed {
+    }
+    .digitalRGBLed {
+    }
+    .analogRGBLed {
+    }
   </style>
   <body>
     <nav>
@@ -941,10 +956,33 @@
     <div id="leds" hidden>
       <h2>leds</h2>
 
-      <label>
-        <b>led </b>
-        <pre id="leds"></pre>
-      </label>
+      <div id="setLeds">
+        <template id="analogSingleLedTemplate">
+          <div class="setLed">
+            <input type="color" disabled />
+            <input type="range" min="0" max="255" step="1" value="0" />
+          </div>
+        </template>
+        <template id="digitalSingleLedTemplate">
+          <div class="setLed">
+            <input type="color" disabled />
+            <input type="checkbox" />
+          </div>
+        </template>
+        <template id="digitalRGBLedTemplate">
+          <div class="setLed">
+            <input type="color" disabled />
+            <label>r<input type="checkbox" class="r" /> </label>
+            <label>g<input type="checkbox" class="g" /> </label>
+            <label>b<input type="checkbox" class="b" /> </label>
+          </div>
+        </template>
+        <template id="analogRGBLedTemplate">
+          <div class="setLed">
+            <input type="color" />
+          </div>
+        </template>
+      </div>
     </div>
 
     <div id="firmware" hidden>

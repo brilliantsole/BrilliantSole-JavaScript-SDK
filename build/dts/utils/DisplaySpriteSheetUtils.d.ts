@@ -1,7 +1,7 @@
 import { DisplayBezierCurve, DisplaySize } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
-import opentype, { Font } from "opentype.js";
+import { type Font } from "opentype.js";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayContextState } from "./DisplayContextState.ts";
 export type DisplaySpriteSubLine = {
@@ -65,7 +65,7 @@ export type FontToSpriteSheetOptions = {
     overrideMaxSpriteHeight?: boolean;
 };
 export declare const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions;
-export declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
+export declare function parseFont(arrayBuffer: ArrayBuffer): Promise<Font>;
 export declare function getFontUnicodeRange(font: Font): import("./RangeHelper.ts").Range | undefined;
 export declare const englishRegex: RegExp;
 export declare function contourArea(points: Vector2[]): number;

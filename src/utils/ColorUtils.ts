@@ -80,9 +80,9 @@ export function scaleColor(
 ): DisplayColorRGB {
   const { r, g, b } = color;
   return {
-    r: r * scalar,
-    g: g * scalar,
-    b: b * scalar,
+    r: Math.round(r * scalar),
+    g: Math.round(g * scalar),
+    b: Math.round(b * scalar),
   };
 }
 

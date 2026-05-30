@@ -11,7 +11,7 @@ import {
   serializeContextCommands,
 } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
-import opentype, { Glyph, Font } from "opentype.js";
+import { type Glyph, type Font, parse as parseOpenType } from "opentype.js";
 import { decompress } from "woff2-encoder";
 import RangeHelper from "./RangeHelper.ts";
 import { Vector2 } from "./MathUtils.ts";
@@ -87,7 +87,7 @@ export function getCurvesPoints(curves: DisplayBezierCurve[]) {
 }
 export function serializeSpriteSheet(
   displayManager: DisplayManagerInterface,
-  spriteSheet: DisplaySpriteSheet
+  spriteSheet: DisplaySpriteSheet,
 ) {
   const { name, sprites } = spriteSheet;
   _console.log(`serializing ${name} spriteSheet`, spriteSheet);
@@ -99,7 +99,7 @@ export function serializeSpriteSheet(
   const spritePayloads = sprites.map((sprite, index) => {
     const commandsData = serializeContextCommands(
       displayManager,
-      sprite.commands
+      sprite.commands,
     );
     const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
     dataView.setUint16(0, sprite.width, true);
@@ -110,7 +110,7 @@ export function serializeSpriteSheet(
     return serializedSprite;
   });
   const spriteOffsetsDataView = new DataView(
-    new ArrayBuffer(sprites.length * 2)
+    new ArrayBuffer(sprites.length * 2),
   );
   let offset =
     numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
@@ -124,7 +124,7 @@ export function serializeSpriteSheet(
   const serializedSpriteSheet = concatenateArrayBuffers(
     numberOfSpritesDataView,
     spriteOffsetsDataView,
-    spritePayloads
+    spritePayloads,
   );
   _console.log("serializedSpriteSheet", serializedSpriteSheet);
 
@@ -174,7 +174,7 @@ export async function parseFont(arrayBuffer: ArrayBuffer) {
     // @ts-expect-error
     arrayBuffer = result.buffer;
   }
-  const font = opentype.parse(arrayBuffer);
+  const font = parseOpenType(arrayBuffer);
   //_console.log("font", font);
   return font;
 }
@@ -217,7 +217,7 @@ export type FontMetrics = {
 export function getFontMetrics(
   font: Font | Font[],
   fontSize: number,
-  options?: FontToSpriteSheetOptions
+  options?: FontToSpriteSheetOptions,
 ): FontMetrics {
   _console.assertTypeWithError(fontSize, "number");
 
@@ -249,7 +249,7 @@ export function getFontMetrics(
         .filter((glyph) => glyph.unicode != undefined);
       string = removeSubstrings(
         string,
-        filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode!))
+        filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode!)),
       );
     }
 
@@ -327,7 +327,7 @@ export async function fontToSpriteSheet(
   font: Font | Font[],
   fontSize: number,
   spriteSheetName?: string,
-  options?: FontToSpriteSheetOptions
+  options?: FontToSpriteSheetOptions,
 ) {
   _console.assertTypeWithError(fontSize, "number");
 
@@ -348,7 +348,7 @@ export async function fontToSpriteSheet(
   const { maxSpriteHeight, maxSpriteY, minSpriteY } = getFontMetrics(
     fonts,
     fontSize,
-    options
+    options,
   );
   // _console.log({ maxSpriteHeight, maxSpriteY, minSpriteY });
   const strokeWidth = options.stroke ? options.strokeWidth || 1 : 0;
@@ -370,7 +370,7 @@ export async function fontToSpriteSheet(
         .filter((glyph) => glyph.unicode != undefined);
       string = removeSubstrings(
         string,
-        filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode!))
+        filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode!)),
       );
       //_console.log("filteredString", string);
       //_console.log("filteredGlyphs", filteredGlyphs);
@@ -428,7 +428,7 @@ export async function fontToSpriteSheet(
       const spriteWidth =
         Math.max(
           Math.max(bbox.x2, bbox.x2 - bbox.x1),
-          glyph.advanceWidth ?? 0
+          glyph.advanceWidth ?? 0,
         ) *
           fontScale +
         strokeWidth;
@@ -439,7 +439,7 @@ export async function fontToSpriteSheet(
       const path = glyph.getPath(
         -bbox.x1 * fontScale,
         bbox.y2 * fontScale,
-        fontSize
+        fontSize,
       );
       if (options.stroke) {
         path.stroke = "white";
@@ -662,7 +662,7 @@ export async function fontToSpriteSheet(
 export function stringToSprites(
   string: string,
   spriteSheet: DisplaySpriteSheet,
-  requireAll = false
+  requireAll = false,
 ) {
   const sprites: DisplaySprite[] = [];
   let substring = string;
@@ -681,7 +681,7 @@ export function stringToSprites(
     if (requireAll) {
       _console.assertWithError(
         longestSprite,
-        `couldn't find sprite with name prefixing "${substring}"`
+        `couldn't find sprite with name prefixing "${substring}"`,
       );
     }
 
@@ -700,7 +700,7 @@ export function stringToSprites(
 
 export function getReferencedSprites(
   sprite: DisplaySprite,
-  spriteSheet: DisplaySpriteSheet
+  spriteSheet: DisplaySpriteSheet,
 ) {
   const sprites: DisplaySprite[] = [];
   sprite.commands
@@ -719,12 +719,12 @@ export function getReferencedSprites(
 export function reduceSpriteSheet(
   spriteSheet: DisplaySpriteSheet,
   spriteNames: string | string[],
-  requireAll = false
+  requireAll = false,
 ) {
   const reducedSpriteSheet = Object.assign({}, spriteSheet);
   if (!(spriteNames instanceof Array)) {
     spriteNames = stringToSprites(spriteNames, spriteSheet, requireAll).map(
-      (sprite) => sprite.name
+      (sprite) => sprite.name,
     );
   }
   _console.log("reducingSpriteSheet", spriteSheet, spriteNames);
@@ -733,7 +733,7 @@ export function reduceSpriteSheet(
     if (spriteNames.includes(sprite.name)) {
       reducedSpriteSheet.sprites.push(sprite);
       reducedSpriteSheet.sprites.push(
-        ...getReferencedSprites(sprite, spriteSheet)
+        ...getReferencedSprites(sprite, spriteSheet),
       );
     }
   });
@@ -747,14 +747,14 @@ export function stringToSpriteLines(
   contextState: DisplayContextState,
   requireAll = false,
   maxLineBreadth = Infinity,
-  separators = [" "]
+  separators = [" "],
 ): DisplaySpriteLines {
   _console.log("stringToSpriteLines", string);
   const isSpritesDirectionHorizontal = isDirectionHorizontal(
-    contextState.spritesDirection
+    contextState.spritesDirection,
   );
   const isSpritesLineDirectionHorizontal = isDirectionHorizontal(
-    contextState.spritesLineDirection
+    contextState.spritesLineDirection,
   );
   const areSpritesDirectionsOrthogonal =
     isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
@@ -810,7 +810,7 @@ export function stringToSpriteLines(
       if (requireAll) {
         _console.assertWithError(
           longestSprite,
-          `couldn't find sprite with name prefixing "${lineSubstring}"`
+          `couldn't find sprite with name prefixing "${lineSubstring}"`,
         );
       }
 
@@ -928,7 +928,7 @@ export function getMaxSpriteSheetSize(spriteSheet: DisplaySpriteSheet) {
 
 export function assertValidSpriteLines(
   displayManager: DisplayManagerInterface,
-  spriteLines: DisplaySpriteLines
+  spriteLines: DisplaySpriteLines,
 ) {
   spriteLines.forEach((spriteLine) => {
     spriteLine.forEach((spriteSubLine) => {
@@ -937,11 +937,11 @@ export function assertValidSpriteLines(
       const spriteSheet = displayManager.spriteSheets[spriteSheetName];
       spriteNames.forEach((spriteName) => {
         const sprite = spriteSheet.sprites.find(
-          (sprite) => sprite.name == spriteName
+          (sprite) => sprite.name == spriteName,
         );
         _console.assertWithError(
           sprite,
-          `no sprite with name "${spriteName}" found in spriteSheet "${spriteSheetName}"`
+          `no sprite with name "${spriteName}" found in spriteSheet "${spriteSheetName}"`,
         );
       });
     });
@@ -950,7 +950,7 @@ export function assertValidSpriteLines(
 
 export function getExpandedSpriteLines(
   spriteLines: DisplaySpriteLines,
-  spriteSheets: Record<string, DisplaySpriteSheet>
+  spriteSheets: Record<string, DisplaySpriteSheet>,
 ) {
   const expandedSpritesLines: DisplaySprite[][] = [];
 
@@ -961,16 +961,16 @@ export function getExpandedSpriteLines(
       const spriteSheet = spriteSheets[spriteSheetName];
       _console.assertWithError(
         spriteSheet,
-        `no spriteSheet found with name "${spriteSheetName}"`
+        `no spriteSheet found with name "${spriteSheetName}"`,
       );
 
       spriteNames.forEach((spriteName) => {
         const sprite = spriteSheet.sprites.find(
-          (sprite) => sprite.name == spriteName
+          (sprite) => sprite.name == spriteName,
         )!;
         _console.assertWithError(
           sprite,
-          `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`
+          `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`,
         );
         _spritesLine.push(sprite);
       });
@@ -982,15 +982,15 @@ export function getExpandedSpriteLines(
 
 export function getExpandedSpriteLinesSize(
   expandedSpritesLines: DisplaySprite[][],
-  contextState: DisplayContextState
+  contextState: DisplayContextState,
 ) {
   const localSize = { width: 0, height: 0 };
 
   const isSpritesDirectionHorizontal = isDirectionHorizontal(
-    contextState.spritesDirection
+    contextState.spritesDirection,
   );
   const isSpritesLineDirectionHorizontal = isDirectionHorizontal(
-    contextState.spritesLineDirection
+    contextState.spritesLineDirection,
   );
 
   const areSpritesDirectionsOrthogonal =
@@ -1023,7 +1023,7 @@ export function getExpandedSpriteLinesSize(
     if (areSpritesDirectionsOrthogonal) {
       localSize[breadthSizeKey] = Math.max(
         localSize[breadthSizeKey],
-        spritesLineBreadth
+        spritesLineBreadth,
       );
 
       localSize[depthSizeKey] += contextState.spritesLineHeight;
@@ -1068,11 +1068,11 @@ export function getExpandedSpriteLinesSize(
 export function getSpriteLinesMetrics(
   spriteLines: DisplaySpriteLines,
   spriteSheets: Record<string, DisplaySpriteSheet>,
-  contextState: DisplayContextState
+  contextState: DisplayContextState,
 ) {
   const expandedSpritesLines = getExpandedSpriteLines(
     spriteLines,
-    spriteSheets
+    spriteSheets,
   );
   return {
     expandedSpritesLines,
@@ -1094,7 +1094,7 @@ export function stringToSpriteLinesMetrics(
   contextState: DisplayContextState,
   requireAll?: boolean,
   maxLineBreadth?: number,
-  separators?: string[]
+  separators?: string[],
 ): DisplaySpriteLinesMetrics {
   return getSpriteLinesMetrics(
     stringToSpriteLines(
@@ -1103,16 +1103,16 @@ export function stringToSpriteLinesMetrics(
       contextState,
       requireAll,
       maxLineBreadth,
-      separators
+      separators,
     ),
     spriteSheets,
-    contextState
+    contextState,
   );
 }
 
 export function spriteLinesToSerializedLines(
   displayManager: DisplayManagerInterface,
-  spriteLines: DisplaySpriteLines
+  spriteLines: DisplaySpriteLines,
 ) {
   const spriteSerializedLines: DisplaySpriteSerializedLines = [];
   spriteLines.forEach((spriteLine) => {
@@ -1130,11 +1130,11 @@ export function spriteLinesToSerializedLines(
       };
       spriteSubLine.spriteNames.forEach((spriteName) => {
         let spriteIndex = spriteSheet.sprites.findIndex(
-          (sprite) => sprite.name == spriteName
+          (sprite) => sprite.name == spriteName,
         );
         _console.assertWithError(
           spriteIndex != -1,
-          `sprite "${spriteName}" not found`
+          `sprite "${spriteName}" not found`,
         );
         spriteIndex = spriteIndex!;
         serializedSubLine.spriteIndices.push(spriteIndex);

@@ -3429,10 +3429,101 @@ toggleQuantizeOverrideDisplayColorsCheckbox.addEventListener("input", () => {
 onBitmapCanvasSizeUpdate();
 
 // LEDS
-const ledInformationContainer = document.getElementById("leds");
-device.addEventListener("getLEDInformation", event => {
-device.leds
-})
+const setLedsContainer = document.getElementById("setLeds");
+
+/** @type {Record<BS.LedType, HTMLTemplateElement>} */
+const setLedTemplates = {
+  analogSingle: document.getElementById("analogSingleLedTemplate"),
+  digitalSingle: document.getElementById("digitalSingleLedTemplate"),
+  digitalRGB: document.getElementById("digitalRGBLedTemplate"),
+  analogRGB: document.getElementById("analogRGBLedTemplate"),
+};
+
+let ledInterval = 50;
+/** @type {{range?: HTMLInputElement, colorInput?: HTMLInputElement, checkbox?: HTMLInputElement}[]} */
+const setLedContainers = [];
+device.addEventListener("getLedInformation", (event) => {
+  setLedsContainer.innerHTML = "";
+  device.leds.forEach((led, index) => {
+    const template = setLedTemplates[led.type];
+    const setLedContainer = template.content
+      .cloneNode(true)
+      .querySelector(".setLed");
+    /** @type {HTMLInputElement} */
+    const range = setLedContainer.querySelector(`input[type="range"]`);
+    let onRangeInput = () => {
+      if (!range.isChanging) {
+        return;
+      }
+      device.setLed({ index, brightness: +range.value });
+    };
+    onRangeInput = BS.ThrottleUtils.throttle(onRangeInput, ledInterval, true);
+    range?.addEventListener("input", () => onRangeInput());
+    /** @type {HTMLInputElement} */
+    const colorInput = setLedContainer.querySelector(`input[type="color"]`);
+    let onColorInput = () => {
+      if (!colorInput.isChanging) {
+        return;
+      }
+      device.setLed({ index, color: colorInput.value });
+    };
+    onColorInput = BS.ThrottleUtils.throttle(onColorInput, ledInterval, true);
+    colorInput?.addEventListener("input", (event) => onColorInput());
+    if (colorInput?.disabled) {
+      colorInput.value = BS.rgbToHex(led.maxColor);
+    }
+    /** @type {HTMLInputElement} */
+    const checkbox = setLedContainer.querySelector(`input[type="checkbox"]`);
+    let onCheckboxInput = () => {
+      if (!checkbox.isChanging) {
+        return;
+      }
+      device.setLed({ index, brightness: checkbox.checked ? 255 : 0 });
+    };
+    onCheckboxInput = BS.ThrottleUtils.throttle(
+      onCheckboxInput,
+      ledInterval,
+      true,
+    );
+    checkbox?.addEventListener("input", (event) => onCheckboxInput());
+
+    [range, colorInput, checkbox].forEach((input) => {
+      input?.addEventListener("focusin", () => {
+        console.log("focusin", input);
+        input.isChanging = true;
+      });
+      input?.addEventListener("focusout", () => {
+        console.log("focusout", input);
+        input.isChanging = false;
+      });
+      input?.addEventListener("change", (event) => {
+        console.log("change", input);
+        input.isChanging = false;
+      });
+    });
+
+    setLedContainers[index] = { range, colorInput, checkbox };
+
+    setLedsContainer.appendChild(setLedContainer);
+  });
+});
+
+device.addEventListener("setLed", (event) => {
+  const { led, ledIndex } = event.message;
+  const { range, checkbox, colorInput } = setLedContainers[ledIndex];
+
+  [range, checkbox, colorInput].forEach((input) => {});
+
+  if (colorInput && !colorInput.disabled && !colorInput.isChanging) {
+    colorInput.value = BS.rgbToHex(led.color);
+  }
+  if (checkbox && !checkbox.isChanging) {
+    checkbox.checked = BS.projectColor(led.color, led.maxColor) > 0;
+  }
+  if (range && !range.isChanging) {
+    range.value = BS.projectColor(led.color, led.maxColor) * 255;
+  }
+});
 
 // CONTAINERS
 const displayContainer = document.getElementById("display");
@@ -3494,7 +3585,7 @@ device.addEventListener("connected", () => {
 
 const ledsContainer = document.getElementById("leds");
 device.addEventListener("connected", () => {
-  if (device.hasLEDs > 0) {
+  if (device.hasLeds) {
     ledsContainer.removeAttribute("hidden");
   } else {
     ledsContainer.setAttribute("hidden", "");

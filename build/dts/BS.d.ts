@@ -70,8 +70,8 @@ export { Font, Glyph };
 import { resizeAndQuantizeImage, quantizeImage, imageToSprite, imageToSpriteSheet, canvasToSprite, canvasToSpriteSheet, resizeImage, imageToBitmaps, canvasToBitmaps } from "./utils/DisplayBitmapUtils.ts";
 export { resizeAndQuantizeImage, quantizeImage, imageToSprite, imageToSpriteSheet, canvasToSprite, canvasToSpriteSheet, resizeImage, imageToBitmaps, canvasToBitmaps, };
 /** BROWSER_END */
-import { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
-export { rgbToHex, hexToRGB };
+import { rgbToHex, hexToRGB, projectColor } from "./utils/ColorUtils.ts";
+export { rgbToHex, hexToRGB, projectColor };
 import { default as DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, DevicePairType, DevicePairTypes } from "./devicePair/DevicePair.ts";
 export { DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, DevicePairType, DevicePairTypes, };
 import { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";
@@ -84,6 +84,8 @@ export declare const ThrottleUtils: {
     throttle: typeof throttle;
     debounce: typeof debounce;
 };
+import { LedType, LedTypes, LedValue, LedValueType, LedValueTypes } from "./led/LedManager.ts";
+export { LedType, LedTypes, LedValue, LedValueType, LedValueTypes };
 import { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes } from "./connection/BaseConnectionManager.ts";
 export { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes, };
 import { DiscoveredDevice } from "./scanner/BaseScanner.ts";

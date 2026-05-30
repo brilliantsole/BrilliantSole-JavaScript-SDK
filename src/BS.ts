@@ -411,8 +411,8 @@ export {
 };
 /** BROWSER_END */
 
-import { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
-export { rgbToHex, hexToRGB };
+import { rgbToHex, hexToRGB, projectColor } from "./utils/ColorUtils.ts";
+export { rgbToHex, hexToRGB, projectColor };
 
 import {
   default as DevicePair,
@@ -444,6 +444,15 @@ export const ThrottleUtils = {
   throttle,
   debounce,
 };
+
+import {
+  LedType,
+  LedTypes,
+  LedValue,
+  LedValueType,
+  LedValueTypes,
+} from "./led/LedManager.ts";
+export { LedType, LedTypes, LedValue, LedValueType, LedValueTypes };
 
 import {
   ConnectionMessageType,
