@@ -1,38 +1,57 @@
 import Device, { SendMessageCallback } from "../Device.ts";
 import EventDispatcher from "../utils/EventDispatcher.ts";
-import { DisplayColorRGB } from "../BS.ts";
-export declare const LEDTypes: readonly ["digitalSingle", "analogSingle", "digitalRGB", "analogRGB"];
-export type LEDType = (typeof LEDTypes)[number];
-export declare const LEDMessageTypes: readonly ["getLEDInformation", "setLEDs", "clearLEDs"];
-export type LedMessageType = (typeof LEDMessageTypes)[number];
-export declare const LedEventTypes: readonly ["getLEDInformation", "setLEDs", "clearLEDs"];
+import { DisplayColorRGB } from "../utils/DisplayUtils.ts";
+export declare const LedTypes: readonly ["digitalSingle", "analogSingle", "digitalRGB", "analogRGB"];
+export type LedType = (typeof LedTypes)[number];
+export declare const LedValueTypes: readonly ["color", "brightness"];
+export type LedValueType = (typeof LedValueTypes)[number];
+export type LedValue = DisplayColorRGB | number;
+export declare const LedMessageTypes: readonly ["getLedInformation", "setLeds", "clearLeds"];
+export type LedMessageType = (typeof LedMessageTypes)[number];
+export declare const LedEventTypes: readonly ["getLedInformation", "setLeds", "clearLeds", "setLed"];
 export type LedEventType = (typeof LedEventTypes)[number];
 export type Led = {
-    type: LEDType;
+    index: number;
+    type: LedType;
     color: DisplayColorRGB;
     maxColor: DisplayColorRGB;
 };
 export interface LedEventMessages {
-    getLEDInformation: {
+    getLedInformation: {
         leds: Led[];
     };
-    setLEDs: {};
-    clearLEDs: {};
+    setLed: {
+        ledIndex: number;
+        led: Led;
+    };
 }
 export type SendLedMessageCallback = SendMessageCallback<LedMessageType>;
 export type LedEventDispatcher = EventDispatcher<Device, LedEventType, LedEventMessages>;
+interface LedColorConfiguration {
+    index: number;
+    color: DisplayColorRGB | string;
+}
+interface LedBrightnessConfiguration {
+    index: number;
+    brightness: number;
+}
+export type LedConfiguration = LedColorConfiguration | LedBrightnessConfiguration;
 declare class LedManager {
     #private;
     constructor();
     sendMessage: SendLedMessageCallback;
     eventDispatcher: LedEventDispatcher;
-    get waitForEvent(): <T extends "getLEDInformation" | "setLEDs" | "clearLEDs">(type: T) => Promise<{
+    get waitForEvent(): <T extends "getLedInformation" | "setLeds" | "clearLeds" | "setLed">(type: T) => Promise<{
         type: T;
         target: Device;
         message: LedEventMessages[T];
     }>;
     get leds(): Led[];
+    setLeds(ledConfigurations: LedConfiguration[], sendImmediately?: boolean): Promise<void>;
+    setLed(ledConfiguration: LedConfiguration, sendImmediately?: boolean): Promise<void>;
+    clearLeds(sendImmediately?: boolean): Promise<void>;
     parseMessage(messageType: LedMessageType, dataView: DataView<ArrayBuffer>): void;
+    onSendTxMessages(): void;
     clear(): void;
 }
 export default LedManager;

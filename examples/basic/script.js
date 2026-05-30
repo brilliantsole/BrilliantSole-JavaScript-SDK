@@ -3428,6 +3428,13 @@ toggleQuantizeOverrideDisplayColorsCheckbox.addEventListener("input", () => {
 });
 onBitmapCanvasSizeUpdate();
 
+// LEDS
+const ledInformationContainer = document.getElementById("leds");
+device.addEventListener("getLEDInformation", event => {
+device.leds
+})
+
+// CONTAINERS
 const displayContainer = document.getElementById("display");
 device.addEventListener("connected", () => {
   if (!device.isDisplayAvailable) {
@@ -3478,9 +3485,18 @@ device.addEventListener("connected", () => {
 });
 const vibrationContainer = document.getElementById("vibration");
 device.addEventListener("connected", () => {
-  if (device.vibrationLocations.length > 0) {
+  if (device.hasVibration) {
     vibrationContainer.removeAttribute("hidden");
   } else {
     vibrationContainer.setAttribute("hidden", "");
+  }
+});
+
+const ledsContainer = document.getElementById("leds");
+device.addEventListener("connected", () => {
+  if (device.hasLEDs > 0) {
+    ledsContainer.removeAttribute("hidden");
+  } else {
+    ledsContainer.setAttribute("hidden", "");
   }
 });

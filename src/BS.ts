@@ -113,6 +113,9 @@ export { CenterOfPressure };
 import CenterOfPressureModel from "./utils/CenterOfPressureModel.ts";
 export { CenterOfPressureModel };
 
+import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.ts";
+export { concatenateArrayBuffers };
+
 import {
   VibrationConfiguration,
   VibrationLocation,

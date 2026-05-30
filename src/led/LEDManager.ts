@@ -3,38 +3,59 @@ import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import Device, { SendMessageCallback } from "../Device.ts";
 import autoBind from "auto-bind";
 import EventDispatcher from "../utils/EventDispatcher.ts";
-import { DisplayColorRGB } from "../BS.ts";
+import { DisplayColorRGB } from "../utils/DisplayUtils.ts";
+import {
+  areColorsEqual,
+  blackColor,
+  clampColor,
+  projectColor,
+  roundColor,
+  scaleColor,
+  stringToRGB,
+  whiteColor,
+} from "../utils/ColorUtils.ts";
+import { clamp } from "../utils/MathUtils.ts";
 
 const _console = createConsole("LedManager", { log: true });
 
-export const LEDTypes = [
+export const LedTypes = [
   "digitalSingle",
   "analogSingle",
   "digitalRGB",
   "analogRGB",
 ] as const;
-export type LEDType = (typeof LEDTypes)[number];
+export type LedType = (typeof LedTypes)[number];
 
-export const LEDMessageTypes = [
-  "getLEDInformation",
-  "setLEDs",
-  "clearLEDs",
+export const LedValueTypes = ["color", "brightness"] as const;
+export type LedValueType = (typeof LedValueTypes)[number];
+
+export type LedValue = DisplayColorRGB | number;
+
+export const LedMessageTypes = [
+  "getLedInformation",
+  "setLeds",
+  "clearLeds",
 ] as const;
-export type LedMessageType = (typeof LEDMessageTypes)[number];
+export type LedMessageType = (typeof LedMessageTypes)[number];
 
-export const LedEventTypes = LEDMessageTypes;
+export const LedEventTypes = [...LedMessageTypes, "setLed"] as const;
 export type LedEventType = (typeof LedEventTypes)[number];
 
 export type Led = {
-  type: LEDType;
+  index: number;
+  type: LedType;
   color: DisplayColorRGB;
   maxColor: DisplayColorRGB;
 };
 
 export interface LedEventMessages {
-  getLEDInformation: { leds: Led[] };
-  setLEDs: {};
-  clearLEDs: {};
+  getLedInformation: { leds: Led[] };
+  // setLeds: {};
+  // clearLeds: {};
+  setLed: {
+    ledIndex: number;
+    led: Led;
+  };
 }
 
 export type SendLedMessageCallback = SendMessageCallback<LedMessageType>;
@@ -44,6 +65,18 @@ export type LedEventDispatcher = EventDispatcher<
   LedEventType,
   LedEventMessages
 >;
+
+interface LedColorConfiguration {
+  index: number;
+  color: DisplayColorRGB | string;
+}
+interface LedBrightnessConfiguration {
+  index: number;
+  brightness: number;
+}
+export type LedConfiguration =
+  | LedColorConfiguration
+  | LedBrightnessConfiguration;
 
 class LedManager {
   constructor() {
@@ -59,15 +92,18 @@ class LedManager {
     return this.eventDispatcher.waitForEvent;
   }
 
-  // LED
+  // Led
   #leds: Led[] = [];
+  #pendingColors: DisplayColorRGB[] = [];
   get leds() {
     return this.#leds;
   }
-  #setLEDs(newLeds: Led[]) {
+  #updateLeds(newLeds: Led[]) {
+    _console.log("updateLeds", newLeds);
     this.#leds = newLeds;
+    this.#pendingColors.length = 0;
     _console.log("leds", this.leds);
-    this.#dispatchEvent("getLEDInformation", { leds: this.leds });
+    this.#dispatchEvent("getLedInformation", { leds: this.leds });
   }
 
   #parseLedInformation(dataView: DataView<ArrayBuffer>) {
@@ -78,12 +114,11 @@ class LedManager {
     let offset = 0;
     while (offset < dataView.byteLength) {
       const ledTypeIndex = dataView.getUint8(offset++);
-      const ledType: LEDType = LEDTypes[ledTypeIndex];
+      const ledType: LedType = LedTypes[ledTypeIndex];
       console.log({ ledTypeIndex, ledType });
-      _console.assertEnumWithError(ledType, LEDTypes);
+      _console.assertEnumWithError(ledType, LedTypes);
 
-      const maxColor: DisplayColorRGB = { r: 255, g: 255, b: 255 };
-
+      const maxColor: DisplayColorRGB = structuredClone(whiteColor);
       switch (ledType) {
         case "digitalSingle":
         case "analogSingle":
@@ -98,34 +133,182 @@ class LedManager {
           _console.error(`uncaught ledType "${ledType}"`);
           break;
       }
-
       _console.log("maxColor", maxColor);
+
+      const led: Led = {
+        index: newLeds.length,
+        type: ledType,
+        color: structuredClone(blackColor),
+        maxColor,
+      };
+      _console.log("led", led);
+      newLeds.push(led);
     }
 
-    this.#setLEDs(newLeds);
+    this.#updateLeds(newLeds);
   }
-  // FILL
+
+  #clampColor(color: DisplayColorRGB, led: Led): LedValue {
+    const { type, maxColor, index } = led;
+    switch (type) {
+      case "digitalSingle":
+        {
+          const value = Math.floor(projectColor(color, maxColor));
+          if (true) {
+            return value;
+          } else {
+            return value == 0 ? blackColor : maxColor;
+          }
+        }
+        break;
+      case "analogSingle":
+        {
+          const value = projectColor(color, maxColor);
+          if (true) {
+            return value;
+          } else {
+            return scaleColor(color, value);
+          }
+        }
+        break;
+      case "digitalRGB":
+        return roundColor(clampColor(color, maxColor));
+        break;
+      case "analogRGB":
+        return clampColor(color, maxColor);
+        break;
+      default:
+        _console.error(`uncaught led #${index} type "${type}"`);
+        return blackColor;
+        break;
+    }
+  }
+  #verifyLedIndex(ledIndex: number) {
+    _console.assertRangeWithError(
+      "ledConfiguration.index",
+      ledIndex,
+      0,
+      this.leds.length - 1,
+    );
+  }
+
+  async setLeds(
+    ledConfigurations: LedConfiguration[],
+    sendImmediately?: boolean,
+  ) {
+    _console.log("setLeds", ledConfigurations, { sendImmediately });
+    let setLedsData!: ArrayBuffer;
+    ledConfigurations.forEach((ledConfiguration) => {
+      const { index } = ledConfiguration;
+      this.#verifyLedIndex(index);
+      const led = this.#leds[index];
+
+      let arrayBuffer: ArrayBuffer;
+
+      let value: LedValue;
+
+      if ("color" in ledConfiguration) {
+        let { color } = ledConfiguration;
+        if (typeof color == "string") {
+          color = stringToRGB(color);
+        }
+        value = this.#clampColor(color, led);
+      } else if ("brightness" in ledConfiguration) {
+        let { brightness } = ledConfiguration;
+        value = clamp(brightness, 0, 255);
+      } else {
+        _console.error(
+          `ledConfiguration contains neither a "color" nor "brightness"`,
+          ledConfiguration,
+        );
+        return;
+      }
+
+      if (typeof value == "number") {
+        arrayBuffer = concatenateArrayBuffers(
+          led.index,
+          LedValueTypes.indexOf("brightness"),
+          value,
+        );
+      } else {
+        arrayBuffer = concatenateArrayBuffers(
+          led.index,
+          LedValueTypes.indexOf("color"),
+          value.r,
+          value.g,
+          value.b,
+        );
+      }
+
+      let newColor = value;
+      if (typeof newColor == "number") {
+        newColor = scaleColor(led.maxColor, newColor);
+      }
+
+      _console.log(`led.index ${led.index} newColor:`, newColor);
+      const isColorRedundant = areColorsEqual(led.color, newColor);
+      if (!isColorRedundant) {
+        this.#pendingColors[led.index] = newColor;
+        setLedsData = concatenateArrayBuffers(setLedsData, arrayBuffer);
+      } else {
+        _console.log("redundant color - skipping");
+      }
+    });
+
+    await this.sendMessage(
+      [{ type: "setLeds", data: setLedsData }],
+      sendImmediately,
+    );
+  }
+  async setLed(ledConfiguration: LedConfiguration, sendImmediately?: boolean) {
+    _console.log("setLed", ledConfiguration, { sendImmediately });
+    return this.setLeds([ledConfiguration], sendImmediately);
+  }
+  async clearLeds(sendImmediately?: boolean) {
+    _console.log("clearLeds");
+    this.#pendingColors = this.#leds.map(() => blackColor);
+    await this.sendMessage([{ type: "clearLeds" }], sendImmediately);
+  }
 
   // MESSAGE
   parseMessage(messageType: LedMessageType, dataView: DataView<ArrayBuffer>) {
     _console.log({ messageType }, dataView);
 
     switch (messageType) {
-      case "getLEDInformation":
+      case "getLedInformation":
         this.#parseLedInformation(dataView);
         break;
-      case "setLEDs":
+      case "setLeds":
         break;
-      case "clearLEDs":
+      case "clearLeds":
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }
   }
 
+  onSendTxMessages() {
+    _console.log("onSendTxMessages");
+    this.#flushPendingColors();
+  }
+  #flushPendingColors() {
+    _console.log("flushPendingColors");
+    this.#pendingColors.forEach((color, ledIndex) => {
+      this.#verifyLedIndex(ledIndex);
+      const led = this.#leds[ledIndex];
+      led.color = color;
+      this.#dispatchEvent("setLed", {
+        ledIndex,
+        led,
+      });
+    });
+    this.#pendingColors.length = 0;
+  }
+
   clear() {
-    _console.log("clear");
+    // _console.log("clear");
     this.#leds.length = 0;
+    this.#pendingColors.length = 0;
   }
 }
 

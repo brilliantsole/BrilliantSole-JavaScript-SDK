@@ -149,9 +149,9 @@ import LedManager, {
   LedEventDispatcher,
   LedEventTypes,
   LedMessageType,
-  LEDMessageTypes,
+  LedMessageTypes,
   SendLedMessageCallback,
-} from "./led/LEDManager.ts";
+} from "./led/LedManager.ts";
 
 const _console = createConsole("Device", { log: false });
 
@@ -383,7 +383,7 @@ class Device {
       // TODO: - add to RequiredInformationConnectionMessages later on
       if (this.deviceInformation.modelNumber == "PMSG") {
         _console.log("requesting led information");
-        this.sendTxMessages([{ type: "getLEDInformation" }], false);
+        this.sendTxMessages([{ type: "getLedInformation" }], false);
       } else {
         _console.log("don't need to request led information");
       }
@@ -473,6 +473,7 @@ class Device {
           break;
       }
     });
+
     DeviceManager.onDevice(this);
     if (isInBrowser) {
       window.addEventListener("beforeunload", () => {
@@ -547,8 +548,12 @@ class Device {
 
     this._informationManager.connectionType = this.connectionType;
   }
-  async #sendTxMessages(messages?: TxMessage[], sendImmediately?: boolean) {
+  async #sendTxMessages(messages?: TxMessage[], sendImmediately = true) {
+    _console.log("sendTxMessages", messages, { sendImmediately });
     await this.#connectionManager?.sendTxMessages(messages, sendImmediately);
+    if (sendImmediately) {
+      this.#ledManager.onSendTxMessages();
+    }
   }
   private sendTxMessages = this.#sendTxMessages.bind(this);
 
@@ -1034,7 +1039,7 @@ class Device {
             messageType as DisplayMessageType,
             dataView,
           );
-        } else if (LEDMessageTypes.includes(messageType as LedMessageType)) {
+        } else if (LedMessageTypes.includes(messageType as LedMessageType)) {
           this.#ledManager.parseMessage(
             messageType as LedMessageType,
             dataView,
@@ -1320,16 +1325,13 @@ class Device {
   get vibrationLocations() {
     return this.#vibrationManager.vibrationLocations;
   }
+  get hasVibration() {
+    return this.vibrationLocations.length > 0;
+  }
 
   #vibrationManager = new VibrationManager();
-  async triggerVibration(
-    vibrationConfigurations: VibrationConfiguration[],
-    sendImmediately?: boolean,
-  ) {
-    this.#vibrationManager.triggerVibration(
-      vibrationConfigurations,
-      sendImmediately,
-    );
+  get triggerVibration() {
+    return this.#vibrationManager.triggerVibration;
   }
 
   // FILE TRANSFER
@@ -2250,7 +2252,7 @@ class Device {
     return this.#displayManager.drawClosedPath;
   }
 
-  // LED
+  // Led
   #ledManager = new LedManager();
 
   get leds() {
@@ -2259,7 +2261,15 @@ class Device {
   get hasLeds() {
     return this.leds.length > 0;
   }
-  // FILL
+  get setLed() {
+    return this.#ledManager.setLed;
+  }
+  get setLeds() {
+    return this.#ledManager.setLeds;
+  }
+  get clearLeds() {
+    return this.#ledManager.clearLeds;
+  }
 }
 
 export default Device;

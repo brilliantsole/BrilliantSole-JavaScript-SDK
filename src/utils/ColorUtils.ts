@@ -15,7 +15,7 @@ export function hexToRGB(hex: string): DisplayColorRGB {
 
   _console.assertWithError(
     hex.length == 6,
-    `hex length must be 6 (got ${hex.length})`
+    `hex length must be 6 (got ${hex.length})`,
   );
 
   const r = parseInt(hex.substring(0, 2), 16);
@@ -26,6 +26,7 @@ export function hexToRGB(hex: string): DisplayColorRGB {
 }
 
 export const blackColor: DisplayColorRGB = { r: 0, g: 0, b: 0 };
+export const whiteColor: DisplayColorRGB = { r: 255, g: 255, b: 255 };
 export function colorNameToRGB(colorName: string): DisplayColorRGB {
   const temp = document.createElement("div");
   temp.style.color = colorName;
@@ -45,6 +46,50 @@ export function colorNameToRGB(colorName: string): DisplayColorRGB {
   };
 }
 
+export function clampColor(
+  color: DisplayColorRGB,
+  maxColor: DisplayColorRGB,
+): DisplayColorRGB {
+  return {
+    r: Math.min(color.r, maxColor.r),
+    g: Math.min(color.g, maxColor.g),
+    b: Math.min(color.b, maxColor.b),
+  };
+}
+
+export function roundColor(color: DisplayColorRGB): DisplayColorRGB {
+  const { r, g, b } = color;
+  return {
+    r: r == 0 ? 0 : 255,
+    g: g == 0 ? 0 : 255,
+    b: b == 0 ? 0 : 255,
+  };
+}
+
+export function projectColor(
+  color: DisplayColorRGB,
+  maxColor: DisplayColorRGB,
+) {
+  const { r, g, b } = clampColor(color, maxColor);
+  return (r + g + b) / (maxColor.r + maxColor.g + maxColor.b);
+}
+
+export function scaleColor(
+  color: DisplayColorRGB,
+  scalar: number,
+): DisplayColorRGB {
+  const { r, g, b } = color;
+  return {
+    r: r * scalar,
+    g: g * scalar,
+    b: b * scalar,
+  };
+}
+
+export function areColorsEqual(A: DisplayColorRGB, B: DisplayColorRGB) {
+  return A.r == B.r && A.g == B.g && A.b == B.b;
+}
+
 export function stringToRGB(string: string): DisplayColorRGB {
   if (string.startsWith("#")) {
     return hexToRGB(string);
@@ -59,7 +104,7 @@ export function rgbToHex({ r, g, b }: DisplayColorRGB): string {
 
   _console.assertWithError(
     [r, g, b].every((v) => v >= 0 && v <= 255),
-    `RGB values must be between 0 and 255 (got r=${r}, g=${g}, b=${b})`
+    `RGB values must be between 0 and 255 (got r=${r}, g=${g}, b=${b})`,
   );
 
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -67,7 +112,7 @@ export function rgbToHex({ r, g, b }: DisplayColorRGB): string {
 
 export function colorDistanceSq(
   a: DisplayColorRGB,
-  b: DisplayColorRGB
+  b: DisplayColorRGB,
 ): number {
   return (a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2;
 }
@@ -89,7 +134,7 @@ export interface KMeansResult {
 export function kMeansColors(
   colors: string[],
   k: number,
-  options?: KMeansOptions
+  options?: KMeansOptions,
 ): KMeansResult {
   _console.assertTypeWithError(k, "number");
   _console.assertWithError(k > 0, `invalid k ${k}`);
@@ -158,7 +203,7 @@ export function kMeansColors(
               b: acc.b + p.b,
             } as DisplayColorRGB;
           },
-          { ...blackColor }
+          { ...blackColor },
         );
         return {
           r: sum.r / cluster.length,
@@ -191,7 +236,7 @@ export function kMeansColors(
 
 export function mapToClosestPaletteIndex(
   colors: string[],
-  palette: string[]
+  palette: string[],
 ): Record<string, number> {
   const paletteRGB: DisplayColorRGB[] = palette.map(stringToRGB);
   const mapping: Record<string, number> = {};
