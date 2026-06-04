@@ -377,7 +377,7 @@ abstract class BaseConnectionManager {
 
   protected defaultMtu = 23;
   //mtu?: number;
-  protected mtu?: number = this.defaultMtu;
+  mtu?: number = this.defaultMtu;
 
   async sendTxData(data: ArrayBuffer) {
     _console.log("sendTxData", data);
