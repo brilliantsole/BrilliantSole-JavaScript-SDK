@@ -23,7 +23,9 @@ export interface VibrationWaveformEffectSegment {
 }
 
 export interface VibrationWaveformSegment {
+  /** in ms */
   duration: number;
+  /** [0, 1] */
   amplitude: number;
 }
 
@@ -322,9 +324,24 @@ class VibrationManager {
   }
 
   async triggerVibration(
+    vibrationConfiguration: VibrationConfiguration,
+    sendImmediately: boolean,
+  ): Promise<void>;
+  async triggerVibration(
     vibrationConfigurations: VibrationConfiguration[],
+    sendImmediately: boolean,
+  ): Promise<void>;
+  async triggerVibration(
+    vibrationConfigurations: VibrationConfiguration[] | VibrationConfiguration,
     sendImmediately: boolean = true,
   ) {
+    if (!Array.isArray(vibrationConfigurations)) {
+      vibrationConfigurations = [vibrationConfigurations];
+    }
+    if (vibrationConfigurations.length == 0) {
+      _console.log("empty vibrationConfigurations");
+      return;
+    }
     let triggerVibrationData!: ArrayBuffer;
     vibrationConfigurations.forEach((vibrationConfiguration) => {
       const { type } = vibrationConfiguration;
@@ -341,6 +358,10 @@ class VibrationManager {
         case "waveformEffect":
           {
             const { segments, loopCount } = vibrationConfiguration;
+            if (segments.length == 0) {
+              _console.log("no segments");
+              return;
+            }
             arrayBuffer = this.#createWaveformEffectsData(
               locations,
               segments,
@@ -351,6 +372,10 @@ class VibrationManager {
         case "waveform":
           {
             const { segments } = vibrationConfiguration;
+            if (segments.length == 0) {
+              _console.log("no segments");
+              return;
+            }
             arrayBuffer = this.#createWaveformData(locations, segments);
           }
           break;
@@ -358,11 +383,23 @@ class VibrationManager {
           throw Error(`invalid vibration type "${type}"`);
       }
       _console.log({ type, arrayBuffer });
+      if (arrayBuffer.byteLength == 0) {
+        _console.log("empty arrayBuffer");
+        return;
+      }
       triggerVibrationData = concatenateArrayBuffers(
         triggerVibrationData,
         arrayBuffer,
       );
     });
+    if (!triggerVibrationData) {
+      _console.log("no triggerVibrationData");
+      return;
+    }
+    if (triggerVibrationData.byteLength == 0) {
+      _console.log("empty triggerVibrationData");
+      return;
+    }
     await this.sendMessage(
       [{ type: "triggerVibration", data: triggerVibrationData }],
       sendImmediately,

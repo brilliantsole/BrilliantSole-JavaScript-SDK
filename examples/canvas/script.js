@@ -249,16 +249,9 @@ const grabWebcamFrame = () => {
     webcamCanvas.width,
     webcamCanvas.height,
   );
-  cameraImage.src = webcamCanvas.toDataURL("image/pg");
+  cameraImage.src = webcamCanvas.toDataURL("image/png");
   // console.log("cameraImage.src", cameraImage.src);
 };
-
-window.addEventListener("handlandmarkerresult", () => {
-  if (!webcamVideo.srcObject) {
-    return;
-  }
-  grabWebcamFrame();
-});
 
 const imageContainer = document.getElementById("imageContainer");
 const toggleMirrorCameraButton = document.getElementById("toggleMirrorCamera");
@@ -333,6 +326,15 @@ const setDrawingCursor = (x, y, normalized = false) => {
   drawingCursorContainer.style.left = `${100 * x}%`;
   drawingCursorContainer.style.top = `${100 * y}%`;
 };
+
+// HAND LANDMARKER
+
+window.addEventListener("handlandmarkerresult", () => {
+  if (!webcamVideo.srcObject) {
+    return;
+  }
+  grabWebcamFrame();
+});
 
 // CANVAS
 

@@ -9,5 +9,4 @@ declare const isAndroid: boolean;
 declare const isSafari: boolean;
 declare const isIOS: boolean;
 declare const isMac: boolean;
-declare const isInLensStudio: boolean;
-export { isInDev, isInProduction, isInBrowser, isInNode, isAndroid, isInBluefy, isInWebBLE, isSafari, isInLensStudio, isIOS, isMac, isBluetoothSupported, };
+export { isInDev, isInProduction, isInBrowser, isInNode, isAndroid, isInBluefy, isInWebBLE, isSafari, isIOS, isMac, isBluetoothSupported, };

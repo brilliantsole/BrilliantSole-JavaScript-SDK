@@ -1,4 +1,4 @@
-import { isInDev, isInLensStudio, isInNode } from "./environment.ts";
+import { isInDev, isInNode } from "./environment.ts";
 
 declare var Studio: any | undefined;
 
@@ -22,17 +22,7 @@ interface ConsoleLike {
 }
 
 var __console: ConsoleLike;
-if (isInLensStudio) {
-  const log = function (...args: any[]) {
-    Studio.log(args.map((value) => new String(value)).join(","));
-  };
-  __console = {};
-  __console.log = log;
-  __console.warn = log.bind(__console, "WARNING");
-  __console.error = log.bind(__console, "ERROR");
-} else {
-  __console = console;
-}
+__console = console;
 
 function getCallerFunctionPath(): string {
   const stack = new Error().stack;

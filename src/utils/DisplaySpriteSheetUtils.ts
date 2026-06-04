@@ -11,7 +11,7 @@ import {
   serializeContextCommands,
 } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
-import { type Glyph, type Font, parse as parseOpenType } from "opentype.js";
+import opentype, { type Glyph, type Font } from "opentype.js";
 import { decompress } from "woff2-encoder";
 import RangeHelper from "./RangeHelper.ts";
 import { Vector2 } from "./MathUtils.ts";
@@ -174,7 +174,7 @@ export async function parseFont(arrayBuffer: ArrayBuffer) {
     // @ts-expect-error
     arrayBuffer = result.buffer;
   }
-  const font = parseOpenType(arrayBuffer);
+  const font = opentype.parse(arrayBuffer);
   //_console.log("font", font);
   return font;
 }

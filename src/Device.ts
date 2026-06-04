@@ -381,15 +381,6 @@ class Device {
         _console.log("don't need to request number of buttons/touches");
       }
     });
-    this.addEventListener("deviceInformation", (event) => {
-      // TODO: - add to RequiredInformationConnectionMessages later on
-      if (this.deviceInformation.modelNumber == "PMSG") {
-        _console.log("requesting led information");
-        this.sendTxMessages([{ type: "getLedInformation" }], false);
-      } else {
-        _console.log("don't need to request led information");
-      }
-    });
     this.addEventListener("getSensorConfiguration", (event) => {
       const { sensorConfiguration } = event.message;
       this.#cameraManager.sensorRate = sensorConfiguration.camera ?? 0;
@@ -710,6 +701,8 @@ class Device {
         type: messageType,
       }),
     );
+    // TODO: - add to RequiredInformationConnectionMessages once fully integrated
+    messages.push({ type: "getLedInformation" });
     this.#sendTxMessages(messages);
   }
 
@@ -1546,11 +1539,6 @@ class Device {
 
     this.#fileTransferManager.isServerSide = this.isServerSide;
     this.#displayManager.isServerSide = this.isServerSide;
-  }
-
-  // UKATON
-  get isUkaton() {
-    return this.deviceInformation.modelNumber.includes("Ukaton");
   }
 
   // WIFI MANAGER

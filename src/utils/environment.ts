@@ -32,13 +32,6 @@ const isSafari =
 const isIOS = isInBrowser && /iPad|iPhone|iPod/i.test(userAgent);
 const isMac = isInBrowser && /Macintosh/i.test(userAgent);
 
-const isInLensStudio =
-  !isInBrowser &&
-  !isInNode &&
-  typeof global !== "undefined" &&
-  // @ts-expect-error
-  typeof Studio !== "undefined";
-
 export {
   isInDev,
   isInProduction,
@@ -48,7 +41,6 @@ export {
   isInBluefy,
   isInWebBLE,
   isSafari,
-  isInLensStudio,
   isIOS,
   isMac,
   isBluetoothSupported,

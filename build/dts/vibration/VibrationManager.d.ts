@@ -11,7 +11,9 @@ export interface VibrationWaveformEffectSegment {
     loopCount?: number;
 }
 export interface VibrationWaveformSegment {
+    /** in ms */
     duration: number;
+    /** [0, 1] */
     amplitude: number;
 }
 export declare const VibrationMessageTypes: readonly ["getVibrationLocations", "triggerVibration"];
@@ -55,7 +57,8 @@ declare class VibrationManager {
         target: Device;
         message: VibrationEventMessages[T];
     }>;
-    triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;
+    triggerVibration(vibrationConfiguration: VibrationConfiguration, sendImmediately: boolean): Promise<void>;
+    triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately: boolean): Promise<void>;
     get vibrationLocations(): ("left" | "right" | "front" | "rear")[];
     parseMessage(messageType: VibrationMessageType, dataView: DataView<ArrayBuffer>): void;
 }

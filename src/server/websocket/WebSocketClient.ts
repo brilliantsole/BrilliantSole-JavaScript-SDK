@@ -21,7 +21,7 @@ import {
   WebSocketMessage,
 } from "./WebSocketUtils.ts";
 import { parseMessage } from "../../utils/ParseUtils.ts";
-import { isInLensStudio, isInBrowser } from "../../utils/environment.ts";
+import { isInBrowser } from "../../utils/environment.ts";
 
 const _console = createConsole("WebSocketClient", { log: false });
 
@@ -61,18 +61,14 @@ class WebSocketClient extends BaseClient {
   connect(
     url: string | URL = `${
       location.protocol.includes("https") ? "wss" : "ws"
-    }://${location.host}`
+    }://${location.host}`,
   ) {
     if (this.webSocket) {
       this.assertDisconnection();
     }
     this._connectionStatus = "connecting";
 
-    if (isInLensStudio) {
-      // FILL
-    } else {
-      this.webSocket = new WebSocket(url);
-    }
+    this.webSocket = new WebSocket(url);
   }
 
   disconnect() {
@@ -84,7 +80,7 @@ class WebSocketClient extends BaseClient {
         () => {
           this.reconnectOnDisconnection = true;
         },
-        { once: true }
+        { once: true },
       );
     }
     this._connectionStatus = "disconnecting";
@@ -118,7 +114,7 @@ class WebSocketClient extends BaseClient {
       createWebSocketMessage({
         type: "serverMessage",
         data: createServerMessage(...messages),
-      })
+      }),
     );
   }
 
@@ -177,13 +173,13 @@ class WebSocketClient extends BaseClient {
       WebSocketMessageTypes,
       this.#onServerMessage.bind(this),
       null,
-      true
+      true,
     );
   }
 
   #onServerMessage(
     messageType: WebSocketMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     switch (messageType) {
       case "ping":

@@ -15,6 +15,10 @@ export type Led = {
     type: LedType;
     color: DisplayColorRGB;
     maxColor: DisplayColorRGB;
+    isSingle: boolean;
+    isRGB: boolean;
+    isAnalog: boolean;
+    isDigital: boolean;
 };
 export interface LedEventMessages {
     getLedInformation: {

@@ -377,13 +377,13 @@ abstract class BaseConnectionManager {
 
   protected defaultMtu = 23;
   //mtu?: number;
-  mtu?: number = this.defaultMtu;
+  protected mtu?: number = this.defaultMtu;
 
   async sendTxData(data: ArrayBuffer) {
     _console.log("sendTxData", data);
   }
 
-  parseRxMessage(dataView: DataView<ArrayBuffer>) {
+  protected parseRxMessage(dataView: DataView<ArrayBuffer>) {
     parseMessage(
       dataView,
       TxRxMessageTypes,

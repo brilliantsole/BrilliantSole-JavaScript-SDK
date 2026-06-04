@@ -1,8 +1,4 @@
-import {
-  isInBrowser,
-  isInLensStudio,
-  isInNode,
-} from "../../utils/environment.ts";
+import { isInBrowser, isInNode } from "../../utils/environment.ts";
 import { createConsole } from "../../utils/Console.ts";
 
 const _console = createConsole("bluetoothUUIDs", { log: false });
@@ -48,13 +44,13 @@ function generateBluetoothUUID(value: string): BluetoothServiceUUID {
   _console.assertTypeWithError(value, "string");
   _console.assertWithError(
     value.length == 4,
-    "value must be 4 characters long"
+    "value must be 4 characters long",
   );
   return `ea6d${value}-a725-4f9b-893d-c3913e33b39f`;
 }
 
 function stringToCharacteristicUUID(
-  identifier: string
+  identifier: string,
 ): BluetoothCharacteristicUUID {
   return BluetoothUUID?.getCharacteristic?.(identifier);
 }
@@ -151,11 +147,11 @@ export const optionalServiceUUIDs = [
 export const allServiceUUIDs = [...serviceUUIDs, ...optionalServiceUUIDs];
 
 export function getServiceNameFromUUID(
-  serviceUUID: BluetoothServiceUUID
+  serviceUUID: BluetoothServiceUUID,
 ): BluetoothServiceName | undefined {
   serviceUUID = serviceUUID.toString().toLowerCase();
   const serviceNames = Object.keys(
-    bluetoothUUIDs.services
+    bluetoothUUIDs.services,
   ) as BluetoothServiceName[];
   return serviceNames.find((serviceName) => {
     const serviceInfo = bluetoothUUIDs.services[serviceName];
@@ -181,7 +177,7 @@ Object.values(bluetoothUUIDs.services).forEach((serviceInfo) => {
     return;
   }
   const characteristicNames = Object.keys(
-    serviceInfo.characteristics
+    serviceInfo.characteristics,
   ) as BluetoothCharacteristicName[];
   characteristicNames.forEach((characteristicName) => {
     const characteristicInfo = serviceInfo.characteristics[characteristicName]!;
@@ -197,14 +193,14 @@ Object.values(bluetoothUUIDs.services).forEach((serviceInfo) => {
 //_console.log({ characteristicUUIDs, allCharacteristicUUIDs });
 
 export function getCharacteristicNameFromUUID(
-  characteristicUUID: BluetoothCharacteristicUUID
+  characteristicUUID: BluetoothCharacteristicUUID,
 ): BluetoothCharacteristicName | undefined {
   //_console.log({ characteristicUUID });
   characteristicUUID = characteristicUUID.toString().toLowerCase();
   var characteristicName: BluetoothCharacteristicName | undefined;
   Object.values(bluetoothUUIDs.services).some((serviceInfo) => {
     const characteristicNames = Object.keys(
-      serviceInfo.characteristics
+      serviceInfo.characteristics,
     ) as BluetoothCharacteristicName[];
     characteristicName = characteristicNames.find((_characteristicName) => {
       const characteristicInfo =
@@ -224,7 +220,7 @@ export function getCharacteristicNameFromUUID(
 }
 
 export function getCharacteristicProperties(
-  characteristicName: BluetoothCharacteristicName
+  characteristicName: BluetoothCharacteristicName,
 ): BluetoothCharacteristicProperties {
   const properties = {
     broadcast: false,

@@ -89,7 +89,7 @@ declare abstract class BaseConnectionManager {
     protected defaultMtu: number;
     mtu?: number;
     sendTxData(data: ArrayBuffer): Promise<void>;
-    parseRxMessage(dataView: DataView<ArrayBuffer>): void;
+    protected parseRxMessage(dataView: DataView<ArrayBuffer>): void;
     clear(): void;
     remove(): void;
 }

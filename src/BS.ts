@@ -128,6 +128,10 @@ import {
   MaxVibrationWaveformEffectSegmentLoopCount,
   MaxNumberOfVibrationWaveformSegments,
   MaxVibrationWaveformEffectSequenceLoopCount,
+  VibrationWaveformSegment,
+  VibrationWaveformEffectSegment,
+  VibrationWaveformEffectConfiguration,
+  VibrationWaveformConfiguration,
 } from "./vibration/VibrationManager.ts";
 export {
   VibrationConfiguration,
@@ -141,6 +145,10 @@ export {
   MaxVibrationWaveformEffectSegmentLoopCount,
   MaxNumberOfVibrationWaveformSegments,
   MaxVibrationWaveformEffectSequenceLoopCount,
+  VibrationWaveformSegment,
+  VibrationWaveformEffectSegment,
+  VibrationWaveformEffectConfiguration,
+  VibrationWaveformConfiguration,
 };
 
 import {
@@ -451,8 +459,16 @@ import {
   LedValue,
   LedValueType,
   LedValueTypes,
+  LedConfiguration,
 } from "./led/LedManager.ts";
-export { LedType, LedTypes, LedValue, LedValueType, LedValueTypes };
+export {
+  LedType,
+  LedTypes,
+  LedValue,
+  LedValueType,
+  LedValueTypes,
+  LedConfiguration,
+};
 
 import {
   ConnectionMessageType,

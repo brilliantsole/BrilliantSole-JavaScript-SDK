@@ -1,0 +1,159 @@
+<html>
+  <head>
+    <title>Depth Anything V3 | BrilliantSole JavaScript SDK</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+
+    <script src="./depth-anything-v3.js" type="module"></script>
+    <script src="../utils/misc/cameraSelect.js"></script>
+  </head>
+  <style>
+    img,
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    html,
+    body {
+      touch-action: manipulation;
+    }
+
+    #imageContainer {
+      display: flex;
+      height: 200px;
+    }
+    #imageContainer > img {
+      width: 100%;
+      height: 100%;
+    }
+
+    #depthContainer {
+      font-size: x-large;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Depth Anything V3 | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+    <label>
+      ip address:
+      <input
+        id="ipAddress"
+        placeholder="192.168.4.1"
+        type="text"
+        minlength="7"
+        maxlength="13"
+        size="14"
+      />
+    </label>
+    <br />
+
+    <label><b>camera status:</b> <span id="cameraStatus"></span></label>
+    <br />
+
+    <label>
+      rate (ms):
+      <input id="cameraRate" disabled type="number" min="5" max="40" step="5" />
+    </label>
+    <br />
+
+    <label>
+      resoluton:
+      <input
+        id="cameraResolution"
+        disabled
+        type="number"
+        min="100"
+        max="480"
+        step="1"
+      />
+    </label>
+    <br />
+
+    <label>
+      quality:
+      <input
+        id="cameraQuality"
+        disabled
+        type="number"
+        min="0"
+        max="100"
+        step="1"
+      />
+    </label>
+    <br />
+
+    <label>auto picture: <input type="checkbox" id="autoPicture" /> </label>
+    <br />
+
+    <button disabled id="takePicture">take picture</button>
+    <progress value="0" id="cameraImageProgress"></progress>
+    <br />
+    <button disabled id="focusCamera">focus camera</button>
+    <br />
+
+    <label>
+      webcam
+      <select data-camera data-width="320" data-height="240"></select>
+    </label>
+    <button id="toggleMirrorCamera">mirror camera</button>
+
+    <br />
+    <label id="depthContainer">depth: <span id="depth">0</span></label>
+    <br />
+    <label>
+      depth min threshold:
+      <input
+        id="depthMinThreshold"
+        type="number"
+        min="0.1"
+        max="0.8"
+        step="0.05"
+        value="0.3"
+    /></label>
+    <label>
+      depth max threshold:
+      <input
+        id="depthMaxThreshold"
+        type="number"
+        min="0.1"
+        max="0.8"
+        step="0.05"
+        value="0.6"
+    /></label>
+    <br />
+    <meter
+      style="width: 200px"
+      id="depthFeedback"
+      min="0"
+      max="1"
+      low="0.3"
+      high="0.7"
+      optimum="1"
+    ></meter>
+
+    <br />
+
+    <div style="display: flex; max-height: 200px; flex-wrap: wrap">
+      <div id="imageContainer">
+        <canvas
+          data-depth-estimator
+          width="300"
+          height="300"
+          id="imageOverlay"
+        ></canvas>
+        <img data-depth-estimator id="cameraImage" />
+      </div>
+      <video id="cameraVideo" muted autoplay playsinline></video>
+    </div>
+  </body>
+</html>

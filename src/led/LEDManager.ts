@@ -46,6 +46,11 @@ export type Led = {
   type: LedType;
   color: DisplayColorRGB;
   maxColor: DisplayColorRGB;
+
+  isSingle: boolean;
+  isRGB: boolean;
+  isAnalog: boolean;
+  isDigital: boolean;
 };
 
 export interface LedEventMessages {
@@ -106,6 +111,18 @@ class LedManager {
     this.#dispatchEvent("getLedInformation", { leds: this.leds });
   }
 
+  #isLedTypeAnalog(ledType: LedType) {
+    return ledType.startsWith("analog");
+  }
+  #isLedTypeDigital(ledType: LedType) {
+    return ledType.startsWith("digital");
+  }
+  #isLedTypeSingle(ledType: LedType) {
+    return ledType.endsWith("Single");
+  }
+  #isLedTypeRGB(ledType: LedType) {
+    return ledType.endsWith("RGB");
+  }
   #parseLedInformation(dataView: DataView<ArrayBuffer>) {
     _console.log("parseLedInformation", dataView);
 
@@ -140,6 +157,10 @@ class LedManager {
         type: ledType,
         color: structuredClone(blackColor),
         maxColor,
+        isAnalog: this.#isLedTypeAnalog(ledType),
+        isDigital: this.#isLedTypeDigital(ledType),
+        isSingle: this.#isLedTypeSingle(ledType),
+        isRGB: this.#isLedTypeRGB(ledType),
       };
       _console.log("led", led);
       newLeds.push(led);
@@ -196,6 +217,10 @@ class LedManager {
     ledConfigurations: LedConfiguration[],
     sendImmediately?: boolean,
   ) {
+    if (ledConfigurations.length == 0) {
+      _console.log("empty ledConfigurations");
+      return;
+    }
     _console.log("setLeds", ledConfigurations, { sendImmediately });
     let setLedsData!: ArrayBuffer;
     ledConfigurations.forEach((ledConfiguration) => {

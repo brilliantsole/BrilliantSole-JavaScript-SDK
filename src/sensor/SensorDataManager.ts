@@ -49,6 +49,11 @@ import {
 import { CameraSensorTypes } from "../CameraManager.ts";
 import { MicrophoneSensorTypes } from "../MicrophoneManager.ts";
 import autoBind from "auto-bind";
+import LightSensorDataManager, {
+  ContinuousLightSensorTypes,
+  LightSensorDataEventMessages,
+  LightSensorTypes,
+} from "./LightSensorDataManager.ts";
 
 const _console = createConsole("SensorDataManager", { log: false });
 
@@ -60,6 +65,7 @@ export const SensorTypes = [
   ...MicrophoneSensorTypes,
   ...ButtonSensorTypes,
   ...TouchSensorTypes,
+  ...LightSensorTypes,
 ] as const;
 export type SensorType = (typeof SensorTypes)[number];
 
@@ -67,6 +73,7 @@ export const ContinuousSensorTypes = [
   ...ContinuousPressureSensorTypes,
   ...ContinuousMotionTypes,
   ...ContinuousBarometerSensorTypes,
+  ...ContinuousLightSensorTypes,
 ] as const;
 export type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];
 
@@ -99,7 +106,8 @@ type BaseSensorDataEventMessages = BarometerSensorDataEventMessages &
   MotionSensorDataEventMessages &
   PressureDataEventMessages &
   ButtonSensorDataEventMessages &
-  TouchSensorDataEventMessages;
+  TouchSensorDataEventMessages &
+  LightSensorDataEventMessages;
 type _SensorDataEventMessages = ExtendInterfaceValues<
   AddKeysAsPropertyToInterface<BaseSensorDataEventMessages, "sensorType">,
   BaseSensorDataEventMessage
@@ -166,6 +174,7 @@ class SensorDataManager {
   barometerSensorDataManager = new BarometerSensorDataManager();
   buttonSensorDataManager = new ButtonSensorDataManager();
   touchSensorDataManager = new TouchSensorDataManager();
+  lightSensorDataManager = new LightSensorDataManager();
 
   #scalars: Map<SensorType, number> = new Map();
   #counts: Map<SensorType, number> = new Map();
@@ -393,6 +402,9 @@ class SensorDataManager {
       case "microphone":
         // we parse microphone data using MicrophoneManager
         return;
+      case "light":
+        sensorData = this.lightSensorDataManager.parseData(dataView, scalar);
+        break;
       default:
         _console.error(`uncaught sensorType "${sensorType}"`);
     }
