@@ -41,7 +41,6 @@ import DeviceManager, {
 } from "../DeviceManager.ts";
 import { RequiredWifiMessageTypes } from "../WifiManager.ts";
 import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
-import { isInNode } from "../utils/environment.ts";
 
 const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...DeviceInformationTypes,
@@ -51,44 +50,48 @@ const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
 
 const _console = createConsole("BaseServer", { log: true });
 
+export interface BaseServerClient {}
+
 export const ServerEventTypes = [
   "clientConnected",
   "clientDisconnected",
 ] as const;
 export type ServerEventType = (typeof ServerEventTypes)[number];
 
-interface ServerEventMessages {
-  clientConnected: { client: any };
-  clientDisconnected: { client: any };
+interface ServerEventMessages<ServerClient extends BaseServerClient> {
+  clientConnected: { client: ServerClient };
+  clientDisconnected: { client: ServerClient };
 }
 
-export type ServerEventDispatcher = EventDispatcher<
-  BaseServer,
+export type ServerEventDispatcher<ServerClient extends BaseServerClient> =
+  EventDispatcher<
+    BaseServer<ServerClient>,
+    ServerEventType,
+    ServerEventMessages<ServerClient>
+  >;
+export type ServerEvent<ServerClient extends BaseServerClient> = Event<
+  BaseServer<ServerClient>,
   ServerEventType,
-  ServerEventMessages
+  ServerEventMessages<ServerClient>
 >;
-export type ServerEvent = Event<
-  BaseServer,
+export type ServerEventMap<ServerClient extends BaseServerClient> = EventMap<
+  BaseServer<ServerClient>,
   ServerEventType,
-  ServerEventMessages
+  ServerEventMessages<ServerClient>
 >;
-export type ServerEventMap = EventMap<
-  BaseServer,
-  ServerEventType,
-  ServerEventMessages
->;
-export type BoundServerEventListeners = BoundEventListeners<
-  BaseServer,
-  ServerEventType,
-  ServerEventMessages
->;
+export type BoundServerEventListeners<ServerClient extends BaseServerClient> =
+  BoundEventListeners<
+    BaseServer<ServerClient>,
+    ServerEventType,
+    ServerEventMessages<ServerClient>
+  >;
 
-abstract class BaseServer {
+abstract class BaseServer<
+  ServerClient extends BaseServerClient = BaseServerClient,
+> {
   // EVENT DISPATCHER
-  protected eventDispatcher: ServerEventDispatcher = new EventDispatcher(
-    this as BaseServer,
-    ServerEventTypes,
-  );
+  protected eventDispatcher: ServerEventDispatcher<ServerClient> =
+    new EventDispatcher(this as BaseServer<ServerClient>, ServerEventTypes);
   get addEventListener() {
     return this.eventDispatcher.addEventListener;
   }
@@ -112,9 +115,7 @@ abstract class BaseServer {
     addEventListeners(this, this.#boundServerListeners);
   }
 
-  get numberOfClients() {
-    return 0;
-  }
+  clients: ServerClient[] = [];
 
   static #ClearSensorConfigurationsWhenNoClients = true;
   static get ClearSensorConfigurationsWhenNoClients() {
@@ -136,19 +137,21 @@ abstract class BaseServer {
   }
 
   // SERVER LISTENERS
-  #boundServerListeners: BoundServerEventListeners = {
+  #boundServerListeners: BoundServerEventListeners<BaseServer> = {
     clientConnected: this.#onClientConnected.bind(this),
     clientDisconnected: this.#onClientDisconnected.bind(this),
   };
-  #onClientConnected(event: ServerEventMap["clientConnected"]) {
+  #onClientConnected(event: ServerEventMap<BaseServer>["clientConnected"]) {
     const client = event.message.client;
     _console.log("onClientConnected");
   }
-  #onClientDisconnected(event: ServerEventMap["clientDisconnected"]) {
+  #onClientDisconnected(
+    event: ServerEventMap<BaseServer>["clientDisconnected"],
+  ) {
     const client = event.message.client;
     _console.log("onClientDisconnected");
     if (
-      this.numberOfClients == 0 &&
+      this.clients.length == 0 &&
       this.clearSensorConfigurationsWhenNoClients
     ) {
       DeviceManager.ConnectedDevices.forEach((device) => {

@@ -16110,9 +16110,7 @@ class BaseServer {
         addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
     }
-    get numberOfClients() {
-        return 0;
-    }
+    clients = [];
     static #ClearSensorConfigurationsWhenNoClients = true;
     static get ClearSensorConfigurationsWhenNoClients() {
         return this.#ClearSensorConfigurationsWhenNoClients;
@@ -16140,7 +16138,7 @@ class BaseServer {
     #onClientDisconnected(event) {
         event.message.client;
         _console$3.log("onClientDisconnected");
-        if (this.numberOfClients == 0 &&
+        if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
             DeviceManager$1.ConnectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
@@ -16405,8 +16403,10 @@ _a = BaseServer;
 
 const _console$2 = createConsole("WebSocketServer", { log: false });
 class WebSocketServer extends BaseServer {
-    get numberOfClients() {
-        return this.#server?.clients.size || 0;
+    get clients() {
+        if (this.#server) {
+            return this.#server.clients;
+        }
     }
     #server;
     get server() {
@@ -16552,13 +16552,9 @@ const udpPongMessage = createUDPServerMessage("pong");
 
 const _console = createConsole("UDPServer", { log: false });
 class UDPServer extends BaseServer {
-    #clients = [];
-    get numberOfClients() {
-        return this.#clients.length;
-    }
     #getClientByRemoteInfo(remoteInfo, createIfNotFound = false) {
         const { address, port } = remoteInfo;
-        let client = this.#clients.find((client) => client.address == address && client.port == port);
+        let client = this.clients.find((client) => client.address == address && client.port == port);
         if (!client && createIfNotFound) {
             client = {
                 ...remoteInfo,
@@ -16570,8 +16566,8 @@ class UDPServer extends BaseServer {
                 lastTimeSentData: 0,
             };
             _console.log("created new client", client);
-            this.#clients.push(client);
-            _console.log(`currently have ${this.numberOfClients} clients`);
+            this.clients.push(client);
+            _console.log(`currently have ${this.clients.length} clients`);
             this.dispatchEvent("clientConnected", { client });
         }
         return client;
@@ -16709,15 +16705,15 @@ class UDPServer extends BaseServer {
     }
     broadcastMessage(message) {
         super.broadcastMessage(message);
-        this.#clients.forEach((client) => {
+        this.clients.forEach((client) => {
             this.#sendToClient(client, createUDPServerMessage({ type: "serverMessage", data: message }));
         });
     }
     #removeClient(client) {
         _console.log(`removing client ${this.#clientToString(client)}...`);
         client.removeSelfTimer.stop();
-        this.#clients = this.#clients.filter((_client) => _client != client);
-        _console.log(`currently have ${this.numberOfClients} clients`);
+        this.clients = this.clients.filter((_client) => _client != client);
+        _console.log(`currently have ${this.clients.length} clients`);
         this.dispatchEvent("clientDisconnected", { client });
     }
 }

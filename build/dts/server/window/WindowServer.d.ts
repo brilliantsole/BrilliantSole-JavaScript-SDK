@@ -1,9 +1,13 @@
-import BaseServer from "../BaseServer.ts";
-declare class WindowServer extends BaseServer {
+import BaseServer, { BaseServerClient } from "../BaseServer.ts";
+interface WindowServerClient extends BaseServerClient {
+    iframe: HTMLIFrameElement;
+    messageChannel?: MessageChannel;
+    didSendMessagePort?: boolean;
+}
+declare class WindowServer extends BaseServer<WindowServerClient> {
     #private;
     static readonly shared: WindowServer;
     constructor();
-    get numberOfClients(): number;
     broadcastMessage(message: ArrayBuffer): void;
 }
 declare const _default: WindowServer;

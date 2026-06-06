@@ -37906,9 +37906,7 @@
 	        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
 	        addEventListeners(this, this.#boundServerListeners);
 	    }
-	    get numberOfClients() {
-	        return 0;
-	    }
+	    clients = [];
 	    static #ClearSensorConfigurationsWhenNoClients = true;
 	    static get ClearSensorConfigurationsWhenNoClients() {
 	        return this.#ClearSensorConfigurationsWhenNoClients;
@@ -37936,7 +37934,7 @@
 	    #onClientDisconnected(event) {
 	        event.message.client;
 	        _console$6.log("onClientDisconnected");
-	        if (this.numberOfClients == 0 &&
+	        if (this.clients.length == 0 &&
 	            this.clearSensorConfigurationsWhenNoClients) {
 	            DeviceManager$1.ConnectedDevices.forEach((device) => {
 	                device.clearSensorConfiguration();
@@ -38199,7 +38197,7 @@
 	}
 	_a = BaseServer;
 
-	const _console$5 = createConsole("WindowClient", { log: true });
+	const _console$5 = createConsole("WindowServer", { log: true });
 	class WindowServer extends BaseServer {
 	    static shared = new WindowServer();
 	    constructor() {
@@ -38230,18 +38228,14 @@
 	            this.#onIframeAdded(iframe);
 	        });
 	    }
-	    #clients = [];
-	    get numberOfClients() {
-	        return this.#clients.length;
-	    }
 	    #getClientByiFrame(iframe) {
-	        return this.#clients.find((client) => client.iframe == iframe);
+	        return this.clients.find((client) => client.iframe == iframe);
 	    }
 	    #getClientBySource(source) {
-	        return this.#clients.find((client) => client.iframe.contentWindow == source);
+	        return this.clients.find((client) => client.iframe.contentWindow == source);
 	    }
 	    #getClientByMessagePort(port) {
-	        return this.#clients.find((client) => client.messageChannel?.port1 == port);
+	        return this.clients.find((client) => client.messageChannel?.port1 == port);
 	    }
 	    #messageClient(client, message, transfer) {
 	        _console$5.log("messageClient", client, message, { transfer });
@@ -38260,7 +38254,7 @@
 	    }
 	    broadcastMessage(message) {
 	        super.broadcastMessage(message);
-	        this.#clients.forEach((client) => {
+	        this.clients.forEach((client) => {
 	            this.#messageClient(client, createWindowMessage({ type: "serverMessage", data: message }));
 	        });
 	    }
@@ -38290,13 +38284,13 @@
 	            }
 	            addEventListeners(iframe, this.#boundIframeEventListeners);
 	            client = { iframe };
-	            this.#clients.push(client);
+	            this.clients.push(client);
 	            _console$5.log("client added", client);
 	        }
 	        _console$5.log("onWindowMessage", client, data);
 	        const dataView = new DataView(data);
 	        _console$5.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
-	        this.#parseWindowClientMessage(client, dataView);
+	        this.#parseWindowServerClientMessage(client, dataView);
 	    }
 	    #iframeObserver;
 	    #collectIframes(node) {
@@ -38333,7 +38327,7 @@
 	            messageChannel.port1.close();
 	            removeEventListeners(messageChannel.port1, this.#boundMessageChannelPortEventListeners);
 	        }
-	        this.#clients.splice(this.#clients.indexOf(client), 1);
+	        this.clients.splice(this.clients.indexOf(client), 1);
 	        _console$5.log("client removed", client);
 	    }
 	    #boundIframeEventListeners = {
@@ -38366,7 +38360,7 @@
 	        }
 	        _console$5.log("onMessagePortMessage", client);
 	    }
-	    #parseWindowClientMessage(client, dataView) {
+	    #parseWindowServerClientMessage(client, dataView) {
 	        let responseMessages = [];
 	        let transfer = [];
 	        parseMessage(dataView, WindowMessageTypes, this.#onClientMessage.bind(this), { responseMessages, transfer, client }, true);

@@ -20,13 +20,12 @@ export type ClientEventDispatcher = EventDispatcher<BaseClient, ClientEventType,
 export type ClientEvent = Event<BaseClient, ClientEventType, ClientEventMessages>;
 export type BoundClientEventListeners = BoundEventListeners<BaseClient, ClientEventType, ClientEventMessages>;
 export type ServerURL = string | URL;
-type DevicesMap = {
-    [deviceId: string]: Device;
-};
 declare abstract class BaseClient {
     #private;
     protected get baseConstructor(): typeof BaseClient;
-    get devices(): Readonly<DevicesMap>;
+    get devices(): {
+        [deviceId: string]: Device;
+    };
     get addEventListener(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
         type: T;
         target: BaseClient;

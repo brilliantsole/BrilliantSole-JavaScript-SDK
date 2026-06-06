@@ -1,9 +1,15 @@
-import BaseServer from "../BaseServer.ts";
+import BaseServer, { BaseServerClient } from "../BaseServer.ts";
+import { Timer } from "../../utils/Timer.ts";
 /** NODE_START */
 import type * as dgram from "dgram";
-declare class UDPServer extends BaseServer {
+interface UDPServerClient extends dgram.RemoteInfo, BaseServerClient {
+    receivePort?: number;
+    isAlive?: boolean;
+    removeSelfTimer: Timer;
+    lastTimeSentData: number;
+}
+declare class UDPServer extends BaseServer<UDPServerClient> {
     #private;
-    get numberOfClients(): number;
     get socket(): dgram.Socket | undefined;
     set socket(newSocket: dgram.Socket | undefined);
     broadcastMessage(message: ArrayBuffer): void;

@@ -2106,13 +2106,12 @@ interface ClientConnectionEventMessages {
 }
 type ClientEventMessages = ClientConnectionEventMessages & ScannerEventMessages;
 type ServerURL = string | URL;
-type DevicesMap = {
-    [deviceId: string]: Device;
-};
 declare abstract class BaseClient {
     #private;
     protected get baseConstructor(): typeof BaseClient;
-    get devices(): Readonly<DevicesMap>;
+    get devices(): {
+        [deviceId: string]: Device;
+    };
     get addEventListener(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
         type: T;
         target: BaseClient;
@@ -2186,40 +2185,42 @@ declare class WindowClient extends BaseClient {
 }
 declare const _default$1: WindowClient;
 
+interface BaseServerClient {
+}
 declare const ServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
 type ServerEventType = (typeof ServerEventTypes)[number];
-interface ServerEventMessages {
+interface ServerEventMessages<ServerClient extends BaseServerClient> {
     clientConnected: {
-        client: any;
+        client: ServerClient;
     };
     clientDisconnected: {
-        client: any;
+        client: ServerClient;
     };
 }
-type ServerEventDispatcher = EventDispatcher<BaseServer, ServerEventType, ServerEventMessages>;
-declare abstract class BaseServer {
+type ServerEventDispatcher<ServerClient extends BaseServerClient> = EventDispatcher<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
+declare abstract class BaseServer<ServerClient extends BaseServerClient = BaseServerClient> {
     #private;
-    protected eventDispatcher: ServerEventDispatcher;
+    protected eventDispatcher: ServerEventDispatcher<ServerClient>;
     get addEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
         type: T;
-        target: BaseServer;
-        message: ServerEventMessages[T];
+        target: BaseServer<ServerClient>;
+        message: ServerEventMessages<ServerClient>[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: ServerEventMessages[T]) => void;
+    protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: ServerEventMessages<ServerClient>[T]) => void;
     get removeEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
         type: T;
-        target: BaseServer;
-        message: ServerEventMessages[T];
+        target: BaseServer<ServerClient>;
+        message: ServerEventMessages<ServerClient>[T];
     }) => void) => void;
     get waitForEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T) => Promise<{
         type: T;
-        target: BaseServer;
-        message: ServerEventMessages[T];
+        target: BaseServer<ServerClient>;
+        message: ServerEventMessages<ServerClient>[T];
     }>;
     constructor();
-    get numberOfClients(): number;
+    clients: ServerClient[];
     static get ClearSensorConfigurationsWhenNoClients(): boolean;
     static set ClearSensorConfigurationsWhenNoClients(newValue: boolean);
     get clearSensorConfigurationsWhenNoClients(): boolean;
@@ -2229,11 +2230,15 @@ declare abstract class BaseServer {
     protected parseClientDeviceMessage(device: Device, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
 }
 
-declare class WindowServer extends BaseServer {
+interface WindowServerClient extends BaseServerClient {
+    iframe: HTMLIFrameElement;
+    messageChannel?: MessageChannel;
+    didSendMessagePort?: boolean;
+}
+declare class WindowServer extends BaseServer<WindowServerClient> {
     #private;
     static readonly shared: WindowServer;
     constructor();
-    get numberOfClients(): number;
     broadcastMessage(message: ArrayBuffer): void;
 }
 declare const _default: WindowServer;

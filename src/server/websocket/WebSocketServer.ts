@@ -8,7 +8,7 @@ import {
   dataToArrayBuffer,
 } from "../../utils/ArrayBufferUtils.ts";
 import { Timer } from "../../utils/Timer.ts";
-import BaseServer from "../BaseServer.ts";
+import BaseServer, { BaseServerClient } from "../BaseServer.ts";
 import {
   webSocketPingMessage,
   webSocketPongMessage,
@@ -25,20 +25,21 @@ import type * as ws from "ws";
 import { parseMessage } from "../../utils/ParseUtils.ts";
 /** NODE_END */
 
-interface WebSocketClient extends ws.WebSocket {
+interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
   isAlive: boolean;
   pingClientTimer?: Timer;
 }
-interface WebSocketServer extends ws.WebSocketServer {}
 
-class WebSocketServer extends BaseServer {
-  get numberOfClients() {
-    return this.#server?.clients.size || 0;
+class WebSocketServer extends BaseServer<WebSocketServerClient> {
+  get clients() {
+    if (this.#server) {
+      return this.#server.clients as Set<WebSocketServerClient>;
+    }
   }
 
   // WEBSOCKET SERVER
 
-  #server?: WebSocketServer;
+  #server?: ws.WebSocketServer;
   get server() {
     return this.#server;
   }
@@ -73,7 +74,7 @@ class WebSocketServer extends BaseServer {
   #onWebSocketServerClose() {
     _console.log("server.close");
   }
-  #onWebSocketServerConnection(client: WebSocketClient) {
+  #onWebSocketServerConnection(client: WebSocketServerClient) {
     _console.log("server.connection");
     client.isAlive = true;
     client.pingClientTimer = new Timer(
@@ -107,7 +108,7 @@ class WebSocketServer extends BaseServer {
   }
   #onWebSocketClientMessage(event: ws.MessageEvent) {
     _console.log("client.message");
-    const client = event.target as WebSocketClient;
+    const client = event.target as WebSocketServerClient;
     client.isAlive = true;
     client.pingClientTimer!.restart();
     const dataView = new DataView(
@@ -118,7 +119,7 @@ class WebSocketServer extends BaseServer {
   }
   #onWebSocketClientClose(event: ws.CloseEvent) {
     _console.log("client.close");
-    const client = event.target as WebSocketClient;
+    const client = event.target as WebSocketServerClient;
     client.pingClientTimer!.stop();
     removeEventListeners(client, this.#boundWebSocketClientListeners);
     this.dispatchEvent("clientDisconnected", { client });
@@ -129,7 +130,7 @@ class WebSocketServer extends BaseServer {
 
   // PARSING
   #parseWebSocketClientMessage(
-    client: WebSocketClient,
+    client: WebSocketServerClient,
     dataView: DataView<ArrayBuffer>,
   ) {
     let responseMessages: ArrayBuffer[] = [];
@@ -198,7 +199,7 @@ class WebSocketServer extends BaseServer {
   }
 
   // PING
-  #pingClient(client: WebSocketClient) {
+  #pingClient(client: WebSocketServerClient) {
     if (!client.isAlive) {
       client.terminate();
       return;

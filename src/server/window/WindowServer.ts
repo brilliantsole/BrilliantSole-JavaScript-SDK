@@ -5,7 +5,7 @@ import {
   removeEventListeners,
 } from "../../utils/EventUtils.ts";
 import { parseMessage } from "../../utils/ParseUtils.ts";
-import BaseServer from "../BaseServer.ts";
+import BaseServer, { BaseServerClient } from "../BaseServer.ts";
 import {
   createWindowMessage,
   windowMessageKey,
@@ -14,15 +14,15 @@ import {
   windowPongMessage,
 } from "./WindowUtils.ts";
 
-const _console = createConsole("WindowClient", { log: true });
+const _console = createConsole("WindowServer", { log: true });
 
-type WindowClient = {
+interface WindowServerClient extends BaseServerClient {
   iframe: HTMLIFrameElement;
   messageChannel?: MessageChannel;
   didSendMessagePort?: boolean;
-};
+}
 
-class WindowServer extends BaseServer {
+class WindowServer extends BaseServer<WindowServerClient> {
   static readonly shared = new WindowServer();
 
   constructor() {
@@ -63,25 +63,18 @@ class WindowServer extends BaseServer {
   }
 
   // CLIENTS
-  #clients: WindowClient[] = [];
-  get numberOfClients() {
-    return this.#clients.length;
-  }
-
   #getClientByiFrame(iframe: HTMLIFrameElement) {
-    return this.#clients.find((client) => client.iframe == iframe);
+    return this.clients.find((client) => client.iframe == iframe);
   }
   #getClientBySource(source: MessageEventSource) {
-    return this.#clients.find(
-      (client) => client.iframe.contentWindow == source,
-    );
+    return this.clients.find((client) => client.iframe.contentWindow == source);
   }
   #getClientByMessagePort(port: MessagePort) {
-    return this.#clients.find((client) => client.messageChannel?.port1 == port);
+    return this.clients.find((client) => client.messageChannel?.port1 == port);
   }
 
   #messageClient(
-    client: WindowClient,
+    client: WindowServerClient,
     message: ArrayBuffer,
     transfer?: Transferable[] | undefined,
   ) {
@@ -106,7 +99,7 @@ class WindowServer extends BaseServer {
 
   broadcastMessage(message: ArrayBuffer) {
     super.broadcastMessage(message);
-    this.#clients.forEach((client) => {
+    this.clients.forEach((client) => {
       this.#messageClient(
         client,
         createWindowMessage({ type: "serverMessage", data: message }),
@@ -148,13 +141,13 @@ class WindowServer extends BaseServer {
       }
       addEventListeners(iframe, this.#boundIframeEventListeners);
       client = { iframe };
-      this.#clients.push(client);
+      this.clients.push(client);
       _console.log("client added", client);
     }
     _console.log("onWindowMessage", client, data);
     const dataView = new DataView(data) as DataView<ArrayBuffer>;
     _console.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
-    this.#parseWindowClientMessage(client, dataView);
+    this.#parseWindowServerClientMessage(client, dataView);
   }
 
   // IFRAME
@@ -203,7 +196,7 @@ class WindowServer extends BaseServer {
       );
     }
 
-    this.#clients.splice(this.#clients.indexOf(client), 1);
+    this.clients.splice(this.clients.indexOf(client), 1);
     _console.log("client removed", client);
   }
   #boundIframeEventListeners: {
@@ -223,7 +216,7 @@ class WindowServer extends BaseServer {
   }
 
   // MESSAGE PORT
-  #createMessageChannel(client: WindowClient) {
+  #createMessageChannel(client: WindowServerClient) {
     const messageChannel = new MessageChannel();
     addEventListeners(
       messageChannel.port1,
@@ -250,8 +243,8 @@ class WindowServer extends BaseServer {
   }
 
   // PARSING
-  #parseWindowClientMessage(
-    client: WindowClient,
+  #parseWindowServerClientMessage(
+    client: WindowServerClient,
     dataView: DataView<ArrayBuffer>,
   ) {
     let responseMessages: ArrayBuffer[] = [];
@@ -287,7 +280,7 @@ class WindowServer extends BaseServer {
     context: {
       responseMessages: (ArrayBuffer | undefined)[];
       transfer: Transferable[];
-      client: WindowClient;
+      client: WindowServerClient;
     },
   ) {
     const { responseMessages, transfer, client } = context;

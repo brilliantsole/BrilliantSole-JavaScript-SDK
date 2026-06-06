@@ -2244,40 +2244,42 @@ declare abstract class BaseScanner {
 
 declare let scanner: BaseScanner;
 
+interface BaseServerClient {
+}
 declare const ServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
 type ServerEventType = (typeof ServerEventTypes)[number];
-interface ServerEventMessages {
+interface ServerEventMessages<ServerClient extends BaseServerClient> {
     clientConnected: {
-        client: any;
+        client: ServerClient;
     };
     clientDisconnected: {
-        client: any;
+        client: ServerClient;
     };
 }
-type ServerEventDispatcher = EventDispatcher<BaseServer, ServerEventType, ServerEventMessages>;
-declare abstract class BaseServer {
+type ServerEventDispatcher<ServerClient extends BaseServerClient> = EventDispatcher<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
+declare abstract class BaseServer<ServerClient extends BaseServerClient = BaseServerClient> {
     #private;
-    protected eventDispatcher: ServerEventDispatcher;
+    protected eventDispatcher: ServerEventDispatcher<ServerClient>;
     get addEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
         type: T;
-        target: BaseServer;
-        message: ServerEventMessages[T];
+        target: BaseServer<ServerClient>;
+        message: ServerEventMessages<ServerClient>[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: ServerEventMessages[T]) => void;
+    protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: ServerEventMessages<ServerClient>[T]) => void;
     get removeEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
         type: T;
-        target: BaseServer;
-        message: ServerEventMessages[T];
+        target: BaseServer<ServerClient>;
+        message: ServerEventMessages<ServerClient>[T];
     }) => void) => void;
     get waitForEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T) => Promise<{
         type: T;
-        target: BaseServer;
-        message: ServerEventMessages[T];
+        target: BaseServer<ServerClient>;
+        message: ServerEventMessages<ServerClient>[T];
     }>;
     constructor();
-    get numberOfClients(): number;
+    clients: ServerClient[];
     static get ClearSensorConfigurationsWhenNoClients(): boolean;
     static set ClearSensorConfigurationsWhenNoClients(newValue: boolean);
     get clearSensorConfigurationsWhenNoClients(): boolean;
@@ -2287,19 +2289,26 @@ declare abstract class BaseServer {
     protected parseClientDeviceMessage(device: Device, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
 }
 
-interface WebSocketServer extends ws.WebSocketServer {
+interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
+    isAlive: boolean;
+    pingClientTimer?: Timer;
 }
-declare class WebSocketServer extends BaseServer {
+declare class WebSocketServer extends BaseServer<WebSocketServerClient> {
     #private;
-    get numberOfClients(): number;
-    get server(): WebSocketServer | undefined;
-    set server(newServer: WebSocketServer | undefined);
+    get clients(): Set<WebSocketServerClient> | undefined;
+    get server(): ws.WebSocketServer | undefined;
+    set server(newServer: ws.WebSocketServer | undefined);
     broadcastMessage(message: ArrayBuffer): void;
 }
 
-declare class UDPServer extends BaseServer {
+interface UDPServerClient extends dgram.RemoteInfo, BaseServerClient {
+    receivePort?: number;
+    isAlive?: boolean;
+    removeSelfTimer: Timer;
+    lastTimeSentData: number;
+}
+declare class UDPServer extends BaseServer<UDPServerClient> {
     #private;
-    get numberOfClients(): number;
     get socket(): dgram.Socket | undefined;
     set socket(newSocket: dgram.Socket | undefined);
     broadcastMessage(message: ArrayBuffer): void;

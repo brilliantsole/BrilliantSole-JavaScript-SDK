@@ -76,8 +76,6 @@ export type BoundClientEventListeners = BoundEventListeners<
 
 export type ServerURL = string | URL;
 
-type DevicesMap = { [deviceId: string]: Device };
-
 abstract class BaseClient {
   protected get baseConstructor() {
     return this.constructor as typeof BaseClient;
@@ -98,8 +96,8 @@ abstract class BaseClient {
   }
 
   // DEVICES
-  #devices: DevicesMap = {};
-  get devices(): Readonly<DevicesMap> {
+  #devices: { [deviceId: string]: Device } = {};
+  get devices() {
     return this.#devices;
   }
 

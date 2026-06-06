@@ -1,42 +1,44 @@
 import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
+export interface BaseServerClient {
+}
 export declare const ServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
 export type ServerEventType = (typeof ServerEventTypes)[number];
-interface ServerEventMessages {
+interface ServerEventMessages<ServerClient extends BaseServerClient> {
     clientConnected: {
-        client: any;
+        client: ServerClient;
     };
     clientDisconnected: {
-        client: any;
+        client: ServerClient;
     };
 }
-export type ServerEventDispatcher = EventDispatcher<BaseServer, ServerEventType, ServerEventMessages>;
-export type ServerEvent = Event<BaseServer, ServerEventType, ServerEventMessages>;
-export type ServerEventMap = EventMap<BaseServer, ServerEventType, ServerEventMessages>;
-export type BoundServerEventListeners = BoundEventListeners<BaseServer, ServerEventType, ServerEventMessages>;
-declare abstract class BaseServer {
+export type ServerEventDispatcher<ServerClient extends BaseServerClient> = EventDispatcher<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
+export type ServerEvent<ServerClient extends BaseServerClient> = Event<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
+export type ServerEventMap<ServerClient extends BaseServerClient> = EventMap<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
+export type BoundServerEventListeners<ServerClient extends BaseServerClient> = BoundEventListeners<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
+declare abstract class BaseServer<ServerClient extends BaseServerClient = BaseServerClient> {
     #private;
-    protected eventDispatcher: ServerEventDispatcher;
+    protected eventDispatcher: ServerEventDispatcher<ServerClient>;
     get addEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
         type: T;
-        target: BaseServer;
-        message: ServerEventMessages[T];
+        target: BaseServer<ServerClient>;
+        message: ServerEventMessages<ServerClient>[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: ServerEventMessages[T]) => void;
+    protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: ServerEventMessages<ServerClient>[T]) => void;
     get removeEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
         type: T;
-        target: BaseServer;
-        message: ServerEventMessages[T];
+        target: BaseServer<ServerClient>;
+        message: ServerEventMessages<ServerClient>[T];
     }) => void) => void;
     get waitForEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T) => Promise<{
         type: T;
-        target: BaseServer;
-        message: ServerEventMessages[T];
+        target: BaseServer<ServerClient>;
+        message: ServerEventMessages<ServerClient>[T];
     }>;
     constructor();
-    get numberOfClients(): number;
+    clients: ServerClient[];
     static get ClearSensorConfigurationsWhenNoClients(): boolean;
     static set ClearSensorConfigurationsWhenNoClients(newValue: boolean);
     get clearSensorConfigurationsWhenNoClients(): boolean;
