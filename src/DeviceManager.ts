@@ -104,7 +104,7 @@ class DeviceManager {
   /** @private */
   OnDeviceConnectionStatusUpdated(
     device: Device,
-    connectionStatus: ConnectionStatus
+    connectionStatus: ConnectionStatus,
   ) {
     if (
       connectionStatus == "notConnected" &&
@@ -149,7 +149,7 @@ class DeviceManager {
   #AssertLocalStorage() {
     _console.assertWithError(
       isInBrowser,
-      "localStorage is only available in the browser"
+      "localStorage is only available in the browser",
     );
     _console.assertWithError(window.localStorage, "localStorage not found");
   }
@@ -158,7 +158,7 @@ class DeviceManager {
     this.#AssertLocalStorage();
     localStorage.setItem(
       this.#LocalStorageKey,
-      JSON.stringify(this.#LocalStorageConfiguration)
+      JSON.stringify(this.#LocalStorageConfiguration),
     );
   }
   async #LoadFromLocalStorage() {
@@ -168,7 +168,7 @@ class DeviceManager {
       _console.log("no info found in localStorage");
       this.#LocalStorageConfiguration = Object.assign(
         {},
-        this.#DefaultLocalStorageConfiguration
+        this.#DefaultLocalStorageConfiguration,
       );
       this.#SaveToLocalStorage();
       return;
@@ -195,7 +195,7 @@ class DeviceManager {
       this.#LocalStorageConfiguration!.devices.findIndex(
         (deviceInformation) => {
           return deviceInformation.bluetoothId == device.bluetoothId;
-        }
+        },
       );
     if (deviceInformationIndex == -1) {
       return;
@@ -255,7 +255,12 @@ class DeviceManager {
       return;
     }
 
-    const bluetoothDevices = await navigator.bluetooth.getDevices();
+    let bluetoothDevices: BluetoothDevice[] = [];
+    try {
+      bluetoothDevices = await navigator.bluetooth.getDevices();
+    } catch (error) {
+      _console.error(error);
+    }
 
     _console.log({ bluetoothDevices });
 
@@ -265,18 +270,18 @@ class DeviceManager {
       }
       let deviceInformation = configuration.devices.find(
         (deviceInformation) =>
-          bluetoothDevice.id == deviceInformation.bluetoothId
+          bluetoothDevice.id == deviceInformation.bluetoothId,
       );
       if (!deviceInformation) {
         return;
       }
 
       let existingConnectedDevice = this.ConnectedDevices.filter(
-        (device) => device.connectionType == "webBluetooth"
+        (device) => device.connectionType == "webBluetooth",
       ).find((device) => device.bluetoothId == bluetoothDevice.id);
 
       const existingAvailableDevice = this.AvailableDevices.filter(
-        (device) => device.connectionType == "webBluetooth"
+        (device) => device.connectionType == "webBluetooth",
       ).find((device) => device.bluetoothId == bluetoothDevice.id);
       if (existingAvailableDevice) {
         if (
@@ -315,7 +320,7 @@ class DeviceManager {
 
   #EventDispatcher: DeviceManagerEventDispatcher = new EventDispatcher(
     this as DeviceManager,
-    DeviceManagerEventTypes
+    DeviceManagerEventTypes,
   );
 
   get AddEventListener() {
@@ -350,7 +355,7 @@ class DeviceManager {
           const deviceInformationIndex =
             this.#LocalStorageConfiguration!.devices.findIndex(
               (_deviceInformation) =>
-                _deviceInformation.bluetoothId == deviceInformation.bluetoothId
+                _deviceInformation.bluetoothId == deviceInformation.bluetoothId,
             );
           if (deviceInformationIndex == -1) {
             this.#LocalStorageConfiguration!.devices.push(deviceInformation);
@@ -371,7 +376,7 @@ class DeviceManager {
         _console.log("removing device", device);
         this.#ConnectedDevices.splice(
           this.#ConnectedDevices.indexOf(device),
-          1
+          1,
         );
         this.#DispatchEvent("deviceDisconnected", { device });
         this.#DispatchEvent("deviceIsConnected", { device });
@@ -385,7 +390,7 @@ class DeviceManager {
     }
     if (device.isConnected && !this.AvailableDevices.includes(device)) {
       const existingAvailableDevice = this.AvailableDevices.find(
-        (_device) => _device.bluetoothId == device.bluetoothId
+        (_device) => _device.bluetoothId == device.bluetoothId,
       );
       _console.log({ existingAvailableDevice });
       if (existingAvailableDevice) {

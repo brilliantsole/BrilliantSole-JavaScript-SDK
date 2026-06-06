@@ -244,13 +244,17 @@ export function getFontMetrics(
     const glyphs: Glyph[] = [];
     let filteredGlyphs: Glyph[] | undefined;
     if (string != undefined) {
-      filteredGlyphs = font
-        .stringToGlyphs(string)
-        .filter((glyph) => glyph.unicode != undefined);
-      string = removeSubstrings(
-        string,
-        filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode!)),
-      );
+      try {
+        filteredGlyphs = font
+          .stringToGlyphs(string)
+          .filter((glyph) => glyph.unicode != undefined);
+        string = removeSubstrings(
+          string,
+          filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode!)),
+        );
+      } catch (error) {
+        _console.error(error);
+      }
     }
 
     for (let index = 0; index < font.glyphs.length; index++) {

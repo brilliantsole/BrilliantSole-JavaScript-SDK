@@ -1,9 +1,9 @@
 import * as BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
-console.log(BS);
+// console.log(BS);
 
 const device = new BS.Device();
-console.log({ device });
+// console.log({ device });
 window.device = device;
 
 //BS.setAllConsoleLevelFlags({ log: false });

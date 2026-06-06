@@ -53,6 +53,14 @@ export {
   BoundDeviceManagerEventListeners,
 };
 
+/** BROWSER_START */
+import { default as WindowClient } from "./server/window/WindowClient.ts";
+export { WindowClient };
+
+import { default as WindowServer } from "./server/window/WindowServer.ts";
+export { WindowServer };
+/** BROWSER_END */
+
 import { DeviceInformation } from "./DeviceInformationManager.ts";
 export { DeviceInformation };
 

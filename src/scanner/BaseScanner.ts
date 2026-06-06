@@ -86,7 +86,7 @@ abstract class BaseScanner {
   #assertIsSupported() {
     _console.assertWithError(
       this.isSupported,
-      `${this.constructor.name} is not supported`
+      `${this.constructor.name} is not supported`,
     );
   }
 
@@ -94,7 +94,7 @@ abstract class BaseScanner {
   #assertIsSubclass() {
     _console.assertWithError(
       this.constructor != BaseScanner,
-      `${this.constructor.name} must be subclassed`
+      `${this.constructor.name} must be subclassed`,
     );
   }
   constructor() {
@@ -112,7 +112,7 @@ abstract class BaseScanner {
   // EVENT DISPATCHER
   #eventDispatcher: ScannerEventDispatcher = new EventDispatcher(
     this as BaseScanner,
-    ScannerEventTypes
+    ScannerEventTypes,
   );
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
@@ -207,7 +207,7 @@ abstract class BaseScanner {
   #assertValidDiscoveredDeviceId(discoveredDeviceId: string) {
     _console.assertWithError(
       this.#discoveredDevices[discoveredDeviceId],
-      `no discovered device with id "${discoveredDeviceId}"`
+      `no discovered device with id "${discoveredDeviceId}"`,
     );
   }
 
@@ -229,7 +229,7 @@ abstract class BaseScanner {
   }
   #checkDiscoveredDevicesExpirationTimer = new Timer(
     this.#checkDiscoveredDevicesExpiration.bind(this),
-    1000
+    1000,
   );
   #checkDiscoveredDevicesExpiration() {
     const entries = Object.entries(this.#discoveredDevices);
@@ -265,6 +265,10 @@ abstract class BaseScanner {
     return false;
   }
   reset() {
+    _console.assertWithError(
+      this.canReset,
+      `${this.constructor.name} does not support reset`,
+    );
     _console.log("resetting...");
   }
 }

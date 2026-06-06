@@ -5,7 +5,7 @@ const _console = createConsole("ArrayBufferUtils", { log: false });
 
 export function concatenateArrayBuffers(...arrayBuffers: any[]): ArrayBuffer {
   arrayBuffers = arrayBuffers.filter(
-    (arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null
+    (arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null,
   );
   arrayBuffers = arrayBuffers.map((arrayBuffer) => {
     if (typeof arrayBuffer == "number") {
@@ -39,11 +39,11 @@ export function concatenateArrayBuffers(...arrayBuffers: any[]): ArrayBuffer {
     }
   });
   arrayBuffers = arrayBuffers.filter(
-    (arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer
+    (arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer,
   );
   const length = arrayBuffers.reduce(
     (length, arrayBuffer) => length + arrayBuffer.byteLength,
-    0
+    0,
   );
   const uint8Array = new Uint8Array(length);
   let byteOffset = 0;
@@ -70,7 +70,7 @@ export function objectToArrayBuffer(object: object) {
 export function sliceDataView(
   dataView: DataView<ArrayBuffer>,
   begin: number,
-  length?: number
+  length?: number,
 ) {
   let end;
   if (length != undefined) {

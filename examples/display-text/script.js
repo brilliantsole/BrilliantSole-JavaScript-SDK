@@ -9,7 +9,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -52,7 +52,7 @@ device.addEventListener("connected", () => {
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -77,7 +77,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -201,7 +201,7 @@ const draw = async () => {
           string: newNonEnglishCharacters.join(""),
           usePath,
           ...fontMetrics,
-        }
+        },
       );
       console.log("nonEnglishSpriteSheet", nonEnglishSpriteSheet);
       await displayCanvasHelper.uploadSpriteSheet(nonEnglishSpriteSheet);
@@ -247,7 +247,7 @@ const draw = async () => {
       y,
       text,
       false,
-      drawMaxBreadth
+      drawMaxBreadth,
     );
   } else {
     if (text.length > 0) {
@@ -341,7 +341,7 @@ drawSpriteRotationInput.addEventListener("input", () => {
 });
 
 const drawSpriteHorizontalAlignmentContainer = document.getElementById(
-  "drawSpriteHorizontalAlignment"
+  "drawSpriteHorizontalAlignment",
 );
 const drawSpriteHorizontalAlignmentSelect =
   drawSpriteHorizontalAlignmentContainer.querySelector("select");
@@ -349,7 +349,7 @@ const drawSpriteHorizontalAlignmentOptgroup =
   drawSpriteHorizontalAlignmentContainer.querySelector("optgroup");
 BS.DisplayAlignments.forEach((horizontalAlignment) => {
   drawSpriteHorizontalAlignmentOptgroup.appendChild(
-    new Option(horizontalAlignment)
+    new Option(horizontalAlignment),
   );
 });
 drawSpriteHorizontalAlignmentSelect.value =
@@ -365,7 +365,7 @@ drawSpriteHorizontalAlignmentSelect.addEventListener("input", () => {
 });
 
 const drawSpriteVerticalAlignmentContainer = document.getElementById(
-  "drawSpriteVerticalAlignment"
+  "drawSpriteVerticalAlignment",
 );
 const drawSpriteVerticalAlignmentSelect =
   drawSpriteVerticalAlignmentContainer.querySelector("select");
@@ -373,7 +373,7 @@ const drawSpriteVerticalAlignmentOptgroup =
   drawSpriteVerticalAlignmentContainer.querySelector("optgroup");
 BS.DisplayAlignments.forEach((verticalAlignment) => {
   drawSpriteVerticalAlignmentOptgroup.appendChild(
-    new Option(verticalAlignment)
+    new Option(verticalAlignment),
   );
 });
 drawSpriteVerticalAlignmentSelect.value = drawSpriteParams.verticalAlignment;
@@ -435,7 +435,7 @@ drawSpriteScaleInput.addEventListener("input", () => {
 });
 
 const drawSpritesDirectionContainer = document.getElementById(
-  "drawSpritesDirection"
+  "drawSpritesDirection",
 );
 const drawSpritesDirectionSelect =
   drawSpritesDirectionContainer.querySelector("select");
@@ -456,7 +456,7 @@ drawSpritesDirectionSelect.addEventListener("input", () => {
 });
 
 const drawSpritesLineDirectionContainer = document.getElementById(
-  "drawSpritesLineDirection"
+  "drawSpritesLineDirection",
 );
 const drawSpritesLineDirectionSelect =
   drawSpritesLineDirectionContainer.querySelector("select");
@@ -477,7 +477,7 @@ drawSpritesLineDirectionSelect.addEventListener("input", () => {
 });
 
 const drawSpritesLineAlignmentContainer = document.getElementById(
-  "drawSpritesLineAlignment"
+  "drawSpritesLineAlignment",
 );
 const drawSpritesLineAlignmentSelect =
   drawSpritesLineAlignmentContainer.querySelector("select");
@@ -515,7 +515,7 @@ drawSpritesSpacingInput.addEventListener("input", () => {
 });
 
 const drawSpritesLineSpacingContainer = document.getElementById(
-  "drawSpritesLineSpacing"
+  "drawSpritesLineSpacing",
 );
 const drawSpritesLineSpacingInput =
   drawSpritesLineSpacingContainer.querySelector("input");
@@ -733,7 +733,7 @@ const addFont = async (font) => {
       const { maxSpriteHeight } = BS.getFontMetrics(
         font,
         fontSize,
-        vietnameseFontOptions
+        vietnameseFontOptions,
       );
       spriteSheet = await BS.fontToSpriteSheet(font, fontSize, "english", {
         ...fontOptions,
@@ -745,7 +745,7 @@ const addFont = async (font) => {
         font,
         fontSize,
         "english",
-        fontOptions
+        fontOptions,
       );
     }
     englishFontSpriteSheets[fullName] = spriteSheet;
@@ -796,7 +796,7 @@ const selectFont = async (newFontName) => {
   selectedFont = newFont;
   window.selectedFont = selectedFont;
   selectedFonts = Object.values(fonts).find((fonts) =>
-    fonts.includes(selectedFont)
+    fonts.includes(selectedFont),
   );
   targetLanguage = undefined;
   if (newFontName.startsWith("Noto Sans")) {
@@ -827,7 +827,7 @@ const selectFont = async (newFontName) => {
     const { maxSpriteHeight } = BS.getFontMetrics(
       selectedFont,
       fontSize,
-      vietnameseFontOptions
+      vietnameseFontOptions,
     );
     if (maxSpriteHeight != 0) {
       fontMetrics = BS.getFontMetrics(selectedFont, fontSize, {
@@ -877,15 +877,15 @@ await loadFontUrl("https://fonts.googleapis.com/css2?family=Mozilla+Text");
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Inter");
 await loadFontUrl(
   "https://fonts.googleapis.com/css2?family=Noto+Sans+JP",
-  false
+  false,
 );
 await loadFontUrl(
   "https://fonts.googleapis.com/css2?family=Noto+Sans+KR",
-  false
+  false,
 );
 await loadFontUrl(
   "https://fonts.googleapis.com/css2?family=Noto+Sans+SC",
-  false
+  false,
 );
 
 // MICROPHONE
@@ -922,7 +922,7 @@ const updateMicrophoneSources = async () => {
   }
   audioDevices.forEach((audioInputDevice) => {
     selectMicrophoneOptgroup.appendChild(
-      new Option(audioInputDevice.label, audioInputDevice.deviceId)
+      new Option(audioInputDevice.label, audioInputDevice.deviceId),
     );
   });
   selectMicrophoneSelect.value = "none";
@@ -972,7 +972,7 @@ const stopMicrophoneStream = () => {
   microphoneAudio.setAttribute("hidden", "");
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateMicrophoneSources()
+  updateMicrophoneSources(),
 );
 updateMicrophoneSources();
 
@@ -1045,7 +1045,7 @@ let latestStringRepetitionThreshold = 2;
 let transcription = "";
 let formattedTranscription = "";
 const ignoreStrings = ["[BLANK_AUDIO]", "[inaudible]"].map((string) =>
-  string.toLowerCase()
+  string.toLowerCase(),
 );
 const startTranscribing = async () => {
   if (!loadedModel) {
@@ -1119,7 +1119,7 @@ const startTranscribing = async () => {
           formattedTranscription = transcription;
           const lowercaseTranscription = transcription.toLowerCase();
           const ignoreString = ignoreStrings.some((string) =>
-            lowercaseTranscription.includes(string)
+            lowercaseTranscription.includes(string),
           );
           if (
             !ignoreString &&
@@ -1511,13 +1511,13 @@ let currentTeleprompterSlideIndex = 1;
 const teleprompterSlides = [];
 
 const currentTeleprompterSlideIndexInput = document.getElementById(
-  "currentTeleprompterSlideIndex"
+  "currentTeleprompterSlideIndex",
 );
 currentTeleprompterSlideIndexInput.addEventListener("input", (event) => {
   setCurrentTeleprompterSlideIndex(+event.target.value);
 });
 const numberOfTeleprompterSlidesInput = document.getElementById(
-  "numberOfTeleprompterSlides"
+  "numberOfTeleprompterSlides",
 );
 numberOfTeleprompterSlidesInput.addEventListener("input", (event) => {
   setNumberOfTeleprompterSlides(+event.target.value);
@@ -1536,7 +1536,7 @@ const setNumberOfTeleprompterSlides = (newNumberOfTeleprompterSlides) => {
 
 const setCurrentTeleprompterSlideIndex = (
   newCurrentTeleprompterSlideIndex,
-  isOffset
+  isOffset,
 ) => {
   if (isOffset) {
     newCurrentTeleprompterSlideIndex =
@@ -1545,7 +1545,7 @@ const setCurrentTeleprompterSlideIndex = (
   currentTeleprompterSlideIndex = newCurrentTeleprompterSlideIndex;
   currentTeleprompterSlideIndex = Math.max(
     1,
-    Math.min(numberOfTeleprompterSlides, currentTeleprompterSlideIndex)
+    Math.min(numberOfTeleprompterSlides, currentTeleprompterSlideIndex),
   );
   currentTeleprompterSlideIndexInput.value = currentTeleprompterSlideIndex;
   //console.log({ currentTeleprompterSlideIndex });
@@ -1554,7 +1554,7 @@ const setCurrentTeleprompterSlideIndex = (
 
 const refreshTeleprompter = () => {
   textarea.value = useTeleprompter
-    ? teleprompterSlides[currentTeleprompterSlideIndex] ?? ""
+    ? (teleprompterSlides[currentTeleprompterSlideIndex] ?? "")
     : "";
   textarea.dispatchEvent(new Event("input"));
 };
@@ -1602,7 +1602,7 @@ const saveTeleprompterToLocalStorage = () => {
       numberOfTeleprompterSlides,
       currentTeleprompterSlideIndex,
       slides: teleprompterSlides,
-    })
+    }),
   );
 };
 window.addEventListener("beforeunload", () => {
@@ -1611,7 +1611,7 @@ window.addEventListener("beforeunload", () => {
 loadTeleprompterFromLocalStorage();
 
 const teleprompterPointerLockButton = document.getElementById(
-  "teleprompterPointerLock"
+  "teleprompterPointerLock",
 );
 teleprompterPointerLockButton.addEventListener("keydown", (event) => {
   const { key, target } = event;

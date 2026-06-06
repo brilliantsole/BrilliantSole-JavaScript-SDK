@@ -19,9 +19,10 @@ import {
   webSocketPingTimeout,
   webSocketReconnectTimeout,
   WebSocketMessage,
+  webSocketPingMessage,
+  webSocketPongMessage,
 } from "./WebSocketUtils.ts";
 import { parseMessage } from "../../utils/ParseUtils.ts";
-import { isInBrowser } from "../../utils/environment.ts";
 
 const _console = createConsole("WebSocketClient", { log: false });
 
@@ -48,14 +49,14 @@ class WebSocketClient extends BaseClient {
 
     _console.log("assigned webSocket");
   }
-  get readyState() {
+  get #readyState() {
     return this.webSocket?.readyState;
   }
   get isConnected() {
-    return this.readyState == WebSocket.OPEN;
+    return this.#readyState == WebSocket.OPEN;
   }
   get isDisconnected() {
-    return this.readyState == WebSocket.CLOSED;
+    return this.#readyState == WebSocket.CLOSED;
   }
 
   connect(
@@ -103,14 +104,14 @@ class WebSocketClient extends BaseClient {
   }
 
   // WEBSOCKET MESSAGING
-  sendMessage(message: MessageLike) {
+  #sendMessage(message: MessageLike) {
     this.assertConnection();
     this.#webSocket!.send(message);
     this.#pingTimer.restart();
   }
 
   sendServerMessage(...messages: ServerMessage[]) {
-    this.sendMessage(
+    this.#sendMessage(
       createWebSocketMessage({
         type: "serverMessage",
         data: createServerMessage(...messages),
@@ -118,12 +119,10 @@ class WebSocketClient extends BaseClient {
     );
   }
 
-  #sendWebSocketMessage(...messages: WebSocketMessage[]) {
-    this.sendMessage(createWebSocketMessage(...messages));
-  }
-
   // WEBSOCKET EVENTS
-  #boundWebSocketEventListeners: { [eventType: string]: Function } = {
+  #boundWebSocketEventListeners: {
+    [K in keyof WebSocketEventMap]?: (event: any) => void;
+  } = {
     open: this.#onWebSocketOpen.bind(this),
     message: this.#onWebSocketMessage.bind(this),
     close: this.#onWebSocketClose.bind(this),
@@ -148,12 +147,6 @@ class WebSocketClient extends BaseClient {
     _console.log("webSocket.close", event);
 
     this._connectionStatus = "notConnected";
-
-    Object.entries(this.devices).forEach(([id, device]) => {
-      const connectionManager =
-        device.connectionManager! as ClientConnectionManager;
-      connectionManager.isConnected = false;
-    });
 
     this.#pingTimer.stop();
     if (this.reconnectOnDisconnection) {
@@ -199,10 +192,10 @@ class WebSocketClient extends BaseClient {
   // PING
   #pingTimer = new Timer(this.#ping.bind(this), webSocketPingTimeout);
   #ping() {
-    this.#sendWebSocketMessage("ping");
+    this.#sendMessage(webSocketPingMessage);
   }
   #pong() {
-    this.#sendWebSocketMessage("pong");
+    this.#sendMessage(webSocketPongMessage);
   }
 }
 

@@ -78,7 +78,7 @@ class WebSocketServer extends BaseServer {
     client.isAlive = true;
     client.pingClientTimer = new Timer(
       () => this.#pingClient(client),
-      webSocketPingTimeout
+      webSocketPingTimeout,
     );
     client.pingClientTimer.start();
     addEventListeners(client, this.#boundWebSocketClientListeners);
@@ -111,7 +111,7 @@ class WebSocketServer extends BaseServer {
     client.isAlive = true;
     client.pingClientTimer!.restart();
     const dataView = new DataView(
-      dataToArrayBuffer(event.data as Buffer)
+      dataToArrayBuffer(event.data as Buffer),
     ) as DataView<ArrayBuffer>;
     _console.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
     this.#parseWebSocketClientMessage(client, dataView);
@@ -130,7 +130,7 @@ class WebSocketServer extends BaseServer {
   // PARSING
   #parseWebSocketClientMessage(
     client: WebSocketClient,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     let responseMessages: ArrayBuffer[] = [];
 
@@ -139,7 +139,7 @@ class WebSocketServer extends BaseServer {
       WebSocketMessageTypes,
       this.#onClientMessage.bind(this),
       { responseMessages },
-      true
+      true,
     );
 
     responseMessages = responseMessages.filter(Boolean);
@@ -161,7 +161,7 @@ class WebSocketServer extends BaseServer {
   #onClientMessage(
     messageType: WebSocketMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: { responseMessages: (ArrayBuffer | undefined)[] }
+    context: { responseMessages: (ArrayBuffer | undefined)[] },
   ) {
     const { responseMessages } = context;
     switch (messageType) {
@@ -177,7 +177,7 @@ class WebSocketServer extends BaseServer {
             createWebSocketMessage({
               type: "serverMessage",
               data: responseMessage,
-            })
+            }),
           );
         }
         break;
@@ -192,7 +192,7 @@ class WebSocketServer extends BaseServer {
     super.broadcastMessage(message);
     this.server!.clients.forEach((client) => {
       client.send(
-        createWebSocketMessage({ type: "serverMessage", data: message })
+        createWebSocketMessage({ type: "serverMessage", data: message }),
       );
     });
   }

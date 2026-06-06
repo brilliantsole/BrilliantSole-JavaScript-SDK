@@ -132,7 +132,7 @@ class LedManager {
     while (offset < dataView.byteLength) {
       const ledTypeIndex = dataView.getUint8(offset++);
       const ledType: LedType = LedTypes[ledTypeIndex];
-      console.log({ ledTypeIndex, ledType });
+      _console.log({ ledTypeIndex, ledType });
       _console.assertEnumWithError(ledType, LedTypes);
 
       const maxColor: DisplayColorRGB = structuredClone(whiteColor);
