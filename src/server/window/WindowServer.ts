@@ -5,7 +5,10 @@ import {
   removeEventListeners,
 } from "../../utils/EventUtils.ts";
 import { parseMessage } from "../../utils/ParseUtils.ts";
-import BaseServer, { BaseServerClient } from "../BaseServer.ts";
+import BaseServer, {
+  BaseServerClient,
+  BaseServerClientContext,
+} from "../BaseServer.ts";
 import {
   createWindowMessage,
   windowMessageKey,
@@ -20,6 +23,10 @@ interface WindowServerClient extends BaseServerClient {
   iframe: HTMLIFrameElement;
   messageChannel?: MessageChannel;
   didSendMessagePort?: boolean;
+}
+
+export interface WindowServerClientContext extends BaseServerClientContext<WindowServerClient> {
+  transfer: Transferable[];
 }
 
 class WindowServer extends BaseServer<WindowServerClient> {
@@ -277,11 +284,7 @@ class WindowServer extends BaseServer<WindowServerClient> {
   #onClientMessage(
     messageType: WindowMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: {
-      responseMessages: (ArrayBuffer | undefined)[];
-      transfer: Transferable[];
-      client: WindowServerClient;
-    },
+    context: WindowServerClientContext,
   ) {
     const { responseMessages, transfer, client } = context;
     switch (messageType) {

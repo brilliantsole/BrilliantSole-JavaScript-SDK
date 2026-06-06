@@ -86,6 +86,13 @@ export type BoundServerEventListeners<ServerClient extends BaseServerClient> =
     ServerEventMessages<ServerClient>
   >;
 
+export interface BaseServerClientContext<
+  ServerClient extends BaseServerClient,
+> {
+  client: ServerClient;
+  responseMessages: (ArrayBuffer | undefined)[];
+}
+
 abstract class BaseServer<
   ServerClient extends BaseServerClient = BaseServerClient,
 > {
@@ -361,12 +368,13 @@ abstract class BaseServer<
   #onClientMessage(
     messageType: ServerMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: { responseMessages: ArrayBuffer[] },
+    context: BaseServerClientContext<ServerClient>,
   ) {
     _console.log(
       `onClientMessage "${messageType}" (${dataView.byteLength} bytes)`,
     );
     const { responseMessages } = context;
+    // FILL
     switch (messageType) {
       case "isScanningAvailable":
         responseMessages.push(this.#isScanningAvailableMessage);

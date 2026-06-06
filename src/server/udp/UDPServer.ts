@@ -8,7 +8,10 @@ import {
   removeEventListeners,
 } from "../../utils/EventUtils.ts";
 import { parseMessage } from "../../utils/ParseUtils.ts";
-import BaseServer, { BaseServerClient } from "../BaseServer.ts";
+import BaseServer, {
+  BaseServerClient,
+  BaseServerClientContext,
+} from "../BaseServer.ts";
 import {
   createUDPServerMessage,
   pongUDPClientTimeout,
@@ -30,11 +33,6 @@ interface UDPServerClient extends dgram.RemoteInfo, BaseServerClient {
   isAlive?: boolean;
   removeSelfTimer: Timer;
   lastTimeSentData: number;
-}
-
-interface UDPClientContext {
-  client: UDPServerClient;
-  responseMessages: (ArrayBuffer | undefined)[];
 }
 
 class UDPServer extends BaseServer<UDPServerClient> {
@@ -175,7 +173,7 @@ class UDPServer extends BaseServer<UDPServerClient> {
   #onClientUDPMessage(
     messageType: UDPServerMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: UDPClientContext,
+    context: BaseServerClientContext<UDPServerClient>,
   ) {
     const { client, responseMessages } = context;
     _console.log(
@@ -208,7 +206,7 @@ class UDPServer extends BaseServer<UDPServerClient> {
     }
   }
 
-  #createPongMessage(context: UDPClientContext) {
+  #createPongMessage(context: BaseServerClientContext<UDPServerClient>) {
     const { client } = context;
     // TODO: - no need to ping if streaming sensor data
     return udpPongMessage;
