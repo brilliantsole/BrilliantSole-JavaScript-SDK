@@ -93,7 +93,7 @@ declare class TfliteManager {
     get sampleRate(): number;
     setSampleRate(newSampleRate: number, sendImmediately?: boolean): Promise<void>;
     static AssertValidSensorType(sensorType: SensorType): void;
-    get sensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer" | "camera" | "microphone")[];
+    get sensorTypes(): ("linearAcceleration" | "gyroscope" | "magnetometer" | "camera" | "microphone" | "pressure")[];
     setSensorTypes(newSensorTypes: SensorType[], sendImmediately?: boolean): Promise<void>;
     get isReady(): boolean;
     get captureDelay(): number;

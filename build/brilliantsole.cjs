@@ -7,10 +7,6 @@
 var autoBind$1 = require('auto-bind');
 var tf = require('@tensorflow/tfjs');
 var webbluetooth = require('webbluetooth');
-var sharp = require('sharp');
-var child_process = require('child_process');
-var fs = require('fs/promises');
-var _alawmulaw = require('alawmulaw');
 var RGBQuant = require('rgbquant');
 var opentype = require('opentype.js');
 var woff2Encoder = require('woff2-encoder');
@@ -21,6 +17,10 @@ require('svg-pathdata');
 var noble = require('@stoprocent/noble');
 var os = require('os');
 var three = require('three');
+var sharp = require('sharp');
+var child_process = require('child_process');
+var fs = require('fs/promises');
+var _alawmulaw = require('alawmulaw');
 var dgram = require('dgram');
 
 function _interopNamespaceDefault(e) {
@@ -42,14 +42,23 @@ function _interopNamespaceDefault(e) {
 
 var tf__namespace = /*#__PURE__*/_interopNamespaceDefault(tf);
 var webbluetooth__namespace = /*#__PURE__*/_interopNamespaceDefault(webbluetooth);
-var _alawmulaw__namespace = /*#__PURE__*/_interopNamespaceDefault(_alawmulaw);
 var noble__namespace = /*#__PURE__*/_interopNamespaceDefault(noble);
+var _alawmulaw__namespace = /*#__PURE__*/_interopNamespaceDefault(_alawmulaw);
 var dgram__namespace = /*#__PURE__*/_interopNamespaceDefault(dgram);
 
 const isInProduction =
 "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
 const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
+let isInIframe = false;
+try {
+    isInIframe = window.self !== window.top;
+}
+catch {
+    isInIframe = true;
+}
+const isWKWebView = typeof window !== "undefined" &&
+    typeof window?.webkit?.messageHandlers !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
 let isBluetoothSupported = false;
@@ -74,11 +83,13 @@ var environment = /*#__PURE__*/Object.freeze({
     isInBluefy: isInBluefy,
     isInBrowser: isInBrowser,
     isInDev: isInDev,
+    get isInIframe () { return isInIframe; },
     isInNode: isInNode,
     isInProduction: isInProduction,
     isInWebBLE: isInWebBLE,
     isMac: isMac,
-    isSafari: isSafari
+    isSafari: isSafari,
+    isWKWebView: isWKWebView
 });
 
 var __console;
@@ -570,7 +581,6 @@ const FileTransferCommands = [
     "startReceive",
     "cancel",
 ];
-const FileTransferDirections = ["sending", "receiving"];
 const FileTransferEventTypes = [
     ...FileTransferMessageTypes,
     "fileTransferProgress",
@@ -789,7 +799,8 @@ class FileTransferManager {
         if (bytesReceived != this.#length) {
             const dataView = new DataView(new ArrayBuffer(4));
             dataView.setUint32(0, bytesReceived, true);
-            if (this.isServerSide) {
+            if (!this.#buffer) {
+                _console$P.log("no buffer defined");
                 return;
             }
             await this.sendMessage([
@@ -925,9 +936,7 @@ class FileTransferManager {
             return;
         }
         if (!this.#buffer) {
-            if (!this.isServerSide) {
-                _console$P.error("no buffer defined");
-            }
+            _console$P.log("no buffer defined");
             return;
         }
         const buffer = this.#buffer;
@@ -962,7 +971,7 @@ class FileTransferManager {
             _console$P.error(`not currently sending file`);
             return;
         }
-        if (!this.isServerSide && this.#bytesTransferred != bytesTransferred) {
+        if (this.#buffer && this.#bytesTransferred != bytesTransferred) {
             _console$P.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${this.#bytesTransferred}`);
             this.cancel();
             return;
@@ -982,18 +991,6 @@ class FileTransferManager {
         this.#isCancelling = true;
         await this.#setCommand("cancel");
     }
-    #isServerSide = false;
-    get isServerSide() {
-        return this.#isServerSide;
-    }
-    set isServerSide(newIsServerSide) {
-        if (this.#isServerSide == newIsServerSide) {
-            _console$P.log("redundant isServerSide assignment");
-            return;
-        }
-        _console$P.log({ newIsServerSide });
-        this.#isServerSide = newIsServerSide;
-    }
     requestRequiredInformation() {
         _console$P.log("requesting required fileTransfer information");
         const messages = RequiredFileTransferMessageTypes.map((messageType) => ({
@@ -1006,7 +1003,6 @@ class FileTransferManager {
         this.#isCancelling = false;
         this.#buffer = undefined;
         this.#bytesTransferred = 0;
-        this.#isServerSide = false;
         this.#checksum = 0;
         this.#fileTypes.length = 0;
         this.#type = undefined;
@@ -1050,9 +1046,6 @@ function parseTimestamp(dataView, byteOffset) {
         timestampDifference,
     });
     return timestamp;
-}
-function getVector2Distance(a, b) {
-    return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
 }
 const defaultEuler = {
     heading: 0,
@@ -1575,7 +1568,6 @@ const PressureSensorEventTypes = [
     "pressureCalibrationTrainProgress",
     "calibratedPressureModel",
 ];
-const DefaultNumberOfPressureSensors = 8;
 class PressureSensorDataManager {
     constructor() {
         autoBind$1(this);
@@ -5626,69 +5618,6 @@ function isWireframePolygon({ points, edges, }) {
         return polygon;
     }
 }
-function mergeWireframes(a, b) {
-    const wireframe = structuredClone(a);
-    const pointIndexOffset = a.points.length;
-    b.points.forEach((point) => {
-        wireframe.points.push(point);
-    });
-    b.edges.forEach(({ startIndex, endIndex }) => {
-        wireframe.edges.push({
-            startIndex: startIndex + pointIndexOffset,
-            endIndex: endIndex + pointIndexOffset,
-        });
-    });
-    return trimWireframe(wireframe);
-}
-function intersectWireframes(a, b, ignoreDirection = true) {
-    a = trimWireframe(a);
-    b = trimWireframe(b);
-    const wireframe = { points: [], edges: [] };
-    const aPointIndices = [];
-    const bPointIndices = [];
-    a.points.forEach((point, aPointIndex) => {
-        const bPointIndex = b.points.findIndex((_point) => {
-            const distance = getVector2Distance(point, _point);
-            return distance == 0;
-        });
-        if (bPointIndex != -1) {
-            aPointIndices.push(aPointIndex);
-            bPointIndices.push(bPointIndex);
-            wireframe.points.push(structuredClone(point));
-        }
-    });
-    a.edges.forEach((aEdge) => {
-        if (!aPointIndices.includes(aEdge.startIndex) ||
-            !aPointIndices.includes(aEdge.endIndex)) {
-            return;
-        }
-        const startIndex = aPointIndices.indexOf(aEdge.startIndex);
-        const endIndex = aPointIndices.indexOf(aEdge.endIndex);
-        const bEdge = b.edges.find((bEdge) => {
-            if (!bPointIndices.includes(bEdge.startIndex) ||
-                !bPointIndices.includes(bEdge.endIndex)) {
-                return false;
-            }
-            const bStartIndex = bPointIndices.indexOf(bEdge.startIndex);
-            const bEndIndex = bPointIndices.indexOf(bEdge.endIndex);
-            if (ignoreDirection) {
-                return ((startIndex == bStartIndex && endIndex == bEndIndex) ||
-                    (startIndex == bEndIndex && endIndex == bStartIndex));
-            }
-            else {
-                return startIndex == bStartIndex && endIndex == bEndIndex;
-            }
-        });
-        if (!bEdge) {
-            return;
-        }
-        wireframe.edges.push({
-            startIndex,
-            endIndex,
-        });
-    });
-    return wireframe;
-}
 function trimWireframe(wireframe) {
     _console$u.log("trimming wireframe", wireframe);
     const { points, edges } = wireframe;
@@ -7097,10 +7026,15 @@ function getFontMetrics(font, fontSize, options) {
         const fontScale = (1 / font.unitsPerEm) * fontSize;
         let filteredGlyphs;
         if (string != undefined) {
-            filteredGlyphs = font
-                .stringToGlyphs(string)
-                .filter((glyph) => glyph.unicode != undefined);
-            string = removeSubstrings(string, filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode)));
+            try {
+                filteredGlyphs = font
+                    .stringToGlyphs(string)
+                    .filter((glyph) => glyph.unicode != undefined);
+                string = removeSubstrings(string, filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode)));
+            }
+            catch (error) {
+                _console$s.error(error);
+            }
         }
         for (let index = 0; index < font.glyphs.length; index++) {
             const glyph = font.glyphs.get(index);
@@ -8486,7 +8420,6 @@ async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offse
 }
 
 const _console$p = createConsole("DisplayManager", { log: false });
-const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
 const DisplayInformationTypes = [
@@ -10425,7 +10358,8 @@ class DisplayManager {
             spriteSheetName: this.#pendingSpriteSheetName,
             spriteSheetIndex,
         });
-        if (this.isServerSide) {
+        if (this.#pendingSpriteSheetName == undefined) {
+            _console$p.log("pendingSpriteSheetName is undefined - skipping");
             return;
         }
         _console$p.assertWithError(this.#pendingSpriteSheetName != undefined, "expected spriteSheetName when receiving spriteSheetIndex");
@@ -10529,7 +10463,6 @@ class DisplayManager {
         this.#isReady = true;
         this.#pendingSpriteSheet = undefined;
         this.#pendingSpriteSheetName = undefined;
-        this.isServerSide = false;
         this.#isDrawingBlankSprite = false;
         Object.keys(this.#spriteSheetIndices).forEach((spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]);
         Object.keys(this.#spriteSheets).forEach((spriteSheetName) => delete this.#spriteSheets[spriteSheetName]);
@@ -10540,17 +10473,6 @@ class DisplayManager {
     }
     set mtu(newMtu) {
         this.#mtu = newMtu;
-    }
-    #isServerSide = false;
-    get isServerSide() {
-        return this.#isServerSide;
-    }
-    set isServerSide(newIsServerSide) {
-        if (this.#isServerSide == newIsServerSide) {
-            return;
-        }
-        this.#isServerSide = newIsServerSide;
-        _console$p.log({ isServerSide: this.isServerSide });
     }
 }
 
@@ -10611,7 +10533,7 @@ class LedManager {
         while (offset < dataView.byteLength) {
             const ledTypeIndex = dataView.getUint8(offset++);
             const ledType = LedTypes[ledTypeIndex];
-            console.log({ ledTypeIndex, ledType });
+            _console$o.log({ ledTypeIndex, ledType });
             _console$o.assertEnumWithError(ledType, LedTypes);
             const maxColor = structuredClone(whiteColor);
             switch (ledType) {
@@ -12597,7 +12519,13 @@ class DeviceManager {
             _console$g.log("no devices found in configuration");
             return;
         }
-        const bluetoothDevices = await navigator.bluetooth.getDevices();
+        let bluetoothDevices = [];
+        try {
+            bluetoothDevices = await navigator.bluetooth.getDevices();
+        }
+        catch (error) {
+            _console$g.error(error);
+        }
         _console$g.log({ bluetoothDevices });
         bluetoothDevices.forEach((bluetoothDevice) => {
             if (!bluetoothDevice.gatt) {
@@ -13906,7 +13834,6 @@ class Device {
         this.#sensorConfigurationManager.clear();
         this.#displayManager.reset();
         this.#ledManager.clear();
-        this.#isServerSide = false;
         this.#batteryLevel = undefined;
     }
     #clearConnection() {
@@ -14365,20 +14292,6 @@ class Device {
     get testFirmwareImage() {
         this.#assertCanUpdateFirmware();
         return this.#firmwareManager.testImage;
-    }
-    #isServerSide = false;
-    get isServerSide() {
-        return this.#isServerSide;
-    }
-    set isServerSide(newIsServerSide) {
-        if (this.#isServerSide == newIsServerSide) {
-            _console$b.log("redundant isServerSide assignment");
-            return;
-        }
-        _console$b.log({ newIsServerSide });
-        this.#isServerSide = newIsServerSide;
-        this.#fileTransferManager.isServerSide = this.isServerSide;
-        this.#displayManager.isServerSide = this.isServerSide;
     }
     #wifiManager = new WifiManager();
     get isWifiAvailable() {
@@ -15623,6 +15536,7 @@ class BaseScanner {
         return false;
     }
     reset() {
+        _console$7.assertWithError(this.canReset, `${this.constructor.name} does not support reset`);
         _console$7.log("resetting...");
     }
 }
@@ -15630,12 +15544,12 @@ _a$1 = BaseScanner;
 
 const _console$6 = createConsole("NobleConnectionManager", { log: false });
 let filterUUIDs = true;
+const isLinux$1 = os.platform() == "linux";
+filterUUIDs = !isLinux$1;
 noble__namespace.withBindings("default", {
     extended: true,
     userChannel: true,
 });
-const isLinux$1 = os.platform() == "linux";
-filterUUIDs = !isLinux$1;
 class NobleConnectionManager extends BluetoothConnectionManager {
     get bluetoothId() {
         return this.#noblePeripheral.id;
@@ -16133,6 +16047,26 @@ class NobleScanner extends BaseScanner {
     }
 }
 
+createConsole("NullScanner", { log: false });
+class NullScanner extends BaseScanner {
+    static get isSupported() {
+        return true;
+    }
+    get isScanning() {
+        return false;
+    }
+    get isScanningAvailable() {
+        return false;
+    }
+    get canReset() {
+        return false;
+    }
+    #devices = {};
+    get devices() {
+        return this.#devices;
+    }
+}
+
 const _console$4 = createConsole("Scanner", { log: false });
 let scanner;
 if (NobleScanner.isSupported) {
@@ -16141,6 +16075,7 @@ if (NobleScanner.isSupported) {
 }
 else {
     _console$4.log("Scanner not available");
+    scanner = new NullScanner();
 }
 var scanner$1 = scanner;
 
@@ -16150,7 +16085,7 @@ const RequiredDeviceInformationMessageTypes = [
     "batteryLevel",
     ...RequiredInformationConnectionMessages,
 ];
-const _console$3 = createConsole("BaseServer", { log: false });
+const _console$3 = createConsole("BaseServer", { log: true });
 const ServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -16316,7 +16251,6 @@ class BaseServer {
         const { device } = staticDeviceEvent.message;
         _console$3.log("onDeviceConnected", device.bluetoothId);
         addEventListeners(device, this.#boundDeviceListeners);
-        device.isServerSide = true;
     }
     #onDeviceDisconnected(staticDeviceEvent) {
         const { device } = staticDeviceEvent.message;
@@ -16797,71 +16731,25 @@ const ThrottleUtils = {
     debounce,
 };
 
-exports.CameraCommands = CameraCommands;
-exports.CameraConfigurationTypes = CameraConfigurationTypes;
-exports.CenterOfPressureModel = CenterOfPressureModel;
 exports.ConnectionEventTypes = ConnectionEventTypes;
 exports.ConnectionMessageTypes = ConnectionMessageTypes;
-exports.ContinuousSensorTypes = ContinuousSensorTypes;
-exports.DefaultNumberOfDisplayColors = DefaultNumberOfDisplayColors;
-exports.DefaultNumberOfPressureSensors = DefaultNumberOfPressureSensors;
 exports.Device = Device;
 exports.DeviceManager = DeviceManager$1;
 exports.DevicePair = DevicePair;
 exports.DevicePairTypes = DevicePairTypes;
-exports.DeviceTypes = DeviceTypes;
-exports.DisplayAlignments = DisplayAlignments;
-exports.DisplayBezierCurveTypes = DisplayBezierCurveTypes;
-exports.DisplayBrightnesses = DisplayBrightnesses;
 exports.DisplayContextCommandTypes = DisplayContextCommandTypes;
-exports.DisplayDirections = DisplayDirections;
-exports.DisplayPixelDepths = DisplayPixelDepths;
-exports.DisplaySegmentCaps = DisplaySegmentCaps;
 exports.DisplaySpriteContextCommandTypes = DisplaySpriteContextCommandTypes;
 exports.Environment = environment;
 exports.EventUtils = EventUtils;
-exports.FileTransferDirections = FileTransferDirections;
-exports.FileTypes = FileTypes;
 exports.LedTypes = LedTypes;
 exports.LedValueTypes = LedValueTypes;
-exports.MaxNameLength = MaxNameLength;
-exports.MaxNumberOfVibrationWaveformEffectSegments = MaxNumberOfVibrationWaveformEffectSegments;
-exports.MaxNumberOfVibrationWaveformSegments = MaxNumberOfVibrationWaveformSegments;
-exports.MaxSensorRate = MaxSensorRate;
-exports.MaxSpriteSheetNameLength = MaxSpriteSheetNameLength;
-exports.MaxVibrationWaveformEffectSegmentDelay = MaxVibrationWaveformEffectSegmentDelay;
-exports.MaxVibrationWaveformEffectSegmentLoopCount = MaxVibrationWaveformEffectSegmentLoopCount;
-exports.MaxVibrationWaveformEffectSequenceLoopCount = MaxVibrationWaveformEffectSequenceLoopCount;
-exports.MaxVibrationWaveformSegmentDuration = MaxVibrationWaveformSegmentDuration;
-exports.MaxWifiPasswordLength = MaxWifiPasswordLength;
-exports.MaxWifiSSIDLength = MaxWifiSSIDLength;
-exports.MicrophoneBitDepths = MicrophoneBitDepths;
-exports.MicrophoneCommands = MicrophoneCommands;
-exports.MicrophoneConfigurationTypes = MicrophoneConfigurationTypes;
-exports.MicrophoneConfigurationValues = MicrophoneConfigurationValues;
-exports.MicrophoneSampleRates = MicrophoneSampleRates;
-exports.MinNameLength = MinNameLength;
-exports.MinSpriteSheetNameLength = MinSpriteSheetNameLength;
-exports.MinWifiPasswordLength = MinWifiPasswordLength;
-exports.MinWifiSSIDLength = MinWifiSSIDLength;
 exports.RangeHelper = RangeHelper;
 exports.RangeHelper2 = RangeHelper2;
 exports.Scanner = scanner$1;
-exports.SensorRateStep = SensorRateStep;
-exports.SensorTypes = SensorTypes;
-exports.Sides = Sides;
-exports.TfliteSensorTypes = TfliteSensorTypes;
-exports.TfliteTasks = TfliteTasks;
 exports.ThrottleUtils = ThrottleUtils;
-exports.Timer = Timer;
 exports.TxRxMessageTypes = TxRxMessageTypes;
 exports.UDPServer = UDPServer;
-exports.VibrationLocations = VibrationLocations;
-exports.VibrationTypes = VibrationTypes;
-exports.VibrationWaveformEffects = VibrationWaveformEffects;
 exports.WebSocketServer = WebSocketServer;
-exports.concatenateArrayBuffers = concatenateArrayBuffers;
-exports.displayCurveTypeToNumberOfControlPoints = displayCurveTypeToNumberOfControlPoints;
 exports.englishRegex = englishRegex;
 exports.fontToSpriteSheet = fontToSpriteSheet;
 exports.getFontMaxHeight = getFontMaxHeight;
@@ -16870,15 +16758,10 @@ exports.getFontUnicodeRange = getFontUnicodeRange;
 exports.getMaxSpriteSheetSize = getMaxSpriteSheetSize;
 exports.getTensorFlowModel = getTensorFlowModel;
 exports.hexToRGB = hexToRGB;
-exports.intersectWireframes = intersectWireframes;
 exports.isTensorFlowAvailable = isTensorFlowAvailable;
 exports.isTensorFlowModelAvailable = isTensorFlowModelAvailable;
-exports.isWireframePolygon = isWireframePolygon;
 exports.listTensorflowModels = listTensorflowModels;
-exports.maxDisplayScale = maxDisplayScale;
-exports.mergeWireframes = mergeWireframes;
 exports.parseFont = parseFont;
-exports.pixelDepthToNumberOfColors = pixelDepthToNumberOfColors;
 exports.projectColor = projectColor;
 exports.rgbToHex = rgbToHex;
 exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
@@ -16887,5 +16770,4 @@ exports.simplifyCurves = simplifyCurves;
 exports.simplifyPoints = simplifyPoints;
 exports.simplifyPointsAsCubicCurveControlPoints = simplifyPointsAsCubicCurveControlPoints;
 exports.stringToSprites = stringToSprites;
-exports.wait = wait;
 //# sourceMappingURL=brilliantsole.cjs.map

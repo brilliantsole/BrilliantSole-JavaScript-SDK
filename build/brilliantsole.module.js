@@ -2,10 +2,9 @@
  * @copyright Zack Qattan 2024
  * @license MIT
  */
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 const isInProduction =
-__BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+"__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 let isInIframe = false;
 try {
@@ -133,9 +132,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -789,7 +785,8 @@ class FileTransferManager {
         if (bytesReceived != this.#length) {
             const dataView = new DataView(new ArrayBuffer(4));
             dataView.setUint32(0, bytesReceived, true);
-            if (this.isServerSide) {
+            if (!this.#buffer) {
+                _console$R.log("no buffer defined");
                 return;
             }
             await this.sendMessage([
@@ -925,9 +922,7 @@ class FileTransferManager {
             return;
         }
         if (!this.#buffer) {
-            if (!this.isServerSide) {
-                _console$R.error("no buffer defined");
-            }
+            _console$R.log("no buffer defined");
             return;
         }
         const buffer = this.#buffer;
@@ -962,7 +957,7 @@ class FileTransferManager {
             _console$R.error(`not currently sending file`);
             return;
         }
-        if (!this.isServerSide && this.#bytesTransferred != bytesTransferred) {
+        if (this.#buffer && this.#bytesTransferred != bytesTransferred) {
             _console$R.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${this.#bytesTransferred}`);
             this.cancel();
             return;
@@ -982,18 +977,6 @@ class FileTransferManager {
         this.#isCancelling = true;
         await this.#setCommand("cancel");
     }
-    #isServerSide = false;
-    get isServerSide() {
-        return this.#isServerSide;
-    }
-    set isServerSide(newIsServerSide) {
-        if (this.#isServerSide == newIsServerSide) {
-            _console$R.log("redundant isServerSide assignment");
-            return;
-        }
-        _console$R.log({ newIsServerSide });
-        this.#isServerSide = newIsServerSide;
-    }
     requestRequiredInformation() {
         _console$R.log("requesting required fileTransfer information");
         const messages = RequiredFileTransferMessageTypes.map((messageType) => ({
@@ -1006,7 +989,6 @@ class FileTransferManager {
         this.#isCancelling = false;
         this.#buffer = undefined;
         this.#bytesTransferred = 0;
-        this.#isServerSide = false;
         this.#checksum = 0;
         this.#fileTypes.length = 0;
         this.#type = undefined;
@@ -32739,7 +32721,8 @@ class DisplayManager {
             spriteSheetName: this.#pendingSpriteSheetName,
             spriteSheetIndex,
         });
-        if (this.isServerSide) {
+        if (this.#pendingSpriteSheetName == undefined) {
+            _console$q.log("pendingSpriteSheetName is undefined - skipping");
             return;
         }
         _console$q.assertWithError(this.#pendingSpriteSheetName != undefined, "expected spriteSheetName when receiving spriteSheetIndex");
@@ -32843,7 +32826,6 @@ class DisplayManager {
         this.#isReady = true;
         this.#pendingSpriteSheet = undefined;
         this.#pendingSpriteSheetName = undefined;
-        this.isServerSide = false;
         this.#isDrawingBlankSprite = false;
         Object.keys(this.#spriteSheetIndices).forEach((spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]);
         Object.keys(this.#spriteSheets).forEach((spriteSheetName) => delete this.#spriteSheets[spriteSheetName]);
@@ -32854,17 +32836,6 @@ class DisplayManager {
     }
     set mtu(newMtu) {
         this.#mtu = newMtu;
-    }
-    #isServerSide = false;
-    get isServerSide() {
-        return this.#isServerSide;
-    }
-    set isServerSide(newIsServerSide) {
-        if (this.#isServerSide == newIsServerSide) {
-            return;
-        }
-        this.#isServerSide = newIsServerSide;
-        _console$q.log({ isServerSide: this.isServerSide });
     }
 }
 
@@ -34774,7 +34745,7 @@ const DeviceManagerEventTypes = [
     "availableDevices",
     "connectedDevices",
 ];
-let DeviceManager$1 = class DeviceManager {
+class DeviceManager {
     static shared = new DeviceManager();
     constructor() {
         if (DeviceManager.shared && this != DeviceManager.shared) {
@@ -35050,8 +35021,8 @@ let DeviceManager$1 = class DeviceManager {
             connectedDevices: this.ConnectedDevices,
         });
     }
-};
-var DeviceManager = DeviceManager$1.shared;
+}
+var DeviceManager$1 = DeviceManager.shared;
 
 const _console$g = createConsole("ServerUtils", { log: false });
 const ServerMessageTypes = [
@@ -35565,7 +35536,7 @@ class Device {
                     break;
             }
         });
-        DeviceManager.onDevice(this);
+        DeviceManager$1.onDevice(this);
         if (isInBrowser) {
             window.addEventListener("beforeunload", () => {
                 if (this.isConnected && this.clearSensorConfigurationOnLeave) {
@@ -35899,7 +35870,7 @@ class Device {
                 this.#requestRequiredInformation();
             }
         }
-        DeviceManager.OnDeviceConnectionStatusUpdated(this, connectionStatus);
+        DeviceManager$1.OnDeviceConnectionStatusUpdated(this, connectionStatus);
     }
     #dispatchConnectionEvents(includeIsConnected = false) {
         this.#dispatchEvent("connectionStatus", {
@@ -35942,7 +35913,6 @@ class Device {
         this.#sensorConfigurationManager.clear();
         this.#displayManager.reset();
         this.#ledManager.clear();
-        this.#isServerSide = false;
         this.#batteryLevel = undefined;
     }
     #clearConnection() {
@@ -36401,20 +36371,6 @@ class Device {
     get testFirmwareImage() {
         this.#assertCanUpdateFirmware();
         return this.#firmwareManager.testImage;
-    }
-    #isServerSide = false;
-    get isServerSide() {
-        return this.#isServerSide;
-    }
-    set isServerSide(newIsServerSide) {
-        if (this.#isServerSide == newIsServerSide) {
-            _console$d.log("redundant isServerSide assignment");
-            return;
-        }
-        _console$d.log({ newIsServerSide });
-        this.#isServerSide = newIsServerSide;
-        this.#fileTransferManager.isServerSide = this.isServerSide;
-        this.#displayManager.isServerSide = this.isServerSide;
     }
     #wifiManager = new WifiManager();
     get isWifiAvailable() {
@@ -37537,7 +37493,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager._CheckDeviceAvailability(device);
+            DeviceManager$1._CheckDeviceAvailability(device);
             return device;
         });
     }
@@ -37906,12 +37862,12 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$7 = createConsole("Scanner", { log: false });
-let scanner$1;
+let scanner;
 {
     _console$7.log("Scanner not available");
-    scanner$1 = new NullScanner();
+    scanner = new NullScanner();
 }
-var scanner = scanner$1;
+var scanner$1 = scanner;
 
 var _a;
 const RequiredDeviceInformationMessageTypes = [
@@ -37939,9 +37895,9 @@ class BaseServer {
         return this.eventDispatcher.waitForEvent;
     }
     constructor() {
-        _console$6.assertWithError(scanner, "no scanner defined");
-        addEventListeners(scanner, this.#boundScannerListeners);
-        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        _console$6.assertWithError(scanner$1, "no scanner defined");
+        addEventListeners(scanner$1, this.#boundScannerListeners);
+        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
     }
     get numberOfClients() {
@@ -37976,7 +37932,7 @@ class BaseServer {
         _console$6.log("onClientDisconnected");
         if (this.numberOfClients == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager.ConnectedDevices.forEach((device) => {
+            DeviceManager$1.ConnectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -37997,7 +37953,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner.isScanningAvailable,
+            data: scanner$1.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -38006,7 +37962,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner.isScanning,
+            data: scanner$1.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -38032,9 +37988,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner.discoveredDevicesArray
+        const serverMessages = scanner$1.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager.ConnectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -38046,7 +38002,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager.ConnectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager$1.ConnectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -38085,7 +38041,6 @@ class BaseServer {
         const { device } = staticDeviceEvent.message;
         _console$6.log("onDeviceConnected", device.bluetoothId);
         addEventListeners(device, this.#boundDeviceListeners);
-        device.isServerSide = isInNode;
     }
     #onDeviceDisconnected(staticDeviceEvent) {
         const { device } = staticDeviceEvent.message;
@@ -38129,10 +38084,10 @@ class BaseServer {
                 responseMessages.push(this.#isScanningMessage);
                 break;
             case "startScan":
-                scanner.startScan();
+                scanner$1.startScan();
                 break;
             case "stopScan":
-                scanner.stopScan();
+                scanner$1.stopScan();
                 break;
             case "discoveredDevices":
                 responseMessages.push(this.#discoveredDevicesMessage);
@@ -38148,14 +38103,14 @@ class BaseServer {
                     else {
                         _console$6.log(`connecting to device with id ${deviceId}...`);
                     }
-                    scanner.connectToDevice(deviceId, connectionType);
+                    scanner$1.connectToDevice(deviceId, connectionType);
                 }
                 break;
             case "disconnectFromDevice":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    let device = DeviceManager.AvailableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner.devices[deviceId];
+                    let device = DeviceManager$1.AvailableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner$1.devices[deviceId];
                     if (!device) {
                         _console$6.error(`no device found with id ${deviceId}`);
                         break;
@@ -38173,7 +38128,7 @@ class BaseServer {
             case "deviceMessage":
                 {
                     const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-                    const device = DeviceManager.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$6.error(`no device found with id ${deviceId}`);
                         break;
@@ -38188,7 +38143,7 @@ class BaseServer {
             case "requiredDeviceInformation":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    const device = DeviceManager.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$6.error(`no device found with id ${deviceId}`);
                         break;
@@ -41653,7 +41608,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager.AddEventListener("deviceConnected", (event) => {
+        DeviceManager$1.AddEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -41852,5 +41807,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowServer_default as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowServer_default as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

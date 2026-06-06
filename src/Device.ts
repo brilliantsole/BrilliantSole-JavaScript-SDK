@@ -916,7 +916,6 @@ class Device {
     this.#sensorConfigurationManager.clear();
     this.#displayManager.reset();
     this.#ledManager.clear();
-    this.#isServerSide = false;
     this.#batteryLevel = undefined;
   }
   #clearConnection() {
@@ -1522,23 +1521,6 @@ class Device {
   get testFirmwareImage() {
     this.#assertCanUpdateFirmware();
     return this.#firmwareManager.testImage;
-  }
-
-  // SERVER SIDE
-  #isServerSide = false;
-  get isServerSide() {
-    return this.#isServerSide;
-  }
-  set isServerSide(newIsServerSide) {
-    if (this.#isServerSide == newIsServerSide) {
-      _console.log("redundant isServerSide assignment");
-      return;
-    }
-    _console.log({ newIsServerSide });
-    this.#isServerSide = newIsServerSide;
-
-    this.#fileTransferManager.isServerSide = this.isServerSide;
-    this.#displayManager.isServerSide = this.isServerSide;
   }
 
   // WIFI MANAGER

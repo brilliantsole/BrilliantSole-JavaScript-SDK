@@ -3063,9 +3063,11 @@ class DisplayManager implements DisplayManagerInterface {
       spriteSheetName: this.#pendingSpriteSheetName,
       spriteSheetIndex,
     });
-    if (this.isServerSide) {
+    if (this.#pendingSpriteSheetName == undefined) {
+      _console.log("pendingSpriteSheetName is undefined - skipping");
       return;
     }
+
     _console.assertWithError(
       this.#pendingSpriteSheetName != undefined,
       "expected spriteSheetName when receiving spriteSheetIndex",
@@ -3244,8 +3246,6 @@ class DisplayManager implements DisplayManagerInterface {
     this.#pendingSpriteSheet = undefined;
     this.#pendingSpriteSheetName = undefined;
 
-    this.isServerSide = false;
-
     this.#isDrawingBlankSprite = false;
 
     Object.keys(this.#spriteSheetIndices).forEach(
@@ -3263,20 +3263,6 @@ class DisplayManager implements DisplayManagerInterface {
   }
   set mtu(newMtu: number) {
     this.#mtu = newMtu;
-  }
-
-  // SERVER SIDE
-  #isServerSide = false;
-  get isServerSide() {
-    return this.#isServerSide;
-  }
-  set isServerSide(newIsServerSide) {
-    if (this.#isServerSide == newIsServerSide) {
-      //_console.log("redundant isServerSide assignment");
-      return;
-    }
-    this.#isServerSide = newIsServerSide;
-    _console.log({ isServerSide: this.isServerSide });
   }
 }
 

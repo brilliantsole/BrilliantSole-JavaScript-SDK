@@ -79,11 +79,11 @@ declare class FileTransferManager {
         target: Device;
         message: FileTransferEventMessages[T];
     }>;
-    get fileTypes(): ("cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet")[];
+    get fileTypes(): ("tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | "cameraImage")[];
     static get MaxLength(): number;
     /** kB */
     get maxLength(): number;
-    get type(): "cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | undefined;
+    get type(): "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | "cameraImage" | undefined;
     get length(): number;
     get checksum(): number;
     get status(): "idle" | "sending" | "receiving";
@@ -92,8 +92,6 @@ declare class FileTransferManager {
     mtu: number;
     receive(type: FileType): Promise<void>;
     cancel(): Promise<void>;
-    get isServerSide(): boolean;
-    set isServerSide(newIsServerSide: boolean);
     requestRequiredInformation(): void;
     clear(): void;
 }
