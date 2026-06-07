@@ -56,8 +56,6 @@ class UDPServer extends BaseServer<UDPServerClient> {
       };
       _console.log("created new client", client);
 
-      this.clients.push(client);
-      _console.log(`currently have ${this.clients.length} clients`);
       this.dispatchEvent("clientConnected", { client });
     }
     return client;
@@ -268,8 +266,6 @@ class UDPServer extends BaseServer<UDPServerClient> {
   #removeClient(client: UDPServerClient) {
     _console.log(`removing client ${this.#clientToString(client)}...`);
     client.removeSelfTimer.stop();
-    this.clients = this.clients.filter((_client) => _client != client);
-    _console.log(`currently have ${this.clients.length} clients`);
     this.dispatchEvent("clientDisconnected", { client });
   }
 }

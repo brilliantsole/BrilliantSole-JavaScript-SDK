@@ -31,12 +31,6 @@ interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
 }
 
 class WebSocketServer extends BaseServer<WebSocketServerClient> {
-  get clients() {
-    if (this.#server) {
-      return this.#server.clients as Set<WebSocketServerClient>;
-    }
-  }
-
   // WEBSOCKET SERVER
 
   #server?: ws.WebSocketServer;

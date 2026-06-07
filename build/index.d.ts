@@ -2670,7 +2670,7 @@ declare class DevicePair {
 }
 
 type BoundGenericEventListeners = {
-    [eventType: string]: Function;
+    [eventType: string]: Function | Function[];
 };
 declare function addEventListeners(target: any, boundEventListeners: BoundGenericEventListeners): void;
 declare function removeEventListeners(target: any, boundEventListeners: BoundGenericEventListeners): void;

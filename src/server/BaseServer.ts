@@ -144,19 +144,28 @@ abstract class BaseServer<
   }
 
   // SERVER LISTENERS
-  #boundServerListeners: BoundServerEventListeners<BaseServer> = {
+  #boundServerListeners: BoundServerEventListeners<ServerClient> = {
     clientConnected: this.#onClientConnected.bind(this),
     clientDisconnected: this.#onClientDisconnected.bind(this),
   };
-  #onClientConnected(event: ServerEventMap<BaseServer>["clientConnected"]) {
+  #onClientConnected(event: ServerEventMap<ServerClient>["clientConnected"]) {
     const client = event.message.client;
+    if (!this.clients.includes(client)) {
+      this.clients.push(client);
+    }
     _console.log("onClientConnected");
+    _console.log(`currently have ${this.clients.length} clients`);
   }
   #onClientDisconnected(
-    event: ServerEventMap<BaseServer>["clientDisconnected"],
+    event: ServerEventMap<ServerClient>["clientDisconnected"],
   ) {
     const client = event.message.client;
+    if (this.clients.includes(client)) {
+      this.clients.splice(this.clients.indexOf(client), 1);
+    }
+
     _console.log("onClientDisconnected");
+    _console.log(`currently have ${this.clients.length} clients`);
     if (
       this.clients.length == 0 &&
       this.clearSensorConfigurationsWhenNoClients
@@ -374,7 +383,7 @@ abstract class BaseServer<
       `onClientMessage "${messageType}" (${dataView.byteLength} bytes)`,
     );
     const { responseMessages } = context;
-    // FILL
+
     switch (messageType) {
       case "isScanningAvailable":
         responseMessages.push(this.#isScanningAvailableMessage);

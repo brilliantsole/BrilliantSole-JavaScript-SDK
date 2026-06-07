@@ -10954,19 +10954,34 @@ class BaseConnectionManager {
 
 const _console$m = createConsole("EventUtils", { log: false });
 function addEventListeners(target, boundEventListeners) {
-    let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
+    let addEventListener = target.addEventListener ||
+        target.addListener ||
+        target.on ||
+        target.AddEventListener;
     _console$m.assertWithError(addEventListener, "no add listener function found for target");
     addEventListener = addEventListener.bind(target);
-    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
-        addEventListener(eventType, eventListener);
+    Object.entries(boundEventListeners).forEach(([eventType, eventListeners]) => {
+        eventListeners = Array.isArray(eventListeners)
+            ? eventListeners
+            : [eventListeners];
+        eventListeners.forEach((eventListener) => {
+            addEventListener(eventType, eventListener);
+        });
     });
 }
 function removeEventListeners(target, boundEventListeners) {
-    let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
+    let removeEventListener = target.removeEventListener ||
+        target.removeListener ||
+        target.RemoveEventListener;
     _console$m.assertWithError(removeEventListener, "no remove listener function found for target");
     removeEventListener = removeEventListener.bind(target);
-    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
-        removeEventListener(eventType, eventListener);
+    Object.entries(boundEventListeners).forEach(([eventType, eventListeners]) => {
+        eventListeners = Array.isArray(eventListeners)
+            ? eventListeners
+            : [eventListeners];
+        eventListeners.forEach((eventListener) => {
+            removeEventListener(eventType, eventListener);
+        });
     });
 }
 
@@ -16132,12 +16147,20 @@ class BaseServer {
         clientDisconnected: this.#onClientDisconnected.bind(this),
     };
     #onClientConnected(event) {
-        event.message.client;
+        const client = event.message.client;
+        if (!this.clients.includes(client)) {
+            this.clients.push(client);
+        }
         _console$3.log("onClientConnected");
+        _console$3.log(`currently have ${this.clients.length} clients`);
     }
     #onClientDisconnected(event) {
-        event.message.client;
+        const client = event.message.client;
+        if (this.clients.includes(client)) {
+            this.clients.splice(this.clients.indexOf(client), 1);
+        }
         _console$3.log("onClientDisconnected");
+        _console$3.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
             DeviceManager$1.ConnectedDevices.forEach((device) => {
@@ -16403,11 +16426,6 @@ _a = BaseServer;
 
 const _console$2 = createConsole("WebSocketServer", { log: false });
 class WebSocketServer extends BaseServer {
-    get clients() {
-        if (this.#server) {
-            return this.#server.clients;
-        }
-    }
     #server;
     get server() {
         return this.#server;
@@ -16566,8 +16584,6 @@ class UDPServer extends BaseServer {
                 lastTimeSentData: 0,
             };
             _console.log("created new client", client);
-            this.clients.push(client);
-            _console.log(`currently have ${this.clients.length} clients`);
             this.dispatchEvent("clientConnected", { client });
         }
         return client;
@@ -16712,8 +16728,6 @@ class UDPServer extends BaseServer {
     #removeClient(client) {
         _console.log(`removing client ${this.#clientToString(client)}...`);
         client.removeSelfTimer.stop();
-        this.clients = this.clients.filter((_client) => _client != client);
-        _console.log(`currently have ${this.clients.length} clients`);
         this.dispatchEvent("clientDisconnected", { client });
     }
 }

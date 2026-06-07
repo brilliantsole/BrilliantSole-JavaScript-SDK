@@ -33323,19 +33323,34 @@
 
 	const _console$n = createConsole("EventUtils", { log: false });
 	function addEventListeners(target, boundEventListeners) {
-	    let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
+	    let addEventListener = target.addEventListener ||
+	        target.addListener ||
+	        target.on ||
+	        target.AddEventListener;
 	    _console$n.assertWithError(addEventListener, "no add listener function found for target");
 	    addEventListener = addEventListener.bind(target);
-	    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
-	        addEventListener(eventType, eventListener);
+	    Object.entries(boundEventListeners).forEach(([eventType, eventListeners]) => {
+	        eventListeners = Array.isArray(eventListeners)
+	            ? eventListeners
+	            : [eventListeners];
+	        eventListeners.forEach((eventListener) => {
+	            addEventListener(eventType, eventListener);
+	        });
 	    });
 	}
 	function removeEventListeners(target, boundEventListeners) {
-	    let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
+	    let removeEventListener = target.removeEventListener ||
+	        target.removeListener ||
+	        target.RemoveEventListener;
 	    _console$n.assertWithError(removeEventListener, "no remove listener function found for target");
 	    removeEventListener = removeEventListener.bind(target);
-	    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
-	        removeEventListener(eventType, eventListener);
+	    Object.entries(boundEventListeners).forEach(([eventType, eventListeners]) => {
+	        eventListeners = Array.isArray(eventListeners)
+	            ? eventListeners
+	            : [eventListeners];
+	        eventListeners.forEach((eventListener) => {
+	            removeEventListener(eventType, eventListener);
+	        });
 	    });
 	}
 
@@ -37649,13 +37664,19 @@
 	    toggleConnection() {
 	        throw new Error("Method not implemented.");
 	    }
-	    #sendMessage(message) {
+	    #sendMessage(message, transfer) {
 	        if (message != windowPingMessage) {
 	            this.assertConnection();
 	        }
-	        window.parent.postMessage({
-	            [windowMessageKey]: message,
-	        }, "*");
+	        _console$9.log("sendMessage", message, { transfer });
+	        if (this.#port) {
+	            this.#port.postMessage(message, { transfer });
+	        }
+	        else {
+	            window.parent.postMessage({
+	                [windowMessageKey]: message,
+	            }, "*", transfer);
+	        }
 	    }
 	    sendServerMessage(...messages) {
 	        this.#sendMessage(createWindowMessage({
@@ -37928,12 +37949,20 @@
 	        clientDisconnected: this.#onClientDisconnected.bind(this),
 	    };
 	    #onClientConnected(event) {
-	        event.message.client;
+	        const client = event.message.client;
+	        if (!this.clients.includes(client)) {
+	            this.clients.push(client);
+	        }
 	        _console$6.log("onClientConnected");
+	        _console$6.log(`currently have ${this.clients.length} clients`);
 	    }
 	    #onClientDisconnected(event) {
-	        event.message.client;
+	        const client = event.message.client;
+	        if (this.clients.includes(client)) {
+	            this.clients.splice(this.clients.indexOf(client), 1);
+	        }
 	        _console$6.log("onClientDisconnected");
+	        _console$6.log(`currently have ${this.clients.length} clients`);
 	        if (this.clients.length == 0 &&
 	            this.clearSensorConfigurationsWhenNoClients) {
 	            DeviceManager$1.ConnectedDevices.forEach((device) => {
@@ -38284,8 +38313,7 @@
 	            }
 	            addEventListeners(iframe, this.#boundIframeEventListeners);
 	            client = { iframe };
-	            this.clients.push(client);
-	            _console$5.log("client added", client);
+	            this.dispatchEvent("clientConnected", { client });
 	        }
 	        _console$5.log("onWindowMessage", client, data);
 	        const dataView = new DataView(data);
@@ -38327,8 +38355,7 @@
 	            messageChannel.port1.close();
 	            removeEventListeners(messageChannel.port1, this.#boundMessageChannelPortEventListeners);
 	        }
-	        this.clients.splice(this.clients.indexOf(client), 1);
-	        _console$5.log("client removed", client);
+	        this.dispatchEvent("clientDisconnected", { client });
 	    }
 	    #boundIframeEventListeners = {
 	        load: this.#onIframeLoad.bind(this),
@@ -38342,6 +38369,7 @@
 	        _console$5.log("onIframeLoad", client);
 	    }
 	    #createMessageChannel(client) {
+	        _console$5.log("createMessageChannel", client);
 	        const messageChannel = new MessageChannel();
 	        addEventListeners(messageChannel.port1, this.#boundMessageChannelPortEventListeners);
 	        messageChannel.port1.start();
@@ -38352,13 +38380,16 @@
 	        message: this.#onMessagePortMessage.bind(this),
 	    };
 	    #onMessagePortMessage(event) {
-	        _console$5.log("onMessagePortMessage", event);
 	        const port = event.currentTarget;
 	        const client = this.#getClientByMessagePort(port);
 	        if (!client) {
+	            _console$5.error("no client found for port", port);
 	            return;
 	        }
-	        _console$5.log("onMessagePortMessage", client);
+	        const arrayBuffer = event.data;
+	        const dataView = new DataView(arrayBuffer);
+	        _console$5.log(`received ${dataView.byteLength} bytes`, dataView.buffer, client);
+	        this.#parseWindowServerClientMessage(client, dataView);
 	    }
 	    #parseWindowServerClientMessage(client, dataView) {
 	        let responseMessages = [];
@@ -38380,6 +38411,7 @@
 	    }
 	    #onClientMessage(messageType, dataView, context) {
 	        const { responseMessages, transfer, client } = context;
+	        _console$5.log("onClientMessage", { messageType }, context);
 	        switch (messageType) {
 	            case "ping":
 	                this.#createMessageChannel(client);

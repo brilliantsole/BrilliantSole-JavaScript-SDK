@@ -33,7 +33,8 @@ device.addEventListener("connectionStatus", () => {
 const iframe = document.querySelector("iframe");
 iframe.addEventListener("load", (event) => {
   console.log(`iframe loaded "${iframe.src}"`);
-  urlInput.value = iframe.contentWindow.location.href;
+  urlInput.value = iframe.src;
+  // urlInput.value = iframe.contentWindow.location.href;
 });
 
 /** @type {HTMLInputElement} */
@@ -56,7 +57,8 @@ urlGoButton.addEventListener("click", () => urlGo());
 
 const urlRefresh = () => {
   console.log("urlRefresh");
-  iframe.contentWindow.location.reload();
+  // iframe.contentWindow.location.reload();
+  iframe.src = iframe.src;
 };
 const urlRefreshButton = document.getElementById("urlRefresh");
 urlRefreshButton.addEventListener("click", () => urlRefresh());

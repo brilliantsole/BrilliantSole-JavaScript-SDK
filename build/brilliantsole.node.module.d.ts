@@ -2166,7 +2166,7 @@ declare class DevicePair {
 }
 
 type BoundGenericEventListeners = {
-    [eventType: string]: Function;
+    [eventType: string]: Function | Function[];
 };
 declare function addEventListeners(target: any, boundEventListeners: BoundGenericEventListeners): void;
 declare function removeEventListeners(target: any, boundEventListeners: BoundGenericEventListeners): void;
@@ -2295,7 +2295,6 @@ interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
 }
 declare class WebSocketServer extends BaseServer<WebSocketServerClient> {
     #private;
-    get clients(): Set<WebSocketServerClient> | undefined;
     get server(): ws.WebSocketServer | undefined;
     set server(newServer: ws.WebSocketServer | undefined);
     broadcastMessage(message: ArrayBuffer): void;

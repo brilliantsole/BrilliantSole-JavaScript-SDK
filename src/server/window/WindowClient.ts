@@ -168,16 +168,22 @@ class WindowClient extends BaseClient {
   }
 
   // MESSAGING
-  #sendMessage(message: MessageLike) {
+  #sendMessage(message: MessageLike, transfer?: Transferable[] | undefined) {
     if (message != windowPingMessage) {
       this.assertConnection();
     }
-    window.parent.postMessage(
-      {
-        [windowMessageKey]: message,
-      },
-      "*",
-    );
+    _console.log("sendMessage", message, { transfer });
+    if (this.#port) {
+      this.#port.postMessage(message, { transfer });
+    } else {
+      window.parent.postMessage(
+        {
+          [windowMessageKey]: message,
+        },
+        "*",
+        transfer,
+      );
+    }
   }
 
   sendServerMessage(...messages: ServerMessage[]) {

@@ -9,7 +9,6 @@ interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
 }
 declare class WebSocketServer extends BaseServer<WebSocketServerClient> {
     #private;
-    get clients(): Set<WebSocketServerClient> | undefined;
     get server(): ws.WebSocketServer | undefined;
     set server(newServer: ws.WebSocketServer | undefined);
     broadcastMessage(message: ArrayBuffer): void;

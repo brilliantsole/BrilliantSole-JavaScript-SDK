@@ -148,8 +148,7 @@ class WindowServer extends BaseServer<WindowServerClient> {
       }
       addEventListeners(iframe, this.#boundIframeEventListeners);
       client = { iframe };
-      this.clients.push(client);
-      _console.log("client added", client);
+      this.dispatchEvent("clientConnected", { client });
     }
     _console.log("onWindowMessage", client, data);
     const dataView = new DataView(data) as DataView<ArrayBuffer>;
@@ -203,8 +202,7 @@ class WindowServer extends BaseServer<WindowServerClient> {
       );
     }
 
-    this.clients.splice(this.clients.indexOf(client), 1);
-    _console.log("client removed", client);
+    this.dispatchEvent("clientDisconnected", { client });
   }
   #boundIframeEventListeners: {
     [K in keyof HTMLElementEventMap]?: (event: HTMLElementEventMap[K]) => void;
@@ -224,6 +222,7 @@ class WindowServer extends BaseServer<WindowServerClient> {
 
   // MESSAGE PORT
   #createMessageChannel(client: WindowServerClient) {
+    _console.log("createMessageChannel", client);
     const messageChannel = new MessageChannel();
     addEventListeners(
       messageChannel.port1,
@@ -240,13 +239,21 @@ class WindowServer extends BaseServer<WindowServerClient> {
   };
 
   #onMessagePortMessage(event: MessagePortEventMap["message"]) {
-    _console.log("onMessagePortMessage", event);
+    // _console.log("onMessagePortMessage", event);
     const port = event.currentTarget as MessagePort;
     const client = this.#getClientByMessagePort(port);
     if (!client) {
+      _console.error("no client found for port", port);
       return;
     }
-    _console.log("onMessagePortMessage", client);
+    const arrayBuffer = event.data as ArrayBuffer;
+    const dataView = new DataView(arrayBuffer) as DataView<ArrayBuffer>;
+    _console.log(
+      `received ${dataView.byteLength} bytes`,
+      dataView.buffer,
+      client,
+    );
+    this.#parseWindowServerClientMessage(client, dataView);
   }
 
   // PARSING
@@ -287,6 +294,7 @@ class WindowServer extends BaseServer<WindowServerClient> {
     context: WindowServerClientContext,
   ) {
     const { responseMessages, transfer, client } = context;
+    _console.log("onClientMessage", { messageType }, context);
     switch (messageType) {
       case "ping":
         this.#createMessageChannel(client);
