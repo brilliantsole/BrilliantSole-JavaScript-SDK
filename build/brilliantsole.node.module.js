@@ -22,9 +22,10 @@ import fs from 'fs/promises';
 import * as _alawmulaw from 'alawmulaw';
 import * as dgram from 'dgram';
 
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 const isInProduction =
-"__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+__BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 let isInIframe = false;
 try {
@@ -152,6 +153,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -12711,12 +12715,12 @@ createServerMessage("discoveredDevices");
 const _console$e = createConsole("WebSocketUtils", { log: false });
 const webSocketPingTimeout = 30_000;
 const WebSocketMessageTypes$1 = ["ping", "pong", "serverMessage"];
-function createWebSocketMessage$1(...messages) {
+function createWebSocketMessage$2(...messages) {
     _console$e.log("createWebSocketMessage", ...messages);
     return createMessage(WebSocketMessageTypes$1, ...messages);
 }
-const webSocketPingMessage = createWebSocketMessage$1("ping");
-const webSocketPongMessage = createWebSocketMessage$1("pong");
+const webSocketPingMessage = createWebSocketMessage$2("ping");
+const webSocketPongMessage = createWebSocketMessage$2("pong");
 
 const _console$d = createConsole("WebSocketConnectionManager", { log: false });
 const WebSocketMessageTypes = [
@@ -12726,7 +12730,7 @@ const WebSocketMessageTypes = [
     "deviceInformation",
     "message",
 ];
-function createWebSocketMessage(...messages) {
+function createWebSocketMessage$1(...messages) {
     _console$d.log("createWebSocketMessage", ...messages);
     return createMessage(WebSocketMessageTypes, ...messages);
 }
@@ -12861,7 +12865,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
         this.#pingTimer.restart();
     }
     #sendWebSocketMessage(...messages) {
-        this.#sendMessage(createWebSocketMessage(...messages));
+        this.#sendMessage(createWebSocketMessage$1(...messages));
     }
     #boundWebSocketEventListeners = {
         open: this.#onWebSocketOpen.bind(this),
@@ -16071,6 +16075,28 @@ else {
 }
 var scanner$1 = scanner;
 
+class GuardManager {
+    #guards = [];
+    add(guard) {
+        if (this.#guards.includes(guard)) {
+            return;
+        }
+        this.#guards.push(guard);
+    }
+    remove(guard) {
+        if (!this.#guards.includes(guard)) {
+            return;
+        }
+        this.#guards.splice(this.#guards.indexOf(guard), 1);
+    }
+    evaluate(...args) {
+        return this.#guards.every((guard) => guard(...args));
+    }
+    clear() {
+        this.#guards.length = 0;
+    }
+}
+
 var _a;
 const RequiredDeviceInformationMessageTypes = [
     ...DeviceInformationTypes,
@@ -16148,6 +16174,9 @@ class BaseServer {
     }
     broadcastMessage(message) {
         _console$3.log("broadcasting", message);
+        this.clients.forEach((client) => {
+            this.sendToClient(client, message);
+        });
     }
     #boundScannerListeners = {
         isScanningAvailable: this.#onScannerIsAvailable.bind(this),
@@ -16273,12 +16302,19 @@ class BaseServer {
             data: [device.bluetoothId, createDeviceMessage(...messages)],
         });
     }
+    clientToServerGuardManager = new GuardManager();
+    serverToClientGuardManager = new GuardManager();
+    clientToDeviceGuardManager = new GuardManager();
+    deviceToClientGuardManager = new GuardManager();
     parseClientMessage(client, dataView) {
         let responseMessages = [];
         const context = {
             responseMessages,
             client,
         };
+        if (!this.clientToServerGuardManager.evaluate(client)) {
+            return;
+        }
         parseMessage(dataView, ServerMessageTypes, this.#onClientMessage.bind(this), context, true);
         responseMessages = responseMessages.filter(Boolean);
         if (responseMessages.length > 0) {
@@ -16288,6 +16324,9 @@ class BaseServer {
     #onClientMessage(messageType, dataView, context) {
         _console$3.log(`onClientMessage "${messageType}" (${dataView.byteLength} bytes)`);
         const { client, responseMessages } = context;
+        if (!this.clientToServerGuardManager.evaluate(client, messageType, dataView)) {
+            return;
+        }
         switch (messageType) {
             case "isScanningAvailable":
                 responseMessages.push(this.#isScanningAvailableMessage);
@@ -16346,7 +16385,7 @@ class BaseServer {
                         break;
                     }
                     const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
-                    const responseMessage = this.parseClientDeviceMessage(device, _dataView);
+                    const responseMessage = this.parseClientDeviceMessage(client, device, _dataView);
                     if (responseMessage) {
                         responseMessages.push(responseMessage);
                     }
@@ -16381,25 +16420,37 @@ class BaseServer {
         }
         _console$3.log(responseMessages);
     }
-    parseClientDeviceMessage(device, dataView) {
+    parseClientDeviceMessage(client, device, dataView) {
         _console$3.log("onDeviceMessage", device.bluetoothId, dataView);
-        let responseMessages = [];
-        parseMessage(dataView, ConnectionMessageTypes, this.#parseClientDeviceMessageCallback.bind(this), { responseMessages, device }, true);
-        if (responseMessages.length > 0) {
-            return this.#createDeviceServerMessage(device, ...responseMessages);
+        let deviceMessages = [];
+        if (!this.clientToDeviceGuardManager.evaluate(client, device)) {
+            return;
+        }
+        const context = {
+            deviceMessages,
+            device,
+            client,
+        };
+        parseMessage(dataView, ConnectionMessageTypes, this.#parseClientDeviceMessageCallback.bind(this), context, true);
+        if (deviceMessages.length > 0) {
+            return this.#createDeviceServerMessage(device, ...deviceMessages);
         }
     }
     #parseClientDeviceMessageCallback(messageType, dataView, context) {
         _console$3.log(`clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`);
+        const { client, device, deviceMessages } = context;
+        if (!this.clientToDeviceGuardManager.evaluate(client, device, messageType, dataView)) {
+            return;
+        }
         switch (messageType) {
             case "smp":
-                context.device.connectionManager.sendSmpMessage(dataView.buffer);
+                device.connectionManager.sendSmpMessage(dataView.buffer);
                 break;
             case "tx":
-                context.device.connectionManager.sendTxData(dataView.buffer);
+                device.connectionManager.sendTxData(dataView.buffer);
                 break;
             default:
-                context.responseMessages.push(this.#createDeviceMessage(context.device, messageType));
+                deviceMessages.push(this.#createDeviceMessage(device, messageType));
                 break;
         }
     }
@@ -16506,7 +16557,7 @@ class WebSocketServer extends BaseServer {
             case "serverMessage":
                 const responseMessage = this.parseClientMessage(client, dataView);
                 if (responseMessage) {
-                    responseMessages.push(createWebSocketMessage$1({
+                    responseMessages.push(createWebSocketMessage$2({
                         type: "serverMessage",
                         data: responseMessage,
                     }));
@@ -16525,11 +16576,8 @@ class WebSocketServer extends BaseServer {
         _console$2.log(`sending ${message.byteLength} bytes to client`);
         client.send(message);
     }
-    broadcastMessage(message) {
-        super.broadcastMessage(message);
-        this.clients.forEach((client) => {
-            this.#sendToClient(client, createWebSocketMessage$1({ type: "serverMessage", data: message }));
-        });
+    sendToClient(client, message) {
+        this.#sendToClient(client, createWebSocketMessage$2({ type: "serverMessage", data: message }));
     }
     #pingClient(client) {
         if (!client.isAlive) {
@@ -16708,11 +16756,8 @@ class UDPServer extends BaseServer {
             _console.error("serious error sending data", error);
         }
     }
-    broadcastMessage(message) {
-        super.broadcastMessage(message);
-        this.clients.forEach((client) => {
-            this.#sendToClient(client, createUDPServerMessage({ type: "serverMessage", data: message }));
-        });
+    sendToClient(client, message) {
+        this.#sendToClient(client, createUDPServerMessage({ type: "serverMessage", data: message }));
     }
     #removeClient(client) {
         _console.log(`removing client ${this.#clientToString(client)}...`);

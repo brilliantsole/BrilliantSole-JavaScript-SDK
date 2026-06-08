@@ -14,6 +14,6 @@ declare class UDPServer extends BaseServer<UDPServerClient> {
     #private;
     get socket(): dgram.Socket | undefined;
     set socket(newSocket: dgram.Socket | undefined);
-    broadcastMessage(message: ArrayBuffer): void;
+    protected sendToClient(client: UDPServerClient, message: ArrayBuffer): void;
 }
 export default UDPServer;

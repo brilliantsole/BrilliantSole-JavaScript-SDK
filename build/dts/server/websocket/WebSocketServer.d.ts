@@ -13,6 +13,6 @@ declare class WebSocketServer extends BaseServer<WebSocketServerClient> {
     #private;
     get server(): ws.WebSocketServer | undefined;
     set server(newServer: ws.WebSocketServer | undefined);
-    broadcastMessage(message: ArrayBuffer): void;
+    protected sendToClient(client: WebSocketServerClient, message: ArrayBuffer): void;
 }
 export default WebSocketServer;

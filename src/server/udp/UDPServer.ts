@@ -148,8 +148,6 @@ class UDPServer extends BaseServer<UDPServerClient> {
     let responseMessages: ArrayBuffer[] = [];
     const context: UDPServerClientContext = { responseMessages, client };
 
-    // FILL - continue?
-
     parseMessage(
       dataView,
       UDPServerMessageTypes,
@@ -174,8 +172,6 @@ class UDPServer extends BaseServer<UDPServerClient> {
     _console.log(
       `received "${messageType}" message from ${client.address}:${client.port}`,
     );
-
-    // FILL - continue?
 
     switch (messageType) {
       case "ping":
@@ -262,14 +258,11 @@ class UDPServer extends BaseServer<UDPServerClient> {
       _console.error("serious error sending data", error);
     }
   }
-  broadcastMessage(message: ArrayBuffer) {
-    super.broadcastMessage(message);
-    this.clients.forEach((client) => {
-      this.#sendToClient(
-        client,
-        createUDPServerMessage({ type: "serverMessage", data: message }),
-      );
-    });
+  protected sendToClient(client: UDPServerClient, message: ArrayBuffer) {
+    this.#sendToClient(
+      client,
+      createUDPServerMessage({ type: "serverMessage", data: message }),
+    );
   }
 
   // REMOVE CLIENT

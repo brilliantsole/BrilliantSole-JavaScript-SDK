@@ -11,7 +11,7 @@ declare class WindowServer extends BaseServer<WindowServerClient> {
     #private;
     static readonly shared: WindowServer;
     constructor();
-    broadcastMessage(message: ArrayBuffer): void;
+    protected sendToClient(client: WindowServerClient, message: ArrayBuffer): void;
 }
 declare const _default: WindowServer;
 export default _default;

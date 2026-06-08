@@ -80,7 +80,7 @@ class WindowServer extends BaseServer<WindowServerClient> {
     return this.clients.find((client) => client.messageChannel?.port1 == port);
   }
 
-  #messageClient(
+  #sendToClient(
     client: WindowServerClient,
     message: ArrayBuffer,
     transfer?: Transferable[] | undefined,
@@ -90,7 +90,7 @@ class WindowServer extends BaseServer<WindowServerClient> {
       return;
     }
 
-    _console.log("messageClient", client, message, { transfer });
+    _console.log("sendToClient", client, message, { transfer });
     const { messageChannel, iframe, didSendMessagePort } = client;
     // _console.log({ messageChannel, didSendMessagePort });
     if (messageChannel && didSendMessagePort) {
@@ -109,14 +109,11 @@ class WindowServer extends BaseServer<WindowServerClient> {
     }
   }
 
-  broadcastMessage(message: ArrayBuffer) {
-    super.broadcastMessage(message);
-    this.clients.forEach((client) => {
-      this.#messageClient(
-        client,
-        createWindowMessage({ type: "serverMessage", data: message }),
-      );
-    });
+  protected sendToClient(client: WindowServerClient, message: ArrayBuffer) {
+    this.#sendToClient(
+      client,
+      createWindowMessage({ type: "serverMessage", data: message }),
+    );
   }
 
   // WINDOW
@@ -274,8 +271,6 @@ class WindowServer extends BaseServer<WindowServerClient> {
       transfer,
     };
 
-    // FILL - continue?
-
     parseMessage(
       dataView,
       WindowMessageTypes,
@@ -289,7 +284,7 @@ class WindowServer extends BaseServer<WindowServerClient> {
     const responseMessage = concatenateArrayBuffers(responseMessages);
     _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
     try {
-      this.#messageClient(client, responseMessage, transfer);
+      this.#sendToClient(client, responseMessage, transfer);
     } catch (error) {
       _console.log("error sending message", error);
     }
@@ -302,8 +297,6 @@ class WindowServer extends BaseServer<WindowServerClient> {
   ) {
     const { responseMessages, transfer, client } = context;
     _console.log("onClientMessage", { messageType }, context);
-
-    // FILL - continue?
 
     switch (messageType) {
       case "ping":

@@ -136,8 +136,6 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
 
     const context: WebSocketServerClientContext = { responseMessages, client };
 
-    // FILL - continue?
-
     parseMessage(
       dataView,
       WebSocketMessageTypes,
@@ -165,8 +163,6 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
     const { responseMessages, client } = context;
 
     _console.log("onClientMessage", { messageType });
-
-    // FILL - continue?
 
     switch (messageType) {
       case "ping":
@@ -202,14 +198,11 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
 
     client.send(message);
   }
-  broadcastMessage(message: ArrayBuffer) {
-    super.broadcastMessage(message);
-    this.clients.forEach((client) => {
-      this.#sendToClient(
-        client,
-        createWebSocketMessage({ type: "serverMessage", data: message }),
-      );
-    });
+  protected sendToClient(client: WebSocketServerClient, message: ArrayBuffer) {
+    this.#sendToClient(
+      client,
+      createWebSocketMessage({ type: "serverMessage", data: message }),
+    );
   }
 
   // PING

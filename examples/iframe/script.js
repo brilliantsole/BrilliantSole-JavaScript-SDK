@@ -62,3 +62,17 @@ const urlRefresh = () => {
 };
 const urlRefreshButton = document.getElementById("urlRefresh");
 urlRefreshButton.addEventListener("click", () => urlRefresh());
+
+BS.WindowServer.clientServerGuardManager.add(
+  (client, messageType, dataView) => {
+    console.log("guard client?", client, messageType, dataView);
+    return true;
+  },
+);
+
+BS.WindowServer.clientDeviceGuardManager.add(
+  (client, device, messageType, dataView) => {
+    console.log("guard client device?", client, device, messageType, dataView);
+    return true;
+  },
+);

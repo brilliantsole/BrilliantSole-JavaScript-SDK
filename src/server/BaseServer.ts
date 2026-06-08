@@ -41,6 +41,7 @@ import DeviceManager, {
 } from "../DeviceManager.ts";
 import { RequiredWifiMessageTypes } from "../WifiManager.ts";
 import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
+import GuardManager from "../utils/GuardManager.ts";
 
 const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...DeviceInformationTypes,
@@ -91,6 +92,14 @@ export interface BaseServerClientContext<
 > {
   client: ServerClient;
   responseMessages: (ArrayBuffer | undefined)[];
+}
+
+export interface BaseServerClientDeviceContext<
+  ServerClient extends BaseServerClient,
+> {
+  client: ServerClient;
+  deviceMessages: DeviceMessage[];
+  device: Device;
 }
 
 abstract class BaseServer<ServerClient extends BaseServerClient> {
@@ -176,8 +185,16 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   // CLIENT MESSAGING
+  protected abstract sendToClient(
+    client: ServerClient,
+    message: ArrayBuffer,
+  ): void;
+
   broadcastMessage(message: ArrayBuffer) {
     _console.log("broadcasting", message);
+    this.clients.forEach((client) => {
+      this.sendToClient(client, message);
+    });
   }
 
   // SCANNER
@@ -354,6 +371,28 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   // PARSING
+  clientToServerGuardManager = new GuardManager<
+    [client: ServerClient, messageType?: ServerMessageType, dataView?: DataView]
+  >();
+  serverToClientGuardManager = new GuardManager<
+    [client: ServerClient, messageType?: ServerMessageType, dataView?: DataView]
+  >();
+  clientToDeviceGuardManager = new GuardManager<
+    [
+      client: ServerClient,
+      device: Device,
+      messageType?: ConnectionMessageType,
+      dataView?: DataView,
+    ]
+  >();
+  deviceToClientGuardManager = new GuardManager<
+    [
+      client: ServerClient,
+      device: Device,
+      messageType?: ConnectionMessageType,
+      dataView?: DataView,
+    ]
+  >();
   protected parseClientMessage(
     client: ServerClient,
     dataView: DataView<ArrayBuffer>,
@@ -365,7 +404,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       client,
     };
 
-    // FILL - continue?
+    if (!this.clientToServerGuardManager.evaluate(client)) {
+      return;
+    }
 
     parseMessage(
       dataView,
@@ -390,9 +431,14 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     _console.log(
       `onClientMessage "${messageType}" (${dataView.byteLength} bytes)`,
     );
+
     const { client, responseMessages } = context;
 
-    // FILL - continue?
+    if (
+      !this.clientToServerGuardManager.evaluate(client, messageType, dataView)
+    ) {
+      return;
+    }
 
     switch (messageType) {
       case "isScanningAvailable":
@@ -467,6 +513,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             dataView.byteOffset + byteOffset,
           );
           const responseMessage = this.parseClientDeviceMessage(
+            client,
             device,
             _dataView,
           );
@@ -514,45 +561,68 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   protected parseClientDeviceMessage(
+    client: ServerClient,
     device: Device,
     dataView: DataView<ArrayBuffer>,
   ) {
     _console.log("onDeviceMessage", device.bluetoothId, dataView);
 
-    let responseMessages: DeviceMessage[] = [];
+    let deviceMessages: DeviceMessage[] = [];
+
+    if (!this.clientToDeviceGuardManager.evaluate(client, device)) {
+      return;
+    }
+
+    const context: BaseServerClientDeviceContext<ServerClient> = {
+      deviceMessages,
+      device,
+      client,
+    };
 
     parseMessage(
       dataView,
       ConnectionMessageTypes,
       this.#parseClientDeviceMessageCallback.bind(this),
-      { responseMessages, device },
+      context,
       true,
     );
 
-    if (responseMessages.length > 0) {
-      return this.#createDeviceServerMessage(device, ...responseMessages);
+    if (deviceMessages.length > 0) {
+      return this.#createDeviceServerMessage(device, ...deviceMessages);
     }
   }
 
   #parseClientDeviceMessageCallback(
     messageType: ConnectionMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: { responseMessages: DeviceMessage[]; device: Device },
+    context: BaseServerClientDeviceContext<ServerClient>,
   ) {
     _console.log(
       `clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`,
     );
+
+    const { client, device, deviceMessages } = context;
+
+    if (
+      !this.clientToDeviceGuardManager.evaluate(
+        client,
+        device,
+        messageType,
+        dataView,
+      )
+    ) {
+      return;
+    }
+
     switch (messageType) {
       case "smp":
-        context.device.connectionManager!.sendSmpMessage(dataView.buffer);
+        device.connectionManager!.sendSmpMessage(dataView.buffer);
         break;
       case "tx":
-        context.device.connectionManager!.sendTxData(dataView.buffer);
+        device.connectionManager!.sendTxData(dataView.buffer);
         break;
       default:
-        context.responseMessages.push(
-          this.#createDeviceMessage(context.device, messageType),
-        );
+        deviceMessages.push(this.#createDeviceMessage(device, messageType));
         break;
     }
   }
