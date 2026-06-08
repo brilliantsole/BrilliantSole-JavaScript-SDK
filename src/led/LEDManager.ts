@@ -3,7 +3,10 @@ import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import Device, { SendMessageCallback } from "../Device.ts";
 import autoBind from "auto-bind";
 import EventDispatcher from "../utils/EventDispatcher.ts";
-import { DisplayColorRGB } from "../utils/DisplayUtils.ts";
+import {
+  DisplayColorRGB,
+  DisplayColorRGBOrString,
+} from "../utils/DisplayUtils.ts";
 import {
   areColorsEqual,
   blackColor,
@@ -73,7 +76,7 @@ export type LedEventDispatcher = EventDispatcher<
 
 interface LedColorConfiguration {
   index: number;
-  color: DisplayColorRGB | string;
+  color: DisplayColorRGBOrString;
 }
 interface LedBrightnessConfiguration {
   index: number;

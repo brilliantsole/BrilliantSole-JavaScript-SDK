@@ -1,6 +1,6 @@
 import Device, { SendMessageCallback } from "../Device.ts";
 import EventDispatcher from "../utils/EventDispatcher.ts";
-import { DisplayColorRGB } from "../utils/DisplayUtils.ts";
+import { DisplayColorRGB, DisplayColorRGBOrString } from "../utils/DisplayUtils.ts";
 export declare const LedTypes: readonly ["digitalSingle", "analogSingle", "digitalRGB", "analogRGB"];
 export type LedType = (typeof LedTypes)[number];
 export declare const LedValueTypes: readonly ["color", "brightness"];
@@ -33,7 +33,7 @@ export type SendLedMessageCallback = SendMessageCallback<LedMessageType>;
 export type LedEventDispatcher = EventDispatcher<Device, LedEventType, LedEventMessages>;
 interface LedColorConfiguration {
     index: number;
-    color: DisplayColorRGB | string;
+    color: DisplayColorRGBOrString;
 }
 interface LedBrightnessConfiguration {
     index: number;

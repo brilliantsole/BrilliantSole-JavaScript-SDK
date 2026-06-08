@@ -16,7 +16,7 @@ window.device = device;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -80,7 +80,7 @@ orientationSelect.addEventListener("input", () => {
       break;
     default:
       console.error(
-        `uncaught orientationSelect value "${orientationSelect.value}"`
+        `uncaught orientationSelect value "${orientationSelect.value}"`,
       );
       break;
   }
@@ -183,7 +183,7 @@ const updatePosition = (position) => {
   _position.copy(position).multiplyScalar(window.positionScalar);
   targetPositionEntity.object3D.position.lerp(
     _position,
-    window.interpolationSmoothing
+    window.interpolationSmoothing,
   );
 };
 
@@ -220,7 +220,7 @@ const updateQuaternion = (quaternion, applyOffset = false) => {
   }
   targetRotationEntity.object3D.quaternion.slerp(
     targetQuaternion,
-    window.interpolationSmoothing
+    window.interpolationSmoothing,
   );
 };
 
@@ -256,3 +256,100 @@ device.addEventListener("gyroscope", (event) => {
   gyroscopeQuaternion.setFromEuler(gyroscopeEuler);
   updateQuaternion(gyroscopeQuaternion);
 });
+
+// LED
+
+const { lerp, inverseLerp, clamp } = THREE.MathUtils;
+
+THREE.MathUtils.inverseLerp;
+
+window.pitchMax = 30;
+/** @param {BS.Euler} orientation */
+const getTilt = (orientation) => {
+  const { pitch, roll } = orientation;
+  const pitchAbs = Math.abs(pitch);
+  const pitchLerp = inverseLerp(0, window.pitchMax, pitchAbs);
+  const clampedPitchLerp = clamp(pitchLerp, 0, 1);
+  const tilt = clampedPitchLerp;
+  // console.log({ pitch, pitchAbs, pitchLerp, clampedPitchLerp, tilt });
+  // console.log({ tilt });
+  return tilt;
+};
+
+/** @type {BS.Led[]} */
+let colorLeds = [];
+device.addEventListener("getLedInformation", (event) => {
+  colorLeds = event.message.leds.filter((led) => led.type == "analogRGB");
+  console.log(colorLeds);
+});
+
+const ledColorInput = document.getElementById("ledColor");
+ledColorInput.addEventListener("focusin", () => {
+  console.log("focusin", ledColorInput);
+  ledColorInput.isChanging = true;
+});
+ledColorInput.addEventListener("focusout", () => {
+  console.log("focusout", ledColorInput);
+  ledColorInput.isChanging = false;
+});
+ledColorInput.addEventListener("change", (event) => {
+  console.log("change", ledColorInput);
+  ledColorInput.isChanging = false;
+});
+
+ledColorInput.addEventListener("input", (event) => {
+  setColor(ledColorInput.value);
+});
+
+/** @param {BS.DisplayColorRGBOrString} color */
+let setColor = (color, overwrite = false) => {
+  if (!device.isConnected) {
+    return;
+  }
+  if (!ledColorInput.isChanging && !overwrite) {
+    return;
+  }
+  if (colorLeds.length == 0) {
+    return;
+  }
+  device.setLeds(colorLeds.map((led) => ({ index: led.index, color })));
+  ledColorInput.value = color;
+};
+setColor = BS.ThrottleUtils.throttle(setColor, 20, true);
+
+device.addEventListener("orientation", (event) => {
+  const { orientation } = event.message;
+  const tilt = getTilt(orientation);
+  /** @type {BS.DisplayColorRGBOrString} */
+  const color = `hsl(${lerp(120, 0, tilt)}, 100%, ${lerp(0, 50, tilt)}%)`;
+  setColor(color, true);
+});
+
+// VIBRATION
+
+let vibrationInterval = 1000;
+device.addEventListener("orientation", (event) => {
+  const { orientation } = event.message;
+  const tilt = getTilt(orientation);
+  if (false && tilt == 1) {
+    const amplitude = 1;
+    const duration = 500;
+
+    vibrate({
+      type: "waveform",
+      segments: [{ amplitude, duration }],
+    });
+  }
+});
+
+/** @param {BS.VibrationConfiguration} vibrationConfiguration */
+let vibrate = (vibrationConfiguration) => {
+  if (!device.isConnected) {
+    return;
+  }
+  if (!device.hasVibration) {
+    return;
+  }
+  device.triggerVibration(vibrationConfiguration);
+};
+vibrate = BS.ThrottleUtils.throttle(vibrate, vibrationInterval, true);

@@ -35,6 +35,8 @@ interface UDPServerClient extends dgram.RemoteInfo, BaseServerClient {
   lastTimeSentData: number;
 }
 
+export interface UDPServerClientContext extends BaseServerClientContext<UDPServerClient> {}
+
 class UDPServer extends BaseServer<UDPServerClient> {
   #getClientByRemoteInfo(
     remoteInfo: dgram.RemoteInfo,
@@ -144,39 +146,37 @@ class UDPServer extends BaseServer<UDPServerClient> {
       dataView.buffer,
     );
     let responseMessages: ArrayBuffer[] = [];
+    const context: UDPServerClientContext = { responseMessages, client };
+
+    // FILL - continue?
+
     parseMessage(
       dataView,
       UDPServerMessageTypes,
-      this.#onClientUDPMessage.bind(this),
-      { responseMessages, client },
+      this.#onClientMessage.bind(this),
+      context,
       true,
     );
 
     responseMessages = responseMessages.filter(Boolean);
 
-    if (responseMessages.length == 0) {
-      _console.log("no response to send");
-      return;
-    }
-
-    if (client.receivePort == undefined) {
-      _console.log("client has no defined receivePort");
-      return;
-    }
-
     const response = concatenateArrayBuffers(responseMessages);
     _console.log(`responding with ${response.byteLength} bytes...`, response);
     this.#sendToClient(client, response);
   }
-  #onClientUDPMessage(
+  #onClientMessage(
     messageType: UDPServerMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: BaseServerClientContext<UDPServerClient>,
+    context: UDPServerClientContext,
   ) {
     const { client, responseMessages } = context;
+
     _console.log(
       `received "${messageType}" message from ${client.address}:${client.port}`,
     );
+
+    // FILL - continue?
+
     switch (messageType) {
       case "ping":
         responseMessages.push(this.#createPongMessage(context));
@@ -187,7 +187,7 @@ class UDPServer extends BaseServer<UDPServerClient> {
         responseMessages.push(this.#parseRemoteReceivePort(dataView, client));
         break;
       case "serverMessage":
-        const responseMessage = this.parseClientMessage(dataView);
+        const responseMessage = this.parseClientMessage(client, dataView);
         if (responseMessage) {
           responseMessages.push(
             createUDPServerMessage({
@@ -229,6 +229,16 @@ class UDPServer extends BaseServer<UDPServerClient> {
 
   // CLIENT MESSAGING
   #sendToClient(client: UDPServerClient, message: ArrayBuffer) {
+    if (message.byteLength == 0) {
+      _console.log("no response to send");
+      return;
+    }
+
+    if (client.receivePort == undefined) {
+      _console.log("client has no defined receivePort");
+      return;
+    }
+
     _console.log(
       `sending ${message.byteLength} bytes to ${this.#clientToString(
         client,

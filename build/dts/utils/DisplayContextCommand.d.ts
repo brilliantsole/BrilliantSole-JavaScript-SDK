@@ -2,7 +2,7 @@ import { DisplayBezierCurve, DisplayBitmap, DisplayBitmapColorPair, DisplaySprit
 import { DisplayAlignment, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import { DisplaySpriteSerializedLines } from "./DisplaySpriteSheetUtils.ts";
-import { DisplayColorRGB } from "./DisplayUtils.ts";
+import { DisplayColorRGBOrString } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
 export declare const DisplayContextCommandTypes: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setIgnoreFill", "setIgnoreLine", "setFillBackground", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesLineHeight", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlignment", "setSpritesLineAlignment", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawWireframe", "drawQuadraticBezierCurve", "drawQuadraticBezierCurves", "drawCubicBezierCurve", "drawCubicBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites", "startSprite", "endSprite", "clearContext"];
 export type DisplayContextCommandType = (typeof DisplayContextCommandTypes)[number];
@@ -18,7 +18,7 @@ export interface SimpleDisplayCommand extends BaseDisplayContextCommand {
 export interface SetDisplayColorCommand extends BaseDisplayContextCommand {
     type: "setColor";
     colorIndex: number;
-    color: DisplayColorRGB | string;
+    color: DisplayColorRGBOrString;
 }
 export interface SetDisplayColorOpacityCommand extends BaseDisplayContextCommand {
     type: "setColorOpacity";

@@ -210,7 +210,7 @@ interface DisplayManagerInterface {
     clear(sendImmediately?: boolean): Promise<void>;
     get colors(): string[];
     get numberOfColors(): number;
-    setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     assertValidColorIndex(colorIndex: number): void;
     assertValidLineWidth(lineWidth: number): void;
     assertValidNumberOfColors(numberOfColors: number): void;
@@ -255,7 +255,7 @@ interface DisplayManagerInterface {
     get bitmapColorIndices(): number[];
     get bitmapColors(): string[];
     selectBitmapColors(bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
-    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleDirection(direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
@@ -267,7 +267,7 @@ interface DisplayManagerInterface {
     get spriteColors(): string[];
     selectSpriteColors(spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean): Promise<void>;
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
-    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
@@ -369,7 +369,7 @@ interface SimpleDisplayCommand extends BaseDisplayContextCommand {
 interface SetDisplayColorCommand extends BaseDisplayContextCommand {
     type: "setColor";
     colorIndex: number;
-    color: DisplayColorRGB | string;
+    color: DisplayColorRGBOrString;
 }
 interface SetDisplayColorOpacityCommand extends BaseDisplayContextCommand {
     type: "setColorOpacity";
@@ -887,6 +887,7 @@ type DisplayColorRGB = {
     g: number;
     b: number;
 };
+type DisplayColorRGBOrString = DisplayColorRGB | string;
 declare const displayCurveTypeToNumberOfControlPoints: Record<DisplayBezierCurveType, number>;
 declare function isWireframePolygon({ points, edges, }: DisplayWireframe): Vector2[] | undefined;
 declare function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe): DisplayWireframe;
@@ -918,7 +919,7 @@ interface LedEventMessages {
 }
 interface LedColorConfiguration {
     index: number;
-    color: DisplayColorRGB | string;
+    color: DisplayColorRGBOrString;
 }
 interface LedBrightnessConfiguration {
     index: number;
@@ -1878,7 +1879,7 @@ declare class Device {
     get isDisplayAwake(): boolean;
     get showDisplay(): (sendImmediately?: boolean) => Promise<void>;
     get clearDisplay(): (sendImmediately?: boolean) => Promise<void>;
-    get setDisplayColor(): (colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayColor(): (colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean) => Promise<void>;
     get setDisplayColorOpacity(): (colorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayOpacity(): (opacity: number, sendImmediately?: boolean) => Promise<void>;
     get saveDisplayContext(): (sendImmediately?: boolean) => Promise<void>;
@@ -1941,7 +1942,7 @@ declare class Device {
     get setDisplayContextState(): (newState: PartialDisplayContextState, sendImmediately?: boolean) => Promise<void>;
     get selectDisplayBitmapColor(): (bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean) => Promise<void>;
     get selectDisplayBitmapColors(): (bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean) => Promise<void>;
-    get setDisplayBitmapColor(): (bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayBitmapColor(): (bitmapColorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapColorOpacity(): (bitmapColorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapScaleDirection(): (direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapScaleX(): (bitmapScaleX: number, sendImmediately?: boolean) => Promise<void>;
@@ -1950,7 +1951,7 @@ declare class Device {
     get resetDisplayBitmapScale(): (sendImmediately?: boolean) => Promise<void>;
     get selectDisplaySpriteColor(): (spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean) => Promise<void>;
     get selectDisplaySpriteColors(): (spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean) => Promise<void>;
-    get setDisplaySpriteColor(): (spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteColor(): (spriteColorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean) => Promise<void>;
     get setDisplaySpriteColorOpacity(): (spriteColorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
     get resetDisplaySpriteColors(): (sendImmediately?: boolean) => Promise<void>;
     get setDisplaySpriteScaleDirection(): (direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean) => Promise<void>;
@@ -2198,7 +2199,7 @@ interface ServerEventMessages<ServerClient extends BaseServerClient> {
     };
 }
 type ServerEventDispatcher<ServerClient extends BaseServerClient> = EventDispatcher<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
-declare abstract class BaseServer<ServerClient extends BaseServerClient = BaseServerClient> {
+declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     #private;
     protected eventDispatcher: ServerEventDispatcher<ServerClient>;
     get addEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
@@ -2226,7 +2227,7 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient = BaseSe
     get clearSensorConfigurationsWhenNoClients(): boolean;
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
     broadcastMessage(message: ArrayBuffer): void;
-    protected parseClientMessage(dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
+    protected parseClientMessage(client: ServerClient, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
     protected parseClientDeviceMessage(device: Device, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
 }
 
@@ -2395,7 +2396,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     set interval(newInterval: number);
     get isReady(): boolean;
     clear(sendImmediately?: boolean): Promise<void>;
-    setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
     saveContext(sendImmediately?: boolean): Promise<void>;
@@ -2437,7 +2438,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get bitmapColors(): string[];
     selectBitmapColor(bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectBitmapColors(bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
-    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleDirection(direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
@@ -2450,7 +2451,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get spriteBitmapColors(): string[];
     selectSpriteColor(spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectSpriteColors(spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean): Promise<void>;
-    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
     setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
@@ -2702,4 +2703,4 @@ declare const ThrottleUtils: {
 };
 
 export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, _default$2 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment_d as Environment, EventUtils, FileTransferDirections, FileTypes, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, _default$1 as WindowClient, _default as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait };
-export type { BoundDeviceEventListeners, BoundDeviceManagerEventListeners, BoundDevicePairEventListeners, CameraCommand, CameraConfiguration, CameraConfigurationType, CenterOfPressure, ConnectionEventType, ConnectionMessageType, ContinuousSensorType, DeviceEvent, DeviceEventListenerMap, DeviceEventMap, DeviceInformation, DeviceManagerEvent, DeviceManagerEventListenerMap, DeviceManagerEventMap, DevicePairEvent, DevicePairEventListenerMap, DevicePairEventMap, DevicePairType, DeviceType, DiscoveredDevice, DisplayAlignment, DisplayBezierCurveType, DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayCanvasHelperEvent, DisplayCanvasHelperEventListenerMap, DisplayCanvasHelperEventMap, DisplayColorRGB, DisplayContextCommand, DisplayContextCommandType, DisplayDirection, DisplaySegmentCap, DisplaySize, DisplaySprite, DisplaySpriteColorPair, DisplaySpriteContextCommandType, DisplaySpriteLine, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSubLine, DisplayWireframe, DisplayWireframeEdge, Euler, FileTransferDirection, FileType, FontMetrics, FontToSpriteSheetOptions, LedConfiguration, LedType, LedValue, LedValueType, MicrophoneBitDepth, MicrophoneCommand, MicrophoneConfiguration, MicrophoneConfigurationType, MicrophoneSampleRate, PressureData, PressureSensorPosition, PressureSensorValue, Quaternion, Range, SensorConfiguration, SensorType, Side, TfliteFileConfiguration, TfliteSensorType, TfliteTask, TxRxMessageType, Vector2, Vector3, VibrationConfiguration, VibrationLocation, VibrationType, VibrationWaveformConfiguration, VibrationWaveformEffect, VibrationWaveformEffectConfiguration, VibrationWaveformEffectSegment, VibrationWaveformSegment };
+export type { BoundDeviceEventListeners, BoundDeviceManagerEventListeners, BoundDevicePairEventListeners, CameraCommand, CameraConfiguration, CameraConfigurationType, CenterOfPressure, ConnectionEventType, ConnectionMessageType, ContinuousSensorType, DeviceEvent, DeviceEventListenerMap, DeviceEventMap, DeviceInformation, DeviceManagerEvent, DeviceManagerEventListenerMap, DeviceManagerEventMap, DevicePairEvent, DevicePairEventListenerMap, DevicePairEventMap, DevicePairType, DeviceType, DiscoveredDevice, DisplayAlignment, DisplayBezierCurveType, DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayCanvasHelperEvent, DisplayCanvasHelperEventListenerMap, DisplayCanvasHelperEventMap, DisplayColorRGB, DisplayColorRGBOrString, DisplayContextCommand, DisplayContextCommandType, DisplayDirection, DisplaySegmentCap, DisplaySize, DisplaySprite, DisplaySpriteColorPair, DisplaySpriteContextCommandType, DisplaySpriteLine, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSubLine, DisplayWireframe, DisplayWireframeEdge, Euler, FileTransferDirection, FileType, FontMetrics, FontToSpriteSheetOptions, Led, LedConfiguration, LedType, LedValue, LedValueType, MicrophoneBitDepth, MicrophoneCommand, MicrophoneConfiguration, MicrophoneConfigurationType, MicrophoneSampleRate, PressureData, PressureSensorPosition, PressureSensorValue, Quaternion, Range, SensorConfiguration, SensorType, Side, TfliteFileConfiguration, TfliteSensorType, TfliteTask, TxRxMessageType, Vector2, Vector3, VibrationConfiguration, VibrationLocation, VibrationType, VibrationWaveformConfiguration, VibrationWaveformEffect, VibrationWaveformEffectConfiguration, VibrationWaveformEffectSegment, VibrationWaveformSegment };

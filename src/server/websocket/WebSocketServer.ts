@@ -8,7 +8,10 @@ import {
   dataToArrayBuffer,
 } from "../../utils/ArrayBufferUtils.ts";
 import { Timer } from "../../utils/Timer.ts";
-import BaseServer, { BaseServerClient } from "../BaseServer.ts";
+import BaseServer, {
+  BaseServerClient,
+  BaseServerClientContext,
+} from "../BaseServer.ts";
 import {
   webSocketPingMessage,
   webSocketPongMessage,
@@ -29,6 +32,8 @@ interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
   isAlive: boolean;
   pingClientTimer?: Timer;
 }
+
+export interface WebSocketServerClientContext extends BaseServerClientContext<WebSocketServerClient> {}
 
 class WebSocketServer extends BaseServer<WebSocketServerClient> {
   // WEBSOCKET SERVER
@@ -129,25 +134,24 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
   ) {
     let responseMessages: ArrayBuffer[] = [];
 
+    const context: WebSocketServerClientContext = { responseMessages, client };
+
+    // FILL - continue?
+
     parseMessage(
       dataView,
       WebSocketMessageTypes,
       this.#onClientMessage.bind(this),
-      { responseMessages },
+      context,
       true,
     );
 
     responseMessages = responseMessages.filter(Boolean);
 
-    if (responseMessages.length == 0) {
-      _console.log("nothing to send back");
-      return;
-    }
-
     const responseMessage = concatenateArrayBuffers(responseMessages);
     _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
     try {
-      client.send(responseMessage);
+      this.#sendToClient(client, responseMessage);
     } catch (error) {
       _console.log("error sending message", error);
     }
@@ -156,9 +160,14 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
   #onClientMessage(
     messageType: WebSocketMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: { responseMessages: (ArrayBuffer | undefined)[] },
+    context: WebSocketServerClientContext,
   ) {
-    const { responseMessages } = context;
+    const { responseMessages, client } = context;
+
+    _console.log("onClientMessage", { messageType });
+
+    // FILL - continue?
+
     switch (messageType) {
       case "ping":
         responseMessages.push(webSocketPongMessage);
@@ -166,7 +175,7 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
       case "pong":
         break;
       case "serverMessage":
-        const responseMessage = this.parseClientMessage(dataView);
+        const responseMessage = this.parseClientMessage(client, dataView);
         if (responseMessage) {
           responseMessages.push(
             createWebSocketMessage({
@@ -183,10 +192,21 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
   }
 
   // CLIENT MESSAGING
+  #sendToClient(client: WebSocketServerClient, message: ArrayBuffer) {
+    if (message.byteLength == 0) {
+      _console.log("nothing to send back");
+      return;
+    }
+
+    _console.log(`sending ${message.byteLength} bytes to client`);
+
+    client.send(message);
+  }
   broadcastMessage(message: ArrayBuffer) {
     super.broadcastMessage(message);
-    this.server!.clients.forEach((client) => {
-      client.send(
+    this.clients.forEach((client) => {
+      this.#sendToClient(
+        client,
         createWebSocketMessage({ type: "serverMessage", data: message }),
       );
     });
@@ -199,7 +219,7 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
       return;
     }
     client.isAlive = false;
-    client.send(webSocketPingMessage);
+    this.#sendToClient(client, webSocketPingMessage);
   }
 }
 

@@ -93,9 +93,7 @@ export interface BaseServerClientContext<
   responseMessages: (ArrayBuffer | undefined)[];
 }
 
-abstract class BaseServer<
-  ServerClient extends BaseServerClient = BaseServerClient,
-> {
+abstract class BaseServer<ServerClient extends BaseServerClient> {
   // EVENT DISPATCHER
   protected eventDispatcher: ServerEventDispatcher<ServerClient> =
     new EventDispatcher(this as BaseServer<ServerClient>, ServerEventTypes);
@@ -356,14 +354,24 @@ abstract class BaseServer<
   }
 
   // PARSING
-  protected parseClientMessage(dataView: DataView<ArrayBuffer>) {
+  protected parseClientMessage(
+    client: ServerClient,
+    dataView: DataView<ArrayBuffer>,
+  ) {
     let responseMessages: ArrayBuffer[] = [];
+
+    const context: BaseServerClientContext<BaseServerClient> = {
+      responseMessages,
+      client,
+    };
+
+    // FILL - continue?
 
     parseMessage(
       dataView,
       ServerMessageTypes,
       this.#onClientMessage.bind(this),
-      { responseMessages },
+      context,
       true,
     );
 
@@ -382,7 +390,9 @@ abstract class BaseServer<
     _console.log(
       `onClientMessage "${messageType}" (${dataView.byteLength} bytes)`,
     );
-    const { responseMessages } = context;
+    const { client, responseMessages } = context;
+
+    // FILL - continue?
 
     switch (messageType) {
       case "isScanningAvailable":
@@ -500,6 +510,7 @@ abstract class BaseServer<
         _console.error(`uncaught messageType "${messageType}"`);
         break;
     }
+    _console.log(responseMessages);
   }
 
   protected parseClientDeviceMessage(

@@ -252,7 +252,7 @@ declare class Device {
     get isDisplayAwake(): boolean;
     get showDisplay(): (sendImmediately?: boolean) => Promise<void>;
     get clearDisplay(): (sendImmediately?: boolean) => Promise<void>;
-    get setDisplayColor(): (colorIndex: number, color: import("./BS.ts").DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayColor(): (colorIndex: number, color: import("./BS.ts").DisplayColorRGBOrString, sendImmediately?: boolean) => Promise<void>;
     get setDisplayColorOpacity(): (colorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayOpacity(): (opacity: number, sendImmediately?: boolean) => Promise<void>;
     get saveDisplayContext(): (sendImmediately?: boolean) => Promise<void>;
@@ -315,7 +315,7 @@ declare class Device {
     get setDisplayContextState(): (newState: import("./utils/DisplayContextState.ts").PartialDisplayContextState, sendImmediately?: boolean) => Promise<void>;
     get selectDisplayBitmapColor(): (bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean) => Promise<void>;
     get selectDisplayBitmapColors(): (bitmapColorPairs: import("./DisplayManager.ts").DisplayBitmapColorPair[], sendImmediately?: boolean) => Promise<void>;
-    get setDisplayBitmapColor(): (bitmapColorIndex: number, color: import("./BS.ts").DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayBitmapColor(): (bitmapColorIndex: number, color: import("./BS.ts").DisplayColorRGBOrString, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapColorOpacity(): (bitmapColorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapScaleDirection(): (direction: import("./utils/DisplayUtils.ts").DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapScaleX(): (bitmapScaleX: number, sendImmediately?: boolean) => Promise<void>;
@@ -324,7 +324,7 @@ declare class Device {
     get resetDisplayBitmapScale(): (sendImmediately?: boolean) => Promise<void>;
     get selectDisplaySpriteColor(): (spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean) => Promise<void>;
     get selectDisplaySpriteColors(): (spriteColorPairs: import("./DisplayManager.ts").DisplaySpriteColorPair[], sendImmediately?: boolean) => Promise<void>;
-    get setDisplaySpriteColor(): (spriteColorIndex: number, color: import("./BS.ts").DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteColor(): (spriteColorIndex: number, color: import("./BS.ts").DisplayColorRGBOrString, sendImmediately?: boolean) => Promise<void>;
     get setDisplaySpriteColorOpacity(): (spriteColorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
     get resetDisplaySpriteColors(): (sendImmediately?: boolean) => Promise<void>;
     get setDisplaySpriteScaleDirection(): (direction: import("./utils/DisplayUtils.ts").DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean) => Promise<void>;

@@ -3439,7 +3439,7 @@ const setLedTemplates = {
   analogRGB: document.getElementById("analogRGBLedTemplate"),
 };
 
-let ledInterval = 50;
+let ledInterval = 20;
 /** @type {{range?: HTMLInputElement, colorInput?: HTMLInputElement, checkbox?: HTMLInputElement}[]} */
 const setLedContainers = [];
 device.addEventListener("getLedInformation", (event) => {

@@ -2,7 +2,7 @@ import Device from "../Device.ts";
 import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap, DisplayBezierCurve, DisplayBezierCurveType, DisplayWireframe } from "../DisplayManager.ts";
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
-import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
+import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection, DisplayColorRGBOrString } from "./DisplayUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
@@ -127,7 +127,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     set interval(newInterval: number);
     get isReady(): boolean;
     clear(sendImmediately?: boolean): Promise<void>;
-    setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
     saveContext(sendImmediately?: boolean): Promise<void>;
@@ -169,7 +169,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get bitmapColors(): string[];
     selectBitmapColor(bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectBitmapColors(bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
-    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleDirection(direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
@@ -182,7 +182,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get spriteBitmapColors(): string[];
     selectSpriteColor(spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectSpriteColors(spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean): Promise<void>;
-    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
     setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;

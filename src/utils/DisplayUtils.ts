@@ -38,7 +38,7 @@ const _console = createConsole("DisplayUtils", { log: false });
 export function formatRotation(
   rotation: number,
   isRadians?: boolean,
-  isSigned?: boolean
+  isSigned?: boolean,
 ) {
   if (isRadians) {
     const rotationRad = rotation;
@@ -84,7 +84,7 @@ export function assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
 }
 
 export function assertValidDisplayBrightness(
-  displayBrightness: DisplayBrightness
+  displayBrightness: DisplayBrightness,
 ) {
   _console.assertEnumWithError(displayBrightness, DisplayBrightnesses);
 }
@@ -226,7 +226,7 @@ export function pixelDepthToPixelBitWidth(pixelDepth: DisplayPixelDepth) {
 }
 export function numberOfColorsToPixelDepth(numberOfColors: number) {
   return DisplayPixelDepths.find(
-    (pixelDepth) => numberOfColors <= pixelDepthToNumberOfColors(pixelDepth)
+    (pixelDepth) => numberOfColors <= pixelDepthToNumberOfColors(pixelDepth),
   );
 }
 
@@ -256,6 +256,7 @@ export type DisplayColorRGB = {
   g: number;
   b: number;
 };
+export type DisplayColorRGBOrString = DisplayColorRGB | string;
 export type DisplayColorYCbCr = {
   y: number;
   cb: number;
@@ -271,7 +272,7 @@ export function assertValidDirection(direction: DisplayDirection) {
 }
 
 export function assertValidAlignmentDirection(
-  direction: DisplayAlignmentDirection
+  direction: DisplayAlignmentDirection,
 ) {
   _console.assertEnumWithError(direction, DisplayAlignmentDirections);
 }
@@ -291,7 +292,7 @@ export const maxNumberOfDisplayCurvePoints = 200;
 export function assertValidNumberOfControlPoints(
   curveType: DisplayBezierCurveType,
   controlPoints: Vector2[],
-  isPath = false
+  isPath = false,
 ) {
   let numberOfControlPoints =
     displayCurveTypeToNumberOfControlPoints[curveType];
@@ -300,18 +301,18 @@ export function assertValidNumberOfControlPoints(
   }
   _console.assertWithError(
     controlPoints.length == numberOfControlPoints,
-    `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`
+    `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`,
   );
 }
 export function assertValidPathNumberOfControlPoints(
   curveType: DisplayBezierCurveType,
-  controlPoints: Vector2[]
+  controlPoints: Vector2[],
 ) {
   const numberOfControlPoints =
     displayCurveTypeToNumberOfControlPoints[curveType];
   _console.assertWithError(
     (controlPoints.length - 1) % (numberOfControlPoints - 1) == 0,
-    `invalid number of path control points ${controlPoints.length} for path "${curveType}"`
+    `invalid number of path control points ${controlPoints.length} for path "${curveType}"`,
   );
 }
 
@@ -331,13 +332,13 @@ export function assertValidWireframe({ points, edges }: DisplayWireframe) {
       `edgeStartIndex.${index}`,
       edge.startIndex,
       0,
-      points.length
+      points.length,
     );
     _console.assertRangeWithError(
       `edgeEndIndex.${index}`,
       edge.endIndex,
       0,
-      points.length
+      points.length,
     );
   });
 }
@@ -359,7 +360,7 @@ export function isWireframePolygon({
     } else {
       const startIndex = pointIndices.at(-1);
       const edge = _edges.find(
-        (edge) => edge.startIndex == startIndex || edge.endIndex == startIndex
+        (edge) => edge.startIndex == startIndex || edge.endIndex == startIndex,
       );
       _console.log(i, "edge", edge);
       if (edge) {
@@ -412,7 +413,7 @@ export function mergeWireframes(a: DisplayWireframe, b: DisplayWireframe) {
 export function intersectWireframes(
   a: DisplayWireframe,
   b: DisplayWireframe,
-  ignoreDirection = true
+  ignoreDirection = true,
 ) {
   a = trimWireframe(a);
   b = trimWireframe(b);
@@ -486,7 +487,7 @@ export function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe {
     let endPoint = points[endIndex];
 
     let trimmedStartIndex = trimmedPoints.findIndex(
-      ({ x, y }) => startPoint.x == x && startPoint.y == y
+      ({ x, y }) => startPoint.x == x && startPoint.y == y,
     );
     if (trimmedStartIndex == -1) {
       //_console.log("adding startPoint", startPoint);
@@ -495,7 +496,7 @@ export function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe {
     }
 
     let trimmedEndIndex = trimmedPoints.findIndex(
-      ({ x, y }) => endPoint.x == x && endPoint.y == y
+      ({ x, y }) => endPoint.x == x && endPoint.y == y,
     );
     if (trimmedEndIndex == -1) {
       //_console.log("adding endPoint", endPoint);
@@ -509,7 +510,8 @@ export function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe {
     };
     let trimmedEdgeIndex = trimmedEdges.findIndex(
       ({ startIndex, endIndex }) =>
-        startIndex == trimmedEdge.startIndex && endIndex == trimmedEdge.endIndex
+        startIndex == trimmedEdge.startIndex &&
+        endIndex == trimmedEdge.endIndex,
     );
     if (trimmedEdgeIndex == -1) {
       //_console.log("adding edge", trimmedEdge);
@@ -537,7 +539,7 @@ export function getPointDataType(points: Vector2[]): DisplayPointDataType {
 export function serializePoints(
   points: Vector2[],
   pointDataType?: DisplayPointDataType,
-  isPath = false
+  isPath = false,
 ) {
   pointDataType = pointDataType || getPointDataType(points);
   _console.assertEnumWithError(pointDataType, DisplayPointDataTypes);
@@ -548,7 +550,7 @@ export function serializePoints(
   }
   const dataView = new DataView(new ArrayBuffer(dataViewLength));
   _console.log(
-    `serializing ${points.length} ${pointDataType} points (${dataView.byteLength} bytes)...`
+    `serializing ${points.length} ${pointDataType} points (${dataView.byteLength} bytes)...`,
   );
   let offset = 0;
   if (!isPath) {

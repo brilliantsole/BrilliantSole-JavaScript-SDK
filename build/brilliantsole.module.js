@@ -13195,7 +13195,8 @@ function trimWireframe(wireframe) {
             startIndex: trimmedStartIndex,
             endIndex: trimmedEndIndex,
         };
-        let trimmedEdgeIndex = trimmedEdges.findIndex(({ startIndex, endIndex }) => startIndex == trimmedEdge.startIndex && endIndex == trimmedEdge.endIndex);
+        let trimmedEdgeIndex = trimmedEdges.findIndex(({ startIndex, endIndex }) => startIndex == trimmedEdge.startIndex &&
+            endIndex == trimmedEdge.endIndex);
         if (trimmedEdgeIndex == -1) {
             trimmedEdges.push(trimmedEdge);
             trimmedEdgeIndex = trimmedEdges.length - 1;
@@ -37551,7 +37552,7 @@ const windowMessageKey = "BrilliantWear";
 const windowPingMessage = createWindowMessage("ping");
 const windowPongMessage = createWindowMessage("pong");
 
-const _console$9 = createConsole("WindowClient", { log: true });
+const _console$9 = createConsole("WindowClient", { log: false });
 class WindowClient extends BaseClient {
     static shared = new WindowClient();
     constructor() {
@@ -38092,9 +38093,13 @@ class BaseServer {
             data: [device.bluetoothId, createDeviceMessage(...messages)],
         });
     }
-    parseClientMessage(dataView) {
+    parseClientMessage(client, dataView) {
         let responseMessages = [];
-        parseMessage(dataView, ServerMessageTypes, this.#onClientMessage.bind(this), { responseMessages }, true);
+        const context = {
+            responseMessages,
+            client,
+        };
+        parseMessage(dataView, ServerMessageTypes, this.#onClientMessage.bind(this), context, true);
         responseMessages = responseMessages.filter(Boolean);
         if (responseMessages.length > 0) {
             return concatenateArrayBuffers(responseMessages);
@@ -38102,7 +38107,7 @@ class BaseServer {
     }
     #onClientMessage(messageType, dataView, context) {
         _console$6.log(`onClientMessage "${messageType}" (${dataView.byteLength} bytes)`);
-        const { responseMessages } = context;
+        const { client, responseMessages } = context;
         switch (messageType) {
             case "isScanningAvailable":
                 responseMessages.push(this.#isScanningAvailableMessage);
@@ -38194,6 +38199,7 @@ class BaseServer {
                 _console$6.error(`uncaught messageType "${messageType}"`);
                 break;
         }
+        _console$6.log(responseMessages);
     }
     parseClientDeviceMessage(device, dataView) {
         _console$6.log("onDeviceMessage", device.bluetoothId, dataView);
@@ -38220,7 +38226,7 @@ class BaseServer {
 }
 _a = BaseServer;
 
-const _console$5 = createConsole("WindowServer", { log: true });
+const _console$5 = createConsole("WindowServer", { log: false });
 class WindowServer extends BaseServer {
     static shared = new WindowServer();
     constructor() {
@@ -38261,6 +38267,10 @@ class WindowServer extends BaseServer {
         return this.clients.find((client) => client.messageChannel?.port1 == port);
     }
     #messageClient(client, message, transfer) {
+        if (message.byteLength == 0) {
+            _console$5.log("nothing to send to client");
+            return;
+        }
         _console$5.log("messageClient", client, message, { transfer });
         const { messageChannel, iframe, didSendMessagePort } = client;
         if (messageChannel && didSendMessagePort) {
@@ -38388,12 +38398,13 @@ class WindowServer extends BaseServer {
     #parseWindowServerClientMessage(client, dataView) {
         let responseMessages = [];
         let transfer = [];
-        parseMessage(dataView, WindowMessageTypes, this.#onClientMessage.bind(this), { responseMessages, transfer, client }, true);
+        const context = {
+            responseMessages,
+            client,
+            transfer,
+        };
+        parseMessage(dataView, WindowMessageTypes, this.#onClientMessage.bind(this), context, true);
         responseMessages = responseMessages.filter(Boolean);
-        if (responseMessages.length == 0) {
-            _console$5.log("nothing to send back");
-            return;
-        }
         const responseMessage = concatenateArrayBuffers(responseMessages);
         _console$5.log(`sending ${responseMessage.byteLength} bytes to client...`);
         try {
@@ -38416,7 +38427,7 @@ class WindowServer extends BaseServer {
                 break;
             case "serverMessage":
                 {
-                    const responseMessage = this.parseClientMessage(dataView);
+                    const responseMessage = this.parseClientMessage(client, dataView);
                     if (responseMessage) {
                         responseMessages.push(createWindowMessage({
                             type: "serverMessage",
@@ -38940,8 +38951,7 @@ class DisplayCanvasHelper {
         }
     }
     async #clearContext(sendImmediately) {
-        this.#resetContextState(true, !this.#isDrawingSprite && !this.#isDrawingBlankSprite
-        );
+        this.#resetContextState(true, !this.#isDrawingSprite && !this.#isDrawingBlankSprite);
     }
     async clearContext(sendImmediately) {
         await this.#clearContext(sendImmediately);

@@ -17,7 +17,7 @@ import {
   windowPongMessage,
 } from "./WindowUtils.ts";
 
-const _console = createConsole("WindowServer", { log: true });
+const _console = createConsole("WindowServer", { log: false });
 
 interface WindowServerClient extends BaseServerClient {
   iframe: HTMLIFrameElement;
@@ -85,6 +85,11 @@ class WindowServer extends BaseServer<WindowServerClient> {
     message: ArrayBuffer,
     transfer?: Transferable[] | undefined,
   ) {
+    if (message.byteLength == 0) {
+      _console.log("nothing to send to client");
+      return;
+    }
+
     _console.log("messageClient", client, message, { transfer });
     const { messageChannel, iframe, didSendMessagePort } = client;
     // _console.log({ messageChannel, didSendMessagePort });
@@ -263,21 +268,23 @@ class WindowServer extends BaseServer<WindowServerClient> {
   ) {
     let responseMessages: ArrayBuffer[] = [];
     let transfer: Transferable[] = [];
+    const context: WindowServerClientContext = {
+      responseMessages,
+      client,
+      transfer,
+    };
+
+    // FILL - continue?
 
     parseMessage(
       dataView,
       WindowMessageTypes,
       this.#onClientMessage.bind(this),
-      { responseMessages, transfer, client },
+      context,
       true,
     );
 
     responseMessages = responseMessages.filter(Boolean);
-
-    if (responseMessages.length == 0) {
-      _console.log("nothing to send back");
-      return;
-    }
 
     const responseMessage = concatenateArrayBuffers(responseMessages);
     _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
@@ -295,6 +302,9 @@ class WindowServer extends BaseServer<WindowServerClient> {
   ) {
     const { responseMessages, transfer, client } = context;
     _console.log("onClientMessage", { messageType }, context);
+
+    // FILL - continue?
+
     switch (messageType) {
       case "ping":
         this.#createMessageChannel(client);
@@ -305,7 +315,7 @@ class WindowServer extends BaseServer<WindowServerClient> {
         break;
       case "serverMessage":
         {
-          const responseMessage = this.parseClientMessage(dataView);
+          const responseMessage = this.parseClientMessage(client, dataView);
           if (responseMessage) {
             responseMessages.push(
               createWindowMessage({

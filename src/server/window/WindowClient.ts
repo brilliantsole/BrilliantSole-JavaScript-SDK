@@ -19,7 +19,7 @@ import {
   windowPongMessage,
 } from "./WindowUtils.ts";
 
-const _console = createConsole("WindowClient", { log: true });
+const _console = createConsole("WindowClient", { log: false });
 
 class WindowClient extends BaseClient {
   static readonly shared = new WindowClient();

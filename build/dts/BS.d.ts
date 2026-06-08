@@ -52,8 +52,8 @@ import { wait, Timer } from "./utils/Timer.ts";
 export { wait, Timer };
 import { DisplaySegmentCap, DisplaySegmentCaps, DisplayAlignment, DisplayAlignments, DisplayDirection, DisplayDirections } from "./utils/DisplayContextState.ts";
 export { DisplaySegmentCap, DisplaySegmentCaps, DisplayAlignment, DisplayAlignments, DisplayDirection, DisplayDirections, };
-import { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, displayCurveTypeToNumberOfControlPoints, mergeWireframes, intersectWireframes, isWireframePolygon } from "./utils/DisplayUtils.ts";
-export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, displayCurveTypeToNumberOfControlPoints, mergeWireframes, intersectWireframes, isWireframePolygon, };
+import { maxDisplayScale, DisplayColorRGB, DisplayColorRGBOrString, pixelDepthToNumberOfColors, displayCurveTypeToNumberOfControlPoints, mergeWireframes, intersectWireframes, isWireframePolygon } from "./utils/DisplayUtils.ts";
+export { maxDisplayScale, DisplayColorRGB, DisplayColorRGBOrString, pixelDepthToNumberOfColors, displayCurveTypeToNumberOfControlPoints, mergeWireframes, intersectWireframes, isWireframePolygon, };
 /** BROWSER_START */
 import { svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, isValidSVG, getSvgStringFromDataUrl } from "./utils/SvgUtils.ts";
 export { svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, isValidSVG, getSvgStringFromDataUrl, };
@@ -90,8 +90,8 @@ export declare const ThrottleUtils: {
     throttle: typeof throttle;
     debounce: typeof debounce;
 };
-import { LedType, LedTypes, LedValue, LedValueType, LedValueTypes, LedConfiguration } from "./led/LedManager.ts";
-export { LedType, LedTypes, LedValue, LedValueType, LedValueTypes, LedConfiguration, };
+import { LedType, LedTypes, LedValue, LedValueType, LedValueTypes, LedConfiguration, Led } from "./led/LedManager.ts";
+export { LedType, LedTypes, LedValue, LedValueType, LedValueTypes, LedConfiguration, Led, };
 import { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes } from "./connection/BaseConnectionManager.ts";
 export { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes, };
 import { DiscoveredDevice } from "./scanner/BaseScanner.ts";

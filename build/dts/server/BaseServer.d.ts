@@ -20,7 +20,7 @@ export interface BaseServerClientContext<ServerClient extends BaseServerClient> 
     client: ServerClient;
     responseMessages: (ArrayBuffer | undefined)[];
 }
-declare abstract class BaseServer<ServerClient extends BaseServerClient = BaseServerClient> {
+declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     #private;
     protected eventDispatcher: ServerEventDispatcher<ServerClient>;
     get addEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
@@ -48,7 +48,7 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient = BaseSe
     get clearSensorConfigurationsWhenNoClients(): boolean;
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
     broadcastMessage(message: ArrayBuffer): void;
-    protected parseClientMessage(dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
+    protected parseClientMessage(client: ServerClient, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
     protected parseClientDeviceMessage(device: Device, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
 }
 export default BaseServer;

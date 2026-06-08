@@ -1,7 +1,7 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { Vector2 } from "./utils/MathUtils.ts";
-import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./utils/DisplayUtils.ts";
+import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection, DisplayColorRGBOrString } from "./utils/DisplayUtils.ts";
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap, PartialDisplayContextState } from "./utils/DisplayContextState.ts";
 import { DisplayContextCommand } from "./utils/DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
@@ -169,7 +169,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     clear(sendImmediately?: boolean): Promise<void>;
     assertValidColorIndex(colorIndex: number): void;
     get colors(): string[];
-    setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     get opacities(): number[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
@@ -212,7 +212,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get bitmapColorIndices(): number[];
     get bitmapColors(): string[];
     selectBitmapColors(bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
-    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleDirection(direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
@@ -223,7 +223,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get spriteColorIndices(): number[];
     get spriteColors(): string[];
     selectSpriteColors(spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean): Promise<void>;
-    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
     setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;

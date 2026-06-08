@@ -42,6 +42,7 @@ import {
   assertValidPathNumberOfControlPoints,
   assertValidPath,
   isWireframePolygon,
+  DisplayColorRGBOrString,
 } from "./utils/DisplayUtils.ts";
 import {
   assertValidBitmapPixels,
@@ -866,7 +867,7 @@ class DisplayManager implements DisplayManagerInterface {
   }
   async setColor(
     colorIndex: number,
-    color: DisplayColorRGB | string,
+    color: DisplayColorRGBOrString,
     sendImmediately?: boolean,
   ) {
     let colorRGB: DisplayColorRGB;
@@ -1640,7 +1641,7 @@ class DisplayManager implements DisplayManagerInterface {
   }
   async setBitmapColor(
     bitmapColorIndex: number,
-    color: DisplayColorRGB | string,
+    color: DisplayColorRGBOrString,
     sendImmediately?: boolean,
   ) {
     return this.setColor(
@@ -1810,7 +1811,7 @@ class DisplayManager implements DisplayManagerInterface {
   }
   async setSpriteColor(
     spriteColorIndex: number,
-    color: DisplayColorRGB | string,
+    color: DisplayColorRGBOrString,
     sendImmediately?: boolean,
   ) {
     return this.setColor(

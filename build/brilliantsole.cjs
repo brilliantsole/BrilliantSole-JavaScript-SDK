@@ -5641,7 +5641,8 @@ function trimWireframe(wireframe) {
             startIndex: trimmedStartIndex,
             endIndex: trimmedEndIndex,
         };
-        let trimmedEdgeIndex = trimmedEdges.findIndex(({ startIndex, endIndex }) => startIndex == trimmedEdge.startIndex && endIndex == trimmedEdge.endIndex);
+        let trimmedEdgeIndex = trimmedEdges.findIndex(({ startIndex, endIndex }) => startIndex == trimmedEdge.startIndex &&
+            endIndex == trimmedEdge.endIndex);
         if (trimmedEdgeIndex == -1) {
             trimmedEdges.push(trimmedEdge);
             trimmedEdgeIndex = trimmedEdges.length - 1;
@@ -16296,9 +16297,13 @@ class BaseServer {
             data: [device.bluetoothId, createDeviceMessage(...messages)],
         });
     }
-    parseClientMessage(dataView) {
+    parseClientMessage(client, dataView) {
         let responseMessages = [];
-        parseMessage(dataView, ServerMessageTypes, this.#onClientMessage.bind(this), { responseMessages }, true);
+        const context = {
+            responseMessages,
+            client,
+        };
+        parseMessage(dataView, ServerMessageTypes, this.#onClientMessage.bind(this), context, true);
         responseMessages = responseMessages.filter(Boolean);
         if (responseMessages.length > 0) {
             return concatenateArrayBuffers(responseMessages);
@@ -16306,7 +16311,7 @@ class BaseServer {
     }
     #onClientMessage(messageType, dataView, context) {
         _console$3.log(`onClientMessage "${messageType}" (${dataView.byteLength} bytes)`);
-        const { responseMessages } = context;
+        const { client, responseMessages } = context;
         switch (messageType) {
             case "isScanningAvailable":
                 responseMessages.push(this.#isScanningAvailableMessage);
@@ -16398,6 +16403,7 @@ class BaseServer {
                 _console$3.error(`uncaught messageType "${messageType}"`);
                 break;
         }
+        _console$3.log(responseMessages);
     }
     parseClientDeviceMessage(device, dataView) {
         _console$3.log("onDeviceMessage", device.bluetoothId, dataView);
@@ -16500,23 +16506,21 @@ class WebSocketServer extends BaseServer {
     }
     #parseWebSocketClientMessage(client, dataView) {
         let responseMessages = [];
-        parseMessage(dataView, WebSocketMessageTypes$1, this.#onClientMessage.bind(this), { responseMessages }, true);
+        const context = { responseMessages, client };
+        parseMessage(dataView, WebSocketMessageTypes$1, this.#onClientMessage.bind(this), context, true);
         responseMessages = responseMessages.filter(Boolean);
-        if (responseMessages.length == 0) {
-            _console$2.log("nothing to send back");
-            return;
-        }
         const responseMessage = concatenateArrayBuffers(responseMessages);
         _console$2.log(`sending ${responseMessage.byteLength} bytes to client...`);
         try {
-            client.send(responseMessage);
+            this.#sendToClient(client, responseMessage);
         }
         catch (error) {
             _console$2.log("error sending message", error);
         }
     }
     #onClientMessage(messageType, dataView, context) {
-        const { responseMessages } = context;
+        const { responseMessages, client } = context;
+        _console$2.log("onClientMessage", { messageType });
         switch (messageType) {
             case "ping":
                 responseMessages.push(webSocketPongMessage);
@@ -16524,7 +16528,7 @@ class WebSocketServer extends BaseServer {
             case "pong":
                 break;
             case "serverMessage":
-                const responseMessage = this.parseClientMessage(dataView);
+                const responseMessage = this.parseClientMessage(client, dataView);
                 if (responseMessage) {
                     responseMessages.push(createWebSocketMessage$1({
                         type: "serverMessage",
@@ -16537,10 +16541,18 @@ class WebSocketServer extends BaseServer {
                 break;
         }
     }
+    #sendToClient(client, message) {
+        if (message.byteLength == 0) {
+            _console$2.log("nothing to send back");
+            return;
+        }
+        _console$2.log(`sending ${message.byteLength} bytes to client`);
+        client.send(message);
+    }
     broadcastMessage(message) {
         super.broadcastMessage(message);
-        this.server.clients.forEach((client) => {
-            client.send(createWebSocketMessage$1({ type: "serverMessage", data: message }));
+        this.clients.forEach((client) => {
+            this.#sendToClient(client, createWebSocketMessage$1({ type: "serverMessage", data: message }));
         });
     }
     #pingClient(client) {
@@ -16549,7 +16561,7 @@ class WebSocketServer extends BaseServer {
             return;
         }
         client.isAlive = false;
-        client.send(webSocketPingMessage);
+        this.#sendToClient(client, webSocketPingMessage);
     }
 }
 
@@ -16648,21 +16660,14 @@ class UDPServer extends BaseServer {
     #onClientData(client, dataView) {
         _console.log(`parsing ${dataView.byteLength} bytes from ${this.#clientToString(client)}`, dataView.buffer);
         let responseMessages = [];
-        parseMessage(dataView, UDPServerMessageTypes, this.#onClientUDPMessage.bind(this), { responseMessages, client }, true);
+        const context = { responseMessages, client };
+        parseMessage(dataView, UDPServerMessageTypes, this.#onClientMessage.bind(this), context, true);
         responseMessages = responseMessages.filter(Boolean);
-        if (responseMessages.length == 0) {
-            _console.log("no response to send");
-            return;
-        }
-        if (client.receivePort == undefined) {
-            _console.log("client has no defined receivePort");
-            return;
-        }
         const response = concatenateArrayBuffers(responseMessages);
         _console.log(`responding with ${response.byteLength} bytes...`, response);
         this.#sendToClient(client, response);
     }
-    #onClientUDPMessage(messageType, dataView, context) {
+    #onClientMessage(messageType, dataView, context) {
         const { client, responseMessages } = context;
         _console.log(`received "${messageType}" message from ${client.address}:${client.port}`);
         switch (messageType) {
@@ -16675,7 +16680,7 @@ class UDPServer extends BaseServer {
                 responseMessages.push(this.#parseRemoteReceivePort(dataView, client));
                 break;
             case "serverMessage":
-                const responseMessage = this.parseClientMessage(dataView);
+                const responseMessage = this.parseClientMessage(client, dataView);
                 if (responseMessage) {
                     responseMessages.push(createUDPServerMessage({
                         type: "serverMessage",
@@ -16704,6 +16709,14 @@ class UDPServer extends BaseServer {
         });
     }
     #sendToClient(client, message) {
+        if (message.byteLength == 0) {
+            _console.log("no response to send");
+            return;
+        }
+        if (client.receivePort == undefined) {
+            _console.log("client has no defined receivePort");
+            return;
+        }
         _console.log(`sending ${message.byteLength} bytes to ${this.#clientToString(client)}...`);
         try {
             this.#socket.send(new Uint8Array(message), client.receivePort, client.address, (error, bytes) => {

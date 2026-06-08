@@ -284,6 +284,7 @@ export {
 import {
   maxDisplayScale,
   DisplayColorRGB,
+  DisplayColorRGBOrString,
   pixelDepthToNumberOfColors,
   displayCurveTypeToNumberOfControlPoints,
   mergeWireframes,
@@ -293,6 +294,7 @@ import {
 export {
   maxDisplayScale,
   DisplayColorRGB,
+  DisplayColorRGBOrString,
   pixelDepthToNumberOfColors,
   displayCurveTypeToNumberOfControlPoints,
   mergeWireframes,
@@ -468,6 +470,7 @@ import {
   LedValueType,
   LedValueTypes,
   LedConfiguration,
+  Led,
 } from "./led/LedManager.ts";
 export {
   LedType,
@@ -476,6 +479,7 @@ export {
   LedValueType,
   LedValueTypes,
   LedConfiguration,
+  Led,
 };
 
 import {
