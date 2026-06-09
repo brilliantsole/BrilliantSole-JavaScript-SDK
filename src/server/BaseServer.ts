@@ -12,6 +12,8 @@ import {
   ServerMessageType,
   createDeviceMessage,
   DeviceMessageType,
+  ServerMessageOrMessageType,
+  DeviceMessageOrMessageType,
 } from "./ServerUtils.ts";
 import Device, {
   BoundDeviceEventListeners,
@@ -106,15 +108,15 @@ export interface BaseServerClientDeviceContext<
 export type BaseServerClientGuardManagerArgs<
   Server extends BaseServer<ServerClient>,
   ServerClient extends BaseServerClient,
-> = [{ message?: ServerMessage; client: ServerClient; server: Server }];
+> = [{ client: ServerClient; message?: ServerMessage; server: Server }];
 export type BaseServerClientDeviceGuardManagerArgs<
   Server extends BaseServer<ServerClient>,
   ServerClient extends BaseServerClient,
 > = [
   {
-    message?: DeviceMessage;
     device: Device;
     client: ServerClient;
+    message?: DeviceMessage;
     server: Server;
   },
 ];
@@ -420,14 +422,20 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     BaseServerClientGuardManagerArgs<BaseServer<ServerClient>, ServerClient>
   >();
 
-  #guardServerToClient(client: ServerClient, message?: ServerMessage) {
+  #guardServerToClient(
+    client: ServerClient,
+    message?: ServerMessageOrMessageType,
+  ) {
+    if (typeof message == "string") {
+      message = { type: message };
+    }
     return this.serverToClientGuardManager.evaluate({
       client,
       message,
       server: this,
     });
   }
-  #filterServerToClients(message: ServerMessage) {
+  #filterServerToClients(message: ServerMessageOrMessageType) {
     return this.clients.filter((client) =>
       this.#guardServerToClient(client, message),
     );
@@ -469,8 +477,11 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   #guardDeviceToClient(
     device: Device,
     client: ServerClient,
-    message?: DeviceMessage,
+    message?: DeviceMessageOrMessageType,
   ) {
+    if (typeof message == "string") {
+      message = { type: message };
+    }
     return this.deviceToClientGuardManager.evaluate({
       device,
       client,
@@ -481,7 +492,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
   #filterDeviceToClients(
     device: Device,
-    message: DeviceMessage,
+    message: DeviceMessageOrMessageType,
     clients = this.clients,
   ) {
     return clients.filter((client) =>
@@ -530,9 +541,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
     const { client, responseMessages } = context;
 
-    const message: ServerMessage = dataView
-      ? { type: messageType, data: dataView }
-      : messageType;
+    const message: ServerMessage = { type: messageType, data: dataView };
 
     if (!this.#guardClientToServer(client, message)) {
       return;

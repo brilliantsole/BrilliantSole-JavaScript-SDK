@@ -34,8 +34,9 @@ const SocketMessageTypes = [
 ] as const;
 type SocketMessageType = (typeof SocketMessageTypes)[number];
 
-type SocketMessage = SocketMessageType | Message<SocketMessageType>;
-function createSocketMessage(...messages: SocketMessage[]) {
+type SocketMessage = Message<SocketMessageType>;
+type SocketMessageOrMessageType = SocketMessage | SocketMessageType;
+function createSocketMessage(...messages: SocketMessageOrMessageType[]) {
   _console.log("createSocketMessage", ...messages);
   return createMessage(SocketMessageTypes, ...messages);
 }
@@ -113,7 +114,7 @@ class UDPConnectionManager extends BaseConnectionManager {
     const parsedReceivePort = dataView.getUint16(0, true);
     if (parsedReceivePort != this.receivePort) {
       _console.error(
-        `incorrect receivePort (expected ${this.receivePort}, got ${parsedReceivePort})`
+        `incorrect receivePort (expected ${this.receivePort}, got ${parsedReceivePort})`,
       );
       return;
     }
@@ -160,7 +161,7 @@ class UDPConnectionManager extends BaseConnectionManager {
     this.#pingTimer.restart();
   }
 
-  #sendSocketMessage(...messages: SocketMessage[]) {
+  #sendSocketMessage(...messages: SocketMessageOrMessageType[]) {
     this.#sendMessage(createSocketMessage(...messages));
   }
 
@@ -210,7 +211,7 @@ class UDPConnectionManager extends BaseConnectionManager {
     _console.log("socket.message", message.byteLength, remoteInfo);
     const arrayBuffer = message.buffer.slice(
       message.byteOffset,
-      message.byteOffset + message.byteLength
+      message.byteOffset + message.byteLength,
     );
     const dataView = new DataView(arrayBuffer) as DataView<ArrayBuffer>;
     this.#parseSocketMessage(dataView);
@@ -282,13 +283,13 @@ class UDPConnectionManager extends BaseConnectionManager {
       SocketMessageTypes,
       this.#onMessage.bind(this),
       null,
-      true
+      true,
     );
   }
 
   #onMessage(messageType: SocketMessageType, dataView: DataView<ArrayBuffer>) {
     _console.log(
-      `received "${messageType}" message (${dataView.byteLength} bytes)`
+      `received "${messageType}" message (${dataView.byteLength} bytes)`,
     );
     switch (messageType) {
       case "ping":
@@ -308,7 +309,7 @@ class UDPConnectionManager extends BaseConnectionManager {
           DeviceInformationTypes,
           (deviceInformationType, dataView) => {
             this.onMessageReceived!(deviceInformationType, dataView);
-          }
+          },
         );
         break;
       case "message":

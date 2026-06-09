@@ -28,15 +28,15 @@ export interface BaseServerClientDeviceContext<ServerClient extends BaseServerCl
     device: Device;
 }
 export type BaseServerClientGuardManagerArgs<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> = [{
-    message?: ServerMessage;
     client: ServerClient;
+    message?: ServerMessage;
     server: Server;
 }];
 export type BaseServerClientDeviceGuardManagerArgs<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> = [
     {
-        message?: DeviceMessage;
         device: Device;
         client: ServerClient;
+        message?: DeviceMessage;
         server: Server;
     }
 ];

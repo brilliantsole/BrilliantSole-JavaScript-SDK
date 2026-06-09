@@ -2252,8 +2252,8 @@ interface Message<MessageType extends string> {
     type: MessageType;
     data?: MessageLike | MessageLike[];
 }
-type ServerMessage = ServerMessageType | Message<ServerMessageType>;
-type DeviceMessage = DeviceEventType | Message<DeviceEventType>;
+type ServerMessage = Message<ServerMessageType>;
+type DeviceMessage = Message<DeviceEventType>;
 
 type Guard<TArgs extends unknown[]> = (...args: TArgs) => boolean;
 declare class GuardManager<TArgs extends unknown[]> {
@@ -2281,15 +2281,15 @@ interface ServerEventMessages<ServerClient extends BaseServerClient> {
 }
 type ServerEventDispatcher<ServerClient extends BaseServerClient> = EventDispatcher<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
 type BaseServerClientGuardManagerArgs<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> = [{
-    message?: ServerMessage;
     client: ServerClient;
+    message?: ServerMessage;
     server: Server;
 }];
 type BaseServerClientDeviceGuardManagerArgs<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> = [
     {
-        message?: DeviceMessage;
         device: Device;
         client: ServerClient;
+        message?: DeviceMessage;
         server: Server;
     }
 ];

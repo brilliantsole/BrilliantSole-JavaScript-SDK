@@ -10,12 +10,15 @@ export interface Message<MessageType extends string> {
     data?: MessageLike | MessageLike[];
 }
 export declare function createMessage<MessageType extends string>(enumeration: readonly MessageType[], ...messages: (Message<MessageType> | MessageType)[]): ArrayBuffer;
-export type ServerMessage = ServerMessageType | Message<ServerMessageType>;
-export declare function createServerMessage(...messages: ServerMessage[]): ArrayBuffer;
-export type DeviceMessage = DeviceEventType | Message<DeviceEventType>;
-export declare function createDeviceMessage(...messages: DeviceMessage[]): ArrayBuffer;
-export type ClientDeviceMessage = ConnectionMessageType | Message<ConnectionMessageType>;
-export declare function createClientDeviceMessage(...messages: ClientDeviceMessage[]): ArrayBuffer;
+export type ServerMessage = Message<ServerMessageType>;
+export type ServerMessageOrMessageType = ServerMessage | ServerMessageType;
+export declare function createServerMessage(...messages: ServerMessageOrMessageType[]): ArrayBuffer;
+export type DeviceMessage = Message<DeviceEventType>;
+export type DeviceMessageOrMessageType = DeviceEventType | DeviceMessage;
+export declare function createDeviceMessage(...messages: DeviceMessageOrMessageType[]): ArrayBuffer;
+export type ClientDeviceMessage = Message<ConnectionMessageType>;
+export type ClientDeviceMessageOrMessageType = ConnectionMessageType | ClientDeviceMessage;
+export declare function createClientDeviceMessage(...messages: ClientDeviceMessageOrMessageType[]): ArrayBuffer;
 export declare const isScanningAvailableRequestMessage: ArrayBuffer;
 export declare const isScanningRequestMessage: ArrayBuffer;
 export declare const startScanRequestMessage: ArrayBuffer;

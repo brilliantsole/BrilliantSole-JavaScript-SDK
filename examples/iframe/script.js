@@ -63,7 +63,10 @@ const urlRefresh = () => {
 const urlRefreshButton = document.getElementById("urlRefresh");
 urlRefreshButton.addEventListener("click", () => urlRefresh());
 
-window.lol = true;
+window.allowSensorData = true;
 BS.WindowServer.deviceToClientGuardManager.add(({ client, message }) => {
-  console.log("lol", message);
+  if (message?.type == "sensorData") {
+    return window.allowSensorData;
+  }
+  return true;
 });

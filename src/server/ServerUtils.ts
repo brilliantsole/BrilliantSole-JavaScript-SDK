@@ -92,22 +92,27 @@ export function createMessage<MessageType extends string>(
   return concatenateArrayBuffers(...messageBuffers);
 }
 
-export type ServerMessage = ServerMessageType | Message<ServerMessageType>;
-export function createServerMessage(...messages: ServerMessage[]) {
+export type ServerMessage = Message<ServerMessageType>;
+export type ServerMessageOrMessageType = ServerMessage | ServerMessageType;
+export function createServerMessage(...messages: ServerMessageOrMessageType[]) {
   _console.log("createServerMessage", ...messages);
   return createMessage(ServerMessageTypes, ...messages);
 }
 
-export type DeviceMessage = DeviceEventType | Message<DeviceEventType>;
-export function createDeviceMessage(...messages: DeviceMessage[]) {
+export type DeviceMessage = Message<DeviceEventType>;
+export type DeviceMessageOrMessageType = DeviceEventType | DeviceMessage;
+export function createDeviceMessage(...messages: DeviceMessageOrMessageType[]) {
   _console.log("createDeviceMessage", ...messages);
   return createMessage(DeviceEventTypes, ...messages);
 }
 
-export type ClientDeviceMessage =
+export type ClientDeviceMessage = Message<ConnectionMessageType>;
+export type ClientDeviceMessageOrMessageType =
   | ConnectionMessageType
-  | Message<ConnectionMessageType>;
-export function createClientDeviceMessage(...messages: ClientDeviceMessage[]) {
+  | ClientDeviceMessage;
+export function createClientDeviceMessage(
+  ...messages: ClientDeviceMessageOrMessageType[]
+) {
   _console.log("createClientDeviceMessage", ...messages);
   return createMessage(ConnectionMessageTypes, ...messages);
 }
