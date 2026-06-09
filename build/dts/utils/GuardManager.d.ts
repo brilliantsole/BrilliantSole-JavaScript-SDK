@@ -5,5 +5,8 @@ declare class GuardManager<TArgs extends unknown[]> {
     remove(guard: Guard<TArgs>): void;
     evaluate(...args: TArgs): boolean;
     clear(): void;
+    get length(): number;
+    set length(newLength: number);
+    get isEmpty(): boolean;
 }
 export default GuardManager;

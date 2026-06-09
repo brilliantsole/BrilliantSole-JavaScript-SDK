@@ -1,5 +1,5 @@
 import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
-import { DeviceMessage } from "./ServerUtils.ts";
+import { DeviceMessage, ServerMessage } from "./ServerUtils.ts";
 import Device from "../Device.ts";
 import GuardManager from "../utils/GuardManager.ts";
 export interface BaseServerClient {
@@ -27,6 +27,19 @@ export interface BaseServerClientDeviceContext<ServerClient extends BaseServerCl
     deviceMessages: DeviceMessage[];
     device: Device;
 }
+export type BaseServerClientGuardManagerArgs<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> = [{
+    message?: ServerMessage;
+    client: ServerClient;
+    server: Server;
+}];
+export type BaseServerClientDeviceGuardManagerArgs<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> = [
+    {
+        message?: DeviceMessage;
+        device: Device;
+        client: ServerClient;
+        server: Server;
+    }
+];
 declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     #private;
     protected eventDispatcher: ServerEventDispatcher<ServerClient>;
@@ -55,11 +68,11 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     get clearSensorConfigurationsWhenNoClients(): boolean;
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
     protected abstract sendToClient(client: ServerClient, message: ArrayBuffer): void;
-    broadcastMessage(message: ArrayBuffer): void;
-    clientToServerGuardManager: GuardManager<[client: ServerClient, messageType?: "isScanningAvailable" | "isScanning" | "startScan" | "stopScan" | "discoveredDevice" | "discoveredDevices" | "expiredDiscoveredDevice" | "connectToDevice" | "disconnectFromDevice" | "connectedDevices" | "deviceMessage" | "requiredDeviceInformation" | undefined, dataView?: DataView<ArrayBufferLike> | undefined]>;
-    serverToClientGuardManager: GuardManager<[client: ServerClient, messageType?: "isScanningAvailable" | "isScanning" | "startScan" | "stopScan" | "discoveredDevice" | "discoveredDevices" | "expiredDiscoveredDevice" | "connectToDevice" | "disconnectFromDevice" | "connectedDevices" | "deviceMessage" | "requiredDeviceInformation" | undefined, dataView?: DataView<ArrayBufferLike> | undefined]>;
-    clientToDeviceGuardManager: GuardManager<[client: ServerClient, device: Device, messageType?: "sensorData" | "batteryLevel" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "getSensorConfiguration" | "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "getFileTypes" | "maxFileLength" | "getFileType" | "getFileLength" | "getFileChecksum" | "fileTransferStatus" | "getFileBlock" | "isWifiAvailable" | "getWifiSSID" | "getWifiPassword" | "isWifiConnected" | "ipAddress" | "cameraStatus" | "getCameraConfiguration" | "microphoneStatus" | "getMicrophoneConfiguration" | "microphoneData" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayReady" | "getSpriteSheetName" | "displayContextCommands" | "getLedInformation" | "smp" | "rx" | "tx" | "setName" | "setType" | "setCurrentTime" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "getVibrationLocations" | "triggerVibration" | "setFileType" | "setFileLength" | "setFileChecksum" | "setFileTransferCommand" | "setFileBlock" | "fileBytesTransferred" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled" | "setWifiSSID" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiSecure" | "cameraCommand" | "setCameraConfiguration" | "cameraData" | "microphoneCommand" | "setMicrophoneConfiguration" | "displayCommand" | "setDisplayBrightness" | "setSpriteSheetName" | "spriteSheetIndex" | "getSensorCounts" | "setLeds" | "clearLeds" | undefined, dataView?: DataView<ArrayBufferLike> | undefined]>;
-    deviceToClientGuardManager: GuardManager<[client: ServerClient, device: Device, messageType?: "sensorData" | "batteryLevel" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "getSensorConfiguration" | "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "getFileTypes" | "maxFileLength" | "getFileType" | "getFileLength" | "getFileChecksum" | "fileTransferStatus" | "getFileBlock" | "isWifiAvailable" | "getWifiSSID" | "getWifiPassword" | "isWifiConnected" | "ipAddress" | "cameraStatus" | "getCameraConfiguration" | "microphoneStatus" | "getMicrophoneConfiguration" | "microphoneData" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayReady" | "getSpriteSheetName" | "displayContextCommands" | "getLedInformation" | "smp" | "rx" | "tx" | "setName" | "setType" | "setCurrentTime" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "getVibrationLocations" | "triggerVibration" | "setFileType" | "setFileLength" | "setFileChecksum" | "setFileTransferCommand" | "setFileBlock" | "fileBytesTransferred" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled" | "setWifiSSID" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiSecure" | "cameraCommand" | "setCameraConfiguration" | "cameraData" | "microphoneCommand" | "setMicrophoneConfiguration" | "displayCommand" | "setDisplayBrightness" | "setSpriteSheetName" | "spriteSheetIndex" | "getSensorCounts" | "setLeds" | "clearLeds" | undefined, dataView?: DataView<ArrayBufferLike> | undefined]>;
+    broadcastMessage(message: ArrayBuffer, clients?: ServerClient[]): void;
+    clientToServerGuardManager: GuardManager<BaseServerClientGuardManagerArgs<BaseServer<ServerClient>, ServerClient>>;
+    serverToClientGuardManager: GuardManager<BaseServerClientGuardManagerArgs<BaseServer<ServerClient>, ServerClient>>;
+    clientToDeviceGuardManager: GuardManager<BaseServerClientDeviceGuardManagerArgs<BaseServer<ServerClient>, ServerClient>>;
+    deviceToClientGuardManager: GuardManager<BaseServerClientDeviceGuardManagerArgs<BaseServer<ServerClient>, ServerClient>>;
     protected parseClientMessage(client: ServerClient, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
     protected parseClientDeviceMessage(client: ServerClient, device: Device, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
 }

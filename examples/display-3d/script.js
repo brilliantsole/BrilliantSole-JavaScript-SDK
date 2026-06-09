@@ -16,7 +16,7 @@ window.rotationDevice = rotationDevice;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -34,10 +34,10 @@ device.addEventListener("connectionStatus", () => {
 });
 
 const toggleRotationConnectionButton = document.getElementById(
-  "toggleRotationConnection"
+  "toggleRotationConnection",
 );
 toggleRotationConnectionButton.addEventListener("click", () =>
-  rotationDevice.toggleConnection()
+  rotationDevice.toggleConnection(),
 );
 rotationDevice.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -76,7 +76,7 @@ device.addEventListener("connected", () => {
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -101,7 +101,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -268,7 +268,7 @@ async function captureModelSnapshot(alphaThreshold = 10, reposition = true) {
     0,
     0,
     width,
-    height
+    height,
   );
 
   // --- Step 6: pixel-level trim for zero-padding ---
@@ -313,7 +313,7 @@ async function captureModelSnapshot(alphaThreshold = 10, reposition = true) {
     const destStart = y * finalW * 4;
     finalImageData.data.set(
       data.subarray(srcStart, srcStart + finalW * 4),
-      destStart
+      destStart,
     );
   }
   finalCtx.putImageData(finalImageData, 0, 0);
@@ -334,7 +334,7 @@ window.captureModelSnapshot = captureModelSnapshot;
 async function captureEntityRotations(
   numberOfSteps = 10,
   waitTime = 100,
-  skipPicture = false
+  skipPicture = false,
 ) {
   const captures = [];
   const step = 360 / numberOfSteps;
@@ -369,14 +369,14 @@ async function captureEntityRotations(
           THREE.MathUtils.degToRad(pitch), // X = pitch
           THREE.MathUtils.degToRad(yaw), // Y = yaw
           THREE.MathUtils.degToRad(0), // Z = roll (upright),
-          "ZXY"
+          "ZXY",
         );
       } else {
         modelEntity.object3D.rotation.set(
           THREE.MathUtils.degToRad(pitch + 90), // X = pitch
           THREE.MathUtils.degToRad(0), // Y = yaw
           THREE.MathUtils.degToRad(yaw), // Z = roll (upright),
-          "XYZ"
+          "XYZ",
         );
       }
 
@@ -462,13 +462,13 @@ const generateSpriteSheet = async (numberOfSteps, waitTime) => {
       skipVoidColor
         ? Math.min(
             BS.pixelDepthToNumberOfColors(pixelDepth),
-            displayCanvasHelper.numberOfColors - 1
+            displayCanvasHelper.numberOfColors - 1,
           )
         : BS.pixelDepthToNumberOfColors(pixelDepth),
       createSinglePalette ? "palette" : i,
       !createSinglePalette,
       spriteSheet,
-      skipVoidColor ? 1 : 0
+      skipVoidColor ? 1 : 0,
     );
     //console.log(sprite, blob);
 
@@ -501,7 +501,7 @@ let maxSpritePreviewHeight = 50;
 window.generateSpriteSheet = generateSpriteSheet;
 
 const generateSpriteSheetButton = document.getElementById(
-  "generateSpriteSheet"
+  "generateSpriteSheet",
 );
 generateSpriteSheetButton.addEventListener("click", () => {
   generateSpriteSheet(numberOfSteps, waitTime);
@@ -541,7 +541,7 @@ window.addEventListener(
       e.preventDefault();
     }
   },
-  { passive: false }
+  { passive: false },
 );
 
 const waitForFrame = async () => await new Promise(requestAnimationFrame);
@@ -634,8 +634,9 @@ async function getModelScreenBoundingBox(alphaThreshold = 10) {
   const prevSkyVis = [];
   skies.forEach(
     (sky, i) => (
-      (prevSkyVis[i] = sky.object3D.visible), (sky.object3D.visible = false)
-    )
+      (prevSkyVis[i] = sky.object3D.visible),
+      (sky.object3D.visible = false)
+    ),
   );
 
   if (typeof waitForFrame === "function") await waitForFrame();
@@ -945,8 +946,8 @@ BS.DisplayPixelDepths.forEach((pixelDepth) => {
   pixelDepthOptgroup.appendChild(
     new Option(
       `${BS.pixelDepthToNumberOfColors(pixelDepth)} colors`,
-      pixelDepth
-    )
+      pixelDepth,
+    ),
   );
 });
 pixelDepthSelect.value = pixelDepth;
@@ -1008,11 +1009,11 @@ const draw = async () => {
         skipVoidColor
           ? Math.min(
               BS.pixelDepthToNumberOfColors(pixelDepth),
-              displayCanvasHelper.numberOfColors - 1
+              displayCanvasHelper.numberOfColors - 1,
             )
           : BS.pixelDepthToNumberOfColors(pixelDepth),
         "palette",
-        maxFileLength
+        maxFileLength,
       );
       checkSpriteSheetSize();
       await displayCanvasHelper.drawSpriteFromSpriteSheet(
@@ -1020,7 +1021,7 @@ const draw = async () => {
         drawY,
         spriteSheet.sprites[0].name,
         spriteSheet,
-        "palette"
+        "palette",
       );
     } else {
       const { sprite, rotation } = await getClosestModelSprite();
@@ -1032,7 +1033,7 @@ const draw = async () => {
         width,
         height,
         rotation,
-        sprite.height / sprite.width
+        sprite.height / sprite.width,
       );
 
       let spriteScale = innerBox.height / sprite.height;
@@ -1051,7 +1052,7 @@ const draw = async () => {
           drawY,
           sprite.name,
           spriteSheet,
-          createSinglePalette ? "model" : sprite.name
+          createSinglePalette ? "model" : sprite.name,
         );
       }
     }
@@ -1119,7 +1120,7 @@ device.addEventListener("fileTransferStatus", () => {
 });
 
 const checkSpriteSheetSizeButton = document.getElementById(
-  "checkSpriteSheetSize"
+  "checkSpriteSheetSize",
 );
 const checkSpriteSheetSize = () => {
   const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(spriteSheet);
@@ -1179,7 +1180,7 @@ const updateQuaternion = (quaternion, applyOffset = false) => {
   }
   targetRotationEntity.object3D.quaternion.slerp(
     targetQuaternion,
-    window.interpolationSmoothing
+    window.interpolationSmoothing,
   );
 };
 rotationDevice.addEventListener("gameRotation", (event) => {
@@ -1203,7 +1204,7 @@ const updatePosition = (position) => {
   _position.copy(position).multiplyScalar(window.positionScalar);
   targetPositionEntity.object3D.position.lerp(
     _position,
-    window.interpolationSmoothing
+    window.interpolationSmoothing,
   );
 };
 

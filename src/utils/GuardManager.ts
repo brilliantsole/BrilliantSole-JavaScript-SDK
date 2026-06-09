@@ -22,7 +22,18 @@ class GuardManager<TArgs extends unknown[]> {
   }
 
   clear() {
-    this.#guards.length = 0;
+    this.length = 0;
+  }
+
+  get length() {
+    return this.#guards.length;
+  }
+  set length(newLength) {
+    this.#guards.length = newLength;
+  }
+
+  get isEmpty() {
+    return this.length == 0;
   }
 }
 

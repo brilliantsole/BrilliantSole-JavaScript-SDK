@@ -79,13 +79,13 @@ export function createMessage<MessageType extends string>(
     messageDataLengthDataView.setUint16(
       0,
       messageDataArrayBufferByteLength,
-      true
+      true,
     );
 
     return concatenateArrayBuffers(
       messageTypeEnum,
       messageDataLengthDataView,
-      messageDataArrayBuffer
+      messageDataArrayBuffer,
     );
   });
   _console.log("messageBuffers", ...messageBuffers);
@@ -114,7 +114,7 @@ export function createClientDeviceMessage(...messages: ClientDeviceMessage[]) {
 
 // STATIC MESSAGES
 export const isScanningAvailableRequestMessage = createServerMessage(
-  "isScanningAvailable"
+  "isScanningAvailable",
 );
 export const isScanningRequestMessage = createServerMessage("isScanning");
 export const startScanRequestMessage = createServerMessage("startScan");
