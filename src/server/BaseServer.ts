@@ -14,6 +14,7 @@ import {
   DeviceMessageType,
   ServerMessageOrMessageType,
   DeviceMessageOrMessageType,
+  createMessage,
 } from "./ServerUtils.ts";
 import Device, {
   BoundDeviceEventListeners,
@@ -31,6 +32,8 @@ import {
   ConnectionMessageType,
   ConnectionMessageTypes,
   ConnectionTypes,
+  TxRxMessageType,
+  TxRxMessageTypes,
 } from "../connection/BaseConnectionManager.ts";
 import {
   BoundScannerEventListeners,
@@ -146,6 +149,27 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     addEventListeners(scanner, this.#boundScannerListeners);
     addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
     addEventListeners(this, this.#boundServerListeners);
+
+    this.deviceToClientGuardManager.add(({ message }) => {
+      if (message) {
+        // TODO - custom deviceToClient guards like sensorData, etc
+        switch (message.type) {
+          case "sensorData":
+            break;
+        }
+      }
+      return true;
+    });
+    this.clientToDeviceGuardManager.add(({ message }) => {
+      if (message) {
+        // TODO - custom clientToDevice guards like setSensorConfiguration, etc
+        switch (message.type) {
+          case "setSensorConfiguration":
+            break;
+        }
+      }
+      return true;
+    });
   }
 
   clients: ServerClient[] = [];
@@ -358,11 +382,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       dataView,
     );
 
-    // TODO: - parse stuff like "sensorData", "sensorConfiguration", etc
-
     this.broadcastMessage(
       this.#createDeviceServerMessage(device, deviceMessage),
-      this.#filterDeviceToClients(device, deviceMessage),
+      this.#guardDeviceToClients(device, deviceMessage),
     );
   }
 
@@ -396,7 +418,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     _console.log("onDeviceIsConnected", device.bluetoothId);
     this.broadcastMessage(
       this.#createDeviceIsConnectedMessage(device),
-      this.#filterDeviceToClients(device, "isConnected"),
+      this.#guardDeviceToClients(device, "isConnected"),
     );
   }
   #createDeviceIsConnectedMessage(device: Device) {
@@ -490,12 +512,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     });
   }
 
-  #filterDeviceToClients(
-    device: Device,
-    message: DeviceMessageOrMessageType,
-    clients = this.clients,
-  ) {
-    return clients.filter((client) =>
+  #guardDeviceToClients(device: Device, message: DeviceMessageOrMessageType) {
+    return this.clients.filter((client) =>
       this.#guardDeviceToClient(device, client, message),
     );
   }
@@ -600,7 +618,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             () => {
               this.broadcastMessage(
                 this.#createDeviceIsConnectedMessage(device),
-                this.#filterDeviceToClients(device, "isConnected"),
+                this.#guardDeviceToClients(device, "isConnected"),
               );
             },
             { once: true },
@@ -716,6 +734,29 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     }
   }
 
+  #filterClientToDeviceTxMessage(
+    client: ServerClient,
+    device: Device,
+    dataView: DataView<ArrayBuffer>,
+  ) {
+    if (this.clientToDeviceGuardManager.isEmpty) {
+      return dataView;
+    }
+    const filteredTxMessages: ArrayBuffer[] = [];
+    parseMessage(
+      dataView,
+      TxRxMessageTypes,
+      (messageType, dataView) => {
+        const message: DeviceMessage = { type: messageType, data: dataView };
+        if (this.#guardClientToDevice(client, device, message)) {
+          filteredTxMessages.push(createMessage(TxRxMessageTypes, message));
+        }
+      },
+      null,
+      true,
+    );
+    return new DataView(concatenateArrayBuffers(filteredTxMessages));
+  }
   #parseClientDeviceMessageCallback(
     messageType: ConnectionMessageType,
     dataView: DataView<ArrayBuffer>,
@@ -737,8 +778,14 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         device.connectionManager!.sendSmpMessage(dataView.buffer);
         break;
       case "tx":
-        // TODO: - parse to intercept events like "setSensorConfiguration", "takePicture", etc
-        device.connectionManager!.sendTxData(dataView.buffer);
+        {
+          dataView = this.#filterClientToDeviceTxMessage(
+            client,
+            device,
+            dataView,
+          );
+          device.connectionManager!.sendTxData(dataView.buffer);
+        }
         break;
       default:
         deviceMessages.push(message);

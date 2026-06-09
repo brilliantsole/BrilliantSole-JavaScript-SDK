@@ -17,6 +17,7 @@ import { CameraMessageTypes } from "../CameraManager.ts";
 import { MicrophoneMessageTypes } from "../MicrophoneManager.ts";
 import { DisplayMessageTypes } from "../DisplayManager.ts";
 import { LedMessageTypes } from "../led/LedManager.ts";
+import { createMessage } from "../server/ServerUtils.ts";
 
 const _console = createConsole("BaseConnectionManager", { log: false });
 
@@ -323,11 +324,19 @@ abstract class BaseConnectionManager {
     _console.log("sendTxMessages", this.#pendingMessages.slice());
 
     const arrayBuffers = this.#pendingMessages.map((message) => {
-      BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
-      const messageTypeEnum = TxRxMessageTypes.indexOf(message.type);
-      const dataLength = new DataView(new ArrayBuffer(2));
-      dataLength.setUint16(0, message.data?.byteLength || 0, true);
-      return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
+      if (false) {
+        BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
+        const messageTypeEnum = TxRxMessageTypes.indexOf(message.type);
+        const dataLength = new DataView(new ArrayBuffer(2));
+        dataLength.setUint16(0, message.data?.byteLength || 0, true);
+        return concatenateArrayBuffers(
+          messageTypeEnum,
+          dataLength,
+          message.data,
+        );
+      } else {
+        return createMessage(TxRxMessageTypes, message);
+      }
     });
     this.#pendingMessages.length = 0;
 

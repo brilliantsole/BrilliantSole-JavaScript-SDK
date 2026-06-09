@@ -11091,6 +11091,7 @@ class SensorConfigurationManager {
     #createData(sensorConfiguration) {
         let sensorTypes = Object.keys(sensorConfiguration);
         sensorTypes = sensorTypes.filter((sensorType) => this.#assertAvailableSensorType(sensorType));
+        sensorTypes = sensorTypes.filter((sensorType) => this.configuration[sensorType] != sensorConfiguration[sensorType]);
         const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
         sensorTypes.forEach((sensorType, index) => {
             SensorDataManager.AssertValidSensorType(sensorType);
@@ -33059,7 +33060,65 @@ class LedManager {
     }
 }
 
-const _console$o = createConsole("BaseConnectionManager", { log: false });
+const _console$o = createConsole("ServerUtils", { log: false });
+const ServerMessageTypes = [
+    "isScanningAvailable",
+    "isScanning",
+    "startScan",
+    "stopScan",
+    "discoveredDevice",
+    "discoveredDevices",
+    "expiredDiscoveredDevice",
+    "connectToDevice",
+    "disconnectFromDevice",
+    "connectedDevices",
+    "deviceMessage",
+    "requiredDeviceInformation",
+];
+function createMessage(enumeration, ...messages) {
+    _console$o.log("createMessage", ...messages);
+    const messageBuffers = messages.map((message) => {
+        if (typeof message == "string") {
+            message = { type: message };
+        }
+        if (message.data != undefined) {
+            if (!Array.isArray(message.data)) {
+                message.data = [message.data];
+            }
+        }
+        else {
+            message.data = [];
+        }
+        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
+        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
+        _console$o.assertEnumWithError(message.type, enumeration);
+        const messageTypeEnum = enumeration.indexOf(message.type);
+        const messageDataLengthDataView = new DataView(new ArrayBuffer(2));
+        messageDataLengthDataView.setUint16(0, messageDataArrayBufferByteLength, true);
+        return concatenateArrayBuffers(messageTypeEnum, messageDataLengthDataView, messageDataArrayBuffer);
+    });
+    _console$o.log("messageBuffers", ...messageBuffers);
+    return concatenateArrayBuffers(...messageBuffers);
+}
+function createServerMessage(...messages) {
+    _console$o.log("createServerMessage", ...messages);
+    return createMessage(ServerMessageTypes, ...messages);
+}
+function createDeviceMessage(...messages) {
+    _console$o.log("createDeviceMessage", ...messages);
+    return createMessage(DeviceEventTypes, ...messages);
+}
+function createClientDeviceMessage(...messages) {
+    _console$o.log("createClientDeviceMessage", ...messages);
+    return createMessage(ConnectionMessageTypes, ...messages);
+}
+createServerMessage("isScanningAvailable");
+createServerMessage("isScanning");
+createServerMessage("startScan");
+createServerMessage("stopScan");
+createServerMessage("discoveredDevices");
+
+const _console$g = createConsole("BaseConnectionManager", { log: false });
 const ConnectionTypes = [
     "webBluetooth",
     "noble",
@@ -33104,7 +33163,7 @@ const ConnectionMessageTypes = [
 ];
 class BaseConnectionManager {
     static #AssertValidTxRxMessageType(messageType) {
-        _console$o.assertEnumWithError(messageType, TxRxMessageTypes);
+        _console$g.assertEnumWithError(messageType, TxRxMessageTypes);
     }
     onStatusUpdated;
     onMessageReceived;
@@ -33126,7 +33185,7 @@ class BaseConnectionManager {
         return this.baseConstructor.type;
     }
     #assertIsSupported() {
-        _console$o.assertWithError(this.isSupported, `${this.type} is not supported`);
+        _console$g.assertWithError(this.isSupported, `${this.type} is not supported`);
     }
     constructor() {
         this.#assertIsSupported();
@@ -33136,12 +33195,12 @@ class BaseConnectionManager {
         return this.#status;
     }
     set status(newConnectionStatus) {
-        _console$o.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
+        _console$g.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
         if (this.#status == newConnectionStatus) {
-            _console$o.log(`tried to assign same connection status "${newConnectionStatus}"`);
+            _console$g.log(`tried to assign same connection status "${newConnectionStatus}"`);
             return;
         }
-        _console$o.log(`new connection status "${newConnectionStatus}"`);
+        _console$g.log(`new connection status "${newConnectionStatus}"`);
         this.#status = newConnectionStatus;
         this.onStatusUpdated(this.status);
         if (this.isConnected) {
@@ -33161,16 +33220,16 @@ class BaseConnectionManager {
         return false;
     }
     assertIsNotConnected() {
-        _console$o.assertWithError(!this.isConnected, "device is already connected");
+        _console$g.assertWithError(!this.isConnected, "device is already connected");
     }
     #assertIsNotConnecting() {
-        _console$o.assertWithError(this.status != "connecting", "device is already connecting");
+        _console$g.assertWithError(this.status != "connecting", "device is already connecting");
     }
     assertIsConnected() {
-        _console$o.assertWithError(this.isConnected, "device is not connected");
+        _console$g.assertWithError(this.isConnected, "device is not connected");
     }
     #assertIsNotDisconnecting() {
-        _console$o.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+        _console$g.assertWithError(this.status != "disconnecting", "device is already disconnecting");
     }
     assertIsConnectedAndNotDisconnecting() {
         this.assertIsConnected();
@@ -33178,11 +33237,11 @@ class BaseConnectionManager {
     }
     async connect() {
         if (this.isConnected) {
-            _console$o.log("already connected");
+            _console$g.log("already connected");
             return false;
         }
         if (this.#status == "connecting") {
-            _console$o.log("already connecting");
+            _console$g.log("already connecting");
             return false;
         }
         this.status = "connecting";
@@ -33193,37 +33252,37 @@ class BaseConnectionManager {
     }
     async reconnect() {
         if (this.isConnected) {
-            _console$o.log("already connected");
+            _console$g.log("already connected");
             return false;
         }
         if (this.#status == "connecting") {
-            _console$o.log("already connecting");
+            _console$g.log("already connecting");
             return false;
         }
         if (!this.canReconnect) {
-            _console$o.warn("unable to reconnect");
+            _console$g.warn("unable to reconnect");
             return false;
         }
         this.status = "connecting";
-        _console$o.log("attempting to reconnect...");
+        _console$g.log("attempting to reconnect...");
         return true;
     }
     async disconnect() {
         if (this.#status == "notConnected") {
-            _console$o.log("already not connected");
+            _console$g.log("already not connected");
             return false;
         }
         if (this.#status == "disconnecting") {
-            _console$o.log("already disconnecting");
+            _console$g.log("already disconnecting");
             return false;
         }
         this.status = "disconnecting";
-        _console$o.log("disconnecting from device...");
+        _console$g.log("disconnecting from device...");
         return true;
     }
     async sendSmpMessage(data) {
         this.assertIsConnectedAndNotDisconnecting();
-        _console$o.log("sending smp message", data);
+        _console$g.log("sending smp message", data);
     }
     #pendingMessages = [];
     #isSendingMessages = false;
@@ -33231,58 +33290,56 @@ class BaseConnectionManager {
         this.assertIsConnectedAndNotDisconnecting();
         if (messages) {
             this.#pendingMessages.push(...messages);
-            _console$o.log(`appended ${messages.length} messages`);
+            _console$g.log(`appended ${messages.length} messages`);
         }
         if (!sendImmediately) {
-            _console$o.log("not sending immediately - waiting until later");
+            _console$g.log("not sending immediately - waiting until later");
             return;
         }
         if (this.#isSendingMessages) {
-            _console$o.log("already sending messages - waiting until later");
+            _console$g.log("already sending messages - waiting until later");
             return;
         }
         if (this.#pendingMessages.length == 0) {
-            _console$o.log("no pendingMessages");
+            _console$g.log("no pendingMessages");
             return;
         }
         this.#isSendingMessages = true;
-        _console$o.log("sendTxMessages", this.#pendingMessages.slice());
+        _console$g.log("sendTxMessages", this.#pendingMessages.slice());
         const arrayBuffers = this.#pendingMessages.map((message) => {
-            BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
-            const messageTypeEnum = TxRxMessageTypes.indexOf(message.type);
-            const dataLength = new DataView(new ArrayBuffer(2));
-            dataLength.setUint16(0, message.data?.byteLength || 0, true);
-            return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
+            {
+                return createMessage(TxRxMessageTypes, message);
+            }
         });
         this.#pendingMessages.length = 0;
         if (this.mtu) {
             while (arrayBuffers.length > 0) {
                 if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
-                    _console$o.error("every arrayBuffer is too big to send");
+                    _console$g.error("every arrayBuffer is too big to send");
                     break;
                 }
-                _console$o.log("remaining arrayBuffers.length", arrayBuffers.length);
+                _console$g.log("remaining arrayBuffers.length", arrayBuffers.length);
                 let arrayBufferByteLength = 0;
                 let arrayBufferCount = 0;
                 arrayBuffers.some((arrayBuffer) => {
                     if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu - 3) {
-                        _console$o.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
+                        _console$g.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
                         return true;
                     }
-                    _console$o.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
+                    _console$g.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
                     arrayBufferCount++;
                     arrayBufferByteLength += arrayBuffer.byteLength;
                 });
                 const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
-                _console$o.log({ arrayBufferCount, arrayBuffersToSend });
+                _console$g.log({ arrayBufferCount, arrayBuffersToSend });
                 const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
-                _console$o.log("sending arrayBuffer (partitioned)", arrayBuffer);
+                _console$g.log("sending arrayBuffer (partitioned)", arrayBuffer);
                 await this.sendTxData(arrayBuffer);
             }
         }
         else {
             const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
-            _console$o.log("sending arrayBuffer (all)", arrayBuffer);
+            _console$g.log("sending arrayBuffer (all)", arrayBuffer);
             await this.sendTxData(arrayBuffer);
         }
         this.#isSendingMessages = false;
@@ -33291,20 +33348,20 @@ class BaseConnectionManager {
     defaultMtu = 23;
     mtu = this.defaultMtu;
     async sendTxData(data) {
-        _console$o.log("sendTxData", data);
+        _console$g.log("sendTxData", data);
     }
     parseRxMessage(dataView) {
         parseMessage(dataView, TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
         this.onMessagesReceived();
     }
     #onRxMessage(messageType, dataView) {
-        _console$o.log({ messageType, dataView });
+        _console$g.log({ messageType, dataView });
         this.onMessageReceived(messageType, dataView);
     }
     #timer = new Timer(this.#checkConnection.bind(this), 5000);
     #checkConnection() {
         if (!this.isConnected) {
-            _console$o.log("timer detected disconnection");
+            _console$g.log("timer detected disconnection");
             this.status = "notConnected";
         }
     }
@@ -35043,64 +35100,6 @@ let DeviceManager$1 = class DeviceManager {
     }
 };
 var DeviceManager = DeviceManager$1.shared;
-
-const _console$g = createConsole("ServerUtils", { log: false });
-const ServerMessageTypes = [
-    "isScanningAvailable",
-    "isScanning",
-    "startScan",
-    "stopScan",
-    "discoveredDevice",
-    "discoveredDevices",
-    "expiredDiscoveredDevice",
-    "connectToDevice",
-    "disconnectFromDevice",
-    "connectedDevices",
-    "deviceMessage",
-    "requiredDeviceInformation",
-];
-function createMessage(enumeration, ...messages) {
-    _console$g.log("createMessage", ...messages);
-    const messageBuffers = messages.map((message) => {
-        if (typeof message == "string") {
-            message = { type: message };
-        }
-        if (message.data != undefined) {
-            if (!Array.isArray(message.data)) {
-                message.data = [message.data];
-            }
-        }
-        else {
-            message.data = [];
-        }
-        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
-        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
-        _console$g.assertEnumWithError(message.type, enumeration);
-        const messageTypeEnum = enumeration.indexOf(message.type);
-        const messageDataLengthDataView = new DataView(new ArrayBuffer(2));
-        messageDataLengthDataView.setUint16(0, messageDataArrayBufferByteLength, true);
-        return concatenateArrayBuffers(messageTypeEnum, messageDataLengthDataView, messageDataArrayBuffer);
-    });
-    _console$g.log("messageBuffers", ...messageBuffers);
-    return concatenateArrayBuffers(...messageBuffers);
-}
-function createServerMessage(...messages) {
-    _console$g.log("createServerMessage", ...messages);
-    return createMessage(ServerMessageTypes, ...messages);
-}
-function createDeviceMessage(...messages) {
-    _console$g.log("createDeviceMessage", ...messages);
-    return createMessage(DeviceEventTypes, ...messages);
-}
-function createClientDeviceMessage(...messages) {
-    _console$g.log("createClientDeviceMessage", ...messages);
-    return createMessage(ConnectionMessageTypes, ...messages);
-}
-createServerMessage("isScanningAvailable");
-createServerMessage("isScanning");
-createServerMessage("startScan");
-createServerMessage("stopScan");
-createServerMessage("discoveredDevices");
 
 const _console$f = createConsole("WebSocketUtils", { log: false });
 const webSocketPingTimeout = 30_000;
@@ -37956,6 +37955,23 @@ class BaseServer {
         addEventListeners(scanner, this.#boundScannerListeners);
         addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
+        this.deviceToClientGuardManager.add(({ message }) => {
+            if (message) {
+                switch (message.type) {
+                                    }
+            }
+            return true;
+        });
+        this.clientToDeviceGuardManager.add(({ message }) => {
+            if (message) {
+                switch (message.type) {
+                    case "setSensorConfiguration":
+                        console.log("lolz!", message);
+                        break;
+                }
+            }
+            return true;
+        });
     }
     clients = [];
     static #ClearSensorConfigurationsWhenNoClients = true;
@@ -38102,7 +38118,7 @@ class BaseServer {
         }
         const { messageType, dataView } = deviceConnectionMessage;
         const deviceMessage = this.#createDeviceMessage(device, messageType, dataView);
-        this.broadcastMessage(this.#createDeviceServerMessage(device, deviceMessage), this.#filterDeviceToClients(device, deviceMessage));
+        this.broadcastMessage(this.#createDeviceServerMessage(device, deviceMessage), this.#guardDeviceToClients(device, deviceMessage));
     }
     #boundDeviceManagerListeners = {
         deviceConnected: this.#onDeviceConnected.bind(this),
@@ -38122,7 +38138,7 @@ class BaseServer {
     #onDeviceIsConnected(staticDeviceEvent) {
         const { device } = staticDeviceEvent.message;
         _console$6.log("onDeviceIsConnected", device.bluetoothId);
-        this.broadcastMessage(this.#createDeviceIsConnectedMessage(device), this.#filterDeviceToClients(device, "isConnected"));
+        this.broadcastMessage(this.#createDeviceIsConnectedMessage(device), this.#guardDeviceToClients(device, "isConnected"));
     }
     #createDeviceIsConnectedMessage(device) {
         return this.#createDeviceServerMessage(device, {
@@ -38180,8 +38196,8 @@ class BaseServer {
             server: this,
         });
     }
-    #filterDeviceToClients(device, message, clients = this.clients) {
-        return clients.filter((client) => this.#guardDeviceToClient(device, client, message));
+    #guardDeviceToClients(device, message) {
+        return this.clients.filter((client) => this.#guardDeviceToClient(device, client, message));
     }
     parseClientMessage(client, dataView) {
         let responseMessages = [];
@@ -38252,7 +38268,7 @@ class BaseServer {
                     }
                     _console$6.log(`disconnecting from device with id ${deviceId}...`);
                     device.addEventListener("notConnected", () => {
-                        this.broadcastMessage(this.#createDeviceIsConnectedMessage(device), this.#filterDeviceToClients(device, "isConnected"));
+                        this.broadcastMessage(this.#createDeviceIsConnectedMessage(device), this.#guardDeviceToClients(device, "isConnected"));
                     }, { once: true });
                     device.disconnect();
                 }
@@ -38331,6 +38347,19 @@ class BaseServer {
             return this.#createDeviceServerMessage(device, ...deviceMessages);
         }
     }
+    #filterClientToDeviceTxMessage(client, device, dataView) {
+        if (this.clientToDeviceGuardManager.isEmpty) {
+            return dataView;
+        }
+        const filteredTxMessages = [];
+        parseMessage(dataView, TxRxMessageTypes, (messageType, dataView) => {
+            const message = { type: messageType, data: dataView };
+            if (this.#guardClientToDevice(client, device, message)) {
+                filteredTxMessages.push(createMessage(TxRxMessageTypes, message));
+            }
+        }, null, true);
+        return new DataView(concatenateArrayBuffers(filteredTxMessages));
+    }
     #parseClientDeviceMessageCallback(messageType, dataView, context) {
         _console$6.log(`clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`);
         const { client, device, deviceMessages } = context;
@@ -38343,7 +38372,10 @@ class BaseServer {
                 device.connectionManager.sendSmpMessage(dataView.buffer);
                 break;
             case "tx":
-                device.connectionManager.sendTxData(dataView.buffer);
+                {
+                    dataView = this.#filterClientToDeviceTxMessage(client, device, dataView);
+                    device.connectionManager.sendTxData(dataView.buffer);
+                }
                 break;
             default:
                 deviceMessages.push(message);
