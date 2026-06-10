@@ -15,6 +15,7 @@ import {
   ServerMessageOrMessageType,
   DeviceMessageOrMessageType,
   createMessage,
+  DeviceMessageTypes,
 } from "./ServerUtils.ts";
 import Device, {
   BoundDeviceEventListeners,
@@ -48,6 +49,16 @@ import DeviceManager, {
 import { RequiredWifiMessageTypes } from "../WifiManager.ts";
 import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
 import GuardManager from "../utils/GuardManager.ts";
+import {
+  parseSensorConfiguration,
+  SensorConfiguration,
+  serializeSensorConfiguration,
+} from "../sensor/SensorConfigurationManager.ts";
+import {
+  parseSensorData,
+  SensorType,
+  SensorTypes,
+} from "../sensor/SensorDataManager.ts";
 
 const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...DeviceInformationTypes,
@@ -108,21 +119,45 @@ export interface BaseServerClientDeviceContext<
   device: Device;
 }
 
-export type BaseServerClientGuardManagerArgs<
+export interface BaseServerClientGuardManagerArg<
   Server extends BaseServer<ServerClient>,
   ServerClient extends BaseServerClient,
-> = [{ client: ServerClient; message?: ServerMessage; server: Server }];
-export type BaseServerClientDeviceGuardManagerArgs<
+> {
+  client: ServerClient;
+  message?: ServerMessage;
+  server: Server;
+}
+
+export interface BaseServerClientDeviceGuardManagerArg<
   Server extends BaseServer<ServerClient>,
   ServerClient extends BaseServerClient,
-> = [
-  {
-    device: Device;
-    client: ServerClient;
-    message?: DeviceMessage;
-    server: Server;
-  },
-];
+> {
+  device: Device;
+  client: ServerClient;
+  message?: DeviceMessage;
+  server: Server;
+}
+
+export interface BaseServerClientDeviceSensorDataGuardManagerArg<
+  Server extends BaseServer<ServerClient>,
+  ServerClient extends BaseServerClient,
+> {
+  device: Device;
+  client: ServerClient;
+  sensorType: SensorType;
+  sensorData: DataView;
+  server: Server;
+}
+export interface BaseServerClientDeviceSensorConfigurationGuardManagerArg<
+  Server extends BaseServer<ServerClient>,
+  ServerClient extends BaseServerClient,
+> {
+  device: Device;
+  client: ServerClient;
+  sensorType: SensorType;
+  sensorRate: number;
+  server: Server;
+}
 
 abstract class BaseServer<ServerClient extends BaseServerClient> {
   // EVENT DISPATCHER
@@ -149,27 +184,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     addEventListeners(scanner, this.#boundScannerListeners);
     addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
     addEventListeners(this, this.#boundServerListeners);
-
-    this.deviceToClientGuardManager.add(({ message }) => {
-      if (message) {
-        // TODO - custom deviceToClient guards like sensorData, etc
-        switch (message.type) {
-          case "sensorData":
-            break;
-        }
-      }
-      return true;
-    });
-    this.clientToDeviceGuardManager.add(({ message }) => {
-      if (message) {
-        // TODO - custom clientToDevice guards like setSensorConfiguration, etc
-        switch (message.type) {
-          case "setSensorConfiguration":
-            break;
-        }
-      }
-      return true;
-    });
   }
 
   clients: ServerClient[] = [];
@@ -234,7 +248,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   ): void;
 
   #sendToClient(client: ServerClient, message: ArrayBuffer) {
-    if (this.#guardServerToClient(client)) {
+    if (this.#allowServerToClient(client)) {
       this.sendToClient(client, message);
     }
   }
@@ -376,15 +390,70 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     }
 
     const { messageType, dataView } = deviceConnectionMessage;
+
+    switch (messageType) {
+      case "sensorData":
+        if (!this.deviceSensorDataToClientGuardManager.isEmpty) {
+          const clientSensorDataMessageMap: Map<ServerClient, ArrayBuffer[]> =
+            new Map();
+
+          const timestampArrayBuffer = dataView.buffer.slice(0, 2);
+          const context = parseSensorData(
+            dataView,
+            (sensorType, sensorDataView, context, isLast) => {
+              this.clients.forEach((client) => {
+                if (
+                  this.#allowDeviceSensorDataToClient(
+                    device,
+                    client,
+                    sensorType,
+                    sensorDataView,
+                  )
+                ) {
+                  if (!clientSensorDataMessageMap.has(client)) {
+                    clientSensorDataMessageMap.set(client, []);
+                  }
+                  clientSensorDataMessageMap.get(client)!.push(
+                    createMessage(SensorTypes, false, {
+                      type: sensorType,
+                      data: sensorDataView,
+                    }),
+                  );
+                }
+              });
+            },
+          );
+
+          clientSensorDataMessageMap.forEach((data, client) => {
+            const dataView = new DataView(
+              concatenateArrayBuffers(timestampArrayBuffer, ...data),
+            );
+            const deviceMessage = this.#createDeviceMessage(
+              device,
+              "sensorData",
+              dataView,
+            );
+
+            this.#sendToClient(
+              client,
+              this.#createDeviceServerMessage(device, deviceMessage),
+            );
+          });
+          return;
+        }
+        break;
+      default:
+        break;
+    }
+
     const deviceMessage = this.#createDeviceMessage(
       device,
       messageType,
       dataView,
     );
-
     this.broadcastMessage(
       this.#createDeviceServerMessage(device, deviceMessage),
-      this.#guardDeviceToClients(device, deviceMessage),
+      this.#allowDeviceToClients(device, deviceMessage),
     );
   }
 
@@ -418,7 +487,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     _console.log("onDeviceIsConnected", device.bluetoothId);
     this.broadcastMessage(
       this.#createDeviceIsConnectedMessage(device),
-      this.#guardDeviceToClients(device, "isConnected"),
+      this.#allowDeviceToClients(device, "isConnected"),
     );
   }
   #createDeviceIsConnectedMessage(device: Device) {
@@ -438,13 +507,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
   // PARSING
   clientToServerGuardManager = new GuardManager<
-    BaseServerClientGuardManagerArgs<BaseServer<ServerClient>, ServerClient>
+    [BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]
   >();
   serverToClientGuardManager = new GuardManager<
-    BaseServerClientGuardManagerArgs<BaseServer<ServerClient>, ServerClient>
+    [BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]
   >();
 
-  #guardServerToClient(
+  #allowServerToClient(
     client: ServerClient,
     message?: ServerMessageOrMessageType,
   ) {
@@ -459,11 +528,11 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
   #filterServerToClients(message: ServerMessageOrMessageType) {
     return this.clients.filter((client) =>
-      this.#guardServerToClient(client, message),
+      this.#allowServerToClient(client, message),
     );
   }
 
-  #guardClientToServer(client: ServerClient, message?: ServerMessage) {
+  #allowClientToServer(client: ServerClient, message?: ServerMessage) {
     return this.clientToServerGuardManager.evaluate({
       message,
       client,
@@ -472,19 +541,23 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   clientToDeviceGuardManager = new GuardManager<
-    BaseServerClientDeviceGuardManagerArgs<
-      BaseServer<ServerClient>,
-      ServerClient
-    >
+    [
+      BaseServerClientDeviceGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
   >();
   deviceToClientGuardManager = new GuardManager<
-    BaseServerClientDeviceGuardManagerArgs<
-      BaseServer<ServerClient>,
-      ServerClient
-    >
+    [
+      BaseServerClientDeviceGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
   >();
 
-  #guardClientToDevice(
+  #allowClientToDevice(
     client: ServerClient,
     device: Device,
     message?: DeviceMessage,
@@ -496,7 +569,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       server: this,
     });
   }
-  #guardDeviceToClient(
+  #allowDeviceToClient(
     device: Device,
     client: ServerClient,
     message?: DeviceMessageOrMessageType,
@@ -511,11 +584,56 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       server: this,
     });
   }
-
-  #guardDeviceToClients(device: Device, message: DeviceMessageOrMessageType) {
+  #allowDeviceToClients(device: Device, message: DeviceMessageOrMessageType) {
     return this.clients.filter((client) =>
-      this.#guardDeviceToClient(device, client, message),
+      this.#allowDeviceToClient(device, client, message),
     );
+  }
+
+  deviceSensorDataToClientGuardManager = new GuardManager<
+    [
+      BaseServerClientDeviceSensorDataGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
+  >();
+  #allowDeviceSensorDataToClient(
+    device: Device,
+    client: ServerClient,
+    sensorType: SensorType,
+    sensorData: DataView,
+  ) {
+    return this.deviceSensorDataToClientGuardManager.evaluate({
+      device,
+      client,
+      sensorType,
+      sensorData,
+      server: this,
+    });
+  }
+
+  clientSensorConfigurationToDeviceGuardManager = new GuardManager<
+    [
+      BaseServerClientDeviceSensorConfigurationGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
+  >();
+  #allowDeviceSensorConfigurationToClient(
+    device: Device,
+    client: ServerClient,
+    sensorType: SensorType,
+    sensorRate: number,
+  ) {
+    return this.clientSensorConfigurationToDeviceGuardManager.evaluate({
+      device,
+      client,
+      sensorType,
+      sensorRate,
+      server: this,
+    });
   }
 
   protected parseClientMessage(
@@ -529,7 +647,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       client,
     };
 
-    if (!this.#guardClientToServer(client)) {
+    if (!this.#allowClientToServer(client)) {
       return;
     }
 
@@ -561,18 +679,18 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
     const message: ServerMessage = { type: messageType, data: dataView };
 
-    if (!this.#guardClientToServer(client, message)) {
+    if (!this.#allowClientToServer(client, message)) {
       return;
     }
 
     switch (messageType) {
       case "isScanningAvailable":
-        if (this.#guardServerToClient(client, "isScanningAvailable")) {
+        if (this.#allowServerToClient(client, "isScanningAvailable")) {
           responseMessages.push(this.#isScanningAvailableMessage);
         }
         break;
       case "isScanning":
-        if (this.#guardServerToClient(client, "isScanning")) {
+        if (this.#allowServerToClient(client, "isScanning")) {
           responseMessages.push(this.#isScanningMessage);
         }
         break;
@@ -583,7 +701,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         scanner.stopScan();
         break;
       case "discoveredDevices":
-        if (this.#guardServerToClient(client, "discoveredDevices")) {
+        if (this.#allowServerToClient(client, "discoveredDevices")) {
           responseMessages.push(this.#discoveredDevicesMessage);
         }
         break;
@@ -618,7 +736,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             () => {
               this.broadcastMessage(
                 this.#createDeviceIsConnectedMessage(device),
-                this.#guardDeviceToClients(device, "isConnected"),
+                this.#allowDeviceToClients(device, "isConnected"),
               );
             },
             { once: true },
@@ -627,7 +745,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         }
         break;
       case "connectedDevices":
-        if (this.#guardServerToClient(client, "connectedDevices")) {
+        if (this.#allowServerToClient(client, "connectedDevices")) {
           responseMessages.push(this.#connectedDevicesMessage);
         }
         break;
@@ -669,20 +787,20 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
           const messages: DeviceMessage[] = [];
           RequiredDeviceInformationMessageTypes.forEach((messageType) => {
-            if (this.#guardDeviceToClient(device, client, messageType)) {
+            if (this.#allowDeviceToClient(device, client, messageType)) {
               messages.push(this.#createDeviceMessage(device, messageType));
             }
           });
 
           if (device.isWifiAvailable) {
             RequiredWifiMessageTypes.forEach((messageType) => {
-              if (this.#guardDeviceToClient(device, client, messageType)) {
+              if (this.#allowDeviceToClient(device, client, messageType)) {
                 messages.push(this.#createDeviceMessage(device, messageType));
               }
             });
           }
           if (device.hasCamera) {
-            if (this.#guardDeviceToClient(device, client, "cameraData")) {
+            if (this.#allowDeviceToClient(device, client, "cameraData")) {
               messages.push(this.#createDeviceMessage(device, "cameraData"));
             }
           }
@@ -711,7 +829,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
     let deviceMessages: DeviceMessage[] = [];
 
-    if (!this.#guardClientToDevice(client, device)) {
+    if (!this.#allowClientToDevice(client, device)) {
       return;
     }
 
@@ -739,7 +857,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     device: Device,
     dataView: DataView<ArrayBuffer>,
   ) {
-    if (this.clientToDeviceGuardManager.isEmpty) {
+    if (
+      this.clientToDeviceGuardManager.isEmpty &&
+      this.clientSensorConfigurationToDeviceGuardManager.isEmpty
+    ) {
       return dataView;
     }
     const filteredTxMessages: ArrayBuffer[] = [];
@@ -747,15 +868,49 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       dataView,
       TxRxMessageTypes,
       (messageType, dataView) => {
-        const message: DeviceMessage = { type: messageType, data: dataView };
-        if (this.#guardClientToDevice(client, device, message)) {
-          filteredTxMessages.push(createMessage(TxRxMessageTypes, message));
+        let message: DeviceMessage = { type: messageType, data: dataView };
+        switch (message.type) {
+          case "setSensorConfiguration":
+            if (!this.clientSensorConfigurationToDeviceGuardManager.isEmpty) {
+              _console.log("trimming sensorConfiguration...");
+              const sensorConfiguration = parseSensorConfiguration(
+                message.data,
+                (sensorType, sensorRate) => {
+                  return this.#allowDeviceSensorConfigurationToClient(
+                    device,
+                    client,
+                    sensorType,
+                    sensorRate,
+                  );
+                },
+              );
+              _console.log("trimmed sensorConfiguration", sensorConfiguration);
+              const sensorConfigurationData =
+                serializeSensorConfiguration(sensorConfiguration);
+              if (sensorConfigurationData.byteLength > 0) {
+                message.data = sensorConfigurationData;
+              } else {
+                _console.log(
+                  "no sensorConfigurationData - sending existing sensorConfiguration",
+                );
+                message = this.#createDeviceMessage(
+                  device,
+                  "getSensorConfiguration",
+                );
+              }
+            }
+            break;
+        }
+        if (this.#allowClientToDevice(client, device, message)) {
+          filteredTxMessages.push(
+            createMessage(TxRxMessageTypes, true, message),
+          );
         }
       },
       null,
       true,
     );
-    return new DataView(concatenateArrayBuffers(filteredTxMessages));
+    return new DataView(concatenateArrayBuffers(...filteredTxMessages));
   }
   #parseClientDeviceMessageCallback(
     messageType: ConnectionMessageType,
@@ -769,7 +924,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     const { client, device, deviceMessages } = context;
 
     const message: DeviceMessage = { type: messageType, data: dataView };
-    if (!this.#guardClientToDevice(client, device, message)) {
+    if (!this.#allowClientToDevice(client, device, message)) {
       return;
     }
 
@@ -778,14 +933,12 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         device.connectionManager!.sendSmpMessage(dataView.buffer);
         break;
       case "tx":
-        {
-          dataView = this.#filterClientToDeviceTxMessage(
-            client,
-            device,
-            dataView,
-          );
-          device.connectionManager!.sendTxData(dataView.buffer);
-        }
+        dataView = this.#filterClientToDeviceTxMessage(
+          client,
+          device,
+          dataView,
+        );
+        device.connectionManager!.sendTxData(dataView.buffer);
         break;
       default:
         deviceMessages.push(message);

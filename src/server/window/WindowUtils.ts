@@ -9,7 +9,7 @@ export type WindowMessageType = (typeof WindowMessageTypes)[number];
 export type WindowMessage = WindowMessageType | Message<WindowMessageType>;
 export function createWindowMessage(...messages: WindowMessage[]) {
   _console.log("createWindowMessage", ...messages);
-  return createMessage(WindowMessageTypes, ...messages);
+  return createMessage(WindowMessageTypes, true, ...messages);
 }
 
 export const windowMessageKey = "BrilliantWear";

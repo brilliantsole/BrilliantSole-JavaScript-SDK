@@ -32,7 +32,7 @@ type WebSocketMessage = WebSocketMessageType | Message<WebSocketMessageType>;
 type WebSocketMessageOrMessageType = WebSocketMessage | WebSocketMessageType;
 function createWebSocketMessage(...messages: WebSocketMessageOrMessageType[]) {
   _console.log("createWebSocketMessage", ...messages);
-  return createMessage(WebSocketMessageTypes, ...messages);
+  return createMessage(WebSocketMessageTypes, true, ...messages);
 }
 
 const WebSocketDeviceInformationMessageTypes: WebSocketMessageType[] = [

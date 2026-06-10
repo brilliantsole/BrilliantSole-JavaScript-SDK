@@ -335,7 +335,7 @@ abstract class BaseConnectionManager {
           message.data,
         );
       } else {
-        return createMessage(TxRxMessageTypes, message);
+        return createMessage(TxRxMessageTypes, true, message);
       }
     });
     this.#pendingMessages.length = 0;

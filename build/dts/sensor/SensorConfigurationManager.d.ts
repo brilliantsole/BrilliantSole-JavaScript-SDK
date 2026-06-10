@@ -17,6 +17,9 @@ export interface SensorConfigurationEventMessages {
 }
 export type SensorConfigurationEventDispatcher = EventDispatcher<Device, SensorConfigurationEventType, SensorConfigurationEventMessages>;
 export type SendSensorConfigurationMessageCallback = SendMessageCallback<SensorConfigurationMessageType>;
+export declare function parseSensorConfiguration(dataView: DataView<ArrayBuffer>, callback?: (sensorType: SensorType, sensorRate: number, context?: any) => boolean, context?: any): SensorConfiguration;
+export declare function assertValidSensorRate(sensorRate: number): void;
+export declare function serializeSensorConfiguration(sensorConfiguration: SensorConfiguration, availableSensorTypes?: SensorType[]): DataView<ArrayBuffer>;
 declare class SensorConfigurationManager {
     #private;
     constructor();

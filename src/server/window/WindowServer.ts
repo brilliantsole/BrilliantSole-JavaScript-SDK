@@ -35,6 +35,8 @@ class WindowServer extends BaseServer<WindowServerClient> {
   constructor() {
     super();
 
+    this.clearSensorConfigurationsWhenNoClients = false; // may set to true if it's a headless "app" hub
+
     if (WindowServer.shared && this != WindowServer.shared) {
       throw Error("WindowServer is a singleton - use WindowServer.shared");
     }

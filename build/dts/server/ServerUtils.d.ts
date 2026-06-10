@@ -9,7 +9,7 @@ export interface Message<MessageType extends string> {
     type: MessageType;
     data?: MessageLike | MessageLike[];
 }
-export declare function createMessage<MessageType extends string>(enumeration: readonly MessageType[], ...messages: (Message<MessageType> | MessageType)[]): ArrayBuffer;
+export declare function createMessage<MessageType extends string>(enumeration: readonly MessageType[], use2Bytes: boolean, ...messages: (Message<MessageType> | MessageType)[]): ArrayBuffer;
 export type ServerMessage = Message<ServerMessageType>;
 export type ServerMessageOrMessageType = ServerMessage | ServerMessageType;
 export declare function createServerMessage(...messages: ServerMessageOrMessageType[]): ArrayBuffer;

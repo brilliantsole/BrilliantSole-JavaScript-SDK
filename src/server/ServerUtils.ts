@@ -52,6 +52,7 @@ export interface Message<MessageType extends string> {
 
 export function createMessage<MessageType extends string>(
   enumeration: readonly MessageType[],
+  use2Bytes: boolean,
   ...messages: (Message<MessageType> | MessageType)[]
 ) {
   _console.log("createMessage", ...messages);
@@ -75,12 +76,18 @@ export function createMessage<MessageType extends string>(
     _console.assertEnumWithError(message.type, enumeration);
     const messageTypeEnum = enumeration.indexOf(message.type);
 
-    const messageDataLengthDataView = new DataView(new ArrayBuffer(2));
-    messageDataLengthDataView.setUint16(
-      0,
-      messageDataArrayBufferByteLength,
-      true,
-    );
+    let messageDataLengthDataView: DataView;
+    if (use2Bytes) {
+      messageDataLengthDataView = new DataView(new ArrayBuffer(2));
+      messageDataLengthDataView.setUint16(
+        0,
+        messageDataArrayBufferByteLength,
+        true,
+      );
+    } else {
+      messageDataLengthDataView = new DataView(new ArrayBuffer(1));
+      messageDataLengthDataView.setUint8(0, messageDataArrayBufferByteLength);
+    }
 
     return concatenateArrayBuffers(
       messageTypeEnum,
@@ -96,14 +103,14 @@ export type ServerMessage = Message<ServerMessageType>;
 export type ServerMessageOrMessageType = ServerMessage | ServerMessageType;
 export function createServerMessage(...messages: ServerMessageOrMessageType[]) {
   _console.log("createServerMessage", ...messages);
-  return createMessage(ServerMessageTypes, ...messages);
+  return createMessage(ServerMessageTypes, true, ...messages);
 }
 
 export type DeviceMessage = Message<DeviceEventType>;
 export type DeviceMessageOrMessageType = DeviceEventType | DeviceMessage;
 export function createDeviceMessage(...messages: DeviceMessageOrMessageType[]) {
   _console.log("createDeviceMessage", ...messages);
-  return createMessage(DeviceEventTypes, ...messages);
+  return createMessage(DeviceEventTypes, true, ...messages);
 }
 
 export type ClientDeviceMessage = Message<ConnectionMessageType>;
@@ -114,7 +121,7 @@ export function createClientDeviceMessage(
   ...messages: ClientDeviceMessageOrMessageType[]
 ) {
   _console.log("createClientDeviceMessage", ...messages);
-  return createMessage(ConnectionMessageTypes, ...messages);
+  return createMessage(ConnectionMessageTypes, true, ...messages);
 }
 
 // STATIC MESSAGES

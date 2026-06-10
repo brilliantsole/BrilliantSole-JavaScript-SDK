@@ -1,3 +1,4 @@
+import { Euler } from "../utils/MathUtils.ts";
 import PressureSensorDataManager, { PressureDataEventMessages, PressureSensorEventMessages } from "./PressureSensorDataManager.ts";
 import MotionSensorDataManager, { MotionSensorDataEventMessages } from "./MotionSensorDataManager.ts";
 import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./BarometerSensorDataManager.ts";
@@ -29,6 +30,17 @@ interface AnySensorDataEventMessages {
 }
 export type SensorDataEventMessages = (_SensorDataEventMessages & AnySensorDataEventMessages) & PressureSensorEventMessages & ButtonSensorEventMessages & TouchSensorEventMessages;
 export type SensorDataEventDispatcher = EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;
+export type SensorDataParseContext = {
+    timestamp: number;
+    euler?: Euler;
+    messages: {
+        [T in keyof _SensorDataEventMessages]: {
+            sensorType: T;
+            message: _SensorDataEventMessages[T];
+            dataView?: DataView<ArrayBuffer>;
+        };
+    }[keyof _SensorDataEventMessages][];
+};
 export declare const SensorMetaDataMessageTypes: readonly ["getSensorCounts"];
 export type SensorMetaDataMessageType = (typeof SensorMetaDataMessageTypes)[number];
 export declare const RequiredSensorMetaDataMessageTypes: SensorMetaDataMessageType[];
@@ -37,6 +49,7 @@ export type SensorMetaDataEventType = (typeof SensorMetaDataEventTypes)[number];
 export interface SensorMetaDataEventMessages {
 }
 export type SensorMetaDataEventDispatcher = EventDispatcher<Device, SensorMetaDataEventType, SensorMetaDataEventMessages>;
+export declare function parseSensorData(dataView: DataView<ArrayBuffer>, callback: (sensorType: SensorType, dataView: DataView<ArrayBuffer>, context: SensorDataParseContext, isLast?: boolean) => void): SensorDataParseContext;
 declare class SensorDataManager {
     #private;
     constructor();
@@ -50,12 +63,8 @@ declare class SensorDataManager {
     static AssertValidSensorTypeEnum(sensorTypeEnum: number): void;
     get eventDispatcher(): SensorDataEventDispatcher & SensorMetaDataEventDispatcher;
     set eventDispatcher(eventDispatcher: SensorDataEventDispatcher & SensorMetaDataEventDispatcher);
-    get dispatchEvent(): (<T extends "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone" | "buttons" | "touches" | "light" | "sensorData" | "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "pressureMotionAutoRangeEnabled" | "pressureMotionAutoRangeDisabled" | "pressureMotionAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel" | "numberOfButtons" | "button" | "buttonDown" | "buttonUp" | "numberOfTouches" | "touch" | "touchDown" | "touchUp" | "getPressurePositions" | "getSensorScalars">(type: T, message: SensorDataEventMessages[T]) => void) & (<T extends "getSensorCounts">(type: T, message: SensorMetaDataEventMessages[T]) => void);
+    get dispatchEvent(): (<T extends "getPressurePositions" | "getSensorScalars" | "sensorData" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone" | "buttons" | "touches" | "light" | "pressureAutoRangeEnabled" | "pressureAutoRangeDisabled" | "pressureAutoRange" | "pressureMotionAutoRangeEnabled" | "pressureMotionAutoRangeDisabled" | "pressureMotionAutoRange" | "isRecordingPressureCalibrationData" | "pressureCalibrationDataRecordStart" | "pressureCalibrationDataRecordStop" | "pressureCalibrationDataRecordingProgress" | "isTrainingPressureCalibration" | "pressureCalibrationTrainStart" | "pressureCalibrationTrainEnd" | "pressureCalibrationTrainProgress" | "calibratedPressureModel" | "numberOfButtons" | "button" | "buttonDown" | "buttonUp" | "numberOfTouches" | "touch" | "touchDown" | "touchUp">(type: T, message: SensorDataEventMessages[T]) => void) & (<T extends "getSensorCounts">(type: T, message: SensorMetaDataEventMessages[T]) => void);
     parseMessage(messageType: SensorDataMessageType | SensorMetaDataMessageType, dataView: DataView<ArrayBuffer>): void;
-    parseScalars(dataView: DataView<ArrayBuffer>): void;
-    parseCounts(dataView: DataView<ArrayBuffer>): void;
-    private parseData;
-    private parseDataCallback;
     clear(): void;
 }
 export default SensorDataManager;

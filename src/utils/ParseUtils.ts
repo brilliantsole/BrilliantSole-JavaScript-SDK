@@ -6,14 +6,14 @@ const _console = createConsole("ParseUtils", { log: false });
 
 export function parseStringFromDataView(
   dataView: DataView<ArrayBuffer>,
-  byteOffset: number = 0
+  byteOffset: number = 0,
 ) {
   const stringLength = dataView.getUint8(byteOffset++);
   const string = textDecoder.decode(
     dataView.buffer.slice(
       dataView.byteOffset + byteOffset,
-      dataView.byteOffset + byteOffset + stringLength
-    )
+      dataView.byteOffset + byteOffset + stringLength,
+    ),
   );
   byteOffset += stringLength;
   return { string, byteOffset };
@@ -26,17 +26,17 @@ export function parseMessage<MessageType extends string>(
     messageType: MessageType,
     dataView: DataView<ArrayBuffer>,
     context?: any,
-    isLast?: boolean
+    isLast?: boolean,
   ) => void,
   context?: any,
-  parseMessageLengthAsUint16: boolean = false
+  parseMessageLengthAsUint16: boolean = false,
 ) {
   let byteOffset = 0;
   while (byteOffset < dataView.byteLength) {
     const messageTypeEnum = dataView.getUint8(byteOffset++);
     _console.assertWithError(
       messageTypeEnum in messageTypes,
-      `invalid messageTypeEnum ${messageTypeEnum}`
+      `invalid messageTypeEnum ${messageTypeEnum}`,
     );
     const messageType = messageTypes[messageTypeEnum];
 

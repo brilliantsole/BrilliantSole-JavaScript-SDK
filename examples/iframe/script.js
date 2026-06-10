@@ -63,10 +63,24 @@ const urlRefresh = () => {
 const urlRefreshButton = document.getElementById("urlRefresh");
 urlRefreshButton.addEventListener("click", () => urlRefresh());
 
-window.allowSensorData = true;
-BS.WindowServer.deviceToClientGuardManager.add(({ client, message }) => {
-  if (message?.type == "sensorData") {
-    return window.allowSensorData;
-  }
-  return true;
-});
+window.allowGameRotationConfig = true;
+BS.WindowServer.clientSensorConfigurationToDeviceGuardManager.add(
+  ({ client, message, sensorType, sensorRate }) => {
+    console.log("allow sensorConfiguration?", { sensorType, sensorRate });
+    if (sensorType == "gameRotation") {
+      return window.allowGameRotationConfig;
+    }
+    return true;
+  },
+);
+
+window.allowGameRotationData = true;
+BS.WindowServer.deviceSensorDataToClientGuardManager.add(
+  ({ client, message, sensorType, sensorData }) => {
+    console.log("allow sensorData?", { sensorType, sensorData });
+    if (sensorType == "gameRotation") {
+      return window.allowGameRotationData;
+    }
+    return true;
+  },
+);

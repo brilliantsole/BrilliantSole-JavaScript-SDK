@@ -19,7 +19,7 @@ export type UDPServerMessage =
   | Message<UDPServerMessageType>;
 export function createUDPServerMessage(...messages: UDPServerMessage[]) {
   _console.log("createUDPServerMessage", ...messages);
-  return createMessage(UDPServerMessageTypes, ...messages);
+  return createMessage(UDPServerMessageTypes, true, ...messages);
 }
 
 // STATIC MESSAGES

@@ -129,7 +129,7 @@ export type SensorDataEventDispatcher = EventDispatcher<
   SensorDataEventMessages
 >;
 
-type SensorDataParseContext = {
+export type SensorDataParseContext = {
   timestamp: number;
   euler?: Euler;
   messages: {
@@ -163,6 +163,31 @@ export type SensorMetaDataEventDispatcher = EventDispatcher<
   SensorMetaDataEventType,
   SensorMetaDataEventMessages
 >;
+
+export function parseSensorData(
+  dataView: DataView<ArrayBuffer>,
+  callback: (
+    sensorType: SensorType,
+    dataView: DataView<ArrayBuffer>,
+    context: SensorDataParseContext,
+    isLast?: boolean,
+  ) => void,
+) {
+  _console.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+
+  let byteOffset = 0;
+  const timestamp = parseTimestamp(dataView, byteOffset);
+  byteOffset += 2;
+
+  const _dataView = new DataView(dataView.buffer, byteOffset);
+
+  const context: SensorDataParseContext = {
+    timestamp,
+    messages: [],
+  };
+  parseMessage(_dataView, SensorTypes, callback, context);
+  return context;
+}
 
 class SensorDataManager {
   constructor() {
@@ -223,23 +248,23 @@ class SensorDataManager {
 
     switch (messageType) {
       case "getSensorScalars":
-        this.parseScalars(dataView);
+        this.#parseScalars(dataView);
         break;
       case "getPressurePositions":
         this.pressureSensorDataManager.parsePositions(dataView);
         break;
       case "sensorData":
-        this.parseData(dataView);
+        this.#parseData(dataView);
         break;
       case "getSensorCounts":
-        this.parseCounts(dataView);
+        this.#parseCounts(dataView);
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }
   }
 
-  parseScalars(dataView: DataView<ArrayBuffer>) {
+  #parseScalars(dataView: DataView<ArrayBuffer>) {
     for (
       let byteOffset = 0;
       byteOffset < dataView.byteLength;
@@ -257,7 +282,7 @@ class SensorDataManager {
     }
   }
 
-  parseCounts(dataView: DataView<ArrayBuffer>) {
+  #parseCounts(dataView: DataView<ArrayBuffer>) {
     for (
       let byteOffset = 0;
       byteOffset < dataView.byteLength;
@@ -287,29 +312,17 @@ class SensorDataManager {
     }
   }
 
-  private parseData(dataView: DataView<ArrayBuffer>) {
-    _console.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
-
-    let byteOffset = 0;
-    const timestamp = parseTimestamp(dataView, byteOffset);
-    byteOffset += 2;
-
-    const _dataView = new DataView(dataView.buffer, byteOffset);
-
-    const context: SensorDataParseContext = {
-      timestamp,
-      messages: [],
-    };
-    parseMessage(
-      _dataView,
-      SensorTypes,
-      this.parseDataCallback.bind(this),
-      context,
+  #parseData(dataView: DataView<ArrayBuffer>) {
+    const context = parseSensorData(
+      dataView,
+      this.#parseDataCallback.bind(this),
     );
-    context.messages.forEach(({ sensorType, message, dataView }) => {
+    const { messages, timestamp, euler } = context;
+
+    messages.forEach(({ sensorType, message, dataView }) => {
       if (sensorType == "pressure") {
-        if (context.euler) {
-          this.pressureSensorDataManager.onEuler(context.euler, timestamp);
+        if (euler) {
+          this.pressureSensorDataManager.onEuler(euler, timestamp);
         }
         const scalar = this.#scalars.get("pressure") || 1;
         message.pressure = this.pressureSensorDataManager.parseData(
@@ -324,7 +337,7 @@ class SensorDataManager {
     });
   }
 
-  private parseDataCallback(
+  #parseDataCallback(
     sensorType: SensorType,
     dataView: DataView<ArrayBuffer>,
     context: SensorDataParseContext,

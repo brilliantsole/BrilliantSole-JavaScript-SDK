@@ -14,7 +14,7 @@ export type WebSocketMessage =
   | Message<WebSocketMessageType>;
 export function createWebSocketMessage(...messages: WebSocketMessage[]) {
   _console.log("createWebSocketMessage", ...messages);
-  return createMessage(WebSocketMessageTypes, ...messages);
+  return createMessage(WebSocketMessageTypes, true, ...messages);
 }
 
 // STATIC MESSAGES

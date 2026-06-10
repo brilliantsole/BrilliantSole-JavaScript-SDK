@@ -38,7 +38,7 @@ type SocketMessage = Message<SocketMessageType>;
 type SocketMessageOrMessageType = SocketMessage | SocketMessageType;
 function createSocketMessage(...messages: SocketMessageOrMessageType[]) {
   _console.log("createSocketMessage", ...messages);
-  return createMessage(SocketMessageTypes, ...messages);
+  return createMessage(SocketMessageTypes, true, ...messages);
 }
 
 const SocketDeviceInformationMessageTypes: SocketMessageType[] = [
