@@ -16146,18 +16146,18 @@ const ServerEventTypes = [
     "clientDisconnected",
 ];
 class BaseServer {
-    eventDispatcher = new EventDispatcher(this, ServerEventTypes);
+    #eventDispatcher = new EventDispatcher(this, ServerEventTypes);
     get addEventListener() {
-        return this.eventDispatcher.addEventListener;
+        return this.#eventDispatcher.addEventListener;
     }
     get dispatchEvent() {
-        return this.eventDispatcher.dispatchEvent;
+        return this.#eventDispatcher.dispatchEvent;
     }
     get removeEventListener() {
-        return this.eventDispatcher.removeEventListener;
+        return this.#eventDispatcher.removeEventListener;
     }
     get waitForEvent() {
-        return this.eventDispatcher.waitForEvent;
+        return this.#eventDispatcher.waitForEvent;
     }
     constructor() {
         _console$3.assertWithError(scanner$1, "no scanner defined");
@@ -16723,12 +16723,7 @@ class WebSocketServer extends BaseServer {
         responseMessages = responseMessages.filter(Boolean);
         const responseMessage = concatenateArrayBuffers(responseMessages);
         _console$2.log(`sending ${responseMessage.byteLength} bytes to client...`);
-        try {
-            this.#sendToClient(client, responseMessage);
-        }
-        catch (error) {
-            _console$2.log("error sending message", error);
-        }
+        this.#sendToClient(client, responseMessage);
     }
     #onClientMessage(messageType, dataView, context) {
         const { responseMessages, client } = context;
@@ -16759,7 +16754,12 @@ class WebSocketServer extends BaseServer {
             return;
         }
         _console$2.log(`sending ${message.byteLength} bytes to client`);
-        client.send(message);
+        try {
+            client.send(message);
+        }
+        catch (error) {
+            _console$2.log("error sending message", error);
+        }
     }
     sendToClient(client, message) {
         this.#sendToClient(client, createWebSocketMessage$1({ type: "serverMessage", data: message }));

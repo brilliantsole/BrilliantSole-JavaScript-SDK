@@ -1,23 +1,15 @@
 import { createConsole } from "../../utils/Console.ts";
-import {
-  addEventListeners,
-  removeEventListeners,
-} from "../../utils/EventUtils.ts";
-import { parseMessage } from "../../utils/ParseUtils.ts";
+import { addEventListeners } from "../../utils/EventUtils.ts";
 import BaseClient from "../BaseClient.ts";
 import {
   createServerMessage,
-  MessageLike,
-  ServerMessage,
+  ServerMessageOrMessageType,
 } from "../ServerUtils.ts";
+
 import {
-  createWindowMessage,
-  windowMessageKey,
-  WindowMessageType,
-  WindowMessageTypes,
-  windowPingMessage,
-  windowPongMessage,
-} from "./WindowUtils.ts";
+  default as WindowManagerClient,
+  WindowManagerClientEventMap,
+} from "../../window/WindowManagerClient.ts";
 
 const _console = createConsole("WindowClient", { log: false });
 
@@ -31,176 +23,65 @@ class WindowClient extends BaseClient {
       throw Error("WindowClient is a singleton - use WindowClient.shared");
     }
 
-    addEventListeners(window, this.#boundWindowEventListeners);
-
-    this.connect();
+    addEventListeners(WindowManagerClient, this.#boundWindowEventListeners);
   }
 
   // WINDOW
   #boundWindowEventListeners: {
-    [K in keyof WindowEventMap]?: (event: WindowEventMap[K]) => void;
+    [K in keyof WindowManagerClientEventMap]?: (
+      event: WindowManagerClientEventMap[K],
+    ) => void;
   } = {
-    message: this.#onWindowMessage.bind(this),
+    connectionStatus: this.#onWindowManagerClientConnectionStatus.bind(this),
+    serverMessage: this.#onWindowManagerClientServerMessage.bind(this),
   };
-  #onWindowMessage(event: WindowEventMap["message"]) {
-    if (event.source == window) {
-      return;
-    }
-    if (!event.source) {
-      return;
-    }
-    if (event.source != window.parent) {
-      return;
-    }
-    // _console.log("onWindowMessage", event);
-
-    const arrayBuffer: ArrayBuffer | undefined = event.data[windowMessageKey];
-    if (!arrayBuffer) {
-      return;
-    }
-    const { ports } = event;
-    if (ports?.length > 0) {
-      this.#onMessagePort(ports[0]);
-    }
-
-    _console.log("onWindowMessage", arrayBuffer, ports);
-    const dataView = new DataView(arrayBuffer) as DataView<ArrayBuffer>;
-    _console.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
-    this.#parseWindowMessage(dataView);
-
-    if (!this.#isConnected) {
-      this.#isConnected = true;
-      this._sendRequiredMessages();
-    }
-  }
-
-  #port?: MessagePort;
-  #onMessagePort(port: MessagePort) {
-    if (this.#port == port) {
-      return;
-    }
-    if (this.#port) {
-      removeEventListeners(
-        this.#port,
-        this.#boundMessageChannelPortEventListeners,
-      );
-      this.#port.close();
-    }
-    this.#port = port;
-    _console.log("port", this.#port);
-    addEventListeners(this.#port, this.#boundMessageChannelPortEventListeners);
-    this.#port.start();
-  }
-
-  // MESSAGE PORT
-  #boundMessageChannelPortEventListeners: {
-    [K in keyof MessagePortEventMap]?: (event: MessagePortEventMap[K]) => void;
-  } = {
-    message: this.#onMessagePortMessage.bind(this),
-  };
-
-  #onMessagePortMessage(event: MessagePortEventMap["message"]) {
-    _console.log("onMessagePortMessage", event);
-    const port = event.currentTarget as MessagePort;
-    if (this.#port != port) {
-      _console.error("received message from wrong port");
-      return;
-    }
-    const arrayBuffer = event.data as ArrayBuffer;
-    const dataView = new DataView(arrayBuffer) as DataView<ArrayBuffer>;
-    _console.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
-    this.#parseWindowMessage(dataView);
-  }
-
-  // PARSING
-
-  #parseWindowMessage(dataView: DataView<ArrayBuffer>) {
-    parseMessage(
-      dataView,
-      WindowMessageTypes,
-      this.#onServerMessage.bind(this),
-      null,
-      true,
-    );
-  }
-
-  #onServerMessage(
-    messageType: WindowMessageType,
-    dataView: DataView<ArrayBuffer>,
+  #onWindowManagerClientConnectionStatus(
+    event: WindowManagerClientEventMap["connectionStatus"],
   ) {
-    switch (messageType) {
-      case "ping":
-        this.#pong();
-        break;
-      case "pong":
-        break;
-      case "serverMessage":
-        this.parseMessage(dataView);
-        break;
-      default:
-        _console.error(`uncaught messageType "${messageType}"`);
-        break;
-    }
+    _console.log(
+      "onWindowManagerClientConnectionStatus",
+      event.message.connectionStatus,
+    );
+    this._sendRequiredMessages();
+  }
+  #onWindowManagerClientServerMessage(
+    event: WindowManagerClientEventMap["serverMessage"],
+  ) {
+    _console.log("onWindowManagerClientServerMessage", event.message.dataView);
+    this.parseMessage(event.message.dataView);
   }
 
   // CONNECTION
-
-  #isConnected = false;
   get isConnected() {
-    return this.#isConnected;
+    return WindowManagerClient.isConnected;
   }
   get isDisconnected() {
-    return !this.isConnected;
+    return WindowManagerClient.isDisconnected;
   }
 
-  // connection is automatic for now
   connect() {
-    this.#ping();
+    this.#onConnectionCommand();
   }
-  disconnect(): void {
-    throw new Error("Method not implemented.");
+  disconnect() {
+    this.#onConnectionCommand();
   }
-  reconnect(): void {
-    throw new Error("Method not implemented.");
+  reconnect() {
+    this.#onConnectionCommand();
   }
-  toggleConnection(): void {
-    throw new Error("Method not implemented.");
+  toggleConnection() {
+    this.#onConnectionCommand();
+  }
+  #onConnectionCommand() {
+    throw new Error("WindowClient connection is automatic");
   }
 
   // MESSAGING
-  #sendMessage(message: MessageLike, transfer?: Transferable[] | undefined) {
-    if (message != windowPingMessage) {
-      this.assertConnection();
-    }
-    _console.log("sendMessage", message, { transfer });
-    if (this.#port) {
-      this.#port.postMessage(message, { transfer });
-    } else {
-      window.parent.postMessage(
-        {
-          [windowMessageKey]: message,
-        },
-        "*",
-        transfer,
-      );
-    }
-  }
-
-  sendServerMessage(...messages: ServerMessage[]) {
-    this.#sendMessage(
-      createWindowMessage({
-        type: "serverMessage",
-        data: createServerMessage(...messages),
-      }),
-    );
-  }
-
-  // PING
-  #ping() {
-    this.#sendMessage(windowPingMessage);
-  }
-  #pong() {
-    this.#sendMessage(windowPongMessage);
+  sendServerMessage(...messages: ServerMessageOrMessageType[]) {
+    _console.log("sendServerMessage", messages);
+    WindowManagerClient.sendMessage({
+      type: "serverMessage",
+      data: createServerMessage(...messages),
+    });
   }
 }
 

@@ -55,7 +55,6 @@ export interface BaseServerClientDeviceSensorConfigurationGuardManagerArg<Server
 }
 declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     #private;
-    protected eventDispatcher: ServerEventDispatcher<ServerClient>;
     get addEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
         type: T;
         target: BaseServer<ServerClient>;

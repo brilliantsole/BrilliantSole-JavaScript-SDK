@@ -1,15 +1,11 @@
-import BaseServer, { BaseServerClient, BaseServerClientContext } from "../BaseServer.ts";
-interface WindowServerClient extends BaseServerClient {
-    iframe: HTMLIFrameElement;
-    messageChannel?: MessageChannel;
-    didSendMessagePort?: boolean;
-}
-export interface WindowServerClientContext extends BaseServerClientContext<WindowServerClient> {
-    transfer: Transferable[];
+import BaseServer, { BaseServerClient } from "../BaseServer.ts";
+import { WindowManagerServerClient } from "../../window/WindowManagerServer.ts";
+interface WindowServerClient extends BaseServerClient, WindowManagerServerClient {
 }
 declare class WindowServer extends BaseServer<WindowServerClient> {
     #private;
     static readonly shared: WindowServer;
+    init(): void;
     constructor();
     protected sendToClient(client: WindowServerClient, message: ArrayBuffer): void;
 }

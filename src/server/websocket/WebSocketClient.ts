@@ -2,13 +2,12 @@ import { createConsole } from "../../utils/Console.ts";
 import {
   createServerMessage,
   MessageLike,
-  ServerMessage,
+  ServerMessageOrMessageType,
 } from "../ServerUtils.ts";
 import {
   addEventListeners,
   removeEventListeners,
 } from "../../utils/EventUtils.ts";
-import ClientConnectionManager from "../../connection/ClientConnectionManager.ts";
 import BaseClient, { ServerURL } from "../BaseClient.ts";
 import type * as ws from "ws";
 import { Timer } from "../../utils/Timer.ts";
@@ -18,7 +17,6 @@ import {
   WebSocketMessageTypes,
   webSocketPingTimeout,
   webSocketReconnectTimeout,
-  WebSocketMessage,
   webSocketPingMessage,
   webSocketPongMessage,
 } from "./WebSocketUtils.ts";
@@ -110,7 +108,7 @@ class WebSocketClient extends BaseClient {
     this.#pingTimer.restart();
   }
 
-  sendServerMessage(...messages: ServerMessage[]) {
+  sendServerMessage(...messages: ServerMessageOrMessageType[]) {
     this.#sendMessage(
       createWebSocketMessage({
         type: "serverMessage",

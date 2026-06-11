@@ -11,11 +11,9 @@ import {
   ServerMessage,
   ServerMessageType,
   createDeviceMessage,
-  DeviceMessageType,
   ServerMessageOrMessageType,
   DeviceMessageOrMessageType,
   createMessage,
-  DeviceMessageTypes,
 } from "./ServerUtils.ts";
 import Device, {
   BoundDeviceEventListeners,
@@ -161,19 +159,21 @@ export interface BaseServerClientDeviceSensorConfigurationGuardManagerArg<
 
 abstract class BaseServer<ServerClient extends BaseServerClient> {
   // EVENT DISPATCHER
-  protected eventDispatcher: ServerEventDispatcher<ServerClient> =
-    new EventDispatcher(this as BaseServer<ServerClient>, ServerEventTypes);
+  #eventDispatcher: ServerEventDispatcher<ServerClient> = new EventDispatcher(
+    this as BaseServer<ServerClient>,
+    ServerEventTypes,
+  );
   get addEventListener() {
-    return this.eventDispatcher.addEventListener;
+    return this.#eventDispatcher.addEventListener;
   }
   protected get dispatchEvent() {
-    return this.eventDispatcher.dispatchEvent;
+    return this.#eventDispatcher.dispatchEvent;
   }
   get removeEventListener() {
-    return this.eventDispatcher.removeEventListener;
+    return this.#eventDispatcher.removeEventListener;
   }
   get waitForEvent() {
-    return this.eventDispatcher.waitForEvent;
+    return this.#eventDispatcher.waitForEvent;
   }
 
   // CONSTRUCTOR

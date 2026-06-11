@@ -5,6 +5,7 @@ import {
   ClientDeviceMessage,
   createClientDeviceMessage,
   ServerMessageType,
+  ServerMessageOrMessageType,
 } from "./ServerUtils.ts";
 import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
 import EventDispatcher, {
@@ -108,7 +109,7 @@ abstract class BaseClient {
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
   }
-  protected get dispatchEvent() {
+  get #dispatchEvent() {
     return this.#eventDispatcher.dispatchEvent;
   }
   get removeEventListener() {
@@ -118,6 +119,7 @@ abstract class BaseClient {
     return this.#eventDispatcher.waitForEvent;
   }
 
+  // CONNECTION
   abstract isConnected: boolean;
   protected assertConnection() {
     _console.assertWithError(this.isConnected, "notConnected");
@@ -152,7 +154,7 @@ abstract class BaseClient {
     this._reconnectOnDisconnection = newReconnectOnDisconnection;
   }
 
-  abstract sendServerMessage(...messages: ServerMessage[]): void;
+  abstract sendServerMessage(...messages: ServerMessageOrMessageType[]): void;
 
   // CONNECTION STATUS
   #_connectionStatus: ClientConnectionStatus = "notConnected";
@@ -167,15 +169,15 @@ abstract class BaseClient {
     }
     this.#_connectionStatus = newConnectionStatus;
 
-    this.dispatchEvent("connectionStatus", {
+    this.#dispatchEvent("connectionStatus", {
       connectionStatus: this.connectionStatus,
     });
-    this.dispatchEvent(this.connectionStatus, {});
+    this.#dispatchEvent(this.connectionStatus, {});
 
     switch (newConnectionStatus) {
       case "connected":
       case "notConnected":
-        this.dispatchEvent("isConnected", { isConnected: this.isConnected });
+        this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
         if (this.isConnected) {
           // this._sendRequiredMessages();
         } else {
@@ -188,12 +190,12 @@ abstract class BaseClient {
     return this._connectionStatus;
   }
 
-  static #RequiredMessageTypes: ServerMessage[] = [
+  static #RequiredMessageTypes: ServerMessageOrMessageType[] = [
     "isScanningAvailable",
     "discoveredDevices",
     "connectedDevices",
   ];
-  get #requiredMessageTypes(): ServerMessage[] {
+  get #requiredMessageTypes(): ServerMessageOrMessageType[] {
     return BaseClient.#RequiredMessageTypes;
   }
   protected _sendRequiredMessages() {
@@ -201,7 +203,7 @@ abstract class BaseClient {
     this.sendServerMessage(...this.#requiredMessageTypes);
   }
 
-  #receivedMessageTypes: ServerMessage[] = [];
+  #receivedMessageTypes: ServerMessageOrMessageType[] = [];
   #checkIfFullyConnected() {
     if (this.connectionStatus != "connecting") {
       return;
@@ -336,7 +338,7 @@ abstract class BaseClient {
   set #isScanningAvailable(newIsAvailable) {
     _console.assertTypeWithError(newIsAvailable, "boolean");
     this.#_isScanningAvailable = newIsAvailable;
-    this.dispatchEvent("isScanningAvailable", {
+    this.#dispatchEvent("isScanningAvailable", {
       isScanningAvailable: this.isScanningAvailable,
     });
     if (this.isScanningAvailable) {
@@ -364,7 +366,7 @@ abstract class BaseClient {
   set #isScanning(newIsScanning) {
     _console.assertTypeWithError(newIsScanning, "boolean");
     this.#_isScanning = newIsScanning;
-    this.dispatchEvent("isScanning", { isScanning: this.isScanning });
+    this.#dispatchEvent("isScanning", { isScanning: this.isScanning });
   }
   get isScanning() {
     return this.#isScanning;
@@ -407,7 +409,7 @@ abstract class BaseClient {
   protected onDiscoveredDevice(discoveredDevice: DiscoveredDevice) {
     _console.log({ discoveredDevice });
     this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
-    this.dispatchEvent("discoveredDevice", { discoveredDevice });
+    this.#dispatchEvent("discoveredDevice", { discoveredDevice });
   }
   requestDiscoveredDevices() {
     this.sendServerMessage({ type: "discoveredDevices" });
@@ -421,7 +423,7 @@ abstract class BaseClient {
     }
     _console.log({ expiredDiscoveredDevice: discoveredDevice });
     delete this.#discoveredDevices[bluetoothId];
-    this.dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
+    this.#dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
   }
 
   // DEVICE CONNECTION

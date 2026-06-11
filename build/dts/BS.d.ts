@@ -11,10 +11,14 @@ export { isTensorFlowAvailable, listTensorflowModels, isTensorFlowModelAvailable
 import { default as DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners } from "./DeviceManager.ts";
 export { DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners, };
 /** BROWSER_START */
-import { default as WindowClient } from "./server/window/WindowClient.ts";
-export { WindowClient };
+import { default as WindowManagerServer } from "./window/WindowManagerServer.ts";
+export { WindowManagerServer };
+import { default as WindowManagerClient } from "./window/WindowManagerClient.ts";
+export { WindowManagerClient };
 import { default as WindowServer } from "./server/window/WindowServer.ts";
 export { WindowServer };
+import { default as WindowClient } from "./server/window/WindowClient.ts";
+export { WindowClient };
 /** BROWSER_END */
 import { DeviceInformation } from "./DeviceInformationManager.ts";
 export { DeviceInformation };

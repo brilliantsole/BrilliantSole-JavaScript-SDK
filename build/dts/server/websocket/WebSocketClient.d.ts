@@ -1,4 +1,4 @@
-import { ServerMessage } from "../ServerUtils.ts";
+import { ServerMessageOrMessageType } from "../ServerUtils.ts";
 import BaseClient, { ServerURL } from "../BaseClient.ts";
 declare class WebSocketClient extends BaseClient {
     #private;
@@ -10,6 +10,6 @@ declare class WebSocketClient extends BaseClient {
     disconnect(): void;
     reconnect(): void;
     toggleConnection(url?: ServerURL): void;
-    sendServerMessage(...messages: ServerMessage[]): void;
+    sendServerMessage(...messages: ServerMessageOrMessageType[]): void;
 }
 export default WebSocketClient;
