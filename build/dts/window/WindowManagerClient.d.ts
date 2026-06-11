@@ -22,24 +22,24 @@ export type WindowManagerClientEventListenerMap = EventListenerMap<WindowManager
 export type BoundWindowManagerClientEventListeners = BoundEventListeners<WindowManagerClient, WindowManagerClientEventType, WindowManagerClientEventMessages>;
 declare class WindowManagerClient {
     #private;
-    get addEventListener(): <T extends "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: {
+    get addEventListener(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "serverMessage">(type: T, listener: (event: {
         type: T;
         target: WindowManagerClient;
         message: WindowManagerClientEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "serverMessage">(type: T, listener: (event: {
         type: T;
         target: WindowManagerClient;
         message: WindowManagerClientEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "serverMessage">(type: T) => Promise<{
         type: T;
         target: WindowManagerClient;
         message: WindowManagerClientEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T) => void;
+    get removeEventListeners(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "serverMessage">(type: T) => void;
     get removeAllEventListeners(): () => void;
     static readonly shared: WindowManagerClient;
     constructor();

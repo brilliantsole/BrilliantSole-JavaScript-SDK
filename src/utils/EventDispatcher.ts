@@ -1,3 +1,4 @@
+import autoBind from "auto-bind";
 import { createConsole } from "./Console.ts";
 
 const _console = createConsole("EventDispatcher", { log: false });
@@ -5,7 +6,7 @@ const _console = createConsole("EventDispatcher", { log: false });
 export type EventMap<
   Target extends any,
   EventType extends string,
-  EventMessages extends Partial<Record<EventType, any>>
+  EventMessages extends Partial<Record<EventType, any>>,
 > = {
   [T in keyof EventMessages]: {
     type: T;
@@ -16,7 +17,7 @@ export type EventMap<
 export type EventListenerMap<
   Target extends any,
   EventType extends string,
-  EventMessages extends Partial<Record<EventType, any>>
+  EventMessages extends Partial<Record<EventType, any>>,
 > = {
   [T in keyof EventMessages]: (event: {
     type: T;
@@ -28,14 +29,14 @@ export type EventListenerMap<
 export type Event<
   Target extends any,
   EventType extends string,
-  EventMessages extends Partial<Record<EventType, any>>
+  EventMessages extends Partial<Record<EventType, any>>,
 > = EventMap<Target, EventType, EventMessages>[keyof EventMessages];
 
 type SpecificEvent<
   Target extends any,
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>,
-  SpecificEventType extends EventType
+  SpecificEventType extends EventType,
 > = {
   type: SpecificEventType;
   target: Target;
@@ -45,18 +46,18 @@ type SpecificEvent<
 export type BoundEventListeners<
   Target extends any,
   EventType extends string,
-  EventMessages extends Partial<Record<EventType, any>>
+  EventMessages extends Partial<Record<EventType, any>>,
 > = {
   [SpecificEventType in keyof EventMessages]?: (
     // @ts-expect-error
-    event: SpecificEvent<Target, EventType, EventMessages, SpecificEventType>
+    event: SpecificEvent<Target, EventType, EventMessages, SpecificEventType>,
   ) => void;
 };
 
 class EventDispatcher<
   Target extends any,
   EventType extends string,
-  EventMessages extends Partial<Record<EventType, any>>
+  EventMessages extends Partial<Record<EventType, any>>,
 > {
   private listeners: {
     [T in EventType]?: {
@@ -72,14 +73,9 @@ class EventDispatcher<
 
   constructor(
     private target: Target,
-    private validEventTypes: readonly EventType[]
+    private validEventTypes: readonly EventType[],
   ) {
-    this.addEventListener = this.addEventListener.bind(this);
-    this.removeEventListener = this.removeEventListener.bind(this);
-    this.removeEventListeners = this.removeEventListeners.bind(this);
-    this.removeAllEventListeners = this.removeAllEventListeners.bind(this);
-    this.dispatchEvent = this.dispatchEvent.bind(this);
-    this.waitForEvent = this.waitForEvent.bind(this);
+    autoBind(this);
   }
 
   private isValidEventType(type: any): type is EventType {
@@ -103,7 +99,7 @@ class EventDispatcher<
       target: Target;
       message: EventMessages[T];
     }) => void,
-    options: { once?: boolean } = { once: false }
+    options: { once?: boolean } = { once: false },
   ): void {
     if (!this.isValidEventType(type)) {
       throw new Error(`Invalid event type: ${type}`);
@@ -127,7 +123,7 @@ class EventDispatcher<
     this.listeners[type]!.push({ listener, once: options.once });
 
     _console.log(
-      `currently have ${this.listeners[type]!.length} "${type}" listeners`
+      `currently have ${this.listeners[type]!.length} "${type}" listeners`,
     );
   }
 
@@ -137,7 +133,7 @@ class EventDispatcher<
       type: T;
       target: Target;
       message: EventMessages[T];
-    }) => void
+    }) => void,
   ): void {
     if (!this.isValidEventType(type)) {
       throw new Error(`Invalid event type: ${type}`);
@@ -205,7 +201,7 @@ class EventDispatcher<
   }
 
   waitForEvent<T extends EventType>(
-    type: T
+    type: T,
   ): Promise<{ type: T; target: Target; message: EventMessages[T] }> {
     return new Promise((resolve) => {
       const onceListener = (event: {

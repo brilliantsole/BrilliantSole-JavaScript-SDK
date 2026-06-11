@@ -207,12 +207,7 @@ class EventDispatcher {
     constructor(target, validEventTypes) {
         this.target = target;
         this.validEventTypes = validEventTypes;
-        this.addEventListener = this.addEventListener.bind(this);
-        this.removeEventListener = this.removeEventListener.bind(this);
-        this.removeEventListeners = this.removeEventListeners.bind(this);
-        this.removeAllEventListeners = this.removeAllEventListeners.bind(this);
-        this.dispatchEvent = this.dispatchEvent.bind(this);
-        this.waitForEvent = this.waitForEvent.bind(this);
+        autoBind$1(this);
     }
     isValidEventType(type) {
         return this.validEventTypes.includes(type);
