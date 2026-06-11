@@ -50,8 +50,6 @@ class WindowServer extends BaseServer<WindowServerClient> {
     clientConnected: this.#onWindowManaagerServerClientConnected.bind(this),
     clientDisconnected:
       this.#onWindowManaagerServerClientDisconnected.bind(this),
-    clientServerMessage:
-      this.#onWindowManagerServerClientServerMessage.bind(this),
   };
   #onWindowManaagerServerClientConnected(
     event: WindowManagerServerEventMap["clientConnected"],
@@ -66,24 +64,6 @@ class WindowServer extends BaseServer<WindowServerClient> {
     const { client } = event.message;
     _console.log("onWindowManaagerServerClientDisconnected", client);
     this.dispatchEvent("clientDisconnected", { client });
-  }
-  #onWindowManagerServerClientServerMessage(
-    event: WindowManagerServerEventMap["clientServerMessage"],
-  ) {
-    const { client, dataView } = event.message;
-    _console.log("onWindowManagerServerClientServerMessage", client, dataView);
-    this.#parseWindowServerClientMessage(client, dataView);
-  }
-
-  // PARSING
-  #parseWindowServerClientMessage(
-    client: WindowServerClient,
-    dataView: DataView<ArrayBuffer>,
-  ) {
-    const responseMessage = this.parseClientMessage(client, dataView);
-    if (responseMessage) {
-      this.sendToClient(client, responseMessage);
-    }
   }
 }
 

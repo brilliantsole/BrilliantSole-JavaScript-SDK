@@ -4,13 +4,15 @@ export interface WindowManagerServerClient {
     iframe: HTMLIFrameElement;
     messageChannel?: MessageChannel;
     didSendMessagePort?: boolean;
+    didLoad?: boolean;
+    allowRedirects?: boolean;
 }
 export interface WindowManagerServerClientContext {
     client: WindowManagerServerClient;
     responseMessages: (ArrayBuffer | undefined)[];
     transfer: Transferable[];
 }
-export declare const WindowManagerServerEventTypes: readonly ["clientConnected", "clientDisconnected", "clientServerMessage"];
+export declare const WindowManagerServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
 export type WindowManagerServerEventType = (typeof WindowManagerServerEventTypes)[number];
 interface WindowManagerServerEventMessages {
     clientConnected: {
@@ -18,10 +20,6 @@ interface WindowManagerServerEventMessages {
     };
     clientDisconnected: {
         client: WindowManagerServerClient;
-    };
-    clientServerMessage: {
-        client: WindowManagerServerClient;
-        dataView: DataView<ArrayBuffer>;
     };
 }
 export type WindowManagerServerEventDispatcher = EventDispatcher<WindowManagerServer, WindowManagerServerEventType, WindowManagerServerEventMessages>;
@@ -31,24 +29,24 @@ export type WindowManagerServerEventListenerMap = EventListenerMap<WindowManager
 export type BoundWindowManagerServerEventListeners = BoundEventListeners<WindowManagerServer, WindowManagerServerEventType, WindowManagerServerEventMessages>;
 declare class WindowManagerServer {
     #private;
-    get addEventListener(): <T extends "clientConnected" | "clientDisconnected" | "clientServerMessage">(type: T, listener: (event: {
+    get addEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
         type: T;
         target: WindowManagerServer;
         message: WindowManagerServerEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "clientConnected" | "clientDisconnected" | "clientServerMessage">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
         type: T;
         target: WindowManagerServer;
         message: WindowManagerServerEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "clientConnected" | "clientDisconnected" | "clientServerMessage">(type: T) => Promise<{
+    get waitForEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T) => Promise<{
         type: T;
         target: WindowManagerServer;
         message: WindowManagerServerEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "clientConnected" | "clientDisconnected" | "clientServerMessage">(type: T) => void;
+    get removeEventListeners(): <T extends "clientConnected" | "clientDisconnected">(type: T) => void;
     get removeAllEventListeners(): () => void;
     static readonly shared: WindowManagerServer;
     constructor();

@@ -28,6 +28,8 @@ export interface WindowManagerServerClient {
   iframe: HTMLIFrameElement;
   messageChannel?: MessageChannel;
   didSendMessagePort?: boolean;
+  didLoad?: boolean;
+  allowRedirects?: boolean;
 }
 export interface WindowManagerServerClientContext {
   client: WindowManagerServerClient;
@@ -38,7 +40,6 @@ export interface WindowManagerServerClientContext {
 export const WindowManagerServerEventTypes = [
   "clientConnected",
   "clientDisconnected",
-  "clientServerMessage",
 ] as const;
 export type WindowManagerServerEventType =
   (typeof WindowManagerServerEventTypes)[number];
@@ -46,10 +47,6 @@ export type WindowManagerServerEventType =
 interface WindowManagerServerEventMessages {
   clientConnected: { client: WindowManagerServerClient };
   clientDisconnected: { client: WindowManagerServerClient };
-  clientServerMessage: {
-    client: WindowManagerServerClient;
-    dataView: DataView<ArrayBuffer>;
-  };
 }
 
 export type WindowManagerServerEventDispatcher = EventDispatcher<
@@ -231,7 +228,7 @@ class WindowManagerServer {
         return;
       }
       addEventListeners(iframe, this.#boundIframeEventListeners);
-      client = { iframe };
+      client = { iframe, allowRedirects: true };
       this.#clients.push(client);
       this.#dispatchEvent("clientConnected", { client });
     }
@@ -304,6 +301,17 @@ class WindowManagerServer {
       return;
     }
     _console.log("onIframeLoad", client);
+    if (client.didLoad) {
+      _console.log("client loaded twice");
+      if (!client.allowRedirects) {
+        _console.log("force reloading...");
+        client.didLoad = false;
+        iframe.src = iframe.src;
+      }
+    } else {
+      _console.log("client first load");
+      client.didLoad = true;
+    }
   }
 
   // MESSAGE PORT
@@ -387,22 +395,18 @@ class WindowManagerServer {
       case "pong":
         break;
       case "serverMessage":
-        if (false) {
-          this.#dispatchEvent("clientServerMessage", { client, dataView });
-        } else {
-          // @ts-expect-error
-          const responseMessage = WindowServer.parseClientMessage(
-            client,
-            dataView,
+        // @ts-expect-error
+        const responseMessage = WindowServer.parseClientMessage(
+          client,
+          dataView,
+        );
+        if (responseMessage) {
+          responseMessages.push(
+            createWindowManagerMessage({
+              type: "serverMessage",
+              data: responseMessage,
+            }),
           );
-          if (responseMessage) {
-            responseMessages.push(
-              createWindowManagerMessage({
-                type: "serverMessage",
-                data: responseMessage,
-              }),
-            );
-          }
         }
         break;
       default:
