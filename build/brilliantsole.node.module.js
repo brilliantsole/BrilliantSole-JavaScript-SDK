@@ -15232,17 +15232,9 @@ class DevicePair {
     }
     #addDeviceEventListeners(device) {
         addEventListeners(device, this.#boundDeviceEventListeners);
-        DeviceEventTypes.forEach((deviceEventType) => {
-            device.addEventListener(
-            deviceEventType, this.#redispatchDeviceEvent.bind(this));
-        });
     }
     #removeDeviceEventListeners(device) {
         removeEventListeners(device, this.#boundDeviceEventListeners);
-        DeviceEventTypes.forEach((deviceEventType) => {
-            device.removeEventListener(
-            deviceEventType, this.#redispatchDeviceEvent.bind(this));
-        });
     }
     #removeDevice(device) {
         const foundDevice = Sides.some((side) => {
@@ -15270,6 +15262,7 @@ class DevicePair {
         isConnected: this.#onDeviceIsConnected.bind(this),
         sensorData: this.#onDeviceSensorData.bind(this),
         getType: this.#onDeviceType.bind(this),
+        "*": this.#onDeviceWildcard.bind(this),
     };
     #redispatchDeviceEvent(deviceEvent) {
         const { type, target: device, message } = deviceEvent;
@@ -15292,6 +15285,14 @@ class DevicePair {
             return;
         }
         this.assignDevice(device);
+    }
+    #onDeviceWildcard(deviceEvent) {
+        const { type, target: device, message } = deviceEvent;
+        this.#dispatchEvent(getDevicePairDeviceEventType(type), {
+            ...message,
+            device,
+            side: device.side,
+        });
     }
     async setSensorConfiguration(sensorConfiguration) {
         for (let i = 0; i < Sides.length; i++) {

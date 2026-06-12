@@ -325,11 +325,11 @@ class VibrationManager {
 
   async triggerVibration(
     vibrationConfiguration: VibrationConfiguration,
-    sendImmediately: boolean,
+    sendImmediately?: boolean,
   ): Promise<void>;
   async triggerVibration(
     vibrationConfigurations: VibrationConfiguration[],
-    sendImmediately: boolean,
+    sendImmediately?: boolean,
   ): Promise<void>;
   async triggerVibration(
     vibrationConfigurations: VibrationConfiguration[] | VibrationConfiguration,

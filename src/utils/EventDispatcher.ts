@@ -7,7 +7,7 @@ export const wildcardEventType = "*" as const;
 export type WildcardEventType = typeof wildcardEventType;
 
 export type EventMap<
-  Target extends any,
+  Target,
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>,
 > = {
@@ -16,7 +16,16 @@ export type EventMap<
     target: Target;
     message: EventMessages[T];
   };
+} & {
+  [wildcardEventType]: {
+    [T in keyof EventMessages]: {
+      type: T;
+      target: Target;
+      message: EventMessages[T];
+    };
+  }[keyof EventMessages];
 };
+
 export type EventListenerMap<
   Target extends any,
   EventType extends string,

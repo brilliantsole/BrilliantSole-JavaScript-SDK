@@ -45,7 +45,7 @@ declare class LedManager {
     constructor();
     sendMessage: SendLedMessageCallback;
     eventDispatcher: LedEventDispatcher;
-    get waitForEvent(): <T extends "getLedInformation" | "setLeds" | "clearLeds" | "setLed">(type: T) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getLedInformation" | "setLeds" | "clearLeds" | "setLed", LedEventMessages, T>>;
+    get waitForEvent(): <T extends "getLedInformation" | "setLed" | "setLeds" | "clearLeds">(type: T) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getLedInformation" | "setLed" | "setLeds" | "clearLeds", LedEventMessages, T>>;
     get leds(): Led[];
     setLeds(ledConfigurations: LedConfiguration[], sendImmediately?: boolean): Promise<void>;
     setLed(ledConfiguration: LedConfiguration, sendImmediately?: boolean): Promise<void>;

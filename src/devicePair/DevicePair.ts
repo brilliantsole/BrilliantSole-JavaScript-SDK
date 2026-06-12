@@ -48,11 +48,11 @@ type DevicePairDeviceEventMessages = ExtendInterfaceValues<
 type DevicePairDeviceEventType = KeyOf<DevicePairDeviceEventMessages>;
 function getDevicePairDeviceEventType(deviceEventType: DeviceEventType) {
   return `device${capitalizeFirstCharacter(
-    deviceEventType
+    deviceEventType,
   )}` as DevicePairDeviceEventType;
 }
 const DevicePairDeviceEventTypes = DeviceEventTypes.map((eventType) =>
-  getDevicePairDeviceEventType(eventType)
+  getDevicePairDeviceEventType(eventType),
 ) as DevicePairDeviceEventType[];
 
 export const DevicePairConnectionEventTypes = ["isConnected"] as const;
@@ -121,7 +121,7 @@ class DevicePair {
 
   #eventDispatcher: DevicePairEventDispatcher = new EventDispatcher(
     this as DevicePair,
-    DevicePairEventTypes
+    DevicePairEventTypes,
   );
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
@@ -178,7 +178,7 @@ class DevicePair {
   assignDevice(device: Device) {
     if (!this.#isDeviceCorrectType(device)) {
       _console.log(
-        `device is incorrect type ${device.type} for ${this.type} devicePair`
+        `device is incorrect type ${device.type} for ${this.type} devicePair`,
       );
       return;
     }
@@ -221,23 +221,21 @@ class DevicePair {
 
   #addDeviceEventListeners(device: Device) {
     addEventListeners(device, this.#boundDeviceEventListeners);
-    DeviceEventTypes.forEach((deviceEventType) => {
-      device.addEventListener(
-        // @ts-expect-error
-        deviceEventType,
-        this.#redispatchDeviceEvent.bind(this)
-      );
-    });
+    // DeviceEventTypes.forEach((deviceEventType) => {
+    //   device.addEventListener(
+    //     deviceEventType,
+    //     this.#redispatchDeviceEvent.bind(this),
+    //   );
+    // });
   }
   #removeDeviceEventListeners(device: Device) {
     removeEventListeners(device, this.#boundDeviceEventListeners);
-    DeviceEventTypes.forEach((deviceEventType) => {
-      device.removeEventListener(
-        // @ts-expect-error
-        deviceEventType,
-        this.#redispatchDeviceEvent.bind(this)
-      );
-    });
+    // DeviceEventTypes.forEach((deviceEventType) => {
+    //   device.removeEventListener(
+    //     deviceEventType,
+    //     this.#redispatchDeviceEvent.bind(this),
+    //   );
+    // });
   }
 
   #removeDevice(device: Device) {
@@ -270,6 +268,7 @@ class DevicePair {
     isConnected: this.#onDeviceIsConnected.bind(this),
     sensorData: this.#onDeviceSensorData.bind(this),
     getType: this.#onDeviceType.bind(this),
+    "*": this.#onDeviceWildcard.bind(this),
   };
 
   #redispatchDeviceEvent(deviceEvent: DeviceEvent) {
@@ -297,6 +296,15 @@ class DevicePair {
     }
     this.assignDevice(device);
   }
+  #onDeviceWildcard(deviceEvent: DeviceEventMap["*"]) {
+    const { type, target: device, message } = deviceEvent;
+    // @ts-ignore
+    this.#dispatchEvent(getDevicePairDeviceEventType(type), {
+      ...message,
+      device,
+      side: device.side,
+    });
+  }
 
   // SENSOR CONFIGURATION
   async setSensorConfiguration(sensorConfiguration: SensorConfiguration) {
@@ -323,7 +331,7 @@ class DevicePair {
   }
   setPressureAutoRange(newPressureAutoRange: boolean) {
     Sides.forEach((side) =>
-      this[side]?.setPressureAutoRange(newPressureAutoRange)
+      this[side]?.setPressureAutoRange(newPressureAutoRange),
     );
   }
   togglePressureAutoRange() {
@@ -332,7 +340,7 @@ class DevicePair {
 
   setPressureMotionAutoRange(newPressureMotionAutoRange: boolean) {
     Sides.forEach((side) =>
-      this[side]?.setPressureMotionAutoRange(newPressureMotionAutoRange)
+      this[side]?.setPressureMotionAutoRange(newPressureMotionAutoRange),
     );
   }
   togglePressureMotionAutoRange() {
@@ -342,12 +350,12 @@ class DevicePair {
   // VIBRATION
   async triggerVibration(
     vibrationConfigurations: VibrationConfiguration[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ) {
     const promises = Sides.map((side) => {
       return this[side]?.triggerVibration(
         vibrationConfigurations,
-        sendImmediately
+        sendImmediately,
       );
     }).filter(Boolean);
     return Promise.allSettled(promises);
