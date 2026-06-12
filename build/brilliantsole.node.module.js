@@ -22,10 +22,9 @@ import fs from 'fs/promises';
 import * as _alawmulaw from 'alawmulaw';
 import * as dgram from 'dgram';
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 const isInProduction =
-__BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+"__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 let isInIframe = false;
 try {
@@ -153,9 +152,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -16125,16 +16121,16 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$4 = createConsole("Scanner", { log: false });
-let scanner$1;
+let scanner;
 if (NobleScanner.isSupported) {
     _console$4.log("using NobleScanner");
-    scanner$1 = new NobleScanner();
+    scanner = new NobleScanner();
 }
 else {
     _console$4.log("Scanner not available");
-    scanner$1 = new NullScanner();
+    scanner = new NullScanner();
 }
-var scanner = scanner$1;
+var scanner$1 = scanner;
 
 class GuardManager {
     #guards = [];
@@ -16193,8 +16189,8 @@ class BaseServer {
         return this.#eventDispatcher.waitForEvent;
     }
     constructor() {
-        _console$3.assertWithError(scanner, "no scanner defined");
-        addEventListeners(scanner, this.#boundScannerListeners);
+        _console$3.assertWithError(scanner$1, "no scanner defined");
+        addEventListeners(scanner$1, this.#boundScannerListeners);
         addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
     }
@@ -16265,7 +16261,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner.isScanningAvailable,
+            data: scanner$1.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -16274,7 +16270,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner.isScanning,
+            data: scanner$1.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -16300,7 +16296,7 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner.discoveredDevicesArray
+        const serverMessages = scanner$1.discoveredDevicesArray
             .filter((discoveredDevice) => {
             const existingConnectedDevice = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
@@ -16505,10 +16501,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner.startScan();
+                scanner$1.startScan();
                 break;
             case "stopScan":
-                scanner.stopScan();
+                scanner$1.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -16526,14 +16522,14 @@ class BaseServer {
                     else {
                         _console$3.log(`connecting to device with id ${deviceId}...`);
                     }
-                    scanner.connectToDevice(deviceId, connectionType);
+                    scanner$1.connectToDevice(deviceId, connectionType);
                 }
                 break;
             case "disconnectFromDevice":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
                     let device = DeviceManager$1.AvailableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner.devices[deviceId];
+                    device = device ?? scanner$1.devices[deviceId];
                     if (!device) {
                         _console$3.error(`no device found with id ${deviceId}`);
                         break;
@@ -16993,5 +16989,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ConnectionEventTypes, ConnectionMessageTypes, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner as Scanner, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites };
+export { ConnectionEventTypes, ConnectionMessageTypes, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner$1 as Scanner, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites };
 //# sourceMappingURL=brilliantsole.node.module.js.map
