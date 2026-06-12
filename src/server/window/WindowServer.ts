@@ -15,7 +15,7 @@ interface WindowServerClient
 class WindowServer extends BaseServer<WindowServerClient> {
   static readonly shared = new WindowServer();
 
-  init() {
+  protected init() {
     addEventListeners(
       WindowManagerServer,
       this.#boundWindowManagerServerEventListeners,

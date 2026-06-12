@@ -52,19 +52,11 @@ declare class DeviceManager {
      * _only available on web-bluetooth enabled browsers_
      */
     GetDevices(): Promise<Device[] | undefined>;
-    get AddEventListener(): <T extends "deviceIsConnected" | "deviceConnected" | "connectedDevices" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
-        type: T;
-        target: DeviceManager;
-        message: DeviceManagerEventMessages[T];
-    }) => void, options?: {
+    get AddEventListener(): <T extends "*" | "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<DeviceManager, "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices", DeviceManagerEventMessages, T>) => void, options?: {
         once?: boolean;
     }) => void;
-    get RemoveEventListener(): <T extends "deviceIsConnected" | "deviceConnected" | "connectedDevices" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
-        type: T;
-        target: DeviceManager;
-        message: DeviceManagerEventMessages[T];
-    }) => void) => void;
-    get RemoveEventListeners(): <T extends "deviceIsConnected" | "deviceConnected" | "connectedDevices" | "deviceDisconnected" | "availableDevices">(type: T) => void;
+    get RemoveEventListener(): <T extends "*" | "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<DeviceManager, "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices", DeviceManagerEventMessages, T>) => void) => void;
+    get RemoveEventListeners(): <T extends "*" | "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices">(type: T) => void;
     get RemoveAllEventListeners(): () => void;
     _CheckDeviceAvailability(device: Device): void;
 }

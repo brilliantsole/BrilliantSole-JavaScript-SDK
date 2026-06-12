@@ -3,6 +3,9 @@ import { createConsole } from "./Console.ts";
 
 const _console = createConsole("EventDispatcher", { log: false });
 
+export const wildcardEventType = "*" as const;
+export type WildcardEventType = typeof wildcardEventType;
+
 export type EventMap<
   Target extends any,
   EventType extends string,
@@ -24,6 +27,8 @@ export type EventListenerMap<
     target: Target;
     message: EventMessages[T];
   }) => void;
+} & {
+  [wildcardEventType]: (event: Event<Target, EventType, EventMessages>) => void;
 };
 
 export type Event<
@@ -43,15 +48,38 @@ type SpecificEvent<
   message: EventMessages[SpecificEventType];
 };
 
+export type ListenerEvent<
+  Target,
+  EventType extends string,
+  EventMessages extends Partial<Record<EventType, any>>,
+  T extends EventType | WildcardEventType,
+> = T extends WildcardEventType
+  ? Event<Target, EventType, EventMessages>
+  : SpecificEvent<Target, EventType, EventMessages, T & EventType>;
+
+export type ListenerObject<
+  Target,
+  EventType extends string,
+  EventMessages extends Partial<Record<EventType, any>>,
+  T extends EventType | WildcardEventType,
+> = {
+  listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void;
+  once?: boolean;
+  shouldRemove?: boolean;
+};
+
 export type BoundEventListeners<
-  Target extends any,
+  Target,
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>,
 > = {
-  [SpecificEventType in keyof EventMessages]?: (
-    // @ts-expect-error
-    event: SpecificEvent<Target, EventType, EventMessages, SpecificEventType>,
-  ) => void;
+  [K in
+    | EventType
+    | typeof wildcardEventType]?: K extends typeof wildcardEventType
+    ? (event: Event<Target, EventType, EventMessages>) => void
+    : (
+        event: SpecificEvent<Target, EventType, EventMessages, K & EventType>,
+      ) => void;
 };
 
 class EventDispatcher<
@@ -59,57 +87,71 @@ class EventDispatcher<
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>,
 > {
-  private listeners: {
-    [T in EventType]?: {
-      listener: (event: {
-        type: T;
-        target: Target;
-        message: EventMessages[T];
-      }) => void;
-      once?: boolean;
-      shouldRemove?: boolean;
-    }[];
-  } = {};
+  #listeners: Partial<
+    Record<
+      EventType | WildcardEventType,
+      {
+        listener: Function;
+        once?: boolean;
+        shouldRemove?: boolean;
+      }[]
+    >
+  > = {};
 
-  constructor(
-    private target: Target,
-    private validEventTypes: readonly EventType[],
-  ) {
+  #target!: Target;
+  #validEventTypes!: readonly EventType[];
+
+  constructor(target: Target, validEventTypes: readonly EventType[]) {
     autoBind(this);
+
+    this.#target = target;
+    this.#validEventTypes = validEventTypes;
+
+    _console.assertWithError(
+      // @ts-expect-error
+      !validEventTypes.includes(wildcardEventType),
+      `eventTypes cannot include the wildcardSymbol "${wildcardEventType}"`,
+    );
   }
 
-  private isValidEventType(type: any): type is EventType {
-    return this.validEventTypes.includes(type);
+  #isValidEventType(type: any): type is EventType {
+    return this.#validEventTypes.includes(type);
+  }
+  #isValidListenerType(
+    type: EventType | WildcardEventType,
+  ): type is EventType | WildcardEventType {
+    return (
+      type === wildcardEventType ||
+      this.#validEventTypes.includes(type as EventType)
+    );
   }
 
-  private updateEventListeners(type: EventType) {
-    if (!this.listeners[type]) return;
-    this.listeners[type] = this.listeners[type]!.filter((listenerObj) => {
-      if (listenerObj.shouldRemove) {
-        _console.log(`removing "${type}" eventListener`, listenerObj);
-      }
-      return !listenerObj.shouldRemove;
-    });
+  #updateEventListeners<T extends EventType | WildcardEventType>(type: T) {
+    if (!this.#listeners[type]) return;
+    this.#listeners[type] = this.#listeners[type]!.filter(
+      (listenerObj) => !listenerObj.shouldRemove,
+    );
   }
 
-  addEventListener<T extends EventType>(
+  addEventListener<T extends EventType | WildcardEventType>(
     type: T,
-    listener: (event: {
-      type: T;
-      target: Target;
-      message: EventMessages[T];
-    }) => void,
+    listener: (
+      event: ListenerEvent<Target, EventType, EventMessages, T>,
+    ) => void,
     options: { once?: boolean } = { once: false },
   ): void {
-    if (!this.isValidEventType(type)) {
+    if (!this.#isValidListenerType(type)) {
       throw new Error(`Invalid event type: ${type}`);
     }
 
-    if (!this.listeners[type]) {
-      this.listeners[type] = [];
-      _console.log(`creating "${type}" listeners array`, this.listeners[type]!);
+    if (!this.#listeners[type]) {
+      this.#listeners[type] = [];
+      _console.log(
+        `creating "${type}" listeners array`,
+        this.#listeners[type]!,
+      );
     }
-    const alreadyAdded = this.listeners[type].find((listenerObject) => {
+    const alreadyAdded = this.#listeners[type].find((listenerObject) => {
       return (
         listenerObject.listener == listener &&
         listenerObject.once == options.once
@@ -120,29 +162,27 @@ class EventDispatcher<
       return;
     }
     _console.log(`adding "${type}" listener`, listener, options);
-    this.listeners[type]!.push({ listener, once: options.once });
+    this.#listeners[type]!.push({ listener, once: options.once });
 
     _console.log(
-      `currently have ${this.listeners[type]!.length} "${type}" listeners`,
+      `currently have ${this.#listeners[type]!.length} "${type}" listeners`,
     );
   }
 
-  removeEventListener<T extends EventType>(
+  removeEventListener<T extends EventType | WildcardEventType>(
     type: T,
-    listener: (event: {
-      type: T;
-      target: Target;
-      message: EventMessages[T];
-    }) => void,
+    listener: (
+      event: ListenerEvent<Target, EventType, EventMessages, T>,
+    ) => void,
   ): void {
-    if (!this.isValidEventType(type)) {
+    if (!this.#isValidListenerType(type)) {
       throw new Error(`Invalid event type: ${type}`);
     }
 
-    if (!this.listeners[type]) return;
+    if (!this.#listeners[type]) return;
 
     _console.log(`removing "${type}" listener...`, listener);
-    this.listeners[type]!.forEach((listenerObj) => {
+    this.#listeners[type]!.forEach((listenerObj) => {
       const isListenerToRemove = listenerObj.listener === listener;
       if (isListenerToRemove) {
         _console.log(`flagging "${type}" listener`, listener);
@@ -150,34 +190,48 @@ class EventDispatcher<
       }
     });
 
-    this.updateEventListeners(type);
+    this.#updateEventListeners(type);
   }
 
-  removeEventListeners<T extends EventType>(type: T): void {
-    if (!this.isValidEventType(type)) {
+  removeEventListeners<T extends EventType | WildcardEventType>(type: T): void {
+    if (!this.#isValidListenerType(type)) {
       throw new Error(`Invalid event type: ${type}`);
     }
 
-    if (!this.listeners[type]) return;
+    if (!this.#listeners[type]) return;
 
     _console.log(`removing "${type}" listeners...`);
-    this.listeners[type] = [];
+    this.#listeners[type] = [];
   }
 
   removeAllEventListeners(): void {
     _console.log(`removing listeners...`);
-    this.listeners = {};
+    this.#listeners = {};
   }
 
   dispatchEvent<T extends EventType>(type: T, message: EventMessages[T]): void {
-    if (!this.isValidEventType(type)) {
+    if (!this.#isValidEventType(type)) {
       throw new Error(`Invalid event type: ${type}`);
     }
 
-    if (!this.listeners[type]) return;
+    this.#dispatchEvent(type, message);
+    this.#dispatchEvent(type, message, true);
+  }
+  #dispatchEvent<T extends EventType>(
+    type: T,
+    message: EventMessages[T],
+    isWildcard = false,
+  ): void {
+    if (!this.#isValidEventType(type)) {
+      throw new Error(`Invalid event type: ${type}`);
+    }
+
+    const listenersType = isWildcard ? wildcardEventType : type;
+
+    if (!this.#listeners[listenersType]) return;
 
     // Take a snapshot of listeners at this moment
-    const listenersSnapshot = [...this.listeners[type]!];
+    const listenersSnapshot = [...this.#listeners[listenersType]!];
 
     listenersSnapshot.forEach((listenerObj) => {
       if (listenerObj.shouldRemove) {
@@ -186,7 +240,7 @@ class EventDispatcher<
 
       _console.log(`dispatching "${type}" listener`, listenerObj);
       try {
-        listenerObj.listener({ type, target: this.target, message });
+        listenerObj.listener({ type, target: this.#target, message });
       } catch (error) {
         console.error(error);
       }
@@ -197,18 +251,16 @@ class EventDispatcher<
       }
     });
 
-    this.updateEventListeners(type);
+    this.#updateEventListeners(type);
   }
 
   waitForEvent<T extends EventType>(
     type: T,
-  ): Promise<{ type: T; target: Target; message: EventMessages[T] }> {
+  ): Promise<ListenerEvent<Target, EventType, EventMessages, T>> {
     return new Promise((resolve) => {
-      const onceListener = (event: {
-        type: T;
-        target: Target;
-        message: EventMessages[T];
-      }) => {
+      const onceListener = (
+        event: ListenerEvent<Target, EventType, EventMessages, T>,
+      ) => {
         resolve(event);
       };
 

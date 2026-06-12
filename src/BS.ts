@@ -392,6 +392,12 @@ export {
   FontMetrics,
 };
 
+// import {
+//   WildcardEventType,
+//   wildcardEventType,
+// } from "./utils/EventDispatcher.ts";
+// export { WildcardEventType, wildcardEventType };
+
 /** BROWSER_START */
 import {
   default as DisplayCanvasHelper,

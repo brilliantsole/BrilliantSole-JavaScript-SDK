@@ -29,24 +29,12 @@ export type WindowManagerServerEventListenerMap = EventListenerMap<WindowManager
 export type BoundWindowManagerServerEventListeners = BoundEventListeners<WindowManagerServer, WindowManagerServerEventType, WindowManagerServerEventMessages>;
 declare class WindowManagerServer {
     #private;
-    get addEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
-        type: T;
-        target: WindowManagerServer;
-        message: WindowManagerServerEventMessages[T];
-    }) => void, options?: {
+    get addEventListener(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<WindowManagerServer, "clientConnected" | "clientDisconnected", WindowManagerServerEventMessages, T>) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {
-        type: T;
-        target: WindowManagerServer;
-        message: WindowManagerServerEventMessages[T];
-    }) => void) => void;
-    get waitForEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T) => Promise<{
-        type: T;
-        target: WindowManagerServer;
-        message: WindowManagerServerEventMessages[T];
-    }>;
-    get removeEventListeners(): <T extends "clientConnected" | "clientDisconnected">(type: T) => void;
+    get removeEventListener(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<WindowManagerServer, "clientConnected" | "clientDisconnected", WindowManagerServerEventMessages, T>) => void) => void;
+    get waitForEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<WindowManagerServer, "clientConnected" | "clientDisconnected", WindowManagerServerEventMessages, T>>;
+    get removeEventListeners(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T) => void;
     get removeAllEventListeners(): () => void;
     static readonly shared: WindowManagerServer;
     constructor();

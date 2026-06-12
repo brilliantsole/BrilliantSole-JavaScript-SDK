@@ -417,4 +417,5 @@ class WindowManagerServer {
 }
 
 export default WindowManagerServer.shared;
+// @ts-expect-error
 WindowServer.init();

@@ -200,37 +200,39 @@ function setAllConsoleLevelFlags(levelFlags) {
 }
 
 const _console$S = createConsole("EventDispatcher", { log: false });
+const wildcardEventType = "*";
 class EventDispatcher {
-    target;
-    validEventTypes;
-    listeners = {};
+    #listeners = {};
+    #target;
+    #validEventTypes;
     constructor(target, validEventTypes) {
-        this.target = target;
-        this.validEventTypes = validEventTypes;
         autoBind$1(this);
+        this.#target = target;
+        this.#validEventTypes = validEventTypes;
+        _console$S.assertWithError(
+        !validEventTypes.includes(wildcardEventType), `eventTypes cannot include the wildcardSymbol "${wildcardEventType}"`);
     }
-    isValidEventType(type) {
-        return this.validEventTypes.includes(type);
+    #isValidEventType(type) {
+        return this.#validEventTypes.includes(type);
     }
-    updateEventListeners(type) {
-        if (!this.listeners[type])
+    #isValidListenerType(type) {
+        return (type === wildcardEventType ||
+            this.#validEventTypes.includes(type));
+    }
+    #updateEventListeners(type) {
+        if (!this.#listeners[type])
             return;
-        this.listeners[type] = this.listeners[type].filter((listenerObj) => {
-            if (listenerObj.shouldRemove) {
-                _console$S.log(`removing "${type}" eventListener`, listenerObj);
-            }
-            return !listenerObj.shouldRemove;
-        });
+        this.#listeners[type] = this.#listeners[type].filter((listenerObj) => !listenerObj.shouldRemove);
     }
     addEventListener(type, listener, options = { once: false }) {
-        if (!this.isValidEventType(type)) {
+        if (!this.#isValidListenerType(type)) {
             throw new Error(`Invalid event type: ${type}`);
         }
-        if (!this.listeners[type]) {
-            this.listeners[type] = [];
-            _console$S.log(`creating "${type}" listeners array`, this.listeners[type]);
+        if (!this.#listeners[type]) {
+            this.#listeners[type] = [];
+            _console$S.log(`creating "${type}" listeners array`, this.#listeners[type]);
         }
-        const alreadyAdded = this.listeners[type].find((listenerObject) => {
+        const alreadyAdded = this.#listeners[type].find((listenerObject) => {
             return (listenerObject.listener == listener &&
                 listenerObject.once == options.once);
         });
@@ -239,52 +241,60 @@ class EventDispatcher {
             return;
         }
         _console$S.log(`adding "${type}" listener`, listener, options);
-        this.listeners[type].push({ listener, once: options.once });
-        _console$S.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
+        this.#listeners[type].push({ listener, once: options.once });
+        _console$S.log(`currently have ${this.#listeners[type].length} "${type}" listeners`);
     }
     removeEventListener(type, listener) {
-        if (!this.isValidEventType(type)) {
+        if (!this.#isValidListenerType(type)) {
             throw new Error(`Invalid event type: ${type}`);
         }
-        if (!this.listeners[type])
+        if (!this.#listeners[type])
             return;
         _console$S.log(`removing "${type}" listener...`, listener);
-        this.listeners[type].forEach((listenerObj) => {
+        this.#listeners[type].forEach((listenerObj) => {
             const isListenerToRemove = listenerObj.listener === listener;
             if (isListenerToRemove) {
                 _console$S.log(`flagging "${type}" listener`, listener);
                 listenerObj.shouldRemove = true;
             }
         });
-        this.updateEventListeners(type);
+        this.#updateEventListeners(type);
     }
     removeEventListeners(type) {
-        if (!this.isValidEventType(type)) {
+        if (!this.#isValidListenerType(type)) {
             throw new Error(`Invalid event type: ${type}`);
         }
-        if (!this.listeners[type])
+        if (!this.#listeners[type])
             return;
         _console$S.log(`removing "${type}" listeners...`);
-        this.listeners[type] = [];
+        this.#listeners[type] = [];
     }
     removeAllEventListeners() {
         _console$S.log(`removing listeners...`);
-        this.listeners = {};
+        this.#listeners = {};
     }
     dispatchEvent(type, message) {
-        if (!this.isValidEventType(type)) {
+        if (!this.#isValidEventType(type)) {
             throw new Error(`Invalid event type: ${type}`);
         }
-        if (!this.listeners[type])
+        this.#dispatchEvent(type, message);
+        this.#dispatchEvent(type, message, true);
+    }
+    #dispatchEvent(type, message, isWildcard = false) {
+        if (!this.#isValidEventType(type)) {
+            throw new Error(`Invalid event type: ${type}`);
+        }
+        const listenersType = isWildcard ? wildcardEventType : type;
+        if (!this.#listeners[listenersType])
             return;
-        const listenersSnapshot = [...this.listeners[type]];
+        const listenersSnapshot = [...this.#listeners[listenersType]];
         listenersSnapshot.forEach((listenerObj) => {
             if (listenerObj.shouldRemove) {
                 return;
             }
             _console$S.log(`dispatching "${type}" listener`, listenerObj);
             try {
-                listenerObj.listener({ type, target: this.target, message });
+                listenerObj.listener({ type, target: this.#target, message });
             }
             catch (error) {
                 console.error(error);
@@ -294,7 +304,7 @@ class EventDispatcher {
                 listenerObj.shouldRemove = true;
             }
         });
-        this.updateEventListeners(type);
+        this.#updateEventListeners(type);
     }
     waitForEvent(type) {
         return new Promise((resolve) => {
