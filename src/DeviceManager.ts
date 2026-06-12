@@ -1,9 +1,18 @@
 import { ConnectionStatus } from "./connection/BaseConnectionManager.ts";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.ts";
-import Device, { BoundDeviceEventListeners, DeviceEventMap } from "./Device.ts";
 import { DeviceType } from "./InformationManager.ts";
 import { createConsole } from "./utils/Console.ts";
 import { isInBluefy, isInBrowser } from "./utils/environment.ts";
+import { addEventListeners } from "./utils/EventUtils.ts";
+
+import Device, {
+  BoundDeviceEventListeners,
+  DeviceEvent,
+  DeviceEventMap,
+  DeviceEventMessages,
+  DeviceEventType,
+  DeviceEventTypes,
+} from "./Device.ts";
 import EventDispatcher, {
   BoundEventListeners,
   Event,
@@ -12,7 +21,12 @@ import EventDispatcher, {
   WildcardEventType,
   wildcardEventType,
 } from "./utils/EventDispatcher.ts";
-import { addEventListeners } from "./utils/EventUtils.ts";
+import { capitalizeFirstCharacter } from "./utils/stringUtils.ts";
+import {
+  AddPrefixToInterfaceKeys,
+  ExtendInterfaceValues,
+  KeyOf,
+} from "./utils/TypeScriptUtils.ts";
 
 const _console = createConsole("DeviceManager", { log: false });
 
@@ -27,27 +41,50 @@ export interface LocalStorageConfiguration {
   devices: LocalStorageDeviceInformation[];
 }
 
-// FILL - eventTypes
+interface BaseDeviceManagerDeviceEventMessage {
+  device: Device;
+}
+type DeviceManagerDeviceEventMessages = ExtendInterfaceValues<
+  AddPrefixToInterfaceKeys<DeviceEventMessages, "device">,
+  BaseDeviceManagerDeviceEventMessage
+>;
+type DeviceManagerDeviceEventType = KeyOf<DeviceManagerDeviceEventMessages>;
+function getDeviceManagerDeviceEventTypes(deviceEventType: DeviceEventType) {
+  return ["device"].map(
+    (prefix) =>
+      `${prefix}${capitalizeFirstCharacter(
+        deviceEventType,
+      )}` as DeviceManagerDeviceEventType,
+  );
+}
+const DeviceManagerDeviceEventTypes = DeviceEventTypes.flatMap((eventType) =>
+  getDeviceManagerDeviceEventTypes(eventType),
+) as DeviceManagerDeviceEventType[];
 
-export const DeviceManagerEventTypes = [
-  "deviceConnected",
-  "deviceDisconnected",
-  "deviceIsConnected",
+export const wildcardDeviceEventType = "device*" as const;
+export type WildcardDeviceEventType = typeof wildcardDeviceEventType;
+
+const BaseDeviceManagerEventTypes = [
   "availableDevices",
   "connectedDevices",
+  wildcardDeviceEventType,
+] as const;
+type BaseDeviceManagerEventType = (typeof BaseDeviceManagerEventTypes)[number];
+
+interface BaseDeviceManagerEventMessages {
+  availableDevices: { availableDevices: Device[] };
+  connectedDevices: { connectedDevices: Device[] };
+  [wildcardDeviceEventType]: DeviceEvent;
+}
+
+export const DeviceManagerEventTypes = [
+  ...DeviceManagerDeviceEventTypes,
+  ...BaseDeviceManagerEventTypes,
 ] as const;
 export type DeviceManagerEventType = (typeof DeviceManagerEventTypes)[number];
 
-interface DeviceManagerEventMessage {
-  device: Device;
-}
-export interface DeviceManagerEventMessages {
-  deviceConnected: DeviceManagerEventMessage;
-  deviceDisconnected: DeviceManagerEventMessage;
-  deviceIsConnected: DeviceManagerEventMessage;
-  availableDevices: { availableDevices: Device[] };
-  connectedDevices: { connectedDevices: Device[] };
-}
+export type DeviceManagerEventMessages = DeviceManagerDeviceEventMessages &
+  BaseDeviceManagerEventMessages;
 
 export type DeviceManagerEventDispatcher = EventDispatcher<
   DeviceManager,
@@ -83,6 +120,12 @@ class DeviceManager {
       throw Error("DeviceManager is a singleton - use DeviceManager.shared");
     }
 
+    // @ts-expect-error
+    Device.OnDevice = this.onDevice.bind(this);
+    // @ts-expect-error
+    Device.OnDeviceConnectionStatusUpdated =
+      this.OnDeviceConnectionStatusUpdated.bind(this);
+
     if (this.CanUseLocalStorage) {
       this.UseLocalStorage = true;
     }
@@ -99,9 +142,9 @@ class DeviceManager {
     addEventListeners(device, this.#boundDeviceEventListeners);
   }
 
-  #onDeviceType(event: DeviceEventMap["getType"]) {
+  #onDeviceType(deviceEvent: DeviceEventMap["getType"]) {
     if (this.#UseLocalStorage) {
-      this.#UpdateLocalStorageConfigurationForDevice(event.target);
+      this.#UpdateLocalStorageConfigurationForDevice(deviceEvent.target);
     }
   }
 
@@ -344,8 +387,8 @@ class DeviceManager {
     return this.#EventDispatcher.removeAllEventListeners;
   }
 
-  #OnDeviceIsConnected(event: DeviceEventMap["isConnected"]) {
-    const { target: device } = event;
+  #OnDeviceIsConnected(deviceEvent: DeviceEventMap["isConnected"]) {
+    const { target: device } = deviceEvent;
     if (device.isConnected) {
       if (!this.#ConnectedDevices.includes(device)) {
         _console.log("adding device", device);
@@ -371,7 +414,10 @@ class DeviceManager {
           this.#SaveToLocalStorage();
         }
         this.#DispatchEvent("deviceConnected", { device });
-        this.#DispatchEvent("deviceIsConnected", { device });
+        this.#DispatchEvent("deviceIsConnected", {
+          device,
+          isConnected: device.isConnected,
+        });
         this.#DispatchConnectedDevices();
       } else {
         _console.log("device already included");
@@ -383,8 +429,11 @@ class DeviceManager {
           this.#ConnectedDevices.indexOf(device),
           1,
         );
-        this.#DispatchEvent("deviceDisconnected", { device });
-        this.#DispatchEvent("deviceIsConnected", { device });
+        this.#DispatchEvent("deviceNotConnected", { device });
+        this.#DispatchEvent("deviceIsConnected", {
+          device,
+          isConnected: device.isConnected,
+        });
         this.#DispatchConnectedDevices();
       } else {
         _console.log("device already not included");
@@ -409,8 +458,23 @@ class DeviceManager {
     }
     this._CheckDeviceAvailability(device);
   }
-  #onDeviceEvent(event: DeviceEventMap[WildcardEventType]) {
-    // FILL - redisatch event
+  #onDeviceEvent(deviceEvent: DeviceEventMap[WildcardEventType]) {
+    const { type, target: device, message } = deviceEvent;
+
+    this.#DispatchEvent(wildcardDeviceEventType, {
+      type,
+      ...message,
+      device,
+    });
+
+    getDeviceManagerDeviceEventTypes(type as DeviceEventType).forEach(
+      (_type) => {
+        this.#DispatchEvent(_type, {
+          ...message,
+          device,
+        });
+      },
+    );
   }
 
   _CheckDeviceAvailability(device: Device) {

@@ -460,7 +460,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   // STATIC DEVICE LISTENERS
   #boundDeviceManagerListeners: BoundDeviceManagerEventListeners = {
     deviceConnected: this.#onDeviceConnected.bind(this),
-    deviceDisconnected: this.#onDeviceDisconnected.bind(this),
+    deviceNotConnected: this.#onDeviceNotConnected.bind(this),
     deviceIsConnected: this.#onDeviceIsConnected.bind(this),
   };
 
@@ -472,11 +472,11 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     addEventListeners(device, this.#boundDeviceListeners);
   }
 
-  #onDeviceDisconnected(
-    staticDeviceEvent: DeviceManagerEventMap["deviceDisconnected"],
+  #onDeviceNotConnected(
+    staticDeviceEvent: DeviceManagerEventMap["deviceNotConnected"],
   ) {
     const { device } = staticDeviceEvent.message;
-    _console.log("onDeviceDisconnected", device.bluetoothId);
+    _console.log("onDeviceNotConnected", device.bluetoothId);
     removeEventListeners(device, this.#boundDeviceListeners);
   }
 

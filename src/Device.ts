@@ -99,7 +99,6 @@ import InformationManager, {
   SendInformationMessageCallback,
 } from "./InformationManager.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
-import DeviceManager from "./DeviceManager.ts";
 import CameraManager, {
   CameraEventDispatcher,
   CameraEventMessages,
@@ -250,6 +249,13 @@ export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
 ];
 
 class Device {
+  // DEVICE MANAGER
+  private static OnDevice: (device: Device) => void;
+  private static OnDeviceConnectionStatusUpdated: (
+    device: Device,
+    connectionStatus: ConnectionStatus,
+  ) => void;
+
   get bluetoothId() {
     return this.#connectionManager?.bluetoothId;
   }
@@ -467,7 +473,7 @@ class Device {
       }
     });
 
-    DeviceManager.onDevice(this);
+    Device.OnDevice(this);
     if (isInBrowser) {
       window.addEventListener("beforeunload", () => {
         if (this.isConnected && this.clearSensorConfigurationOnLeave) {
@@ -870,7 +876,7 @@ class Device {
       }
     }
 
-    DeviceManager.OnDeviceConnectionStatusUpdated(this, connectionStatus);
+    Device.OnDeviceConnectionStatusUpdated(this, connectionStatus);
   }
 
   #dispatchConnectionEvents(includeIsConnected: boolean = false) {
