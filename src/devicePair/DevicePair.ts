@@ -4,13 +4,14 @@ import EventDispatcher, {
   Event,
   EventListenerMap,
   EventMap,
+  wildcardEventType,
+  WildcardEventType,
 } from "../utils/EventDispatcher.ts";
 import {
   addEventListeners,
   removeEventListeners,
 } from "../utils/EventUtils.ts";
 import Device, {
-  DeviceEvent,
   DeviceEventType,
   DeviceEventMessages,
   DeviceEventTypes,
@@ -42,17 +43,20 @@ interface BaseDevicePairDeviceEventMessage {
   side: Side;
 }
 type DevicePairDeviceEventMessages = ExtendInterfaceValues<
-  AddPrefixToInterfaceKeys<DeviceEventMessages, "device">,
+  AddPrefixToInterfaceKeys<DeviceEventMessages, "device" | Side>,
   BaseDevicePairDeviceEventMessage
 >;
 type DevicePairDeviceEventType = KeyOf<DevicePairDeviceEventMessages>;
-function getDevicePairDeviceEventType(deviceEventType: DeviceEventType) {
-  return `device${capitalizeFirstCharacter(
-    deviceEventType,
-  )}` as DevicePairDeviceEventType;
+function getDevicePairDeviceEventTypes(deviceEventType: DeviceEventType) {
+  return ["device", ...Sides].map(
+    (prefix) =>
+      `${prefix}${capitalizeFirstCharacter(
+        deviceEventType,
+      )}` as DevicePairDeviceEventType,
+  );
 }
-const DevicePairDeviceEventTypes = DeviceEventTypes.map((eventType) =>
-  getDevicePairDeviceEventType(eventType),
+const DevicePairDeviceEventTypes = DeviceEventTypes.flatMap((eventType) =>
+  getDevicePairDeviceEventTypes(eventType),
 ) as DevicePairDeviceEventType[];
 
 export const DevicePairConnectionEventTypes = ["isConnected"] as const;
@@ -268,18 +272,8 @@ class DevicePair {
     isConnected: this.#onDeviceIsConnected.bind(this),
     sensorData: this.#onDeviceSensorData.bind(this),
     getType: this.#onDeviceType.bind(this),
-    "*": this.#onDeviceWildcard.bind(this),
+    [wildcardEventType]: this.#onDeviceEvent.bind(this),
   };
-
-  #redispatchDeviceEvent(deviceEvent: DeviceEvent) {
-    const { type, target: device, message } = deviceEvent;
-    // @ts-ignore
-    this.#dispatchEvent(getDevicePairDeviceEventType(type), {
-      ...message,
-      device,
-      side: device.side,
-    });
-  }
 
   #onDeviceIsConnected(deviceEvent: DeviceEventMap["isConnected"]) {
     this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
@@ -296,13 +290,14 @@ class DevicePair {
     }
     this.assignDevice(device);
   }
-  #onDeviceWildcard(deviceEvent: DeviceEventMap["*"]) {
+  #onDeviceEvent(deviceEvent: DeviceEventMap[WildcardEventType]) {
     const { type, target: device, message } = deviceEvent;
-    // @ts-ignore
-    this.#dispatchEvent(getDevicePairDeviceEventType(type), {
-      ...message,
-      device,
-      side: device.side,
+    getDevicePairDeviceEventTypes(type as DeviceEventType).forEach((_type) => {
+      this.#dispatchEvent(_type, {
+        ...message,
+        device,
+        side: device.side,
+      });
     });
   }
 

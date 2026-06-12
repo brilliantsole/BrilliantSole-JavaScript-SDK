@@ -52,11 +52,11 @@ declare class DeviceManager {
      * _only available on web-bluetooth enabled browsers_
      */
     GetDevices(): Promise<Device[] | undefined>;
-    get AddEventListener(): <T extends "deviceIsConnected" | "deviceConnected" | "*" | "connectedDevices" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<DeviceManager, "deviceIsConnected" | "deviceConnected" | "connectedDevices" | "deviceDisconnected" | "availableDevices", DeviceManagerEventMessages, T>) => void, options?: {
+    get AddEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices" | "*">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<DeviceManager, "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices", DeviceManagerEventMessages, T>) => void, options?: {
         once?: boolean;
     }) => void;
-    get RemoveEventListener(): <T extends "deviceIsConnected" | "deviceConnected" | "*" | "connectedDevices" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<DeviceManager, "deviceIsConnected" | "deviceConnected" | "connectedDevices" | "deviceDisconnected" | "availableDevices", DeviceManagerEventMessages, T>) => void) => void;
-    get RemoveEventListeners(): <T extends "deviceIsConnected" | "deviceConnected" | "*" | "connectedDevices" | "deviceDisconnected" | "availableDevices">(type: T) => void;
+    get RemoveEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices" | "*">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<DeviceManager, "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices", DeviceManagerEventMessages, T>) => void) => void;
+    get RemoveEventListeners(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices" | "*">(type: T) => void;
     get RemoveAllEventListeners(): () => void;
     _CheckDeviceAvailability(device: Device): void;
 }

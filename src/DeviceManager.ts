@@ -9,6 +9,8 @@ import EventDispatcher, {
   Event,
   EventListenerMap,
   EventMap,
+  WildcardEventType,
+  wildcardEventType,
 } from "./utils/EventDispatcher.ts";
 import { addEventListeners } from "./utils/EventUtils.ts";
 
@@ -24,6 +26,8 @@ export interface LocalStorageDeviceInformation {
 export interface LocalStorageConfiguration {
   devices: LocalStorageDeviceInformation[];
 }
+
+// FILL - eventTypes
 
 export const DeviceManagerEventTypes = [
   "deviceConnected",
@@ -88,6 +92,7 @@ class DeviceManager {
   #boundDeviceEventListeners: BoundDeviceEventListeners = {
     getType: this.#onDeviceType.bind(this),
     isConnected: this.#OnDeviceIsConnected.bind(this),
+    [wildcardEventType]: this.#onDeviceEvent.bind(this),
   };
   /** @private */
   onDevice(device: Device) {
@@ -403,6 +408,9 @@ class DeviceManager {
       this.#DispatchAvailableDevices();
     }
     this._CheckDeviceAvailability(device);
+  }
+  #onDeviceEvent(event: DeviceEventMap[WildcardEventType]) {
+    // FILL - redisatch event
   }
 
   _CheckDeviceAvailability(device: Device) {

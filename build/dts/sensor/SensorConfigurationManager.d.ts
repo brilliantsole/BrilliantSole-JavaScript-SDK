@@ -25,7 +25,7 @@ declare class SensorConfigurationManager {
     constructor();
     sendMessage: SendSensorConfigurationMessageCallback;
     eventDispatcher: SensorConfigurationEventDispatcher;
-    get addEventListener(): <T extends "getSensorConfiguration" | "*" | "setSensorConfiguration">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getSensorConfiguration" | "setSensorConfiguration", SensorConfigurationEventMessages, T>) => void, options?: {
+    get addEventListener(): <T extends "*" | "getSensorConfiguration" | "setSensorConfiguration">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getSensorConfiguration" | "setSensorConfiguration", SensorConfigurationEventMessages, T>) => void, options?: {
         once?: boolean;
     }) => void;
     get waitForEvent(): <T extends "getSensorConfiguration" | "setSensorConfiguration">(type: T) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getSensorConfiguration" | "setSensorConfiguration", SensorConfigurationEventMessages, T>>;
