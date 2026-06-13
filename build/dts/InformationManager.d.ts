@@ -41,7 +41,9 @@ declare class InformationManager {
     constructor();
     sendMessage: SendInformationMessageCallback;
     eventDispatcher: InformationEventDispatcher;
-    get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime">(type: T) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime", InformationEventMessages, T>>;
+    get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "setName" | "setType" | "setCurrentTime">(type: T, options?: {
+        immediate?: boolean;
+    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "setName" | "setType" | "setCurrentTime", InformationEventMessages, T>>;
     get isCharging(): boolean;
     get batteryCurrent(): number;
     getBatteryCurrent(): Promise<void>;

@@ -203,6 +203,7 @@ const _console$S = createConsole("EventDispatcher", { log: false });
 const wildcardEventType = "*";
 class EventDispatcher {
     #listeners = {};
+    #latestEvents = {};
     #target;
     #validEventTypes;
     constructor(target, validEventTypes) {
@@ -224,7 +225,7 @@ class EventDispatcher {
             return;
         this.#listeners[type] = this.#listeners[type].filter((listenerObj) => !listenerObj.shouldRemove);
     }
-    addEventListener(type, listener, options = { once: false }) {
+    addEventListener(type, listener, options = { once: false, immediate: false }) {
         if (!this.#isValidListenerType(type)) {
             throw new Error(`Invalid event type: ${type}`);
         }
@@ -233,16 +234,29 @@ class EventDispatcher {
             _console$S.log(`creating "${type}" listeners array`, this.#listeners[type]);
         }
         const alreadyAdded = this.#listeners[type].find((listenerObject) => {
-            return (listenerObject.listener == listener &&
-                listenerObject.once == options.once);
+            return (listenerObject.listener === listener &&
+                listenerObject.once === options.once &&
+                listenerObject.immediate === options.immediate);
         });
         if (alreadyAdded) {
             _console$S.log("already added listener");
             return;
         }
-        _console$S.log(`adding "${type}" listener`, listener, options);
-        this.#listeners[type].push({ listener, once: options.once });
+        const listenerObj = {
+            listener,
+            once: options.once,
+            immediate: options.immediate,
+        };
+        _console$S.log(`adding "${type}" listener`, listenerObj);
+        this.#listeners[type].push(listenerObj);
         _console$S.log(`currently have ${this.#listeners[type].length} "${type}" listeners`);
+        if (options.immediate && type != wildcardEventType) {
+            const latestEvent = this.#latestEvents[type];
+            if (latestEvent) {
+                this.#invokeListener(listenerObj, latestEvent.type, latestEvent.message);
+                this.#updateEventListeners(type);
+            }
+        }
     }
     removeEventListener(type, listener) {
         if (!this.#isValidListenerType(type)) {
@@ -277,8 +291,26 @@ class EventDispatcher {
         if (!this.#isValidEventType(type)) {
             throw new Error(`Invalid event type: ${type}`);
         }
+        this.#latestEvents[type] = {
+            type,
+            target: this.#target,
+            message,
+        };
         this.#dispatchEvent(type, message);
         this.#dispatchEvent(type, message, true);
+    }
+    #invokeListener(listenerObj, type, message) {
+        _console$S.log(`dispatching "${type}" listener`, listenerObj);
+        try {
+            listenerObj.listener({ type, target: this.#target, message });
+        }
+        catch (error) {
+            console.error(error);
+        }
+        if (listenerObj.once) {
+            _console$S.log(`flagging "${type}" listener`, listenerObj);
+            listenerObj.shouldRemove = true;
+        }
     }
     #dispatchEvent(type, message, isWildcard = false) {
         if (!this.#isValidEventType(type)) {
@@ -292,26 +324,16 @@ class EventDispatcher {
             if (listenerObj.shouldRemove) {
                 return;
             }
-            _console$S.log(`dispatching "${type}" listener`, listenerObj);
-            try {
-                listenerObj.listener({ type, target: this.#target, message });
-            }
-            catch (error) {
-                console.error(error);
-            }
-            if (listenerObj.once) {
-                _console$S.log(`flagging "${type}" listener`, listenerObj);
-                listenerObj.shouldRemove = true;
-            }
+            this.#invokeListener(listenerObj, type, message);
         });
         this.#updateEventListeners(type);
     }
-    waitForEvent(type) {
+    waitForEvent(type, options = {}) {
         return new Promise((resolve) => {
-            const onceListener = (event) => {
-                resolve(event);
-            };
-            this.addEventListener(type, onceListener, { once: true });
+            this.addEventListener(type, resolve, {
+                once: true,
+                immediate: options.immediate,
+            });
         });
     }
 }

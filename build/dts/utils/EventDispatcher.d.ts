@@ -46,16 +46,24 @@ export type EventDispatcherTypes<Target, EventType extends string, EventMessages
     BoundEventListeners: BoundEventListeners<Target, EventType, EventMessages>;
     EventDispatcher: EventDispatcher<Target, EventType, EventMessages>;
 };
+export type EventDispatcherOptions = {
+    once?: boolean;
+    immediate?: boolean;
+};
+export type EventDispatcherListener = {
+    listener: Function;
+    shouldRemove?: boolean;
+} & EventDispatcherOptions;
 declare class EventDispatcher<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> {
     #private;
     constructor(target: Target, validEventTypes: readonly EventType[]);
-    addEventListener<T extends EventType | WildcardEventType>(type: T, listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void, options?: {
-        once?: boolean;
-    }): void;
+    addEventListener<T extends EventType | WildcardEventType>(type: T, listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void, options?: EventDispatcherOptions): void;
     removeEventListener<T extends EventType | WildcardEventType>(type: T, listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void): void;
     removeEventListeners<T extends EventType | WildcardEventType>(type: T): void;
     removeAllEventListeners(): void;
     dispatchEvent<T extends EventType>(type: T, message: EventMessages[T]): void;
-    waitForEvent<T extends EventType>(type: T): Promise<ListenerEvent<Target, EventType, EventMessages, T>>;
+    waitForEvent<T extends EventType>(type: T, options?: {
+        immediate?: boolean;
+    }): Promise<ListenerEvent<Target, EventType, EventMessages, T>>;
 }
 export default EventDispatcher;

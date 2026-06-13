@@ -215,6 +215,7 @@ const _console$W = createConsole("EventDispatcher", { log: false });
 const wildcardEventType = "*";
 let EventDispatcher$1 = class EventDispatcher {
     #listeners = {};
+    #latestEvents = {};
     #target;
     #validEventTypes;
     constructor(target, validEventTypes) {
@@ -236,7 +237,7 @@ let EventDispatcher$1 = class EventDispatcher {
             return;
         this.#listeners[type] = this.#listeners[type].filter((listenerObj) => !listenerObj.shouldRemove);
     }
-    addEventListener(type, listener, options = { once: false }) {
+    addEventListener(type, listener, options = { once: false, immediate: false }) {
         if (!this.#isValidListenerType(type)) {
             throw new Error(`Invalid event type: ${type}`);
         }
@@ -245,16 +246,29 @@ let EventDispatcher$1 = class EventDispatcher {
             _console$W.log(`creating "${type}" listeners array`, this.#listeners[type]);
         }
         const alreadyAdded = this.#listeners[type].find((listenerObject) => {
-            return (listenerObject.listener == listener &&
-                listenerObject.once == options.once);
+            return (listenerObject.listener === listener &&
+                listenerObject.once === options.once &&
+                listenerObject.immediate === options.immediate);
         });
         if (alreadyAdded) {
             _console$W.log("already added listener");
             return;
         }
-        _console$W.log(`adding "${type}" listener`, listener, options);
-        this.#listeners[type].push({ listener, once: options.once });
+        const listenerObj = {
+            listener,
+            once: options.once,
+            immediate: options.immediate,
+        };
+        _console$W.log(`adding "${type}" listener`, listenerObj);
+        this.#listeners[type].push(listenerObj);
         _console$W.log(`currently have ${this.#listeners[type].length} "${type}" listeners`);
+        if (options.immediate && type != wildcardEventType) {
+            const latestEvent = this.#latestEvents[type];
+            if (latestEvent) {
+                this.#invokeListener(listenerObj, latestEvent.type, latestEvent.message);
+                this.#updateEventListeners(type);
+            }
+        }
     }
     removeEventListener(type, listener) {
         if (!this.#isValidListenerType(type)) {
@@ -289,8 +303,26 @@ let EventDispatcher$1 = class EventDispatcher {
         if (!this.#isValidEventType(type)) {
             throw new Error(`Invalid event type: ${type}`);
         }
+        this.#latestEvents[type] = {
+            type,
+            target: this.#target,
+            message,
+        };
         this.#dispatchEvent(type, message);
         this.#dispatchEvent(type, message, true);
+    }
+    #invokeListener(listenerObj, type, message) {
+        _console$W.log(`dispatching "${type}" listener`, listenerObj);
+        try {
+            listenerObj.listener({ type, target: this.#target, message });
+        }
+        catch (error) {
+            console.error(error);
+        }
+        if (listenerObj.once) {
+            _console$W.log(`flagging "${type}" listener`, listenerObj);
+            listenerObj.shouldRemove = true;
+        }
     }
     #dispatchEvent(type, message, isWildcard = false) {
         if (!this.#isValidEventType(type)) {
@@ -304,26 +336,16 @@ let EventDispatcher$1 = class EventDispatcher {
             if (listenerObj.shouldRemove) {
                 return;
             }
-            _console$W.log(`dispatching "${type}" listener`, listenerObj);
-            try {
-                listenerObj.listener({ type, target: this.#target, message });
-            }
-            catch (error) {
-                console.error(error);
-            }
-            if (listenerObj.once) {
-                _console$W.log(`flagging "${type}" listener`, listenerObj);
-                listenerObj.shouldRemove = true;
-            }
+            this.#invokeListener(listenerObj, type, message);
         });
         this.#updateEventListeners(type);
     }
-    waitForEvent(type) {
+    waitForEvent(type, options = {}) {
         return new Promise((resolve) => {
-            const onceListener = (event) => {
-                resolve(event);
-            };
-            this.addEventListener(type, onceListener, { once: true });
+            this.addEventListener(type, resolve, {
+                once: true,
+                immediate: options.immediate,
+            });
         });
     }
 };
@@ -36816,7 +36838,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-class DeviceManager {
+let DeviceManager$1 = class DeviceManager {
     static shared = new DeviceManager();
     constructor() {
         if (DeviceManager.shared && this != DeviceManager.shared) {
@@ -37110,8 +37132,8 @@ class DeviceManager {
             connectedDevices: this.connectedDevices,
         });
     }
-}
-var DeviceManager$1 = DeviceManager.shared;
+};
+var DeviceManager = DeviceManager$1.shared;
 
 const _console$e = createConsole("WindowManagerUtils", { log: false });
 const WindowManagerMessageTypes = [
@@ -37323,12 +37345,12 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$c = createConsole("Scanner", { log: false });
-let scanner;
+let scanner$1;
 {
     _console$c.log("Scanner not available");
-    scanner = new NullScanner();
+    scanner$1 = new NullScanner();
 }
-var scanner$1 = scanner;
+var scanner = scanner$1;
 
 class GuardManager {
     #guards = [];
@@ -37387,9 +37409,9 @@ class BaseServer {
         return this.#eventDispatcher.waitForEvent;
     }
     constructor() {
-        _console$b.assertWithError(scanner$1, "no scanner defined");
-        addEventListeners(scanner$1, this.#boundScannerListeners);
-        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
+        _console$b.assertWithError(scanner, "no scanner defined");
+        addEventListeners(scanner, this.#boundScannerListeners);
+        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
     }
     clients = [];
@@ -37430,7 +37452,7 @@ class BaseServer {
         _console$b.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager$1.connectedDevices.forEach((device) => {
+            DeviceManager.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -37459,7 +37481,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner$1.isScanningAvailable,
+            data: scanner.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -37468,7 +37490,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner$1.isScanning,
+            data: scanner.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -37494,9 +37516,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner$1.discoveredDevicesArray
+        const serverMessages = scanner.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -37508,7 +37530,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -37699,10 +37721,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner$1.startScan();
+                scanner.startScan();
                 break;
             case "stopScan":
-                scanner$1.stopScan();
+                scanner.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -37720,14 +37742,14 @@ class BaseServer {
                     else {
                         _console$b.log(`connecting to device with id ${deviceId}...`);
                     }
-                    scanner$1.connectToDevice(deviceId, connectionType);
+                    scanner.connectToDevice(deviceId, connectionType);
                 }
                 break;
             case "disconnectFromDevice":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner$1.devices[deviceId];
+                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner.devices[deviceId];
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -37747,7 +37769,7 @@ class BaseServer {
             case "deviceMessage":
                 {
                     const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -37762,7 +37784,7 @@ class BaseServer {
             case "requiredDeviceInformation":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -37870,7 +37892,7 @@ class BaseServer {
 _a$1 = BaseServer;
 
 const _console$a = createConsole("WindowServer", { log: false });
-class WindowServer extends BaseServer {
+let WindowServer$1 = class WindowServer extends BaseServer {
     static shared = new WindowServer();
     init() {
         addEventListeners(WindowManagerServer_default, this.#boundWindowManagerServerEventListeners);
@@ -37902,8 +37924,8 @@ class WindowServer extends BaseServer {
         _console$a.log("onWindowManaagerServerClientDisconnected", client);
         this.dispatchEvent("clientDisconnected", { client });
     }
-}
-var WindowServer$1 = WindowServer.shared;
+};
+var WindowServer = WindowServer$1.shared;
 
 const _console$9 = createConsole("WindowManager", { log: true });
 const WindowManagerServerEventTypes = [
@@ -38142,7 +38164,7 @@ class WindowManagerServer {
             case "pong":
                 break;
             case "serverMessage":
-                const responseMessage = WindowServer$1.parseClientMessage(client, dataView);
+                const responseMessage = WindowServer.parseClientMessage(client, dataView);
                 if (responseMessage) {
                     responseMessages.push(createWindowManagerMessage({
                         type: "serverMessage",
@@ -38157,7 +38179,7 @@ class WindowManagerServer {
     }
 }
 var WindowManagerServer_default = WindowManagerServer.shared;
-WindowServer$1.init();
+WindowServer.init();
 
 const _console$8 = createConsole("WindowManagerClient", { log: true });
 const ClientConnectionStatuses$1 = [
@@ -38172,7 +38194,7 @@ const WindowManagerClientEventTypes = [
     "isConnected",
     "serverMessage",
 ];
-class WindowManagerClient {
+let WindowManagerClient$1 = class WindowManagerClient {
     #eventDispatcher = new EventDispatcher$1(this, WindowManagerClientEventTypes);
     get addEventListener() {
         return this.#eventDispatcher.addEventListener;
@@ -38343,8 +38365,8 @@ class WindowManagerClient {
     #pong() {
         this.#sendMessage(windowManagerPongMessage);
     }
-}
-var WindowManagerClient$1 = WindowManagerClient.shared;
+};
+var WindowManagerClient = WindowManagerClient$1.shared;
 
 const _console$7 = createConsole("ClientConnectionManager", { log: false });
 [
@@ -38806,7 +38828,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager$1._checkDeviceAvailability(device);
+            DeviceManager._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -38847,7 +38869,7 @@ class WindowClient extends BaseClient {
         if (WindowClient.shared && this != WindowClient.shared) {
             throw Error("WindowClient is a singleton - use WindowClient.shared");
         }
-        addEventListeners(WindowManagerClient$1, this.#boundWindowEventListeners);
+        addEventListeners(WindowManagerClient, this.#boundWindowEventListeners);
     }
     #boundWindowEventListeners = {
         connectionStatus: this.#onWindowManagerClientConnectionStatus.bind(this),
@@ -38862,10 +38884,10 @@ class WindowClient extends BaseClient {
         this.parseMessage(event.message.dataView);
     }
     get isConnected() {
-        return WindowManagerClient$1.isConnected;
+        return WindowManagerClient.isConnected;
     }
     get isDisconnected() {
-        return WindowManagerClient$1.isDisconnected;
+        return WindowManagerClient.isDisconnected;
     }
     connect() {
         this.#onConnectionCommand();
@@ -38884,7 +38906,7 @@ class WindowClient extends BaseClient {
     }
     sendServerMessage(...messages) {
         _console$5.log("sendServerMessage", messages);
-        WindowManagerClient$1.sendMessage({
+        WindowManagerClient.sendMessage({
             type: "serverMessage",
             data: createServerMessage(...messages),
         });
@@ -42096,7 +42118,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager$1.addEventListener("deviceConnected", (event) => {
+        DeviceManager.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -42295,5 +42317,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient$1 as WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer$1 as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
 //# sourceMappingURL=brilliantsole.module.js.map

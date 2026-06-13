@@ -103,21 +103,31 @@ export type EventDispatcherTypes<
   EventDispatcher: EventDispatcher<Target, EventType, EventMessages>;
 };
 
+export type EventDispatcherOptions = {
+  once?: boolean;
+  immediate?: boolean;
+};
+
+export type EventDispatcherListener = {
+  listener: Function;
+  shouldRemove?: boolean;
+} & EventDispatcherOptions;
+
 class EventDispatcher<
   Target extends any,
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>,
 > {
   #listeners: Partial<
-    Record<
-      EventType | WildcardEventType,
-      {
-        listener: Function;
-        once?: boolean;
-        shouldRemove?: boolean;
-      }[]
-    >
+    Record<EventType | WildcardEventType, EventDispatcherListener[]>
   > = {};
+  #latestEvents: Partial<{
+    [K in EventType]: {
+      type: K;
+      target: Target;
+      message: EventMessages[K];
+    };
+  }> = {};
 
   #target!: Target;
   #validEventTypes!: readonly EventType[];
@@ -159,7 +169,7 @@ class EventDispatcher<
     listener: (
       event: ListenerEvent<Target, EventType, EventMessages, T>,
     ) => void,
-    options: { once?: boolean } = { once: false },
+    options: EventDispatcherOptions = { once: false, immediate: false },
   ): void {
     if (!this.#isValidListenerType(type)) {
       throw new Error(`Invalid event type: ${type}`);
@@ -174,20 +184,40 @@ class EventDispatcher<
     }
     const alreadyAdded = this.#listeners[type].find((listenerObject) => {
       return (
-        listenerObject.listener == listener &&
-        listenerObject.once == options.once
+        listenerObject.listener === listener &&
+        listenerObject.once === options.once &&
+        listenerObject.immediate === options.immediate
       );
     });
     if (alreadyAdded) {
       _console.log("already added listener");
       return;
     }
-    _console.log(`adding "${type}" listener`, listener, options);
-    this.#listeners[type]!.push({ listener, once: options.once });
+    const listenerObj: EventDispatcherListener = {
+      listener,
+      once: options.once,
+      immediate: options.immediate,
+    };
+    _console.log(`adding "${type}" listener`, listenerObj);
+    this.#listeners[type]!.push(listenerObj);
 
     _console.log(
       `currently have ${this.#listeners[type]!.length} "${type}" listeners`,
     );
+
+    if (options.immediate && type != wildcardEventType) {
+      const latestEvent = this.#latestEvents[type];
+
+      if (latestEvent) {
+        this.#invokeListener(
+          listenerObj,
+          latestEvent.type,
+          latestEvent.message,
+        );
+
+        this.#updateEventListeners(type);
+      }
+    }
   }
 
   removeEventListener<T extends EventType | WildcardEventType>(
@@ -235,8 +265,31 @@ class EventDispatcher<
       throw new Error(`Invalid event type: ${type}`);
     }
 
+    this.#latestEvents[type] = {
+      type,
+      target: this.#target,
+      message,
+    };
+
     this.#dispatchEvent(type, message);
     this.#dispatchEvent(type, message, true);
+  }
+  #invokeListener<T extends EventType>(
+    listenerObj: EventDispatcherListener,
+    type: T,
+    message: EventMessages[T],
+  ) {
+    _console.log(`dispatching "${type}" listener`, listenerObj);
+    try {
+      listenerObj.listener({ type, target: this.#target, message });
+    } catch (error) {
+      console.error(error);
+    }
+
+    if (listenerObj.once) {
+      _console.log(`flagging "${type}" listener`, listenerObj);
+      listenerObj.shouldRemove = true;
+    }
   }
   #dispatchEvent<T extends EventType>(
     type: T,
@@ -258,18 +311,7 @@ class EventDispatcher<
       if (listenerObj.shouldRemove) {
         return;
       }
-
-      _console.log(`dispatching "${type}" listener`, listenerObj);
-      try {
-        listenerObj.listener({ type, target: this.#target, message });
-      } catch (error) {
-        console.error(error);
-      }
-
-      if (listenerObj.once) {
-        _console.log(`flagging "${type}" listener`, listenerObj);
-        listenerObj.shouldRemove = true;
-      }
+      this.#invokeListener(listenerObj, type, message);
     });
 
     this.#updateEventListeners(type);
@@ -277,15 +319,13 @@ class EventDispatcher<
 
   waitForEvent<T extends EventType>(
     type: T,
+    options: { immediate?: boolean } = {},
   ): Promise<ListenerEvent<Target, EventType, EventMessages, T>> {
     return new Promise((resolve) => {
-      const onceListener = (
-        event: ListenerEvent<Target, EventType, EventMessages, T>,
-      ) => {
-        resolve(event);
-      };
-
-      this.addEventListener(type, onceListener, { once: true });
+      this.addEventListener(type, resolve, {
+        once: true,
+        immediate: options.immediate,
+      });
     });
   }
 }
