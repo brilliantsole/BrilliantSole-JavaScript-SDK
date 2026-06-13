@@ -2,9 +2,9 @@ import * as BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
 // console.log(BS);
 
-const device = new BS.Device();
+// const device = new BS.Device();
 // console.log({ device });
-window.device = device;
+// window.device = device;
 
 //BS.setAllConsoleLevelFlags({ log: false });
 //BS.setConsoleLevelFlagsForType("PressureDataManager", { log: true });
@@ -38,7 +38,7 @@ function onAvailableDevices(availableDevices) {
       });
       availableDevice.addEventListener("connectionStatus", () => {
         toggleConnectionButton.disabled =
-          device.connectionStatus != "notConnected";
+          availableDevice.connectionStatus != "notConnected";
       });
 
       availableDevicesContainer.appendChild(availableDeviceContainer);
@@ -59,18 +59,49 @@ BS.DeviceManager.addEventListener("availableDevices", (event) => {
 });
 getDevices();
 
+// DEVICE
+
+/** @type {BS.Device?} */
+let currentDevice;
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (!currentDevice) {
+    onDevice(device);
+  }
+});
+BS.DeviceManager.addEventListener("deviceNotConnected", (event) => {
+  const { device } = event.message;
+  if (currentDevice == device) {
+    currentDevice.removeAllEventListeners();
+    currentDevice = undefined;
+    const nextConnectedDevice = BS.DeviceManager.connectedDevices[0];
+    if (nextConnectedDevice) {
+      onDevice(nextConnectedDevice);
+    }
+  }
+});
+
+/** @param {BS.Device} device */
+const onDevice = (device, replaceCurrentDevice = false) => {
+  if (currentDevice) {
+    if (!replaceCurrentDevice) {
+      return;
+    }
+    currentDevice.removeAllEventListeners();
+  }
+  currentDevice = device;
+  console.log("currentDevice", currentDevice);
+};
+
 // CONNECTION
 
 /** @type {HTMLButtonElement} */
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () => {
-  switch (device.connectionStatus) {
-    case "notConnected":
-      device.connect();
-      break;
-    case "connected":
-      device.disconnect();
-      break;
+  if (currentDevice) {
+    currentDevice.toggleConnection();
+  } else {
+    BS.Device.Connect();
   }
 });
 
@@ -81,6 +112,12 @@ reconnectButton.addEventListener("click", () => {
 });
 device.addEventListener("connectionStatus", () => {
   reconnectButton.disabled = !device.canReconnect;
+});
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device == currentDevice) {
+    // FILL
+  }
 });
 
 device.addEventListener("connectionStatus", () => {

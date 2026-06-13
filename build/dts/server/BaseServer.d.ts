@@ -1,4 +1,4 @@
-import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventDispatcherTypes, EventMap } from "../utils/EventDispatcher.ts";
 import { DeviceMessage, ServerMessage } from "./ServerUtils.ts";
 import Device from "../Device.ts";
 import GuardManager from "../utils/GuardManager.ts";
@@ -19,6 +19,7 @@ export type ServerEventDispatcher<ServerClient extends BaseServerClient> = Event
 export type ServerEvent<ServerClient extends BaseServerClient> = Event<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
 export type ServerEventMap<ServerClient extends BaseServerClient> = EventMap<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
 export type BoundServerEventListeners<ServerClient extends BaseServerClient> = BoundEventListeners<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
+export type ServerEventDisptcherTypes<ServerClient extends BaseServerClient> = EventDispatcherTypes<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
 export interface BaseServerClientContext<ServerClient extends BaseServerClient> {
     client: ServerClient;
     responseMessages: (ArrayBuffer | undefined)[];

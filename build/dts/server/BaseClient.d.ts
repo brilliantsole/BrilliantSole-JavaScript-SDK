@@ -1,5 +1,5 @@
 import { ClientDeviceMessage, ServerMessageOrMessageType } from "./ServerUtils.ts";
-import EventDispatcher, { BoundEventListeners, Event } from "../utils/EventDispatcher.ts";
+import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
 import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
 import { ClientConnectionType } from "../connection/BaseConnectionManager.ts";
@@ -16,9 +16,12 @@ interface ClientConnectionEventMessages {
     };
 }
 export type ClientEventMessages = ClientConnectionEventMessages & ScannerEventMessages;
-export type ClientEventDispatcher = EventDispatcher<BaseClient, ClientEventType, ClientEventMessages>;
-export type ClientEvent = Event<BaseClient, ClientEventType, ClientEventMessages>;
-export type BoundClientEventListeners = BoundEventListeners<BaseClient, ClientEventType, ClientEventMessages>;
+export type ClientEventDispatcherTypes = EventDispatcherTypes<BaseClient, ClientEventType, ClientEventMessages>;
+export type ClientEvent = ClientEventDispatcherTypes["Event"];
+export type ClientEventMap = ClientEventDispatcherTypes["EventMap"];
+export type ClientEventListenerMap = ClientEventDispatcherTypes["EventListenerMap"];
+export type ClientEventDispatcher = ClientEventDispatcherTypes["EventDispatcher"];
+export type BoundClientEventListeners = ClientEventDispatcherTypes["BoundEventListeners"];
 export type ServerURL = string | URL;
 declare abstract class BaseClient {
     #private;
@@ -26,11 +29,11 @@ declare abstract class BaseClient {
     get devices(): {
         [deviceId: string]: Device;
     };
-    get addEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice", ClientEventMessages, T>) => void, options?: {
+    get addEventListener(): <T extends "*" | "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseClient, "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice", ClientEventMessages, T>) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice", ClientEventMessages, T>) => void) => void;
-    get waitForEvent(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<BaseClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice", ClientEventMessages, T>>;
+    get removeEventListener(): <T extends "*" | "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseClient, "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice", ClientEventMessages, T>) => void) => void;
+    get waitForEvent(): <T extends "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<BaseClient, "isConnected" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice", ClientEventMessages, T>>;
     abstract isConnected: boolean;
     protected assertConnection(): void;
     abstract isDisconnected: boolean;

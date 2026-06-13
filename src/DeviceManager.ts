@@ -13,10 +13,7 @@ import Device, {
   DeviceEventTypes,
 } from "./Device.ts";
 import EventDispatcher, {
-  BoundEventListeners,
-  Event,
-  EventListenerMap,
-  EventMap,
+  EventDispatcherTypes,
   WildcardEventType,
   wildcardEventType,
 } from "./utils/EventDispatcher.ts";
@@ -87,8 +84,6 @@ interface BaseDeviceManagerEventMessages {
   [wildcardDeviceEventType]: WildcardDeviceEventMessage<BaseDeviceManagerDeviceEventMessage>;
 }
 
-// const x: WildcardDeviceEventMessage<BaseDeviceManagerDeviceEventMessage>["device"];
-
 export const DeviceManagerEventTypes = [
   ...DeviceManagerDeviceEventTypes,
   ...BaseDeviceManagerEventTypes,
@@ -98,31 +93,20 @@ export type DeviceManagerEventType = (typeof DeviceManagerEventTypes)[number];
 export type DeviceManagerEventMessages = DeviceManagerDeviceEventMessages &
   BaseDeviceManagerEventMessages;
 
-export type DeviceManagerEventDispatcher = EventDispatcher<
+export type DeviceManagerEventDisptcherTypes = EventDispatcherTypes<
   DeviceManager,
   DeviceManagerEventType,
   DeviceManagerEventMessages
 >;
-export type DeviceManagerEventMap = EventMap<
-  typeof Device,
-  DeviceManagerEventType,
-  DeviceManagerEventMessages
->;
-export type DeviceManagerEventListenerMap = EventListenerMap<
-  typeof Device,
-  DeviceManagerEventType,
-  DeviceManagerEventMessages
->;
-export type DeviceManagerEvent = Event<
-  typeof Device,
-  DeviceManagerEventType,
-  DeviceManagerEventMessages
->;
-export type BoundDeviceManagerEventListeners = BoundEventListeners<
-  typeof Device,
-  DeviceManagerEventType,
-  DeviceManagerEventMessages
->;
+export type DeviceManagerEvent = DeviceManagerEventDisptcherTypes["Event"];
+export type DeviceManagerEventMap =
+  DeviceManagerEventDisptcherTypes["EventMap"];
+export type DeviceManagerEventListenerMap =
+  DeviceManagerEventDisptcherTypes["EventListenerMap"];
+export type DeviceManagerEventDispatcher =
+  DeviceManagerEventDisptcherTypes["EventDispatcher"];
+export type BoundDeviceManagerEventListeners =
+  DeviceManagerEventDisptcherTypes["BoundEventListeners"];
 
 class DeviceManager {
   static readonly shared = new DeviceManager();
@@ -378,25 +362,25 @@ class DeviceManager {
 
   // STATIC EVENTLISTENERS
 
-  #EventDispatcher: DeviceManagerEventDispatcher = new EventDispatcher(
+  #eventDispatcher: DeviceManagerEventDispatcher = new EventDispatcher(
     this as DeviceManager,
     DeviceManagerEventTypes,
   );
 
   get addEventListener() {
-    return this.#EventDispatcher.addEventListener;
+    return this.#eventDispatcher.addEventListener;
   }
   get #dispatchEvent() {
-    return this.#EventDispatcher.dispatchEvent;
+    return this.#eventDispatcher.dispatchEvent;
   }
   get removeEventListener() {
-    return this.#EventDispatcher.removeEventListener;
+    return this.#eventDispatcher.removeEventListener;
   }
   get removeEventListeners() {
-    return this.#EventDispatcher.removeEventListeners;
+    return this.#eventDispatcher.removeEventListeners;
   }
   get removeAllEventListeners() {
-    return this.#EventDispatcher.removeAllEventListeners;
+    return this.#eventDispatcher.removeAllEventListeners;
   }
 
   #onDeviceIsConnected(deviceEvent: DeviceEventMap["isConnected"]) {

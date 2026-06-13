@@ -3,7 +3,7 @@ import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, Disp
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection, DisplayColorRGBOrString } from "./DisplayUtils.ts";
-import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
+import { EventDispatcherTypes } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplaySprite, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
@@ -71,11 +71,12 @@ export interface DisplayCanvasHelperEventMessages {
         device: Device;
     };
 }
-export type DisplayCanvasHelperEventDispatcher = EventDispatcher<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
-export type DisplayCanvasHelperEvent = Event<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
-export type DisplayCanvasHelperEventMap = EventMap<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
-export type DisplayCanvasHelperEventListenerMap = EventListenerMap<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
-export type BoundDisplayCanvasHelperEventListeners = BoundEventListeners<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
+export type DisplayCanvasHelperEventDispatcherTypes = EventDispatcherTypes<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
+export type DisplayCanvasHelperEvent = DisplayCanvasHelperEventDispatcherTypes["Event"];
+export type DisplayCanvasHelperEventMap = DisplayCanvasHelperEventDispatcherTypes["EventMap"];
+export type DisplayCanvasHelperEventListenerMap = DisplayCanvasHelperEventDispatcherTypes["EventListenerMap"];
+export type DisplayCanvasHelperEventDispatcher = DisplayCanvasHelperEventDispatcherTypes["EventDispatcher"];
+export type BoundDisplayCanvasHelperEventListeners = DisplayCanvasHelperEventDispatcherTypes["BoundEventListeners"];
 export type DisplayBoundingBox = {
     x: number;
     y: number;
@@ -85,12 +86,12 @@ export type DisplayBoundingBox = {
 declare class DisplayCanvasHelper implements DisplayManagerInterface {
     #private;
     constructor();
-    get addEventListener(): <T extends "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "*" | "brightness" | "resize" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "resize" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void, options?: {
+    get addEventListener(): <T extends "*" | "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "*" | "brightness" | "resize" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "resize" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void) => void;
-    get waitForEvent(): <T extends "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "resize" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => Promise<import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "resize" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>>;
-    get removeEventListeners(): <T extends "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "*" | "brightness" | "resize" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => void;
+    get removeEventListener(): <T extends "*" | "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void) => void;
+    get waitForEvent(): <T extends "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => Promise<import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>>;
+    get removeEventListeners(): <T extends "*" | "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);

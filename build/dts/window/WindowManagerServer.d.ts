@@ -1,4 +1,4 @@
-import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "../utils/EventDispatcher.ts";
+import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
 import { WindowManagerMessage } from "./WindowManagerUtils.ts";
 export interface WindowManagerServerClient {
     iframe: HTMLIFrameElement;
@@ -22,11 +22,12 @@ interface WindowManagerServerEventMessages {
         client: WindowManagerServerClient;
     };
 }
-export type WindowManagerServerEventDispatcher = EventDispatcher<WindowManagerServer, WindowManagerServerEventType, WindowManagerServerEventMessages>;
-export type WindowManagerServerEvent = Event<WindowManagerServer, WindowManagerServerEventType, WindowManagerServerEventMessages>;
-export type WindowManagerServerEventMap = EventMap<WindowManagerServer, WindowManagerServerEventType, WindowManagerServerEventMessages>;
-export type WindowManagerServerEventListenerMap = EventListenerMap<WindowManagerServer, WindowManagerServerEventType, WindowManagerServerEventMessages>;
-export type BoundWindowManagerServerEventListeners = BoundEventListeners<WindowManagerServer, WindowManagerServerEventType, WindowManagerServerEventMessages>;
+export type WindowManagerServerEventDispatcherTypes = EventDispatcherTypes<WindowManagerServer, WindowManagerServerEventType, WindowManagerServerEventMessages>;
+export type WindowManagerServerEvent = WindowManagerServerEventDispatcherTypes["Event"];
+export type WindowManagerServerEventMap = WindowManagerServerEventDispatcherTypes["EventMap"];
+export type WindowManagerServerEventListenerMap = WindowManagerServerEventDispatcherTypes["EventListenerMap"];
+export type WindowManagerServerEventDispatcher = WindowManagerServerEventDispatcherTypes["EventDispatcher"];
+export type BoundWindowManagerServerEventListeners = WindowManagerServerEventDispatcherTypes["BoundEventListeners"];
 declare class WindowManagerServer {
     #private;
     get addEventListener(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<WindowManagerServer, "clientConnected" | "clientDisconnected", WindowManagerServerEventMessages, T>) => void, options?: {

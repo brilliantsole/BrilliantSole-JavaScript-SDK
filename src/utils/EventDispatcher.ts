@@ -91,6 +91,18 @@ export type BoundEventListeners<
       ) => void;
 };
 
+export type EventDispatcherTypes<
+  Target,
+  EventType extends string,
+  EventMessages extends Partial<Record<EventType, any>>,
+> = {
+  Event: Event<Target, EventType, EventMessages>;
+  EventMap: EventMap<Target, EventType, EventMessages>;
+  EventListenerMap: EventListenerMap<Target, EventType, EventMessages>;
+  BoundEventListeners: BoundEventListeners<Target, EventType, EventMessages>;
+  EventDispatcher: EventDispatcher<Target, EventType, EventMessages>;
+};
+
 class EventDispatcher<
   Target extends any,
   EventType extends string,

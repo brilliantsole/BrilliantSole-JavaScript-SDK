@@ -1,9 +1,6 @@
 import { createConsole } from "./utils/Console.ts";
 import EventDispatcher, {
-  BoundEventListeners,
-  Event,
-  EventListenerMap,
-  EventMap,
+  EventDispatcherTypes,
 } from "./utils/EventDispatcher.ts";
 import BaseConnectionManager, {
   TxMessage,
@@ -207,27 +204,19 @@ export type SendMessageCallback<MessageType extends string> = (
 
 export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
 
-export type DeviceEventDispatcher = EventDispatcher<
+export type DeviceEventDispatcherTypes = EventDispatcherTypes<
   Device,
   DeviceEventType,
   DeviceEventMessages
 >;
-export type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
-export type DeviceEventMap = EventMap<
-  Device,
-  DeviceEventType,
-  DeviceEventMessages
->;
-export type DeviceEventListenerMap = EventListenerMap<
-  Device,
-  DeviceEventType,
-  DeviceEventMessages
->;
-export type BoundDeviceEventListeners = BoundEventListeners<
-  Device,
-  DeviceEventType,
-  DeviceEventMessages
->;
+export type DeviceEvent = DeviceEventDispatcherTypes["Event"];
+export type DeviceEventMap = DeviceEventDispatcherTypes["EventMap"];
+export type DeviceEventListenerMap =
+  DeviceEventDispatcherTypes["EventListenerMap"];
+export type DeviceEventDispatcher =
+  DeviceEventDispatcherTypes["EventDispatcher"];
+export type BoundDeviceEventListeners =
+  DeviceEventDispatcherTypes["BoundEventListeners"];
 
 export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
   "isCharging",

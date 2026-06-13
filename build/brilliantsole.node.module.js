@@ -14901,21 +14901,21 @@ class DeviceManager {
         this.#dispatchAvailableDevices();
         return this.availableDevices;
     }
-    #EventDispatcher = new EventDispatcher(this, DeviceManagerEventTypes);
+    #eventDispatcher = new EventDispatcher(this, DeviceManagerEventTypes);
     get addEventListener() {
-        return this.#EventDispatcher.addEventListener;
+        return this.#eventDispatcher.addEventListener;
     }
     get #dispatchEvent() {
-        return this.#EventDispatcher.dispatchEvent;
+        return this.#eventDispatcher.dispatchEvent;
     }
     get removeEventListener() {
-        return this.#EventDispatcher.removeEventListener;
+        return this.#eventDispatcher.removeEventListener;
     }
     get removeEventListeners() {
-        return this.#EventDispatcher.removeEventListeners;
+        return this.#eventDispatcher.removeEventListeners;
     }
     get removeAllEventListeners() {
-        return this.#EventDispatcher.removeAllEventListeners;
+        return this.#eventDispatcher.removeAllEventListeners;
     }
     #onDeviceIsConnected(deviceEvent) {
         const { target: device } = deviceEvent;
@@ -17000,5 +17000,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ConnectionEventTypes, ConnectionMessageTypes, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner$1 as Scanner, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites };
+export { ConnectionEventTypes, ConnectionMessageTypes, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner$1 as Scanner, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantsole.node.module.js.map

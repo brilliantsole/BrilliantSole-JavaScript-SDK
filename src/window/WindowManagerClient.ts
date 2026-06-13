@@ -2,6 +2,7 @@ import { createConsole } from "../utils/Console.ts";
 import EventDispatcher, {
   BoundEventListeners,
   Event,
+  EventDispatcherTypes,
   EventListenerMap,
   EventMap,
 } from "../utils/EventDispatcher.ts";
@@ -47,31 +48,21 @@ interface WindowManagerClientEventMessages {
   serverMessage: { dataView: DataView<ArrayBuffer> };
 }
 
-export type WindowManagerClientEventDispatcher = EventDispatcher<
+export type WindowManagerClientEventDispatcherTypes = EventDispatcherTypes<
   WindowManagerClient,
   WindowManagerClientEventType,
   WindowManagerClientEventMessages
 >;
-export type WindowManagerClientEvent = Event<
-  WindowManagerClient,
-  WindowManagerClientEventType,
-  WindowManagerClientEventMessages
->;
-export type WindowManagerClientEventMap = EventMap<
-  WindowManagerClient,
-  WindowManagerClientEventType,
-  WindowManagerClientEventMessages
->;
-export type WindowManagerClientEventListenerMap = EventListenerMap<
-  WindowManagerClient,
-  WindowManagerClientEventType,
-  WindowManagerClientEventMessages
->;
-export type BoundWindowManagerClientEventListeners = BoundEventListeners<
-  WindowManagerClient,
-  WindowManagerClientEventType,
-  WindowManagerClientEventMessages
->;
+export type WindowManagerClientEvent =
+  WindowManagerClientEventDispatcherTypes["Event"];
+export type WindowManagerClientEventMap =
+  WindowManagerClientEventDispatcherTypes["EventMap"];
+export type WindowManagerClientEventListenerMap =
+  WindowManagerClientEventDispatcherTypes["EventListenerMap"];
+export type WindowManagerClientEventDispatcher =
+  WindowManagerClientEventDispatcherTypes["EventDispatcher"];
+export type BoundWindowManagerClientEventListeners =
+  WindowManagerClientEventDispatcherTypes["BoundEventListeners"];
 
 class WindowManagerClient {
   // EVENT DISPATCHER

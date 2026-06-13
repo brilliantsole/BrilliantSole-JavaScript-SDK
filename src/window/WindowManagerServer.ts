@@ -3,6 +3,7 @@ import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
   Event,
+  EventDispatcherTypes,
   EventListenerMap,
   EventMap,
 } from "../utils/EventDispatcher.ts";
@@ -49,31 +50,21 @@ interface WindowManagerServerEventMessages {
   clientDisconnected: { client: WindowManagerServerClient };
 }
 
-export type WindowManagerServerEventDispatcher = EventDispatcher<
+export type WindowManagerServerEventDispatcherTypes = EventDispatcherTypes<
   WindowManagerServer,
   WindowManagerServerEventType,
   WindowManagerServerEventMessages
 >;
-export type WindowManagerServerEvent = Event<
-  WindowManagerServer,
-  WindowManagerServerEventType,
-  WindowManagerServerEventMessages
->;
-export type WindowManagerServerEventMap = EventMap<
-  WindowManagerServer,
-  WindowManagerServerEventType,
-  WindowManagerServerEventMessages
->;
-export type WindowManagerServerEventListenerMap = EventListenerMap<
-  WindowManagerServer,
-  WindowManagerServerEventType,
-  WindowManagerServerEventMessages
->;
-export type BoundWindowManagerServerEventListeners = BoundEventListeners<
-  WindowManagerServer,
-  WindowManagerServerEventType,
-  WindowManagerServerEventMessages
->;
+export type WindowManagerServerEvent =
+  WindowManagerServerEventDispatcherTypes["Event"];
+export type WindowManagerServerEventMap =
+  WindowManagerServerEventDispatcherTypes["EventMap"];
+export type WindowManagerServerEventListenerMap =
+  WindowManagerServerEventDispatcherTypes["EventListenerMap"];
+export type WindowManagerServerEventDispatcher =
+  WindowManagerServerEventDispatcherTypes["EventDispatcher"];
+export type BoundWindowManagerServerEventListeners =
+  WindowManagerServerEventDispatcherTypes["BoundEventListeners"];
 
 class WindowManagerServer {
   // EVENT DISPATCHER

@@ -68,6 +68,8 @@ import { simplifyPoints, simplifyCurves, simplifyPointsAsCubicCurveControlPoints
 export { simplifyPoints, simplifyCurves, simplifyPointsAsCubicCurveControlPoints, };
 import { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, fontToSpriteSheet, getFontMetrics, DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, getFontMaxHeight, getMaxSpriteSheetSize, englishRegex, FontToSpriteSheetOptions, FontMetrics } from "./utils/DisplaySpriteSheetUtils.ts";
 export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, stringToSprites, fontToSpriteSheet, getFontMetrics, DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, getFontMaxHeight, getMaxSpriteSheetSize, englishRegex, FontToSpriteSheetOptions, FontMetrics, };
+import { WildcardEventType, wildcardEventType } from "./utils/EventDispatcher.ts";
+export { WildcardEventType, wildcardEventType };
 /** BROWSER_START */
 import { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap } from "./utils/DisplayCanvasHelper.ts";
 export { DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, };

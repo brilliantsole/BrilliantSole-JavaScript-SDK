@@ -2,6 +2,7 @@ import { createConsole } from "../utils/Console.ts";
 import EventDispatcher, {
   BoundEventListeners,
   Event,
+  EventDispatcherTypes,
   EventMap,
 } from "../utils/EventDispatcher.ts";
 import {
@@ -97,6 +98,13 @@ export type ServerEventMap<ServerClient extends BaseServerClient> = EventMap<
 >;
 export type BoundServerEventListeners<ServerClient extends BaseServerClient> =
   BoundEventListeners<
+    BaseServer<ServerClient>,
+    ServerEventType,
+    ServerEventMessages<ServerClient>
+  >;
+
+export type ServerEventDisptcherTypes<ServerClient extends BaseServerClient> =
+  EventDispatcherTypes<
     BaseServer<ServerClient>,
     ServerEventType,
     ServerEventMessages<ServerClient>

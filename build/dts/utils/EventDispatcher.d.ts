@@ -39,6 +39,13 @@ export type ListenerObject<Target, EventType extends string, EventMessages exten
 export type BoundEventListeners<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
     [K in EventType | typeof wildcardEventType]?: K extends typeof wildcardEventType ? (event: Event<Target, EventType, EventMessages>) => void : (event: SpecificEvent<Target, EventType, EventMessages, K & EventType>) => void;
 };
+export type EventDispatcherTypes<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
+    Event: Event<Target, EventType, EventMessages>;
+    EventMap: EventMap<Target, EventType, EventMessages>;
+    EventListenerMap: EventListenerMap<Target, EventType, EventMessages>;
+    BoundEventListeners: BoundEventListeners<Target, EventType, EventMessages>;
+    EventDispatcher: EventDispatcher<Target, EventType, EventMessages>;
+};
 declare class EventDispatcher<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> {
     #private;
     constructor(target: Target, validEventTypes: readonly EventType[]);

@@ -11,6 +11,7 @@ import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
   Event,
+  EventDispatcherTypes,
 } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
 import {
@@ -59,21 +60,19 @@ interface ClientConnectionEventMessages {
 export type ClientEventMessages = ClientConnectionEventMessages &
   ScannerEventMessages;
 
-export type ClientEventDispatcher = EventDispatcher<
+export type ClientEventDispatcherTypes = EventDispatcherTypes<
   BaseClient,
   ClientEventType,
   ClientEventMessages
 >;
-export type ClientEvent = Event<
-  BaseClient,
-  ClientEventType,
-  ClientEventMessages
->;
-export type BoundClientEventListeners = BoundEventListeners<
-  BaseClient,
-  ClientEventType,
-  ClientEventMessages
->;
+export type ClientEvent = ClientEventDispatcherTypes["Event"];
+export type ClientEventMap = ClientEventDispatcherTypes["EventMap"];
+export type ClientEventListenerMap =
+  ClientEventDispatcherTypes["EventListenerMap"];
+export type ClientEventDispatcher =
+  ClientEventDispatcherTypes["EventDispatcher"];
+export type BoundClientEventListeners =
+  ClientEventDispatcherTypes["BoundEventListeners"];
 
 export type ServerURL = string | URL;
 

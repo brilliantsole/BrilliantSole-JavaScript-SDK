@@ -87,6 +87,7 @@ import {
 import EventDispatcher, {
   BoundEventListeners,
   Event,
+  EventDispatcherTypes,
   EventListenerMap,
   EventMap,
 } from "./EventDispatcher.ts";
@@ -204,31 +205,21 @@ export interface DisplayCanvasHelperEventMessages {
   };
 }
 
-export type DisplayCanvasHelperEventDispatcher = EventDispatcher<
+export type DisplayCanvasHelperEventDispatcherTypes = EventDispatcherTypes<
   DisplayCanvasHelper,
   DisplayCanvasHelperEventType,
   DisplayCanvasHelperEventMessages
 >;
-export type DisplayCanvasHelperEvent = Event<
-  DisplayCanvasHelper,
-  DisplayCanvasHelperEventType,
-  DisplayCanvasHelperEventMessages
->;
-export type DisplayCanvasHelperEventMap = EventMap<
-  DisplayCanvasHelper,
-  DisplayCanvasHelperEventType,
-  DisplayCanvasHelperEventMessages
->;
-export type DisplayCanvasHelperEventListenerMap = EventListenerMap<
-  DisplayCanvasHelper,
-  DisplayCanvasHelperEventType,
-  DisplayCanvasHelperEventMessages
->;
-export type BoundDisplayCanvasHelperEventListeners = BoundEventListeners<
-  DisplayCanvasHelper,
-  DisplayCanvasHelperEventType,
-  DisplayCanvasHelperEventMessages
->;
+export type DisplayCanvasHelperEvent =
+  DisplayCanvasHelperEventDispatcherTypes["Event"];
+export type DisplayCanvasHelperEventMap =
+  DisplayCanvasHelperEventDispatcherTypes["EventMap"];
+export type DisplayCanvasHelperEventListenerMap =
+  DisplayCanvasHelperEventDispatcherTypes["EventListenerMap"];
+export type DisplayCanvasHelperEventDispatcher =
+  DisplayCanvasHelperEventDispatcherTypes["EventDispatcher"];
+export type BoundDisplayCanvasHelperEventListeners =
+  DisplayCanvasHelperEventDispatcherTypes["BoundEventListeners"];
 
 export type DisplayBoundingBox = {
   x: number;
