@@ -7,7 +7,6 @@ import { addEventListeners } from "./utils/EventUtils.ts";
 
 import Device, {
   BoundDeviceEventListeners,
-  DeviceEvent,
   DeviceEventMap,
   DeviceEventMessages,
   DeviceEventType,
