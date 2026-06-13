@@ -234,7 +234,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       this.clients.length == 0 &&
       this.clearSensorConfigurationsWhenNoClients
     ) {
-      DeviceManager.ConnectedDevices.forEach((device) => {
+      DeviceManager.connectedDevices.forEach((device) => {
         device.clearSensorConfiguration();
         device.setTfliteInferencingEnabled(false);
       });
@@ -334,7 +334,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   get #discoveredDevicesMessage() {
     const serverMessages: ServerMessage[] = scanner.discoveredDevicesArray
       .filter((discoveredDevice) => {
-        const existingConnectedDevice = DeviceManager.ConnectedDevices.find(
+        const existingConnectedDevice = DeviceManager.connectedDevices.find(
           (device) => device.bluetoothId == discoveredDevice.bluetoothId,
         );
         return !existingConnectedDevice;
@@ -349,7 +349,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     return createServerMessage({
       type: "connectedDevices",
       data: JSON.stringify({
-        connectedDevices: DeviceManager.ConnectedDevices.map(
+        connectedDevices: DeviceManager.connectedDevices.map(
           (device) => device.bluetoothId,
         ),
       }),
@@ -722,7 +722,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       case "disconnectFromDevice":
         {
           const { string: deviceId } = parseStringFromDataView(dataView);
-          let device = DeviceManager.AvailableDevices.find(
+          let device = DeviceManager.availableDevices.find(
             (device) => device.bluetoothId == deviceId,
           );
           device = device ?? scanner.devices[deviceId];
@@ -753,7 +753,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         {
           const { string: deviceId, byteOffset } =
             parseStringFromDataView(dataView);
-          const device = DeviceManager.ConnectedDevices.find(
+          const device = DeviceManager.connectedDevices.find(
             (device) => device.bluetoothId == deviceId,
           );
           if (!device) {
@@ -777,7 +777,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       case "requiredDeviceInformation":
         {
           const { string: deviceId } = parseStringFromDataView(dataView);
-          const device = DeviceManager.ConnectedDevices.find(
+          const device = DeviceManager.connectedDevices.find(
             (device) => device.bluetoothId == deviceId,
           );
           if (!device) {

@@ -7,7 +7,7 @@ console.log({ BS });
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate"
+  "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
@@ -48,7 +48,7 @@ function onAvailableDevices(availableDevices) {
         }
       };
       availableDevice.addEventListener("connectionStatus", () =>
-        onConnectionStatusUpdate()
+        onConnectionStatusUpdate(),
       );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
@@ -56,14 +56,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.GetDevices();
+  const availableDevices = await BS.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
@@ -86,10 +86,10 @@ window.addEventListener("isSensorDataEnabled", () => {
 const connectedDevicesContainer = document.getElementById("connectedDevices");
 /** @type {HTMLTemplateElement} */
 const connectedDeviceTemplate = document.getElementById(
-  "connectedDeviceTemplate"
+  "connectedDeviceTemplate",
 );
 
-BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
   /** @type {BS.Device} */
   const device = event.message.device;
   console.log("deviceConnected", device);
@@ -117,13 +117,13 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
 
   /** @type {HTMLPreElement} */
   const sensorConfigurationPre = connectedDeviceContainer.querySelector(
-    "pre.sensorConfiguration"
+    "pre.sensorConfiguration",
   );
   const updateSensorConfigurationPre = () => {
     sensorConfigurationPre.textContent = JSON.stringify(
       device.sensorConfiguration,
       null,
-      2
+      2,
     );
   };
   device.addEventListener("getSensorConfiguration", () => {
@@ -138,7 +138,7 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
     //console.log({ name: device.name, sensorType, timestamp, data });
     if (isRecording && currentRecording) {
       let deviceRecording = currentRecording.devices.find(
-        (_deviceRecording) => _deviceRecording.id == device.id
+        (_deviceRecording) => _deviceRecording.id == device.id,
       );
       if (!deviceRecording) {
         deviceRecording = {
@@ -150,7 +150,7 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
         currentRecording.devices.push(deviceRecording);
       }
       let sensorTypeData = deviceRecording.sensorData.find(
-        (_sensorTypeData) => _sensorTypeData.sensorType == sensorType
+        (_sensorTypeData) => _sensorTypeData.sensorType == sensorType,
       );
       if (!sensorTypeData) {
         sensorTypeData = {
@@ -187,11 +187,11 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
 /** @type {BS.SensorConfiguration} */
 const sensorConfiguration = {};
 const sensorConfigurationContainer = document.getElementById(
-  "sensorConfiguration"
+  "sensorConfiguration",
 );
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById(
-  "sensorTypeConfigurationTemplate"
+  "sensorTypeConfigurationTemplate",
 );
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeConfigurationContainers = {};
@@ -217,7 +217,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
     window.dispatchEvent(
       new CustomEvent("sensorConfiguration", {
         detail: { sensorConfiguration },
-      })
+      }),
     );
   });
 
@@ -240,7 +240,7 @@ function setIsSensorDataEnabled(newIsSensorDataEnabled) {
   }
   isSensorDataEnabled = newIsSensorDataEnabled;
 
-  BS.DeviceManager.ConnectedDevices.forEach((device) => {
+  BS.DeviceManager.connectedDevices.forEach((device) => {
     if (isSensorDataEnabled) {
       console.log(device, sensorConfiguration);
       device.setSensorConfiguration(sensorConfiguration);
@@ -251,7 +251,7 @@ function setIsSensorDataEnabled(newIsSensorDataEnabled) {
   });
 
   window.dispatchEvent(
-    new CustomEvent("isSensorDataEnabled", { detail: isSensorDataEnabled })
+    new CustomEvent("isSensorDataEnabled", { detail: isSensorDataEnabled }),
   );
 }
 /** @type {HTMLInputElement} */
@@ -261,16 +261,16 @@ toggleSensorDataCheckbox.addEventListener("input", () => {
 });
 function updateToggleSensorDataCheckbox() {
   const isSensorConfigurationZero = Object.values(sensorConfiguration).every(
-    (sensorRate) => sensorRate == 0
+    (sensorRate) => sensorRate == 0,
   );
   toggleSensorDataCheckbox.disabled =
-    isSensorConfigurationZero || BS.DeviceManager.ConnectedDevices.length == 0;
+    isSensorConfigurationZero || BS.DeviceManager.connectedDevices.length == 0;
 }
 window.addEventListener("sensorConfiguration", (event) => {
   updateToggleSensorDataCheckbox();
 });
 
-BS.DeviceManager.AddEventListener("deviceIsConnected", () => {
+BS.DeviceManager.addEventListener("deviceIsConnected", () => {
   updateToggleSensorDataCheckbox();
 });
 
@@ -279,7 +279,7 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", () => {
 let recordingCountdown = 0;
 /** @type {HTMLInputElement} */
 const recordingCountdownInput = document.getElementById(
-  "recordingCountdownInput"
+  "recordingCountdownInput",
 );
 recordingCountdownInput.addEventListener("input", () => {
   recordingCountdown = Number(recordingCountdownInput.value);
@@ -290,7 +290,7 @@ let isRecordingFixedDuration = false;
 
 /** @type {HTMLInputElement} */
 const isRecordingFixedDurationCheckbox = document.getElementById(
-  "isRecordingFixedDuration"
+  "isRecordingFixedDuration",
 );
 isRecordingFixedDurationCheckbox.addEventListener("input", () => {
   isRecordingFixedDuration = !isRecordingFixedDuration;
@@ -426,7 +426,7 @@ function startRecordingTimeout() {
   }
   recordingTimeoutId = setTimeout(
     () => stopRecording(),
-    recordingDuration * 1_000
+    recordingDuration * 1_000,
   );
 }
 function clearRecordingTimeout() {
@@ -480,7 +480,7 @@ window.addEventListener("isSensorDataEnabled", () => {
 
 /** @type {HTMLSpanElement} */
 const recordingCountdownSpan = document.getElementById(
-  "recordingCountdownSpan"
+  "recordingCountdownSpan",
 );
 
 /** @param {number} recordingCountdown */
@@ -498,7 +498,7 @@ function updateRecordingCountdown(recordingCountdown) {
  * @param {BS.VibrationWaveformEffect} effect
  */
 function vibrate(effect) {
-  BS.DeviceManager.ConnectedDevices.forEach((device) => {
+  BS.DeviceManager.connectedDevices.forEach((device) => {
     device.triggerVibration([
       {
         type: "waveformEffect",
@@ -512,11 +512,11 @@ function vibrate(effect) {
 const recordingTemplate = document.getElementById("recordingTemplate");
 /** @type {HTMLTemplateElement} */
 const deviceRecordingTemplate = document.getElementById(
-  "deviceRecordingTemplate"
+  "deviceRecordingTemplate",
 );
 /** @type {HTMLTemplateElement} */
 const sensorTypeRecordingTemplate = document.getElementById(
-  "sensorTypeRecordingTemplate"
+  "sensorTypeRecordingTemplate",
 );
 const recordingsContainer = document.getElementById("recordings");
 
@@ -563,12 +563,12 @@ function onRecording(recording, saveRecordings = true) {
         sensorTypeData.dataRate;
       const date = new Date(sensorTypeData.initialTimestamp);
       sensorTypeRecordingContainer.querySelector(
-        ".initialTimestamp"
+        ".initialTimestamp",
       ).innerText = dateToString(date);
 
       /** @type {HTMLCanvasElement} */
       const visualizationCanvas = sensorTypeRecordingContainer.querySelector(
-        ".visualization canvas"
+        ".visualization canvas",
       );
       const visualizationContainer =
         visualizationCanvas.closest(".visualization");
@@ -599,7 +599,7 @@ function onRecording(recording, saveRecordings = true) {
   const deleteButton = recordingContainer.querySelector(".delete");
   deleteButton.addEventListener("click", () => {
     const confirmDeletion = window.confirm(
-      "are you sure you want to delete this recording?"
+      "are you sure you want to delete this recording?",
     );
     if (!confirmDeletion) {
       return;
@@ -632,11 +632,11 @@ function onRecording(recording, saveRecordings = true) {
 
 /** @type {HTMLButtonElement} */
 const deleteAllRecordingsButton = document.getElementById(
-  "deleteAllRecordings"
+  "deleteAllRecordings",
 );
 deleteAllRecordingsButton.addEventListener("click", () => {
   const confirmDeletion = window.confirm(
-    "are you sure you want to delete all recordings?"
+    "are you sure you want to delete all recordings?",
   );
   if (!confirmDeletion) {
     return;
@@ -784,7 +784,7 @@ function visualizeSensorTypeData(sensorTypeData, canvas) {
     type: "line",
     data: {
       labels: sensorTypeData.data.map(
-        (_, index) => index * sensorTypeData.dataRate
+        (_, index) => index * sensorTypeData.dataRate,
       ),
       datasets: Object.keys(sensorTypeData.data[0]).map((key) => {
         let label = key;

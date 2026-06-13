@@ -271,9 +271,9 @@ class NobleScanner extends BaseScanner {
     const noblePeripheral = this.#noblePeripherals[deviceId];
     _console.log("connecting to discoveredDevice...", deviceId);
 
-    let device = DeviceManager.AvailableDevices.filter(
-      (device) => device.connectionType == "noble",
-    ).find((device) => device.bluetoothId == deviceId);
+    let device = DeviceManager.availableDevices
+      .filter((device) => device.connectionType == "noble")
+      .find((device) => device.bluetoothId == deviceId);
     device = device ?? this.#devices[deviceId];
 
     if (!device) {
@@ -307,9 +307,9 @@ class NobleScanner extends BaseScanner {
     super.disconnectFromDevice(deviceId);
     this.#assertValidNoblePeripheralId(deviceId);
 
-    let device = DeviceManager.AvailableDevices.filter(
-      (device) => device.connectionType == "noble",
-    ).find((device) => device.bluetoothId == deviceId);
+    let device = DeviceManager.availableDevices
+      .filter((device) => device.connectionType == "noble")
+      .find((device) => device.bluetoothId == deviceId);
     device = device ?? this.#devices[deviceId];
 
     if (device) {

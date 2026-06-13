@@ -16,7 +16,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -55,7 +55,7 @@ device.addEventListener("connected", () => {
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -80,7 +80,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -328,14 +328,14 @@ const drawGraph = async (x, y, senseGraphData) => {
 
       if (graphType != "pressure") {
         const metrics = displayCanvasHelper.stringToSpriteLinesMetrics(
-          graphType == "pressure" ? "sum" : _sensorLabels.join("")
+          graphType == "pressure" ? "sum" : _sensorLabels.join(""),
         );
         await displayCanvasHelper.selectFillColor(0);
         await displayCanvasHelper.drawRect(
           -size.width / 2,
           labelOffset.y,
           metrics.size.width,
-          metrics.size.height * 0.8
+          metrics.size.height * 0.8,
         );
       }
 
@@ -661,7 +661,7 @@ const addFont = async (font) => {
       font,
       fontSize,
       "english",
-      fontOptions
+      fontOptions,
     );
     fontSpriteSheets[fullName] = spriteSheet;
     await updateFontSelect();
@@ -721,7 +721,7 @@ const senseContainers = {};
 /** @typedef { {device: BS.Device, numberOfSamples: number, sensorTypes: BS.ContinuousSensorType[], isSensorDataEnabled: boolean, graphData: AllGraphData }} SenseGraphData */
 /** @type {Record<string, SenseGraphData>} */
 const senseGraphData = {};
-BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
+BS.DeviceManager.addEventListener("deviceIsConnected", (event) => {
   const { device } = event.message;
 
   if (device.type == "glasses") {
@@ -811,7 +811,7 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
 
     /** @type {HTMLTemplateElement} */
     const sensorTypeTemplate = senseContainer.querySelector(
-      ".sensorTypeTemplate"
+      ".sensorTypeTemplate",
     );
 
     const quaternion = new THREE.Quaternion();
@@ -856,7 +856,7 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
           });
         sensorTypeTemplate.parentElement.insertBefore(
           sensorTypeContainer,
-          sensorTypeTemplate
+          sensorTypeTemplate,
         );
 
         graphData[sensorType] = [];
@@ -1012,7 +1012,7 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
 
     /** @type {HTMLInputElement} */
     const toggleSenseSensorDataInput = senseContainer.querySelector(
-      ".toggleSenseSensorData"
+      ".toggleSenseSensorData",
     );
     device.addEventListener("isConnected", () => {
       toggleSenseSensorDataInput.disabled = !device.isConnected;

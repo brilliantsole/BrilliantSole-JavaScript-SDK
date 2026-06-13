@@ -12,7 +12,7 @@ BS.setAllConsoleLevelFlags({ log: false });
  * @param {BS.VibrationWaveformEffect} effect
  */
 function vibrate(effect) {
-  BS.DeviceManager.ConnectedDevices.forEach((device) => {
+  BS.DeviceManager.connectedDevices.forEach((device) => {
     device.triggerVibration([
       {
         type: "waveformEffect",
@@ -26,7 +26,7 @@ function vibrate(effect) {
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate"
+  "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
@@ -70,7 +70,7 @@ function onAvailableDevices(availableDevices) {
         }
       };
       availableDevice.addEventListener("connectionStatus", () =>
-        onConnectionStatusUpdate()
+        onConnectionStatusUpdate(),
       );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
@@ -78,14 +78,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.GetDevices();
+  const availableDevices = await BS.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const { availableDevices } = event.message;
   onAvailableDevices(availableDevices);
 });
@@ -108,10 +108,10 @@ window.addEventListener("createNeuralNetwork", () => {
 const connectedDevicesContainer = document.getElementById("connectedDevices");
 /** @type {HTMLTemplateElement} */
 const connectedDeviceTemplate = document.getElementById(
-  "connectedDeviceTemplate"
+  "connectedDeviceTemplate",
 );
 
-BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
   const { device } = event.message;
   console.log("deviceConnected", device);
   const connectedDeviceContainer = connectedDeviceTemplate.content
@@ -164,7 +164,7 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
 const selectedDevicesContainer = document.getElementById("selectedDevices");
 /** @type {HTMLTemplateElement} */
 const selectedDeviceTemplate = document.getElementById(
-  "selectedDeviceTemplate"
+  "selectedDeviceTemplate",
 );
 
 /** @type {Object.<string, HTMLElement>} */
@@ -198,13 +198,13 @@ function selectDevice(device) {
 
     /** @type {HTMLPreElement} */
     const sensorConfigurationPre = selectedDeviceContainer.querySelector(
-      "pre.sensorConfiguration"
+      "pre.sensorConfiguration",
     );
     const updateSensorConfigurationPre = () => {
       sensorConfigurationPre.textContent = JSON.stringify(
         device.sensorConfiguration,
         null,
-        2
+        2,
       );
     };
     device.addEventListener("getSensorConfiguration", () => {
@@ -227,7 +227,7 @@ function selectDevice(device) {
   selectedDevicesContainer.appendChild(selectedDeviceContainer);
 
   window.dispatchEvent(
-    new CustomEvent("deviceSelection", { detail: { device } })
+    new CustomEvent("deviceSelection", { detail: { device } }),
   );
 }
 
@@ -247,7 +247,7 @@ function deselectDevice(device) {
   selectedDeviceContainer.remove();
 
   window.dispatchEvent(
-    new CustomEvent("deviceSelection", { detail: { device } })
+    new CustomEvent("deviceSelection", { detail: { device } }),
   );
 }
 
@@ -361,11 +361,11 @@ BS.TfliteSensorTypes.forEach((sensorType) => {
     sensorTypes.sort(
       (a, b) =>
         BS.ContinuousSensorTypes.indexOf(a) -
-        BS.ContinuousSensorTypes.indexOf(b)
+        BS.ContinuousSensorTypes.indexOf(b),
     );
     console.log("sensorTypes", sensorTypes);
     window.dispatchEvent(
-      new CustomEvent("sensorTypes", { detail: { sensorTypes } })
+      new CustomEvent("sensorTypes", { detail: { sensorTypes } }),
     );
   });
 
@@ -410,7 +410,7 @@ function updateOutputLabels() {
   console.log({ outputLabels });
 
   window.dispatchEvent(
-    new CustomEvent("outputLabels", { detail: { outputLabels } })
+    new CustomEvent("outputLabels", { detail: { outputLabels } }),
   );
 }
 
@@ -502,7 +502,7 @@ function setNumberOfOutputs(newNumberOfOutputs) {
   });
 
   window.dispatchEvent(
-    new CustomEvent("numberOfOutputs", { detail: { numberOfOutputs } })
+    new CustomEvent("numberOfOutputs", { detail: { numberOfOutputs } }),
   );
 
   updateOutputLabels();
@@ -538,7 +538,7 @@ numberOfSamplesInput.addEventListener("input", () => {
   numberOfSamples = Number(numberOfSamplesInput.value);
   //console.log({ numberOfSamples });
   window.dispatchEvent(
-    new CustomEvent("numberOfSamples", { detail: { numberOfSamples } })
+    new CustomEvent("numberOfSamples", { detail: { numberOfSamples } }),
   );
   updateSamplingPeriod();
 });
@@ -555,7 +555,7 @@ samplingRateInput.addEventListener("input", () => {
   //console.log({ samplingRate });
   samplingPeriodInput.step = samplingRate;
   window.dispatchEvent(
-    new CustomEvent("samplingRate", { detail: { samplingRate } })
+    new CustomEvent("samplingRate", { detail: { samplingRate } }),
   );
   updateSamplingPeriod();
 });
@@ -589,7 +589,7 @@ hiddenUnitsInput.addEventListener("input", () => {
   hiddenUnits = Number(hiddenUnitsInput.value);
   console.log({ hiddenUnits });
   window.dispatchEvent(
-    new CustomEvent("hiddenUnits", { detail: { hiddenUnits } })
+    new CustomEvent("hiddenUnits", { detail: { hiddenUnits } }),
   );
 });
 hiddenUnitsInput.dispatchEvent(new Event("input"));
@@ -600,7 +600,7 @@ learningRateInput.addEventListener("input", () => {
   learningRate = Number(learningRateInput.value);
   console.log({ learningRate });
   window.dispatchEvent(
-    new CustomEvent("learningRate", { detail: { learningRate } })
+    new CustomEvent("learningRate", { detail: { learningRate } }),
   );
 });
 learningRateInput.dispatchEvent(new Event("input"));
@@ -648,7 +648,7 @@ function checkIfCanCreateNeuralNetwork() {
 
 /** @type {HTMLButtonElement} */
 const createNeuralNetworkButton = document.getElementById(
-  "createNeuralNetwork"
+  "createNeuralNetwork",
 );
 createNeuralNetworkButton.addEventListener("click", () => {
   if (!canCreateNeuralNetwork()) {
@@ -665,7 +665,7 @@ createNeuralNetworkButton.addEventListener("click", () => {
   console.log({ neuralNetwork });
   window.neuralNetwork = neuralNetwork;
   window.dispatchEvent(
-    new CustomEvent("createNeuralNetwork", { detail: { neuralNetwork } })
+    new CustomEvent("createNeuralNetwork", { detail: { neuralNetwork } }),
   );
 });
 
@@ -700,7 +700,7 @@ toggleSensorDataInputs.forEach((toggleSensorDataInput) => {
     window.dispatchEvent(
       new CustomEvent("isSensorDataEnabled", {
         detail: { isSensorDataEnabled },
-      })
+      }),
     );
   });
 
@@ -743,7 +743,7 @@ let addDataContinuously = false;
 
 /** @type {HTMLButtonElement} */
 const toggleAddDataContinuouslyInput = document.getElementById(
-  "toggleAddDataContinuously"
+  "toggleAddDataContinuously",
 );
 toggleAddDataContinuouslyInput.addEventListener("input", () => {
   addDataContinuously = toggleAddDataContinuouslyInput.checked;
@@ -779,7 +779,7 @@ async function addData() {
 /** @param {BS.DeviceData} deviceData */
 function didFinishCollectingDeviceData(deviceData) {
   return Object.values(deviceData).every(
-    (sensorData) => sensorData.length >= numberOfSamples
+    (sensorData) => sensorData.length >= numberOfSamples,
   );
 }
 /** @param {BS.DevicesData} devicesData */
@@ -825,7 +825,7 @@ function flattenDeviceData(deviceData) {
             const { x, y, z } = vector3;
 
             flattenedDeviceData.push(
-              ...[x, y, z].map((value) => value * scalar)
+              ...[x, y, z].map((value) => value * scalar),
             );
           }
           break;
@@ -836,7 +836,7 @@ function flattenDeviceData(deviceData) {
             const quaternion = sensorData;
             const { x, y, z, w } = quaternion;
             flattenedDeviceData.push(
-              ...[x, y, z, w].map((value) => value * scalar)
+              ...[x, y, z, w].map((value) => value * scalar),
             );
           }
           break;
@@ -845,7 +845,7 @@ function flattenDeviceData(deviceData) {
             /** @type {BS.PressureData} */
             const pressure = sensorData;
             flattenedDeviceData.push(
-              ...pressure.sensors.map((sensor) => sensor.rawValue * scalar)
+              ...pressure.sensors.map((sensor) => sensor.rawValue * scalar),
             );
           }
           break;
@@ -858,7 +858,7 @@ function flattenDeviceData(deviceData) {
     });
   }
   return flattenedDeviceData.map((value) =>
-    value == 0 ? 0.000001 * Math.random() : value
+    value == 0 ? 0.000001 * Math.random() : value,
   );
 }
 
@@ -902,7 +902,7 @@ async function collectData() {
 
         if (deviceData[sensorType].length == numberOfSamples) {
           console.log(
-            `finished collecting ${sensorType} data for device #${index}`
+            `finished collecting ${sensorType} data for device #${index}`,
           );
           return;
         }
@@ -970,7 +970,7 @@ function setThresholdsEnabled(newThresholdsEnabled) {
   thresholdsEnabled = newThresholdsEnabled;
   console.log({ thresholdsEnabled });
   window.dispatchEvent(
-    new CustomEvent("thresholdsEnabled", { detail: { thresholdsEnabled } })
+    new CustomEvent("thresholdsEnabled", { detail: { thresholdsEnabled } }),
   );
 }
 window.addEventListener("loadConfig", () => {
@@ -993,7 +993,7 @@ captureDelayInput.addEventListener("input", () => {
   console.log({ captureDelay });
   throttledOnThresholdReached.interval = captureDelay;
   window.dispatchEvent(
-    new CustomEvent("captureDelay", { detail: { captureDelay } })
+    new CustomEvent("captureDelay", { detail: { captureDelay } }),
   );
 });
 captureDelayInput.dispatchEvent(new Event("input"));
@@ -1024,7 +1024,7 @@ thresholdSensorTypes.forEach((sensorType) => {
     window.dispatchEvent(
       new CustomEvent("threshold", {
         detail: { sensorType, enabled, threshold },
-      })
+      }),
     );
 
   let enabled = false;
@@ -1132,7 +1132,7 @@ const identityQuaternion = new THREE.Quaternion();
 function getEulerMagnitude(euler) {
   const { x, y, z } = euler;
   thresholdEuler.set(
-    ...[x, y, z].map((value) => THREE.MathUtils.degToRad(value))
+    ...[x, y, z].map((value) => THREE.MathUtils.degToRad(value)),
   );
   thresholdQuaternion.setFromEuler(thresholdEuler);
   return thresholdQuaternion.angleTo(identityQuaternion);
@@ -1166,12 +1166,12 @@ window.addEventListener(
             throw Error(`uncaught sensorType ${sensorType}`);
         }
         window.dispatchEvent(
-          new CustomEvent(`threshold.${sensorType}`, { detail: { value } })
+          new CustomEvent(`threshold.${sensorType}`, { detail: { value } }),
         );
       });
     }
   },
-  { once: true }
+  { once: true },
 );
 
 // TRAIN NEURAL NETWORK
@@ -1234,7 +1234,7 @@ function train() {
       () => {
         isTraining = false;
         window.dispatchEvent(new CustomEvent("finishedTraining"));
-      }
+      },
     );
   }, 0);
 }
@@ -1244,7 +1244,7 @@ window.addEventListener(
   () => {
     trainButton.disabled = false;
   },
-  { once: true }
+  { once: true },
 );
 window.addEventListener("loadData", () => {
   trainButton.disabled = false;
@@ -1271,7 +1271,7 @@ window.addEventListener("finishedTraining", () => {
 let testContinuously = false;
 /** @type {HTMLInputElement} */
 const toggleTestContinuouslyInput = document.getElementById(
-  "toggleTestContinuously"
+  "toggleTestContinuously",
 );
 toggleTestContinuouslyInput.addEventListener("input", () => {
   testContinuously = toggleTestContinuouslyInput.checked;
@@ -1301,7 +1301,7 @@ const updateTestButton = () => {
     window.addEventListener(eventType, () => {
       updateTestButton();
     });
-  }
+  },
 );
 
 /** @type {HTMLPreElement} */
@@ -1422,7 +1422,7 @@ function getModel(callback) {
           ],
         };
         callback(data.weightData, weightsManifest);
-      })
+      }),
     );
   }
 }
@@ -1526,7 +1526,7 @@ pythonServerUrlInput.addEventListener("input", () => {
   pythonServerUrl = pythonServerUrlInput.value || defaultPythonServerUrl;
   console.log({ pythonServerUrl });
   window.dispatchEvent(
-    new CustomEvent("pythonServerUrl", { detail: { pythonServerUrl } })
+    new CustomEvent("pythonServerUrl", { detail: { pythonServerUrl } }),
   );
 });
 
@@ -1554,7 +1554,7 @@ const tfLiteFiles = {
 
 /** @type {HTMLButtonElement} */
 const convertModelToTfliteButton = document.getElementById(
-  "convertModelToTflite"
+  "convertModelToTflite",
 );
 convertModelToTfliteButton.addEventListener("click", () => {
   convertModelToTfliteButton.disabled = true;
@@ -1581,7 +1581,7 @@ async function convertModelToTflite() {
             if (quantizeModel) {
               const [, , test_x] = shuffleAndSplitDataSet(
                 prepareDataSet(),
-                1 - trainTestSplit
+                1 - trainTestSplit,
               );
               console.log({ test_x });
               req.body.append("quantize_data", JSON.stringify(test_x));
@@ -1591,8 +1591,8 @@ async function convertModelToTflite() {
 
             return fetch(url, req);
           },
-        }
-      )
+        },
+      ),
     )
     .then((result) => {
       console.log({ result });
@@ -1606,10 +1606,10 @@ async function convertModelToTflite() {
           // js-untar returns a list of files (See https://github.com/InvokIT/js-untar#file-object for details)
           console.log("received files", files);
           const tfLite_model_cpp = files.find(
-            (file) => file.name === "tfLite_model.cpp"
+            (file) => file.name === "tfLite_model.cpp",
           );
           const model_tflite = files.find(
-            (file) => file.name === "model.tflite"
+            (file) => file.name === "model.tflite",
           );
           console.log({ tfLite_model_cpp, model_tflite });
           isConvertingModel = false;
@@ -1617,10 +1617,12 @@ async function convertModelToTflite() {
           window.dispatchEvent(
             new CustomEvent("convertModelToTflite", {
               detail: { tfLiteFiles, files },
-            })
+            }),
           );
           window.dispatchEvent(
-            new CustomEvent("tflite", { detail: { tfliteModel: model_tflite } })
+            new CustomEvent("tflite", {
+              detail: { tfliteModel: model_tflite },
+            }),
           );
         });
     })
@@ -1651,7 +1653,7 @@ loadTfliteInput.addEventListener("input", () => {
     console.log({ tfliteModel });
     tfLiteFiles.model_tflite = tfliteModel;
     window.dispatchEvent(
-      new CustomEvent("tflite", { detail: { tfliteModel } })
+      new CustomEvent("tflite", { detail: { tfliteModel } }),
     );
   }
 });
@@ -1699,7 +1701,7 @@ const updateTransferTfliteButton = () => {
 
 /** @type {HTMLProgressElement} */
 const transferTfliteProgress = document.getElementById(
-  "transferTfliteProgress"
+  "transferTfliteProgress",
 );
 window.addEventListener(
   "createNeuralNetwork",
@@ -1727,12 +1729,12 @@ window.addEventListener(
       });
     }
   },
-  { once: true }
+  { once: true },
 );
 
 /** @type {HTMLButtonElement} */
 const toggleTfliteInferencingEnabledButton = document.getElementById(
-  "toggleTfliteInferencingEnabled"
+  "toggleTfliteInferencingEnabled",
 );
 toggleTfliteInferencingEnabledButton.addEventListener("click", async () => {
   await selectedDevices[0].setTfliteCaptureDelay(1000);
@@ -1748,7 +1750,7 @@ const tfliteInferencePre = document.getElementById("tfliteInference");
 
 /** @type {HTMLElement} */
 const tfliteInferenceClassContainer = document.getElementById(
-  "tfliteInferenceClass"
+  "tfliteInferenceClass",
 );
 
 window.addEventListener(
@@ -1776,7 +1778,7 @@ window.addEventListener(
         tfliteInferencePre.textContent = JSON.stringify(
           event.message.tfliteInference,
           null,
-          2
+          2,
         );
         let highestClassValue = 0;
         let highestClassIndex = 0;
@@ -1786,7 +1788,7 @@ window.addEventListener(
               highestClassValue = classValue;
               highestClassIndex = classIndex;
             }
-          }
+          },
         );
         if (highestClassIndex == 0) {
           tfliteInferenceClassContainer.innerText = "";
@@ -1797,7 +1799,7 @@ window.addEventListener(
       });
     }
   },
-  { once: true }
+  { once: true },
 );
 
 ["finishedTraining", "loadModel"].forEach((eventType) => {

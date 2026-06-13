@@ -14,7 +14,7 @@ export function addEventListeners(
     target.addEventListener ||
     target.addListener ||
     target.on ||
-    target.AddEventListener;
+    target.addEventListener;
   _console.assertWithError(
     addEventListener,
     "no add listener function found for target",
@@ -37,7 +37,7 @@ export function removeEventListeners(
   let removeEventListener =
     target.removeEventListener ||
     target.removeListener ||
-    target.RemoveEventListener;
+    target.removeEventListener;
   _console.assertWithError(
     removeEventListener,
     "no remove listener function found for target",

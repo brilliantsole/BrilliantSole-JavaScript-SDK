@@ -83,7 +83,7 @@ client.addEventListener("connectionStatus", () => {
 
 /** @type {HTMLInputElement} */
 const isScanningAvailableCheckbox = document.getElementById(
-  "isScanningAvailable"
+  "isScanningAvailable",
 );
 client.addEventListener("isScanningAvailable", () => {
   isScanningAvailableCheckbox.checked = client.isScanningAvailable;
@@ -105,7 +105,7 @@ client.addEventListener("isScanning", () => {
 
 /** @type {HTMLTemplateElement} */
 const discoveredDeviceTemplate = document.getElementById(
-  "discoveredDeviceTemplate"
+  "discoveredDeviceTemplate",
 );
 const discoveredDevicesContainer = document.getElementById("discoveredDevices");
 /** @type {Object.<string, HTMLElement>} */
@@ -185,7 +185,7 @@ function updateDiscoveredDeviceContainer(discoveredDevice) {
     discoveredDeviceContainers[discoveredDevice.bluetoothId];
   if (!discoveredDeviceContainer) {
     console.warn(
-      `no discoveredDeviceContainer for device id ${discoveredDevice.bluetoothId}`
+      `no discoveredDeviceContainer for device id ${discoveredDevice.bluetoothId}`,
     );
     return;
   }
@@ -203,7 +203,7 @@ function removeDiscoveredDeviceContainer(discoveredDevice) {
     discoveredDeviceContainers[discoveredDevice.bluetoothId];
   if (!discoveredDeviceContainer) {
     console.warn(
-      `no discoveredDeviceContainer for device id ${discoveredDevice.bluetoothId}`
+      `no discoveredDeviceContainer for device id ${discoveredDevice.bluetoothId}`,
     );
     return;
   }
@@ -232,7 +232,7 @@ client.addEventListener("isScanning", () => {
   }
 });
 
-BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
+BS.DeviceManager.addEventListener("deviceIsConnected", (event) => {
   const device = event.message.device;
   console.log("deviceIsConnected", device);
   const discoveredDeviceContainer =
@@ -268,13 +268,13 @@ checkAudioContextState();
 
 /** @type {HTMLTemplateElement} */
 const connectedDeviceTemplate = document.getElementById(
-  "connectedDeviceTemplate"
+  "connectedDeviceTemplate",
 );
 const connectedDevicesContainer = document.getElementById("connectedDevices");
 /** @type {Object.<string, HTMLElement>} */
 let connectedDeviceContainers = {};
 
-BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
+BS.DeviceManager.addEventListener("connectedDevices", (event) => {
   const { connectedDevices } = event.message;
   console.log({ connectedDevices });
 
@@ -298,11 +298,11 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         (deviceInformationPre.textContent = JSON.stringify(
           device.deviceInformation,
           null,
-          2
+          2,
         ));
       setDeviceInformationPre();
       device.addEventListener("deviceInformation", () =>
-        setDeviceInformationPre()
+        setDeviceInformationPre(),
       );
 
       // DEVICE BATTERY
@@ -332,23 +332,23 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       // DEVICE SENSOR CONFIGURATION
       /** @type {HTMLPreElement} */
       const sensorConfigurationPre = connectedDeviceContainer.querySelector(
-        ".sensorConfiguration"
+        ".sensorConfiguration",
       );
       const setSensorConfigurationPre = () =>
         (sensorConfigurationPre.textContent = JSON.stringify(
           device.sensorConfiguration,
           null,
-          2
+          2,
         ));
       setSensorConfigurationPre();
       device.addEventListener("getSensorConfiguration", () =>
-        setSensorConfigurationPre()
+        setSensorConfigurationPre(),
       );
 
       /** @type {HTMLTemplateElement} */
       const sensorTypeConfigurationTemplate =
         connectedDeviceContainer.querySelector(
-          ".sensorTypeConfigurationTemplate"
+          ".sensorTypeConfigurationTemplate",
         );
       device.sensorTypes.forEach((sensorType) => {
         const sensorTypeConfigurationContainer =
@@ -356,7 +356,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
             .cloneNode(true)
             .querySelector(".sensorTypeConfiguration");
         sensorTypeConfigurationContainer.querySelector(
-          ".sensorType"
+          ".sensorType",
         ).innerText = sensorType;
 
         /** @type {HTMLInputElement} */
@@ -374,7 +374,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
 
         sensorTypeConfigurationTemplate.parentElement.insertBefore(
           sensorTypeConfigurationContainer,
-          sensorTypeConfigurationTemplate
+          sensorTypeConfigurationTemplate,
         );
         sensorTypeConfigurationContainer.dataset.sensorType = sensorType;
       });
@@ -388,7 +388,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       device.addEventListener("getSensorConfiguration", () => {
         for (const sensorType in device.sensorConfiguration) {
           connectedDeviceContainer.querySelector(
-            `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`
+            `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`,
           ).value = device.sensorConfiguration[sensorType];
         }
       });
@@ -529,13 +529,13 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
 
       /** @type {HTMLPreElement} */
       const cameraConfigurationPre = deviceCameraContainer.querySelector(
-        ".cameraConfigurationPre"
+        ".cameraConfigurationPre",
       );
       const updateCameraConfigurationPre = () => {
         cameraConfigurationPre.textContent = JSON.stringify(
           device.cameraConfiguration,
           null,
-          2
+          2,
         );
       };
       device.addEventListener("getCameraConfiguration", () => {
@@ -553,7 +553,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       });
 
       const cameraConfigurationContainer = deviceCameraContainer.querySelector(
-        ".cameraConfiguration"
+        ".cameraConfiguration",
       );
       /** @type {HTMLTemplateElement} */
       const cameraConfigurationTypeTemplate =
@@ -565,7 +565,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
             .querySelector(".cameraConfigurationType");
 
         cameraConfigurationContainer.appendChild(
-          cameraConfigurationTypeContainer
+          cameraConfigurationTypeContainer,
         );
 
         cameraConfigurationTypeContainer.querySelector(".type").innerText =
@@ -639,9 +639,9 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
             device.addEventListener(
               "getCameraConfiguration",
               () => {
-                setTimeout(() => device.takePicture()), 100;
+                (setTimeout(() => device.takePicture()), 100);
               },
-              { once: true }
+              { once: true },
             );
           }
         });
@@ -649,7 +649,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
 
       /** @type {HTMLInputElement} */
       const cameraWhiteBalanceInput = deviceCameraContainer.querySelector(
-        ".cameraWhiteBalance"
+        ".cameraWhiteBalance",
       );
       const updateWhiteBalance = BS.ThrottleUtils.throttle(
         (config) => {
@@ -663,14 +663,14 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
             device.addEventListener(
               "getCameraConfiguration",
               () => {
-                setTimeout(() => device.takePicture()), 100;
+                (setTimeout(() => device.takePicture()), 100);
               },
-              { once: true }
+              { once: true },
             );
           }
         },
         200,
-        true
+        true,
       );
       cameraWhiteBalanceInput.addEventListener("input", () => {
         let [redGain, greenGain, blueGain] = cameraWhiteBalanceInput.value
@@ -747,7 +747,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         microphoneConfigurationPre.textContent = JSON.stringify(
           device.microphoneConfiguration,
           null,
-          2
+          2,
         );
       };
 
@@ -756,7 +756,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       /** @type {HTMLTemplateElement} */
       const microphoneConfigurationTypeTemplate =
         deviceMicrophoneContainer.querySelector(
-          ".microphoneConfigurationTypeTemplate"
+          ".microphoneConfigurationTypeTemplate",
         );
       BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
         const microphoneConfigurationTypeContainer =
@@ -765,7 +765,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
             .querySelector(".microphoneConfigurationType");
 
         microphoneConfigurationContainer.appendChild(
-          microphoneConfigurationTypeContainer
+          microphoneConfigurationTypeContainer,
         );
 
         microphoneConfigurationTypeContainer.querySelector(".type").innerText =
@@ -781,7 +781,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         BS.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
           (value) => {
             optgroup.appendChild(new Option(value));
-          }
+          },
         );
 
         /** @type {HTMLSpanElement} */
@@ -958,16 +958,16 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       const peaksOptions = {
         zoomview: {
           container: deviceMicrophoneContainer.querySelector(
-            ".zoomview-container"
+            ".zoomview-container",
           ),
         },
         overview: {
           container: deviceMicrophoneContainer.querySelector(
-            ".overview-container"
+            ".overview-container",
           ),
         },
         mediaElement: deviceMicrophoneContainer.querySelector(
-          ".microphoneRecording"
+          ".microphoneRecording",
         ),
         webAudio: {
           audioContext: audioContext,
@@ -1054,7 +1054,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
 
       /** @type {HTMLProgressElement} */
       const fileTransferProgress = deviceFileTransferContainer.querySelector(
-        ".fileTransferProgress"
+        ".fileTransferProgress",
       );
       console.log("fileTransferProgress", fileTransferProgress);
 
@@ -1164,11 +1164,11 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       const tfliteNameSpan = deviceTfliteContainer.querySelector(".tfliteName");
       /** @type {HTMLInputElement} */
       const setTfliteNameInput = deviceTfliteContainer.querySelector(
-        ".setTfliteNameInput"
+        ".setTfliteNameInput",
       );
       /** @type {HTMLButtonElement} */
       const setTfliteNameButton = deviceTfliteContainer.querySelector(
-        ".setTfliteNameButton"
+        ".setTfliteNameButton",
       );
 
       device.addEventListener("getTfliteName", () => {
@@ -1195,14 +1195,14 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       const tfliteTaskSpan = deviceTfliteContainer.querySelector(".tfliteTask");
       /** @type {HTMLSelectElement} */
       const setTfliteTaskSelect = deviceTfliteContainer.querySelector(
-        ".setTfliteTaskSelect"
+        ".setTfliteTaskSelect",
       );
       /** @type {HTMLOptGroupElement} */
       const setTfliteTaskOptgroup =
         setTfliteTaskSelect.querySelector("optgroup");
       /** @type {HTMLButtonElement} */
       const setTfliteTaskButton = deviceTfliteContainer.querySelector(
-        ".setTfliteTaskButton"
+        ".setTfliteTaskButton",
       );
 
       BS.TfliteTasks.forEach((task) => {
@@ -1229,11 +1229,11 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         deviceTfliteContainer.querySelector(".tfliteSampleRate");
       /** @type {HTMLInputElement} */
       const setTfliteSampleRateInput = deviceTfliteContainer.querySelector(
-        ".setTfliteSampleRateInput"
+        ".setTfliteSampleRateInput",
       );
       /** @type {HTMLButtonElement} */
       const setTfliteSampleRateButton = deviceTfliteContainer.querySelector(
-        ".setTfliteSampleRateButton"
+        ".setTfliteSampleRateButton",
       );
 
       device.addEventListener("getTfliteSampleRate", () => {
@@ -1263,7 +1263,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         deviceTfliteContainer.querySelector(".tfliteSensorTypes");
       /** @type {HTMLTemplateElement} */
       const tfliteSensorTypeTemplate = deviceTfliteContainer.querySelector(
-        ".tfliteSensorTypeTemplate"
+        ".tfliteSensorTypeTemplate",
       );
       /** @type {Object.<string, HTMLElement>} */
       const tfliteSensorTypeContainers = {};
@@ -1271,7 +1271,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       let tfliteSensorTypes = [];
       /** @type {HTMLButtonElement} */
       const setTfliteSensorTypesButton = deviceTfliteContainer.querySelector(
-        ".setTfliteSensorTypes"
+        ".setTfliteSensorTypes",
       );
 
       const updateTfliteSensorTypes = () => {
@@ -1293,7 +1293,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
             } else {
               tfliteSensorTypes.splice(
                 tfliteSensorTypes.indexOf(sensorType),
-                1
+                1,
               );
             }
             console.log("tfliteSensorTypes", tfliteSensorTypes);
@@ -1343,11 +1343,11 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         deviceTfliteContainer.querySelector(".tfliteThreshold");
       /** @type {HTMLInputElement} */
       const setTfliteThresholdInput = deviceTfliteContainer.querySelector(
-        ".setTfliteThresholdInput"
+        ".setTfliteThresholdInput",
       );
       /** @type {HTMLButtonElement} */
       const setTfliteThresholdButton = deviceTfliteContainer.querySelector(
-        ".setTfliteThresholdButton"
+        ".setTfliteThresholdButton",
       );
 
       device.addEventListener("getTfliteThreshold", () => {
@@ -1372,15 +1372,15 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
 
       /** @type {HTMLSpanElement} */
       const tfliteCaptureDelaySpan = deviceTfliteContainer.querySelector(
-        ".tfliteCaptureDelay"
+        ".tfliteCaptureDelay",
       );
       /** @type {HTMLInputElement} */
       const setTfliteCaptureDelayInput = deviceTfliteContainer.querySelector(
-        ".setTfliteCaptureDelayInput"
+        ".setTfliteCaptureDelayInput",
       );
       /** @type {HTMLButtonElement} */
       const setTfliteCaptureDelayButton = deviceTfliteContainer.querySelector(
-        ".setTfliteCaptureDelayButton"
+        ".setTfliteCaptureDelayButton",
       );
 
       device.addEventListener("getTfliteCaptureDelay", () => {
@@ -1405,7 +1405,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
 
       /** @type {HTMLInputElement} */
       const tfliteInferencingEnabledInput = deviceTfliteContainer.querySelector(
-        ".tfliteInferencingEnabled"
+        ".tfliteInferencingEnabled",
       );
       /** @type {HTMLButtonElement} */
       const toggleTfliteInferencingEnabledButton =
@@ -1445,7 +1445,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
         tfliteInferencePre.textContent = JSON.stringify(
           event.message.tfliteInference,
           null,
-          2
+          2,
         );
       });
 
@@ -1518,7 +1518,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
 
   for (const id in connectedDeviceContainers) {
     const connectedDevice = connectedDevices.find(
-      (connectedDevice) => connectedDevice.bluetoothId == id
+      (connectedDevice) => connectedDevice.bluetoothId == id,
     );
     if (!connectedDevice) {
       console.log("remove", id);

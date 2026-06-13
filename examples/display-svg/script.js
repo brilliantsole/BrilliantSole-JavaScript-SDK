@@ -9,7 +9,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -27,7 +27,7 @@ device.addEventListener("connectionStatus", () => {
 });
 
 // DEVICE
-BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
   if (event.message.device.connectionType != "client") {
     return;
   }
@@ -65,7 +65,7 @@ device.addEventListener("connected", () => {
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -90,7 +90,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -335,7 +335,7 @@ const createSvgSpriteSheet = async () => {
       //colors: overrideColors ? undefined : displayCanvasHelper.colors,
       displayManager: displayCanvasHelper,
       includeText: true,
-    }
+    },
   );
   checkSpriteSheetSize();
   console.log("sprite", sprite);
@@ -445,7 +445,7 @@ device.addEventListener("fileTransferStatus", () => {
 // SIZE
 
 const checkSpriteSheetSizeButton = document.getElementById(
-  "checkSpriteSheetSize"
+  "checkSpriteSheetSize",
 );
 const checkSpriteSheetSize = () => {
   const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(spriteSheet);
@@ -633,7 +633,7 @@ const addFont = async (font) => {
       font,
       fontSize,
       "english",
-      fontOptions
+      fontOptions,
     );
     fontSpriteSheets[fullName] = spriteSheet;
     await updateFontSelect();

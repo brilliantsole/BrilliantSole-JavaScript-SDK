@@ -17,7 +17,7 @@ window.device = device;
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate"
+  "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
@@ -54,14 +54,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.GetDevices();
+  const availableDevices = await BS.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
@@ -112,7 +112,7 @@ function onConnectedDevice(connectedDevice) {
 // SENSOR CONFIGURATION
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById(
-  "sensorTypeConfigurationTemplate"
+  "sensorTypeConfigurationTemplate",
 );
 BS.ContinuousSensorTypes.forEach((sensorType) => {
   const sensorTypeConfigurationContainer =
@@ -135,7 +135,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
   });
 
   sensorTypeConfigurationTemplate.parentElement.appendChild(
-    sensorTypeConfigurationContainer
+    sensorTypeConfigurationContainer,
   );
   sensorTypeConfigurationContainer.dataset.sensorType = sensorType;
 });
@@ -146,7 +146,7 @@ function onSensorConfiguration(device) {
 
     /** @type {HTMLInputElement?} */
     const input = document.querySelector(
-      `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`
+      `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`,
     );
     if (input) {
       input.value = sensorRate;
@@ -215,7 +215,7 @@ function updateSensorRateInputs(device) {
   BS.SensorTypes.forEach((sensorType) => {
     /** @type {HTMLInputElement?} */
     const input = document.querySelector(
-      `[data-sensor-type="${sensorType}"] .input`
+      `[data-sensor-type="${sensorType}"] .input`,
     );
     if (input) {
       const containsSensorType = sensorType in device.sensorConfiguration;
@@ -424,7 +424,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
           {
             min: -Math.PI,
             max: Math.PI,
-          }
+          },
         );
       }
       break;
@@ -439,7 +439,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
           correctedChartContainer.querySelector("canvas"),
           sensorType + "Corrected",
           ["x", "y", "z"],
-          yRange
+          yRange,
         );
 
         const velocityChartContainer = chartTemplate.content
@@ -454,7 +454,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
           {
             min: -0.4,
             max: 0.4,
-          }
+          },
         );
 
         const positionChartContainer = chartTemplate.content
@@ -469,7 +469,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
           {
             min: -0.2,
             max: 0.2,
-          }
+          },
         );
       }
       break;
@@ -484,7 +484,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
           correctedChartContainer.querySelector("canvas"),
           sensorType + "Corrected",
           ["x", "y", "z"],
-          yRange
+          yRange,
         );
       }
       break;
@@ -499,7 +499,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
           correctedChartContainer.querySelector("canvas"),
           sensorType + "Corrected",
           ["x", "y", "z"],
-          yRange
+          yRange,
         );
       }
       break;
@@ -517,7 +517,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
           {
             min: 0,
             max: 1,
-          }
+          },
         );
       }
       break;
@@ -531,7 +531,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
     chartContainer.querySelector("canvas"),
     sensorType,
     axesLabels,
-    yRange
+    yRange,
   );
 });
 
@@ -589,12 +589,12 @@ const setTrackingState = (newTrackingState) => {
         .multiplyScalar(9.8);
       console.log(
         "finalLinearAccelerationPosition",
-        finalLinearAccelerationPosition
+        finalLinearAccelerationPosition,
       );
       peakLinearAccelerationPosition.multiplyScalar(9.8);
       console.log(
         "peakLinearAccelerationPosition",
-        peakLinearAccelerationPosition
+        peakLinearAccelerationPosition,
       );
       break;
   }
@@ -745,29 +745,29 @@ function addSensorDataEventListeners(device) {
               const belowMin = linearAccelerationLength < min;
               const aboveMax = linearAccelerationLength > max;
               setThresholdState(
-                belowMin ? "below" : aboveMax ? "above" : "middle"
+                belowMin ? "below" : aboveMax ? "above" : "middle",
               );
 
               if (trackingState == "tracking") {
                 linearAccelerationVelocity.addScaledVector(
                   linearAccelerationVector,
-                  timestampDifferenceScalar
+                  timestampDifferenceScalar,
                 );
                 linearAccelerationPosition.addScaledVector(
                   linearAccelerationVelocity,
-                  timestampDifferenceScalar
+                  timestampDifferenceScalar,
                 );
                 peakLinearAccelerationPosition.x = Math.max(
                   peakLinearAccelerationPosition.x,
-                  linearAccelerationPosition.x
+                  linearAccelerationPosition.x,
                 );
                 peakLinearAccelerationPosition.y = Math.max(
                   peakLinearAccelerationPosition.y,
-                  linearAccelerationPosition.y
+                  linearAccelerationPosition.y,
                 );
                 peakLinearAccelerationPosition.z = Math.max(
                   peakLinearAccelerationPosition.z,
-                  linearAccelerationPosition.z
+                  linearAccelerationPosition.z,
                 );
               }
 
@@ -865,7 +865,7 @@ if (false)
 const websocketClient = new BS.WebSocketClient();
 /** @type {HTMLButtonElement} */
 const toggleServerConnectionButton = document.getElementById(
-  "toggleServerConnection"
+  "toggleServerConnection",
 );
 toggleServerConnectionButton.addEventListener("click", () => {
   websocketClient.toggleConnection();
@@ -890,7 +890,7 @@ websocketClient.addEventListener("connectionStatus", () => {
   toggleServerConnectionButton.disabled = disabled;
 });
 
-BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
+BS.DeviceManager.addEventListener("connectedDevices", (event) => {
   const { connectedDevices } = event.message;
   const connectedDevice = connectedDevices[0];
   if (!connectedDevice) {

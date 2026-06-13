@@ -9,7 +9,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -73,7 +73,7 @@ webSocketUrlInput.dispatchEvent(new Event("input"));
 
 /** @type {HTMLButtonElement} */
 const toggleClientConnectionButton = document.getElementById(
-  "toggleClientConnection"
+  "toggleClientConnection",
 );
 toggleClientConnectionButton.addEventListener("click", () => {
   if (client.isConnected) {
@@ -108,7 +108,7 @@ client.addEventListener("connectionStatus", () => {
 
 /** @type {HTMLInputElement} */
 const isScanningAvailableCheckbox = document.getElementById(
-  "isScanningAvailable"
+  "isScanningAvailable",
 );
 client.addEventListener("isScanningAvailable", () => {
   isScanningAvailableCheckbox.checked = client.isScanningAvailable;
@@ -141,7 +141,7 @@ client.addEventListener("discoveredDevice", (event) => {
 });
 
 // DEVICE
-BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
   if (event.message.device.connectionType != "client") {
     return;
   }
@@ -179,7 +179,7 @@ device.addEventListener("connected", () => {
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -204,7 +204,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -240,10 +240,10 @@ displayCanvasHelper.addEventListener("color", (event) => {
 
 /** @type {HTMLTemplateElement} */
 const displayColorOpacityTemplate = document.getElementById(
-  "displayColorOpacityTemplate"
+  "displayColorOpacityTemplate",
 );
 const displayColorOpacitiesContainer = document.getElementById(
-  "displayColorOpacities"
+  "displayColorOpacities",
 );
 const setDisplayColorOpacity = BS.ThrottleUtils.throttle(
   (colorIndex, opacity) => {
@@ -251,7 +251,7 @@ const setDisplayColorOpacity = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColorOpacity(colorIndex, opacity, true);
   },
   100,
-  true
+  true,
 );
 const setupColorOpacities = () => {
   displayColorOpacitiesContainer.innerHTML = "";
@@ -280,7 +280,7 @@ const setupColorOpacities = () => {
   }
 };
 displayCanvasHelper.addEventListener("numberOfColors", () =>
-  setupColorOpacities()
+  setupColorOpacities(),
 );
 setupColorOpacities();
 
@@ -294,7 +294,7 @@ const setDisplayOpacity = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setOpacity(opacity, true);
   },
   100,
-  true
+  true,
 );
 displayOpacityInput.addEventListener("input", () => {
   const opacity = Number(displayOpacityInput.value);
@@ -447,7 +447,7 @@ window.addEventListener(
       e.preventDefault();
     }
   },
-  { passive: false }
+  { passive: false },
 );
 const sampleModelEntity = document.getElementById("sampleModel");
 modelEntity.addEventListener("model-loaded", () => {
@@ -462,7 +462,7 @@ const redrawDisplayPlaneEntity = () => {
 const resizeDisplayPlaneEntity = () => {
   displayPlaneEntity.setAttribute(
     "width",
-    displayPlaneEntityHeight * displayCanvasHelper.aspectRatio
+    displayPlaneEntityHeight * displayCanvasHelper.aspectRatio,
   );
   displayPlaneEntity.setAttribute("height", displayPlaneEntityHeight);
 };
@@ -501,7 +501,7 @@ cameraVideo.addEventListener("loadedmetadata", () => {
 });
 /** @type {HTMLCanvasElement} */
 const cameraVideoFaceTrackingCanvas = document.getElementById(
-  "cameraVideoFaceTracking"
+  "cameraVideoFaceTracking",
 );
 const cameraVideoFaceTrackingContext =
   cameraVideoFaceTrackingCanvas.getContext("2d");
@@ -546,7 +546,7 @@ const updateCameraSources = async () => {
     .filter((device) => device.kind == "videoinput")
     .forEach((videoInputDevice) => {
       cameraInputOptgroup.appendChild(
-        new Option(videoInputDevice.label, videoInputDevice.deviceId)
+        new Option(videoInputDevice.label, videoInputDevice.deviceId),
       );
     });
   if (previewMode == "camera") {
@@ -576,7 +576,7 @@ const stopCameraStream = () => {
   cameraStream = undefined;
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateCameraSources()
+  updateCameraSources(),
 );
 updateCameraSources();
 
@@ -1029,7 +1029,7 @@ const drawEye = async (side, center) => {
     eyePosition.x,
     eyePosition.y,
     maxWidth * widthScalar,
-    maxHeight * open
+    maxHeight * open,
   );
   await ctx.clearRotationCrop();
 };
@@ -1062,7 +1062,7 @@ const drawPupil = async (side, center) => {
   const eyePosition = getEyePosition(side, center);
   const pupilPosition = new THREE.Vector2(
     position.x * eyeWidth,
-    position.y * eyeHeight
+    position.y * eyeHeight,
   );
   pupilPosition.add(eyePosition);
   pupilPosition.rotateAround(center, faceParams.rotation.roll);
@@ -1075,7 +1075,7 @@ const drawPupil = async (side, center) => {
     pupilPosition.x,
     pupilPosition.y,
     maxRadius * widthScalar,
-    maxRadius
+    maxRadius,
   );
 };
 /**
@@ -1117,7 +1117,7 @@ const drawEyebrow = async (side, center) => {
 
   const yawInterpolation = getYawInterpolation(
     side,
-    faceParams.yawWidthScalars
+    faceParams.yawWidthScalars,
   );
 
   const widthScalar = 1 - yawInterpolation;
@@ -1146,12 +1146,12 @@ const drawEyebrow = async (side, center) => {
   const startRadius = THREE.MathUtils.lerp(
     eyebrowRadius.start.min,
     eyebrowRadius.start.max,
-    eyebrowRadiusInterpolation
+    eyebrowRadiusInterpolation,
   );
   const endRadius = THREE.MathUtils.lerp(
     eyebrowRadius.end.min,
     eyebrowRadius.end.max,
-    eyebrowRadiusInterpolation
+    eyebrowRadiusInterpolation,
   );
   await ctx.setSegmentStartRadius(startRadius);
   await ctx.setSegmentEndRadius(endRadius);
@@ -1160,7 +1160,7 @@ const drawEyebrow = async (side, center) => {
     eyebrowStartPosition.x,
     eyebrowStartPosition.y,
     eyebrowEndPosition.x,
-    eyebrowEndPosition.y
+    eyebrowEndPosition.y,
   );
 };
 /**
@@ -1209,14 +1209,14 @@ const drawCheek = async (side, center) => {
 
     await ctx.setRotation(
       faceParams.eyeTilt * (isLeft ? 1 : -1) + roll + rotation,
-      true
+      true,
     );
 
     await ctx.drawEllipse(
       cheekPosition.x,
       cheekPosition.y,
       cheekLength,
-      height
+      height,
     );
     await ctx.clearRotationCrop();
   } else {
@@ -1255,7 +1255,7 @@ const drawCheek = async (side, center) => {
       cheekStartPosition.x,
       cheekStartPosition.y,
       cheekEndPosition.x,
-      cheekEndPosition.y
+      cheekEndPosition.y,
     );
   }
 };
@@ -1264,7 +1264,7 @@ function generateSineSegments(
   xSpacing,
   yRange,
   angleScalar = 1,
-  angleOffset = 0
+  angleOffset = 0,
 ) {
   const segments = [];
   for (let i = 0; i < numberOfSegments; i++) {
@@ -1286,14 +1286,14 @@ const draw = async () => {
         5,
         100,
         0.2,
-        ((Date.now() % 1000) / 1000) * Math.PI * 2
-      )
+        ((Date.now() % 1000) / 1000) * Math.PI * 2,
+      ),
     );
   } else {
     const { width, height } = ctx;
     const center = new THREE.Vector2(
       width / 2 + faceParams.position.x,
-      height / 2 + faceParams.position.y
+      height / 2 + faceParams.position.y,
     );
 
     await drawEye("left", center);
@@ -1342,12 +1342,12 @@ const tick = () => {
       const interval = THREE.MathUtils.lerp(
         timeRange.min,
         timeRange.max,
-        Math.random()
+        Math.random(),
       );
       const intervalInterpolation = THREE.MathUtils.inverseLerp(
         0,
         timeRange.max,
-        interval
+        interval,
       );
       refocus.nextTime = now + interval;
       scalar *= 1 - intervalInterpolation;
@@ -1355,7 +1355,7 @@ const tick = () => {
       const zScalar = THREE.MathUtils.lerp(
         zRange.min,
         zRange.max,
-        faceParams.lookAt.z
+        faceParams.lookAt.z,
       );
 
       const x =
@@ -1384,7 +1384,7 @@ const tick = () => {
       const interval = THREE.MathUtils.lerp(
         timeRange.min,
         timeRange.max,
-        Math.random()
+        Math.random(),
       );
       blink.nextTime = now + interval;
 
@@ -1392,14 +1392,14 @@ const tick = () => {
       blink.offset = THREE.MathUtils.lerp(
         offsetRange.min,
         offsetRange.max,
-        Math.random()
+        Math.random(),
       );
 
       blink.duration =
         THREE.MathUtils.lerp(
           durationRange.min,
           durationRange.max,
-          Math.random()
+          Math.random(),
         ) *
           frameLength *
           2 +
@@ -1415,7 +1415,7 @@ const tick = () => {
       let blinkInterpolation = THREE.MathUtils.inverseLerp(
         lastUpdateTime,
         lastUpdateTime + duration,
-        now
+        now,
       );
       blinkInterpolation = THREE.MathUtils.clamp(blinkInterpolation, 0, 1);
       //blinkInterpolation = easeInOutCubic(blinkInterpolation);
@@ -1431,7 +1431,7 @@ const tick = () => {
         let _blinkInterpolation = THREE.MathUtils.inverseLerp(
           lastUpdateTime + (isDominant ? 0 : offset),
           lastUpdateTime + duration - (isDominant ? offset : 0),
-          now
+          now,
         );
         _blinkInterpolation = THREE.MathUtils.clamp(_blinkInterpolation, 0, 1);
         _blinkInterpolation = easeInOutCubic(_blinkInterpolation);
@@ -1471,7 +1471,7 @@ const tick = () => {
       const interval = THREE.MathUtils.lerp(
         timeRange.min,
         timeRange.max,
-        Math.random()
+        Math.random(),
       );
       lookAround.nextTime = now + interval;
 
@@ -1479,7 +1479,7 @@ const tick = () => {
         THREE.MathUtils.lerp(
           durationRange.min,
           durationRange.max,
-          Math.random()
+          Math.random(),
         ) * frameLength;
 
       lookAround.isMoving = true;
@@ -1498,7 +1498,7 @@ const tick = () => {
       let interpolation = THREE.MathUtils.inverseLerp(
         lastUpdateTime,
         lastUpdateTime + duration,
-        now
+        now,
       );
       interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
       interpolation = easeOutCubic(interpolation);
@@ -1512,17 +1512,17 @@ const tick = () => {
       lookAt.x = THREE.MathUtils.lerp(
         startLookAt.x,
         targetLookAt.x,
-        interpolation
+        interpolation,
       );
       lookAt.y = THREE.MathUtils.lerp(
         startLookAt.y,
         targetLookAt.y,
-        interpolation
+        interpolation,
       );
       lookAt.z = THREE.MathUtils.lerp(
         startLookAt.z,
         targetLookAt.z,
-        interpolation
+        interpolation,
       );
       updateLookAt();
     }
@@ -1543,7 +1543,7 @@ const tick = () => {
       const interval = THREE.MathUtils.lerp(
         timeRange.min,
         timeRange.max,
-        Math.random()
+        Math.random(),
       );
       turnAround.nextTime = now + interval;
 
@@ -1551,7 +1551,7 @@ const tick = () => {
         THREE.MathUtils.lerp(
           durationRange.min,
           durationRange.max,
-          Math.random()
+          Math.random(),
         ) * frameLength;
 
       turnAround.isTurning = true;
@@ -1569,7 +1569,7 @@ const tick = () => {
       let interpolation = THREE.MathUtils.inverseLerp(
         lastUpdateTime,
         lastUpdateTime + duration,
-        now
+        now,
       );
       interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
       interpolation = easeOutCubic(interpolation);
@@ -1585,13 +1585,13 @@ const tick = () => {
       rotation.yaw = THREE.MathUtils.lerp(
         startRotation.yaw,
         targetRotation.yaw,
-        interpolation
+        interpolation,
       );
       faceYawInput.value = rotation.yaw;
       rotation.roll = THREE.MathUtils.lerp(
         startRotation.roll,
         targetRotation.roll,
-        interpolation
+        interpolation,
       );
       faceRollInput.value = rotation.roll;
     }
@@ -1606,7 +1606,7 @@ const tick = () => {
       const interval = THREE.MathUtils.lerp(
         timeRange.min,
         timeRange.max,
-        Math.random()
+        Math.random(),
       );
       pose.nextTime = now + interval;
 
@@ -1614,7 +1614,7 @@ const tick = () => {
         THREE.MathUtils.lerp(
           durationRange.min,
           durationRange.max,
-          Math.random()
+          Math.random(),
         ) * frameLength;
 
       pose.isMoving = true;
@@ -1623,45 +1623,45 @@ const tick = () => {
       eyebrows.left.rotation = THREE.MathUtils.lerp(
         pose.eyebrowRotationRange.min,
         pose.eyebrowRotationRange.max,
-        Math.random()
+        Math.random(),
       );
       eyebrows.right.rotation = THREE.MathUtils.lerp(
         pose.eyebrowRotationRange.min,
         pose.eyebrowRotationRange.max,
-        Math.random()
+        Math.random(),
       );
 
       eyebrows.left.y = THREE.MathUtils.lerp(
         pose.eyebrowYRange.min,
         pose.eyebrowYRange.max,
-        Math.random()
+        Math.random(),
       );
       eyebrows.right.y = THREE.MathUtils.lerp(
         pose.eyebrowYRange.min,
         pose.eyebrowYRange.max,
-        Math.random()
+        Math.random(),
       );
 
       cheeks.left.rotation = THREE.MathUtils.lerp(
         pose.eyebrowRotationRange.min,
         pose.eyebrowRotationRange.max,
-        Math.random()
+        Math.random(),
       );
       cheeks.right.rotation = THREE.MathUtils.lerp(
         pose.cheekRotationRange.min,
         pose.cheekRotationRange.max,
-        Math.random()
+        Math.random(),
       );
 
       cheeks.left.y = THREE.MathUtils.lerp(
         pose.cheekYRange.min,
         pose.cheekYRange.max,
-        Math.random()
+        Math.random(),
       );
       cheeks.right.y = THREE.MathUtils.lerp(
         pose.cheekYRange.min,
         pose.cheekYRange.max,
-        Math.random()
+        Math.random(),
       );
 
       cheeks.left.show = Math.round(Math.random() * 0.7);
@@ -1674,7 +1674,7 @@ const tick = () => {
       let interpolation = THREE.MathUtils.inverseLerp(
         lastUpdateTime,
         lastUpdateTime + duration,
-        now
+        now,
       );
       interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
       interpolation = easeOutCubic(interpolation);
@@ -1707,56 +1707,56 @@ const tick = () => {
       faceParams.eyes.left.eyebrow.position.y = THREE.MathUtils.lerp(
         startPose.eyebrows.left.y,
         targetPose.eyebrows.left.y,
-        interpolation
+        interpolation,
       );
       faceParams.eyes.right.eyebrow.position.y = THREE.MathUtils.lerp(
         startPose.eyebrows.right.y,
         targetPose.eyebrows.right.y,
-        interpolation
+        interpolation,
       );
 
       faceParams.eyes.left.eyebrow.rotation = THREE.MathUtils.lerp(
         startPose.eyebrows.left.rotation,
         targetPose.eyebrows.left.rotation,
-        interpolation
+        interpolation,
       );
       faceParams.eyes.right.eyebrow.rotation = THREE.MathUtils.lerp(
         startPose.eyebrows.right.rotation,
         targetPose.eyebrows.right.rotation,
-        interpolation
+        interpolation,
       );
 
       faceParams.eyes.left.cheek.position.y = THREE.MathUtils.lerp(
         startPose.cheeks.left.y,
         targetPose.cheeks.left.y,
-        interpolation
+        interpolation,
       );
       faceParams.eyes.right.cheek.position.y = THREE.MathUtils.lerp(
         startPose.cheeks.right.y,
         targetPose.cheeks.right.y,
-        interpolation
+        interpolation,
       );
 
       faceParams.eyes.left.cheek.rotation = THREE.MathUtils.lerp(
         startPose.cheeks.left.rotation,
         targetPose.cheeks.left.rotation,
-        interpolation
+        interpolation,
       );
       faceParams.eyes.right.cheek.rotation = THREE.MathUtils.lerp(
         startPose.cheeks.right.rotation,
         targetPose.cheeks.right.rotation,
-        interpolation
+        interpolation,
       );
 
       faceParams.eyes.left.cheek.lineWidth = THREE.MathUtils.lerp(
         startPose.cheeks.left.show ? cheekLineWidth : 0,
         targetPose.cheeks.left.show ? cheekLineWidth : 0,
-        interpolation
+        interpolation,
       );
       faceParams.eyes.right.cheek.lineWidth = THREE.MathUtils.lerp(
         startPose.cheeks.right.show ? cheekLineWidth : 0,
         targetPose.cheeks.right.show ? cheekLineWidth : 0,
-        interpolation
+        interpolation,
       );
     }
   }
@@ -1803,7 +1803,7 @@ const { FaceLandmarker, FilesetResolver, DrawingUtils } = vision;
 let faceLandmarker;
 const createFaceLandmarker = async () => {
   const filesetResolver = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm",
   );
   faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
     baseOptions: {
@@ -1855,7 +1855,7 @@ toggleFaceTrackingButton.addEventListener("click", () => {
 
 /** @type {HTMLButtonElement} */
 const toggleShowFaceTrackingButton = document.getElementById(
-  "toggleShowFaceTracking"
+  "toggleShowFaceTracking",
 );
 let showFaceTracking = true;
 const setShowFaceTracking = (newShowFaceTracking) => {
@@ -1905,7 +1905,7 @@ const faceTrackingRenderLoop = () => {
   ) {
     const results = faceLandmarker.detectForVideo(
       cameraVideo,
-      performance.now()
+      performance.now(),
     );
     // console.log("results", results);
     lastFaceTrackingTime = cameraVideo.currentTime;
@@ -1922,47 +1922,47 @@ const faceTrackingRenderLoop = () => {
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_TESSELATION,
-            { color: "#C0C0C070", lineWidth: 1 }
+            { color: "#C0C0C070", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,
-            { color: "#FF3030", lineWidth: 1 }
+            { color: "#FF3030", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW,
-            { color: "#FF3030", lineWidth: 1 }
+            { color: "#FF3030", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_LEFT_EYE,
-            { color: "#30FF30", lineWidth: 1 }
+            { color: "#30FF30", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
-            { color: "#30FF30", lineWidth: 1 }
+            { color: "#30FF30", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_FACE_OVAL,
-            { color: "#E0E0E0", lineWidth: 1 }
+            { color: "#E0E0E0", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_LIPS,
-            { color: "#E0E0E0", lineWidth: 1 }
+            { color: "#E0E0E0", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS,
-            { color: "#FF3030", lineWidth: 1 }
+            { color: "#FF3030", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS,
-            { color: "#30FF30", lineWidth: 1 }
+            { color: "#30FF30", lineWidth: 1 },
           );
         }
       }
@@ -2008,7 +2008,7 @@ const faceTrackingRenderLoop = () => {
             roll,
             mirrorCamera
               ? faceParams.eyes.left.open
-              : faceParams.eyes.right.open
+              : faceParams.eyes.right.open,
           );
 
           const leftPupil = getIrisOffsetXy(
@@ -2021,7 +2021,7 @@ const faceTrackingRenderLoop = () => {
             roll,
             mirrorCamera
               ? faceParams.eyes.right.open
-              : faceParams.eyes.left.open
+              : faceParams.eyes.left.open,
           );
 
           if (mirrorCamera) {
@@ -2070,12 +2070,12 @@ const faceTrackingRenderLoop = () => {
         let browLeftY = THREE.MathUtils.lerp(
           faceParams.pose.eyebrowYRange2.min,
           faceParams.pose.eyebrowYRange2.max,
-          1 - browDownLeft
+          1 - browDownLeft,
         );
         let browRightY = THREE.MathUtils.lerp(
           faceParams.pose.eyebrowYRange2.min,
           faceParams.pose.eyebrowYRange2.max,
-          1 - browDownRight
+          1 - browDownRight,
         );
 
         if (mirrorCamera) {
@@ -2095,11 +2095,11 @@ const faceTrackingRenderLoop = () => {
         // Calculate angles in radians using atan2
         const angleLeft = Math.atan2(
           pInnerLeft.y - pOuterLeft.y,
-          pInnerLeft.x - pOuterLeft.x
+          pInnerLeft.x - pOuterLeft.x,
         );
         const angleRight = Math.atan2(
           pOuterRight.y - pInnerRight.y,
-          pOuterRight.x - pInnerRight.x
+          pOuterRight.x - pInnerRight.x,
         );
 
         if (mirrorCamera) {
@@ -2143,12 +2143,12 @@ const faceTrackingRenderLoop = () => {
         let cheekLeftY = THREE.MathUtils.lerp(
           faceParams.pose.cheekYRange.min,
           faceParams.pose.cheekYRange.max,
-          1 - cheekLeft
+          1 - cheekLeft,
         );
         let cheekRightY = THREE.MathUtils.lerp(
           faceParams.pose.cheekYRange.min,
           faceParams.pose.cheekYRange.max,
-          1 - cheekRight
+          1 - cheekRight,
         );
         const showLeftCheek = cheekLeft > 0.4;
         const showRightCheek = cheekRight > 0.4;
@@ -2198,7 +2198,7 @@ function getIrisOffsetXy(
   topIdx,
   bottomIdx,
   roll,
-  open
+  open,
 ) {
   const center = landmarks[centerIdx];
   const left = landmarks[leftIdx];

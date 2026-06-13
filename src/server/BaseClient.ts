@@ -503,7 +503,8 @@ abstract class BaseClient {
       const connectionManager =
         device.connectionManager! as ClientConnectionManager;
       connectionManager.isConnected = true;
-      DeviceManager._CheckDeviceAvailability(device);
+      // @ts-expect-error
+      DeviceManager._checkDeviceAvailability(device);
       return device;
     });
   }

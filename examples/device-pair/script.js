@@ -7,7 +7,7 @@ console.log({ BS });
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate"
+  "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
@@ -48,7 +48,7 @@ function onAvailableDevices(availableDevices) {
         }
       };
       availableDevice.addEventListener("connectionStatus", () =>
-        onConnectionStatusUpdate()
+        onConnectionStatusUpdate(),
       );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
@@ -56,14 +56,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.GetDevices();
+  const availableDevices = await BS.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const { availableDevices } = event.message;
   onAvailableDevices(availableDevices);
 });
@@ -112,7 +112,7 @@ resetPressureRangeButton.addEventListener("click", () => {
 let pressureAutoRange = true;
 /** @type {HTMLButtonElement} */
 const togglePressureAutoRangeButton = document.getElementById(
-  "togglePressureAutoRange"
+  "togglePressureAutoRange",
 );
 devicePair.addEventListener("isConnected", () => {
   togglePressureAutoRangeButton.disabled = !devicePair.isConnected;
@@ -222,7 +222,7 @@ devicePair.sides.forEach((side) => {
         calibratedCenter: pressure.calibratedCenter,
       },
       (key, value) => value?.toFixed?.(3) || value,
-      2
+      2,
     );
   });
 });
@@ -244,6 +244,6 @@ devicePair.addEventListener("pressure", (event) => {
       normalizedSum: pressure.normalizedSum,
     },
     (key, value) => value?.toFixed?.(3) || value,
-    2
+    2,
   );
 });

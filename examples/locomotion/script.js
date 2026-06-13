@@ -89,7 +89,7 @@ client.addEventListener("connectionStatus", () => {
 
 /** @type {HTMLInputElement} */
 const isScanningAvailableCheckbox = document.getElementById(
-  "isScanningAvailable"
+  "isScanningAvailable",
 );
 client.addEventListener("isScanningAvailable", () => {
   isScanningAvailableCheckbox.checked = client.isScanningAvailable;
@@ -128,13 +128,13 @@ client.addEventListener("discoveredDevice", (event) => {
     client.connectToDevice(discoveredDevice.bluetoothId);
   }
 });
-BS.DeviceManager.AddEventListener("deviceConnected", (e) => console.log(e));
+BS.DeviceManager.addEventListener("deviceConnected", (e) => console.log(e));
 
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate"
+  "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
@@ -175,7 +175,7 @@ function onAvailableDevices(availableDevices) {
         }
       };
       availableDevice.addEventListener("connectionStatus", () =>
-        onConnectionStatusUpdate()
+        onConnectionStatusUpdate(),
       );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
@@ -183,14 +183,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.GetDevices();
+  const availableDevices = await BS.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
@@ -244,7 +244,7 @@ resetPressureRangeButton.addEventListener("click", () => {
 let pressureAutoRange = true;
 /** @type {HTMLButtonElement} */
 const togglePressureAutoRangeButton = document.getElementById(
-  "togglePressureAutoRange"
+  "togglePressureAutoRange",
 );
 devicePair.addEventListener("isConnected", () => {
   togglePressureAutoRangeButton.disabled = !devicePair.isPartiallyConnected;
@@ -260,7 +260,7 @@ togglePressureAutoRangeButton.addEventListener("click", () => {
 let pressureMotionAutoRange = false;
 /** @type {HTMLButtonElement} */
 const togglePressureMotionAutoRangeButton = document.getElementById(
-  "togglePressureMotionAutoRange"
+  "togglePressureMotionAutoRange",
 );
 devicePair.addEventListener("isConnected", () => {
   togglePressureMotionAutoRangeButton.disabled =
@@ -379,7 +379,7 @@ const didStep = {
       const relativeYaw = this.getRelativeYaw(side);
       stepOffset.rotateAround(
         { x: 0, y: 0 },
-        THREE.MathUtils.degToRad(relativeYaw)
+        THREE.MathUtils.degToRad(relativeYaw),
       );
     }
 
@@ -548,7 +548,7 @@ const setCenterOfPressureOffset = async () => {
   setCenterOfPressureOffsetButton.disabled = false;
 };
 const setCenterOfPressureOffsetButton = document.getElementById(
-  "setCenterOfPressureOffset"
+  "setCenterOfPressureOffset",
 );
 devicePair.addEventListener("isConnected", () => {
   setCenterOfPressureOffsetButton.disabled = !devicePair.isPartiallyConnected;
@@ -563,7 +563,7 @@ setCenterOfPressureOffsetButton.addEventListener("click", () => {
 const applyCenterOfPressureOffset = (
   centerOfPressure,
   offset,
-  normalize = true
+  normalize = true,
 ) => {
   const _centerOfPressure = {
     x: centerOfPressure.x - offset.x,
@@ -614,7 +614,7 @@ const getCenterOfPressureMagnitude = (centerOfPressure) => {
 const getPolarCenterOfPressure = (centerOfPressure, side) => {
   centerOfPressure = applyCenterOfPressureOffset(
     centerOfPressure,
-    centerOfPressureOffsets[side] ?? centerOfPressureOffset
+    centerOfPressureOffsets[side] ?? centerOfPressureOffset,
   );
   return {
     angle: getCenterOfPressureAngle(centerOfPressure),
@@ -656,7 +656,7 @@ const onCenterOfPressure = (centerOfPressure, centersOfPressure) => {
   BS.Sides.forEach((side) => {
     polarCentersOfPressure[side] = getPolarCenterOfPressure(
       centersOfPressure[side],
-      side
+      side,
     );
   });
 
@@ -668,7 +668,7 @@ const onCenterOfPressure = (centerOfPressure, centersOfPressure) => {
 
   if (locomotionMode == "centerOfPressure") {
     let angleDifference = Math.abs(
-      polarCentersOfPressure.left.angle - polarCentersOfPressure.right.angle
+      polarCentersOfPressure.left.angle - polarCentersOfPressure.right.angle,
     );
     angleDifference = Math.min(angleDifference, 360 - angleDifference);
     // console.log({ angleDifference });
@@ -761,7 +761,7 @@ const toggleMoveRelativeToInsoles = () => {
   setMoveRelativeToInsoles(!moveRelativeToInsoles);
 };
 const moveRelativeToInsolesCheckbox = document.getElementById(
-  "moveRelativeToInsoles"
+  "moveRelativeToInsoles",
 );
 moveRelativeToInsolesCheckbox.addEventListener("input", () => {
   setMoveRelativeToInsoles(moveRelativeToInsolesCheckbox.checked);
@@ -871,7 +871,7 @@ const toggleMoveRelativeToCamera = () => {
   setMoveRelativeToCamera(!moveRelativeToCamera);
 };
 const moveRelativeToCameraCheckbox = document.getElementById(
-  "moveRelativeToCamera"
+  "moveRelativeToCamera",
 );
 moveRelativeToCameraCheckbox.addEventListener("click", () => {
   setMoveRelativeToCamera(moveRelativeToCameraCheckbox.checked);
@@ -1438,10 +1438,10 @@ loadFromLocalStorage();
 // CANVAS INPUT START
 const centerOfPressureInput = document.getElementById("centerOfPressureInput");
 const leftCenterOfPressureInput = document.getElementById(
-  "leftCenterOfPressureInput"
+  "leftCenterOfPressureInput",
 );
 const rightCenterOfPressureInput = document.getElementById(
-  "rightCenterOfPressureInput"
+  "rightCenterOfPressureInput",
 );
 const centerOfPressureInputs = {
   left: leftCenterOfPressureInput,
@@ -1450,7 +1450,7 @@ const centerOfPressureInputs = {
 
 const leftGameRotationInput = document.getElementById("leftGameRotationInput");
 const rightGameRotationInput = document.getElementById(
-  "rightGameRotationInput"
+  "rightGameRotationInput",
 );
 const gameRotationInputs = {
   left: leftGameRotationInput,
@@ -1605,7 +1605,7 @@ const throttledSetVrChat2DInput = BS.ThrottleUtils.throttle(
       message: { horizontal, vertical },
     }),
   sensorRate,
-  true
+  true,
 );
 const setVrChat2DInput = (horizontal, vertical, isVrChatMessageResponse) => {
   Object.assign(vrChatControls, { horizontal, vertical });
@@ -1628,7 +1628,7 @@ const setVrChat2DInput = (horizontal, vertical, isVrChatMessageResponse) => {
 };
 
 const vrChatLookHorizontalInput = document.getElementById(
-  "vrChatLookHorizontal"
+  "vrChatLookHorizontal",
 );
 vrChatLookHorizontalInput.addEventListener("input", () => {
   const lookHorizontal = +vrChatLookHorizontalInput.value;
@@ -1644,7 +1644,7 @@ const throttledSetVrChatLookHorizontal = BS.ThrottleUtils.throttle(
       message: { lookHorizontal },
     }),
   sensorRate,
-  true
+  true,
 );
 const setVrChatLookHorizontal = (lookHorizontal, isVrChatMessageResponse) => {
   Object.assign(vrChatControls, { lookHorizontal });
@@ -1742,7 +1742,7 @@ devicePair.addEventListener("deviceIsConnected", async (event) => {
 
   if (device.isConnected) {
     const isTensorFlowModelAvailable = await BS.isTensorFlowModelAvailable(
-      getPressureCalibrationModelIndexeddbKey(side)
+      getPressureCalibrationModelIndexeddbKey(side),
     );
     console.log({ isTensorFlowModelAvailable, side });
     if (isTensorFlowModelAvailable) {
@@ -1752,7 +1752,7 @@ devicePair.addEventListener("deviceIsConnected", async (event) => {
 });
 
 const loadPressureCalibratonModelButton = document.getElementById(
-  "loadPressureCalibratonModel"
+  "loadPressureCalibratonModel",
 );
 loadPressureCalibratonModelButton.addEventListener("click", () => {
   loadPressureCalibratonModel();
@@ -1766,12 +1766,12 @@ const loadPressureCalibratonModel = async () => {
       continue;
     }
     const isTensorFlowModelAvailable = await BS.isTensorFlowModelAvailable(
-      getPressureCalibrationModelIndexeddbKey(side)
+      getPressureCalibrationModelIndexeddbKey(side),
     );
     console.log({ isTensorFlowModelAvailable, side });
     if (isTensorFlowModelAvailable) {
       const didLoad = await devicePair[side].loadPressureCalibrationModel(
-        getPressureCalibrationModelIndexeddbKey(side)
+        getPressureCalibrationModelIndexeddbKey(side),
       );
       console.log({ didLoad, side });
     }

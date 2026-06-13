@@ -27,14 +27,19 @@ const scene = document.querySelector("a-scene");
 
 // HAND TRACKING
 
-Object.entries(handTrackingControllers).forEach(([side, handTrackingController]) => {
-  handTrackingController.addEventListener("fingertiptouchstarted", (event) => {
-    const { fingerName, withEl, withFinger, onSameHand } = event.detail;
-  });
-  handTrackingController.addEventListener("fingertiptouchended", (event) => {
-    const { fingerName, withEl, withFinger, onSameHand } = event.detail;
-  });
-});
+Object.entries(handTrackingControllers).forEach(
+  ([side, handTrackingController]) => {
+    handTrackingController.addEventListener(
+      "fingertiptouchstarted",
+      (event) => {
+        const { fingerName, withEl, withFinger, onSameHand } = event.detail;
+      },
+    );
+    handTrackingController.addEventListener("fingertiptouchended", (event) => {
+      const { fingerName, withEl, withFinger, onSameHand } = event.detail;
+    });
+  },
+);
 
 // DOUBLE PINCH
 
@@ -73,43 +78,52 @@ class DebouncedFunction {
   }
 }
 
-Object.entries(handTrackingControllers).forEach(([side, handTrackingController]) => {
-  let numberOfPinches = 0;
-  const resetNumberOfPinches = () => {
-    numberOfPinches = 0;
-  };
-  const debouncedResetNumberOfPinches = new DebouncedFunction(resetNumberOfPinches, 1000);
-  console.log({ side, handTrackingController });
-
-  const onPinchStarted = () => {
-    //console.log("throttled pinch");
-
-    numberOfPinches++;
-    //console.log({ side, numberOfPinches });
-    if (numberOfPinches == 1) {
-      debouncedResetNumberOfPinches.trigger();
-    } else if (numberOfPinches == 2) {
-      handTrackingController.dispatchEvent(new Event("doublepinch"));
+Object.entries(handTrackingControllers).forEach(
+  ([side, handTrackingController]) => {
+    let numberOfPinches = 0;
+    const resetNumberOfPinches = () => {
       numberOfPinches = 0;
-      debouncedResetNumberOfPinches.cancel();
-    }
-  };
+    };
+    const debouncedResetNumberOfPinches = new DebouncedFunction(
+      resetNumberOfPinches,
+      1000,
+    );
+    console.log({ side, handTrackingController });
 
-  const throttledOnPinchStarted = AFRAME.utils.throttle(onPinchStarted, 300);
+    const onPinchStarted = () => {
+      //console.log("throttled pinch");
 
-  handTrackingController.addEventListener("fingertiptouchstarted", (event) => {
-    const { finger, withEl, withFinger, onSameHand } = event.detail;
+      numberOfPinches++;
+      //console.log({ side, numberOfPinches });
+      if (numberOfPinches == 1) {
+        debouncedResetNumberOfPinches.trigger();
+      } else if (numberOfPinches == 2) {
+        handTrackingController.dispatchEvent(new Event("doublepinch"));
+        numberOfPinches = 0;
+        debouncedResetNumberOfPinches.cancel();
+      }
+    };
 
-    //console.log({ finger, withEl, withFinger, onSameHand });
+    const throttledOnPinchStarted = AFRAME.utils.throttle(onPinchStarted, 300);
 
-    const isPinch = finger == "index" && onSameHand && withFinger == "thumb";
-    if (!isPinch) {
-      return;
-    }
+    handTrackingController.addEventListener(
+      "fingertiptouchstarted",
+      (event) => {
+        const { finger, withEl, withFinger, onSameHand } = event.detail;
 
-    throttledOnPinchStarted();
-  });
-});
+        //console.log({ finger, withEl, withFinger, onSameHand });
+
+        const isPinch =
+          finger == "index" && onSameHand && withFinger == "thumb";
+        if (!isPinch) {
+          return;
+        }
+
+        throttledOnPinchStarted();
+      },
+    );
+  },
+);
 
 // DESKTOP PLACEMENT
 
@@ -172,7 +186,12 @@ function setUrlParam(key, value) {
       searchParams.delete(key);
     }
     let newUrl =
-      window.location.protocol + "//" + window.location.host + window.location.pathname + "?" + searchParams.toString();
+      window.location.protocol +
+      "//" +
+      window.location.host +
+      window.location.pathname +
+      "?" +
+      searchParams.toString();
     window.history.pushState({ path: newUrl }, "", newUrl);
   }
 }
@@ -192,7 +211,9 @@ client.addEventListener("isConnected", () => {
 const webSocketUrlInput = document.getElementById("webSocketUrl");
 webSocketUrlInput.value = url.searchParams.get("webSocketUrl") || "";
 
-const toggleSetWebSocketUrlButton = scene.querySelector(".toggleSetWebSocketUrl");
+const toggleSetWebSocketUrlButton = scene.querySelector(
+  ".toggleSetWebSocketUrl",
+);
 client.addEventListener("isConnected", () => {
   toggleSetWebSocketUrlButton.setAttribute("fingertip-button", {
     disabled: client.isConnected,
@@ -207,10 +228,14 @@ webSocketUrlInput.addEventListener("input", () => {
   });
 });
 webSocketUrlInput.addEventListener("focusin", () => {
-  toggleSetWebSocketUrlButton.setAttribute("fingertip-button", { color: "yellow" });
+  toggleSetWebSocketUrlButton.setAttribute("fingertip-button", {
+    color: "yellow",
+  });
 });
 webSocketUrlInput.addEventListener("focusout", () => {
-  toggleSetWebSocketUrlButton.setAttribute("fingertip-button", { color: "white" });
+  toggleSetWebSocketUrlButton.setAttribute("fingertip-button", {
+    color: "white",
+  });
 });
 webSocketUrlInput.dispatchEvent(new Event("input"));
 
@@ -235,7 +260,9 @@ client.addEventListener("connectionStatus", () => {
     case "connected":
     case "notConnected":
       toggleConnectionButton.disabled = false;
-      toggleConnectionButton.innerText = client.isConnected ? "disconnect" : "connect";
+      toggleConnectionButton.innerText = client.isConnected
+        ? "disconnect"
+        : "connect";
       break;
     case "connecting":
     case "disconnecting":
@@ -277,7 +304,9 @@ toggleConnectionEntity.addEventListener("click", () => {
 // SCANNER
 
 /** @type {HTMLInputElement} */
-const isScanningAvailableCheckbox = document.getElementById("isScanningAvailable");
+const isScanningAvailableCheckbox = document.getElementById(
+  "isScanningAvailable",
+);
 client.addEventListener("isScanningAvailable", () => {
   isScanningAvailableCheckbox.checked = client.isScanningAvailable;
 });
@@ -324,7 +353,9 @@ function setScreenMode(newScreenMode) {
     return;
   }
   screenMode = newScreenMode;
-  window.dispatchEvent(new CustomEvent("screenMode", { detail: { screenMode } }));
+  window.dispatchEvent(
+    new CustomEvent("screenMode", { detail: { screenMode } }),
+  );
 }
 
 window.addEventListener("screenMode", () => {
@@ -361,11 +392,15 @@ window.addEventListener("screenMode", () => {
 
 const discoveredDevicesEntity = scene.querySelector(".discoveredDevices");
 /** @type {HTMLTemplateElement} */
-const discoveredDeviceEntityTemplate = discoveredDevicesEntity.querySelector(".discoveredDeviceTemplate");
+const discoveredDeviceEntityTemplate = discoveredDevicesEntity.querySelector(
+  ".discoveredDeviceTemplate",
+);
 /** @type {Object.<string, HTMLElement>} */
 let discoveredDeviceEntities = {};
 
-const toggleShowDiscoveredDevicesEntity = scene.querySelector(".toggleShowDiscoveredDevices");
+const toggleShowDiscoveredDevicesEntity = scene.querySelector(
+  ".toggleShowDiscoveredDevices",
+);
 client.addEventListener("isConnected", () => {
   toggleShowDiscoveredDevicesEntity.setAttribute("fingertip-button", {
     disabled: !client.isConnected,
@@ -383,9 +418,12 @@ toggleShowDiscoveredDevicesEntity.addEventListener("click", () => {
 client.addEventListener("discoveredDevice", (event) => {
   /** @type {BS.DiscoveredDevice} */
   const discoveredDevice = event.message.discoveredDevice;
-  let discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.bluetoothId];
+  let discoveredDeviceEntity =
+    discoveredDeviceEntities[discoveredDevice.bluetoothId];
   if (!discoveredDeviceEntity) {
-    discoveredDeviceEntity = discoveredDeviceEntityTemplate.content.cloneNode(true).querySelector(".discoveredDevice");
+    discoveredDeviceEntity = discoveredDeviceEntityTemplate.content
+      .cloneNode(true)
+      .querySelector(".discoveredDevice");
 
     discoveredDeviceEntity.addEventListener("click", () => {
       let device = client.devices[discoveredDevice.bluetoothId];
@@ -409,7 +447,10 @@ client.addEventListener("discoveredDevice", (event) => {
       }
       onDevice(device);
     };
-    BS.DeviceManager.AddEventListener("deviceIsConnected", deviceIsConnectedListener);
+    BS.DeviceManager.addEventListener(
+      "deviceIsConnected",
+      deviceIsConnectedListener,
+    );
 
     let addedEventListeners = false;
     /** @param {BS.Device} device */
@@ -424,7 +465,10 @@ client.addEventListener("discoveredDevice", (event) => {
         updateDiscoveredDeviceEntity(discoveredDevice);
       });
       updateDiscoveredDeviceEntity(discoveredDevice);
-      BS.DeviceManager.RemoveEventListener("deviceIsConnected", deviceIsConnectedListener);
+      BS.DeviceManager.removeEventListener(
+        "deviceIsConnected",
+        deviceIsConnectedListener,
+      );
     };
 
     let device = client.devices[discoveredDevice.bluetoothId];
@@ -432,7 +476,8 @@ client.addEventListener("discoveredDevice", (event) => {
       onDevice(device);
     }
 
-    discoveredDeviceEntities[discoveredDevice.bluetoothId] = discoveredDeviceEntity;
+    discoveredDeviceEntities[discoveredDevice.bluetoothId] =
+      discoveredDeviceEntity;
     discoveredDevicesEntity.appendChild(discoveredDeviceEntity);
   }
 
@@ -441,9 +486,12 @@ client.addEventListener("discoveredDevice", (event) => {
 
 /** @param {BS.DiscoveredDevice} discoveredDevice */
 function updateDiscoveredDeviceEntity(discoveredDevice) {
-  const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.bluetoothId];
+  const discoveredDeviceEntity =
+    discoveredDeviceEntities[discoveredDevice.bluetoothId];
   if (!discoveredDeviceEntity) {
-    console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.bluetoothId}`);
+    console.warn(
+      `no discoveredDeviceEntity for device id ${discoveredDevice.bluetoothId}`,
+    );
     return;
   }
 
@@ -478,29 +526,42 @@ function updateDiscoveredDeviceEntity(discoveredDevice) {
   if (discoveredDeviceEntity.hasLoaded) {
     discoveredDeviceEntity.setAttribute("fingertip-button", { text, disabled });
   } else {
-    discoveredDeviceEntity.addEventListener("loaded", () => updateDiscoveredDeviceEntity(discoveredDevice), {
-      once: true,
-    });
+    discoveredDeviceEntity.addEventListener(
+      "loaded",
+      () => updateDiscoveredDeviceEntity(discoveredDevice),
+      {
+        once: true,
+      },
+    );
   }
 }
 
 window.addEventListener("screenMode", () => {
   const isDiscoveredDevicesMode = screenMode == "discoveredDevices";
-  const text = [isDiscoveredDevicesMode ? "hide" : "show", "discovered", "devices"].join("\n");
+  const text = [
+    isDiscoveredDevicesMode ? "hide" : "show",
+    "discovered",
+    "devices",
+  ].join("\n");
   toggleShowDiscoveredDevicesEntity.setAttribute("fingertip-button", {
     text,
   });
   discoveredDevicesEntity.object3D.visible = isDiscoveredDevicesMode;
-  Object.entries(client.discoveredDevices).forEach(([deviceId, discoveredDevice]) => {
-    updateDiscoveredDeviceEntity(discoveredDevice);
-  });
+  Object.entries(client.discoveredDevices).forEach(
+    ([deviceId, discoveredDevice]) => {
+      updateDiscoveredDeviceEntity(discoveredDevice);
+    },
+  );
 });
 
 /** @param {BS.DiscoveredDevice} discoveredDevice */
 function removeDiscoveredDeviceEntity(discoveredDevice) {
-  const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.bluetoothId];
+  const discoveredDeviceEntity =
+    discoveredDeviceEntities[discoveredDevice.bluetoothId];
   if (!discoveredDeviceEntity) {
-    console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.bluetoothId}`);
+    console.warn(
+      `no discoveredDeviceEntity for device id ${discoveredDevice.bluetoothId}`,
+    );
     return;
   }
 
@@ -515,7 +576,9 @@ client.addEventListener("expiredDiscoveredDevice", (event) => {
 });
 
 function clearDiscoveredDevices() {
-  discoveredDevicesEntity.querySelectorAll(".discoveredDevice").forEach((entity) => entity.remove());
+  discoveredDevicesEntity
+    .querySelectorAll(".discoveredDevice")
+    .forEach((entity) => entity.remove());
   discoveredDeviceEntities = {};
 }
 
@@ -533,11 +596,15 @@ client.addEventListener("isScanning", () => {
 
 const availableDevicesEntity = scene.querySelector(".availableDevices");
 /** @type {HTMLTemplateElement} */
-const availableDeviceEntityTemplate = availableDevicesEntity.querySelector(".availableDeviceTemplate");
+const availableDeviceEntityTemplate = availableDevicesEntity.querySelector(
+  ".availableDeviceTemplate",
+);
 /** @type {Object.<string, HTMLElement>} */
 let availableDeviceEntities = {};
 
-const toggleShowAvailableDevicesEntity = scene.querySelector(".toggleShowAvailableDevices");
+const toggleShowAvailableDevicesEntity = scene.querySelector(
+  ".toggleShowAvailableDevices",
+);
 client.addEventListener("isConnected", () => {
   toggleShowAvailableDevicesEntity.setAttribute("fingertip-button", {
     disabled: !client.isConnected,
@@ -552,7 +619,7 @@ toggleShowAvailableDevicesEntity.addEventListener("click", () => {
   }
 });
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   /** @type {BS.Device[]} */
   const availableDevices = event.message.availableDevices;
   console.log({ availableDevices });
@@ -564,7 +631,9 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
 
     let availableDeviceEntity = availableDeviceEntities[device.bluetoothId];
     if (!availableDeviceEntity) {
-      availableDeviceEntity = availableDeviceEntityTemplate.content.cloneNode(true).querySelector(".availableDevice");
+      availableDeviceEntity = availableDeviceEntityTemplate.content
+        .cloneNode(true)
+        .querySelector(".availableDevice");
 
       availableDeviceEntity.addEventListener("click", () => {
         console.log("availableDeviceEntity", "click", device);
@@ -587,7 +656,9 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
 function updateAvailableDeviceEntity(device) {
   const availableDeviceEntity = availableDeviceEntities[device.bluetoothId];
   if (!availableDeviceEntity) {
-    console.warn(`no availableDeviceEntity for device id ${device.bluetoothId}`);
+    console.warn(
+      `no availableDeviceEntity for device id ${device.bluetoothId}`,
+    );
     return;
   }
 
@@ -612,29 +683,41 @@ function updateAvailableDeviceEntity(device) {
     disabled = true;
   }
 
-  const text = [device.name, device.type, connectMessage].filter(Boolean).join("\n");
+  const text = [device.name, device.type, connectMessage]
+    .filter(Boolean)
+    .join("\n");
 
   if (availableDeviceEntity.hasLoaded) {
     availableDeviceEntity.setAttribute("fingertip-button", { text, disabled });
   } else {
-    availableDeviceEntity.addEventListener("loaded", () => updateAvailableDeviceEntity(device), { once: true });
+    availableDeviceEntity.addEventListener(
+      "loaded",
+      () => updateAvailableDeviceEntity(device),
+      { once: true },
+    );
   }
 }
 
 window.addEventListener("screenMode", () => {
   const isAvailableDevicesMode = screenMode == "availableDevices";
-  const text = [isAvailableDevicesMode ? "hide" : "show", "available", "devices"].join("\n");
+  const text = [
+    isAvailableDevicesMode ? "hide" : "show",
+    "available",
+    "devices",
+  ].join("\n");
   toggleShowAvailableDevicesEntity.setAttribute("fingertip-button", {
     text,
   });
   availableDevicesEntity.object3D.visible = isAvailableDevicesMode;
-  BS.DeviceManager.AvailableDevices.forEach((availableDevice) => {
+  BS.DeviceManager.availableDevices.forEach((availableDevice) => {
     updateAvailableDeviceEntity(availableDevice);
   });
 });
 
 function clearAvailableDevices() {
-  availableDevicesEntity.querySelectorAll(".availableDevice").forEach((entity) => entity.remove());
+  availableDevicesEntity
+    .querySelectorAll(".availableDevice")
+    .forEach((entity) => entity.remove());
   availableDeviceEntities = {};
 }
 
@@ -679,7 +762,9 @@ function setPositionMode(newPositionMode) {
   console.log(sensorConfiguration);
   devicePair.setSensorConfiguration(sensorConfiguration);
 
-  window.dispatchEvent(new CustomEvent("positionMode", { detail: { positionMode } }));
+  window.dispatchEvent(
+    new CustomEvent("positionMode", { detail: { positionMode } }),
+  );
 }
 
 // ROTATION MODE
@@ -715,7 +800,9 @@ function setOrientationMode(newOrientationMode) {
   console.log(sensorConfiguration);
   devicePair.setSensorConfiguration(sensorConfiguration);
 
-  window.dispatchEvent(new CustomEvent("orientationMode", { detail: { orientationMode } }));
+  window.dispatchEvent(
+    new CustomEvent("orientationMode", { detail: { orientationMode } }),
+  );
 }
 
 // PRESSURE MODE
@@ -749,7 +836,9 @@ function setPressureMode(newPressureMode) {
   console.log(sensorConfiguration);
   devicePair.setSensorConfiguration(sensorConfiguration);
 
-  window.dispatchEvent(new CustomEvent("pressureMode", { detail: { pressureMode } }));
+  window.dispatchEvent(
+    new CustomEvent("pressureMode", { detail: { pressureMode } }),
+  );
 }
 
 // DEVICE PAIR
@@ -757,9 +846,16 @@ function setPressureMode(newPressureMode) {
 const devicePairEntity = scene.querySelector(".devicePair");
 
 /** @type {BS.SensorType[]} */
-const sensorTypes = ["pressure", "linearAcceleration", "gameRotation", "gyroscope"];
+const sensorTypes = [
+  "pressure",
+  "linearAcceleration",
+  "gameRotation",
+  "gyroscope",
+];
 /** @type {HTMLTemplateElement} */
-const toggleSensorTypeEntityTemplate = devicePairEntity.querySelector(".toggleSensorTypeTemplate");
+const toggleSensorTypeEntityTemplate = devicePairEntity.querySelector(
+  ".toggleSensorTypeTemplate",
+);
 
 /** @type {Map.<SensorType, HTMLElement>} */
 const toggleSensorTypeEntities = new Map();
@@ -790,7 +886,9 @@ sensorTypes.forEach((sensorType, index) => {
 function updateToggleSensorTypeEntity(sensorType) {
   const toggleSensorTypeEntity = toggleSensorTypeEntities.get(sensorType);
   if (!toggleSensorTypeEntity) {
-    console.log(`no toggleSensorTypeEntity found for sensorType "${sensorType}"`);
+    console.log(
+      `no toggleSensorTypeEntity found for sensorType "${sensorType}"`,
+    );
     return;
   }
 
@@ -805,10 +903,16 @@ function updateToggleSensorTypeEntity(sensorType) {
     isSensorTypeEnabled = pressureMode == sensorType;
   }
 
-  const sensorTypeStrings = sensorType.split(/(?=[A-Z])/g).map((string) => string.toLowerCase());
-  const text = [isSensorTypeEnabled ? "disable" : "enable", ...sensorTypeStrings].join("\n");
+  const sensorTypeStrings = sensorType
+    .split(/(?=[A-Z])/g)
+    .map((string) => string.toLowerCase());
+  const text = [
+    isSensorTypeEnabled ? "disable" : "enable",
+    ...sensorTypeStrings,
+  ].join("\n");
 
-  const disabled = screenMode != "devicePair" || !devicePair.isPartiallyConnected;
+  const disabled =
+    screenMode != "devicePair" || !devicePair.isPartiallyConnected;
 
   if (toggleSensorTypeEntity.hasLoaded) {
     toggleSensorTypeEntity.setAttribute("fingertip-button", {
@@ -816,9 +920,13 @@ function updateToggleSensorTypeEntity(sensorType) {
       disabled,
     });
   } else {
-    toggleSensorTypeEntity.addEventListener("loaded", () => updateToggleSensorTypeEntity(sensorType), {
-      once: true,
-    });
+    toggleSensorTypeEntity.addEventListener(
+      "loaded",
+      () => updateToggleSensorTypeEntity(sensorType),
+      {
+        once: true,
+      },
+    );
   }
 }
 
@@ -849,7 +957,9 @@ toggleShowDevicePairEntity.addEventListener("click", () => {
 
 window.addEventListener("screenMode", () => {
   const isDevicePairMode = screenMode == "devicePair";
-  const text = [isDevicePairMode ? "hide" : "show", "device", "pair"].join("\n");
+  const text = [isDevicePairMode ? "hide" : "show", "device", "pair"].join(
+    "\n",
+  );
   toggleShowDevicePairEntity.setAttribute("fingertip-button", {
     text,
   });
@@ -880,7 +990,9 @@ let positionScalar = 0.1;
 
 devicePair.sides.forEach((side) => {
   /** @type {HTMLElement} */
-  const insoleMotionEntity = insoleMotionTemplate.content.cloneNode(true).querySelector(".insole.motion");
+  const insoleMotionEntity = insoleMotionTemplate.content
+    .cloneNode(true)
+    .querySelector(".insole.motion");
   insoleMotionEntity.classList.add(side);
 
   let scale = "1 1 1";
@@ -903,7 +1015,8 @@ devicePair.sides.forEach((side) => {
 
   const insolePositionEntity = insoleMotionEntity.querySelector(".position");
 
-  const insoleOrientationEntity = insoleMotionEntity.querySelector(".orientation");
+  const insoleOrientationEntity =
+    insoleMotionEntity.querySelector(".orientation");
 
   // POSITION
 
@@ -912,7 +1025,10 @@ devicePair.sides.forEach((side) => {
   /** @param {BS.Vector3} position */
   const updatePosition = (position) => {
     interpolatedPosition.copy(position).multiplyScalar(positionScalar);
-    insolePositionEntity.object3D.position.lerp(interpolatedPosition, positionInterpolationSmoothing);
+    insolePositionEntity.object3D.position.lerp(
+      interpolatedPosition,
+      positionInterpolationSmoothing,
+    );
   };
 
   // ORIENATION
@@ -935,7 +1051,10 @@ devicePair.sides.forEach((side) => {
     if (applyOffset) {
       targetQuaternion.premultiply(offsetQuaternion);
     }
-    insoleOrientationEntity.object3D.quaternion.slerp(targetQuaternion, orientationInterpolationSmoothing);
+    insoleOrientationEntity.object3D.quaternion.slerp(
+      targetQuaternion,
+      orientationInterpolationSmoothing,
+    );
   };
 
   // DEVICE SENSOR DATA
@@ -999,7 +1118,8 @@ devicePair.sides.forEach((side) => {
 
 // RESET ORIENTATION
 
-const resetOrientationEntity = devicePairEntity.querySelector(".resetOrientation");
+const resetOrientationEntity =
+  devicePairEntity.querySelector(".resetOrientation");
 resetOrientationEntity.addEventListener("click", () => {
   window.dispatchEvent(new CustomEvent("resetOrientation"));
 });
@@ -1021,15 +1141,21 @@ devicePair.addEventListener("deviceIsConnected", () => {
 // PRESSURE
 
 /** @type {HTMLTemplateElement} */
-const insolePressureEntityTemplate = document.getElementById("insolePressureTemplate");
+const insolePressureEntityTemplate = document.getElementById(
+  "insolePressureTemplate",
+);
 /** @type {HTMLTemplateElement} */
-const insolePressureSensorEntityTemplate = document.getElementById("insolePressureSensorTemplate");
+const insolePressureSensorEntityTemplate = document.getElementById(
+  "insolePressureSensorTemplate",
+);
 
 const numberOfPressureSensors = 8;
 
 devicePair.sides.forEach((side) => {
   /** @type {HTMLElement} */
-  const insolePressureEntity = insolePressureEntityTemplate.content.cloneNode(true).querySelector(".insole.pressure");
+  const insolePressureEntity = insolePressureEntityTemplate.content
+    .cloneNode(true)
+    .querySelector(".insole.pressure");
   insolePressureEntity.classList.add(side);
 
   let scale = "1 1 1";
@@ -1052,10 +1178,14 @@ devicePair.sides.forEach((side) => {
   const pressureSensorEntities = [];
   for (let index = 0; index < numberOfPressureSensors; index++) {
     /** @type {HTMLElement} */
-    const insolePressureSensorEntity = insolePressureSensorEntityTemplate.content
-      .cloneNode(true)
-      .querySelector(".insolePressureSensor");
-    insolePressureSensorEntity.setAttribute("src", `#pressureSensorImage${index}`);
+    const insolePressureSensorEntity =
+      insolePressureSensorEntityTemplate.content
+        .cloneNode(true)
+        .querySelector(".insolePressureSensor");
+    insolePressureSensorEntity.setAttribute(
+      "src",
+      `#pressureSensorImage${index}`,
+    );
     insoleImagesEntity.appendChild(insolePressureSensorEntity);
     pressureSensorEntities[index] = insolePressureSensorEntity;
   }
@@ -1063,7 +1193,8 @@ devicePair.sides.forEach((side) => {
   insoleImagesEntity.querySelectorAll("a-image").forEach((imageEntity) => {
     const updateSize = () => {
       let intervalId = setInterval(() => {
-        const image = imageEntity.components?.["material"]?.material?.map?.source?.data;
+        const image =
+          imageEntity.components?.["material"]?.material?.map?.source?.data;
         if (!image) {
           return;
         }
@@ -1093,7 +1224,8 @@ devicePair.sides.forEach((side) => {
     const pressure = event.message.pressure;
 
     pressure.sensors.forEach((sensor, index) => {
-      pressureSensorEntities[index].components["material"].material.opacity = sensor.normalizedValue;
+      pressureSensorEntities[index].components["material"].material.opacity =
+        sensor.normalizedValue;
     });
   });
 

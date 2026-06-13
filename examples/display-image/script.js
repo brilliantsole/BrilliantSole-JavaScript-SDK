@@ -9,7 +9,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -73,7 +73,7 @@ webSocketUrlInput.dispatchEvent(new Event("input"));
 
 /** @type {HTMLButtonElement} */
 const toggleClientConnectionButton = document.getElementById(
-  "toggleClientConnection"
+  "toggleClientConnection",
 );
 toggleClientConnectionButton.addEventListener("click", () => {
   if (client.isConnected) {
@@ -108,7 +108,7 @@ client.addEventListener("connectionStatus", () => {
 
 /** @type {HTMLInputElement} */
 const isScanningAvailableCheckbox = document.getElementById(
-  "isScanningAvailable"
+  "isScanningAvailable",
 );
 client.addEventListener("isScanningAvailable", () => {
   isScanningAvailableCheckbox.checked = client.isScanningAvailable;
@@ -141,7 +141,7 @@ client.addEventListener("discoveredDevice", (event) => {
 });
 
 // DEVICE
-BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
   if (event.message.device.connectionType != "client") {
     return;
   }
@@ -179,7 +179,7 @@ device.addEventListener("connected", () => {
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -204,7 +204,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -311,12 +311,12 @@ const drawImage = async () => {
       0,
       0,
       tempCanvas.width,
-      tempCanvas.height
+      tempCanvas.height,
     );
 
     const result = imageSegmenter.segmentForVideo(
       tempCanvas,
-      performance.now()
+      performance.now(),
     );
     console.log("imageSegmenter result", result);
 
@@ -347,7 +347,7 @@ const drawImage = async () => {
     0,
     0,
     canvas.width,
-    canvas.height
+    canvas.height,
   );
 
   draw();
@@ -487,7 +487,7 @@ const updateCameraSources = async () => {
     .filter((device) => device.kind == "videoinput")
     .forEach((videoInputDevice) => {
       cameraInputOptgroup.appendChild(
-        new Option(videoInputDevice.label, videoInputDevice.deviceId)
+        new Option(videoInputDevice.label, videoInputDevice.deviceId),
       );
     });
   cameraInput.value = "none";
@@ -520,7 +520,7 @@ const stopCameraStream = () => {
   cameraVideo.setAttribute("hidden", "");
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateCameraSources()
+  updateCameraSources(),
 );
 updateCameraSources();
 
@@ -611,8 +611,8 @@ BS.DisplayPixelDepths.forEach((pixelDepth) => {
   pixelDepthOptgroup.appendChild(
     new Option(
       `${BS.pixelDepthToNumberOfColors(pixelDepth)} colors`,
-      pixelDepth
-    )
+      pixelDepth,
+    ),
   );
 });
 pixelDepthSelect.value = pixelDepth;
@@ -668,13 +668,13 @@ const draw = async () => {
     const resizedCanvas = BS.resizeImage(
       canvas,
       outputImageWidth,
-      outputImageHeight
+      outputImageHeight,
     );
 
     const { bitmapRows, colors } = await BS.canvasToBitmaps(
       resizedCanvas,
       numberOfColors,
-      mtu
+      mtu,
     );
     console.log("bitmapRows", bitmapRows, colors);
 
@@ -708,7 +708,7 @@ const draw = async () => {
       "image",
       numberOfColors,
       "image",
-      maxFileLength
+      maxFileLength,
     );
     checkSpriteSheetSize();
     console.log("spriteSheet", spriteSheet);
@@ -744,7 +744,7 @@ const draw = async () => {
         sprite.name,
         spriteSheet,
         undefined,
-        true
+        true,
       );
       offsetYTop += scaledSpriteHeight;
     }
@@ -883,22 +883,22 @@ device.addEventListener("autoPicture", () => {
 
 /** @type {HTMLPreElement} */
 const cameraConfigurationPre = document.getElementById(
-  "cameraConfigurationPre"
+  "cameraConfigurationPre",
 );
 device.addEventListener("getCameraConfiguration", () => {
   cameraConfigurationPre.textContent = JSON.stringify(
     device.cameraConfiguration,
     null,
-    2
+    2,
   );
 });
 
 const cameraConfigurationContainer = document.getElementById(
-  "cameraConfiguration"
+  "cameraConfiguration",
 );
 /** @type {HTMLTemplateElement} */
 const cameraConfigurationTypeTemplate = document.getElementById(
-  "cameraConfigurationTypeTemplate"
+  "cameraConfigurationTypeTemplate",
 );
 BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   const cameraConfigurationTypeContainer =
@@ -967,9 +967,9 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
       device.addEventListener(
         "getCameraConfiguration",
         () => {
-          setTimeout(() => device.takePicture()), 100;
+          (setTimeout(() => device.takePicture()), 100);
         },
-        { once: true }
+        { once: true },
       );
     }
   });
@@ -977,7 +977,7 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
 
 /** @type {HTMLInputElement} */
 const takePictureAfterUpdateCheckbox = document.getElementById(
-  "takePictureAfterUpdate"
+  "takePictureAfterUpdate",
 );
 let takePictureAfterUpdate = false;
 takePictureAfterUpdateCheckbox.addEventListener("input", () => {
@@ -999,14 +999,14 @@ const updateWhiteBalance = BS.ThrottleUtils.throttle(
       device.addEventListener(
         "getCameraConfiguration",
         () => {
-          setTimeout(() => device.takePicture()), 100;
+          (setTimeout(() => device.takePicture()), 100);
         },
-        { once: true }
+        { once: true },
       );
     }
   },
   200,
-  true
+  true,
 );
 cameraWhiteBalanceInput.addEventListener("input", () => {
   let [redGain, greenGain, blueGain] = cameraWhiteBalanceInput.value
@@ -1055,7 +1055,7 @@ import {
 
 let useImageSegmentation = false;
 const useImageSegmentationInput = document.getElementById(
-  "useImageSegmentation"
+  "useImageSegmentation",
 );
 useImageSegmentationInput.addEventListener("input", () => {
   setUseImageSegmentation(useImageSegmentationInput.checked);
@@ -1082,7 +1082,7 @@ const modelAssetPaths = {
 };
 const createImageSegmenter = async () => {
   const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm"
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm",
   );
 
   imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
@@ -1103,7 +1103,7 @@ createImageSegmenter();
 // SIZE
 
 const checkSpriteSheetSizeButton = document.getElementById(
-  "checkSpriteSheetSize"
+  "checkSpriteSheetSize",
 );
 const checkSpriteSheetSize = () => {
   if (!spriteSheet) {

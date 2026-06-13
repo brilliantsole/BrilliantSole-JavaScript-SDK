@@ -366,7 +366,7 @@ class DevicePair {
     return this.#gloves;
   }
   static {
-    DeviceManager.AddEventListener("deviceConnected", (event) => {
+    DeviceManager.addEventListener("deviceConnected", (event) => {
       const { device } = event.message;
       if (device.isInsole) {
         this.#insoles.assignDevice(device);

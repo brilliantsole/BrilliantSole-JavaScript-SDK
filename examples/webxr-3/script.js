@@ -83,7 +83,7 @@ client.addEventListener("connectionStatus", () => {
 
 /** @type {HTMLInputElement} */
 const isScanningAvailableCheckbox = document.getElementById(
-  "isScanningAvailable"
+  "isScanningAvailable",
 );
 client.addEventListener("isScanningAvailable", () => {
   isScanningAvailableCheckbox.checked = client.isScanningAvailable;
@@ -123,7 +123,7 @@ client.addEventListener("discoveredDevice", (event) => {
   }
 });
 
-BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
   if (event.message.device.hasCamera) {
     device = event.message.device;
     onDevice();
@@ -273,13 +273,13 @@ const onDevice = () => {
 
   /** @type {HTMLPreElement} */
   const cameraConfigurationPre = document.getElementById(
-    "cameraConfigurationPre"
+    "cameraConfigurationPre",
   );
   const updateCameraConfigurationPre = () => {
     cameraConfigurationPre.textContent = JSON.stringify(
       device.cameraConfiguration,
       null,
-      2
+      2,
     );
   };
   device.addEventListener("getCameraConfiguration", () => {
@@ -288,11 +288,11 @@ const onDevice = () => {
   updateCameraConfigurationPre();
 
   const cameraConfigurationContainer = document.getElementById(
-    "cameraConfiguration"
+    "cameraConfiguration",
   );
   /** @type {HTMLTemplateElement} */
   const cameraConfigurationTypeTemplate = document.getElementById(
-    "cameraConfigurationTypeTemplate"
+    "cameraConfigurationTypeTemplate",
   );
   BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
     const cameraConfigurationTypeContainer =
@@ -377,9 +377,9 @@ const onDevice = () => {
         device.addEventListener(
           "getCameraConfiguration",
           () => {
-            setTimeout(() => device.takePicture()), 100;
+            (setTimeout(() => device.takePicture()), 100);
           },
-          { once: true }
+          { once: true },
         );
       }
     });
@@ -387,7 +387,7 @@ const onDevice = () => {
 
   /** @type {HTMLInputElement} */
   const takePictureAfterUpdateCheckbox = document.getElementById(
-    "takePictureAfterUpdate"
+    "takePictureAfterUpdate",
   );
   let takePictureAfterUpdate = false;
   takePictureAfterUpdateCheckbox.addEventListener("input", () => {
@@ -409,14 +409,14 @@ const onDevice = () => {
         device.addEventListener(
           "getCameraConfiguration",
           () => {
-            setTimeout(() => device.takePicture()), 100;
+            (setTimeout(() => device.takePicture()), 100);
           },
-          { once: true }
+          { once: true },
         );
       }
     },
     200,
-    true
+    true,
   );
   cameraWhiteBalanceInput.addEventListener("input", () => {
     let [redGain, greenGain, blueGain] = cameraWhiteBalanceInput.value

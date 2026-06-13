@@ -11,7 +11,7 @@ const setRunModelInBrowser = (newRunMoelInBrowser) => {
     localStorage.removeItem(runModelInBrowserKey);
   }
 
-  BS.DeviceManager.ConnectedDevices.forEach((device) => {
+  BS.DeviceManager.connectedDevices.forEach((device) => {
     if (device.type != "generic") {
       return;
     }
@@ -63,10 +63,10 @@ fetch("./kick2.tflite")
 // CONNECT
 
 const connectToDeviceContainers = document.getElementById(
-  "connectToDeviceContainers"
+  "connectToDeviceContainers",
 );
 const connectToDeviceTemplate = document.getElementById(
-  "connectToDeviceTemplate"
+  "connectToDeviceTemplate",
 );
 
 let ipAddresses = ["192.168.1.180", ""];
@@ -262,7 +262,7 @@ const setupDevice = (device) => {
       switch (event.message.sensorType) {
         case "pressure":
           data = event.message.pressure.sensors.map(
-            (sensor) => sensor.rawValue
+            (sensor) => sensor.rawValue,
           );
           break;
         case "linearAcceleration":
@@ -345,7 +345,7 @@ function appendData(timestamp, sensorType, data) {
   }
   pendingSample[sensorType] = data;
   const gotAllSensorSamples = sensorTypes.every(
-    (sensorType) => sensorType in pendingSample
+    (sensorType) => sensorType in pendingSample,
   );
   if (gotAllSensorSamples) {
     //console.log("got all samples");
