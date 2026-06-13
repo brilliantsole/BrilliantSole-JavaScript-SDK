@@ -38,10 +38,10 @@ declare class FirmwareManager {
     sendMessage: SendSmpMessageCallback;
     constructor();
     eventDispatcher: FirmwareEventDispatcher;
-    get addEventListenter(): <T extends "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "*" | "firmwareUploadComplete">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>) => void, options?: {
+    get addEventListenter(): <T extends "*" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "*" | "firmwareUploadComplete">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>) => void) => void;
+    get removeEventListener(): <T extends "*" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>) => void) => void;
     get waitForEvent(): <T extends "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>>;
     parseMessage(messageType: FirmwareMessageType, dataView: DataView<ArrayBuffer>): void;
     uploadFirmware(file: FileLike): Promise<void>;

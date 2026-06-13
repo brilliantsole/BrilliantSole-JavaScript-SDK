@@ -34,15 +34,12 @@ function onAvailableDevices(availableDevices) {
       const toggleConnectionButton =
         availableDeviceContainer.querySelector(".toggleConnection");
       toggleConnectionButton.addEventListener("click", () => {
-        device.connectionManager = availableDevice.connectionManager;
-        device.reconnect();
+        availableDevice.toggleConnection();
       });
-      device.addEventListener("connectionStatus", () => {
+      availableDevice.addEventListener("connectionStatus", () => {
         toggleConnectionButton.disabled =
           device.connectionStatus != "notConnected";
       });
-      toggleConnectionButton.disabled =
-        device.connectionStatus != "notConnected";
 
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
@@ -57,8 +54,8 @@ async function getDevices() {
 }
 
 BS.DeviceManager.addEventListener("availableDevices", (event) => {
-  const devices = event.message.availableDevices;
-  onAvailableDevices(devices);
+  const { availableDevices } = event.message;
+  onAvailableDevices(availableDevices);
 });
 getDevices();
 
