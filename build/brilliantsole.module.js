@@ -33684,7 +33684,7 @@ if (isInBrowser) {
 }
 class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     get bluetoothId() {
-        return this.device.id;
+        return this.device?.id ?? "";
     }
     get canUpdateFirmware() {
         return this.#characteristics.has("smp");
@@ -35194,6 +35194,46 @@ class Device {
             .sendSmpMessage;
         this.#firmwareManager.eventDispatcher = this
             .#eventDispatcher;
+        this.#initThisEventListeners();
+        if (isInBrowser) {
+            window.addEventListener("beforeunload", () => {
+                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+                    this.clearSensorConfiguration();
+                }
+            });
+        }
+        if (isInNode) {
+            process.on("exit", () => {
+                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+                    this.clearSensorConfiguration();
+                }
+            });
+        }
+    }
+    static #DefaultConnectionManager() {
+        return new WebBluetoothConnectionManager();
+    }
+    #eventDispatcher = new EventDispatcher$1(this, DeviceEventTypes);
+    get addEventListener() {
+        return this.#eventDispatcher.addEventListener;
+    }
+    get #dispatchEvent() {
+        return this.#eventDispatcher.dispatchEvent;
+    }
+    get removeEventListener() {
+        return this.#eventDispatcher.removeEventListener;
+    }
+    get waitForEvent() {
+        return this.#eventDispatcher.waitForEvent;
+    }
+    get removeEventListeners() {
+        return this.#eventDispatcher.removeEventListeners;
+    }
+    removeAllEventListeners() {
+        this.#eventDispatcher.removeAllEventListeners();
+        this.#initThisEventListeners();
+    }
+    #initThisEventListeners() {
         this.addEventListener("getMtu", () => {
             _console$g.log("updating mtu...");
             this.#firmwareManager.mtu = this.mtu;
@@ -35327,42 +35367,6 @@ class Device {
             }
         });
         _a$3.OnDevice(this);
-        if (isInBrowser) {
-            window.addEventListener("beforeunload", () => {
-                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
-                    this.clearSensorConfiguration();
-                }
-            });
-        }
-        if (isInNode) {
-            process.on("exit", () => {
-                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
-                    this.clearSensorConfiguration();
-                }
-            });
-        }
-    }
-    static #DefaultConnectionManager() {
-        return new WebBluetoothConnectionManager();
-    }
-    #eventDispatcher = new EventDispatcher$1(this, DeviceEventTypes);
-    get addEventListener() {
-        return this.#eventDispatcher.addEventListener;
-    }
-    get #dispatchEvent() {
-        return this.#eventDispatcher.dispatchEvent;
-    }
-    get removeEventListener() {
-        return this.#eventDispatcher.removeEventListener;
-    }
-    get waitForEvent() {
-        return this.#eventDispatcher.waitForEvent;
-    }
-    get removeEventListeners() {
-        return this.#eventDispatcher.removeEventListeners;
-    }
-    get removeAllEventListeners() {
-        return this.#eventDispatcher.removeAllEventListeners;
     }
     #connectionManager;
     get connectionManager() {
@@ -36838,7 +36842,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager$1 = class DeviceManager {
+class DeviceManager {
     static shared = new DeviceManager();
     constructor() {
         if (DeviceManager.shared && this != DeviceManager.shared) {
@@ -36853,7 +36857,8 @@ let DeviceManager$1 = class DeviceManager {
     }
     #boundDeviceEventListeners = {
         getType: this.#onDeviceType.bind(this),
-        isConnected: this.#onDeviceIsConnected.bind(this),
+        notConnected: this.#onDeviceNotConnected.bind(this),
+        connected: this.#onDeviceConnected.bind(this),
         [wildcardEventType]: this.#onDeviceEvent.bind(this),
     };
     onDevice(device) {
@@ -36869,7 +36874,7 @@ let DeviceManager$1 = class DeviceManager {
             !device.canReconnect &&
             this.#availableDevices.includes(device)) {
             const deviceIndex = this.#availableDevices.indexOf(device);
-            this.availableDevices.splice(deviceIndex, 1);
+            this.#availableDevices.splice(deviceIndex, 1);
             this.#dispatchAvailableDevices();
         }
     }
@@ -36923,7 +36928,7 @@ let DeviceManager$1 = class DeviceManager {
             }
         }
         catch (error) {
-            _console$f.error(error);
+            _console$f.warn(error);
         }
     }
     #updateLocalStorageConfigurationForDevice(device) {
@@ -36983,7 +36988,7 @@ let DeviceManager$1 = class DeviceManager {
             bluetoothDevices = await navigator.bluetooth.getDevices();
         }
         catch (error) {
-            _console$f.error(error);
+            _console$f.warn(error);
         }
         _console$f.log({ bluetoothDevices });
         bluetoothDevices.forEach((bluetoothDevice) => {
@@ -37042,8 +37047,15 @@ let DeviceManager$1 = class DeviceManager {
     get removeAllEventListeners() {
         return this.#eventDispatcher.removeAllEventListeners;
     }
-    #onDeviceIsConnected(deviceEvent) {
+    #onDeviceConnected(deviceEvent) {
         const { target: device } = deviceEvent;
+        this.#onDeviceIsConnected(device);
+    }
+    #onDeviceNotConnected(deviceEvent) {
+        const { target: device } = deviceEvent;
+        this.#onDeviceIsConnected(device);
+    }
+    #onDeviceIsConnected(device) {
         if (device.isConnected) {
             if (!this.#connectedDevices.includes(device)) {
                 _console$f.log("adding device", device);
@@ -37132,8 +37144,8 @@ let DeviceManager$1 = class DeviceManager {
             connectedDevices: this.connectedDevices,
         });
     }
-};
-var DeviceManager = DeviceManager$1.shared;
+}
+var DeviceManager$1 = DeviceManager.shared;
 
 const _console$e = createConsole("WindowManagerUtils", { log: false });
 const WindowManagerMessageTypes = [
@@ -37389,7 +37401,7 @@ const RequiredDeviceInformationMessageTypes = [
     "batteryLevel",
     ...RequiredInformationConnectionMessages,
 ];
-const _console$b = createConsole("BaseServer", { log: true });
+const _console$b = createConsole("BaseServer", { log: false });
 const ServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -37411,7 +37423,7 @@ class BaseServer {
     constructor() {
         _console$b.assertWithError(scanner, "no scanner defined");
         addEventListeners(scanner, this.#boundScannerListeners);
-        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
     }
     clients = [];
@@ -37452,7 +37464,7 @@ class BaseServer {
         _console$b.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager.connectedDevices.forEach((device) => {
+            DeviceManager$1.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -37518,7 +37530,7 @@ class BaseServer {
     get #discoveredDevicesMessage() {
         const serverMessages = scanner.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -37530,7 +37542,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -37748,7 +37760,7 @@ class BaseServer {
             case "disconnectFromDevice":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
                     device = device ?? scanner.devices[deviceId];
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
@@ -37769,7 +37781,7 @@ class BaseServer {
             case "deviceMessage":
                 {
                     const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -37784,7 +37796,7 @@ class BaseServer {
             case "requiredDeviceInformation":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -37927,7 +37939,7 @@ let WindowServer$1 = class WindowServer extends BaseServer {
 };
 var WindowServer = WindowServer$1.shared;
 
-const _console$9 = createConsole("WindowManager", { log: true });
+const _console$9 = createConsole("WindowManager", { log: false });
 const WindowManagerServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -38181,7 +38193,7 @@ class WindowManagerServer {
 var WindowManagerServer_default = WindowManagerServer.shared;
 WindowServer.init();
 
-const _console$8 = createConsole("WindowManagerClient", { log: true });
+const _console$8 = createConsole("WindowManagerClient", { log: false });
 const ClientConnectionStatuses$1 = [
     "notConnected",
     "connecting",
@@ -38483,7 +38495,7 @@ class ClientConnectionManager extends BaseConnectionManager {
 }
 
 var _a;
-const _console$6 = createConsole("BaseClient", { log: true });
+const _console$6 = createConsole("BaseClient", { log: false });
 const ClientConnectionStatuses = [
     "notConnected",
     "connecting",
@@ -38828,7 +38840,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager._checkDeviceAvailability(device);
+            DeviceManager$1._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -38938,6 +38950,9 @@ class DisplayCanvasHelper {
         this.numberOfColors = 16;
         this.#bitmapContext = this.#bitmapCanvas.getContext("2d");
         this.#bitmapContext.imageSmoothingEnabled = false;
+        this.#initThisEventListeners();
+    }
+    #initThisEventListeners() {
         this.addEventListener("ready", () => {
             this.#isReady = true;
             this.#onSentContextCommands();
@@ -38960,8 +38975,9 @@ class DisplayCanvasHelper {
     get removeEventListeners() {
         return this.#eventDispatcher.removeEventListeners;
     }
-    get removeAllEventListeners() {
-        return this.#eventDispatcher.removeAllEventListeners;
+    removeAllEventListeners() {
+        this.#eventDispatcher.removeAllEventListeners();
+        this.#initThisEventListeners();
     }
     #canvas;
     get canvas() {
@@ -42118,7 +42134,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager.addEventListener("deviceConnected", (event) => {
+        DeviceManager$1.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -42317,5 +42333,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ConnectionEventTypes, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
 //# sourceMappingURL=brilliantsole.module.js.map

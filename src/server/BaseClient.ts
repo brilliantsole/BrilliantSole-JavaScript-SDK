@@ -31,7 +31,7 @@ import {
   ConnectionTypes,
 } from "../connection/BaseConnectionManager.ts";
 
-const _console = createConsole("BaseClient", { log: true });
+const _console = createConsole("BaseClient", { log: false });
 
 export const ClientConnectionStatuses = [
   "notConnected",

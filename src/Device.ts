@@ -320,6 +320,54 @@ class Device {
     this.#firmwareManager.eventDispatcher = this
       .#eventDispatcher as FirmwareEventDispatcher;
 
+    this.#initThisEventListeners();
+
+    if (isInBrowser) {
+      window.addEventListener("beforeunload", () => {
+        if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+          this.clearSensorConfiguration();
+        }
+      });
+    }
+    if (isInNode) {
+      /** can add more node leave handlers https://gist.github.com/hyrious/30a878f6e6a057f09db87638567cb11a */
+      process.on("exit", () => {
+        if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+          this.clearSensorConfiguration();
+        }
+      });
+    }
+  }
+
+  static #DefaultConnectionManager(): BaseConnectionManager {
+    return new WebBluetoothConnectionManager();
+  }
+
+  #eventDispatcher: DeviceEventDispatcher = new EventDispatcher(
+    this as Device,
+    DeviceEventTypes,
+  );
+  get addEventListener() {
+    return this.#eventDispatcher.addEventListener;
+  }
+  get #dispatchEvent() {
+    return this.#eventDispatcher.dispatchEvent;
+  }
+  get removeEventListener() {
+    return this.#eventDispatcher.removeEventListener;
+  }
+  get waitForEvent() {
+    return this.#eventDispatcher.waitForEvent;
+  }
+  get removeEventListeners() {
+    return this.#eventDispatcher.removeEventListeners;
+  }
+  removeAllEventListeners() {
+    this.#eventDispatcher.removeAllEventListeners();
+    this.#initThisEventListeners();
+  }
+
+  #initThisEventListeners() {
     this.addEventListener("getMtu", () => {
       _console.log("updating mtu...");
       this.#firmwareManager.mtu = this.mtu;
@@ -463,48 +511,6 @@ class Device {
     });
 
     Device.OnDevice(this);
-    if (isInBrowser) {
-      window.addEventListener("beforeunload", () => {
-        if (this.isConnected && this.clearSensorConfigurationOnLeave) {
-          this.clearSensorConfiguration();
-        }
-      });
-    }
-    if (isInNode) {
-      /** can add more node leave handlers https://gist.github.com/hyrious/30a878f6e6a057f09db87638567cb11a */
-      process.on("exit", () => {
-        if (this.isConnected && this.clearSensorConfigurationOnLeave) {
-          this.clearSensorConfiguration();
-        }
-      });
-    }
-  }
-
-  static #DefaultConnectionManager(): BaseConnectionManager {
-    return new WebBluetoothConnectionManager();
-  }
-
-  #eventDispatcher: DeviceEventDispatcher = new EventDispatcher(
-    this as Device,
-    DeviceEventTypes,
-  );
-  get addEventListener() {
-    return this.#eventDispatcher.addEventListener;
-  }
-  get #dispatchEvent() {
-    return this.#eventDispatcher.dispatchEvent;
-  }
-  get removeEventListener() {
-    return this.#eventDispatcher.removeEventListener;
-  }
-  get waitForEvent() {
-    return this.#eventDispatcher.waitForEvent;
-  }
-  get removeEventListeners() {
-    return this.#eventDispatcher.removeEventListeners;
-  }
-  get removeAllEventListeners() {
-    return this.#eventDispatcher.removeAllEventListeners;
   }
 
   // CONNECTION MANAGER

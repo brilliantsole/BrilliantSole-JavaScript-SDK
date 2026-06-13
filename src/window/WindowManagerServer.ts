@@ -23,7 +23,7 @@ import {
 
 import { default as WindowServer } from "../server/window/WindowServer.ts";
 
-const _console = createConsole("WindowManager", { log: true });
+const _console = createConsole("WindowManager", { log: false });
 
 export interface WindowManagerServerClient {
   iframe: HTMLIFrameElement;

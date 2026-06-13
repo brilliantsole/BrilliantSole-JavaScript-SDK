@@ -23,7 +23,7 @@ import {
 import { parseMessage } from "../utils/ParseUtils.ts";
 import { MessageLike } from "../server/ServerUtils.ts";
 
-const _console = createConsole("WindowManagerClient", { log: true });
+const _console = createConsole("WindowManagerClient", { log: false });
 
 export const ClientConnectionStatuses = [
   "notConnected",

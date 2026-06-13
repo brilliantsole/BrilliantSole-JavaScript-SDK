@@ -65,7 +65,7 @@ const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...RequiredInformationConnectionMessages,
 ];
 
-const _console = createConsole("BaseServer", { log: true });
+const _console = createConsole("BaseServer", { log: false });
 
 export interface BaseServerClient {}
 

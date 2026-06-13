@@ -233,6 +233,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.numberOfColors = 16;
     this.#bitmapContext = this.#bitmapCanvas.getContext("2d")!;
     this.#bitmapContext.imageSmoothingEnabled = false;
+    this.#initThisEventListeners();
+  }
+  #initThisEventListeners() {
     this.addEventListener("ready", () => {
       this.#isReady = true;
       this.#onSentContextCommands();
@@ -260,8 +263,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   get removeEventListeners() {
     return this.#eventDispatcher.removeEventListeners;
   }
-  get removeAllEventListeners() {
-    return this.#eventDispatcher.removeAllEventListeners;
+  removeAllEventListeners() {
+    this.#eventDispatcher.removeAllEventListeners();
+    this.#initThisEventListeners();
   }
 
   // CANVAS

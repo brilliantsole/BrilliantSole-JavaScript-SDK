@@ -130,7 +130,8 @@ class DeviceManager {
   // DEVICE LISTENERS
   #boundDeviceEventListeners: BoundDeviceEventListeners = {
     getType: this.#onDeviceType.bind(this),
-    isConnected: this.#onDeviceIsConnected.bind(this),
+    notConnected: this.#onDeviceNotConnected.bind(this),
+    connected: this.#onDeviceConnected.bind(this),
     [wildcardEventType]: this.#onDeviceEvent.bind(this),
   };
   /** @private */
@@ -156,7 +157,7 @@ class DeviceManager {
       this.#availableDevices.includes(device)
     ) {
       const deviceIndex = this.#availableDevices.indexOf(device);
-      this.availableDevices.splice(deviceIndex, 1);
+      this.#availableDevices.splice(deviceIndex, 1);
       this.#dispatchAvailableDevices();
     }
   }
@@ -225,7 +226,7 @@ class DeviceManager {
         await this.getDevices(); // redundant?
       }
     } catch (error) {
-      _console.error(error);
+      _console.warn(error);
     }
   }
 
@@ -303,7 +304,7 @@ class DeviceManager {
     try {
       bluetoothDevices = await navigator.bluetooth.getDevices();
     } catch (error) {
-      _console.error(error);
+      _console.warn(error);
     }
 
     _console.log({ bluetoothDevices });
@@ -383,8 +384,15 @@ class DeviceManager {
     return this.#eventDispatcher.removeAllEventListeners;
   }
 
-  #onDeviceIsConnected(deviceEvent: DeviceEventMap["isConnected"]) {
+  #onDeviceConnected(deviceEvent: DeviceEventMap["connected"]) {
     const { target: device } = deviceEvent;
+    this.#onDeviceIsConnected(device);
+  }
+  #onDeviceNotConnected(deviceEvent: DeviceEventMap["notConnected"]) {
+    const { target: device } = deviceEvent;
+    this.#onDeviceIsConnected(device);
+  }
+  #onDeviceIsConnected(device: Device) {
     if (device.isConnected) {
       if (!this.#connectedDevices.includes(device)) {
         _console.log("adding device", device);
