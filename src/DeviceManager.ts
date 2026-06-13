@@ -25,6 +25,7 @@ import { capitalizeFirstCharacter } from "./utils/stringUtils.ts";
 import {
   AddPrefixToInterfaceKeys,
   ExtendInterfaceValues,
+  IfAny,
   KeyOf,
 } from "./utils/TypeScriptUtils.ts";
 
@@ -71,11 +72,23 @@ const BaseDeviceManagerEventTypes = [
 ] as const;
 type BaseDeviceManagerEventType = (typeof BaseDeviceManagerEventTypes)[number];
 
+export type WildcardDeviceEventMessage<BaseMessage> = {
+  [K in DeviceEventType]: BaseMessage &
+    (K extends keyof DeviceEventMessages
+      ? IfAny<DeviceEventMessages[K], {}, DeviceEventMessages[K]>
+      : {}) & {
+      deviceType: K;
+      device: Device;
+    };
+}[DeviceEventType];
+
 interface BaseDeviceManagerEventMessages {
   availableDevices: { availableDevices: Device[] };
   connectedDevices: { connectedDevices: Device[] };
-  [wildcardDeviceEventType]: DeviceEvent;
+  [wildcardDeviceEventType]: WildcardDeviceEventMessage<BaseDeviceManagerDeviceEventMessage>;
 }
+
+// const x: WildcardDeviceEventMessage<BaseDeviceManagerDeviceEventMessage>["device"];
 
 export const DeviceManagerEventTypes = [
   ...DeviceManagerDeviceEventTypes,
@@ -413,11 +426,6 @@ class DeviceManager {
           }
           this.#SaveToLocalStorage();
         }
-        this.#dispatchEvent("deviceConnected", { device });
-        this.#dispatchEvent("deviceIsConnected", {
-          device,
-          isConnected: device.isConnected,
-        });
         this.#dispatchConnectedDevices();
       } else {
         _console.log("device already included");
@@ -429,11 +437,6 @@ class DeviceManager {
           this.#connectedDevices.indexOf(device),
           1,
         );
-        this.#dispatchEvent("deviceNotConnected", { device });
-        this.#dispatchEvent("deviceIsConnected", {
-          device,
-          isConnected: device.isConnected,
-        });
         this.#dispatchConnectedDevices();
       } else {
         _console.log("device already not included");
@@ -459,15 +462,15 @@ class DeviceManager {
     this._checkDeviceAvailability(device);
   }
   #onDeviceEvent(deviceEvent: DeviceEventMap[WildcardEventType]) {
-    const { type, target: device, message } = deviceEvent;
+    const { type: deviceType, target: device, message } = deviceEvent;
 
     this.#dispatchEvent(wildcardDeviceEventType, {
-      type,
       ...message,
       device,
+      deviceType,
     });
 
-    getDeviceManagerDeviceEventTypes(type as DeviceEventType).forEach(
+    getDeviceManagerDeviceEventTypes(deviceType as DeviceEventType).forEach(
       (_type) => {
         this.#dispatchEvent(_type, {
           ...message,

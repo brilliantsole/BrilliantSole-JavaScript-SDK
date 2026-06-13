@@ -10,10 +10,11 @@ export type AddKeysAsPropertyToInterface<Interface, Key extends string> = {
     [Value in keyof Interface]: AddProperty<Interface[Value], Key, Value>;
 };
 export type ExtendInterfaceValues<Interface, T> = {
-    [Key in keyof Interface]: Interface[Key] & T;
+    [Key in keyof Interface]: [Interface[Key]] extends [undefined] ? T : Interface[Key] & T;
 };
 export type CapitalizeFirstLetter<S extends string> = S extends `${infer First}${infer Rest}` ? `${Uppercase<First>}${Rest}` : S;
 export type AddPrefix<P extends string, S extends string> = `${P}${CapitalizeFirstLetter<S>}`;
 export type AddPrefixToInterfaceKeys<Interface, P extends string> = {
     [Key in keyof Interface as `${AddPrefix<P, Key & string>}`]: Interface[Key];
 };
+export type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;
