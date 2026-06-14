@@ -34,7 +34,7 @@ export const ClientConnectionTypes = ["noble", "webSocket", "udp"] as const;
 export type ClientConnectionType = (typeof ClientConnectionTypes)[number];
 
 interface BaseConnectOptions {
-  type: "client" | "webBluetooth" | "webSocket" | "udp";
+  type: "client" | "webBluetooth" | "webSocket" | "udp" | undefined;
 }
 export interface WebBluetoothConnectOptions extends BaseConnectOptions {
   type: "webBluetooth";

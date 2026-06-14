@@ -726,9 +726,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           const device = DeviceManager.availableDevices.find(
             (device) => device.bluetoothId == deviceId,
           );
-          if (device) {
-            // @ts-ignore
-            device.connect({ type: connectionType });
+          if (device && !connectionType && device.canReconnect) {
+            device.reconnect();
           } else {
             scanner.connectToDevice(deviceId, connectionType);
           }
