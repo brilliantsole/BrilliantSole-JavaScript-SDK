@@ -19,7 +19,7 @@ import { DisplayMessageTypes } from "../DisplayManager.ts";
 import { LedMessageTypes } from "../led/LedManager.ts";
 import { createMessage } from "../server/ServerUtils.ts";
 
-const _console = createConsole("BaseConnectionManager", { log: false });
+const _console = createConsole("BaseConnectionManager", { log: true });
 
 export const ConnectionTypes = [
   "webBluetooth",
@@ -32,14 +32,8 @@ export type ConnectionType = (typeof ConnectionTypes)[number];
 
 export const ClientConnectionTypes = ["noble", "webSocket", "udp"] as const;
 export type ClientConnectionType = (typeof ClientConnectionTypes)[number];
-export type BaseConnectOptionsType =
-  | "client"
-  | "webBluetooth"
-  | "webSocket"
-  | "udp"
-  | undefined;
 interface BaseConnectOptions {
-  type: "client" | "webBluetooth" | "webSocket" | "udp" | undefined;
+  type?: ConnectionType;
 }
 export interface WebBluetoothConnectOptions extends BaseConnectOptions {
   type: "webBluetooth";
@@ -61,16 +55,16 @@ export interface UDPConnectOptions extends BaseWifiConnectOptions {
   receivePort?: number;
 }
 
-interface UndefinedConnectOptions extends BaseConnectOptions {
-  type: undefined;
+export interface NobleConnectOptions extends BaseConnectOptions {
+  type: "noble";
 }
 
 export type ConnectOptions = { reconnect?: boolean } & (
-  | UndefinedConnectOptions
   | WebBluetoothConnectOptions
   | WebSocketConnectOptions
   | UDPConnectOptions
   | ClientConnectOptions
+  | NobleConnectOptions
 );
 
 export const ConnectionStatuses = [

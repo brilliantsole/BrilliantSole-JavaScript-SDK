@@ -23,7 +23,7 @@ import {
 
 import { default as WindowServer } from "../server/window/WindowServer.ts";
 
-const _console = createConsole("WindowManager", { log: false });
+const _console = createConsole("WindowManager", { log: true });
 
 export interface WindowManagerServerClient {
   iframe: HTMLIFrameElement;
@@ -87,8 +87,10 @@ class WindowManagerServer {
   get removeEventListeners() {
     return this.#eventDispatcher.removeEventListeners;
   }
-  get removeAllEventListeners() {
-    return this.#eventDispatcher.removeAllEventListeners;
+  removeAllEventListeners() {
+    this.#eventDispatcher.removeAllEventListeners();
+    // @ts-expect-error
+    WindowServer.init();
   }
 
   // CONSTRUCTOR

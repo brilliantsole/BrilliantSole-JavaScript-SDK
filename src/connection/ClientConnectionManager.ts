@@ -13,14 +13,14 @@ import { ClientDeviceMessage } from "../server/ServerUtils.ts";
 import BaseClient from "../server/BaseClient.ts";
 import { DiscoveredDevice } from "../BS.ts";
 
-const _console = createConsole("ClientConnectionManager", { log: false });
+const _console = createConsole("ClientConnectionManager", { log: true });
 
 export type SendClientMessageCallback = (
   ...messages: ClientDeviceMessage[]
 ) => void;
 
 export type SendClientConnectMessageCallback = (
-  connectionType?: ClientConnectionType
+  connectionType?: ClientConnectionType,
 ) => void;
 
 const ClientDeviceInformationMessageTypes: ConnectionMessageType[] = [
@@ -65,16 +65,20 @@ class ClientConnectionManager extends BaseConnectionManager {
   }
   set isConnected(newIsConnected) {
     _console.assertTypeWithError(newIsConnected, "boolean");
-    // if (this.#isConnected == newIsConnected) {
-    //   _console.log("redundant newIsConnected assignment", newIsConnected);
-    //   return;
-    // }
+    if (this.#isConnected == newIsConnected) {
+      _console.log("redundant newIsConnected assignment", newIsConnected);
+      return;
+    }
     this.#isConnected = newIsConnected;
+
+    _console.log({ isConnected: this.isConnected });
 
     this.status = this.#isConnected ? "connected" : "notConnected";
 
     if (this.isConnected) {
       this.#requestDeviceInformation();
+    } else {
+      this.#didRequestDeviceInformation = false;
     }
   }
 
@@ -129,9 +133,17 @@ class ClientConnectionManager extends BaseConnectionManager {
     this.sendClientMessage({ type: "tx", data });
   }
 
+  #didRequestDeviceInformation = false;
   #requestDeviceInformation() {
-    //this.sendClientMessage(...ClientDeviceInformationMessageTypes);
-    this.sendRequiredDeviceInformationMessage();
+    _console.log("requestDeviceInformation");
+
+    if (this.#didRequestDeviceInformation == false) {
+      //this.sendClientMessage(...ClientDeviceInformationMessageTypes);
+      this.sendRequiredDeviceInformationMessage();
+      this.#didRequestDeviceInformation = true;
+    } else {
+      _console.log("already requested deviceInformation");
+    }
   }
 
   onClientMessage(dataView: DataView<ArrayBuffer>) {
@@ -141,14 +153,14 @@ class ClientConnectionManager extends BaseConnectionManager {
       DeviceEventTypes,
       this.#onClientMessageCallback.bind(this),
       null,
-      true
+      true,
     );
     this.onMessagesReceived!();
   }
 
   #onClientMessageCallback(
     messageType: DeviceEventType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     let byteOffset = 0;
 

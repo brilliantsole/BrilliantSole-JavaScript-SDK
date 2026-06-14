@@ -150,7 +150,7 @@ import LedManager, {
   SendLedMessageCallback,
 } from "./led/LedManager.ts";
 
-const _console = createConsole("Device", { log: false });
+const _console = createConsole("Device", { log: true });
 
 export const DeviceEventTypes = [
   "connectionMessage",
@@ -235,6 +235,7 @@ export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
   "getFileTypes",
 
   "isWifiAvailable",
+  "getLedInformation",
 ];
 
 class Device {
@@ -650,10 +651,14 @@ class Device {
 
   #didReceiveMessageTypes(messageTypes: ConnectionMessageType[]) {
     return messageTypes.every((messageType) => {
-      const hasConnectionMessage =
-        this.latestConnectionMessages.has(messageType);
+      let hasConnectionMessage = this.latestConnectionMessages.has(messageType);
       if (!hasConnectionMessage) {
-        _console.log(`didn't receive "${messageType}" message`);
+        // TODO: - remove when standard
+        if (messageType == "getLedInformation") {
+          hasConnectionMessage = true;
+        } else {
+          _console.log(`didn't receive "${messageType}" message`);
+        }
       }
       return hasConnectionMessage;
     });
@@ -706,8 +711,6 @@ class Device {
         type: messageType,
       }),
     );
-    // TODO: - add to RequiredInformationConnectionMessages once fully integrated
-    messages.push({ type: "getLedInformation" });
     this.#sendTxMessages(messages);
   }
 
@@ -795,9 +798,6 @@ class Device {
     let reconnect = true;
     switch (typeof arg) {
       case "boolean":
-      case "bigint":
-      case "number":
-      case "string":
         reconnect = Boolean(arg);
         break;
       case "object":
@@ -810,17 +810,25 @@ class Device {
     }
     _console.log("reconnect", { reconnect, options });
 
-    if (this.isConnected) {
-      this.disconnect();
-    } else if (reconnect && this.canReconnect) {
-      try {
-        await this.reconnect();
-      } catch (error) {
-        _console.error("error trying to reconnect", error);
-        await this.connect(options);
-      }
-    } else {
-      await this.connect(options);
+    switch (this.connectionStatus) {
+      case "connecting":
+      case "connected":
+        await this.disconnect();
+        break;
+      case "disconnecting":
+        break;
+      case "notConnected":
+        if (reconnect && this.canReconnect) {
+          try {
+            await this.reconnect();
+          } catch (error) {
+            _console.error("error trying to reconnect", error);
+            await this.connect(options);
+          }
+        } else {
+          await this.connect(options);
+        }
+        break;
     }
   }
 
@@ -924,6 +932,7 @@ class Device {
     this.#batteryLevel = undefined;
   }
   #clearConnection() {
+    _console.log("clearConnection");
     this.connectionManager?.clear();
     this.latestConnectionMessages.clear();
   }

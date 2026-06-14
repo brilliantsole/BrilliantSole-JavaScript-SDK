@@ -1,3 +1,4 @@
+import { OneOrMany } from "./TypeScriptUtils.ts";
 export declare const wildcardEventType: "*";
 export type WildcardEventType = typeof wildcardEventType;
 export type EventMap<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
@@ -36,8 +37,9 @@ export type ListenerObject<Target, EventType extends string, EventMessages exten
     once?: boolean;
     shouldRemove?: boolean;
 };
+type BoundEventListener<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>, K extends EventType | typeof wildcardEventType> = K extends typeof wildcardEventType ? (event: Event<Target, EventType, EventMessages>) => void : (event: SpecificEvent<Target, EventType, EventMessages, K & EventType>) => void;
 export type BoundEventListeners<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
-    [K in EventType | typeof wildcardEventType]?: K extends typeof wildcardEventType ? (event: Event<Target, EventType, EventMessages>) => void : (event: SpecificEvent<Target, EventType, EventMessages, K & EventType>) => void;
+    [K in EventType | typeof wildcardEventType]?: OneOrMany<BoundEventListener<Target, EventType, EventMessages, K>>;
 };
 export type EventDispatcherTypes<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
     Event: Event<Target, EventType, EventMessages>;

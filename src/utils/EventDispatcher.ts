@@ -1,5 +1,6 @@
 import autoBind from "auto-bind";
 import { createConsole } from "./Console.ts";
+import { OneOrMany } from "./TypeScriptUtils.ts";
 
 const _console = createConsole("EventDispatcher", { log: false });
 
@@ -77,18 +78,25 @@ export type ListenerObject<
   shouldRemove?: boolean;
 };
 
+type BoundEventListener<
+  Target,
+  EventType extends string,
+  EventMessages extends Partial<Record<EventType, any>>,
+  K extends EventType | typeof wildcardEventType,
+> = K extends typeof wildcardEventType
+  ? (event: Event<Target, EventType, EventMessages>) => void
+  : (
+      event: SpecificEvent<Target, EventType, EventMessages, K & EventType>,
+    ) => void;
+
 export type BoundEventListeners<
   Target,
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>,
 > = {
-  [K in
-    | EventType
-    | typeof wildcardEventType]?: K extends typeof wildcardEventType
-    ? (event: Event<Target, EventType, EventMessages>) => void
-    : (
-        event: SpecificEvent<Target, EventType, EventMessages, K & EventType>,
-      ) => void;
+  [K in EventType | typeof wildcardEventType]?: OneOrMany<
+    BoundEventListener<Target, EventType, EventMessages, K>
+  >;
 };
 
 export type EventDispatcherTypes<

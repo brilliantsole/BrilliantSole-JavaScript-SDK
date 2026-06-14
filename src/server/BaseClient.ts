@@ -1,7 +1,6 @@
 import { createConsole } from "../utils/Console.ts";
 import {
   ServerMessageTypes,
-  ServerMessage,
   ClientDeviceMessage,
   createClientDeviceMessage,
   ServerMessageType,
@@ -9,8 +8,6 @@ import {
 } from "./ServerUtils.ts";
 import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
 import EventDispatcher, {
-  BoundEventListeners,
-  Event,
   EventDispatcherTypes,
 } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
@@ -31,7 +28,7 @@ import {
   ConnectionTypes,
 } from "../connection/BaseConnectionManager.ts";
 
-const _console = createConsole("BaseClient", { log: false });
+const _console = createConsole("BaseClient", { log: true });
 
 export const ClientConnectionStatuses = [
   "notConnected",

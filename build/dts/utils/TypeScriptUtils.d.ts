@@ -18,3 +18,4 @@ export type AddPrefixToInterfaceKeys<Interface, P extends string> = {
     [Key in keyof Interface as `${AddPrefix<P, Key & string>}`]: Interface[Key];
 };
 export type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;
+export type OneOrMany<T> = T | T[];

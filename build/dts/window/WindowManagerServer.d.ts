@@ -36,7 +36,7 @@ declare class WindowManagerServer {
         immediate?: boolean;
     }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<WindowManagerServer, "clientConnected" | "clientDisconnected", WindowManagerServerEventMessages, T>>;
     get removeEventListeners(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T) => void;
-    get removeAllEventListeners(): () => void;
+    removeAllEventListeners(): void;
     static readonly shared: WindowManagerServer;
     constructor();
     get clients(): WindowManagerServerClient[];

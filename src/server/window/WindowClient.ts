@@ -11,7 +11,7 @@ import {
   WindowManagerClientEventMap,
 } from "../../window/WindowManagerClient.ts";
 
-const _console = createConsole("WindowClient", { log: false });
+const _console = createConsole("WindowClient", { log: true });
 
 class WindowClient extends BaseClient {
   static readonly shared = new WindowClient();

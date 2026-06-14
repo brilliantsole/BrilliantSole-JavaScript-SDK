@@ -174,7 +174,7 @@ const createIframeContainer = () => {
   iframeContainers.appendChild(iframeContainer);
 };
 createIframeContainer();
-createIframeContainer();
+// createIframeContainer();
 
 BS.WindowServer.clientSensorConfigurationToDeviceGuardManager.add(
   ({ client, message, sensorType, sensorRate }) => {

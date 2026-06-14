@@ -34,7 +34,7 @@ function onAvailableDevices(availableDevices) {
       const toggleConnectionButton =
         availableDeviceContainer.querySelector(".toggleConnection");
       toggleConnectionButton.addEventListener("click", () => {
-        availableDevice.toggleConnection();
+        availableDevice.toggleConnection(true);
       });
       availableDevice.addEventListener(
         "connectionStatus",
@@ -49,8 +49,6 @@ function onAvailableDevices(availableDevices) {
               break;
           }
           toggleConnectionButton.innerText = innerText;
-          // toggleConnectionButton.disabled =
-          //   availableDevice.connectionStatus != "notConnected";
         },
         { immediate: true },
       );

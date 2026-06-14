@@ -25,11 +25,11 @@ declare class SensorConfigurationManager {
     constructor();
     sendMessage: SendSensorConfigurationMessageCallback;
     eventDispatcher: SensorConfigurationEventDispatcher;
-    get addEventListener(): <T extends "getSensorConfiguration" | "setSensorConfiguration" | "*">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getSensorConfiguration" | "setSensorConfiguration", SensorConfigurationEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
+    get addEventListener(): <T extends "*" | "getSensorConfiguration" | "setSensorConfiguration">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getSensorConfiguration" | "setSensorConfiguration", SensorConfigurationEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
     get waitForEvent(): <T extends "getSensorConfiguration" | "setSensorConfiguration">(type: T, options?: {
         immediate?: boolean;
     }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getSensorConfiguration" | "setSensorConfiguration", SensorConfigurationEventMessages, T>>;
-    get availableSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone" | "buttons" | "touches" | "light")[];
+    get availableSensorTypes(): ("acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "buttons" | "touches" | "camera" | "microphone" | "light" | "pressure")[];
     hasSensorType(sensorType: SensorType): boolean;
     get configuration(): SensorConfiguration;
     clear(): void;
