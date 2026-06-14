@@ -22,10 +22,9 @@ import fs from 'fs/promises';
 import * as _alawmulaw from 'alawmulaw';
 import * as dgram from 'dgram';
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 const isInProduction =
-__BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+"__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 let isInIframe = false;
 try {
@@ -153,9 +152,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -13306,6 +13302,9 @@ class Device {
             _console$c.log("already connecting");
             return;
         }
+        if (options?.reconnect && this.canReconnect) {
+            return this.reconnect();
+        }
         _console$c.log("connect options", options);
         if (options) {
             switch (options.type) {
@@ -16220,7 +16219,7 @@ const RequiredDeviceInformationMessageTypes = [
     "batteryLevel",
     ...RequiredInformationConnectionMessages,
 ];
-const _console$3 = createConsole("BaseServer", { log: true });
+const _console$3 = createConsole("BaseServer", { log: false });
 const ServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -16574,8 +16573,8 @@ class BaseServer {
                         _console$3.log(`connecting to device with id ${deviceId}...`);
                     }
                     const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    if (device && !connectionType && device.canReconnect) {
-                        device.reconnect();
+                    if (device) {
+                        device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
                         scanner$1.connectToDevice(deviceId, connectionType);

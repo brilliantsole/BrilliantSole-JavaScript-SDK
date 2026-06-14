@@ -25,16 +25,17 @@ import { MessageLike } from "../server/ServerUtils.ts";
 
 const _console = createConsole("WindowManagerClient", { log: false });
 
-export const ClientConnectionStatuses = [
+export const WindowManagerClientConnectionStatuses = [
   "notConnected",
   "connecting",
   "connected",
   "disconnecting",
 ] as const;
-export type ClientConnectionStatus = (typeof ClientConnectionStatuses)[number];
+export type ClientConnectionStatus =
+  (typeof WindowManagerClientConnectionStatuses)[number];
 
 export const WindowManagerClientEventTypes = [
-  ...ClientConnectionStatuses,
+  ...WindowManagerClientConnectionStatuses,
   "connectionStatus",
   "isConnected",
   "serverMessage",

@@ -1444,7 +1444,12 @@ interface UDPConnectOptions extends BaseWifiConnectOptions {
     type: "udp";
     receivePort?: number;
 }
-type ConnectOptions = WebBluetoothConnectOptions | WebSocketConnectOptions | UDPConnectOptions | ClientConnectOptions;
+interface UndefinedConnectOptions extends BaseConnectOptions {
+    type: undefined;
+}
+type ConnectOptions = {
+    reconnect?: boolean;
+} & (UndefinedConnectOptions | WebBluetoothConnectOptions | WebSocketConnectOptions | UDPConnectOptions | ClientConnectOptions);
 declare const ConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 type ConnectionStatus = (typeof ConnectionStatuses)[number];
 declare const ConnectionEventTypes: readonly ["notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected"];

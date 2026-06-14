@@ -32,7 +32,12 @@ export type ConnectionType = (typeof ConnectionTypes)[number];
 
 export const ClientConnectionTypes = ["noble", "webSocket", "udp"] as const;
 export type ClientConnectionType = (typeof ClientConnectionTypes)[number];
-
+export type BaseConnectOptionsType =
+  | "client"
+  | "webBluetooth"
+  | "webSocket"
+  | "udp"
+  | undefined;
 interface BaseConnectOptions {
   type: "client" | "webBluetooth" | "webSocket" | "udp" | undefined;
 }
@@ -55,11 +60,18 @@ export interface UDPConnectOptions extends BaseWifiConnectOptions {
   //sendPort: number;
   receivePort?: number;
 }
-export type ConnectOptions =
+
+interface UndefinedConnectOptions extends BaseConnectOptions {
+  type: undefined;
+}
+
+export type ConnectOptions = { reconnect?: boolean } & (
+  | UndefinedConnectOptions
   | WebBluetoothConnectOptions
   | WebSocketConnectOptions
   | UDPConnectOptions
-  | ClientConnectOptions;
+  | ClientConnectOptions
+);
 
 export const ConnectionStatuses = [
   "notConnected",

@@ -39,31 +39,124 @@ BS.DeviceManager.addEventListener("deviceConnected", (event) => {
     },
     { immediate: true },
   );
-  const disconnectButton = deviceContainer.querySelector(".disconnect");
-  disconnectButton.addEventListener("click", () => {
+  const toggleConnectionButton =
+    deviceContainer.querySelector(".toggleConnection");
+  toggleConnectionButton.addEventListener("click", () => {
     device.disconnect();
   });
 
+  device.addEventListener(
+    "connectionStatus",
+    (event) => {
+      let innerText = device.connectionStatus;
+      switch (device.connectionStatus) {
+        case "connected":
+          innerText = "disconnect";
+          break;
+        case "notConnected":
+          innerText = "connect";
+          break;
+      }
+      toggleConnectionButton.innerText = innerText;
+    },
+    {
+      immediate: true,
+    },
+  );
+
   devicesContainer.appendChild(deviceContainer);
 
-  device.addEventListener(
-    "notConnected",
-    () => {
-      devicesContainer.removeChild(deviceContainer);
-    },
-    { once: true },
-  );
+  device.addEventListener("notConnected", () => {
+    deviceContainer.remove();
+  });
 });
 
+// AVAILABLE DEVICES
+
+const availableDevicesContainer = document.getElementById(
+  "availableDevicesContainer",
+);
+/** @type {HTMLTemplateElement} */
+const availableDeviceContainerTemplate = document.getElementById(
+  "availableDeviceContainerTemplate",
+);
+BS.DeviceManager.addEventListener("availableDevice", (event) => {
+  const { availableDevice: device } = event.message;
+
+  const availableDeviceContainer = availableDeviceContainerTemplate.content
+    .cloneNode(true)
+    .querySelector(".availableDeviceContainer");
+
+  const availableDeviceNameSpan =
+    availableDeviceContainer.querySelector(".name");
+  device.addEventListener(
+    "getName",
+    () => {
+      availableDeviceNameSpan.innerText = device.name;
+    },
+    { immediate: true },
+  );
+
+  const availableDeviceTypeSpan =
+    availableDeviceContainer.querySelector(".type");
+  device.addEventListener(
+    "getType",
+    () => {
+      availableDeviceTypeSpan.innerText = device.type;
+    },
+    { immediate: true },
+  );
+
+  const toggleConnectionButton =
+    availableDeviceContainer.querySelector(".toggleConnection");
+  toggleConnectionButton.addEventListener("click", () => {
+    device.reconnect();
+  });
+  device.addEventListener(
+    "connectionStatus",
+    (event) => {
+      let innerText = device.connectionStatus;
+      switch (device.connectionStatus) {
+        case "connected":
+          innerText = "disconnect";
+          break;
+        case "notConnected":
+          innerText = "connect";
+          break;
+      }
+      toggleConnectionButton.innerText = innerText;
+    },
+    {
+      immediate: true,
+    },
+  );
+
+  availableDevicesContainer.appendChild(availableDeviceContainer);
+
+  device.addEventListener("isConnected", () => {
+    if (device.isConnected) {
+      availableDeviceContainer.setAttribute("hidden", "");
+    } else {
+      availableDeviceContainer.removeAttribute("hidden");
+    }
+  });
+});
+
+const autoConnectToAvailableDevices = true;
+BS.DeviceManager.addEventListener("availableDevice", (event) => {
+  const { availableDevice } = event.message;
+  console.log("availableDevice", availableDevice);
+  if (availableDevice.canReconnect && autoConnectToAvailableDevices) {
+    availableDevice.reconnect();
+  }
+});
+
+// GET DEVICES
 const connectOnLoad = true;
 if (connectOnLoad) {
   const devices = await BS.DeviceManager.getDevices();
-  console.log(devices);
-  // FIX
-  devices.forEach((device) => {
-    console.log(device.name);
-  });
-  // devices.forEach((device) => device.connect());
+  console.log("getDevices", devices);
+  devices.forEach((device) => device.reconnect());
 }
 
 // IFRAME
@@ -74,7 +167,7 @@ const iframeContainerTemplate = document.getElementById(
   "iframeContainerTemplate",
 );
 /** @type {{name: string, url: string}[]} */
-const selectUrls = [{ name: "3d", url: "../3d" }];
+const selectUrls = [{ name: "3d pair", url: "../3d" }];
 const createIframeContainer = () => {
   const iframeContainer = iframeContainerTemplate.content
     .cloneNode(true)

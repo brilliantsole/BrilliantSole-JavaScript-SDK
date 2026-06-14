@@ -561,6 +561,10 @@ class Device {
       return;
     }
 
+    if (options?.reconnect && this.canReconnect) {
+      return this.reconnect();
+    }
+
     _console.log("connect options", options);
     if (options) {
       switch (options.type) {

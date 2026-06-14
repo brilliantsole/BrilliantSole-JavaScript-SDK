@@ -31,6 +31,7 @@ import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
 import {
   ConnectionMessageType,
   ConnectionMessageTypes,
+  ConnectionType,
   ConnectionTypes,
   TxRxMessageTypes,
 } from "../connection/BaseConnectionManager.ts";
@@ -64,7 +65,7 @@ const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...RequiredInformationConnectionMessages,
 ];
 
-const _console = createConsole("BaseServer", { log: true });
+const _console = createConsole("BaseServer", { log: false });
 
 export interface BaseServerClient {}
 
@@ -726,8 +727,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           const device = DeviceManager.availableDevices.find(
             (device) => device.bluetoothId == deviceId,
           );
-          if (device && !connectionType && device.canReconnect) {
-            device.reconnect();
+          if (device) {
+            device.connect({ type: connectionType, reconnect: true });
           } else {
             scanner.connectToDevice(deviceId, connectionType);
           }
