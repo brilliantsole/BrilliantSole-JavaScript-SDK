@@ -27,6 +27,7 @@ export const LedTypes = [
   "digitalRGB",
   "analogRGB",
 ] as const;
+
 export type LedType = (typeof LedTypes)[number];
 
 export const LedValueTypes = ["color", "brightness"] as const;

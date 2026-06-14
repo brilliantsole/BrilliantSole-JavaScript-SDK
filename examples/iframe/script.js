@@ -1,31 +1,72 @@
 import * as BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
 
-// DEVICE
+// ADD DEVICE
 
-const device = new BS.Device();
-window.device = device;
-
-// CONNECT
-
-const toggleConnectionButton = document.getElementById("toggleConnection");
-toggleConnectionButton.addEventListener("click", () => {
-  device.toggleConnection(false);
+const addDeviceButton = document.getElementById("addDevice");
+addDeviceButton.addEventListener("click", () => {
+  BS.Device.Connect();
 });
-device.addEventListener("connectionStatus", () => {
-  let disabled = false;
-  let innerText = device.connectionStatus;
-  switch (device.connectionStatus) {
-    case "notConnected":
-      innerText = "connect";
-      break;
-    case "connected":
-      innerText = "disconnect";
-      break;
-  }
-  toggleConnectionButton.disabled = disabled;
-  toggleConnectionButton.innerText = innerText;
+
+// DEVICES
+
+const devicesContainer = document.getElementById("devicesContainer");
+/** @type {HTMLTemplateElement} */
+const deviceContainerTemplate = document.getElementById(
+  "deviceContainerTemplate",
+);
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+
+  const deviceContainer = deviceContainerTemplate.content
+    .cloneNode(true)
+    .querySelector(".deviceContainer");
+
+  const deviceNameSpan = deviceContainer.querySelector(".name");
+  device.addEventListener(
+    "getName",
+    () => {
+      deviceNameSpan.innerText = device.name;
+    },
+    { immediate: true },
+  );
+
+  const deviceTypeSpan = deviceContainer.querySelector(".type");
+  device.addEventListener(
+    "getType",
+    () => {
+      deviceTypeSpan.innerText = device.type;
+    },
+    { immediate: true },
+  );
+  const disconnectButton = deviceContainer.querySelector(".disconnect");
+  disconnectButton.addEventListener("click", () => {
+    device.disconnect();
+  });
+
+  devicesContainer.appendChild(deviceContainer);
+
+  device.addEventListener(
+    "notConnected",
+    () => {
+      devicesContainer.removeChild(deviceContainer);
+    },
+    { once: true },
+  );
 });
+
+const connectOnLoad = true;
+if (connectOnLoad) {
+  const devices = await BS.DeviceManager.getDevices();
+  console.log(devices);
+  // FIX
+  devices.forEach((device) => {
+    console.log(device.name);
+  });
+  // devices.forEach((device) => device.connect());
+}
+
+// IFRAME
 
 const iframeContainers = document.getElementById("iframeContainers");
 /** @type {HTMLTemplateElement} */

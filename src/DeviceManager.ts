@@ -62,6 +62,7 @@ export const wildcardDeviceEventType = "device*" as const;
 export type WildcardDeviceEventType = typeof wildcardDeviceEventType;
 
 const BaseDeviceManagerEventTypes = [
+  "availableDevice",
   "availableDevices",
   "connectedDevices",
   wildcardDeviceEventType,
@@ -79,6 +80,7 @@ export type WildcardDeviceEventMessage<BaseMessage> = {
 }[DeviceEventType];
 
 interface BaseDeviceManagerEventMessages {
+  availableDevice: { availableDevice: Device };
   availableDevices: { availableDevices: Device[] };
   connectedDevices: { connectedDevices: Device[] };
   [wildcardDeviceEventType]: WildcardDeviceEventMessage<BaseDeviceManagerDeviceEventMessage>;
@@ -343,7 +345,7 @@ class DeviceManager {
       }
 
       if (existingConnectedDevice) {
-        this.availableDevices.push(existingConnectedDevice);
+        this.#pushAvailableDevice(existingConnectedDevice);
         return;
       }
 
@@ -355,7 +357,7 @@ class DeviceManager {
       }
       device._informationManager.updateType(deviceInformation.type);
       device.connectionManager = connectionManager;
-      this.availableDevices.push(device);
+      this.#pushAvailableDevice(device);
     });
     this.#dispatchAvailableDevices();
     return this.availableDevices;
@@ -446,7 +448,7 @@ class DeviceManager {
           this.availableDevices.indexOf(existingAvailableDevice)
         ] = device;
       } else {
-        this.availableDevices.push(device);
+        this.#pushAvailableDevice(device);
       }
       this.#dispatchAvailableDevices();
     }
@@ -483,6 +485,11 @@ class DeviceManager {
     }
   }
 
+  #pushAvailableDevice(availableDevice: Device) {
+    _console.log({ availableDevice });
+    this.availableDevices.push(availableDevice);
+    this.#dispatchEvent("availableDevice", { availableDevice });
+  }
   #dispatchAvailableDevices() {
     _console.log({ availableDevices: this.availableDevices });
     this.#dispatchEvent("availableDevices", {

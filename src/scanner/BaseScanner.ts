@@ -132,7 +132,7 @@ abstract class BaseScanner {
     return false;
   }
   #assertIsAvailable() {
-    _console.assertWithError(this.isScanningAvailable, "not available");
+    _console.assertWithError(this.isScanningAvailable, "scanner not available");
   }
 
   // SCANNING

@@ -49,8 +49,8 @@ function onAvailableDevices(availableDevices) {
               break;
           }
           toggleConnectionButton.innerText = innerText;
-          toggleConnectionButton.disabled =
-            availableDevice.connectionStatus != "notConnected";
+          // toggleConnectionButton.disabled =
+          //   availableDevice.connectionStatus != "notConnected";
         },
         { immediate: true },
       );

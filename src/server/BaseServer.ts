@@ -32,7 +32,6 @@ import {
   ConnectionMessageType,
   ConnectionMessageTypes,
   ConnectionTypes,
-  TxRxMessageType,
   TxRxMessageTypes,
 } from "../connection/BaseConnectionManager.ts";
 import {
@@ -724,12 +723,23 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           } else {
             _console.log(`connecting to device with id ${deviceId}...`);
           }
-          scanner.connectToDevice(deviceId, connectionType);
+          const device = DeviceManager.availableDevices.find(
+            (device) => device.bluetoothId == deviceId,
+          );
+          if (device) {
+            // @ts-ignore
+            device.connect({ type: connectionType });
+          } else {
+            scanner.connectToDevice(deviceId, connectionType);
+          }
         }
         break;
       case "disconnectFromDevice":
         {
           const { string: deviceId } = parseStringFromDataView(dataView);
+          if (!deviceId) {
+            break;
+          }
           let device = DeviceManager.availableDevices.find(
             (device) => device.bluetoothId == deviceId,
           );
@@ -761,6 +771,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         {
           const { string: deviceId, byteOffset } =
             parseStringFromDataView(dataView);
+          if (!deviceId) {
+            break;
+          }
           const device = DeviceManager.connectedDevices.find(
             (device) => device.bluetoothId == deviceId,
           );
@@ -785,6 +798,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       case "requiredDeviceInformation":
         {
           const { string: deviceId } = parseStringFromDataView(dataView);
+          if (!deviceId) {
+            break;
+          }
           const device = DeviceManager.connectedDevices.find(
             (device) => device.bluetoothId == deviceId,
           );

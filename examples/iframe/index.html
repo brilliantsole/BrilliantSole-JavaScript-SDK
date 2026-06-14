@@ -31,8 +31,28 @@
 
     <h1>iframe | BrilliantSole JavaScript SDK</h1>
 
-    <button id="toggleConnection">connect</button>
+    <button id="addDevice">add device</button>
     <br /><br />
+
+    <div id="availableDevicesContainer">
+      <template id="availableDeviceContainerTemplate">
+        <div class="availableDeviceContainer">
+          <span class="name"></span> (<span class="type"></span>)
+          <button class="connect">connect</button>
+        </div>
+      </template>
+    </div>
+    <br />
+
+    <div id="devicesContainer">
+      <template id="deviceContainerTemplate">
+        <div class="deviceContainer">
+          <span class="name"></span> (<span class="type"></span>)
+          <button class="disconnect">disconnect</button>
+        </div>
+      </template>
+    </div>
+    <br />
 
     <div id="iframeContainers">
       <template id="iframeContainerTemplate">

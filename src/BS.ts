@@ -13,6 +13,8 @@ export { Vector2, Vector3, Quaternion, Euler };
 import {
   default as Device,
   DeviceEvent,
+  DeviceEventType,
+  DeviceEventTypes,
   DeviceEventMap,
   DeviceEventListenerMap,
   BoundDeviceEventListeners,
@@ -20,6 +22,8 @@ import {
 export {
   Device,
   DeviceEvent,
+  DeviceEventType,
+  DeviceEventTypes,
   DeviceEventMap,
   DeviceEventListenerMap,
   BoundDeviceEventListeners,
