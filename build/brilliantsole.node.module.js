@@ -16214,7 +16214,7 @@ const RequiredDeviceInformationMessageTypes = [
     "batteryLevel",
     ...RequiredInformationConnectionMessages,
 ];
-const _console$3 = createConsole("BaseServer", { log: false });
+const _console$3 = createConsole("BaseServer", { log: true });
 const ServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -16848,7 +16848,7 @@ class WebSocketServer extends BaseServer {
     }
 }
 
-const _console$1 = createConsole("UDPUtils", { log: false });
+const _console$1 = createConsole("UDPUtils", { log: true });
 const removeUDPClientTimeout = 4_000;
 const UDPServerMessageTypes = [
     "ping",
@@ -16863,7 +16863,7 @@ function createUDPServerMessage(...messages) {
 createUDPServerMessage("ping");
 const udpPongMessage = createUDPServerMessage("pong");
 
-const _console = createConsole("UDPServer", { log: false });
+const _console = createConsole("UDPServer", { log: true });
 class UDPServer extends BaseServer {
     #getClientByRemoteInfo(remoteInfo, createIfNotFound = false) {
         const { address, port } = remoteInfo;

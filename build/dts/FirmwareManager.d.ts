@@ -38,8 +38,8 @@ declare class FirmwareManager {
     sendMessage: SendSmpMessageCallback;
     constructor();
     eventDispatcher: FirmwareEventDispatcher;
-    get addEventListenter(): <T extends "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "*" | "firmwareUploadComplete">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>) => void, options?: import("./utils/EventDispatcher.ts").EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "*" | "firmwareUploadComplete">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>) => void) => void;
+    get addEventListenter(): <T extends "*" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>) => void, options?: import("./utils/EventDispatcher.ts").EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>) => void) => void;
     get waitForEvent(): <T extends "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, options?: {
         immediate?: boolean;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>>;

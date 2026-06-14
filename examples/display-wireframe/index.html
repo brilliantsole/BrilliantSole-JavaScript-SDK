@@ -195,7 +195,12 @@
     </a-scene>
 
     <iframe src="../punch/" id="punch"></iframe>
-    <iframe src="../gloves/" id="glove"></iframe>
+    <iframe
+      src="../gloves/"
+      id="glove"
+      allow="bluetooth 'none'"
+      sandbox="allow-scripts allow-same-origin"
+    ></iframe>
 
     <div id="cameraContainer">
       <video hidden id="cameraVideo" autoplay playsinline></video>
