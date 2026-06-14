@@ -89,7 +89,6 @@ const onCurrentDevice = (callback) => {
 
 BS.DeviceManager.addEventListener("deviceConnected", (event) => {
   const { device } = event.message;
-  console.log("DEVICE CONNECTIN", device);
   if (!currentDevice?.isConnected) {
     onDevice(device);
   }

@@ -1185,7 +1185,7 @@ class Device {
     return this.#sensorConfigurationManager.clearSensorConfiguration();
   }
 
-  static #ClearSensorConfigurationOnLeave = true;
+  static #ClearSensorConfigurationOnLeave = false;
   static get ClearSensorConfigurationOnLeave() {
     return this.#ClearSensorConfigurationOnLeave;
   }

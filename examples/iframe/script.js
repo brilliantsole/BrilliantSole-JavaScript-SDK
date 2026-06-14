@@ -8,69 +8,6 @@ addDeviceButton.addEventListener("click", () => {
   BS.Device.Connect();
 });
 
-// DEVICES
-
-const devicesContainer = document.getElementById("devicesContainer");
-/** @type {HTMLTemplateElement} */
-const deviceContainerTemplate = document.getElementById(
-  "deviceContainerTemplate",
-);
-BS.DeviceManager.addEventListener("deviceConnected", (event) => {
-  const { device } = event.message;
-
-  const deviceContainer = deviceContainerTemplate.content
-    .cloneNode(true)
-    .querySelector(".deviceContainer");
-
-  const deviceNameSpan = deviceContainer.querySelector(".name");
-  device.addEventListener(
-    "getName",
-    () => {
-      deviceNameSpan.innerText = device.name;
-    },
-    { immediate: true },
-  );
-
-  const deviceTypeSpan = deviceContainer.querySelector(".type");
-  device.addEventListener(
-    "getType",
-    () => {
-      deviceTypeSpan.innerText = device.type;
-    },
-    { immediate: true },
-  );
-  const toggleConnectionButton =
-    deviceContainer.querySelector(".toggleConnection");
-  toggleConnectionButton.addEventListener("click", () => {
-    device.disconnect();
-  });
-
-  device.addEventListener(
-    "connectionStatus",
-    (event) => {
-      let innerText = device.connectionStatus;
-      switch (device.connectionStatus) {
-        case "connected":
-          innerText = "disconnect";
-          break;
-        case "notConnected":
-          innerText = "connect";
-          break;
-      }
-      toggleConnectionButton.innerText = innerText;
-    },
-    {
-      immediate: true,
-    },
-  );
-
-  devicesContainer.appendChild(deviceContainer);
-
-  device.addEventListener("notConnected", () => {
-    deviceContainer.remove();
-  });
-});
-
 // AVAILABLE DEVICES
 
 const availableDevicesContainer = document.getElementById(
@@ -110,8 +47,9 @@ BS.DeviceManager.addEventListener("availableDevice", (event) => {
   const toggleConnectionButton =
     availableDeviceContainer.querySelector(".toggleConnection");
   toggleConnectionButton.addEventListener("click", () => {
-    device.reconnect();
+    device.toggleConnection(true);
   });
+
   device.addEventListener(
     "connectionStatus",
     (event) => {
@@ -132,14 +70,6 @@ BS.DeviceManager.addEventListener("availableDevice", (event) => {
   );
 
   availableDevicesContainer.appendChild(availableDeviceContainer);
-
-  device.addEventListener("isConnected", () => {
-    if (device.isConnected) {
-      availableDeviceContainer.setAttribute("hidden", "");
-    } else {
-      availableDeviceContainer.removeAttribute("hidden");
-    }
-  });
 });
 
 const autoConnectToAvailableDevices = true;
