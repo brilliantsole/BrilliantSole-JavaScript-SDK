@@ -132,7 +132,8 @@ function onIFrameLoaded(gloveContainer) {
   )
     .sort((a, b) => a.dataset.pressure - b.dataset.pressure)
     .map((entity) => entity.querySelector("a-sphere"));
-  pressureEntities.forEach((entity) => entity.setAttribute("opacity", "0.0"));
+  console.log("pressureEntities", pressureEntities);
+  pressureEntities.forEach((entity) => entity.setAttribute("opacity", "1.0"));
   scene.addEventListener("loaded", () => {
     if (side == "left") {
       targetEntity.object3D.scale.x *= -1;
@@ -747,6 +748,9 @@ function onIFrameLoaded(gloveContainer) {
   let isCursorDown = false;
   scene.addEventListener("mousemove", (event) => {
     const canvas = scene.canvas;
+    if (!canvas) {
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;

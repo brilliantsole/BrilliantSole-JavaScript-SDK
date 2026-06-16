@@ -109,7 +109,8 @@ const selectUrls = [
   { name: "depth anything v2", url: "../depth-anything-v2" },
   { name: "gloves", url: "../gloves" },
   { name: "punch", url: "../punch" },
-  { name: "wireframe", url: "../wireframe" },
+  { name: "display wireframe", url: "../display-wireframe" },
+  { name: "canvas", url: "../canvas" },
 ];
 const createIframeContainer = () => {
   const iframeContainer = iframeContainerTemplate.content
