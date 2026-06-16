@@ -33,6 +33,7 @@ import {
   DisplayScaleDirection,
   DisplayColorRGB,
   DisplayCropDirection,
+  DisplayColorRGBOrString,
 } from "./DisplayUtils.ts";
 import { degToRad, Vector2 } from "./MathUtils.ts";
 
@@ -48,7 +49,7 @@ export interface DisplayManagerInterface {
   get brightness(): DisplayBrightness;
   setBrightness(
     newDisplayBrightness: DisplayBrightness,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   show(sendImmediately?: boolean): Promise<void>;
@@ -58,8 +59,8 @@ export interface DisplayManagerInterface {
   get numberOfColors(): number;
   setColor(
     colorIndex: number,
-    color: DisplayColorRGB | string,
-    sendImmediately?: boolean
+    color: DisplayColorRGBOrString,
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   assertValidColorIndex(colorIndex: number): void;
@@ -71,7 +72,7 @@ export interface DisplayManagerInterface {
   setColorOpacity(
     colorIndex: number,
     opacity: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
 
@@ -80,15 +81,15 @@ export interface DisplayManagerInterface {
 
   selectFillColor(
     fillColorIndex: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   selectBackgroundColor(
     backgroundColorIndex: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   selectLineColor(
     lineColorIndex: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
 
@@ -96,61 +97,61 @@ export interface DisplayManagerInterface {
   setIgnoreLine(ignoreLine: boolean, sendImmediately?: boolean): Promise<void>;
   setFillBackground(
     fillBackground: boolean,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   setAlignment(
     alignmentDirection: DisplayAlignmentDirection,
     alignment: DisplayAlignment,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setHorizontalAlignment(
     horizontalAlignment: DisplayAlignment,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setVerticalAlignment(
     verticalAlignment: DisplayAlignment,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   resetAlignment(sendImmediately?: boolean): Promise<void>;
 
   setRotation(
     rotation: number,
     isRadians?: boolean,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   clearRotation(sendImmediately?: boolean): Promise<void>;
 
   setSegmentStartCap(
     segmentStartCap: DisplaySegmentCap,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSegmentEndCap(
     segmentEndCap: DisplaySegmentCap,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSegmentCap(
     segmentCap: DisplaySegmentCap,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   setSegmentStartRadius(
     segmentStartRadius: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSegmentEndRadius(
     segmentEndRadius: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSegmentRadius(
     segmentRadius: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   setCrop(
     cropDirection: DisplayCropDirection,
     crop: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setCropTop(cropTop: number, sendImmediately?: boolean): Promise<void>;
   setCropRight(cropRight: number, sendImmediately?: boolean): Promise<void>;
@@ -161,62 +162,62 @@ export interface DisplayManagerInterface {
   setRotationCrop(
     cropDirection: DisplayCropDirection,
     crop: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setRotationCropTop(
     rotationCropTop: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setRotationCropRight(
     rotationCropRight: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setRotationCropBottom(
     rotationCropBottom: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setRotationCropLeft(
     rotationCropLeft: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   clearRotationCrop(sendImmediately?: boolean): Promise<void>;
 
   selectBitmapColor(
     bitmapColorIndex: number,
     colorIndex: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   get bitmapColorIndices(): number[];
   get bitmapColors(): string[];
   selectBitmapColors(
     bitmapColorPairs: DisplayBitmapColorPair[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   setBitmapColor(
     bitmapColorIndex: number,
-    color: DisplayColorRGB | string,
-    sendImmediately?: boolean
+    color: DisplayColorRGBOrString,
+    sendImmediately?: boolean,
   ): Promise<void>;
   setBitmapColorOpacity(
     bitmapColorIndex: number,
     opacity: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   setBitmapScaleDirection(
     direction: DisplayScaleDirection,
     bitmapScale: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setBitmapScaleX(
     bitmapScaleX: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setBitmapScaleY(
     bitmapScaleY: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
   resetBitmapScale(sendImmediately?: boolean): Promise<void>;
@@ -224,89 +225,89 @@ export interface DisplayManagerInterface {
   selectSpriteColor(
     spriteColorIndex: number,
     colorIndex: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   get spriteColorIndices(): number[];
   get spriteColors(): string[];
   selectSpriteColors(
     spriteColorPairs: DisplaySpriteColorPair[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   resetSpriteColors(sendImmediately?: boolean): Promise<void>;
 
   setSpriteColor(
     spriteColorIndex: number,
-    color: DisplayColorRGB | string,
-    sendImmediately?: boolean
+    color: DisplayColorRGBOrString,
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSpriteColorOpacity(
     spriteColorIndex: number,
     opacity: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   setSpriteScaleDirection(
     direction: DisplayScaleDirection,
     spriteScale: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSpriteScaleX(
     spriteScaleX: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSpriteScaleY(
     spriteScaleY: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
   resetSpriteScale(sendImmediately?: boolean): Promise<void>;
 
   setSpritesLineHeight(
     spritesLineHeight: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   setSpritesDirectionGeneric(
     direction: DisplayDirection,
     isOrthogonal: boolean,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSpritesDirection(
     spritesDirection: DisplayDirection,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSpritesLineDirection(
     spritesLineDirection: DisplayDirection,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   setSpritesSpacingGeneric(
     spacing: number,
     isOrthogonal: boolean,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSpritesSpacing(
     spritesSpacing: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSpritesLineSpacing(
     spritesSpacing: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   setSpritesAlignmentGeneric(
     alignment: DisplayAlignment,
     isOrthogonal: boolean,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSpritesAlignment(
     spritesAlignment: DisplayAlignment,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   setSpritesLineAlignment(
     spritesLineAlignment: DisplayAlignment,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   clearRect(
@@ -314,14 +315,14 @@ export interface DisplayManagerInterface {
     y: number,
     width: number,
     height: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawRect(
     offsetX: number,
     offsetY: number,
     width: number,
     height: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawRoundRect(
     offsetX: number,
@@ -329,76 +330,76 @@ export interface DisplayManagerInterface {
     width: number,
     height: number,
     borderRadius: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawCircle(
     offsetX: number,
     offsetY: number,
     radius: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawEllipse(
     offsetX: number,
     offsetY: number,
     radiusX: number,
     radiusY: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawRegularPolygon(
     offsetX: number,
     offsetY: number,
     radius: number,
     numberOfSides: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawPolygon(points: Vector2[], sendImmediately?: boolean): Promise<void>;
 
   drawWireframe(
     wireframe: DisplayWireframe,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   drawCurve(
     curveType: DisplayBezierCurveType,
     controlPoints: Vector2[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawCurves(
     curveType: DisplayBezierCurveType,
     controlPoints: Vector2[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   drawQuadraticBezierCurve(
     controlPoints: Vector2[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawQuadraticBezierCurves(
     controlPoints: Vector2[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   drawCubicBezierCurve(
     controlPoints: Vector2[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawCubicBezierCurves(
     controlPoints: Vector2[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   _drawPath(
     isClosed: boolean,
     curves: DisplayBezierCurve[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawPath(
     curves: DisplayBezierCurve[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawClosedPath(
     curves: DisplayBezierCurve[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   drawSegment(
@@ -406,7 +407,7 @@ export interface DisplayManagerInterface {
     startY: number,
     endX: number,
     endY: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
 
@@ -417,7 +418,7 @@ export interface DisplayManagerInterface {
     startAngle: number,
     angleOffset: number,
     isRadians?: boolean,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawArcEllipse(
     offsetX: number,
@@ -427,31 +428,31 @@ export interface DisplayManagerInterface {
     startAngle: number,
     angleOffset: number,
     isRadians?: boolean,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   drawBitmap(
     offsetX: number,
     offsetY: number,
     bitmap: DisplayBitmap,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   runContextCommand(
     command: DisplayContextCommand,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   runContextCommands(
     commands: DisplayContextCommand[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   imageToBitmap(
     image: HTMLImageElement,
     width: number,
     height: number,
-    numberOfColors?: number
+    numberOfColors?: number,
   ): Promise<{
     blob: Blob;
     bitmap: DisplayBitmap;
@@ -462,7 +463,7 @@ export interface DisplayManagerInterface {
     height: number,
     numberOfColors: number,
     colors?: string[],
-    canvas?: HTMLCanvasElement
+    canvas?: HTMLCanvasElement,
   ): Promise<{
     blob: Blob;
     colors: string[];
@@ -474,7 +475,7 @@ export interface DisplayManagerInterface {
     height: number,
     numberOfColors: number,
     colors?: string[],
-    canvas?: HTMLCanvasElement
+    canvas?: HTMLCanvasElement,
   ): Promise<{
     blob: Blob;
     colors: string[];
@@ -485,31 +486,31 @@ export interface DisplayManagerInterface {
   uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
   selectSpriteSheet(
     spriteSheetName: string,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawSprite(
     offsetX: number,
     offsetY: number,
     spriteName: string,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   stringToSpriteLines(
     string: string,
     requireAll?: boolean,
     maxLineBreadth?: number,
-    separators?: string[]
+    separators?: string[],
   ): DisplaySpriteLines;
   stringToSpriteLinesMetrics(
     string: string,
     requireAll?: boolean,
     maxLineBreadth?: number,
-    separators?: string[]
+    separators?: string[],
   ): DisplaySpriteLinesMetrics;
   drawSprites(
     offsetX: number,
     offsetY: number,
     spriteLines: DisplaySpriteLines,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   drawSpritesString(
     offsetX: number,
@@ -518,7 +519,7 @@ export interface DisplayManagerInterface {
     requireAll?: boolean,
     maxLineBreadth?: number,
     separators?: string[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   assertLoadedSpriteSheet(spriteSheetName: string): void;
   assertSelectedSpriteSheet(spriteSheetName: string): void;
@@ -526,14 +527,14 @@ export interface DisplayManagerInterface {
   assertSprite(spriteName: string): void;
   getSprite(spriteName: string): DisplaySprite | undefined;
   getSpriteSheetPalette(
-    paletteName: string
+    paletteName: string,
   ): DisplaySpriteSheetPalette | undefined;
   getSpriteSheetPaletteSwap(
-    paletteSwapName: string
+    paletteSwapName: string,
   ): DisplaySpriteSheetPaletteSwap | undefined;
   getSpritePaletteSwap(
     spriteName: string,
-    paletteSwapName: string
+    paletteSwapName: string,
   ): DisplaySpritePaletteSwap | undefined;
 
   drawSpriteFromSpriteSheet(
@@ -542,7 +543,7 @@ export interface DisplayManagerInterface {
     spriteName: string,
     spriteSheet: DisplaySpriteSheet,
     paletteName?: string,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
@@ -557,18 +558,18 @@ export interface DisplayManagerInterface {
   selectSpriteSheetPalette(
     paletteName: string,
     offset?: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   selectSpriteSheetPaletteSwap(
     paletteSwapName: string,
     offset?: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   selectSpritePaletteSwap(
     spriteName: string,
     paletteSwapName: string,
     offset?: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
@@ -578,7 +579,7 @@ export interface DisplayManagerInterface {
     offsetY: number,
     width: number,
     height: number,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ): Promise<void>;
   endSprite(sendImmediately?: boolean): Promise<void>;
   clearContext(sendImmediately?: boolean): Promise<void>;
@@ -587,7 +588,7 @@ export interface DisplayManagerInterface {
 export async function runDisplayContextCommand(
   displayManager: DisplayManagerInterface,
   command: DisplayContextCommand,
-  sendImmediately?: boolean
+  sendImmediately?: boolean,
 ) {
   if (command.hide) {
     return;
@@ -632,7 +633,7 @@ export async function runDisplayContextCommand(
         await displayManager.setColorOpacity(
           colorIndex,
           opacity,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -647,7 +648,7 @@ export async function runDisplayContextCommand(
         const { backgroundColorIndex } = command;
         await displayManager.selectBackgroundColor(
           backgroundColorIndex,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -700,7 +701,7 @@ export async function runDisplayContextCommand(
         const { segmentStartCap } = command;
         await displayManager.setSegmentStartCap(
           segmentStartCap,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -721,7 +722,7 @@ export async function runDisplayContextCommand(
         const { segmentStartRadius } = command;
         await displayManager.setSegmentStartRadius(
           segmentStartRadius,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -730,7 +731,7 @@ export async function runDisplayContextCommand(
         const { segmentEndRadius } = command;
         await displayManager.setSegmentEndRadius(
           segmentEndRadius,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -745,7 +746,7 @@ export async function runDisplayContextCommand(
         const { horizontalAlignment } = command;
         await displayManager.setHorizontalAlignment(
           horizontalAlignment,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -754,7 +755,7 @@ export async function runDisplayContextCommand(
         const { verticalAlignment } = command;
         await displayManager.setVerticalAlignment(
           verticalAlignment,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -792,7 +793,7 @@ export async function runDisplayContextCommand(
         const { rotationCropTop } = command;
         await displayManager.setRotationCropTop(
           rotationCropTop,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -801,7 +802,7 @@ export async function runDisplayContextCommand(
         const { rotationCropRight } = command;
         await displayManager.setRotationCropRight(
           rotationCropRight,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -810,7 +811,7 @@ export async function runDisplayContextCommand(
         const { rotationCropBottom } = command;
         await displayManager.setRotationCropBottom(
           rotationCropBottom,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -819,7 +820,7 @@ export async function runDisplayContextCommand(
         const { rotationCropLeft } = command;
         await displayManager.setRotationCropLeft(
           rotationCropLeft,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -829,7 +830,7 @@ export async function runDisplayContextCommand(
         await displayManager.selectBitmapColor(
           bitmapColorIndex,
           colorIndex,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -838,7 +839,7 @@ export async function runDisplayContextCommand(
         const { bitmapColorPairs } = command;
         await displayManager.selectBitmapColors(
           bitmapColorPairs,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -866,7 +867,7 @@ export async function runDisplayContextCommand(
         await displayManager.selectSpriteColor(
           spriteColorIndex,
           colorIndex,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -875,7 +876,7 @@ export async function runDisplayContextCommand(
         const { spriteColorPairs } = command;
         await displayManager.selectSpriteColors(
           spriteColorPairs,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -912,7 +913,7 @@ export async function runDisplayContextCommand(
           offsetY,
           width,
           height,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -925,7 +926,7 @@ export async function runDisplayContextCommand(
           width,
           height,
           borderRadius,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -936,7 +937,7 @@ export async function runDisplayContextCommand(
           offsetX,
           offsetY,
           radius,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -948,7 +949,7 @@ export async function runDisplayContextCommand(
           offsetY,
           radiusX,
           radiusY,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -966,7 +967,7 @@ export async function runDisplayContextCommand(
           offsetY,
           radius,
           numberOfSides,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -984,7 +985,7 @@ export async function runDisplayContextCommand(
           startY,
           endX,
           endY,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -993,7 +994,7 @@ export async function runDisplayContextCommand(
         const { points } = command;
         await displayManager.drawSegments(
           points.map(({ x, y }) => ({ x: x, y: y })),
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1011,7 +1012,7 @@ export async function runDisplayContextCommand(
           startAngle,
           angleOffset,
           true,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1037,7 +1038,7 @@ export async function runDisplayContextCommand(
           startAngle,
           angleOffset,
           true,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1048,7 +1049,7 @@ export async function runDisplayContextCommand(
           offsetX,
           offsetY,
           bitmap,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1061,7 +1062,7 @@ export async function runDisplayContextCommand(
           offsetX,
           offsetY,
           spriteName,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1070,7 +1071,7 @@ export async function runDisplayContextCommand(
         const { spritesLineHeight } = command;
         await displayManager.setSpritesLineHeight(
           spritesLineHeight,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1085,7 +1086,7 @@ export async function runDisplayContextCommand(
         const { spritesAlignment } = command;
         await displayManager.setSpritesAlignment(
           spritesAlignment,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1094,7 +1095,7 @@ export async function runDisplayContextCommand(
         const { spritesDirection } = command;
         await displayManager.setSpritesDirection(
           spritesDirection,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1103,7 +1104,7 @@ export async function runDisplayContextCommand(
         const { spritesLineAlignment } = command;
         await displayManager.setSpritesLineAlignment(
           spritesLineAlignment,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1112,7 +1113,7 @@ export async function runDisplayContextCommand(
         const { spritesLineDirection } = command;
         await displayManager.setSpritesLineDirection(
           spritesLineDirection,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1121,7 +1122,7 @@ export async function runDisplayContextCommand(
         const { spritesLineSpacing } = command;
         await displayManager.setSpritesLineSpacing(
           spritesLineSpacing,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1139,7 +1140,7 @@ export async function runDisplayContextCommand(
             //   displayManager.spriteSheetIndices
             // );
             const spriteSheetName = Object.entries(
-              displayManager.spriteSheetIndices
+              displayManager.spriteSheetIndices,
             ).find(([_spriteSheetName, _spriteSheetIndex]) => {
               return _spriteSheetIndex == spriteSheetIndex;
             })![0];
@@ -1148,7 +1149,7 @@ export async function runDisplayContextCommand(
             const spriteSubLine: DisplaySpriteSubLine = {
               spriteSheetName: spriteSheet.name,
               spriteNames: spriteIndices.map(
-                (spriteIndex) => spriteSheet.sprites[spriteIndex].name
+                (spriteIndex) => spriteSheet.sprites[spriteIndex].name,
               ),
             };
             spriteLine.push(spriteSubLine);
@@ -1160,7 +1161,7 @@ export async function runDisplayContextCommand(
           offsetX,
           offsetY,
           spriteLines,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1168,11 +1169,11 @@ export async function runDisplayContextCommand(
       {
         const { spriteSheetIndex } = command;
         const spriteSheetName = Object.entries(
-          displayManager.spriteSheetIndices
+          displayManager.spriteSheetIndices,
         ).find((entry) => entry[1] == spriteSheetIndex)?.[0];
         await displayManager.selectSpriteSheet(
           spriteSheetName!,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1185,7 +1186,7 @@ export async function runDisplayContextCommand(
         const { controlPoints } = command;
         await displayManager.drawQuadraticBezierCurve(
           controlPoints,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1194,7 +1195,7 @@ export async function runDisplayContextCommand(
         const { controlPoints } = command;
         await displayManager.drawQuadraticBezierCurves(
           controlPoints,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1203,7 +1204,7 @@ export async function runDisplayContextCommand(
         const { controlPoints } = command;
         await displayManager.drawCubicBezierCurve(
           controlPoints,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1212,7 +1213,7 @@ export async function runDisplayContextCommand(
         const { controlPoints } = command;
         await displayManager.drawCubicBezierCurves(
           controlPoints,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1236,7 +1237,7 @@ export async function runDisplayContextCommand(
           offsetY,
           width,
           height,
-          sendImmediately
+          sendImmediately,
         );
       }
       break;
@@ -1252,7 +1253,7 @@ export async function runDisplayContextCommand(
 export async function runDisplayContextCommands(
   displayManager: DisplayManagerInterface,
   commands: DisplayContextCommand[],
-  sendImmediately?: boolean
+  sendImmediately?: boolean,
 ) {
   _console.log("runDisplayContextCommands", commands);
   commands
@@ -1267,43 +1268,43 @@ export async function runDisplayContextCommands(
 
 export function assertLoadedSpriteSheet(
   displayManager: DisplayManagerInterface,
-  spriteSheetName: string
+  spriteSheetName: string,
 ) {
   _console.assertWithError(
     displayManager.spriteSheets[spriteSheetName],
-    `spriteSheet "${spriteSheetName}" not loaded`
+    `spriteSheet "${spriteSheetName}" not loaded`,
   );
 }
 export function assertSelectedSpriteSheet(
   displayManager: DisplayManagerInterface,
-  spriteSheetName: string
+  spriteSheetName: string,
 ) {
   displayManager.assertLoadedSpriteSheet(spriteSheetName);
   _console.assertWithError(
     displayManager.selectedSpriteSheetName == spriteSheetName,
-    `spriteSheet "${spriteSheetName}" not selected`
+    `spriteSheet "${spriteSheetName}" not selected`,
   );
 }
 export function assertAnySelectedSpriteSheet(
-  displayManager: DisplayManagerInterface
+  displayManager: DisplayManagerInterface,
 ) {
   _console.assertWithError(
     displayManager.selectedSpriteSheet,
-    "no spriteSheet selected"
+    "no spriteSheet selected",
   );
 }
 export function getSprite(
   displayManager: DisplayManagerInterface,
-  spriteName: string
+  spriteName: string,
 ): DisplaySprite | undefined {
   displayManager.assertAnySelectedSpriteSheet();
   return displayManager.selectedSpriteSheet!.sprites.find(
-    (sprite) => sprite.name == spriteName
+    (sprite) => sprite.name == spriteName,
   );
 }
 export function assertSprite(
   displayManager: DisplayManagerInterface,
-  spriteName: string
+  spriteName: string,
 ) {
   displayManager.assertAnySelectedSpriteSheet();
   const sprite = displayManager.getSprite(spriteName);
@@ -1311,24 +1312,24 @@ export function assertSprite(
 }
 export function getSpriteSheetPalette(
   displayManager: DisplayManagerInterface,
-  paletteName: string
+  paletteName: string,
 ): DisplaySpriteSheetPalette | undefined {
   return displayManager.selectedSpriteSheet?.palettes?.find(
-    (palette) => palette.name == paletteName
+    (palette) => palette.name == paletteName,
   );
 }
 export function getSpriteSheetPaletteSwap(
   displayManager: DisplayManagerInterface,
-  paletteSwapName: string
+  paletteSwapName: string,
 ): DisplaySpriteSheetPaletteSwap | undefined {
   return displayManager.selectedSpriteSheet?.paletteSwaps?.find(
-    (paletteSwap) => paletteSwap.name == paletteSwapName
+    (paletteSwap) => paletteSwap.name == paletteSwapName,
   );
 }
 export function getSpritePaletteSwap(
   displayManager: DisplayManagerInterface,
   spriteName: string,
-  paletteSwapName: string
+  paletteSwapName: string,
 ): DisplaySpritePaletteSwap | undefined {
   return displayManager
     .getSprite(spriteName)
@@ -1337,38 +1338,38 @@ export function getSpritePaletteSwap(
 
 export function assertSpriteSheetPalette(
   displayManagerInterface: DisplayManagerInterface,
-  paletteName: string
+  paletteName: string,
 ) {
   const spriteSheetPalette =
     displayManagerInterface.getSpriteSheetPalette(paletteName);
   _console.assertWithError(
     spriteSheetPalette,
-    `no spriteSheetPalette found with name "${paletteName}"`
+    `no spriteSheetPalette found with name "${paletteName}"`,
   );
 }
 export function assertSpriteSheetPaletteSwap(
   displayManagerInterface: DisplayManagerInterface,
-  paletteSwapName: string
+  paletteSwapName: string,
 ) {
   const spriteSheetPaletteSwap =
     displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
   _console.assertWithError(
     spriteSheetPaletteSwap,
-    `no paletteSwapName found with name "${paletteSwapName}"`
+    `no paletteSwapName found with name "${paletteSwapName}"`,
   );
 }
 export function assertSpritePaletteSwap(
   displayManagerInterface: DisplayManagerInterface,
   spriteName: string,
-  paletteSwapName: string
+  paletteSwapName: string,
 ) {
   const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(
     spriteName,
-    paletteSwapName
+    paletteSwapName,
   );
   _console.assertWithError(
     spritePaletteSwap,
-    `no spritePaletteSwap found for sprite "${spriteName}" name "${paletteSwapName}"`
+    `no spritePaletteSwap found for sprite "${spriteName}" name "${paletteSwapName}"`,
   );
 }
 export async function selectSpriteSheetPalette(
@@ -1376,7 +1377,7 @@ export async function selectSpriteSheetPalette(
   paletteName: string,
   offset?: number,
   indicesOnly?: boolean,
-  sendImmediately?: boolean
+  sendImmediately?: boolean,
 ) {
   offset = offset || 0;
 
@@ -1386,7 +1387,7 @@ export async function selectSpriteSheetPalette(
 
   _console.assertWithError(
     palette.numberOfColors + offset <= displayManagerInterface.numberOfColors,
-    `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`
+    `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`,
   );
 
   //_console.log({ indicesOnly });
@@ -1412,7 +1413,7 @@ export async function selectSpriteSheetPaletteSwap(
   displayManagerInterface: DisplayManagerInterface,
   paletteSwapName: string,
   offset?: number,
-  sendImmediately?: boolean
+  sendImmediately?: boolean,
 ) {
   offset = offset || 0;
   displayManagerInterface.assertAnySelectedSpriteSheet();
@@ -1444,14 +1445,14 @@ export async function selectSpritePaletteSwap(
   spriteName: string,
   paletteSwapName: string,
   offset?: number,
-  sendImmediately?: boolean
+  sendImmediately?: boolean,
 ) {
   offset = offset || 0;
   displayManagerInterface.assertAnySelectedSpriteSheet();
 
   const paletteSwap = displayManagerInterface.getSpritePaletteSwap(
     spriteName,
-    paletteSwapName
+    paletteSwapName,
   )!;
 
   const spriteColorPairs: DisplaySpriteColorPair[] = [];
@@ -1480,7 +1481,7 @@ export async function drawSpriteFromSpriteSheet(
   spriteName: string,
   spriteSheet: DisplaySpriteSheet,
   paletteName?: string,
-  sendImmediately?: boolean
+  sendImmediately?: boolean,
 ) {
   const reducedSpriteSheet = reduceSpriteSheet(spriteSheet, [spriteName]);
   await displayManagerInterface.uploadSpriteSheet(reducedSpriteSheet);
@@ -1489,7 +1490,7 @@ export async function drawSpriteFromSpriteSheet(
     offsetX,
     offsetY,
     spriteName,
-    sendImmediately
+    sendImmediately,
   );
   if (paletteName != undefined) {
     await displayManagerInterface.selectSpriteSheetPalette(paletteName);

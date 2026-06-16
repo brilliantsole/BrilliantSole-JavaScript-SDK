@@ -8,7 +8,10 @@ import {
   dataToArrayBuffer,
 } from "../../utils/ArrayBufferUtils.ts";
 import { Timer } from "../../utils/Timer.ts";
-import BaseServer from "../BaseServer.ts";
+import BaseServer, {
+  BaseServerClient,
+  BaseServerClientContext,
+} from "../BaseServer.ts";
 import {
   webSocketPingMessage,
   webSocketPongMessage,
@@ -25,20 +28,17 @@ import type * as ws from "ws";
 import { parseMessage } from "../../utils/ParseUtils.ts";
 /** NODE_END */
 
-interface WebSocketClient extends ws.WebSocket {
+interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
   isAlive: boolean;
   pingClientTimer?: Timer;
 }
-interface WebSocketServer extends ws.WebSocketServer {}
 
-class WebSocketServer extends BaseServer {
-  get numberOfClients() {
-    return this.#server?.clients.size || 0;
-  }
+export interface WebSocketServerClientContext extends BaseServerClientContext<WebSocketServerClient> {}
 
+class WebSocketServer extends BaseServer<WebSocketServerClient> {
   // WEBSOCKET SERVER
 
-  #server?: WebSocketServer;
+  #server?: ws.WebSocketServer;
   get server() {
     return this.#server;
   }
@@ -73,12 +73,12 @@ class WebSocketServer extends BaseServer {
   #onWebSocketServerClose() {
     _console.log("server.close");
   }
-  #onWebSocketServerConnection(client: WebSocketClient) {
+  #onWebSocketServerConnection(client: WebSocketServerClient) {
     _console.log("server.connection");
     client.isAlive = true;
     client.pingClientTimer = new Timer(
       () => this.#pingClient(client),
-      webSocketPingTimeout
+      webSocketPingTimeout,
     );
     client.pingClientTimer.start();
     addEventListeners(client, this.#boundWebSocketClientListeners);
@@ -107,18 +107,18 @@ class WebSocketServer extends BaseServer {
   }
   #onWebSocketClientMessage(event: ws.MessageEvent) {
     _console.log("client.message");
-    const client = event.target as WebSocketClient;
+    const client = event.target as WebSocketServerClient;
     client.isAlive = true;
     client.pingClientTimer!.restart();
     const dataView = new DataView(
-      dataToArrayBuffer(event.data as Buffer)
+      dataToArrayBuffer(event.data as Buffer),
     ) as DataView<ArrayBuffer>;
     _console.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
     this.#parseWebSocketClientMessage(client, dataView);
   }
   #onWebSocketClientClose(event: ws.CloseEvent) {
     _console.log("client.close");
-    const client = event.target as WebSocketClient;
+    const client = event.target as WebSocketServerClient;
     client.pingClientTimer!.stop();
     removeEventListeners(client, this.#boundWebSocketClientListeners);
     this.dispatchEvent("clientDisconnected", { client });
@@ -129,41 +129,37 @@ class WebSocketServer extends BaseServer {
 
   // PARSING
   #parseWebSocketClientMessage(
-    client: WebSocketClient,
-    dataView: DataView<ArrayBuffer>
+    client: WebSocketServerClient,
+    dataView: DataView<ArrayBuffer>,
   ) {
     let responseMessages: ArrayBuffer[] = [];
+
+    const context: WebSocketServerClientContext = { responseMessages, client };
 
     parseMessage(
       dataView,
       WebSocketMessageTypes,
       this.#onClientMessage.bind(this),
-      { responseMessages },
-      true
+      context,
+      true,
     );
 
     responseMessages = responseMessages.filter(Boolean);
 
-    if (responseMessages.length == 0) {
-      _console.log("nothing to send back");
-      return;
-    }
-
     const responseMessage = concatenateArrayBuffers(responseMessages);
     _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
-    try {
-      client.send(responseMessage);
-    } catch (error) {
-      _console.log("error sending message", error);
-    }
+    this.#sendToClient(client, responseMessage);
   }
 
   #onClientMessage(
     messageType: WebSocketMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: { responseMessages: (ArrayBuffer | undefined)[] }
+    context: WebSocketServerClientContext,
   ) {
-    const { responseMessages } = context;
+    const { responseMessages, client } = context;
+
+    _console.log("onClientMessage", { messageType });
+
     switch (messageType) {
       case "ping":
         responseMessages.push(webSocketPongMessage);
@@ -171,13 +167,13 @@ class WebSocketServer extends BaseServer {
       case "pong":
         break;
       case "serverMessage":
-        const responseMessage = this.parseClientMessage(dataView);
+        const responseMessage = this.parseClientMessage(client, dataView);
         if (responseMessage) {
           responseMessages.push(
             createWebSocketMessage({
               type: "serverMessage",
               data: responseMessage,
-            })
+            }),
           );
         }
         break;
@@ -188,23 +184,35 @@ class WebSocketServer extends BaseServer {
   }
 
   // CLIENT MESSAGING
-  broadcastMessage(message: ArrayBuffer) {
-    super.broadcastMessage(message);
-    this.server!.clients.forEach((client) => {
-      client.send(
-        createWebSocketMessage({ type: "serverMessage", data: message })
-      );
-    });
+  #sendToClient(client: WebSocketServerClient, message: ArrayBuffer) {
+    if (message.byteLength == 0) {
+      _console.log("nothing to send back");
+      return;
+    }
+
+    _console.log(`sending ${message.byteLength} bytes to client`);
+
+    try {
+      client.send(message);
+    } catch (error) {
+      _console.log("error sending message", error);
+    }
+  }
+  protected sendToClient(client: WebSocketServerClient, message: ArrayBuffer) {
+    this.#sendToClient(
+      client,
+      createWebSocketMessage({ type: "serverMessage", data: message }),
+    );
   }
 
   // PING
-  #pingClient(client: WebSocketClient) {
+  #pingClient(client: WebSocketServerClient) {
     if (!client.isAlive) {
       client.terminate();
       return;
     }
     client.isAlive = false;
-    client.send(webSocketPingMessage);
+    this.#sendToClient(client, webSocketPingMessage);
   }
 }
 

@@ -1,0 +1,74 @@
+<html>
+  <head>
+    <title>iframe | BrilliantSole JavaScript SDK</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+  </head>
+  <style>
+    #iframeContainers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1em;
+      height: calc(100% - 200px);
+    }
+    #iframeContainers > div {
+      width: 100%;
+      height: 100%;
+    }
+    iframe {
+      height: 100%;
+      width: 100%;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>iframe | BrilliantSole JavaScript SDK</h1>
+
+    <button id="addDevice">add device</button>
+    <br /><br />
+
+    <b>Devices</b>
+
+    <div id="availableDevicesContainer">
+      <template id="availableDeviceContainerTemplate">
+        <div class="availableDeviceContainer">
+          <span class="name"></span> (<span class="type"></span>)
+          <button class="toggleConnection">connect</button>
+        </div>
+      </template>
+    </div>
+    <br />
+
+    <div id="iframeContainers">
+      <template id="iframeContainerTemplate">
+        <div class="iframeContainer">
+          <label>url: <input type="url" class="url" /> </label>
+          <button class="urlGo">go</button>
+          <button class="urlRefresh">refresh</button>
+          <button class="toggleSensorData">disable sensor data</button>
+          <select class="urlSelect">
+            <optgroup label="select url">
+              <option value="none">none</option>
+            </optgroup>
+          </select>
+          <button class="open">open in new tab</button>
+          <br />
+
+          <iframe
+            class="iframe"
+            src="../basic/"
+            allow="bluetooth 'none'"
+            sandbox="allow-scripts allow-same-origin allow-modals"
+          ></iframe>
+        </div>
+      </template>
+    </div>
+  </body>
+</html>

@@ -98,7 +98,7 @@ export type SendFileTransferMessageCallback =
 export type SendFileCallback = (
   type: FileType,
   file: FileLike,
-  override?: boolean
+  override?: boolean,
 ) => Promise<boolean>;
 
 class FileTransferManager {
@@ -130,14 +130,14 @@ class FileTransferManager {
   #assertValidTypeEnum(typeEnum: number) {
     _console.assertWithError(
       typeEnum in FileTypes,
-      `invalid typeEnum ${typeEnum}`
+      `invalid typeEnum ${typeEnum}`,
     );
   }
 
   #assertValidStatusEnum(statusEnum: number) {
     _console.assertWithError(
       statusEnum in FileTransferStatuses,
-      `invalid statusEnum ${statusEnum}`
+      `invalid statusEnum ${statusEnum}`,
     );
   }
   #assertValidCommand(command: FileTransferCommand) {
@@ -182,7 +182,7 @@ class FileTransferManager {
   #assertValidLength(length: number) {
     _console.assertWithError(
       length <= this.maxLength,
-      `file length ${length}kB too large - must be ${this.maxLength}kB or less`
+      `file length ${length}kB too large - must be ${this.maxLength}kB or less`,
     );
   }
 
@@ -215,7 +215,7 @@ class FileTransferManager {
 
     this.sendMessage(
       [{ type: "setFileType", data: UInt8ByteBuffer(typeEnum) }],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -250,7 +250,7 @@ class FileTransferManager {
     dataView.setUint32(0, newLength, true);
     this.sendMessage(
       [{ type: "setFileLength", data: dataView.buffer }],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -283,7 +283,7 @@ class FileTransferManager {
     dataView.setUint32(0, newChecksum, true);
     this.sendMessage(
       [{ type: "setFileChecksum", data: dataView.buffer }],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -303,7 +303,7 @@ class FileTransferManager {
           data: UInt8ByteBuffer(commandEnum),
         },
       ],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -349,14 +349,14 @@ class FileTransferManager {
 
     const bytesReceived = this.#receivedBlocks.reduce(
       (sum, arrayBuffer) => (sum += arrayBuffer.byteLength),
-      0
+      0,
     );
     const progress = bytesReceived / this.#length;
 
     _console.log(
       `received ${bytesReceived}/${this.#length} bytes (${progress * 100}%) - ${
         this.#length - bytesReceived
-      } bytes remaining`
+      } bytes remaining`,
     );
 
     this.#dispatchEvent("fileTransferProgress", {
@@ -368,7 +368,8 @@ class FileTransferManager {
       const dataView = new DataView(new ArrayBuffer(4));
       dataView.setUint32(0, bytesReceived, true);
 
-      if (this.isServerSide) {
+      if (!this.#buffer) {
+        _console.log("no buffer defined");
         return;
       }
       await this.sendMessage([
@@ -405,7 +406,7 @@ class FileTransferManager {
 
     if (checksum != this.#checksum) {
       _console.error(
-        `wrong checksum - expected ${this.#checksum}, got ${checksum}`
+        `wrong checksum - expected ${this.#checksum}, got ${checksum}`,
       );
       return;
     }
@@ -422,7 +423,7 @@ class FileTransferManager {
 
   parseMessage(
     messageType: FileTransferMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     _console.log({ messageType });
 
@@ -537,9 +538,7 @@ class FileTransferManager {
       return;
     }
     if (!this.#buffer) {
-      if (!this.isServerSide) {
-        _console.error("no buffer defined");
-      }
+      _console.log("no buffer defined");
       return;
     }
 
@@ -556,7 +555,7 @@ class FileTransferManager {
     _console.log(
       `sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${
         buffer.byteLength
-      } bytes (${progress * 100}%)`
+      } bytes (${progress * 100}%)`,
     );
     this.#dispatchEvent("fileTransferProgress", {
       progress,
@@ -583,11 +582,11 @@ class FileTransferManager {
       _console.error(`not currently sending file`);
       return;
     }
-    if (!this.isServerSide && this.#bytesTransferred != bytesTransferred) {
+    if (this.#buffer && this.#bytesTransferred != bytesTransferred) {
       _console.error(
         `bytesTransferred are not equal - got ${bytesTransferred}, expected ${
           this.#bytesTransferred
-        }`
+        }`,
       );
       this.cancel();
       return;
@@ -612,20 +611,6 @@ class FileTransferManager {
     await this.#setCommand("cancel");
   }
 
-  // SERVER SIDE
-  #isServerSide = false;
-  get isServerSide() {
-    return this.#isServerSide;
-  }
-  set isServerSide(newIsServerSide) {
-    if (this.#isServerSide == newIsServerSide) {
-      _console.log("redundant isServerSide assignment");
-      return;
-    }
-    _console.log({ newIsServerSide });
-    this.#isServerSide = newIsServerSide;
-  }
-
   requestRequiredInformation() {
     _console.log("requesting required fileTransfer information");
     const messages = RequiredFileTransferMessageTypes.map((messageType) => ({
@@ -639,7 +624,6 @@ class FileTransferManager {
     this.#isCancelling = false;
     this.#buffer = undefined;
     this.#bytesTransferred = 0;
-    this.#isServerSide = false;
     this.#checksum = 0;
     this.#fileTypes.length = 0;
     this.#type = undefined;

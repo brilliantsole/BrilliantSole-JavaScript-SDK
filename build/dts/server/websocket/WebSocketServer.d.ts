@@ -1,13 +1,18 @@
-import BaseServer from "../BaseServer.ts";
+import { Timer } from "../../utils/Timer.ts";
+import BaseServer, { BaseServerClient, BaseServerClientContext } from "../BaseServer.ts";
 /** NODE_START */
 import type * as ws from "ws";
-interface WebSocketServer extends ws.WebSocketServer {
+/** NODE_END */
+interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
+    isAlive: boolean;
+    pingClientTimer?: Timer;
 }
-declare class WebSocketServer extends BaseServer {
+export interface WebSocketServerClientContext extends BaseServerClientContext<WebSocketServerClient> {
+}
+declare class WebSocketServer extends BaseServer<WebSocketServerClient> {
     #private;
-    get numberOfClients(): number;
-    get server(): WebSocketServer | undefined;
-    set server(newServer: WebSocketServer | undefined);
-    broadcastMessage(message: ArrayBuffer): void;
+    get server(): ws.WebSocketServer | undefined;
+    set server(newServer: ws.WebSocketServer | undefined);
+    protected sendToClient(client: WebSocketServerClient, message: ArrayBuffer): void;
 }
 export default WebSocketServer;

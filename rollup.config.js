@@ -36,7 +36,6 @@ function header() {
 function removeLines(context) {
   const isInBrowser = context == "browser";
   const isInNode = context == "node";
-  const isInLensStudio = context == "ls";
 
   return replace({
     preventAssignment: true,
@@ -46,8 +45,6 @@ function removeLines(context) {
       "/** BROWSER_END */": isInBrowser ? "" : "BROWSER_END */",
       "/** NODE_START */": isInNode ? "" : "/** NODE_START",
       "/** NODE_END */": isInNode ? "" : "NODE_END */",
-      "/** LS_START */": isInLensStudio ? "" : "/** LS_START",
-      "/** LS_END */": isInLensStudio ? "" : "LS_END */",
     },
   });
 }
@@ -101,30 +98,6 @@ const nodeExternal = [
   "child_process",
   "three",
   "@tensorflow/tfjs",
-];
-
-const lensStudioPlugins = [
-  removeLines("ls"),
-  resolve(),
-  commonjs(),
-  babel({
-    babelHelpers: "bundled",
-    extensions: [".ts", ".js"], // <-- important
-    exclude: "node_modules/**",
-    presets: [
-      [
-        "@babel/preset-env",
-        {
-          targets: "> 0.25%, not dead",
-        },
-      ],
-      "@babel/preset-typescript",
-    ],
-    plugins: [
-      "@babel/plugin-proposal-optional-chaining",
-      "@babel/plugin-proposal-nullish-coalescing-operator",
-    ],
-  }),
 ];
 
 const defaultOutput = {
@@ -296,19 +269,6 @@ const productionOnlyBuilds = [
         format: "cjs",
         name,
         file: "build/brilliantsole.cjs",
-      },
-    ],
-    ...defaultBuild,
-  },
-  {
-    input,
-    plugins: [...lensStudioPlugins, ..._plugins],
-    output: [
-      {
-        ...defaultOutput,
-        format: "umd",
-        name,
-        file: "build/brilliantsole.ls.js",
       },
     ],
     ...defaultBuild,

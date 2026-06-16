@@ -38,6 +38,76 @@ export type SensorConfigurationEventDispatcher = EventDispatcher<
 export type SendSensorConfigurationMessageCallback =
   SendMessageCallback<SensorConfigurationMessageType>;
 
+export function parseSensorConfiguration(
+  dataView: DataView<ArrayBuffer>,
+  callback?: (
+    sensorType: SensorType,
+    sensorRate: number,
+    context?: any,
+  ) => boolean,
+  context?: any,
+) {
+  const parsedSensorConfiguration: SensorConfiguration = {};
+  for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 3) {
+    const sensorTypeIndex = dataView.getUint8(byteOffset);
+    const sensorType = SensorTypes[sensorTypeIndex];
+
+    const sensorRate = dataView.getUint16(byteOffset + 1, true);
+    _console.log({ sensorType, sensorRate });
+
+    if (!sensorType) {
+      _console.warn(`unknown sensorType index ${sensorTypeIndex}`);
+      continue;
+    }
+    if (callback && !callback(sensorType, sensorRate, context)) {
+      continue;
+    }
+    parsedSensorConfiguration[sensorType] = sensorRate;
+  }
+  _console.log({ parsedSensorConfiguration });
+  return parsedSensorConfiguration;
+}
+
+export function assertValidSensorRate(sensorRate: number) {
+  _console.assertTypeWithError(sensorRate, "number");
+  _console.assertWithError(
+    sensorRate >= 0,
+    `sensorRate must be 0 or greater (got ${sensorRate})`,
+  );
+  _console.assertWithError(
+    sensorRate < MaxSensorRate,
+    `sensorRate must be 0 or greater (got ${sensorRate})`,
+  );
+  _console.assertWithError(
+    sensorRate % SensorRateStep == 0,
+    `sensorRate must be multiple of ${SensorRateStep}`,
+  );
+}
+
+export function serializeSensorConfiguration(
+  sensorConfiguration: SensorConfiguration,
+  availableSensorTypes?: SensorType[],
+) {
+  let sensorTypes = Object.keys(sensorConfiguration) as SensorType[];
+  if (availableSensorTypes) {
+    sensorTypes = sensorTypes.filter((sensorType) =>
+      availableSensorTypes.includes(sensorType),
+    );
+  }
+  const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
+  sensorTypes.forEach((sensorType, index) => {
+    SensorDataManager.AssertValidSensorType(sensorType);
+    const sensorTypeEnum = SensorTypes.indexOf(sensorType);
+    dataView.setUint8(index * 3, sensorTypeEnum);
+
+    const sensorRate = sensorConfiguration[sensorType]!;
+    assertValidSensorRate(sensorRate);
+    dataView.setUint16(index * 3 + 1, sensorRate, true);
+  });
+  _console.log({ sensorConfigurationData: dataView });
+  return dataView;
+}
+
 class SensorConfigurationManager {
   constructor() {
     autoBind(this);
@@ -59,15 +129,6 @@ class SensorConfigurationManager {
   #availableSensorTypes!: SensorType[];
   get availableSensorTypes() {
     return this.#availableSensorTypes || [];
-  }
-  #assertAvailableSensorType(sensorType: SensorType) {
-    _console.assertWithError(
-      this.#availableSensorTypes,
-      "must get initial sensorConfiguration"
-    );
-    const isSensorTypeAvailable = this.hasSensorType(sensorType);
-    _console.log({ sensorType, isSensorTypeAvailable });
-    return isSensorTypeAvailable;
   }
 
   hasSensorType(sensorType: SensorType) {
@@ -101,12 +162,13 @@ class SensorConfigurationManager {
   async setConfiguration(
     newSensorConfiguration: SensorConfiguration,
     clearRest?: boolean,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ) {
+    newSensorConfiguration = structuredClone(newSensorConfiguration);
     if (clearRest) {
       newSensorConfiguration = Object.assign(
         structuredClone(this.zeroSensorConfiguration),
-        newSensorConfiguration
+        newSensorConfiguration,
       );
     }
     _console.log({ newSensorConfiguration });
@@ -114,7 +176,18 @@ class SensorConfigurationManager {
       _console.log("redundant sensor configuration");
       return;
     }
-    const setSensorConfigurationData = this.#createData(newSensorConfiguration);
+    const sensorTypes = Object.keys(newSensorConfiguration) as SensorType[];
+    sensorTypes.forEach((sensorType) => {
+      const sensorRate = newSensorConfiguration[sensorType];
+      if (this.configuration[sensorType] == sensorRate) {
+        delete newSensorConfiguration[sensorType];
+      }
+    });
+
+    const setSensorConfigurationData = serializeSensorConfiguration(
+      newSensorConfiguration,
+      this.availableSensorTypes,
+    );
     _console.log({ setSensorConfigurationData });
 
     const promise = this.waitForEvent("getSensorConfiguration");
@@ -125,7 +198,7 @@ class SensorConfigurationManager {
           data: setSensorConfigurationData.buffer,
         },
       ],
-      sendImmediately
+      sendImmediately,
     );
     await promise;
   }
@@ -133,7 +206,7 @@ class SensorConfigurationManager {
     sensorType: SensorType,
     sensorRate: number,
     clearRest?: boolean,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ) {
     const newSensorConfiguration: SensorConfiguration = {};
     if (this.configuration[sensorType]) {
@@ -144,32 +217,15 @@ class SensorConfigurationManager {
     await this.setConfiguration(
       newSensorConfiguration,
       clearRest,
-      sendImmediately
+      sendImmediately,
     );
   }
 
   #parse(dataView: DataView<ArrayBuffer>) {
-    const parsedSensorConfiguration: SensorConfiguration = {};
-    for (
-      let byteOffset = 0;
-      byteOffset < dataView.byteLength;
-      byteOffset += 3
-    ) {
-      const sensorTypeIndex = dataView.getUint8(byteOffset);
-      const sensorType = SensorTypes[sensorTypeIndex];
-
-      const sensorRate = dataView.getUint16(byteOffset + 1, true);
-      _console.log({ sensorType, sensorRate });
-
-      if (!sensorType) {
-        _console.warn(`unknown sensorType index ${sensorTypeIndex}`);
-        continue;
-      }
-      parsedSensorConfiguration[sensorType] = sensorRate;
-    }
+    const parsedSensorConfiguration = parseSensorConfiguration(dataView);
     _console.log({ parsedSensorConfiguration });
     this.#availableSensorTypes = Object.keys(
-      parsedSensorConfiguration
+      parsedSensorConfiguration,
     ) as SensorType[];
     _console.log("availableSensorTypes", this.#availableSensorTypes);
     return parsedSensorConfiguration;
@@ -179,40 +235,20 @@ class SensorConfigurationManager {
     _console.assertTypeWithError(sensorRate, "number");
     _console.assertWithError(
       sensorRate >= 0,
-      `sensorRate must be 0 or greater (got ${sensorRate})`
+      `sensorRate must be 0 or greater (got ${sensorRate})`,
     );
     _console.assertWithError(
       sensorRate < MaxSensorRate,
-      `sensorRate must be 0 or greater (got ${sensorRate})`
+      `sensorRate must be 0 or greater (got ${sensorRate})`,
     );
     _console.assertWithError(
       sensorRate % SensorRateStep == 0,
-      `sensorRate must be multiple of ${SensorRateStep}`
+      `sensorRate must be multiple of ${SensorRateStep}`,
     );
   }
 
   #assertValidSensorRate(sensorRate: number) {
     SensorConfigurationManager.#AssertValidSensorRate(sensorRate);
-  }
-
-  #createData(sensorConfiguration: SensorConfiguration) {
-    let sensorTypes = Object.keys(sensorConfiguration) as SensorType[];
-    sensorTypes = sensorTypes.filter((sensorType) =>
-      this.#assertAvailableSensorType(sensorType)
-    );
-
-    const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
-    sensorTypes.forEach((sensorType, index) => {
-      SensorDataManager.AssertValidSensorType(sensorType);
-      const sensorTypeEnum = SensorTypes.indexOf(sensorType);
-      dataView.setUint8(index * 3, sensorTypeEnum);
-
-      const sensorRate = sensorConfiguration[sensorType]!;
-      this.#assertValidSensorRate(sensorRate);
-      dataView.setUint16(index * 3 + 1, sensorRate, true);
-    });
-    _console.log({ sensorConfigurationData: dataView });
-    return dataView;
   }
 
   // ZERO
@@ -239,7 +275,7 @@ class SensorConfigurationManager {
   // MESSAGE
   parseMessage(
     messageType: SensorConfigurationMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     _console.log({ messageType });
 

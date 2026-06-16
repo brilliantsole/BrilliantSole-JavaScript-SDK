@@ -15,7 +15,7 @@ window.device = device;
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate"
+  "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
@@ -52,14 +52,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.GetDevices();
+  const availableDevices = await BS.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
@@ -108,7 +108,7 @@ device.addEventListener("connectionStatus", () => {
 
 /** @type {HTMLInputElement} */
 const reconnectOnDisconnectionCheckbox = document.getElementById(
-  "reconnectOnDisconnection"
+  "reconnectOnDisconnection",
 );
 reconnectOnDisconnectionCheckbox.addEventListener("input", () => {
   device.reconnectOnDisconnection = reconnectOnDisconnectionCheckbox.checked;
@@ -122,19 +122,19 @@ device.addEventListener("deviceInformation", () => {
   deviceInformationPre.textContent = JSON.stringify(
     device.deviceInformation,
     null,
-    2
+    2,
   );
 });
 
 /** @type {HTMLPreElement} */
 const sensorConfigurationPre = document.getElementById(
-  "sensorConfigurationPre"
+  "sensorConfigurationPre",
 );
 device.addEventListener("getSensorConfiguration", () => {
   sensorConfigurationPre.textContent = JSON.stringify(
     device.sensorConfiguration,
     null,
-    2
+    2,
   );
 });
 
@@ -457,7 +457,7 @@ function updateToggleSamplingButton() {
     window.addEventListener(eventType, () => {
       updateToggleSamplingButton();
     });
-  }
+  },
 );
 device.addEventListener("isConnected", () => {
   updateToggleSamplingButton();
@@ -498,7 +498,7 @@ async function getProjects() {
     x.onload = () => {
       if (x.status !== 200) {
         reject(
-          "No projects found: " + x.status + " - " + JSON.stringify(x.response)
+          "No projects found: " + x.status + " - " + JSON.stringify(x.response),
         );
       } else {
         if (!x.response.success) {
@@ -508,7 +508,7 @@ async function getProjects() {
           console.log("projects", projects);
           resolve(projects);
           window.dispatchEvent(
-            new CustomEvent("edgeImpulseProjects", { detail: { projects } })
+            new CustomEvent("edgeImpulseProjects", { detail: { projects } }),
           );
         }
       }
@@ -527,7 +527,7 @@ async function getProject() {
     x.onload = () => {
       if (x.status !== 200) {
         reject(
-          "No projects found: " + x.status + " - " + JSON.stringify(x.response)
+          "No projects found: " + x.status + " - " + JSON.stringify(x.response),
         );
       } else {
         if (!x.response.success) {
@@ -537,7 +537,7 @@ async function getProject() {
           console.log("project", project);
           resolve(project);
           window.dispatchEvent(
-            new CustomEvent("edgeImpulseProject", { detail: { project } })
+            new CustomEvent("edgeImpulseProject", { detail: { project } }),
           );
         }
       }
@@ -561,7 +561,7 @@ async function getHmacKey() {
           "No development keys found: " +
             x.status +
             " - " +
-            JSON.stringify(x.response)
+            JSON.stringify(x.response),
         );
       } else {
         if (!x.response.success) {
@@ -713,7 +713,7 @@ async function connectToRemoteManagement() {
         allowedTfliteSensorTypes.push("acceleration");
       }
       const invalidSensors = sensorTypes.filter(
-        (sensorType) => !allowedTfliteSensorTypes.includes(sensorType)
+        (sensorType) => !allowedTfliteSensorTypes.includes(sensorType),
       );
       if (invalidSensors.length > 0) {
         console.error("invalid sensorTypes", invalidSensors);
@@ -807,7 +807,7 @@ async function normalizeJpeg(blob) {
   ctx.drawImage(img, -x, 0);
 
   return await new Promise((resolve) =>
-    canvas.toBlob(resolve, "image/jpeg", 1)
+    canvas.toBlob(resolve, "image/jpeg", 1),
   );
 }
 device.addEventListener("cameraImage", async (event) => {
@@ -935,7 +935,7 @@ function remoteManagementHelloMessage() {
         default:
           return true;
       }
-    })
+    }),
   );
   const singleTliteSensorTypes = allowedTfliteSensorTypes.filter(
     (sensorType) => {
@@ -947,7 +947,7 @@ function remoteManagementHelloMessage() {
         default:
           return false;
       }
-    }
+    },
   );
   sensorCombinations.push(...singleTliteSensorTypes);
 
@@ -997,7 +997,7 @@ function isRemoteManagementConnected() {
 
 /** @type {HTMLButtonElement} */
 const toggleRemoteManagementConnectionButton = document.getElementById(
-  "toggleRemoteManagementConnection"
+  "toggleRemoteManagementConnection",
 );
 toggleRemoteManagementConnectionButton.addEventListener("click", () => {
   toggleRemoteManagementConnection();
@@ -1038,19 +1038,19 @@ device.addEventListener("isConnected", () => {
 let reconnectRemoteManagementOnDisconnection = false;
 /** @type {HTMLInputElement} */
 const reconnectRemoteManagementOnDisconnectionInput = document.getElementById(
-  "reconnectRemoteManagementOnDisconnection"
+  "reconnectRemoteManagementOnDisconnection",
 );
 reconnectRemoteManagementOnDisconnectionInput.addEventListener(
   "input",
   (event) => {
     setReconnectRemoteManagementOnDisconnection(event.target.checked);
-  }
+  },
 );
 reconnectRemoteManagementOnDisconnectionInput.checked =
   reconnectRemoteManagementOnDisconnection;
 /** @param {boolean} newReconnectRemoteManagementOnDisconnection */
 function setReconnectRemoteManagementOnDisconnection(
-  newReconnectRemoteManagementOnDisconnection
+  newReconnectRemoteManagementOnDisconnection,
 ) {
   reconnectRemoteManagementOnDisconnection =
     newReconnectRemoteManagementOnDisconnection;
@@ -1096,7 +1096,7 @@ async function collectData(sensorTypes, numberOfSamples) {
       }
 
       const didFinishCollectingDeviceData = Object.values(deviceData).every(
-        (sensorData) => sensorData.length >= numberOfSamples
+        (sensorData) => sensorData.length >= numberOfSamples,
       );
 
       if (didFinishCollectingDeviceData) {
@@ -1137,7 +1137,7 @@ async function uploadMotionData(sensorTypes, deviceData) {
       case "gyroscope":
       case "magnetometer":
         names = ["x", "y", "z"].map(
-          (component) => `${sensorType}.${component}`
+          (component) => `${sensorType}.${component}`,
         );
         switch (sensorType) {
           case "acceleration":
@@ -1195,7 +1195,7 @@ async function uploadMotionData(sensorTypes, deviceData) {
           ) {
             value.push(
               sensorSamples[sampleIndex].sensors[pressureIndex].rawValue *
-                scalar
+                scalar,
             );
           }
           break;
@@ -1243,7 +1243,7 @@ async function uploadData(values, sensors) {
   formData.append(
     "message",
     new Blob([JSON.stringify(data)], { type: "application/json" }),
-    "message.json"
+    "message.json",
   );
 
   return new Promise((resolve, reject) => {
@@ -1256,7 +1256,7 @@ async function uploadData(values, sensors) {
           "Failed to upload (status code " +
             xml.status +
             "): " +
-            xml.responseText
+            xml.responseText,
         );
       }
     };
@@ -1298,13 +1298,13 @@ async function createSignature(hmacKey, data) {
       },
     },
     false, // export = false
-    ["sign", "verify"] // what this key can do
+    ["sign", "verify"], // what this key can do
   );
   // Create signature for encoded input data
   const signature = await crypto.subtle.sign(
     "HMAC",
     key,
-    textEncoder.encode(JSON.stringify(data))
+    textEncoder.encode(JSON.stringify(data)),
   );
   // Convert back to Hex
   const b = new Uint8Array(signature);
@@ -1498,22 +1498,22 @@ device.addEventListener("autoPicture", () => {
 
 /** @type {HTMLPreElement} */
 const cameraConfigurationPre = document.getElementById(
-  "cameraConfigurationPre"
+  "cameraConfigurationPre",
 );
 device.addEventListener("getCameraConfiguration", () => {
   cameraConfigurationPre.textContent = JSON.stringify(
     device.cameraConfiguration,
     null,
-    2
+    2,
   );
 });
 
 const cameraConfigurationContainer = document.getElementById(
-  "cameraConfiguration"
+  "cameraConfiguration",
 );
 /** @type {HTMLTemplateElement} */
 const cameraConfigurationTypeTemplate = document.getElementById(
-  "cameraConfigurationTypeTemplate"
+  "cameraConfigurationTypeTemplate",
 );
 BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   const cameraConfigurationTypeContainer =
@@ -1581,9 +1581,9 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
       device.addEventListener(
         "getCameraConfiguration",
         () => {
-          setTimeout(() => device.takePicture()), 100;
+          (setTimeout(() => device.takePicture()), 100);
         },
-        { once: true }
+        { once: true },
       );
     }
   });
@@ -1591,7 +1591,7 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
 
 /** @type {HTMLInputElement} */
 const takePictureAfterUpdateCheckbox = document.getElementById(
-  "takePictureAfterUpdate"
+  "takePictureAfterUpdate",
 );
 let takePictureAfterUpdate = false;
 takePictureAfterUpdateCheckbox.addEventListener("input", () => {
@@ -1613,14 +1613,14 @@ const updateWhiteBalance = BS.ThrottleUtils.throttle(
       device.addEventListener(
         "getCameraConfiguration",
         () => {
-          setTimeout(() => device.takePicture()), 100;
+          (setTimeout(() => device.takePicture()), 100);
         },
-        { once: true }
+        { once: true },
       );
     }
   },
   200,
-  true
+  true,
 );
 cameraWhiteBalanceInput.addEventListener("input", () => {
   let [redGain, greenGain, blueGain] = cameraWhiteBalanceInput.value
@@ -1669,7 +1669,7 @@ device.addEventListener("connected", () => {
 
 /** @type {HTMLSpanElement} */
 const isMicrophoneAvailableSpan = document.getElementById(
-  "isMicrophoneAvailable"
+  "isMicrophoneAvailable",
 );
 device.addEventListener("connected", () => {
   isMicrophoneAvailableSpan.innerText = device.hasMicrophone;
@@ -1683,22 +1683,22 @@ device.addEventListener("microphoneStatus", () => {
 
 /** @type {HTMLPreElement} */
 const microphoneConfigurationPre = document.getElementById(
-  "microphoneConfigurationPre"
+  "microphoneConfigurationPre",
 );
 device.addEventListener("getMicrophoneConfiguration", () => {
   microphoneConfigurationPre.textContent = JSON.stringify(
     device.microphoneConfiguration,
     null,
-    2
+    2,
   );
 });
 
 const microphoneConfigurationContainer = document.getElementById(
-  "microphoneConfiguration"
+  "microphoneConfiguration",
 );
 /** @type {HTMLTemplateElement} */
 const microphoneConfigurationTypeTemplate = document.getElementById(
-  "microphoneConfigurationTypeTemplate"
+  "microphoneConfigurationTypeTemplate",
 );
 BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
   const microphoneConfigurationTypeContainer =
@@ -1707,7 +1707,7 @@ BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
       .querySelector(".microphoneConfigurationType");
 
   microphoneConfigurationContainer.appendChild(
-    microphoneConfigurationTypeContainer
+    microphoneConfigurationTypeContainer,
   );
 
   microphoneConfigurationTypeContainer.querySelector(".type").innerText =
@@ -1722,7 +1722,7 @@ BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
   BS.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
     (value) => {
       optgroup.appendChild(new Option(value));
-    }
+    },
   );
 
   /** @type {HTMLSpanElement} */
@@ -1810,7 +1810,7 @@ stopMicrophoneButton.addEventListener("click", () => {
 });
 /** @type {HTMLButtonElement} */
 const enableMicrophoneVadButton = document.getElementById(
-  "enableMicrophoneVad"
+  "enableMicrophoneVad",
 );
 enableMicrophoneVadButton.addEventListener("click", () => {
   device.enableMicrophoneVad();
@@ -1863,11 +1863,11 @@ microphoneStreamAudioElement.srcObject =
 
 /** @type {HTMLAudioElement} */
 const microphoneRecordingAudioElement = document.getElementById(
-  "microphoneRecording"
+  "microphoneRecording",
 );
 /** @type {HTMLInputElement} */
 const autoPlayMicrophoneRecordingCheckbox = document.getElementById(
-  "autoPlayMicrophoneRecording"
+  "autoPlayMicrophoneRecording",
 );
 let autoPlayMicrophoneRecording = autoPlayMicrophoneRecordingCheckbox.checked;
 console.log("autoPlayMicrophoneRecording", autoPlayMicrophoneRecording);
@@ -1884,7 +1884,7 @@ device.addEventListener("microphoneRecording", (event) => {
 
 /** @type {HTMLButtonElement} */
 const toggleMicrophoneRecordingButton = document.getElementById(
-  "toggleMicrophoneRecording"
+  "toggleMicrophoneRecording",
 );
 toggleMicrophoneRecordingButton.addEventListener("click", () => {
   device.toggleMicrophoneRecording();

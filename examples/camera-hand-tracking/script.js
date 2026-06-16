@@ -3,35 +3,91 @@ window.BS = BS;
 console.log(BS);
 
 // DEVICE
+/** @type {BS.Device?} */
+let currentDevice;
 
-const device = new BS.Device();
-console.log({ device });
-window.device = device;
+/** @param {(device: BS.Device)=>void} callback */
+const onCurrentDevice = (callback) => {
+  BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+    if (event.message.device == currentDevice) {
+      callback(currentDevice);
+    }
+  });
+};
 
-// CONNECT
-
-const toggleConnectionButton = document.getElementById("toggleConnection");
-toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
-);
-device.addEventListener("connectionStatus", () => {
-  let disabled = false;
-  let innerText = device.connectionStatus;
-  switch (device.connectionStatus) {
-    case "notConnected":
-      innerText = "connect";
-      break;
-    case "connected":
-      innerText = "disconnect";
-      break;
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (!currentDevice?.isConnected) {
+    onDevice(device);
   }
-  toggleConnectionButton.disabled = disabled;
-  toggleConnectionButton.innerText = innerText;
+});
+BS.DeviceManager.addEventListener("deviceNotConnected", (event) => {
+  const { device } = event.message;
+  if (currentDevice == device) {
+    console.log("currentDevice is gone");
+    currentDevice.removeAllEventListeners();
+    const nextConnectedDevice = BS.DeviceManager.connectedDevices[0];
+    console.log("nextConnectedDevice", nextConnectedDevice);
+    if (nextConnectedDevice) {
+      onDevice(nextConnectedDevice);
+    }
+  }
+});
+
+/** @param {BS.Device} device */
+const onDevice = (device, replaceCurrentDevice = false) => {
+  if (currentDevice?.isConnected) {
+    if (!replaceCurrentDevice) {
+      return;
+    }
+    currentDevice.removeAllEventListeners();
+  }
+  currentDevice = device;
+  console.log("currentDevice", currentDevice);
+};
+
+// CONNECTION
+
+/** @type {HTMLButtonElement} */
+const toggleConnectionButton = document.getElementById("toggleConnection");
+toggleConnectionButton.addEventListener("click", async () => {
+  if (currentDevice) {
+    currentDevice.toggleConnection();
+  } else {
+    toggleConnectionButton.innerText = "connecting...";
+    await BS.Device.Connect();
+    if (!currentDevice) {
+      toggleConnectionButton.innerText = "connect";
+    }
+  }
+});
+
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "connectionStatus",
+    () => {
+      switch (device.connectionStatus) {
+        case "connected":
+        case "notConnected":
+          toggleConnectionButton.disabled = false;
+          toggleConnectionButton.innerText = device.isConnected
+            ? "disconnect"
+            : "connect";
+          break;
+        case "connecting":
+        case "disconnecting":
+          toggleConnectionButton.disabled = true;
+          toggleConnectionButton.innerText = currentDevice.connectionStatus;
+          break;
+      }
+    },
+    { immediate: true },
+  );
 });
 
 // CAMERA
 
-device.addEventListener("connected", () => {
+onCurrentDevice((device) => {
   if (device.hasCamera) {
     //device.setSensorConfiguration({camera:20})
   } else {
@@ -42,83 +98,99 @@ device.addEventListener("connected", () => {
 
 /** @type {HTMLSpanElement} */
 const cameraStatusSpan = document.getElementById("cameraStatus");
-device.addEventListener("cameraStatus", () => {
-  cameraStatusSpan.innerText = device.cameraStatus;
+onCurrentDevice((device) => {
+  device.addEventListener("cameraStatus", () => {
+    cameraStatusSpan.innerText = device.cameraStatus;
+  });
 });
 
 /** @type {HTMLButtonElement} */
 const takePictureButton = document.getElementById("takePicture");
 takePictureButton.addEventListener("click", () => {
-  if (device.cameraStatus == "idle") {
-    device.takePicture();
+  if (currentDevice.cameraStatus == "idle") {
+    currentDevice.takePicture();
   } else {
-    device.stopCamera();
+    currentDevice.stopCamera();
   }
 });
-device.addEventListener("connected", () => {
-  updateTakePictureButton();
-});
-device.addEventListener("getSensorConfiguration", () => {
-  updateTakePictureButton();
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "getSensorConfiguration",
+    () => {
+      updateTakePictureButton();
+    },
+    { immediate: true },
+  );
 });
 const updateTakePictureButton = () => {
-  takePictureButton.disabled = !device.isConnected;
+  takePictureButton.disabled = !currentDevice.isConnected;
   // device.sensorConfiguration.camera == 0 ||
   // device.cameraStatus != "idle";
 };
-device.addEventListener("cameraStatus", () => {
-  updateTakePictureButton();
+onCurrentDevice((device) => {
+  device.addEventListener("cameraStatus", () => {
+    updateTakePictureButton();
+  });
 });
 
 /** @type {HTMLButtonElement} */
 const focusCameraButton = document.getElementById("focusCamera");
 focusCameraButton.addEventListener("click", () => {
-  if (device.cameraStatus == "idle") {
-    device.focusCamera();
+  if (currentDevice.cameraStatus == "idle") {
+    currentDevice.focusCamera();
   } else {
-    device.stopCamera();
+    currentDevice.stopCamera();
   }
 });
-device.addEventListener("connected", () => {
-  updateFocusCameraButton();
-});
-device.addEventListener("getSensorConfiguration", () => {
-  updateFocusCameraButton();
+
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "getSensorConfiguration",
+    () => {
+      updateFocusCameraButton();
+    },
+    { immediate: true },
+  );
 });
 const updateFocusCameraButton = () => {
   focusCameraButton.disabled =
-    !device.isConnected ||
-    device.sensorConfiguration.camera == 0 ||
-    device.cameraStatus != "idle";
+    !currentDevice.isConnected ||
+    currentDevice.sensorConfiguration.camera == 0 ||
+    currentDevice.cameraStatus != "idle";
 };
-device.addEventListener("cameraStatus", (event) => {
-  updateFocusCameraButton();
-  if (
-    device.cameraStatus == "idle" &&
-    event.message.previousCameraStatus == "focusing"
-  ) {
-    device.takePicture();
-  }
+onCurrentDevice((device) => {
+  device.addEventListener("cameraStatus", (event) => {
+    updateFocusCameraButton();
+    if (
+      device.cameraStatus == "idle" &&
+      event.message.previousCameraStatus == "focusing"
+    ) {
+      device.takePicture();
+    }
+  });
 });
 
 /** @type {HTMLButtonElement} */
 const sleepCameraButton = document.getElementById("sleepCamera");
 sleepCameraButton.addEventListener("click", () => {
-  if (device.cameraStatus == "asleep") {
-    device.wakeCamera();
+  if (currentDevice.cameraStatus == "asleep") {
+    currentDevice.wakeCamera();
   } else {
-    device.sleepCamera();
+    currentDevice.sleepCamera();
   }
 });
-device.addEventListener("connected", () => {
-  updateSleepCameraButton();
-});
-device.addEventListener("getSensorConfiguration", () => {
-  updateSleepCameraButton();
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "getSensorConfiguration",
+    () => {
+      updateSleepCameraButton();
+    },
+    { immediate: true },
+  );
 });
 const updateSleepCameraButton = () => {
-  let disabled = !device.isConnected || !device.hasCamera;
-  switch (device.cameraStatus) {
+  let disabled = !currentDevice.isConnected || !currentDevice.hasCamera;
+  switch (currentDevice.cameraStatus) {
     case "asleep":
       sleepCameraButton.innerText = "wake camera";
       break;
@@ -131,52 +203,66 @@ const updateSleepCameraButton = () => {
   }
   sleepCameraButton.disabled = disabled;
 };
-device.addEventListener("cameraStatus", () => {
-  updateSleepCameraButton();
+onCurrentDevice((device) => {
+  device.addEventListener("cameraStatus", () => {
+    updateSleepCameraButton();
+  });
 });
 
 /** @type {HTMLImageElement} */
 const cameraImage = document.getElementById("cameraImage");
 const cameraImageParent = cameraImage.parentElement;
-device.addEventListener("cameraImage", (event) => {
-  cameraImage.src = event.message.url;
+onCurrentDevice((device) => {
+  device.addEventListener("cameraImage", (event) => {
+    cameraImage.src = event.message.url;
+  });
 });
 
 /** @type {HTMLProgressElement} */
 const cameraImageProgress = document.getElementById("cameraImageProgress");
-device.addEventListener("cameraImageProgress", (event) => {
-  if (event.message.type == "image") {
-    cameraImageProgress.value = event.message.progress;
-  }
+onCurrentDevice((device) => {
+  device.addEventListener("cameraImageProgress", (event) => {
+    if (event.message.type == "image") {
+      cameraImageProgress.value = event.message.progress;
+    }
+  });
 });
 
 /** @type {HTMLInputElement} */
 const autoPictureCheckbox = document.getElementById("autoPicture");
 autoPictureCheckbox.addEventListener("input", () => {
-  device.autoPicture = autoPictureCheckbox.checked;
+  currentDevice.autoPicture = autoPictureCheckbox.checked;
 });
-device.addEventListener("autoPicture", () => {
-  autoPictureCheckbox.checked = device.autoPicture;
+onCurrentDevice((device) => {
+  device.addEventListener("autoPicture", () => {
+    autoPictureCheckbox.checked = device.autoPicture;
+  });
 });
 
 /** @type {HTMLPreElement} */
 const cameraConfigurationPre = document.getElementById(
-  "cameraConfigurationPre"
+  "cameraConfigurationPre",
 );
-device.addEventListener("getCameraConfiguration", () => {
-  cameraConfigurationPre.textContent = JSON.stringify(
-    device.cameraConfiguration,
-    null,
-    2
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "getCameraConfiguration",
+    () => {
+      cameraConfigurationPre.textContent = JSON.stringify(
+        device.cameraConfiguration,
+        null,
+        2,
+      );
+    },
+    { immediate: true },
   );
 });
 
 const cameraConfigurationContainer = document.getElementById(
-  "cameraConfiguration"
+  "cameraConfiguration",
 );
 /** @type {HTMLTemplateElement} */
 const cameraConfigurationTypeTemplate = document.getElementById(
-  "cameraConfigurationTypeTemplate"
+  "cameraConfigurationTypeTemplate",
 );
 BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   const cameraConfigurationTypeContainer =
@@ -195,59 +281,75 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   /** @type {HTMLSpanElement} */
   const span = cameraConfigurationTypeContainer.querySelector("span");
 
-  device.addEventListener("isConnected", () => {
-    updateIsInputDisabled();
-  });
-  device.addEventListener("connected", () => {
-    updateContainerVisibility();
-  });
-  device.addEventListener("cameraStatus", () => {
-    updateIsInputDisabled();
+  onCurrentDevice((device) => {
+    device.addEventListener(
+      "isConnected",
+      () => {
+        updateIsInputDisabled();
+      },
+      { immediate: true },
+    );
+    device.addEventListener("cameraStatus", () => {
+      updateIsInputDisabled();
+    });
   });
   const updateIsInputDisabled = () => {
     input.disabled =
-      !device.isConnected || !device.hasCamera || device.cameraStatus != "idle";
+      !currentDevice.isConnected ||
+      !currentDevice.hasCamera ||
+      currentDevice.cameraStatus != "idle";
   };
 
   const updateContainerVisibility = () => {
-    const isVisible = cameraConfigurationType in device.cameraConfiguration;
+    const isVisible =
+      cameraConfigurationType in currentDevice.cameraConfiguration;
     cameraConfigurationTypeContainer.style.display = isVisible ? "" : "none";
   };
 
   const updateInput = () => {
-    const value = device.cameraConfiguration[cameraConfigurationType];
+    const value = currentDevice.cameraConfiguration[cameraConfigurationType];
     span.innerText = value;
     input.value = value;
   };
 
-  device.addEventListener("connected", () => {
-    if (!device.hasCamera) {
-      return;
-    }
-    const range = device.cameraConfigurationRanges[cameraConfigurationType];
-    input.min = range.min;
-    input.max = range.max;
+  onCurrentDevice((device) => {
+    device.addEventListener(
+      "connected",
+      () => {
+        if (!device.hasCamera) {
+          return;
+        }
+        const range = device.cameraConfigurationRanges[cameraConfigurationType];
+        input.min = range.min;
+        input.max = range.max;
 
-    updateInput();
-  });
+        updateInput();
+      },
+      { immediate: true },
+    );
 
-  device.addEventListener("getCameraConfiguration", () => {
-    updateInput();
+    device.addEventListener(
+      "getCameraConfiguration",
+      () => {
+        updateInput();
+      },
+      { immediate: true },
+    );
   });
 
   input.addEventListener("change", () => {
     const value = Number(input.value);
     // console.log(`updating ${cameraConfigurationType} to ${value}`);
-    device.setCameraConfiguration({
+    currentDevice.setCameraConfiguration({
       [cameraConfigurationType]: value,
     });
     if (takePictureAfterUpdate) {
-      device.addEventListener(
+      currentDevice.addEventListener(
         "getCameraConfiguration",
         () => {
-          setTimeout(() => device.takePicture()), 100;
+          (setTimeout(() => currentDevice.takePicture()), 100);
         },
-        { once: true }
+        { once: true },
       );
     }
   });
@@ -255,7 +357,7 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
 
 /** @type {HTMLInputElement} */
 const takePictureAfterUpdateCheckbox = document.getElementById(
-  "takePictureAfterUpdate"
+  "takePictureAfterUpdate",
 );
 let takePictureAfterUpdate = false;
 takePictureAfterUpdateCheckbox.addEventListener("input", () => {
@@ -282,46 +384,55 @@ toggleRotationCheckbox.addEventListener("input", () => {
   console.log({ rotatePicture: rotationEnabled });
   updateRotation();
 });
-device.addEventListener("isConnected", () => {
-  const enabled =
-    device.isConnected &&
-    (device.hasSensorType("gameRotation") ||
-      device.hasSensorType("orientation"));
-  toggleRotationCheckbox.disabled = !enabled;
-});
-device.addEventListener("connected", () => {
+
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "isConnected",
+    () => {
+      const enabled =
+        device.isConnected &&
+        (device.hasSensorType("gameRotation") ||
+          device.hasSensorType("orientation"));
+      toggleRotationCheckbox.disabled = !enabled;
+    },
+    { immediate: true },
+  );
   updateRotation();
 });
 const updateRotation = () => {
   if (!rotationEnabled) {
     cameraImageParent.style.transform = `rotate(${0}rad)`;
   }
-  if (!device.isConnected) {
+  if (!currentDevice.isConnected) {
     return;
   }
   /** @type {BS.SensorType} */
-  const sensorType = device.hasSensorType("gameRotation")
+  const sensorType = currentDevice.hasSensorType("gameRotation")
     ? "gameRotation"
     : "orientation";
-  device.setSensorConfiguration({ [sensorType]: rotationEnabled ? 20 : 0 });
+  currentDevice.setSensorConfiguration({
+    [sensorType]: rotationEnabled ? 20 : 0,
+  });
 };
-device.addEventListener("gameRotation", (event) => {
-  quaternion.copy(event.message.gameRotation);
-  euler.setFromQuaternion(quaternion);
-  console.log({ cameraRoll: euler.z });
-});
-device.addEventListener("orientation", (event) => {
-  const { heading, pitch, roll } = event.message.orientation;
-  orientationVector3.set(pitch, heading, roll).multiplyScalar(Math.PI / 180);
-  euler.setFromVector3(orientationVector3);
-  console.log({ cameraRoll: euler.z });
-});
+onCurrentDevice((device) => {
+  device.addEventListener("gameRotation", (event) => {
+    quaternion.copy(event.message.gameRotation);
+    euler.setFromQuaternion(quaternion);
+    console.log({ cameraRoll: euler.z });
+  });
+  device.addEventListener("orientation", (event) => {
+    const { heading, pitch, roll } = event.message.orientation;
+    orientationVector3.set(pitch, heading, roll).multiplyScalar(Math.PI / 180);
+    euler.setFromVector3(orientationVector3);
+    console.log({ cameraRoll: euler.z });
+  });
 
-device.addEventListener("cameraStatus", () => {
-  if (rotationEnabled && device.cameraStatus == "takingPicture") {
-    cameraRoll = euler.z;
-    console.log({ cameraRoll });
-  }
+  device.addEventListener("cameraStatus", () => {
+    if (rotationEnabled && device.cameraStatus == "takingPicture") {
+      cameraRoll = euler.z;
+      console.log({ cameraRoll });
+    }
+  });
 });
 cameraImage.addEventListener("load", () => {
   if (rotationEnabled) {
@@ -343,7 +454,7 @@ import {
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
 const vision = await FilesetResolver.forVisionTasks(
-  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+  "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm",
 );
 const handLandmarker = await HandLandmarker.createFromOptions(vision, {
   baseOptions: {
@@ -378,7 +489,7 @@ cameraImage.addEventListener("load", () => {
 
   const handLandmarkerResult = handLandmarker.detectForVideo(
     cameraImage,
-    performance.now()
+    performance.now(),
   );
 
   //console.log("handLandmarkerResult", handLandmarkerResult);
@@ -438,13 +549,14 @@ const updateQuaternion = (quaternion, applyOffset = true) => {
   }
   camera.object3D.quaternion.slerp(
     targetQuaternion,
-    window.interpolationSmoothing
+    window.interpolationSmoothing,
   );
 };
-
-device.addEventListener("gameRotation", (event) => {
-  const { gameRotation } = event.message;
-  updateQuaternion(gameRotation);
+onCurrentDevice((device) => {
+  device.addEventListener("gameRotation", (event) => {
+    const { gameRotation } = event.message;
+    updateQuaternion(gameRotation);
+  });
 });
 
 // CAMERA
@@ -476,7 +588,7 @@ const drawCameraVideo = () => {
     0,
     0,
     cameraCanvas.width,
-    cameraCanvas.height
+    cameraCanvas.height,
   );
   cameraImage.src = cameraCanvas.toDataURL("image/png");
   requestAnimationFrame(drawCameraVideo);
@@ -527,7 +639,7 @@ const updateCameraSources = async () => {
     .filter((device) => device.kind == "videoinput")
     .forEach((videoInputDevice) => {
       cameraInputOptgroup.appendChild(
-        new Option(videoInputDevice.label, videoInputDevice.deviceId)
+        new Option(videoInputDevice.label, videoInputDevice.deviceId),
       );
     });
   cameraInput.value = "none";
@@ -559,6 +671,6 @@ const stopCameraStream = () => {
   cameraVideo.srcObject = undefined;
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateCameraSources()
+  updateCameraSources(),
 );
 updateCameraSources();

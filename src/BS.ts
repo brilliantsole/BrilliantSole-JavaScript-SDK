@@ -13,6 +13,8 @@ export { Vector2, Vector3, Quaternion, Euler };
 import {
   default as Device,
   DeviceEvent,
+  DeviceEventType,
+  DeviceEventTypes,
   DeviceEventMap,
   DeviceEventListenerMap,
   BoundDeviceEventListeners,
@@ -20,6 +22,8 @@ import {
 export {
   Device,
   DeviceEvent,
+  DeviceEventType,
+  DeviceEventTypes,
   DeviceEventMap,
   DeviceEventListenerMap,
   BoundDeviceEventListeners,
@@ -52,6 +56,22 @@ export {
   DeviceManagerEventListenerMap,
   BoundDeviceManagerEventListeners,
 };
+
+/** BROWSER_START */
+
+import { default as WindowManagerServer } from "./window/WindowManagerServer.ts";
+export { WindowManagerServer };
+
+import { default as WindowManagerClient } from "./window/WindowManagerClient.ts";
+export { WindowManagerClient };
+
+import { default as WindowServer } from "./server/window/WindowServer.ts";
+export { WindowServer };
+
+import { default as WindowClient } from "./server/window/WindowClient.ts";
+export { WindowClient };
+
+/** BROWSER_END */
 
 import { DeviceInformation } from "./DeviceInformationManager.ts";
 export { DeviceInformation };
@@ -113,6 +133,9 @@ export { CenterOfPressure };
 import CenterOfPressureModel from "./utils/CenterOfPressureModel.ts";
 export { CenterOfPressureModel };
 
+import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.ts";
+export { concatenateArrayBuffers };
+
 import {
   VibrationConfiguration,
   VibrationLocation,
@@ -125,6 +148,10 @@ import {
   MaxVibrationWaveformEffectSegmentLoopCount,
   MaxNumberOfVibrationWaveformSegments,
   MaxVibrationWaveformEffectSequenceLoopCount,
+  VibrationWaveformSegment,
+  VibrationWaveformEffectSegment,
+  VibrationWaveformEffectConfiguration,
+  VibrationWaveformConfiguration,
 } from "./vibration/VibrationManager.ts";
 export {
   VibrationConfiguration,
@@ -138,6 +165,10 @@ export {
   MaxVibrationWaveformEffectSegmentLoopCount,
   MaxNumberOfVibrationWaveformSegments,
   MaxVibrationWaveformEffectSequenceLoopCount,
+  VibrationWaveformSegment,
+  VibrationWaveformEffectSegment,
+  VibrationWaveformEffectConfiguration,
+  VibrationWaveformConfiguration,
 };
 
 import {
@@ -265,6 +296,7 @@ export {
 import {
   maxDisplayScale,
   DisplayColorRGB,
+  DisplayColorRGBOrString,
   pixelDepthToNumberOfColors,
   displayCurveTypeToNumberOfControlPoints,
   mergeWireframes,
@@ -274,6 +306,7 @@ import {
 export {
   maxDisplayScale,
   DisplayColorRGB,
+  DisplayColorRGBOrString,
   pixelDepthToNumberOfColors,
   displayCurveTypeToNumberOfControlPoints,
   mergeWireframes,
@@ -363,6 +396,12 @@ export {
   FontMetrics,
 };
 
+import {
+  WildcardEventType,
+  wildcardEventType,
+} from "./utils/EventDispatcher.ts";
+export { WildcardEventType, wildcardEventType };
+
 /** BROWSER_START */
 import {
   default as DisplayCanvasHelper,
@@ -408,8 +447,8 @@ export {
 };
 /** BROWSER_END */
 
-import { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
-export { rgbToHex, hexToRGB };
+import { rgbToHex, hexToRGB, projectColor } from "./utils/ColorUtils.ts";
+export { rgbToHex, hexToRGB, projectColor };
 
 import {
   default as DevicePair,
@@ -440,6 +479,25 @@ import { throttle, debounce } from "./utils/ThrottleUtils.ts";
 export const ThrottleUtils = {
   throttle,
   debounce,
+};
+
+import {
+  LedType,
+  LedTypes,
+  LedValue,
+  LedValueType,
+  LedValueTypes,
+  LedConfiguration,
+  Led,
+} from "./led/LedManager.ts";
+export {
+  LedType,
+  LedTypes,
+  LedValue,
+  LedValueType,
+  LedValueTypes,
+  LedConfiguration,
+  Led,
 };
 
 import {

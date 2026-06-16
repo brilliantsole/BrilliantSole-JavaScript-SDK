@@ -1,6 +1,8 @@
 declare const isInProduction: boolean;
 declare const isInDev: boolean;
 declare const isInBrowser: boolean;
+declare let isInIframe: boolean;
+declare const isWKWebView: boolean;
 declare const isInNode: boolean;
 declare let isBluetoothSupported: boolean;
 declare const isInBluefy: boolean;
@@ -9,5 +11,4 @@ declare const isAndroid: boolean;
 declare const isSafari: boolean;
 declare const isIOS: boolean;
 declare const isMac: boolean;
-declare const isInLensStudio: boolean;
-export { isInDev, isInProduction, isInBrowser, isInNode, isAndroid, isInBluefy, isInWebBLE, isSafari, isInLensStudio, isIOS, isMac, isBluetoothSupported, };
+export { isInDev, isInProduction, isInBrowser, isInIframe, isWKWebView, isInNode, isAndroid, isInBluefy, isInWebBLE, isSafari, isIOS, isMac, isBluetoothSupported, };

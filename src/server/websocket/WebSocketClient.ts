@@ -2,13 +2,12 @@ import { createConsole } from "../../utils/Console.ts";
 import {
   createServerMessage,
   MessageLike,
-  ServerMessage,
+  ServerMessageOrMessageType,
 } from "../ServerUtils.ts";
 import {
   addEventListeners,
   removeEventListeners,
 } from "../../utils/EventUtils.ts";
-import ClientConnectionManager from "../../connection/ClientConnectionManager.ts";
 import BaseClient, { ServerURL } from "../BaseClient.ts";
 import type * as ws from "ws";
 import { Timer } from "../../utils/Timer.ts";
@@ -18,10 +17,10 @@ import {
   WebSocketMessageTypes,
   webSocketPingTimeout,
   webSocketReconnectTimeout,
-  WebSocketMessage,
+  webSocketPingMessage,
+  webSocketPongMessage,
 } from "./WebSocketUtils.ts";
 import { parseMessage } from "../../utils/ParseUtils.ts";
-import { isInLensStudio, isInBrowser } from "../../utils/environment.ts";
 
 const _console = createConsole("WebSocketClient", { log: false });
 
@@ -48,31 +47,27 @@ class WebSocketClient extends BaseClient {
 
     _console.log("assigned webSocket");
   }
-  get readyState() {
+  get #readyState() {
     return this.webSocket?.readyState;
   }
   get isConnected() {
-    return this.readyState == WebSocket.OPEN;
+    return this.#readyState == WebSocket.OPEN;
   }
   get isDisconnected() {
-    return this.readyState == WebSocket.CLOSED;
+    return this.#readyState == WebSocket.CLOSED;
   }
 
   connect(
     url: string | URL = `${
       location.protocol.includes("https") ? "wss" : "ws"
-    }://${location.host}`
+    }://${location.host}`,
   ) {
     if (this.webSocket) {
       this.assertDisconnection();
     }
     this._connectionStatus = "connecting";
 
-    if (isInLensStudio) {
-      // FILL
-    } else {
-      this.webSocket = new WebSocket(url);
-    }
+    this.webSocket = new WebSocket(url);
   }
 
   disconnect() {
@@ -84,7 +79,7 @@ class WebSocketClient extends BaseClient {
         () => {
           this.reconnectOnDisconnection = true;
         },
-        { once: true }
+        { once: true },
       );
     }
     this._connectionStatus = "disconnecting";
@@ -107,27 +102,25 @@ class WebSocketClient extends BaseClient {
   }
 
   // WEBSOCKET MESSAGING
-  sendMessage(message: MessageLike) {
+  #sendMessage(message: MessageLike) {
     this.assertConnection();
     this.#webSocket!.send(message);
     this.#pingTimer.restart();
   }
 
-  sendServerMessage(...messages: ServerMessage[]) {
-    this.sendMessage(
+  sendServerMessage(...messages: ServerMessageOrMessageType[]) {
+    this.#sendMessage(
       createWebSocketMessage({
         type: "serverMessage",
         data: createServerMessage(...messages),
-      })
+      }),
     );
   }
 
-  #sendWebSocketMessage(...messages: WebSocketMessage[]) {
-    this.sendMessage(createWebSocketMessage(...messages));
-  }
-
   // WEBSOCKET EVENTS
-  #boundWebSocketEventListeners: { [eventType: string]: Function } = {
+  #boundWebSocketEventListeners: {
+    [K in keyof WebSocketEventMap]?: (event: any) => void;
+  } = {
     open: this.#onWebSocketOpen.bind(this),
     message: this.#onWebSocketMessage.bind(this),
     close: this.#onWebSocketClose.bind(this),
@@ -153,12 +146,6 @@ class WebSocketClient extends BaseClient {
 
     this._connectionStatus = "notConnected";
 
-    Object.entries(this.devices).forEach(([id, device]) => {
-      const connectionManager =
-        device.connectionManager! as ClientConnectionManager;
-      connectionManager.isConnected = false;
-    });
-
     this.#pingTimer.stop();
     if (this.reconnectOnDisconnection) {
       setTimeout(() => {
@@ -177,13 +164,13 @@ class WebSocketClient extends BaseClient {
       WebSocketMessageTypes,
       this.#onServerMessage.bind(this),
       null,
-      true
+      true,
     );
   }
 
   #onServerMessage(
     messageType: WebSocketMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     switch (messageType) {
       case "ping":
@@ -203,10 +190,10 @@ class WebSocketClient extends BaseClient {
   // PING
   #pingTimer = new Timer(this.#ping.bind(this), webSocketPingTimeout);
   #ping() {
-    this.#sendWebSocketMessage("ping");
+    this.#sendMessage(webSocketPingMessage);
   }
   #pong() {
-    this.#sendWebSocketMessage("pong");
+    this.#sendMessage(webSocketPongMessage);
   }
 }
 

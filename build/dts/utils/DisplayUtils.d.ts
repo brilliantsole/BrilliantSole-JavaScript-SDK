@@ -47,6 +47,7 @@ export type DisplayColorRGB = {
     g: number;
     b: number;
 };
+export type DisplayColorRGBOrString = DisplayColorRGB | string;
 export type DisplayColorYCbCr = {
     y: number;
     cb: number;

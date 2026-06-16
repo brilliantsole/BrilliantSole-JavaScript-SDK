@@ -1,9 +1,20 @@
-export type EventMap<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
+import { OneOrMany } from "./TypeScriptUtils.ts";
+export declare const wildcardEventType: "*";
+export type WildcardEventType = typeof wildcardEventType;
+export type EventMap<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
     [T in keyof EventMessages]: {
         type: T;
         target: Target;
         message: EventMessages[T];
     };
+} & {
+    [wildcardEventType]: {
+        [T in keyof EventMessages]: {
+            type: T;
+            target: Target;
+            message: EventMessages[T];
+        };
+    }[keyof EventMessages];
 };
 export type EventListenerMap<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
     [T in keyof EventMessages]: (event: {
@@ -11,6 +22,8 @@ export type EventListenerMap<Target extends any, EventType extends string, Event
         target: Target;
         message: EventMessages[T];
     }) => void;
+} & {
+    [wildcardEventType]: (event: Event<Target, EventType, EventMessages>) => void;
 };
 export type Event<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = EventMap<Target, EventType, EventMessages>[keyof EventMessages];
 type SpecificEvent<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>, SpecificEventType extends EventType> = {
@@ -18,35 +31,41 @@ type SpecificEvent<Target extends any, EventType extends string, EventMessages e
     target: Target;
     message: EventMessages[SpecificEventType];
 };
-export type BoundEventListeners<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
-    [SpecificEventType in keyof EventMessages]?: (event: SpecificEvent<Target, EventType, EventMessages, SpecificEventType>) => void;
+export type ListenerEvent<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>, T extends EventType | WildcardEventType> = T extends WildcardEventType ? Event<Target, EventType, EventMessages> : SpecificEvent<Target, EventType, EventMessages, T & EventType>;
+export type ListenerObject<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>, T extends EventType | WildcardEventType> = {
+    listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void;
+    once?: boolean;
+    shouldRemove?: boolean;
 };
+type BoundEventListener<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>, K extends EventType | typeof wildcardEventType> = K extends typeof wildcardEventType ? (event: Event<Target, EventType, EventMessages>) => void : (event: SpecificEvent<Target, EventType, EventMessages, K & EventType>) => void;
+export type BoundEventListeners<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
+    [K in EventType | typeof wildcardEventType]?: OneOrMany<BoundEventListener<Target, EventType, EventMessages, K>>;
+};
+export type EventDispatcherTypes<Target, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
+    Event: Event<Target, EventType, EventMessages>;
+    EventMap: EventMap<Target, EventType, EventMessages>;
+    EventListenerMap: EventListenerMap<Target, EventType, EventMessages>;
+    BoundEventListeners: BoundEventListeners<Target, EventType, EventMessages>;
+    EventDispatcher: EventDispatcher<Target, EventType, EventMessages>;
+};
+export type EventDispatcherOptions = {
+    once?: boolean;
+    immediate?: boolean;
+};
+export type EventDispatcherListener = {
+    listener: Function;
+    shouldRemove?: boolean;
+} & EventDispatcherOptions;
 declare class EventDispatcher<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> {
-    private target;
-    private validEventTypes;
-    private listeners;
+    #private;
     constructor(target: Target, validEventTypes: readonly EventType[]);
-    private isValidEventType;
-    private updateEventListeners;
-    addEventListener<T extends EventType>(type: T, listener: (event: {
-        type: T;
-        target: Target;
-        message: EventMessages[T];
-    }) => void, options?: {
-        once?: boolean;
-    }): void;
-    removeEventListener<T extends EventType>(type: T, listener: (event: {
-        type: T;
-        target: Target;
-        message: EventMessages[T];
-    }) => void): void;
-    removeEventListeners<T extends EventType>(type: T): void;
+    addEventListener<T extends EventType | WildcardEventType>(type: T, listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void, options?: EventDispatcherOptions): void;
+    removeEventListener<T extends EventType | WildcardEventType>(type: T, listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void): void;
+    removeEventListeners<T extends EventType | WildcardEventType>(type: T): void;
     removeAllEventListeners(): void;
     dispatchEvent<T extends EventType>(type: T, message: EventMessages[T]): void;
-    waitForEvent<T extends EventType>(type: T): Promise<{
-        type: T;
-        target: Target;
-        message: EventMessages[T];
-    }>;
+    waitForEvent<T extends EventType>(type: T, options?: {
+        immediate?: boolean;
+    }): Promise<ListenerEvent<Target, EventType, EventMessages, T>>;
 }
 export default EventDispatcher;

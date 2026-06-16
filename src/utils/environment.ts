@@ -10,6 +10,17 @@ const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 const isInBrowser =
   typeof window !== "undefined" && typeof window?.document !== "undefined";
+let isInIframe = false;
+try {
+  isInIframe = window.self !== window.top;
+} catch {
+  isInIframe = true;
+}
+
+const isWKWebView =
+  typeof window !== "undefined" &&
+  typeof window?.webkit?.messageHandlers !== "undefined";
+
 const isInNode =
   typeof process !== "undefined" && process?.versions?.node != null;
 
@@ -32,23 +43,17 @@ const isSafari =
 const isIOS = isInBrowser && /iPad|iPhone|iPod/i.test(userAgent);
 const isMac = isInBrowser && /Macintosh/i.test(userAgent);
 
-const isInLensStudio =
-  !isInBrowser &&
-  !isInNode &&
-  typeof global !== "undefined" &&
-  // @ts-expect-error
-  typeof Studio !== "undefined";
-
 export {
   isInDev,
   isInProduction,
   isInBrowser,
+  isInIframe,
+  isWKWebView,
   isInNode,
   isAndroid,
   isInBluefy,
   isInWebBLE,
   isSafari,
-  isInLensStudio,
   isIOS,
   isMac,
   isBluetoothSupported,

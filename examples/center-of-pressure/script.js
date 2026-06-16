@@ -7,7 +7,7 @@ console.log({ BS });
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate"
+  "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
@@ -48,7 +48,7 @@ function onAvailableDevices(availableDevices) {
         }
       };
       availableDevice.addEventListener("connectionStatus", () =>
-        onConnectionStatusUpdate()
+        onConnectionStatusUpdate(),
       );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
@@ -56,14 +56,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.GetDevices();
+  const availableDevices = await BS.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
@@ -113,7 +113,7 @@ resetPressureRangeButton.addEventListener("click", () => {
 let pressureAutoRange = true;
 /** @type {HTMLButtonElement} */
 const togglePressureAutoRangeButton = document.getElementById(
-  "togglePressureAutoRange"
+  "togglePressureAutoRange",
 );
 devicePair.addEventListener("isConnected", () => {
   togglePressureAutoRangeButton.disabled = !devicePair.isConnected;
@@ -129,7 +129,7 @@ togglePressureAutoRangeButton.addEventListener("click", () => {
 let pressureMotionAutoRange = false;
 /** @type {HTMLButtonElement} */
 const togglePressureMotionAutoRangeButton = document.getElementById(
-  "togglePressureMotionAutoRange"
+  "togglePressureMotionAutoRange",
 );
 devicePair.addEventListener("isConnected", () => {
   togglePressureMotionAutoRangeButton.disabled = !devicePair.isConnected;
@@ -303,7 +303,7 @@ window.glassesDisplayCanvasHelper = glassesDisplayCanvasHelper;
 const glassesDevice = new BS.Device();
 window.glassesDevice = glassesDevice;
 const toggleGlassesConnectionButton = document.getElementById(
-  "toggleGlassesConnection"
+  "toggleGlassesConnection",
 );
 toggleGlassesConnectionButton.addEventListener("click", () => {
   glassesDevice.toggleConnection(false);
@@ -330,7 +330,7 @@ glassesDevice.addEventListener("connected", () => {
 
 /** @type {HTMLProgressElement} */
 const glassesFileTransferProgress = document.getElementById(
-  "glassesFileTransferProgress"
+  "glassesFileTransferProgress",
 );
 glassesDevice.addEventListener("fileTransferProgress", (event) => {
   const progress = event.message.progress;
@@ -347,13 +347,13 @@ glassesDisplayCanvasHelper.addEventListener(
   "deviceSpriteSheetUploadStart",
   () => {
     isUploadingToGlasses = true;
-  }
+  },
 );
 glassesDisplayCanvasHelper.addEventListener(
   "deviceSpriteSheetUploadComplete",
   () => {
     isUploadingToGlasses = false;
-  }
+  },
 );
 glassesDisplayCanvasHelper.addEventListener("deviceUpdated", () => {
   drawGlassesDisplay();
@@ -411,13 +411,13 @@ let drawGlassesDisplay = async () => {
     offset.y,
     size.width,
     size.height,
-    20
+    20,
   );
 
   if (isPlayingGame) {
     await glassesDisplayCanvasHelper.setColor(
       3,
-      glassesDisplayTargetColors[target.isInside ? 1 : 0]
+      glassesDisplayTargetColors[target.isInside ? 1 : 0],
     );
     await displayCanvasHelper.selectSpriteColor(1, 3);
     await displayCanvasHelper.selectSpriteColor(2, 4);
@@ -431,7 +431,7 @@ let drawGlassesDisplay = async () => {
       offset.x - width2 * 0.5 + width2 * target.left,
       offset.y - height2 * 0.5 + height2 * target.top,
       width2 * target.width,
-      height2 * target.height
+      height2 * target.height,
     );
 
     await displayCanvasHelper.setLineWidth(0);
@@ -444,7 +444,7 @@ let drawGlassesDisplay = async () => {
       0,
       target.width * width2,
       target.height * height2,
-      10
+      10,
     );
 
     if (target.isInside) {
@@ -460,7 +460,7 @@ let drawGlassesDisplay = async () => {
         0,
         target.width * width2 * (1 - timeInterpolation),
         target.height * height2 * (1 - timeInterpolation),
-        10 + timeInterpolation * 10
+        10 + timeInterpolation * 10,
       );
     }
 
@@ -477,7 +477,7 @@ let drawGlassesDisplay = async () => {
   await displayCanvasHelper.drawCircle(
     offset.x + width * (currentCenter.x - 0.5),
     offset.y - height * (currentCenter.y - 0.5),
-    8
+    8,
   );
 
   await displayCanvasHelper.show();
@@ -502,7 +502,7 @@ if (false) {
   console.log({ fontSpriteSheetLocalStorageKey });
   try {
     const fontSpriteSheetString = localStorage.getItem(
-      fontSpriteSheetLocalStorageKey
+      fontSpriteSheetLocalStorageKey,
     );
     if (fontSpriteSheetString) {
       englishSpriteSheet = JSON.parse(fontSpriteSheetString);
@@ -514,11 +514,11 @@ if (false) {
       englishSpriteSheet = await BS.fontToSpriteSheet(
         englishFont,
         fontSize,
-        "english"
+        "english",
       );
       localStorage.setItem(
         fontSpriteSheetLocalStorageKey,
-        JSON.stringify(englishSpriteSheet)
+        JSON.stringify(englishSpriteSheet),
       );
     }
     console.log("englishSpriteSheet", englishSpriteSheet);
@@ -529,7 +529,7 @@ if (false) {
     await glassesDisplayCanvasHelper.uploadSpriteSheet(englishSpriteSheet);
     await glassesDisplayCanvasHelper.selectSpriteSheet(englishSpriteSheet.name);
     await glassesDisplayCanvasHelper.setSpritesLineHeight(
-      englishFontLineHeight
+      englishFontLineHeight,
     );
     await drawGlassesDisplay();
   } catch (error) {
@@ -539,7 +539,7 @@ if (false) {
 
 /** @type {HTMLSelectElement} */
 const setGlassesDisplayBrightnessSelect = document.getElementById(
-  "setGlassesDisplayBrightness"
+  "setGlassesDisplayBrightness",
 );
 
 /** @type {HTMLOptGroupElement} */
@@ -547,7 +547,7 @@ const setGlassesDisplayBrightnessOptgroup =
   setGlassesDisplayBrightnessSelect.querySelector("optgroup");
 BS.DisplayBrightnesses.forEach((displayBrightness) => {
   setGlassesDisplayBrightnessOptgroup.appendChild(
-    new Option(displayBrightness)
+    new Option(displayBrightness),
   );
 });
 setGlassesDisplayBrightnessSelect.addEventListener("input", (event) => {

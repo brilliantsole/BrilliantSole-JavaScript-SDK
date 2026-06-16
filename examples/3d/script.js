@@ -10,7 +10,9 @@ console.log({ BS });
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
-const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
+const availableDeviceTemplate = document.getElementById(
+  "availableDeviceTemplate",
+);
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
@@ -19,12 +21,17 @@ function onAvailableDevices(availableDevices) {
     availableDevicesContainer.innerText = "no devices available";
   } else {
     availableDevices.forEach((availableDevice) => {
-      let availableDeviceContainer = availableDeviceTemplate.content.cloneNode(true).querySelector(".availableDevice");
-      availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
-      availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
+      let availableDeviceContainer = availableDeviceTemplate.content
+        .cloneNode(true)
+        .querySelector(".availableDevice");
+      availableDeviceContainer.querySelector(".name").innerText =
+        availableDevice.name;
+      availableDeviceContainer.querySelector(".type").innerText =
+        availableDevice.type;
 
       /** @type {HTMLButtonElement} */
-      const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+      const toggleConnectionButton =
+        availableDeviceContainer.querySelector(".toggleConnection");
       toggleConnectionButton.addEventListener("click", () => {
         availableDevice.toggleConnection();
       });
@@ -33,7 +40,9 @@ function onAvailableDevices(availableDevices) {
           case "connected":
           case "notConnected":
             toggleConnectionButton.disabled = false;
-            toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
+            toggleConnectionButton.innerText = availableDevice.isConnected
+              ? "disconnect"
+              : "connect";
             break;
           case "connecting":
           case "disconnecting":
@@ -42,21 +51,23 @@ function onAvailableDevices(availableDevices) {
             break;
         }
       };
-      availableDevice.addEventListener("connectionStatus", () => onConnectionStatusUpdate());
+      availableDevice.addEventListener("connectionStatus", () =>
+        onConnectionStatusUpdate(),
+      );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.GetDevices();
+  const availableDevices = await BS.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
@@ -87,7 +98,9 @@ window.positionScalar = 0.1;
 
 devicePair.sides.forEach((side) => {
   /** @type {HTMLElement} */
-  const insoleContainer = insoleTemplate.content.cloneNode(true).querySelector(".insole");
+  const insoleContainer = insoleTemplate.content
+    .cloneNode(true)
+    .querySelector(".insole");
   insoleContainer.classList.add(side);
   insoleContainer.dataset.side = side;
   /** @type {HTMLIFrameElement} */
@@ -116,7 +129,8 @@ function onIFrameLoaded(insoleContainer) {
   });
 
   /** @type {HTMLButtonElement} */
-  const toggleConnectionButton = insoleContainer.querySelector(".toggleConnection");
+  const toggleConnectionButton =
+    insoleContainer.querySelector(".toggleConnection");
   toggleConnectionButton.addEventListener("click", () => {
     devicePair[side].toggleConnection();
   });
@@ -129,7 +143,9 @@ function onIFrameLoaded(insoleContainer) {
     if (device.isConnected) {
       toggleConnectionButton.disabled = false;
     }
-    toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
+    toggleConnectionButton.innerText = device.isConnected
+      ? "disconnect"
+      : "reconnect";
   });
 
   devicePair.addEventListener("deviceConnectionStatus", (event) => {
@@ -142,7 +158,9 @@ function onIFrameLoaded(insoleContainer) {
       case "connected":
       case "notConnected":
         toggleConnectionButton.disabled = false;
-        toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
+        toggleConnectionButton.innerText = device.isConnected
+          ? "disconnect"
+          : "reconnect";
         break;
       case "connecting":
       case "disconnecting":
@@ -156,7 +174,12 @@ function onIFrameLoaded(insoleContainer) {
   const orientationSelect = insoleContainer.querySelector(".orientation");
   orientationSelect.addEventListener("input", () => {
     /** @type {BS.SensorConfiguration} */
-    const configuration = { gameRotation: 0, rotation: 0, gyroscope: 0, orientation: 0 };
+    const configuration = {
+      gameRotation: 0,
+      rotation: 0,
+      gyroscope: 0,
+      orientation: 0,
+    };
 
     switch (orientationSelect.value) {
       case "none":
@@ -174,7 +197,9 @@ function onIFrameLoaded(insoleContainer) {
         configuration.gyroscope = sensorRate;
         break;
       default:
-        console.error(`uncaught orientationSelect value "${orientationSelect.value}"`);
+        console.error(
+          `uncaught orientationSelect value "${orientationSelect.value}"`,
+        );
         break;
     }
 
@@ -182,7 +207,8 @@ function onIFrameLoaded(insoleContainer) {
   });
 
   /** @type {HTMLButtonElement} */
-  const resetOrientationButton = insoleContainer.querySelector(".resetOrientation");
+  const resetOrientationButton =
+    insoleContainer.querySelector(".resetOrientation");
   resetOrientationButton.addEventListener("click", () => {
     resetOrientation();
   });
@@ -199,7 +225,11 @@ function onIFrameLoaded(insoleContainer) {
   const positionSelect = insoleContainer.querySelector(".position");
   positionSelect.addEventListener("input", () => {
     /** @type {BS.SensorConfiguration} */
-    const configuration = { acceleration: 0, gravity: 0, linearAcceleration: 0 };
+    const configuration = {
+      acceleration: 0,
+      gravity: 0,
+      linearAcceleration: 0,
+    };
 
     switch (positionSelect.value) {
       case "none":
@@ -214,7 +244,9 @@ function onIFrameLoaded(insoleContainer) {
         configuration.linearAcceleration = sensorRate;
         break;
       default:
-        console.error(`uncaught positionSelect value "${positionSelect.value}"`);
+        console.error(
+          `uncaught positionSelect value "${positionSelect.value}"`,
+        );
         break;
     }
 
@@ -271,7 +303,10 @@ function onIFrameLoaded(insoleContainer) {
   /** @param {BS.Vector3} position */
   const updatePosition = (position) => {
     _position.copy(position).multiplyScalar(window.positionScalar);
-    targetPositionEntity.object3D.position.lerp(_position, window.interpolationSmoothing);
+    targetPositionEntity.object3D.position.lerp(
+      _position,
+      window.interpolationSmoothing,
+    );
   };
 
   devicePair.addEventListener("deviceAcceleration", (event) => {
@@ -321,7 +356,10 @@ function onIFrameLoaded(insoleContainer) {
     if (applyOffset) {
       targetQuaternion.premultiply(offsetQuaternion);
     }
-    targetRotationEntity.object3D.quaternion.slerp(targetQuaternion, window.interpolationSmoothing);
+    targetRotationEntity.object3D.quaternion.slerp(
+      targetQuaternion,
+      window.interpolationSmoothing,
+    );
   };
   devicePair.addEventListener("deviceGameRotation", (event) => {
     const device = event.message.device;
@@ -355,7 +393,9 @@ function onIFrameLoaded(insoleContainer) {
     }
 
     const orientation = event.message.orientation;
-    orientationVector3.set(orientation.pitch, orientation.heading, orientation.roll).multiplyScalar(Math.PI / 180);
+    orientationVector3
+      .set(orientation.pitch, orientation.heading, orientation.roll)
+      .multiplyScalar(Math.PI / 180);
     orientationEuler.setFromVector3(orientationVector3);
     orientationQuaternion.setFromEuler(orientationEuler);
     updateQuaternion(orientationQuaternion);
@@ -385,12 +425,16 @@ function onIFrameLoaded(insoleContainer) {
 
 const websocketClient = new BS.WebSocketClient();
 /** @type {HTMLButtonElement} */
-const toggleServerConnectionButton = document.getElementById("toggleServerConnection");
+const toggleServerConnectionButton = document.getElementById(
+  "toggleServerConnection",
+);
 toggleServerConnectionButton.addEventListener("click", () => {
   websocketClient.toggleConnection();
 });
 websocketClient.addEventListener("isConnected", () => {
-  toggleServerConnectionButton.innerText = websocketClient.isConnected ? "disconnect from server" : "connect to server";
+  toggleServerConnectionButton.innerText = websocketClient.isConnected
+    ? "disconnect from server"
+    : "connect to server";
 });
 websocketClient.addEventListener("connectionStatus", () => {
   let disabled;

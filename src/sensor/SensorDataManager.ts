@@ -28,8 +28,18 @@ import {
 } from "./BarometerSensorDataManager.ts";
 import ButtonSensorDataManager, {
   ButtonSensorDataEventMessages,
+  ButtonSensorEventDispatcher,
+  ButtonSensorEventMessages,
+  ButtonSensorEventTypes,
   ButtonSensorTypes,
 } from "./ButtonSensorDataManager.ts";
+import TouchSensorDataManager, {
+  TouchSensorDataEventMessages,
+  TouchSensorEventDispatcher,
+  TouchSensorEventMessages,
+  TouchSensorEventTypes,
+  TouchSensorTypes,
+} from "./TouchSensorDataManager.ts";
 import Device from "../Device.ts";
 import {
   AddKeysAsPropertyToInterface,
@@ -39,6 +49,11 @@ import {
 import { CameraSensorTypes } from "../CameraManager.ts";
 import { MicrophoneSensorTypes } from "../MicrophoneManager.ts";
 import autoBind from "auto-bind";
+import LightSensorDataManager, {
+  ContinuousLightSensorTypes,
+  LightSensorDataEventMessages,
+  LightSensorTypes,
+} from "./LightSensorDataManager.ts";
 
 const _console = createConsole("SensorDataManager", { log: false });
 
@@ -49,6 +64,8 @@ export const SensorTypes = [
   ...CameraSensorTypes,
   ...MicrophoneSensorTypes,
   ...ButtonSensorTypes,
+  ...TouchSensorTypes,
+  ...LightSensorTypes,
 ] as const;
 export type SensorType = (typeof SensorTypes)[number];
 
@@ -56,6 +73,7 @@ export const ContinuousSensorTypes = [
   ...ContinuousPressureSensorTypes,
   ...ContinuousMotionTypes,
   ...ContinuousBarometerSensorTypes,
+  ...ContinuousLightSensorTypes,
 ] as const;
 export type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];
 
@@ -74,6 +92,8 @@ export const SensorDataEventTypes = [
   ...SensorDataMessageTypes,
   ...SensorTypes,
   ...PressureSensorEventTypes,
+  ...ButtonSensorEventTypes,
+  ...TouchSensorEventTypes,
 ] as const;
 export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 
@@ -85,7 +105,9 @@ interface BaseSensorDataEventMessage {
 type BaseSensorDataEventMessages = BarometerSensorDataEventMessages &
   MotionSensorDataEventMessages &
   PressureDataEventMessages &
-  ButtonSensorDataEventMessages;
+  ButtonSensorDataEventMessages &
+  TouchSensorDataEventMessages &
+  LightSensorDataEventMessages;
 type _SensorDataEventMessages = ExtendInterfaceValues<
   AddKeysAsPropertyToInterface<BaseSensorDataEventMessages, "sensorType">,
   BaseSensorDataEventMessage
@@ -97,7 +119,9 @@ interface AnySensorDataEventMessages {
 }
 export type SensorDataEventMessages = (_SensorDataEventMessages &
   AnySensorDataEventMessages) &
-  PressureSensorEventMessages;
+  PressureSensorEventMessages &
+  ButtonSensorEventMessages &
+  TouchSensorEventMessages;
 
 export type SensorDataEventDispatcher = EventDispatcher<
   Device,
@@ -105,7 +129,7 @@ export type SensorDataEventDispatcher = EventDispatcher<
   SensorDataEventMessages
 >;
 
-type SensorDataParseContext = {
+export type SensorDataParseContext = {
   timestamp: number;
   euler?: Euler;
   messages: {
@@ -117,6 +141,54 @@ type SensorDataParseContext = {
   }[keyof _SensorDataEventMessages][];
 };
 
+export const SensorMetaDataMessageTypes = ["getSensorCounts"] as const;
+export type SensorMetaDataMessageType =
+  (typeof SensorMetaDataMessageTypes)[number];
+
+export const RequiredSensorMetaDataMessageTypes: SensorMetaDataMessageType[] = [
+  "getSensorCounts",
+] as const;
+
+export const SensorMetaDataEventTypes = [
+  ...SensorMetaDataMessageTypes,
+] as const;
+export type SensorMetaDataEventType = (typeof SensorMetaDataEventTypes)[number];
+
+export interface SensorMetaDataEventMessages {
+  // getSensorCounts: { sensorCounts: Partial<Record<SensorType, number>> };
+}
+
+export type SensorMetaDataEventDispatcher = EventDispatcher<
+  Device,
+  SensorMetaDataEventType,
+  SensorMetaDataEventMessages
+>;
+
+export function parseSensorData(
+  dataView: DataView<ArrayBuffer>,
+  callback: (
+    sensorType: SensorType,
+    dataView: DataView<ArrayBuffer>,
+    context: SensorDataParseContext,
+    isLast?: boolean,
+  ) => void,
+) {
+  _console.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+
+  let byteOffset = 0;
+  const timestamp = parseTimestamp(dataView, byteOffset);
+  byteOffset += 2;
+
+  const _dataView = new DataView(dataView.buffer, byteOffset);
+
+  const context: SensorDataParseContext = {
+    timestamp,
+    messages: [],
+  };
+  parseMessage(_dataView, SensorTypes, callback, context);
+  return context;
+}
+
 class SensorDataManager {
   constructor() {
     autoBind(this);
@@ -126,8 +198,11 @@ class SensorDataManager {
   motionSensorDataManager = new MotionSensorDataManager();
   barometerSensorDataManager = new BarometerSensorDataManager();
   buttonSensorDataManager = new ButtonSensorDataManager();
+  touchSensorDataManager = new TouchSensorDataManager();
+  lightSensorDataManager = new LightSensorDataManager();
 
   #scalars: Map<SensorType, number> = new Map();
+  #counts: Map<SensorType, number> = new Map();
 
   static AssertValidSensorType(sensorType: SensorType) {
     _console.assertEnumWithError(sensorType, SensorTypes);
@@ -140,7 +215,7 @@ class SensorDataManager {
     );
   }
 
-  #eventDispatcher!: SensorDataEventDispatcher;
+  #eventDispatcher!: SensorDataEventDispatcher & SensorMetaDataEventDispatcher;
   get eventDispatcher() {
     return this.#eventDispatcher;
   }
@@ -155,33 +230,41 @@ class SensorDataManager {
     this.#eventDispatcher = eventDispatcher;
     this.pressureSensorDataManager.eventDispatcher =
       eventDispatcher as PressureSensorEventDispatcher;
+    this.buttonSensorDataManager.eventDispatcher =
+      eventDispatcher as ButtonSensorEventDispatcher;
+    this.touchSensorDataManager.eventDispatcher =
+      eventDispatcher as TouchSensorEventDispatcher;
   }
+
   get dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }
 
   parseMessage(
-    messageType: SensorDataMessageType,
+    messageType: SensorDataMessageType | SensorMetaDataMessageType,
     dataView: DataView<ArrayBuffer>,
   ) {
     _console.log({ messageType });
 
     switch (messageType) {
       case "getSensorScalars":
-        this.parseScalars(dataView);
+        this.#parseScalars(dataView);
         break;
       case "getPressurePositions":
         this.pressureSensorDataManager.parsePositions(dataView);
         break;
       case "sensorData":
-        this.parseData(dataView);
+        this.#parseData(dataView);
+        break;
+      case "getSensorCounts":
+        this.#parseCounts(dataView);
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }
   }
 
-  parseScalars(dataView: DataView<ArrayBuffer>) {
+  #parseScalars(dataView: DataView<ArrayBuffer>) {
     for (
       let byteOffset = 0;
       byteOffset < dataView.byteLength;
@@ -199,29 +282,47 @@ class SensorDataManager {
     }
   }
 
-  private parseData(dataView: DataView<ArrayBuffer>) {
-    _console.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+  #parseCounts(dataView: DataView<ArrayBuffer>) {
+    for (
+      let byteOffset = 0;
+      byteOffset < dataView.byteLength;
+      byteOffset += 2
+    ) {
+      const sensorTypeIndex = dataView.getUint8(byteOffset);
+      const sensorType = SensorTypes[sensorTypeIndex];
+      if (!sensorType) {
+        _console.warn(`unknown sensorType index ${sensorTypeIndex}`);
+        continue;
+      }
+      const sensorCount = dataView.getUint8(byteOffset + 1);
+      _console.log({ sensorType, sensorCount });
+      this.#counts.set(sensorType, sensorCount);
 
-    let byteOffset = 0;
-    const timestamp = parseTimestamp(dataView, byteOffset);
-    byteOffset += 2;
+      switch (sensorType) {
+        case "buttons":
+          this.buttonSensorDataManager.numberOfButtons = sensorCount;
+          break;
+        case "touches":
+          this.touchSensorDataManager.numberOfTouches = sensorCount;
+          break;
+        default:
+          _console.warn(`uncaught count for sensorType "${sensorType}"`);
+          break;
+      }
+    }
+  }
 
-    const _dataView = new DataView(dataView.buffer, byteOffset);
-
-    const context: SensorDataParseContext = {
-      timestamp,
-      messages: [],
-    };
-    parseMessage(
-      _dataView,
-      SensorTypes,
-      this.parseDataCallback.bind(this),
-      context,
+  #parseData(dataView: DataView<ArrayBuffer>) {
+    const context = parseSensorData(
+      dataView,
+      this.#parseDataCallback.bind(this),
     );
-    context.messages.forEach(({ sensorType, message, dataView }) => {
+    const { messages, timestamp, euler } = context;
+
+    messages.forEach(({ sensorType, message, dataView }) => {
       if (sensorType == "pressure") {
-        if (context.euler) {
-          this.pressureSensorDataManager.onEuler(context.euler, timestamp);
+        if (euler) {
+          this.pressureSensorDataManager.onEuler(euler, timestamp);
         }
         const scalar = this.#scalars.get("pressure") || 1;
         message.pressure = this.pressureSensorDataManager.parseData(
@@ -236,7 +337,7 @@ class SensorDataManager {
     });
   }
 
-  private parseDataCallback(
+  #parseDataCallback(
     sensorType: SensorType,
     dataView: DataView<ArrayBuffer>,
     context: SensorDataParseContext,
@@ -302,8 +403,11 @@ class SensorDataManager {
           scalar,
         );
         break;
-      case "button":
+      case "buttons":
         sensorData = this.buttonSensorDataManager.parseData(dataView);
+        break;
+      case "touches":
+        sensorData = this.touchSensorDataManager.parseData(dataView);
         break;
       case "camera":
         // we parse camera data using CameraManager
@@ -311,6 +415,9 @@ class SensorDataManager {
       case "microphone":
         // we parse microphone data using MicrophoneManager
         return;
+      case "light":
+        sensorData = this.lightSensorDataManager.parseData(dataView, scalar);
+        break;
       default:
         _console.error(`uncaught sensorType "${sensorType}"`);
     }
@@ -342,6 +449,13 @@ class SensorDataManager {
       message,
       dataView: sensorType == "pressure" ? dataView : undefined,
     });
+  }
+
+  clear() {
+    _console.log("clear");
+    // this.pressureSensorDataManager.resetRange();
+    this.buttonSensorDataManager.clear();
+    this.touchSensorDataManager.clear();
   }
 }
 

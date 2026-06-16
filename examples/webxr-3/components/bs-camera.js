@@ -9,16 +9,16 @@ AFRAME.registerComponent("bs-camera", {
     this.onDeviceIsConnected = this.onDeviceIsConnected.bind(this);
     this.onCameraImage = this.onCameraImage.bind(this);
 
-    BS.DeviceManager.AddEventListener(
+    BS.DeviceManager.addEventListener(
       "deviceIsConnected",
-      this.onDeviceIsConnected
+      this.onDeviceIsConnected,
     );
   },
 
   remove: function () {
-    BS.DeviceManager.RemoveEventListener(
+    BS.DeviceManager.removeEventListener(
       "deviceIsConnected",
-      this.onDeviceIsConnected
+      this.onDeviceIsConnected,
     );
   },
 

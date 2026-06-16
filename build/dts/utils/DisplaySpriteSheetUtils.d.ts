@@ -1,7 +1,7 @@
 import { DisplayBezierCurve, DisplaySize } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
-import opentype, { Font } from "opentype.js";
+import opentype, { type Font } from "opentype.js";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayContextState } from "./DisplayContextState.ts";
 export type DisplaySpriteSubLine = {

@@ -7,7 +7,7 @@ console.log({ BS });
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate"
+  "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
 
@@ -49,7 +49,7 @@ function onAvailableDevices(availableDevices) {
         }
       };
       availableDevice.addEventListener("connectionStatus", () =>
-        onConnectionStatusUpdate()
+        onConnectionStatusUpdate(),
       );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
@@ -57,14 +57,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.GetDevices();
+  const availableDevices = await BS.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const { availableDevices } = event.message;
   onAvailableDevices(availableDevices);
 });
@@ -153,7 +153,7 @@ devicePair.sides.forEach((side) => {
 
   /** @type {HTMLButtonElement} */
   const togglePressureDataButton = insoleContainer.querySelector(
-    ".togglePressureData"
+    ".togglePressureData",
   );
   togglePressureDataButton.addEventListener("click", () => {
     const isPressureDataEnabled =
@@ -185,7 +185,7 @@ devicePair.sides.forEach((side) => {
 
   /** @type {HTMLButtonElement} */
   const toggleMotionAutoRangeButton = insoleContainer.querySelector(
-    ".toggleMotionAutoRange"
+    ".toggleMotionAutoRange",
   );
   toggleMotionAutoRangeButton.addEventListener("click", () => {
     devicePair[side].togglePressureMotionAutoRange();
@@ -194,7 +194,7 @@ devicePair.sides.forEach((side) => {
 
   /** @type {HTMLButtonElement} */
   const toggleGameRotationButton = insoleContainer.querySelector(
-    ".toggleGameRotation"
+    ".toggleGameRotation",
   );
   toggleGameRotationButton.addEventListener("click", () => {
     const isPressureDataEnabled =
@@ -229,7 +229,7 @@ devicePair.sides.forEach((side) => {
 
   /** @type {HTMLButtonElement} */
   const trainPressureCalibrationModelButton = insoleContainer.querySelector(
-    ".trainPressureCalibrationModel"
+    ".trainPressureCalibrationModel",
   );
   trainPressureCalibrationModelButton.addEventListener("click", async () => {
     trainPressureCalibrationModelButton.innerText = "training";
@@ -244,11 +244,11 @@ devicePair.sides.forEach((side) => {
 
   /** @type {HTMLButtonElement} */
   const loadPressureCalibratonModelButton = insoleContainer.querySelector(
-    ".loadPressureCalibratonModel"
+    ".loadPressureCalibratonModel",
   );
   loadPressureCalibratonModelButton.addEventListener("click", () => {
     devicePair[side].loadPressureCalibrationModel(
-      getPressureCalibrationModelIndexeddbKey(side)
+      getPressureCalibrationModelIndexeddbKey(side),
     );
     loadPressureCalibratonModelButton.disabled = true;
   });
@@ -256,11 +256,11 @@ devicePair.sides.forEach((side) => {
 
   /** @type {HTMLButtonElement} */
   const savePressureCalibrationModelButton = insoleContainer.querySelector(
-    ".savePressureCalibrationModel"
+    ".savePressureCalibrationModel",
   );
   savePressureCalibrationModelButton.addEventListener("click", async () => {
     devicePair[side].savePressureCalibrationModel(
-      getPressureCalibrationModelDownloadsKey
+      getPressureCalibrationModelDownloadsKey,
     );
   });
   savePressureCalibrationModelButtons[side] =
@@ -268,7 +268,7 @@ devicePair.sides.forEach((side) => {
 
   /** @type {HTMLButtonElement} */
   const loadPressureCalibrationModelButton = insoleContainer.querySelector(
-    ".loadPressureCalibrationModel"
+    ".loadPressureCalibrationModel",
   );
   const loadPressureCalibrationModelInput = document.createElement("input");
   loadPressureCalibrationModelInput.type = "file";
@@ -276,7 +276,7 @@ devicePair.sides.forEach((side) => {
   loadPressureCalibrationModelInput.accept = ".json,.bin";
   loadPressureCalibrationModelInput.addEventListener("change", (event) => {
     devicePair[side].loadPressureCalibrationModel(
-      loadPressureCalibrationModelInput.files
+      loadPressureCalibrationModelInput.files,
     );
   });
   loadPressureCalibrationModelButton.addEventListener("click", async () => {
@@ -287,13 +287,13 @@ devicePair.sides.forEach((side) => {
 
   /** @type {HTMLProgressElement} */
   const pressureCalibrationProgress = insoleContainer.querySelector(
-    ".pressureCalibrationProgress"
+    ".pressureCalibrationProgress",
   );
   pressureCalibrationProgresses[side] = pressureCalibrationProgress;
 
   /** @type {HTMLElement[]} */
   const pressureSensorElements = Array.from(
-    insoleContainer.querySelectorAll("[data-pressure]")
+    insoleContainer.querySelectorAll("[data-pressure]"),
   );
   pressureSensorElementsContainers[side] = pressureSensorElements;
 
@@ -332,7 +332,7 @@ devicePair.addEventListener("deviceIsConnected", async (event) => {
     console.log(getPressureCalibrationModelIndexeddbKey(device.side));
     loadPressureCalibratonModelButtons[device.side].disabled =
       !(await BS.isTensorFlowModelAvailable(
-        getPressureCalibrationModelIndexeddbKey(device.side)
+        getPressureCalibrationModelIndexeddbKey(device.side),
       ));
   } else {
     pressureCalibrationProgresses[device.side].value = 0;
@@ -348,7 +348,7 @@ devicePair.addEventListener("deviceIsConnected", (event) => {
 
   const insoleContainer = insoleContainers[side];
   const viz = insoleContainer.querySelector(".viz");
-  if (device.isUkaton) {
+  if (device.numberOfPressureSensors == 16) {
     viz.classList.add("ukaton");
   } else {
     viz.classList.remove("ukaton");
@@ -525,7 +525,7 @@ devicePair.addEventListener("deviceCalibratedPressureModel", (event) => {
     return;
   }
   device.savePressureCalibrationModel(
-    getPressureCalibrationModelIndexeddbKey(device.side)
+    getPressureCalibrationModelIndexeddbKey(device.side),
   );
 
   const pressureCalibrationProgress =
@@ -540,7 +540,7 @@ devicePair.addEventListener(
     const pressureCalibrationProgress =
       pressureCalibrationProgresses[device.side];
     pressureCalibrationProgress.value = pressureCalibrationTrainProgress;
-  }
+  },
 );
 
 devicePair.addEventListener(
@@ -551,7 +551,7 @@ devicePair.addEventListener(
       toggleRecordingPressureCalibrationDataButtons[device.side];
     toggleRecordingPressureCalibrationDataButton.innerText =
       isRecordingPressureCalibrationData ? "stop recording" : "record";
-  }
+  },
 );
 
 devicePair.addEventListener(
@@ -561,7 +561,7 @@ devicePair.addEventListener(
     const clearRecordingPressureCalibrationDataButton =
       clearRecordingPressureCalibrationDataButtons[device.side];
     clearRecordingPressureCalibrationDataButton.disabled = numberOfSamples == 0;
-  }
+  },
 );
 
 // SERVER
@@ -569,7 +569,7 @@ devicePair.addEventListener(
 const websocketClient = new BS.WebSocketClient();
 /** @type {HTMLButtonElement} */
 const toggleServerConnectionButton = document.getElementById(
-  "toggleServerConnection"
+  "toggleServerConnection",
 );
 toggleServerConnectionButton.addEventListener("click", () => {
   websocketClient.toggleConnection();
@@ -606,7 +606,7 @@ let pressureVisualizationMode = "normalizedValue";
 
 /** @type {HTMLSelectElement} */
 const visualizationModeSelect = document.getElementById(
-  "pressureVisualizationMode"
+  "pressureVisualizationMode",
 );
 visualizationModeSelect.addEventListener("input", (event) => {
   pressureVisualizationMode = event.target.value;
@@ -632,7 +632,7 @@ let centerOfPressureVisualizationMode = "motionCenter";
 
 /** @type {HTMLSelectElement} */
 const centerOfPressureVisualizationModeSelect = document.getElementById(
-  "centerOfPressureVisualizationMode"
+  "centerOfPressureVisualizationMode",
 );
 centerOfPressureVisualizationModeSelect.addEventListener("input", (event) => {
   centerOfPressureVisualizationMode = event.target.value;
@@ -644,9 +644,9 @@ const centerOfPressureVisualizationModeOptGroup =
 centerOfPressureVisualizationModes.forEach(
   (centerOfPressureVisualizationMode) => {
     centerOfPressureVisualizationModeOptGroup.appendChild(
-      new Option(centerOfPressureVisualizationMode)
+      new Option(centerOfPressureVisualizationMode),
     );
-  }
+  },
 );
 centerOfPressureVisualizationModeSelect.value =
   centerOfPressureVisualizationMode;

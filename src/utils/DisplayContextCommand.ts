@@ -45,6 +45,7 @@ import {
   roundScale,
   serializePoints,
   getPointDataType,
+  DisplayColorRGBOrString,
 } from "./DisplayUtils.ts";
 import {
   clamp,
@@ -279,10 +280,9 @@ export interface SimpleDisplayCommand extends BaseDisplayContextCommand {
 export interface SetDisplayColorCommand extends BaseDisplayContextCommand {
   type: "setColor";
   colorIndex: number;
-  color: DisplayColorRGB | string;
+  color: DisplayColorRGBOrString;
 }
-export interface SetDisplayColorOpacityCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplayColorOpacityCommand extends BaseDisplayContextCommand {
   type: "setColorOpacity";
   colorIndex: number;
   opacity: number;
@@ -292,44 +292,36 @@ export interface SetDisplayOpacityCommand extends BaseDisplayContextCommand {
   opacity: number;
 }
 
-export interface SetDisplayHorizontalAlignmentCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplayHorizontalAlignmentCommand extends BaseDisplayContextCommand {
   type: "setHorizontalAlignment";
   horizontalAlignment: DisplayAlignment;
 }
-export interface SetDisplayVerticalAlignmentCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplayVerticalAlignmentCommand extends BaseDisplayContextCommand {
   type: "setVerticalAlignment";
   verticalAlignment: DisplayAlignment;
 }
 
-export interface SelectDisplayBackgroundColorCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplayBackgroundColorCommand extends BaseDisplayContextCommand {
   type: "selectBackgroundColor";
   backgroundColorIndex: number;
 }
-export interface SelectDisplayFillColorCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplayFillColorCommand extends BaseDisplayContextCommand {
   type: "selectFillColor";
   fillColorIndex: number;
 }
-export interface SelectDisplayLineColorCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplayLineColorCommand extends BaseDisplayContextCommand {
   type: "selectLineColor";
   lineColorIndex: number;
 }
-export interface SelectDisplayIgnoreFillCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplayIgnoreFillCommand extends BaseDisplayContextCommand {
   type: "setIgnoreFill";
   ignoreFill: boolean;
 }
-export interface SelectDisplayIgnoreLineCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplayIgnoreLineCommand extends BaseDisplayContextCommand {
   type: "setIgnoreLine";
   ignoreLine: boolean;
 }
-export interface SelectDisplayFillBackgroundCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplayFillBackgroundCommand extends BaseDisplayContextCommand {
   type: "setFillBackground";
   fillBackground: boolean;
 }
@@ -343,13 +335,11 @@ export interface SetDisplayRotationCommand extends BaseDisplayContextCommand {
   isRadians?: boolean;
 }
 
-export interface SetDisplaySegmentStartCapCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySegmentStartCapCommand extends BaseDisplayContextCommand {
   type: "setSegmentStartCap";
   segmentStartCap: DisplaySegmentCap;
 }
-export interface SetDisplaySegmentEndCapCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySegmentEndCapCommand extends BaseDisplayContextCommand {
   type: "setSegmentEndCap";
   segmentEndCap: DisplaySegmentCap;
 }
@@ -358,18 +348,15 @@ export interface SetDisplaySegmentCapCommand extends BaseDisplayContextCommand {
   segmentCap: DisplaySegmentCap;
 }
 
-export interface SetDisplaySegmentStartRadiusCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySegmentStartRadiusCommand extends BaseDisplayContextCommand {
   type: "setSegmentStartRadius";
   segmentStartRadius: number;
 }
-export interface SetDisplaySegmentEndRadiusCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySegmentEndRadiusCommand extends BaseDisplayContextCommand {
   type: "setSegmentEndRadius";
   segmentEndRadius: number;
 }
-export interface SetDisplaySegmentRadiusCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySegmentRadiusCommand extends BaseDisplayContextCommand {
   type: "setSegmentRadius";
   segmentRadius: number;
 }
@@ -391,143 +378,119 @@ export interface SetDisplayCropLeftCommand extends BaseDisplayContextCommand {
   cropLeft: number;
 }
 
-export interface SetDisplayRotationCropTopCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplayRotationCropTopCommand extends BaseDisplayContextCommand {
   type: "setRotationCropTop";
   rotationCropTop: number;
 }
-export interface SetDisplayRotationCropRightCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplayRotationCropRightCommand extends BaseDisplayContextCommand {
   type: "setRotationCropRight";
   rotationCropRight: number;
 }
-export interface SetDisplayRotationCropBottomCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplayRotationCropBottomCommand extends BaseDisplayContextCommand {
   type: "setRotationCropBottom";
   rotationCropBottom: number;
 }
-export interface SetDisplayRotationCropLeftCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplayRotationCropLeftCommand extends BaseDisplayContextCommand {
   type: "setRotationCropLeft";
   rotationCropLeft: number;
 }
 
-export interface SelectDisplayBitmapColorIndexCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplayBitmapColorIndexCommand extends BaseDisplayContextCommand {
   type: "selectBitmapColor";
   bitmapColorIndex: number;
   colorIndex: number;
 }
-export interface SelectDisplayBitmapColorIndicesCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplayBitmapColorIndicesCommand extends BaseDisplayContextCommand {
   type: "selectBitmapColors";
   bitmapColorPairs: DisplayBitmapColorPair[];
 }
 
-export interface SetDisplayBitmapScaleXCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplayBitmapScaleXCommand extends BaseDisplayContextCommand {
   type: "setBitmapScaleX";
   bitmapScaleX: number;
 }
-export interface SetDisplayBitmapScaleYCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplayBitmapScaleYCommand extends BaseDisplayContextCommand {
   type: "setBitmapScaleY";
   bitmapScaleY: number;
 }
-export interface SetDisplayBitmapScaleCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplayBitmapScaleCommand extends BaseDisplayContextCommand {
   type: "setBitmapScale";
   bitmapScale: number;
 }
 
-export interface SelectDisplaySpriteColorIndexCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplaySpriteColorIndexCommand extends BaseDisplayContextCommand {
   type: "selectSpriteColor";
   spriteColorIndex: number;
   colorIndex: number;
 }
-export interface SelectDisplaySpriteColorIndicesCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplaySpriteColorIndicesCommand extends BaseDisplayContextCommand {
   type: "selectSpriteColors";
   spriteColorPairs: DisplaySpriteColorPair[];
 }
 
-export interface SetDisplaySpriteScaleXCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySpriteScaleXCommand extends BaseDisplayContextCommand {
   type: "setSpriteScaleX";
   spriteScaleX: number;
 }
-export interface SetDisplaySpriteScaleYCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySpriteScaleYCommand extends BaseDisplayContextCommand {
   type: "setSpriteScaleY";
   spriteScaleY: number;
 }
-export interface SetDisplaySpriteScaleCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySpriteScaleCommand extends BaseDisplayContextCommand {
   type: "setSpriteScale";
   spriteScale: number;
 }
 
-export interface SetDisplaySpritesLineHeightCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySpritesLineHeightCommand extends BaseDisplayContextCommand {
   type: "setSpritesLineHeight";
   spritesLineHeight: number;
 }
 
-export interface SetDisplaySpritesDirectionCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySpritesDirectionCommand extends BaseDisplayContextCommand {
   type: "setSpritesDirection";
   spritesDirection: DisplayDirection;
 }
-export interface SetDisplaySpritesLineDirectionCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySpritesLineDirectionCommand extends BaseDisplayContextCommand {
   type: "setSpritesLineDirection";
   spritesLineDirection: DisplayDirection;
 }
 
-export interface SetDisplaySpritesSpacingCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySpritesSpacingCommand extends BaseDisplayContextCommand {
   type: "setSpritesSpacing";
   spritesSpacing: number;
 }
-export interface SetDisplaySpritesLineSpacingCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySpritesLineSpacingCommand extends BaseDisplayContextCommand {
   type: "setSpritesLineSpacing";
   spritesLineSpacing: number;
 }
 
-export interface SetDisplaySpritesAlignmentCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySpritesAlignmentCommand extends BaseDisplayContextCommand {
   type: "setSpritesAlignment";
   spritesAlignment: DisplayAlignment;
 }
-export interface SetDisplaySpritesLineAlignmentCommand
-  extends BaseDisplayContextCommand {
+export interface SetDisplaySpritesLineAlignmentCommand extends BaseDisplayContextCommand {
   type: "setSpritesLineAlignment";
   spritesLineAlignment: DisplayAlignment;
 }
 
-export interface BasePositionDisplayContextCommand
-  extends BaseDisplayContextCommand {
+export interface BasePositionDisplayContextCommand extends BaseDisplayContextCommand {
   x: number;
   y: number;
 }
-export interface BaseOffsetPositionDisplayContextCommand
-  extends BaseDisplayContextCommand {
+export interface BaseOffsetPositionDisplayContextCommand extends BaseDisplayContextCommand {
   offsetX: number;
   offsetY: number;
 }
-export interface BaseSizeDisplayContextCommand
-  extends BaseDisplayContextCommand {
+export interface BaseSizeDisplayContextCommand extends BaseDisplayContextCommand {
   width: number;
   height: number;
 }
 
 export interface BaseDisplayRectCommand
-  extends BasePositionDisplayContextCommand,
-    BaseSizeDisplayContextCommand {}
+  extends BasePositionDisplayContextCommand, BaseSizeDisplayContextCommand {}
 export interface BaseDisplayCenterRectCommand
-  extends BaseOffsetPositionDisplayContextCommand,
+  extends
+    BaseOffsetPositionDisplayContextCommand,
     BaseSizeDisplayContextCommand {}
 
 export interface ClearDisplayRectCommand extends BaseDisplayRectCommand {
@@ -538,26 +501,24 @@ export interface DrawDisplayRectCommand extends BaseDisplayCenterRectCommand {
 }
 
 export interface DrawDisplayRoundedRectCommand
-  extends BaseOffsetPositionDisplayContextCommand,
+  extends
+    BaseOffsetPositionDisplayContextCommand,
     BaseSizeDisplayContextCommand {
   type: "drawRoundRect";
   borderRadius: number;
 }
 
-export interface DrawDisplayCircleCommand
-  extends BaseOffsetPositionDisplayContextCommand {
+export interface DrawDisplayCircleCommand extends BaseOffsetPositionDisplayContextCommand {
   type: "drawCircle";
   radius: number;
 }
-export interface DrawDisplayEllipseCommand
-  extends BaseOffsetPositionDisplayContextCommand {
+export interface DrawDisplayEllipseCommand extends BaseOffsetPositionDisplayContextCommand {
   type: "drawEllipse";
   radiusX: number;
   radiusY: number;
 }
 
-export interface DrawDisplayRegularPolygonCommand
-  extends BaseOffsetPositionDisplayContextCommand {
+export interface DrawDisplayRegularPolygonCommand extends BaseOffsetPositionDisplayContextCommand {
   type: "drawRegularPolygon";
   radius: number;
   numberOfSides: number;
@@ -578,8 +539,7 @@ export interface DrawDisplaySegmentsCommand extends BaseDisplayContextCommand {
   points: Vector2[];
 }
 
-export interface DrawDisplayBezierCurveCommand
-  extends BaseDisplayContextCommand {
+export interface DrawDisplayBezierCurveCommand extends BaseDisplayContextCommand {
   type:
     | "drawQuadraticBezierCurve"
     | "drawQuadraticBezierCurves"
@@ -598,16 +558,14 @@ export interface DrawDisplayWireframeCommand extends BaseDisplayContextCommand {
   wireframe: DisplayWireframe;
 }
 
-export interface DrawDisplayArcCommand
-  extends BaseOffsetPositionDisplayContextCommand {
+export interface DrawDisplayArcCommand extends BaseOffsetPositionDisplayContextCommand {
   type: "drawArc";
   radius: number;
   startAngle: number;
   angleOffset: number;
   isRadians?: boolean;
 }
-export interface DrawDisplayArcEllipseCommand
-  extends BaseOffsetPositionDisplayContextCommand {
+export interface DrawDisplayArcEllipseCommand extends BaseOffsetPositionDisplayContextCommand {
   type: "drawArcEllipse";
   radiusX: number;
   radiusY: number;
@@ -616,33 +574,28 @@ export interface DrawDisplayArcEllipseCommand
   isRadians?: boolean;
 }
 
-export interface DrawDisplayBitmapCommand
-  extends BaseOffsetPositionDisplayContextCommand {
+export interface DrawDisplayBitmapCommand extends BaseOffsetPositionDisplayContextCommand {
   type: "drawBitmap";
   bitmap: DisplayBitmap;
 }
 
-export interface SelectDisplaySpriteSheetCommand
-  extends BaseDisplayContextCommand {
+export interface SelectDisplaySpriteSheetCommand extends BaseDisplayContextCommand {
   type: "selectSpriteSheet";
   spriteSheetIndex: number;
 }
 
-export interface DrawDisplaySpriteCommand
-  extends BaseOffsetPositionDisplayContextCommand {
+export interface DrawDisplaySpriteCommand extends BaseOffsetPositionDisplayContextCommand {
   type: "drawSprite";
   spriteIndex: number;
   use2Bytes: boolean;
 }
 
-export interface DrawDisplaySpritesCommand
-  extends BaseOffsetPositionDisplayContextCommand {
+export interface DrawDisplaySpritesCommand extends BaseOffsetPositionDisplayContextCommand {
   type: "drawSprites";
   spriteSerializedLines: DisplaySpriteSerializedLines;
 }
 
-export interface StartDisplaySpriteCommand
-  extends BaseDisplayCenterRectCommand {
+export interface StartDisplaySpriteCommand extends BaseDisplayCenterRectCommand {
   type: "startSprite";
 }
 
@@ -714,7 +667,7 @@ export type DisplayContextCommand =
 
 export function serializeContextCommand(
   displayManager: DisplayManagerInterface,
-  command: DisplayContextCommand
+  command: DisplayContextCommand,
 ) {
   let dataView: DataView<ArrayBuffer> | undefined;
 
@@ -1004,7 +957,7 @@ export function serializeContextCommand(
           "bitmapColors",
           bitmapColorPairs.length,
           1,
-          displayManager.numberOfColors
+          displayManager.numberOfColors,
         );
         const bitmapColorIndices =
           displayManager.contextState.bitmapColorIndices.slice();
@@ -1015,7 +968,7 @@ export function serializeContextCommand(
         });
 
         dataView = new DataView(
-          new ArrayBuffer(bitmapColorPairs.length * 2 + 1)
+          new ArrayBuffer(bitmapColorPairs.length * 2 + 1),
         );
         let offset = 0;
         dataView.setUint8(offset++, bitmapColorPairs.length);
@@ -1070,7 +1023,7 @@ export function serializeContextCommand(
           "spriteColors",
           spriteColorPairs.length,
           1,
-          displayManager.numberOfColors
+          displayManager.numberOfColors,
         );
         const spriteColorIndices =
           displayManager.contextState.spriteColorIndices.slice();
@@ -1081,7 +1034,7 @@ export function serializeContextCommand(
         });
 
         dataView = new DataView(
-          new ArrayBuffer(spriteColorPairs.length * 2 + 1)
+          new ArrayBuffer(spriteColorPairs.length * 2 + 1),
         );
         let offset = 0;
         dataView.setUint8(offset++, spriteColorPairs.length);
@@ -1260,7 +1213,7 @@ export function serializeContextCommand(
         const pointsDataView = serializePoints(points);
 
         const edgesDataView = new DataView(
-          new ArrayBuffer(1 + 2 * edges.length)
+          new ArrayBuffer(1 + 2 * edges.length),
         );
         let edgesDataOffset = 0;
         edgesDataView.setUint8(edgesDataOffset++, edges.length);
@@ -1270,7 +1223,7 @@ export function serializeContextCommand(
         });
 
         dataView = new DataView(
-          concatenateArrayBuffers(pointsDataView, edgesDataView)
+          concatenateArrayBuffers(pointsDataView, edgesDataView),
         );
       }
       break;
@@ -1308,7 +1261,7 @@ export function serializeContextCommand(
         // _console.log("curves", curves);
         assertValidPath(curves);
         const typesDataView = new DataView(
-          new ArrayBuffer(Math.ceil(curves.length / displayCurveTypesPerByte))
+          new ArrayBuffer(Math.ceil(curves.length / displayCurveTypesPerByte)),
         );
         // _console.log({ "curves.length": curves.length, typesDataView });
         const controlPointsDataViews: DataView[] = [];
@@ -1336,18 +1289,18 @@ export function serializeContextCommand(
           const controlPointsDataView = serializePoints(
             controlPoints,
             pointDataType,
-            true
+            true,
           );
           controlPointsDataViews.push(controlPointsDataView);
         });
 
         const controlPointsBuffer = concatenateArrayBuffers(
-          ...controlPointsDataViews
+          ...controlPointsDataViews,
         );
         const headerDataView = new DataView(new ArrayBuffer(3));
         headerDataView.setUint8(
           0,
-          DisplayPointDataTypes.indexOf(pointDataType)
+          DisplayPointDataTypes.indexOf(pointDataType),
         );
         headerDataView.setUint8(1, curves.length);
         headerDataView.setUint8(2, numberOfControlPoints);
@@ -1355,8 +1308,8 @@ export function serializeContextCommand(
           concatenateArrayBuffers(
             headerDataView,
             typesDataView,
-            controlPointsBuffer
-          )
+            controlPointsBuffer,
+          ),
         );
       }
       break;
@@ -1484,14 +1437,14 @@ export function serializeContextCommand(
             const { spriteSheetIndex, spriteIndices, use2Bytes } =
               subSpriteLine;
             const subLineSpriteIndicesDataView = new DataView(
-              new ArrayBuffer(spriteIndices.length * (use2Bytes ? 2 : 1))
+              new ArrayBuffer(spriteIndices.length * (use2Bytes ? 2 : 1)),
             );
             spriteIndices.forEach((spriteIndex, i) => {
               if (use2Bytes) {
                 subLineSpriteIndicesDataView.setUint16(
                   i * 2,
                   spriteIndex,
-                  true
+                  true,
                 );
               } else {
                 subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
@@ -1503,29 +1456,29 @@ export function serializeContextCommand(
             subLineArrayBuffers.push(
               concatenateArrayBuffers(
                 subLineHeaderDataView,
-                subLineSpriteIndicesDataView
-              )
+                subLineSpriteIndicesDataView,
+              ),
             );
           });
           const lineArrayHeaderDataView = new DataView(new ArrayBuffer(2));
           const concatenatedSubLineArrayBuffers = concatenateArrayBuffers(
-            ...subLineArrayBuffers
+            ...subLineArrayBuffers,
           );
           lineArrayHeaderDataView.setUint16(
             0,
             concatenatedSubLineArrayBuffers.byteLength,
-            true
+            true,
           );
           lineArrayBuffers.push(
             concatenateArrayBuffers(
               lineArrayHeaderDataView,
-              concatenatedSubLineArrayBuffers
-            )
+              concatenatedSubLineArrayBuffers,
+            ),
           );
         });
 
         const concatenatedLineArrayBuffers = concatenateArrayBuffers(
-          ...lineArrayBuffers
+          ...lineArrayBuffers,
         );
 
         dataView = new DataView(new ArrayBuffer(2 * 3));
@@ -1537,13 +1490,13 @@ export function serializeContextCommand(
         dataView.setUint16(
           offset,
           concatenatedLineArrayBuffers.byteLength,
-          true
+          true,
         );
         offset += 2;
 
         const buffer = concatenateArrayBuffers(
           dataView,
-          concatenatedLineArrayBuffers
+          concatenatedLineArrayBuffers,
         );
         dataView = new DataView(buffer);
       }
@@ -1564,31 +1517,31 @@ export function serializeContextCommand(
 }
 export function serializeContextCommands(
   displayManager: DisplayManagerInterface,
-  commands: DisplayContextCommand[]
+  commands: DisplayContextCommand[],
 ) {
   const serializedContextCommandArray = commands
     .filter((command) => !command.hide)
     .map((command) => {
       const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
-        command.type
+        command.type,
       );
       const serializedContextCommand = serializeContextCommand(
         displayManager,
-        command
+        command,
       );
       return concatenateArrayBuffers(
         UInt8ByteBuffer(displayContextCommandEnum),
-        serializedContextCommand
+        serializedContextCommand,
       );
     });
   const serializedContextCommands = concatenateArrayBuffers(
-    serializedContextCommandArray
+    serializedContextCommandArray,
   );
   _console.log(
     "serializedContextCommands",
     commands,
     serializedContextCommandArray,
-    serializedContextCommands
+    serializedContextCommands,
   );
   return serializedContextCommands;
 }
@@ -1762,25 +1715,25 @@ const contextCommandDependencies: Map<
 > = new Map();
 function appendContextCommandDependencyPair(
   key: DisplayContextCommandType[],
-  value: DisplayContextCommandType[]
+  value: DisplayContextCommandType[],
 ) {
   contextCommandDependencies.set(new Set(key), new Set(value));
 }
 appendContextCommandDependencyPair(
   [...PathStateDisplayContextCommandTypes],
-  [...PathDrawDisplayContextCommandTypes]
+  [...PathDrawDisplayContextCommandTypes],
 );
 appendContextCommandDependencyPair(
   [...StateDisplayContextCommandTypes],
-  [...DrawDisplayContextCommandTypes]
+  [...DrawDisplayContextCommandTypes],
 );
 appendContextCommandDependencyPair(
   [...SpritesDisplayContextCommandTypes],
-  ["drawSprite", "drawSprites"]
+  ["drawSprite", "drawSprites"],
 );
 appendContextCommandDependencyPair(
   [...BitmapDisplayContextCommandTypes],
-  ["drawBitmap"]
+  ["drawBitmap"],
 );
 
 // TODO - can refine more (e.g. if ignoreLine, then skip setLineWidth, or skip if a set value is already default, etc)
@@ -1813,7 +1766,7 @@ export function trimContextCommands(commands: DisplayContextCommand[]) {
           return trimmedCommand.type == command.type;
         });
         dependentCommandIndex = trimmedCommands.findIndex((trimmedCommand) =>
-          dependencies.has(trimmedCommand.type)
+          dependencies.has(trimmedCommand.type),
         );
 
         _console.log({ similarCommandIndex, dependentCommandIndex });

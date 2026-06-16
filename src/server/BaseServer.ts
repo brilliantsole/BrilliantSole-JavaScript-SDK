@@ -2,6 +2,7 @@ import { createConsole } from "../utils/Console.ts";
 import EventDispatcher, {
   BoundEventListeners,
   Event,
+  EventDispatcherTypes,
   EventMap,
 } from "../utils/EventDispatcher.ts";
 import {
@@ -11,6 +12,9 @@ import {
   ServerMessage,
   ServerMessageType,
   createDeviceMessage,
+  ServerMessageOrMessageType,
+  DeviceMessageOrMessageType,
+  createMessage,
 } from "./ServerUtils.ts";
 import Device, {
   BoundDeviceEventListeners,
@@ -28,6 +32,7 @@ import {
   ConnectionMessageType,
   ConnectionMessageTypes,
   ConnectionTypes,
+  TxRxMessageTypes,
 } from "../connection/BaseConnectionManager.ts";
 import {
   BoundScannerEventListeners,
@@ -41,15 +46,40 @@ import DeviceManager, {
 } from "../DeviceManager.ts";
 import { RequiredWifiMessageTypes } from "../WifiManager.ts";
 import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
+import GuardManager from "../utils/GuardManager.ts";
+import {
+  parseSensorConfiguration,
+  SensorConfiguration,
+  serializeSensorConfiguration,
+} from "../sensor/SensorConfigurationManager.ts";
+import {
+  parseSensorData,
+  RequiredPressureMessageTypes,
+  SensorType,
+  SensorTypes,
+} from "../sensor/SensorDataManager.ts";
+import { RequiredFileTransferMessageTypes } from "../FileTransferManager.ts";
+import { RequiredTfliteMessageTypes } from "../TfliteManager.ts";
 import { RequiredCameraMessageTypes } from "../CameraManager.ts";
+import { RequiredMicrophoneMessageTypes } from "../MicrophoneManager.ts";
+import { RequiredDisplayMessageTypes } from "../DisplayManager.ts";
 
 const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...DeviceInformationTypes,
   "batteryLevel",
   ...RequiredInformationConnectionMessages,
+  ...RequiredPressureMessageTypes,
+  ...RequiredWifiMessageTypes,
+  ...RequiredFileTransferMessageTypes,
+  ...RequiredTfliteMessageTypes,
+  ...RequiredCameraMessageTypes,
+  ...RequiredMicrophoneMessageTypes,
+  ...RequiredDisplayMessageTypes,
 ];
 
 const _console = createConsole("BaseServer", { log: false });
+
+export interface BaseServerClient {}
 
 export const ServerEventTypes = [
   "clientConnected",
@@ -57,49 +87,113 @@ export const ServerEventTypes = [
 ] as const;
 export type ServerEventType = (typeof ServerEventTypes)[number];
 
-interface ServerEventMessages {
-  clientConnected: { client: any };
-  clientDisconnected: { client: any };
+interface ServerEventMessages<ServerClient extends BaseServerClient> {
+  clientConnected: { client: ServerClient };
+  clientDisconnected: { client: ServerClient };
 }
 
-export type ServerEventDispatcher = EventDispatcher<
-  BaseServer,
+export type ServerEventDispatcher<ServerClient extends BaseServerClient> =
+  EventDispatcher<
+    BaseServer<ServerClient>,
+    ServerEventType,
+    ServerEventMessages<ServerClient>
+  >;
+export type ServerEvent<ServerClient extends BaseServerClient> = Event<
+  BaseServer<ServerClient>,
   ServerEventType,
-  ServerEventMessages
+  ServerEventMessages<ServerClient>
 >;
-export type ServerEvent = Event<
-  BaseServer,
+export type ServerEventMap<ServerClient extends BaseServerClient> = EventMap<
+  BaseServer<ServerClient>,
   ServerEventType,
-  ServerEventMessages
+  ServerEventMessages<ServerClient>
 >;
-export type ServerEventMap = EventMap<
-  BaseServer,
-  ServerEventType,
-  ServerEventMessages
->;
-export type BoundServerEventListeners = BoundEventListeners<
-  BaseServer,
-  ServerEventType,
-  ServerEventMessages
->;
+export type BoundServerEventListeners<ServerClient extends BaseServerClient> =
+  BoundEventListeners<
+    BaseServer<ServerClient>,
+    ServerEventType,
+    ServerEventMessages<ServerClient>
+  >;
 
-abstract class BaseServer {
+export type ServerEventDisptcherTypes<ServerClient extends BaseServerClient> =
+  EventDispatcherTypes<
+    BaseServer<ServerClient>,
+    ServerEventType,
+    ServerEventMessages<ServerClient>
+  >;
+
+export interface BaseServerClientContext<
+  ServerClient extends BaseServerClient,
+> {
+  client: ServerClient;
+  responseMessages: (ArrayBuffer | undefined)[];
+}
+
+export interface BaseServerClientDeviceContext<
+  ServerClient extends BaseServerClient,
+> {
+  client: ServerClient;
+  deviceMessages: DeviceMessage[];
+  device: Device;
+}
+
+export interface BaseServerClientGuardManagerArg<
+  Server extends BaseServer<ServerClient>,
+  ServerClient extends BaseServerClient,
+> {
+  client: ServerClient;
+  message?: ServerMessage;
+  server: Server;
+}
+
+export interface BaseServerClientDeviceGuardManagerArg<
+  Server extends BaseServer<ServerClient>,
+  ServerClient extends BaseServerClient,
+> {
+  device: Device;
+  client: ServerClient;
+  message?: DeviceMessage;
+  server: Server;
+}
+
+export interface BaseServerClientDeviceSensorDataGuardManagerArg<
+  Server extends BaseServer<ServerClient>,
+  ServerClient extends BaseServerClient,
+> {
+  device: Device;
+  client: ServerClient;
+  sensorType: SensorType;
+  sensorData: DataView;
+  server: Server;
+}
+export interface BaseServerClientDeviceSensorConfigurationGuardManagerArg<
+  Server extends BaseServer<ServerClient>,
+  ServerClient extends BaseServerClient,
+> {
+  device: Device;
+  client: ServerClient;
+  sensorType: SensorType;
+  sensorRate: number;
+  server: Server;
+}
+
+abstract class BaseServer<ServerClient extends BaseServerClient> {
   // EVENT DISPATCHER
-  protected eventDispatcher: ServerEventDispatcher = new EventDispatcher(
-    this as BaseServer,
-    ServerEventTypes
+  #eventDispatcher: ServerEventDispatcher<ServerClient> = new EventDispatcher(
+    this as BaseServer<ServerClient>,
+    ServerEventTypes,
   );
   get addEventListener() {
-    return this.eventDispatcher.addEventListener;
+    return this.#eventDispatcher.addEventListener;
   }
   protected get dispatchEvent() {
-    return this.eventDispatcher.dispatchEvent;
+    return this.#eventDispatcher.dispatchEvent;
   }
   get removeEventListener() {
-    return this.eventDispatcher.removeEventListener;
+    return this.#eventDispatcher.removeEventListener;
   }
   get waitForEvent() {
-    return this.eventDispatcher.waitForEvent;
+    return this.#eventDispatcher.waitForEvent;
   }
 
   // CONSTRUCTOR
@@ -112,9 +206,7 @@ abstract class BaseServer {
     addEventListeners(this, this.#boundServerListeners);
   }
 
-  get numberOfClients() {
-    return 0;
-  }
+  clients: ServerClient[] = [];
 
   static #ClearSensorConfigurationsWhenNoClients = true;
   static get ClearSensorConfigurationsWhenNoClients() {
@@ -136,22 +228,33 @@ abstract class BaseServer {
   }
 
   // SERVER LISTENERS
-  #boundServerListeners: BoundServerEventListeners = {
+  #boundServerListeners: BoundServerEventListeners<ServerClient> = {
     clientConnected: this.#onClientConnected.bind(this),
     clientDisconnected: this.#onClientDisconnected.bind(this),
   };
-  #onClientConnected(event: ServerEventMap["clientConnected"]) {
+  #onClientConnected(event: ServerEventMap<ServerClient>["clientConnected"]) {
     const client = event.message.client;
+    if (!this.clients.includes(client)) {
+      this.clients.push(client);
+    }
     _console.log("onClientConnected");
+    _console.log(`currently have ${this.clients.length} clients`);
   }
-  #onClientDisconnected(event: ServerEventMap["clientDisconnected"]) {
+  #onClientDisconnected(
+    event: ServerEventMap<ServerClient>["clientDisconnected"],
+  ) {
     const client = event.message.client;
+    if (this.clients.includes(client)) {
+      this.clients.splice(this.clients.indexOf(client), 1);
+    }
+
     _console.log("onClientDisconnected");
+    _console.log(`currently have ${this.clients.length} clients`);
     if (
-      this.numberOfClients == 0 &&
+      this.clients.length == 0 &&
       this.clearSensorConfigurationsWhenNoClients
     ) {
-      DeviceManager.ConnectedDevices.forEach((device) => {
+      DeviceManager.connectedDevices.forEach((device) => {
         device.clearSensorConfiguration();
         device.setTfliteInferencingEnabled(false);
       });
@@ -159,8 +262,25 @@ abstract class BaseServer {
   }
 
   // CLIENT MESSAGING
-  broadcastMessage(message: ArrayBuffer) {
+  protected abstract sendToClient(
+    client: ServerClient,
+    message: ArrayBuffer,
+  ): void;
+
+  #sendToClient(client: ServerClient, message: ArrayBuffer) {
+    if (this.#allowServerToClient(client)) {
+      this.sendToClient(client, message);
+    }
+  }
+
+  broadcastMessage(
+    message: ArrayBuffer,
+    clients: ServerClient[] = this.clients,
+  ) {
     _console.log("broadcasting", message);
+    clients.forEach((client) => {
+      this.#sendToClient(client, message);
+    });
   }
 
   // SCANNER
@@ -172,22 +292,28 @@ abstract class BaseServer {
   };
 
   #onScannerIsAvailable(event: ScannerEventMap["isScanningAvailable"]) {
-    this.broadcastMessage(this.#isScanningAvailableMessage);
+    this.broadcastMessage(
+      this.#isScanningAvailableMessage,
+      this.#filterServerToClients("isScanningAvailable"),
+    );
   }
   get #isScanningAvailableMessage() {
     return createServerMessage({
       type: "isScanningAvailable",
-      data: scanner!.isScanningAvailable,
+      data: scanner.isScanningAvailable,
     });
   }
 
   #onScannerIsScanning(event: ScannerEventMap["isScanning"]) {
-    this.broadcastMessage(this.#isScanningMessage);
+    this.broadcastMessage(
+      this.#isScanningMessage,
+      this.#filterServerToClients("isScanning"),
+    );
   }
   get #isScanningMessage() {
     return createServerMessage({
       type: "isScanning",
-      data: scanner!.isScanning,
+      data: scanner.isScanning,
     });
   }
 
@@ -196,9 +322,11 @@ abstract class BaseServer {
     _console.log(discoveredDevice);
 
     this.broadcastMessage(
-      this.#createDiscoveredDeviceMessage(discoveredDevice)
+      this.#createDiscoveredDeviceMessage(discoveredDevice),
+      this.#filterServerToClients("discoveredDevice"),
     );
   }
+
   #createDiscoveredDeviceMessage(discoveredDevice: DiscoveredDevice) {
     return createServerMessage({
       type: "discoveredDevice",
@@ -207,12 +335,13 @@ abstract class BaseServer {
   }
 
   #onExpiredDiscoveredDevice(
-    event: ScannerEventMap["expiredDiscoveredDevice"]
+    event: ScannerEventMap["expiredDiscoveredDevice"],
   ) {
     const { discoveredDevice } = event.message;
     _console.log("expired", discoveredDevice);
     this.broadcastMessage(
-      this.#createExpiredDiscoveredDeviceMessage(discoveredDevice)
+      this.#createExpiredDiscoveredDeviceMessage(discoveredDevice),
+      this.#filterServerToClients("discoveredDevice"),
     );
   }
   #createExpiredDiscoveredDeviceMessage(discoveredDevice: DiscoveredDevice) {
@@ -223,10 +352,10 @@ abstract class BaseServer {
   }
 
   get #discoveredDevicesMessage() {
-    const serverMessages: ServerMessage[] = scanner!.discoveredDevicesArray
+    const serverMessages: ServerMessage[] = scanner.discoveredDevicesArray
       .filter((discoveredDevice) => {
-        const existingConnectedDevice = DeviceManager.ConnectedDevices.find(
-          (device) => device.bluetoothId == discoveredDevice.bluetoothId
+        const existingConnectedDevice = DeviceManager.connectedDevices.find(
+          (device) => device.bluetoothId == discoveredDevice.bluetoothId,
         );
         return !existingConnectedDevice;
       })
@@ -240,8 +369,8 @@ abstract class BaseServer {
     return createServerMessage({
       type: "connectedDevices",
       data: JSON.stringify({
-        connectedDevices: DeviceManager.ConnectedDevices.map(
-          (device) => device.bluetoothId
+        connectedDevices: DeviceManager.connectedDevices.map(
+          (device) => device.bluetoothId,
         ),
       }),
     });
@@ -255,7 +384,7 @@ abstract class BaseServer {
   #createDeviceMessage(
     device: Device,
     messageType: ConnectionMessageType,
-    dataView?: DataView
+    dataView?: DataView,
   ): DeviceMessage {
     switch (messageType) {
       case "cameraData":
@@ -265,6 +394,10 @@ abstract class BaseServer {
           data: dataView || device._buildCameraData(),
         };
       default:
+        _console.assertWithError(
+          device.latestConnectionMessages.has(messageType),
+          `device doesn't have messageType "${messageType}"`,
+        );
         return {
           type: messageType as DeviceEventType,
           data: dataView || device.latestConnectionMessages.get(messageType),
@@ -273,53 +406,113 @@ abstract class BaseServer {
   }
 
   #onDeviceConnectionMessage(deviceEvent: DeviceEventMap["connectionMessage"]) {
-    const { target: device, message } = deviceEvent;
-    _console.log("onDeviceConnectionMessage", deviceEvent.message);
+    const { target: device, message: deviceConnectionMessage } = deviceEvent;
+    _console.log("onDeviceConnectionMessage", deviceConnectionMessage);
 
     if (!device.isConnected) {
       return;
     }
 
-    const { messageType, dataView } = message;
+    const { messageType, dataView } = deviceConnectionMessage;
 
+    switch (messageType) {
+      case "sensorData":
+        if (!this.deviceSensorDataToClientGuardManager.isEmpty) {
+          const clientSensorDataMessageMap: Map<ServerClient, ArrayBuffer[]> =
+            new Map();
+
+          const timestampArrayBuffer = dataView.buffer.slice(0, 2);
+          const context = parseSensorData(
+            dataView,
+            (sensorType, sensorDataView, context, isLast) => {
+              this.clients.forEach((client) => {
+                if (
+                  this.#allowDeviceSensorDataToClient(
+                    device,
+                    client,
+                    sensorType,
+                    sensorDataView,
+                  )
+                ) {
+                  if (!clientSensorDataMessageMap.has(client)) {
+                    clientSensorDataMessageMap.set(client, []);
+                  }
+                  clientSensorDataMessageMap.get(client)!.push(
+                    createMessage(SensorTypes, false, {
+                      type: sensorType,
+                      data: sensorDataView,
+                    }),
+                  );
+                }
+              });
+            },
+          );
+
+          clientSensorDataMessageMap.forEach((data, client) => {
+            const dataView = new DataView(
+              concatenateArrayBuffers(timestampArrayBuffer, ...data),
+            );
+            const deviceMessage = this.#createDeviceMessage(
+              device,
+              "sensorData",
+              dataView,
+            );
+
+            this.#sendToClient(
+              client,
+              this.#createDeviceServerMessage(device, deviceMessage),
+            );
+          });
+          return;
+        }
+        break;
+      default:
+        break;
+    }
+
+    const deviceMessage = this.#createDeviceMessage(
+      device,
+      messageType,
+      dataView,
+    );
     this.broadcastMessage(
-      this.#createDeviceServerMessage(
-        device,
-        this.#createDeviceMessage(device, messageType, dataView)
-      )
+      this.#createDeviceServerMessage(device, deviceMessage),
+      this.#allowDeviceToClients(device, deviceMessage),
     );
   }
 
   // STATIC DEVICE LISTENERS
   #boundDeviceManagerListeners: BoundDeviceManagerEventListeners = {
     deviceConnected: this.#onDeviceConnected.bind(this),
-    deviceDisconnected: this.#onDeviceDisconnected.bind(this),
+    deviceNotConnected: this.#onDeviceNotConnected.bind(this),
     deviceIsConnected: this.#onDeviceIsConnected.bind(this),
   };
 
   #onDeviceConnected(
-    staticDeviceEvent: DeviceManagerEventMap["deviceConnected"]
+    staticDeviceEvent: DeviceManagerEventMap["deviceConnected"],
   ) {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceConnected", device.bluetoothId);
     addEventListeners(device, this.#boundDeviceListeners);
-    device.isServerSide = true;
   }
 
-  #onDeviceDisconnected(
-    staticDeviceEvent: DeviceManagerEventMap["deviceDisconnected"]
+  #onDeviceNotConnected(
+    staticDeviceEvent: DeviceManagerEventMap["deviceNotConnected"],
   ) {
     const { device } = staticDeviceEvent.message;
-    _console.log("onDeviceDisconnected", device.bluetoothId);
+    _console.log("onDeviceNotConnected", device.bluetoothId);
     removeEventListeners(device, this.#boundDeviceListeners);
   }
 
   #onDeviceIsConnected(
-    staticDeviceEvent: DeviceManagerEventMap["deviceIsConnected"]
+    staticDeviceEvent: DeviceManagerEventMap["deviceIsConnected"],
   ) {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceIsConnected", device.bluetoothId);
-    this.broadcastMessage(this.#createDeviceIsConnectedMessage(device));
+    this.broadcastMessage(
+      this.#createDeviceIsConnectedMessage(device),
+      this.#allowDeviceToClients(device, "isConnected"),
+    );
   }
   #createDeviceIsConnectedMessage(device: Device) {
     return this.#createDeviceServerMessage(device, {
@@ -337,15 +530,157 @@ abstract class BaseServer {
   }
 
   // PARSING
-  protected parseClientMessage(dataView: DataView<ArrayBuffer>) {
+  clientToServerGuardManager = new GuardManager<
+    [BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]
+  >();
+  serverToClientGuardManager = new GuardManager<
+    [BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]
+  >();
+
+  #allowServerToClient(
+    client: ServerClient,
+    message?: ServerMessageOrMessageType,
+  ) {
+    if (typeof message == "string") {
+      message = { type: message };
+    }
+    return this.serverToClientGuardManager.evaluate({
+      client,
+      message,
+      server: this,
+    });
+  }
+  #filterServerToClients(message: ServerMessageOrMessageType) {
+    return this.clients.filter((client) =>
+      this.#allowServerToClient(client, message),
+    );
+  }
+
+  #allowClientToServer(client: ServerClient, message?: ServerMessage) {
+    return this.clientToServerGuardManager.evaluate({
+      message,
+      client,
+      server: this,
+    });
+  }
+
+  clientToDeviceGuardManager = new GuardManager<
+    [
+      BaseServerClientDeviceGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
+  >();
+  deviceToClientGuardManager = new GuardManager<
+    [
+      BaseServerClientDeviceGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
+  >();
+
+  #allowClientToDevice(
+    client: ServerClient,
+    device: Device,
+    message?: DeviceMessage,
+  ) {
+    return this.clientToDeviceGuardManager.evaluate({
+      device,
+      client,
+      message,
+      server: this,
+    });
+  }
+  #allowDeviceToClient(
+    device: Device,
+    client: ServerClient,
+    message?: DeviceMessageOrMessageType,
+  ) {
+    if (typeof message == "string") {
+      message = { type: message };
+    }
+    return this.deviceToClientGuardManager.evaluate({
+      device,
+      client,
+      message,
+      server: this,
+    });
+  }
+  #allowDeviceToClients(device: Device, message: DeviceMessageOrMessageType) {
+    return this.clients.filter((client) =>
+      this.#allowDeviceToClient(device, client, message),
+    );
+  }
+
+  deviceSensorDataToClientGuardManager = new GuardManager<
+    [
+      BaseServerClientDeviceSensorDataGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
+  >();
+  #allowDeviceSensorDataToClient(
+    device: Device,
+    client: ServerClient,
+    sensorType: SensorType,
+    sensorData: DataView,
+  ) {
+    return this.deviceSensorDataToClientGuardManager.evaluate({
+      device,
+      client,
+      sensorType,
+      sensorData,
+      server: this,
+    });
+  }
+
+  clientSensorConfigurationToDeviceGuardManager = new GuardManager<
+    [
+      BaseServerClientDeviceSensorConfigurationGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
+  >();
+  #allowDeviceSensorConfigurationToClient(
+    device: Device,
+    client: ServerClient,
+    sensorType: SensorType,
+    sensorRate: number,
+  ) {
+    return this.clientSensorConfigurationToDeviceGuardManager.evaluate({
+      device,
+      client,
+      sensorType,
+      sensorRate,
+      server: this,
+    });
+  }
+
+  protected parseClientMessage(
+    client: ServerClient,
+    dataView: DataView<ArrayBuffer>,
+  ) {
     let responseMessages: ArrayBuffer[] = [];
+
+    const context: BaseServerClientContext<BaseServerClient> = {
+      responseMessages,
+      client,
+    };
+
+    if (!this.#allowClientToServer(client)) {
+      return;
+    }
 
     parseMessage(
       dataView,
       ServerMessageTypes,
       this.#onClientMessage.bind(this),
-      { responseMessages },
-      true
+      context,
+      true,
     );
 
     responseMessages = responseMessages.filter(Boolean);
@@ -358,27 +693,41 @@ abstract class BaseServer {
   #onClientMessage(
     messageType: ServerMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: { responseMessages: ArrayBuffer[] }
+    context: BaseServerClientContext<ServerClient>,
   ) {
     _console.log(
-      `onClientMessage "${messageType}" (${dataView.byteLength} bytes)`
+      `onClientMessage "${messageType}" (${dataView.byteLength} bytes)`,
     );
-    const { responseMessages } = context;
+
+    const { client, responseMessages } = context;
+
+    const message: ServerMessage = { type: messageType, data: dataView };
+
+    if (!this.#allowClientToServer(client, message)) {
+      return;
+    }
+
     switch (messageType) {
       case "isScanningAvailable":
-        responseMessages.push(this.#isScanningAvailableMessage);
+        if (this.#allowServerToClient(client, "isScanningAvailable")) {
+          responseMessages.push(this.#isScanningAvailableMessage);
+        }
         break;
       case "isScanning":
-        responseMessages.push(this.#isScanningMessage);
+        if (this.#allowServerToClient(client, "isScanning")) {
+          responseMessages.push(this.#isScanningMessage);
+        }
         break;
       case "startScan":
-        scanner!.startScan();
+        scanner.startScan();
         break;
       case "stopScan":
-        scanner!.stopScan();
+        scanner.stopScan();
         break;
       case "discoveredDevices":
-        responseMessages.push(this.#discoveredDevicesMessage);
+        if (this.#allowServerToClient(client, "discoveredDevices")) {
+          responseMessages.push(this.#discoveredDevicesMessage);
+        }
         break;
       case "connectToDevice":
         {
@@ -391,16 +740,27 @@ abstract class BaseServer {
           } else {
             _console.log(`connecting to device with id ${deviceId}...`);
           }
-          scanner!.connectToDevice(deviceId, connectionType);
+          const device = DeviceManager.availableDevices.find(
+            (device) => device.bluetoothId == deviceId,
+          );
+          if (device) {
+            // @ts-expect-error
+            device.connect({ type: connectionType, reconnect: true });
+          } else {
+            scanner.connectToDevice(deviceId, connectionType);
+          }
         }
         break;
       case "disconnectFromDevice":
         {
           const { string: deviceId } = parseStringFromDataView(dataView);
-          let device = DeviceManager.AvailableDevices.find(
-            (device) => device.bluetoothId == deviceId
+          if (!deviceId) {
+            break;
+          }
+          let device = DeviceManager.availableDevices.find(
+            (device) => device.bluetoothId == deviceId,
           );
-          device = device ?? scanner!.devices[deviceId];
+          device = device ?? scanner.devices[deviceId];
           if (!device) {
             _console.error(`no device found with id ${deviceId}`);
             break;
@@ -410,23 +770,29 @@ abstract class BaseServer {
             "notConnected",
             () => {
               this.broadcastMessage(
-                this.#createDeviceIsConnectedMessage(device)
+                this.#createDeviceIsConnectedMessage(device),
+                this.#allowDeviceToClients(device, "isConnected"),
               );
             },
-            { once: true }
+            { once: true },
           );
           device.disconnect();
         }
         break;
       case "connectedDevices":
-        responseMessages.push(this.#connectedDevicesMessage);
+        if (this.#allowServerToClient(client, "connectedDevices")) {
+          responseMessages.push(this.#connectedDevicesMessage);
+        }
         break;
       case "deviceMessage":
         {
           const { string: deviceId, byteOffset } =
             parseStringFromDataView(dataView);
-          const device = DeviceManager.ConnectedDevices.find(
-            (device) => device.bluetoothId == deviceId
+          if (!deviceId) {
+            break;
+          }
+          const device = DeviceManager.connectedDevices.find(
+            (device) => device.bluetoothId == deviceId,
           );
           if (!device) {
             _console.error(`no device found with id ${deviceId}`);
@@ -434,11 +800,12 @@ abstract class BaseServer {
           }
           const _dataView = new DataView(
             dataView.buffer,
-            dataView.byteOffset + byteOffset
+            dataView.byteOffset + byteOffset,
           );
           const responseMessage = this.parseClientDeviceMessage(
+            client,
             device,
-            _dataView
+            _dataView,
           );
           if (responseMessage) {
             responseMessages.push(responseMessage);
@@ -448,28 +815,37 @@ abstract class BaseServer {
       case "requiredDeviceInformation":
         {
           const { string: deviceId } = parseStringFromDataView(dataView);
-          const device = DeviceManager.ConnectedDevices.find(
-            (device) => device.bluetoothId == deviceId
+          if (!deviceId) {
+            break;
+          }
+          const device = DeviceManager.connectedDevices.find(
+            (device) => device.bluetoothId == deviceId,
           );
           if (!device) {
             _console.error(`no device found with id ${deviceId}`);
             break;
           }
 
-          const messages = RequiredDeviceInformationMessageTypes.map(
-            (messageType) => this.#createDeviceMessage(device, messageType)
-          );
-          if (device.isWifiAvailable) {
-            RequiredWifiMessageTypes.forEach((messageType) => {
+          const messages: DeviceMessage[] = [];
+
+          RequiredDeviceInformationMessageTypes.forEach((messageType) => {
+            if (
+              device.latestConnectionMessages.has(messageType) &&
+              this.#allowDeviceToClient(device, client, messageType)
+            ) {
               messages.push(this.#createDeviceMessage(device, messageType));
-            });
-          }
+            }
+          });
+
           if (device.hasCamera) {
-            messages.push(this.#createDeviceMessage(device, "cameraData"));
+            if (this.#allowDeviceToClient(device, client, "cameraData")) {
+              messages.push(this.#createDeviceMessage(device, "cameraData"));
+            }
           }
+
           const responseMessage = this.#createDeviceServerMessage(
             device,
-            ...messages
+            ...messages,
           );
           if (responseMessage) {
             responseMessages.push(responseMessage);
@@ -480,48 +856,132 @@ abstract class BaseServer {
         _console.error(`uncaught messageType "${messageType}"`);
         break;
     }
+    _console.log("responseMessages", responseMessages);
   }
 
   protected parseClientDeviceMessage(
+    client: ServerClient,
     device: Device,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     _console.log("onDeviceMessage", device.bluetoothId, dataView);
 
-    let responseMessages: DeviceMessage[] = [];
+    let deviceMessages: DeviceMessage[] = [];
+
+    if (!this.#allowClientToDevice(client, device)) {
+      return;
+    }
+
+    const context: BaseServerClientDeviceContext<ServerClient> = {
+      deviceMessages,
+      device,
+      client,
+    };
 
     parseMessage(
       dataView,
       ConnectionMessageTypes,
       this.#parseClientDeviceMessageCallback.bind(this),
-      { responseMessages, device },
-      true
+      context,
+      true,
     );
 
-    if (responseMessages.length > 0) {
-      return this.#createDeviceServerMessage(device, ...responseMessages);
+    if (deviceMessages.length > 0) {
+      return this.#createDeviceServerMessage(device, ...deviceMessages);
     }
   }
 
+  #filterClientToDeviceTxMessage(
+    client: ServerClient,
+    device: Device,
+    dataView: DataView<ArrayBuffer>,
+  ) {
+    if (
+      this.clientToDeviceGuardManager.isEmpty &&
+      this.clientSensorConfigurationToDeviceGuardManager.isEmpty
+    ) {
+      return dataView;
+    }
+    const filteredTxMessages: ArrayBuffer[] = [];
+    parseMessage(
+      dataView,
+      TxRxMessageTypes,
+      (messageType, dataView) => {
+        _console.log("filtering txMessage", { messageType, dataView });
+        let message: DeviceMessage = { type: messageType, data: dataView };
+        switch (message.type) {
+          case "setSensorConfiguration":
+            if (!this.clientSensorConfigurationToDeviceGuardManager.isEmpty) {
+              _console.log("trimming sensorConfiguration...");
+              const sensorConfiguration = parseSensorConfiguration(
+                message.data,
+                (sensorType, sensorRate) => {
+                  return this.#allowDeviceSensorConfigurationToClient(
+                    device,
+                    client,
+                    sensorType,
+                    sensorRate,
+                  );
+                },
+              );
+              _console.log("trimmed sensorConfiguration", sensorConfiguration);
+              const sensorConfigurationData =
+                serializeSensorConfiguration(sensorConfiguration);
+              if (sensorConfigurationData.byteLength > 0) {
+                message.data = sensorConfigurationData;
+              } else {
+                _console.log(
+                  "no sensorConfigurationData - sending existing sensorConfiguration",
+                );
+                message = this.#createDeviceMessage(
+                  device,
+                  "getSensorConfiguration",
+                );
+              }
+            }
+            break;
+        }
+        if (this.#allowClientToDevice(client, device, message)) {
+          filteredTxMessages.push(
+            createMessage(TxRxMessageTypes, true, message),
+          );
+        }
+      },
+      null,
+      true,
+    );
+    return new DataView(concatenateArrayBuffers(...filteredTxMessages));
+  }
   #parseClientDeviceMessageCallback(
     messageType: ConnectionMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: { responseMessages: DeviceMessage[]; device: Device }
+    context: BaseServerClientDeviceContext<ServerClient>,
   ) {
     _console.log(
-      `clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`
+      `clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`,
     );
+
+    const { client, device, deviceMessages } = context;
+
+    const message: DeviceMessage = { type: messageType, data: dataView };
+    if (!this.#allowClientToDevice(client, device, message)) {
+      return;
+    }
+
     switch (messageType) {
       case "smp":
-        context.device.connectionManager!.sendSmpMessage(dataView.buffer);
+        device.connectionManager!.sendSmpMessage(dataView.buffer);
         break;
       case "tx":
-        context.device.connectionManager!.sendTxData(dataView.buffer);
+        dataView = this.#filterClientToDeviceTxMessage(
+          client,
+          device,
+          dataView,
+        );
+        device.connectionManager!.sendTxData(dataView.buffer);
         break;
       default:
-        context.responseMessages.push(
-          this.#createDeviceMessage(context.device, messageType)
-        );
+        deviceMessages.push(message);
         break;
     }
   }

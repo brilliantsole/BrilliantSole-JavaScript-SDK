@@ -17,24 +17,19 @@ export interface SensorConfigurationEventMessages {
 }
 export type SensorConfigurationEventDispatcher = EventDispatcher<Device, SensorConfigurationEventType, SensorConfigurationEventMessages>;
 export type SendSensorConfigurationMessageCallback = SendMessageCallback<SensorConfigurationMessageType>;
+export declare function parseSensorConfiguration(dataView: DataView<ArrayBuffer>, callback?: (sensorType: SensorType, sensorRate: number, context?: any) => boolean, context?: any): SensorConfiguration;
+export declare function assertValidSensorRate(sensorRate: number): void;
+export declare function serializeSensorConfiguration(sensorConfiguration: SensorConfiguration, availableSensorTypes?: SensorType[]): DataView<ArrayBuffer>;
 declare class SensorConfigurationManager {
     #private;
     constructor();
     sendMessage: SendSensorConfigurationMessageCallback;
     eventDispatcher: SensorConfigurationEventDispatcher;
-    get addEventListener(): <T extends "getSensorConfiguration" | "setSensorConfiguration">(type: T, listener: (event: {
-        type: T;
-        target: Device;
-        message: SensorConfigurationEventMessages[T];
-    }) => void, options?: {
-        once?: boolean;
-    }) => void;
-    get waitForEvent(): <T extends "getSensorConfiguration" | "setSensorConfiguration">(type: T) => Promise<{
-        type: T;
-        target: Device;
-        message: SensorConfigurationEventMessages[T];
-    }>;
-    get availableSensorTypes(): ("acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "button" | "camera" | "microphone" | "pressure")[];
+    get addEventListener(): <T extends "*" | "getSensorConfiguration" | "setSensorConfiguration">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getSensorConfiguration" | "setSensorConfiguration", SensorConfigurationEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
+    get waitForEvent(): <T extends "getSensorConfiguration" | "setSensorConfiguration">(type: T, options?: {
+        immediate?: boolean;
+    }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getSensorConfiguration" | "setSensorConfiguration", SensorConfigurationEventMessages, T>>;
+    get availableSensorTypes(): ("acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "buttons" | "touches" | "camera" | "microphone" | "light" | "pressure")[];
     hasSensorType(sensorType: SensorType): boolean;
     get configuration(): SensorConfiguration;
     clear(): void;

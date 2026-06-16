@@ -1,4 +1,4 @@
-import { isInDev, isInLensStudio, isInNode } from "./environment.ts";
+import { isInDev, isInNode } from "./environment.ts";
 
 declare var Studio: any | undefined;
 
@@ -22,17 +22,7 @@ interface ConsoleLike {
 }
 
 var __console: ConsoleLike;
-if (isInLensStudio) {
-  const log = function (...args: any[]) {
-    Studio.log(args.map((value) => new String(value)).join(","));
-  };
-  __console = {};
-  __console.log = log;
-  __console.warn = log.bind(__console, "WARNING");
-  __console.error = log.bind(__console, "ERROR");
-} else {
-  __console = console;
-}
+__console = console;
 
 function getCallerFunctionPath(): string {
   const stack = new Error().stack;
@@ -168,33 +158,34 @@ class Console {
   assertTypeWithError(value: any, type: string) {
     this.assertWithError(
       typeof value == type,
-      `value ${value} of type "${typeof value}" not of type "${type}"`
+      `value ${value} of type "${typeof value}" not of type "${type}"`,
     );
   }
 
   /** @throws {Error} if value's type doesn't match */
   assertEnumWithError<T extends string | number>(
     value: T,
-    enumeration: readonly T[]
+    enumeration: readonly T[],
   ) {
     this.assertWithError(
       enumeration.includes(value),
-      `invalid enum "${value}"`
+      `invalid enum "${value}"`,
     );
   }
 
   /** @throws {Error} if value is not within some range */
   assertRangeWithError(name: string, value: number, min: number, max: number) {
+    this.assertTypeWithError(value, "number");
     this.assertWithError(
       value >= min && value <= max,
-      `${name} ${value} must be within ${min}-${max}`
+      `${name} ${value} must be within [${min}, ${max}]`,
     );
   }
 }
 
 export function createConsole(
   type: string,
-  levelFlags?: ConsoleLevelFlags
+  levelFlags?: ConsoleLevelFlags,
 ): Console {
   return Console.create(type, levelFlags);
 }
@@ -202,7 +193,7 @@ export function createConsole(
 /** @throws {Error} if no console with type is found */
 export function setConsoleLevelFlagsForType(
   type: string,
-  levelFlags: ConsoleLevelFlags
+  levelFlags: ConsoleLevelFlags,
 ) {
   Console.setLevelFlagsForType(type, levelFlags);
 }

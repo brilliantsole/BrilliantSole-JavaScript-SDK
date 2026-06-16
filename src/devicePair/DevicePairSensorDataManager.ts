@@ -81,7 +81,7 @@ class DevicePairSensorDataManager {
     switch (sensorType) {
       case "pressure":
         value = this.pressureSensorDataManager.onDevicePressureData(
-          event as unknown as DeviceEventMap["pressure"]
+          event as unknown as DeviceEventMap["pressure"],
         );
         break;
       default:
@@ -92,15 +92,13 @@ class DevicePairSensorDataManager {
     if (value) {
       const timestamps = Object.assign(
         {},
-        this.#timestamps[sensorType]
+        this.#timestamps[sensorType],
       ) as DevicePairSensorDataTimestamps;
-      // @ts-expect-error
       this.dispatchEvent(sensorType as DevicePairSensorDataEventType, {
         sensorType,
         timestamps,
         [sensorType]: value,
       });
-      // @ts-expect-error
       this.dispatchEvent("sensorData", {
         sensorType,
         timestamps,

@@ -52,9 +52,9 @@ AFRAME.registerComponent("bs-ankle", {
     this.onDeviceIsConnected = this.onDeviceIsConnected.bind(this);
     this.onTfliteInference = this.onTfliteInference.bind(this);
 
-    BS.DeviceManager.AddEventListener(
+    BS.DeviceManager.addEventListener(
       "deviceIsConnected",
-      this.onDeviceIsConnected
+      this.onDeviceIsConnected,
     );
 
     this.kickSound = document.createElement("a-entity");
@@ -64,7 +64,7 @@ AFRAME.registerComponent("bs-ankle", {
     this.stompSound = document.createElement("a-entity");
     this.stompSound.setAttribute(
       "sound",
-      `src: ${this.data.stompSoundSelector}; volume: 0.8;`
+      `src: ${this.data.stompSoundSelector}; volume: 0.8;`,
     );
     this.el.sceneEl.appendChild(this.stompSound);
   },
@@ -79,9 +79,9 @@ AFRAME.registerComponent("bs-ankle", {
   },
 
   remove: function () {
-    BS.DeviceManager.RemoveEventListener(
+    BS.DeviceManager.removeEventListener(
       "deviceIsConnected",
-      this.onDeviceIsConnected
+      this.onDeviceIsConnected,
     );
   },
 
@@ -106,7 +106,7 @@ AFRAME.registerComponent("bs-ankle", {
       this.debugText.setAttribute("visible", "true");
       this.debugText.setAttribute(
         "value",
-        `${maxClass}\n${maxValue.toFixed(3)}`
+        `${maxClass}\n${maxValue.toFixed(3)}`,
       );
     }
     switch (maxClass) {
@@ -124,7 +124,7 @@ AFRAME.registerComponent("bs-ankle", {
 
   getFloorMetadata: function () {
     const floorEntities = Array.from(
-      this.el.sceneEl.querySelectorAll(`[data-world-mesh="floor"]`)
+      this.el.sceneEl.querySelectorAll(`[data-world-mesh="floor"]`),
     ).filter(Boolean);
     const floorObjects = floorEntities.map((entity) => entity.object3D);
 
@@ -146,7 +146,7 @@ AFRAME.registerComponent("bs-ankle", {
     }
 
     const goombasOnFloor = window.goombas.filter(
-      (goomba) => goomba.floor == floor
+      (goomba) => goomba.floor == floor,
     );
     // console.log("goombasOnFloor", goombasOnFloor);
 
@@ -231,7 +231,7 @@ AFRAME.registerComponent("bs-ankle", {
               `c: ${THREE.MathUtils.radToDeg(cameraYaw).toFixed(0)}`,
               `g: ${THREE.MathUtils.radToDeg(goombaYaw).toFixed(0)}`,
               `a: ${THREE.MathUtils.radToDeg(angle).toFixed(0)}`,
-            ].join("\n")
+            ].join("\n"),
           );
         }
         if (angle > this.data.angleThreshold) {
@@ -296,7 +296,7 @@ AFRAME.registerComponent("bs-ankle", {
     [...goombas, ...window.shells, ...window.soccerBalls].forEach((goomba) => {
       this.cameraToGoomba.subVectors(
         goomba.el.object3D.position,
-        this.cameraPosition
+        this.cameraPosition,
       );
       this.cameraToGoomba.y = 0;
       const direction = this.cameraToGoomba;

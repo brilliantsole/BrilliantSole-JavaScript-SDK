@@ -12,7 +12,7 @@ console.log({ BS });
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate"
+  "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
@@ -53,7 +53,7 @@ function onAvailableDevices(availableDevices) {
         }
       };
       availableDevice.addEventListener("connectionStatus", () =>
-        onConnectionStatusUpdate()
+        onConnectionStatusUpdate(),
       );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
@@ -61,14 +61,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.GetDevices();
+  const availableDevices = await BS.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
@@ -128,11 +128,12 @@ function onIFrameLoaded(gloveContainer) {
   const targetRotationEntity = targetEntity.querySelector(".rotation");
   const gloveEntity = targetEntity.querySelector(".glove");
   const pressureEntities = Array.from(
-    targetEntity.querySelectorAll("[data-pressure]")
+    targetEntity.querySelectorAll("[data-pressure]"),
   )
     .sort((a, b) => a.dataset.pressure - b.dataset.pressure)
     .map((entity) => entity.querySelector("a-sphere"));
-  pressureEntities.forEach((entity) => entity.setAttribute("opacity", "0.0"));
+  console.log("pressureEntities", pressureEntities);
+  pressureEntities.forEach((entity) => entity.setAttribute("opacity", "1.0"));
   scene.addEventListener("loaded", () => {
     if (side == "left") {
       targetEntity.object3D.scale.x *= -1;
@@ -210,7 +211,7 @@ function onIFrameLoaded(gloveContainer) {
         break;
       default:
         console.error(
-          `uncaught orientationSelect value "${orientationSelect.value}"`
+          `uncaught orientationSelect value "${orientationSelect.value}"`,
         );
         break;
     }
@@ -257,7 +258,7 @@ function onIFrameLoaded(gloveContainer) {
         break;
       default:
         console.error(
-          `uncaught positionSelect value "${positionSelect.value}"`
+          `uncaught positionSelect value "${positionSelect.value}"`,
         );
         break;
     }
@@ -320,7 +321,7 @@ function onIFrameLoaded(gloveContainer) {
     _position.copy(position).multiplyScalar(window.positionScalar);
     targetPositionEntity.object3D.position.lerp(
       _position,
-      window.interpolationSmoothing
+      window.interpolationSmoothing,
     );
   };
 
@@ -373,7 +374,7 @@ function onIFrameLoaded(gloveContainer) {
     }
     targetRotationEntity.object3D.quaternion.slerp(
       targetQuaternion,
-      window.interpolationSmoothing
+      window.interpolationSmoothing,
     );
   };
   devicePair.addEventListener("deviceGameRotation", (event) => {
@@ -530,7 +531,7 @@ function onIFrameLoaded(gloveContainer) {
 
     if (devicePair[side]?.isConnected) {
       const device = devicePair[side];
-      if (device.isUkaton) {
+      if (!device.sensorTypes.includes("pressure")) {
         if (isCursorEnabled) {
           device.setSensorConfiguration(pinchSensorConfiguration);
         } else {
@@ -546,7 +547,7 @@ function onIFrameLoaded(gloveContainer) {
         setIsPressureEnabled(isCursorEnabled);
       }
 
-      if (devicePair[side]?.isUkaton) {
+      if (!device.sensorTypes.includes("pressure")) {
         if (isCursorEnabled) {
           positionSelect.value = "linearAcceleration";
         } else {
@@ -562,7 +563,7 @@ function onIFrameLoaded(gloveContainer) {
     if (isCursorEnabled) {
       checkCursorIntersectableEntitiesIntervalId = setInterval(
         () => checkCursorIntersectableEntities(),
-        checkCursorIntersectableEntitiesInterval
+        checkCursorIntersectableEntitiesInterval,
       );
     } else {
       clearInterval(checkCursorIntersectableEntitiesIntervalId);
@@ -699,13 +700,13 @@ function onIFrameLoaded(gloveContainer) {
   const updateCursorEntity = () => {
     cursorRaycaster.setFromCamera(
       cursor2DPosition,
-      cursorCameraEntity.object3D.children[0]
+      cursorCameraEntity.object3D.children[0],
     );
     cursorRaycaster.ray.at(1, cursor3DPosition);
     cursorEntity.object3D.position.copy(cursor3DPosition);
   };
   const cursorIntersectableEntities = Array.from(
-    scene.querySelectorAll(".intersectable")
+    scene.querySelectorAll(".intersectable"),
   );
 
   const dragEntityPosition = new THREE.Vector3();
@@ -726,7 +727,7 @@ function onIFrameLoaded(gloveContainer) {
     cursorIntersectableEntities.forEach((entity) => {
       const intersections = cursorRaycaster.intersectObject(
         entity.object3D,
-        true
+        true,
       );
       const intersection = intersections[0];
       if (intersection) {
@@ -747,6 +748,9 @@ function onIFrameLoaded(gloveContainer) {
   let isCursorDown = false;
   scene.addEventListener("mousemove", (event) => {
     const canvas = scene.canvas;
+    if (!canvas) {
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -765,7 +769,7 @@ function onIFrameLoaded(gloveContainer) {
     //console.log({ isCursorDown });
     cursorMeshEntity.setAttribute(
       "color",
-      isCursorDown ? "black" : cursorMeshEntity.dataset.color
+      isCursorDown ? "black" : cursorMeshEntity.dataset.color,
     );
     if (isCursorDown && intersectedEntities[0]) {
       draggingEntity = intersectedEntities[0];
@@ -778,7 +782,7 @@ function onIFrameLoaded(gloveContainer) {
         cursorHandleEntity.setAttribute("static-body", "");
         draggingEntity.setAttribute(
           "constraint",
-          "target: .cursorHandle; collideConnected: false; type: pointToPoint;"
+          "target: .cursorHandle; collideConnected: false; type: pointToPoint;",
         );
       }
     }
@@ -803,7 +807,7 @@ function onIFrameLoaded(gloveContainer) {
       return;
     }
     const { pressure } = event.message;
-    const pinchPressure = pressure.sensors[4];
+    const pinchPressure = pressure.sensors[0];
     const isPinching = pinchPressure.normalizedValue > 0.5;
     setIsCursorDown(isPinching);
   });
@@ -815,7 +819,7 @@ function onIFrameLoaded(gloveContainer) {
 const websocketClient = new BS.WebSocketClient();
 /** @type {HTMLButtonElement} */
 const toggleServerConnectionButton = document.getElementById(
-  "toggleServerConnection"
+  "toggleServerConnection",
 );
 toggleServerConnectionButton.addEventListener("click", () => {
   websocketClient.toggleConnection();
@@ -878,7 +882,7 @@ const onDeviceSensorData = (event) => {
       break;
   }
   data = data.map(
-    (value) => value * pinchSensorScalars[event.message.sensorType]
+    (value) => value * pinchSensorScalars[event.message.sensorType],
   );
   appendData(event.message.timestamp, event.message.sensorType, data);
 };
@@ -918,7 +922,7 @@ async function loadClassifier() {
 }
 
 devicePair.addEventListener("deviceIsConnected", (event) => {
-  if (event.message.device.isUkaton) {
+  if (event.message.device.isUkaton || true) {
     loadClassifier();
   }
 });
@@ -986,7 +990,7 @@ function appendData(timestamp, sensorType, data) {
   }
   pendingSample[sensorType] = data;
   const gotAllSensorSamples = pinchSensorTypes.every(
-    (sensorType) => sensorType in pendingSample
+    (sensorType) => sensorType in pendingSample,
   );
   if (gotAllSensorSamples) {
     //console.log("got all samples");

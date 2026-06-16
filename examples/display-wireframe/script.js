@@ -14,7 +14,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -54,7 +54,7 @@ device.addEventListener("connected", () => {
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -79,7 +79,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -158,8 +158,8 @@ const draw = async () => {
         draggingEntity
           ? draggingColorIndex
           : intersecting
-          ? intersectingColorIndex
-          : boxColorIndex
+            ? intersectingColorIndex
+            : boxColorIndex,
       );
       await drawScene(gloveScene, (entity) => entity.nodeName == "A-BOX");
       await drawGloveCursor();
@@ -506,19 +506,19 @@ const drawGloveCursor = async () => {
   interpolatedGloveCursorPosition.lerpVectors(
     interpolatedGloveCursorPosition,
     latestGloveCursorPosition,
-    0.6
+    0.6,
   );
 
   /** @type {TVector2} */
   const movement = new THREE.Vector2().subVectors(
     interpolatedGloveCursorPosition,
-    latestInterpolatedGloveCursorPosition
+    latestInterpolatedGloveCursorPosition,
   );
   const movementLength = movement.length();
   const movementLerp = THREE.MathUtils.inverseLerp(
     movementRange.min,
     movementRange.max,
-    movementLength
+    movementLength,
   );
   let scaleX = 1 + movementLerp;
   const inverseMovementLerp = THREE.MathUtils.inverseLerp(0, 7, movementLerp);
@@ -560,13 +560,13 @@ const drawGloveCursor = async () => {
     let bounceScalarX = THREE.MathUtils.lerp(
       bounceScaleRange.min,
       bounceScaleRange.max,
-      bounceScalar
+      bounceScalar,
     );
     bounceScalarX = THREE.MathUtils.lerp(1, bounceScalarX, bounceDamp);
     let bounceScalarY = THREE.MathUtils.lerp(
       bounceScaleRange.min,
       bounceScaleRange.max,
-      1 - bounceScalar
+      1 - bounceScalar,
     );
     bounceScalarY = THREE.MathUtils.lerp(1, bounceScalarY, bounceDamp);
 
@@ -658,7 +658,7 @@ const updateCameraSources = async () => {
     .filter((device) => device.kind == "videoinput")
     .forEach((videoInputDevice) => {
       cameraInputOptgroup.appendChild(
-        new Option(videoInputDevice.label, videoInputDevice.deviceId)
+        new Option(videoInputDevice.label, videoInputDevice.deviceId),
       );
     });
   cameraInput.value = "none";
@@ -690,7 +690,7 @@ const stopCameraStream = () => {
   cameraVideo.setAttribute("hidden", "");
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateCameraSources()
+  updateCameraSources(),
 );
 updateCameraSources();
 
@@ -732,47 +732,47 @@ const trackingRenderLoop = () => {
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_TESSELATION,
-            { color: "#C0C0C070", lineWidth: 1 }
+            { color: "#C0C0C070", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,
-            { color: "#FF3030", lineWidth: 1 }
+            { color: "#FF3030", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW,
-            { color: "#FF3030", lineWidth: 1 }
+            { color: "#FF3030", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_LEFT_EYE,
-            { color: "#30FF30", lineWidth: 1 }
+            { color: "#30FF30", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
-            { color: "#30FF30", lineWidth: 1 }
+            { color: "#30FF30", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_FACE_OVAL,
-            { color: "#E0E0E0", lineWidth: 1 }
+            { color: "#E0E0E0", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_LIPS,
-            { color: "#E0E0E0", lineWidth: 1 }
+            { color: "#E0E0E0", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS,
-            { color: "#FF3030", lineWidth: 1 }
+            { color: "#FF3030", lineWidth: 1 },
           );
           drawingUtils.drawConnectors(
             landmarks,
             FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS,
-            { color: "#30FF30", lineWidth: 1 }
+            { color: "#30FF30", lineWidth: 1 },
           );
         }
         break;
@@ -796,7 +796,7 @@ const trackingRenderLoop = () => {
           });
           drawingUtils.drawConnectors(
             landmark,
-            PoseLandmarker.POSE_CONNECTIONS
+            PoseLandmarker.POSE_CONNECTIONS,
           );
         }
         break;
@@ -840,7 +840,7 @@ const createHandLandmarker = async () => {
     return;
   }
   const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm",
   );
   handLandmarker = await HandLandmarker.createFromOptions(vision, {
     baseOptions: {
@@ -907,7 +907,7 @@ const drawHand = async () => {
 let faceLandmarker;
 const createFaceLandmarker = async () => {
   const filesetResolver = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm",
   );
   faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
     baseOptions: {
@@ -943,7 +943,7 @@ function subdivideArray(arr, subdivisions) {
 const addEdgesToWireframe = (
   wireframe,
   landmarkEdges,
-  intervalOrSubdivision
+  intervalOrSubdivision,
 ) => {
   const isFace = landmarkEdges == FaceLandmarker.FACE_LANDMARKS_FACE_OVAL;
   const isLips = landmarkEdges == FaceLandmarker.FACE_LANDMARKS_LIPS;
@@ -1076,12 +1076,12 @@ const drawFace = async () => {
     addEdgesToWireframe(
       wireframe,
       FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
-      2
+      2,
     );
     addEdgesToWireframe(
       wireframe,
       FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW,
-      2
+      2,
     );
     addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, 2);
     addEdgesToWireframe(wireframe, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, 2);
@@ -1100,7 +1100,7 @@ let poseLandmarker;
 
 const createPoseLandmarker = async () => {
   const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm",
   );
   poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
     baseOptions: {
@@ -1274,12 +1274,12 @@ device.addEventListener("orientation", (event) => {
   _cameraRig.object3D.rotation.set(
     orientationEuler.x,
     orientationEuler.y - orientationOffsetYaw,
-    orientationEuler.z
+    orientationEuler.z,
   );
 });
 
 const calibrateOrientationButton = document.getElementById(
-  "calibrateOrientation"
+  "calibrateOrientation",
 );
 const calibrateOrientation = () => {
   orientationOffsetYaw = orientationEuler.y;
@@ -1292,10 +1292,10 @@ calibrateOrientationButton.addEventListener("click", () => {
 const rotator = new BS.Device();
 
 const toggleRotatorConnectionButton = document.getElementById(
-  "toggleRotatorConnection"
+  "toggleRotatorConnection",
 );
 toggleRotatorConnectionButton.addEventListener("click", () =>
-  rotator.toggleConnection()
+  rotator.toggleConnection(),
 );
 rotator.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -1344,7 +1344,7 @@ rotator.addEventListener("gameRotation", (event) => {
   rotatorQuaternion.copy(gameRotation);
   rotatorEntity.object3D.quaternion.multiplyQuaternions(
     rotatorOffsetQuaternion,
-    rotatorQuaternion
+    rotatorQuaternion,
   );
 });
 
