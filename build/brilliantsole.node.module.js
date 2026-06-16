@@ -22,10 +22,9 @@ import * as _alawmulaw from 'alawmulaw';
 import { Euler, Quaternion } from 'three';
 import * as dgram from 'dgram';
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 const isInProduction =
-__BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+"__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 let isInIframe = false;
 try {
@@ -153,9 +152,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
