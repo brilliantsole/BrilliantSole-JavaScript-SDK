@@ -23,7 +23,7 @@ import {
 
 import { default as WindowServer } from "../server/window/WindowServer.ts";
 
-const _console = createConsole("WindowManager", { log: true });
+const _console = createConsole("WindowManager", { log: false });
 
 export interface WindowManagerServerClient {
   iframe: HTMLIFrameElement;
@@ -227,7 +227,10 @@ class WindowManagerServer {
     }
     _console.log("onWindowMessage", client, data);
     const dataView = new DataView(data) as DataView<ArrayBuffer>;
-    _console.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
+    _console.log(
+      `received ${dataView.byteLength} bytes via window`,
+      dataView.buffer,
+    );
     this.#parseWindowManagerClientMessage(client, dataView);
   }
 
@@ -336,7 +339,7 @@ class WindowManagerServer {
     const arrayBuffer = event.data as ArrayBuffer;
     const dataView = new DataView(arrayBuffer) as DataView<ArrayBuffer>;
     _console.log(
-      `received ${dataView.byteLength} bytes`,
+      `received ${dataView.byteLength} bytes via port`,
       dataView.buffer,
       client,
     );
@@ -348,6 +351,8 @@ class WindowManagerServer {
     client: WindowManagerServerClient,
     dataView: DataView<ArrayBuffer>,
   ) {
+    _console.log("parseWindowManagerClientMessage", client, dataView);
+
     let responseMessages: ArrayBuffer[] = [];
     let transfer: Transferable[] = [];
     const context: WindowManagerServerClientContext = {

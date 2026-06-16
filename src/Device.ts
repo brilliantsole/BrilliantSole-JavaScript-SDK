@@ -150,7 +150,7 @@ import LedManager, {
   SendLedMessageCallback,
 } from "./led/LedManager.ts";
 
-const _console = createConsole("Device", { log: true });
+const _console = createConsole("Device", { log: false });
 
 export const DeviceEventTypes = [
   "connectionMessage",
@@ -376,7 +376,11 @@ class Device {
       this.connectionManager!.mtu = this.mtu;
       this.#displayManager.mtu = this.mtu;
     });
+
     this.addEventListener("getSensorConfiguration", () => {
+      if (this.connectionType == "client") {
+        return;
+      }
       if (this.connectionStatus != "connecting") {
         return;
       }
@@ -430,6 +434,9 @@ class Device {
       this.#cameraManager.sensorRate = sensorConfiguration.camera ?? 0;
     });
     this.addEventListener("getFileTypes", () => {
+      if (this.connectionType == "client") {
+        return;
+      }
       if (this.connectionStatus != "connecting") {
         return;
       }
@@ -441,19 +448,20 @@ class Device {
       }
     });
     this.addEventListener("isWifiAvailable", () => {
+      if (this.connectionType == "client") {
+        return;
+      }
       if (this.connectionStatus != "connecting") {
         return;
       }
-      if (this.connectionType == "client" && !isInNode) {
-        return;
-      }
       if (this.isWifiAvailable) {
-        if (this.connectionType != "client") {
-          this.#wifiManager.requestRequiredInformation();
-        }
+        this.#wifiManager.requestRequiredInformation();
       }
     });
     this.addEventListener("getType", () => {
+      if (this.connectionType == "client") {
+        return;
+      }
       if (this.connectionStatus != "connecting") {
         return;
       }
@@ -663,6 +671,7 @@ class Device {
       return hasConnectionMessage;
     });
   }
+
   get #hasRequiredInformation() {
     let hasRequiredInformation = this.#didReceiveMessageTypes(
       RequiredInformationConnectionMessages,

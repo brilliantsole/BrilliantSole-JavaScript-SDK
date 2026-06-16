@@ -3,65 +3,135 @@ window.BS = BS;
 console.log(BS);
 
 // DEVICE
+/** @type {BS.Device?} */
+let currentDevice;
 
-const device = new BS.Device();
-console.log({ device });
-window.device = device;
+/** @param {(device: BS.Device)=>void} callback */
+const onCurrentDevice = (callback) => {
+  BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+    if (event.message.device == currentDevice) {
+      callback(currentDevice);
+    }
+  });
+};
 
-// CONNECT
-
-const toggleConnectionButton = document.getElementById("toggleConnection");
-toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
-);
-device.addEventListener("connectionStatus", () => {
-  let disabled = false;
-  let innerText = device.connectionStatus;
-  switch (device.connectionStatus) {
-    case "notConnected":
-      innerText = "connect";
-      break;
-    case "connected":
-      innerText = "disconnect";
-      break;
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (!currentDevice?.isConnected) {
+    onDevice(device);
   }
-  toggleConnectionButton.disabled = disabled;
-  toggleConnectionButton.innerText = innerText;
+});
+BS.DeviceManager.addEventListener("deviceNotConnected", (event) => {
+  const { device } = event.message;
+  if (currentDevice == device) {
+    console.log("currentDevice is gone");
+    currentDevice.removeAllEventListeners();
+    const nextConnectedDevice = BS.DeviceManager.connectedDevices[0];
+    console.log("nextConnectedDevice", nextConnectedDevice);
+    if (nextConnectedDevice) {
+      onDevice(nextConnectedDevice);
+    }
+  }
+});
+
+/** @param {BS.Device} device */
+const onDevice = (device, replaceCurrentDevice = false) => {
+  if (currentDevice?.isConnected) {
+    if (!replaceCurrentDevice) {
+      return;
+    }
+    currentDevice.removeAllEventListeners();
+  }
+  currentDevice = device;
+  console.log("currentDevice", currentDevice);
+};
+
+// CONNECTION
+
+/** @type {HTMLButtonElement} */
+const toggleConnectionButton = document.getElementById("toggleConnection");
+toggleConnectionButton.addEventListener("click", async () => {
+  if (currentDevice) {
+    currentDevice.toggleConnection(false);
+  } else {
+    toggleConnectionButton.innerText = "connecting...";
+    await BS.Device.Connect();
+    if (!currentDevice) {
+      toggleConnectionButton.innerText = "connect";
+    }
+  }
+});
+
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "connectionStatus",
+    () => {
+      switch (device.connectionStatus) {
+        case "connected":
+        case "notConnected":
+          toggleConnectionButton.disabled = false;
+          toggleConnectionButton.innerText = device.isConnected
+            ? "disconnect"
+            : "connect";
+          break;
+        case "connecting":
+        case "disconnecting":
+          toggleConnectionButton.disabled = true;
+          toggleConnectionButton.innerText = currentDevice.connectionStatus;
+          break;
+      }
+    },
+    { immediate: true },
+  );
 });
 
 // FILE TRANSFER
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
-device.addEventListener("fileTransferProgress", (event) => {
-  const progress = event.message.progress;
-  console.log({ progress });
-  fileTransferProgress.value = progress == 1 ? 0 : progress;
+onCurrentDevice((device) => {
+  device.addEventListener("fileTransferProgress", (event) => {
+    const progress = event.message.progress;
+    console.log({ progress });
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+  });
 });
 
 // MODEL
 /** @type {HTMLInputElement} */
 const isModelReadyCheckbox = document.getElementById("isModelReady");
-device.addEventListener("getTfliteInferencingEnabled", () => {
-  isModelReadyCheckbox.checked = device.tfliteInferencingEnabled;
-});
-device.addEventListener("fileTransferStatus", () => {
-  if (device.fileTransferStatus == "idle") {
-    fileTransferProgress.value = 0;
-  }
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "getTfliteInferencingEnabled",
+    () => {
+      isModelReadyCheckbox.checked = device.tfliteInferencingEnabled;
+    },
+    { immediate: true },
+  );
+  device.addEventListener(
+    "fileTransferStatus",
+    () => {
+      if (device.fileTransferStatus == "idle") {
+        fileTransferProgress.value = 0;
+      }
+    },
+    { immediate: true },
+  );
 });
 
 /** @type {HTMLSpanElement} */
 const maxClassSpan = document.getElementById("maxClass");
 let gestureTimeout;
-device.addEventListener("tfliteInference", (event) => {
-  maxClassSpan.innerText =
-    event.message.tfliteInference.maxClass.toUpperCase() + "!";
-  if (gestureTimeout) {
-    clearTimeout(gestureTimeout);
-  }
-  gestureTimeout = setTimeout(() => {
-    maxClassSpan.innerText = "";
-  }, 600);
+onCurrentDevice((device) => {
+  device.addEventListener("tfliteInference", (event) => {
+    maxClassSpan.innerText =
+      event.message.tfliteInference.maxClass.toUpperCase() + "!";
+    if (gestureTimeout) {
+      clearTimeout(gestureTimeout);
+    }
+    gestureTimeout = setTimeout(() => {
+      maxClassSpan.innerText = "";
+    }, 600);
+  });
 });
 
 // GLOVE
@@ -84,39 +154,55 @@ fetch("./punch.tflite")
     console.error("Error loading punch model:", err);
   });
 
-device.addEventListener("connected", async () => {
-  if (device.type != "rightGlove") {
-    console.error("expected right glove");
-    device.disconnect();
-    return;
-  }
-  device.sendTfliteConfiguration(punchConfiguration);
-});
-device.addEventListener("tfliteIsReady", () => {
-  if (device.tfliteIsReady) {
-    device.enableTfliteInferencing();
-  }
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "connected",
+    async () => {
+      if (device.type != "rightGlove") {
+        console.error("expected right glove");
+        device.disconnect();
+        return;
+      }
+      device.sendTfliteConfiguration(punchConfiguration);
+    },
+    { immediate: true },
+  );
+  device.addEventListener(
+    "tfliteIsReady",
+    () => {
+      if (device.tfliteIsReady) {
+        device.enableTfliteInferencing();
+      }
+    },
+    { immediate: true },
+  );
 });
 
 // GAME
-device.addEventListener("tfliteInference", (event) => {
-  switch (event.message.tfliteInference.maxClass) {
-    case "punch":
-      punch();
-      break;
-    case "hook":
-      hook();
-      break;
-    case "uppercut":
-      uppercut();
-      break;
-  }
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "tfliteInference",
+    (event) => {
+      switch (event.message.tfliteInference.maxClass) {
+        case "punch":
+          punch();
+          break;
+        case "hook":
+          hook();
+          break;
+        case "uppercut":
+          uppercut();
+          break;
+      }
+    },
+    { immediate: true },
+  );
 });
 
 // PHYSICS
 const punchingBagBaseEntity = document.getElementById("punchingBagBase");
 const punchingBagEntities = Array.from(
-  document.querySelectorAll(".punchingBag")
+  document.querySelectorAll(".punchingBag"),
 ).sort((a, b) => a.dataset.section - b.dataset.section);
 
 const forces = {
@@ -142,10 +228,10 @@ function uppercut() {
 
 /** @param {BS.VibrationWaveformEffect} waveformEffect */
 function triggerWaveformEffect(waveformEffect) {
-  if (!device.isConnected) {
+  if (!currentDevice?.isConnected) {
     return;
   }
-  device.triggerVibration([
+  currentDevice.triggerVibration([
     {
       type: "waveformEffect",
       locations: ["rear"],

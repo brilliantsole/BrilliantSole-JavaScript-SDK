@@ -530,7 +530,7 @@ function onIFrameLoaded(gloveContainer) {
 
     if (devicePair[side]?.isConnected) {
       const device = devicePair[side];
-      if (true || device.isUkaton) {
+      if (!device.sensorTypes.includes("pressure")) {
         if (isCursorEnabled) {
           device.setSensorConfiguration(pinchSensorConfiguration);
         } else {
@@ -546,7 +546,7 @@ function onIFrameLoaded(gloveContainer) {
         setIsPressureEnabled(isCursorEnabled);
       }
 
-      if (devicePair[side]?.isUkaton || devicePair[side]?.isConnected) {
+      if (!device.sensorTypes.includes("pressure")) {
         if (isCursorEnabled) {
           positionSelect.value = "linearAcceleration";
         } else {
@@ -803,7 +803,7 @@ function onIFrameLoaded(gloveContainer) {
       return;
     }
     const { pressure } = event.message;
-    const pinchPressure = pressure.sensors[4];
+    const pinchPressure = pressure.sensors[0];
     const isPinching = pinchPressure.normalizedValue > 0.5;
     setIsCursorDown(isPinching);
   });

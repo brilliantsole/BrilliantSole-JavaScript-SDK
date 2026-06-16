@@ -15,11 +15,11 @@ import 'svg-pathdata';
 import * as noble from '@stoprocent/noble';
 import noble__default from '@stoprocent/noble';
 import os from 'os';
-import { Euler, Quaternion } from 'three';
 import sharp from 'sharp';
 import { spawn } from 'child_process';
 import fs from 'fs/promises';
 import * as _alawmulaw from 'alawmulaw';
+import { Euler, Quaternion } from 'three';
 import * as dgram from 'dgram';
 
 const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
@@ -10783,7 +10783,7 @@ createServerMessage("startScan");
 createServerMessage("stopScan");
 createServerMessage("discoveredDevices");
 
-const _console$m = createConsole("BaseConnectionManager", { log: true });
+const _console$m = createConsole("BaseConnectionManager", { log: false });
 const ConnectionTypes = [
     "webBluetooth",
     "noble",
@@ -12995,7 +12995,7 @@ class UDPConnectionManager extends BaseConnectionManager {
 }
 
 var _a$2;
-const _console$c = createConsole("Device", { log: true });
+const _console$c = createConsole("Device", { log: false });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -13140,6 +13140,9 @@ class Device {
             this.#displayManager.mtu = this.mtu;
         });
         this.addEventListener("getSensorConfiguration", () => {
+            if (this.connectionType == "client") {
+                return;
+            }
             if (this.connectionStatus != "connecting") {
                 return;
             }
@@ -13190,6 +13193,9 @@ class Device {
             this.#cameraManager.sensorRate = sensorConfiguration.camera ?? 0;
         });
         this.addEventListener("getFileTypes", () => {
+            if (this.connectionType == "client") {
+                return;
+            }
             if (this.connectionStatus != "connecting") {
                 return;
             }
@@ -13201,19 +13207,20 @@ class Device {
             }
         });
         this.addEventListener("isWifiAvailable", () => {
+            if (this.connectionType == "client") {
+                return;
+            }
             if (this.connectionStatus != "connecting") {
                 return;
             }
-            if (this.connectionType == "client" && !isInNode) {
-                return;
-            }
             if (this.isWifiAvailable) {
-                if (this.connectionType != "client") {
-                    this.#wifiManager.requestRequiredInformation();
-                }
+                this.#wifiManager.requestRequiredInformation();
             }
         });
         this.addEventListener("getType", () => {
+            if (this.connectionType == "client") {
+                return;
+            }
             if (this.connectionStatus != "connecting") {
                 return;
             }
@@ -16229,8 +16236,15 @@ const RequiredDeviceInformationMessageTypes = [
     ...DeviceInformationTypes,
     "batteryLevel",
     ...RequiredInformationConnectionMessages,
+    ...RequiredPressureMessageTypes,
+    ...RequiredWifiMessageTypes,
+    ...RequiredFileTransferMessageTypes,
+    ...RequiredTfliteMessageTypes,
+    ...RequiredCameraMessageTypes,
+    ...RequiredMicrophoneMessageTypes,
+    ...RequiredDisplayMessageTypes,
 ];
-const _console$3 = createConsole("BaseServer", { log: true });
+const _console$3 = createConsole("BaseServer", { log: false });
 const ServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -16386,6 +16400,7 @@ class BaseServer {
                     data: dataView || device._buildCameraData(),
                 };
             default:
+                _console$3.assertWithError(device.latestConnectionMessages.has(messageType), `device doesn't have messageType "${messageType}"`);
                 return {
                     type: messageType,
                     data: dataView || device.latestConnectionMessages.get(messageType),
@@ -16647,17 +16662,11 @@ class BaseServer {
                     }
                     const messages = [];
                     RequiredDeviceInformationMessageTypes.forEach((messageType) => {
-                        if (this.#allowDeviceToClient(device, client, messageType)) {
+                        if (device.latestConnectionMessages.has(messageType) &&
+                            this.#allowDeviceToClient(device, client, messageType)) {
                             messages.push(this.#createDeviceMessage(device, messageType));
                         }
                     });
-                    if (device.isWifiAvailable) {
-                        RequiredWifiMessageTypes.forEach((messageType) => {
-                            if (this.#allowDeviceToClient(device, client, messageType)) {
-                                messages.push(this.#createDeviceMessage(device, messageType));
-                            }
-                        });
-                    }
                     if (device.hasCamera) {
                         if (this.#allowDeviceToClient(device, client, "cameraData")) {
                             messages.push(this.#createDeviceMessage(device, "cameraData"));
@@ -16698,6 +16707,7 @@ class BaseServer {
         }
         const filteredTxMessages = [];
         parseMessage(dataView, TxRxMessageTypes, (messageType, dataView) => {
+            _console$3.log("filtering txMessage", { messageType, dataView });
             let message = { type: messageType, data: dataView };
             switch (message.type) {
                 case "setSensorConfiguration":

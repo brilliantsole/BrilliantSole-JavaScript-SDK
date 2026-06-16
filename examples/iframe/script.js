@@ -97,7 +97,20 @@ const iframeContainerTemplate = document.getElementById(
   "iframeContainerTemplate",
 );
 /** @type {{name: string, url: string}[]} */
-const selectUrls = [{ name: "3d pair", url: "../3d" }];
+const selectUrls = [
+  { name: "pressure pair", url: "../pressure" },
+  { name: "3d pair", url: "../3d" },
+  { name: "3d", url: "../3d-generic" },
+  { name: "graph", url: "../graph" },
+  { name: "recording", url: "../recording" },
+  { name: "camera", url: "../camera" },
+  { name: "microphone", url: "../microphone" },
+  { name: "camera hand tracking", url: "../camera-hand-tracking" },
+  { name: "depth anything v2", url: "../depth-anything-v2" },
+  { name: "gloves", url: "../gloves" },
+  { name: "punch", url: "../punch" },
+  { name: "wireframe", url: "../wireframe" },
+];
 const createIframeContainer = () => {
   const iframeContainer = iframeContainerTemplate.content
     .cloneNode(true)
@@ -151,6 +164,11 @@ const createIframeContainer = () => {
   const urlRefreshButton = iframeContainer.querySelector(".urlRefresh");
   urlRefreshButton.addEventListener("click", () => urlRefresh());
 
+  const openButton = iframeContainer.querySelector(".open");
+  openButton.addEventListener("click", () => {
+    window.open(iframe.src, "_blank");
+  });
+
   const toggleSensorDataButton =
     iframeContainer.querySelector(".toggleSensorData");
 
@@ -174,7 +192,7 @@ const createIframeContainer = () => {
   iframeContainers.appendChild(iframeContainer);
 };
 createIframeContainer();
-// createIframeContainer();
+createIframeContainer();
 
 BS.WindowServer.clientSensorConfigurationToDeviceGuardManager.add(
   ({ client, message, sensorType, sensorRate }) => {

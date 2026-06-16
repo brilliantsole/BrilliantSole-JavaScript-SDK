@@ -54,17 +54,30 @@ import {
 } from "../sensor/SensorConfigurationManager.ts";
 import {
   parseSensorData,
+  RequiredPressureMessageTypes,
   SensorType,
   SensorTypes,
 } from "../sensor/SensorDataManager.ts";
+import { RequiredFileTransferMessageTypes } from "../FileTransferManager.ts";
+import { RequiredTfliteMessageTypes } from "../TfliteManager.ts";
+import { RequiredCameraMessageTypes } from "../CameraManager.ts";
+import { RequiredMicrophoneMessageTypes } from "../MicrophoneManager.ts";
+import { RequiredDisplayMessageTypes } from "../DisplayManager.ts";
 
 const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...DeviceInformationTypes,
   "batteryLevel",
   ...RequiredInformationConnectionMessages,
+  ...RequiredPressureMessageTypes,
+  ...RequiredWifiMessageTypes,
+  ...RequiredFileTransferMessageTypes,
+  ...RequiredTfliteMessageTypes,
+  ...RequiredCameraMessageTypes,
+  ...RequiredMicrophoneMessageTypes,
+  ...RequiredDisplayMessageTypes,
 ];
 
-const _console = createConsole("BaseServer", { log: true });
+const _console = createConsole("BaseServer", { log: false });
 
 export interface BaseServerClient {}
 
@@ -381,6 +394,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           data: dataView || device._buildCameraData(),
         };
       default:
+        _console.assertWithError(
+          device.latestConnectionMessages.has(messageType),
+          `device doesn't have messageType "${messageType}"`,
+        );
         return {
           type: messageType as DeviceEventType,
           data: dataView || device.latestConnectionMessages.get(messageType),
@@ -810,24 +827,22 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           }
 
           const messages: DeviceMessage[] = [];
+
           RequiredDeviceInformationMessageTypes.forEach((messageType) => {
-            if (this.#allowDeviceToClient(device, client, messageType)) {
+            if (
+              device.latestConnectionMessages.has(messageType) &&
+              this.#allowDeviceToClient(device, client, messageType)
+            ) {
               messages.push(this.#createDeviceMessage(device, messageType));
             }
           });
 
-          if (device.isWifiAvailable) {
-            RequiredWifiMessageTypes.forEach((messageType) => {
-              if (this.#allowDeviceToClient(device, client, messageType)) {
-                messages.push(this.#createDeviceMessage(device, messageType));
-              }
-            });
-          }
           if (device.hasCamera) {
             if (this.#allowDeviceToClient(device, client, "cameraData")) {
               messages.push(this.#createDeviceMessage(device, "cameraData"));
             }
           }
+
           const responseMessage = this.#createDeviceServerMessage(
             device,
             ...messages,
@@ -892,6 +907,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       dataView,
       TxRxMessageTypes,
       (messageType, dataView) => {
+        _console.log("filtering txMessage", { messageType, dataView });
         let message: DeviceMessage = { type: messageType, data: dataView };
         switch (message.type) {
           case "setSensorConfiguration":

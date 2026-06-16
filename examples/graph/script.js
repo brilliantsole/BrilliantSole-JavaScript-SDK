@@ -9,105 +9,103 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
 
-let device = new BS.Device();
-console.log({ device });
-window.device = device;
+// DEVICE
+/** @type {BS.Device?} */
+let currentDevice;
 
-// GET DEVICES
+/** @param {(device: BS.Device)=>void} callback */
+const onCurrentDevice = (callback) => {
+  BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+    if (event.message.device == currentDevice) {
+      callback(currentDevice);
+    }
+  });
+};
 
-/** @type {HTMLTemplateElement} */
-const availableDeviceTemplate = document.getElementById(
-  "availableDeviceTemplate",
-);
-const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {BS.Device[]} availableDevices */
-function onAvailableDevices(availableDevices) {
-  availableDevicesContainer.innerHTML = "";
-  if (availableDevices.length == 0) {
-    availableDevicesContainer.innerText = "no devices available";
-  } else {
-    availableDevices.forEach((availableDevice) => {
-      const availableDeviceContainer = availableDeviceTemplate.content
-        .cloneNode(true)
-        .querySelector(".availableDevice");
-      availableDeviceContainer.querySelector(".name").innerText =
-        availableDevice.name;
-      availableDeviceContainer.querySelector(".type").innerText =
-        availableDevice.type;
-
-      /** @type {HTMLButtonElement} */
-      const toggleConnectionButton =
-        availableDeviceContainer.querySelector(".toggleConnection");
-      toggleConnectionButton.addEventListener("click", () => {
-        device.connectionManager = availableDevice.connectionManager;
-        device.reconnect();
-      });
-      device.addEventListener("connectionStatus", () => {
-        toggleConnectionButton.disabled =
-          device.connectionStatus != "notConnected";
-      });
-      toggleConnectionButton.disabled =
-        device.connectionStatus != "notConnected";
-
-      availableDevicesContainer.appendChild(availableDeviceContainer);
-    });
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (!currentDevice?.isConnected) {
+    onDevice(device);
   }
-}
-async function getDevices() {
-  const availableDevices = await BS.DeviceManager.getDevices();
-  if (!availableDevices) {
-    return;
-  }
-  onAvailableDevices(availableDevices);
-}
-
-BS.DeviceManager.addEventListener("availableDevices", (event) => {
-  const devices = event.message.availableDevices;
-  onAvailableDevices(devices);
 });
-getDevices();
+BS.DeviceManager.addEventListener("deviceNotConnected", (event) => {
+  const { device } = event.message;
+  if (currentDevice == device) {
+    console.log("currentDevice is gone");
+    currentDevice.removeAllEventListeners();
+    const nextConnectedDevice = BS.DeviceManager.connectedDevices[0];
+    console.log("nextConnectedDevice", nextConnectedDevice);
+    if (nextConnectedDevice) {
+      onDevice(nextConnectedDevice);
+    }
+  }
+});
+
+/** @param {BS.Device} device */
+const onDevice = (device, replaceCurrentDevice = false) => {
+  if (currentDevice?.isConnected) {
+    if (!replaceCurrentDevice) {
+      return;
+    }
+    currentDevice.removeAllEventListeners();
+  }
+  currentDevice = device;
+  console.log("currentDevice", currentDevice);
+};
 
 // CONNECTION
 
 /** @type {HTMLButtonElement} */
 const toggleConnectionButton = document.getElementById("toggleConnection");
-toggleConnectionButton.addEventListener("click", () => {
-  switch (device.connectionStatus) {
-    case "notConnected":
-      device.connect();
-      break;
-    case "connected":
-      device.disconnect();
-      break;
-  }
-});
-device.addEventListener("connectionStatus", () => {
-  switch (device.connectionStatus) {
-    case "connected":
-    case "notConnected":
-      toggleConnectionButton.disabled = false;
-      toggleConnectionButton.innerText = device.isConnected
-        ? "disconnect"
-        : "connect";
-      break;
-    case "connecting":
-    case "disconnecting":
-      toggleConnectionButton.disabled = true;
-      toggleConnectionButton.innerText = device.connectionStatus;
-      break;
+toggleConnectionButton.addEventListener("click", async () => {
+  if (currentDevice) {
+    currentDevice.toggleConnection();
+  } else {
+    toggleConnectionButton.innerText = "connecting...";
+    await BS.Device.Connect();
+    if (!currentDevice) {
+      toggleConnectionButton.innerText = "connect";
+    }
   }
 });
 
-/** @param {BS.Device} connectedDevice */
-function onConnectedDevice(connectedDevice) {
-  device = connectedDevice;
-  device.addEventListener("getSensorConfiguration", () => {
-    onSensorConfiguration(device);
-  });
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "connectionStatus",
+    () => {
+      switch (device.connectionStatus) {
+        case "connected":
+        case "notConnected":
+          toggleConnectionButton.disabled = false;
+          toggleConnectionButton.innerText = device.isConnected
+            ? "disconnect"
+            : "connect";
+          break;
+        case "connecting":
+        case "disconnecting":
+          toggleConnectionButton.disabled = true;
+          toggleConnectionButton.innerText = currentDevice.connectionStatus;
+          break;
+      }
+    },
+    { immediate: true },
+  );
+});
+
+// SENSOR DATA
+
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "getSensorConfiguration",
+    () => {
+      onSensorConfiguration(device);
+    },
+    { immediate: true },
+  );
   updateSensorRateInputs(device);
   onSensorConfiguration(device);
   addSensorDataEventListeners(device);
-}
+});
 
 // SENSOR CONFIGURATION
 /** @type {HTMLTemplateElement} */
@@ -131,7 +129,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
   sensorRateInput.addEventListener("input", () => {
     const sensorRate = Number(sensorRateInput.value);
     console.log({ sensorType, sensorRate });
-    device.setSensorConfiguration({ [sensorType]: sensorRate });
+    currentDevice.setSensorConfiguration({ [sensorType]: sensorRate });
   });
 
   sensorTypeConfigurationTemplate.parentElement.appendChild(
@@ -303,7 +301,7 @@ function createChart(canvas, title, axesLabels, yRange) {
   charts[title] = chart;
 
   const appendData = (timestamp, data) => {
-    //console.log({ timestamp, data });
+    // console.log({ timestamp, data });
     chart.data.labels.push(timestamp);
 
     if (chart.data.datasets.length == 0) {
@@ -373,6 +371,9 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
     case "barometer":
       axesLabels = ["barometer"];
       break;
+    case "light":
+      axesLabels = ["light"];
+      break;
     default:
       console.warn(`uncaught sensorType "${sensorType}"`);
       return;
@@ -405,6 +406,9 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
       break;
     case "orientation":
       yRange = { min: -360, max: 360 };
+      break;
+    case "light":
+      yRange = { min: 0, max: 200 };
       break;
   }
 
@@ -859,42 +863,3 @@ if (false)
 
     timestamp += interval;
   }, interval);
-
-// SERVER
-
-const websocketClient = new BS.WebSocketClient();
-/** @type {HTMLButtonElement} */
-const toggleServerConnectionButton = document.getElementById(
-  "toggleServerConnection",
-);
-toggleServerConnectionButton.addEventListener("click", () => {
-  websocketClient.toggleConnection();
-});
-websocketClient.addEventListener("isConnected", () => {
-  toggleServerConnectionButton.innerText = websocketClient.isConnected
-    ? "disconnect from server"
-    : "connect to server";
-});
-websocketClient.addEventListener("connectionStatus", () => {
-  let disabled;
-  switch (websocketClient.connectionStatus) {
-    case "notConnected":
-    case "connected":
-      disabled = false;
-      break;
-    case "connecting":
-    case "disconnecting":
-      disabled = true;
-      break;
-  }
-  toggleServerConnectionButton.disabled = disabled;
-});
-
-BS.DeviceManager.addEventListener("connectedDevices", (event) => {
-  const { connectedDevices } = event.message;
-  const connectedDevice = connectedDevices[0];
-  if (!connectedDevice) {
-    return;
-  }
-  onConnectedDevice(connectedDevice);
-});

@@ -7,7 +7,7 @@ import {
   WindowManagerServerEventMap,
 } from "../../window/WindowManagerServer.ts";
 
-const _console = createConsole("WindowServer", { log: true });
+const _console = createConsole("WindowServer", { log: false });
 
 interface WindowServerClient
   extends BaseServerClient, WindowManagerServerClient {}

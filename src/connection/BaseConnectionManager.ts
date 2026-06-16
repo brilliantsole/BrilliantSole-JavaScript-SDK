@@ -19,7 +19,7 @@ import { DisplayMessageTypes } from "../DisplayManager.ts";
 import { LedMessageTypes } from "../led/LedManager.ts";
 import { createMessage } from "../server/ServerUtils.ts";
 
-const _console = createConsole("BaseConnectionManager", { log: true });
+const _console = createConsole("BaseConnectionManager", { log: false });
 
 export const ConnectionTypes = [
   "webBluetooth",

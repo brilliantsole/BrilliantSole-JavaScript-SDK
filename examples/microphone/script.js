@@ -3,35 +3,91 @@ window.BS = BS;
 console.log(BS);
 
 // DEVICE
+/** @type {BS.Device?} */
+let currentDevice;
 
-const device = new BS.Device();
-console.log({ device });
-window.device = device;
+/** @param {(device: BS.Device)=>void} callback */
+const onCurrentDevice = (callback) => {
+  BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+    if (event.message.device == currentDevice) {
+      callback(currentDevice);
+    }
+  });
+};
 
-// CONNECT
-
-const toggleConnectionButton = document.getElementById("toggleConnection");
-toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
-);
-device.addEventListener("connectionStatus", () => {
-  let disabled = false;
-  let innerText = device.connectionStatus;
-  switch (device.connectionStatus) {
-    case "notConnected":
-      innerText = "connect";
-      break;
-    case "connected":
-      innerText = "disconnect";
-      break;
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (!currentDevice?.isConnected) {
+    onDevice(device);
   }
-  toggleConnectionButton.disabled = disabled;
-  toggleConnectionButton.innerText = innerText;
+});
+BS.DeviceManager.addEventListener("deviceNotConnected", (event) => {
+  const { device } = event.message;
+  if (currentDevice == device) {
+    console.log("currentDevice is gone");
+    currentDevice.removeAllEventListeners();
+    const nextConnectedDevice = BS.DeviceManager.connectedDevices[0];
+    console.log("nextConnectedDevice", nextConnectedDevice);
+    if (nextConnectedDevice) {
+      onDevice(nextConnectedDevice);
+    }
+  }
+});
+
+/** @param {BS.Device} device */
+const onDevice = (device, replaceCurrentDevice = false) => {
+  if (currentDevice?.isConnected) {
+    if (!replaceCurrentDevice) {
+      return;
+    }
+    currentDevice.removeAllEventListeners();
+  }
+  currentDevice = device;
+  console.log("currentDevice", currentDevice);
+};
+
+// CONNECTION
+
+/** @type {HTMLButtonElement} */
+const toggleConnectionButton = document.getElementById("toggleConnection");
+toggleConnectionButton.addEventListener("click", async () => {
+  if (currentDevice) {
+    currentDevice.toggleConnection();
+  } else {
+    toggleConnectionButton.innerText = "connecting...";
+    await BS.Device.Connect();
+    if (!currentDevice) {
+      toggleConnectionButton.innerText = "connect";
+    }
+  }
+});
+
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "connectionStatus",
+    () => {
+      switch (device.connectionStatus) {
+        case "connected":
+        case "notConnected":
+          toggleConnectionButton.disabled = false;
+          toggleConnectionButton.innerText = device.isConnected
+            ? "disconnect"
+            : "connect";
+          break;
+        case "connecting":
+        case "disconnecting":
+          toggleConnectionButton.disabled = true;
+          toggleConnectionButton.innerText = currentDevice.connectionStatus;
+          break;
+      }
+    },
+    { immediate: true },
+  );
 });
 
 // MICROPHONE
 
-device.addEventListener("connected", () => {
+onCurrentDevice((device) => {
   if (device.hasMicrophone) {
     device.setSensorConfiguration({ microphone: 5 });
     device.setMicrophoneConfiguration({ sampleRate: "16000", bitDepth: "16" });
@@ -43,28 +99,40 @@ device.addEventListener("connected", () => {
 
 /** @type {HTMLSpanElement} */
 const microphoneStatusSpan = document.getElementById("microphoneStatus");
-device.addEventListener("microphoneStatus", () => {
-  microphoneStatusSpan.innerText = device.microphoneStatus;
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "microphoneStatus",
+    () => {
+      microphoneStatusSpan.innerText = device.microphoneStatus;
+    },
+    { immediate: true },
+  );
 });
 
 /** @type {HTMLPreElement} */
 const microphoneConfigurationPre = document.getElementById(
-  "microphoneConfigurationPre"
+  "microphoneConfigurationPre",
 );
-device.addEventListener("getMicrophoneConfiguration", () => {
-  microphoneConfigurationPre.textContent = JSON.stringify(
-    device.microphoneConfiguration,
-    null,
-    2
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "getMicrophoneConfiguration",
+    () => {
+      microphoneConfigurationPre.textContent = JSON.stringify(
+        device.microphoneConfiguration,
+        null,
+        2,
+      );
+    },
+    { immediate: true },
   );
 });
 
 const microphoneConfigurationContainer = document.getElementById(
-  "microphoneConfiguration"
+  "microphoneConfiguration",
 );
 /** @type {HTMLTemplateElement} */
 const microphoneConfigurationTypeTemplate = document.getElementById(
-  "microphoneConfigurationTypeTemplate"
+  "microphoneConfigurationTypeTemplate",
 );
 BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
   const microphoneConfigurationTypeContainer =
@@ -73,7 +141,7 @@ BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
       .querySelector(".microphoneConfigurationType");
 
   microphoneConfigurationContainer.appendChild(
-    microphoneConfigurationTypeContainer
+    microphoneConfigurationTypeContainer,
   );
 
   microphoneConfigurationTypeContainer.querySelector(".type").innerText =
@@ -88,46 +156,67 @@ BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
   BS.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
     (value) => {
       optgroup.appendChild(new Option(value));
-    }
+    },
   );
 
   /** @type {HTMLSpanElement} */
   const span = microphoneConfigurationTypeContainer.querySelector("span");
 
-  device.addEventListener("isConnected", () => {
-    updateisInputDisabled();
+  onCurrentDevice((device) => {
+    device.addEventListener(
+      "isConnected",
+      () => {
+        updateisInputDisabled();
+      },
+      { immediate: true },
+    );
+    device.addEventListener(
+      "microphoneStatus",
+      () => {
+        updateisInputDisabled();
+      },
+      { immediate: true },
+    );
   });
-  device.addEventListener("microphoneStatus", () => {
-    updateisInputDisabled();
-  });
+
   const updateisInputDisabled = () => {
     select.disabled =
-      !device.isConnected ||
-      !device.hasMicrophone ||
-      device.microphoneStatus != "idle";
+      !currentDevice.isConnected ||
+      !currentDevice.hasMicrophone ||
+      currentDevice.microphoneStatus != "idle";
   };
 
   const updateSelect = () => {
-    const value = device.microphoneConfiguration[microphoneConfigurationType];
+    const value =
+      currentDevice.microphoneConfiguration[microphoneConfigurationType];
     span.innerText = value;
     select.value = value;
   };
+  onCurrentDevice((device) => {
+    device.addEventListener(
+      "connected",
+      () => {
+        if (!device.hasMicrophone) {
+          return;
+        }
+        updateSelect();
+      },
+      { immediate: true },
+    );
 
-  device.addEventListener("connected", () => {
-    if (!device.hasMicrophone) {
-      return;
-    }
-    updateSelect();
-  });
-
-  device.addEventListener("getMicrophoneConfiguration", () => {
-    updateSelect();
+    device.addEventListener(
+      "getMicrophoneConfiguration",
+      () => {
+        updateSelect();
+      },
+      { immediate: true },
+    );
   });
 
   select.addEventListener("input", () => {
     const value = select.value;
     // console.log(`updating ${microphoneConfigurationType} to ${value}`);
-    device.setMicrophoneConfiguration({
+    currentDevice.setMicrophoneConfiguration({
       [microphoneConfigurationType]: value,
     });
   });
@@ -136,21 +225,25 @@ BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
 /** @type {HTMLButtonElement} */
 const toggleMicrophoneButton = document.getElementById("toggleMicrophone");
 toggleMicrophoneButton.addEventListener("click", () => {
-  device.toggleMicrophone();
+  currentDevice.toggleMicrophone();
 });
-device.addEventListener("connected", () => {
+onCurrentDevice((device) => {
   updateToggleMicrophoneButton();
-});
-device.addEventListener("getSensorConfiguration", () => {
-  updateToggleMicrophoneButton();
+  device.addEventListener(
+    "getSensorConfiguration",
+    () => {
+      updateToggleMicrophoneButton();
+    },
+    { immediate: true },
+  );
 });
 const updateToggleMicrophoneButton = () => {
   let disabled =
-    !device.isConnected ||
-    device.sensorConfiguration.microphone == 0 ||
-    !device.hasMicrophone;
+    !currentDevice.isConnected ||
+    currentDevice.sensorConfiguration.microphone == 0 ||
+    !currentDevice.hasMicrophone;
 
-  switch (device.microphoneStatus) {
+  switch (currentDevice.microphoneStatus) {
     case "streaming":
       toggleMicrophoneButton.innerText = "stop microphone";
       break;
@@ -160,46 +253,60 @@ const updateToggleMicrophoneButton = () => {
   }
   toggleMicrophoneButton.disabled = disabled;
 };
-device.addEventListener("microphoneStatus", () => {
-  updateToggleMicrophoneButton();
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "microphoneStatus",
+    () => {
+      updateToggleMicrophoneButton();
+    },
+    { immediate: true },
+  );
 });
 
 /** @type {HTMLButtonElement} */
 const startMicrophoneButton = document.getElementById("startMicrophone");
 startMicrophoneButton.addEventListener("click", () => {
-  device.startMicrophone();
+  currentDevice.startMicrophone();
 });
 /** @type {HTMLButtonElement} */
 const stopMicrophoneButton = document.getElementById("stopMicrophone");
 stopMicrophoneButton.addEventListener("click", () => {
-  device.stopMicrophone();
+  currentDevice.stopMicrophone();
 });
 /** @type {HTMLButtonElement} */
 const enableMicrophoneVadButton = document.getElementById("enableMicrphoneVad");
 enableMicrophoneVadButton.addEventListener("click", () => {
-  device.enableMicrophoneVad();
+  currentDevice.enableMicrophoneVad();
 });
 
 const updateMicrophoneButtons = () => {
   let disabled =
-    !device.isConnected ||
-    device.sensorConfiguration.microphone == 0 ||
-    !device.hasMicrophone;
+    !currentDevice.isConnected ||
+    currentDevice.sensorConfiguration.microphone == 0 ||
+    !currentDevice.hasMicrophone;
 
   startMicrophoneButton.disabled =
-    disabled || device.microphoneStatus == "streaming";
-  stopMicrophoneButton.disabled = disabled || device.microphoneStatus == "idle";
+    disabled || currentDevice.microphoneStatus == "streaming";
+  stopMicrophoneButton.disabled =
+    disabled || currentDevice.microphoneStatus == "idle";
   enableMicrophoneVadButton.disabled =
-    disabled || device.microphoneStatus == "vad";
+    disabled || currentDevice.microphoneStatus == "vad";
 };
-device.addEventListener("microphoneStatus", () => {
-  updateMicrophoneButtons();
-});
-device.addEventListener("connected", () => {
-  updateMicrophoneButtons();
-});
-device.addEventListener("getSensorConfiguration", () => {
-  updateMicrophoneButtons();
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "microphoneStatus",
+    () => {
+      updateMicrophoneButtons();
+    },
+    { immediate: true },
+  );
+  device.addEventListener(
+    "getSensorConfiguration",
+    () => {
+      updateMicrophoneButtons();
+    },
+    { immediate: true },
+  );
 });
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)({
@@ -221,22 +328,26 @@ audioContext.addEventListener("statechange", () => {
 });
 checkAudioContextState();
 
-device.audioContext = audioContext;
-device.microphoneGainNode.gain.value = 10;
+onCurrentDevice((device) => {
+  device.audioContext = audioContext;
+  device.microphoneGainNode.gain.value = 10;
+});
 
 /** @type {HTMLAudioElement} */
 const microphoneStreamAudioElement =
   document.getElementById("microphoneStream");
-microphoneStreamAudioElement.srcObject =
-  device.microphoneMediaStreamDestination.stream;
+onCurrentDevice((device) => {
+  microphoneStreamAudioElement.srcObject =
+    device.microphoneMediaStreamDestination.stream;
+});
 
 /** @type {HTMLAudioElement} */
 const microphoneRecordingAudioElement = document.getElementById(
-  "microphoneRecording"
+  "microphoneRecording",
 );
 /** @type {HTMLInputElement} */
 const autoPlayMicrphoneRecordingCheckbox = document.getElementById(
-  "autoPlayMicrphoneRecording"
+  "autoPlayMicrphoneRecording",
 );
 let autoPlayMicrphoneRecording = autoPlayMicrphoneRecordingCheckbox.checked;
 console.log("autoPlayMicrphoneRecording", autoPlayMicrphoneRecording);
@@ -244,47 +355,61 @@ autoPlayMicrphoneRecordingCheckbox.addEventListener("input", () => {
   autoPlayMicrphoneRecording = autoPlayMicrphoneRecordingCheckbox.checked;
   console.log({ autoPlayMicrphoneRecording });
 });
-device.addEventListener("microphoneRecording", (event) => {
-  microphoneRecordingAudioElement.src = event.message.url;
-  if (autoPlayMicrphoneRecording) {
-    microphoneRecordingAudioElement.play();
-  }
+onCurrentDevice((device) => {
+  device.addEventListener("microphoneRecording", (event) => {
+    microphoneRecordingAudioElement.src = event.message.url;
+    if (autoPlayMicrphoneRecording) {
+      microphoneRecordingAudioElement.play();
+    }
+  });
 });
 
 /** @type {HTMLButtonElement} */
 const toggleMicrophoneRecordingButton = document.getElementById(
-  "toggleMicrophoneRecording"
+  "toggleMicrophoneRecording",
 );
 toggleMicrophoneRecordingButton.addEventListener("click", () => {
-  device.toggleMicrophoneRecording();
+  currentDevice.toggleMicrophoneRecording();
 });
-device.addEventListener("connected", () => {
-  updateToggleMicrophoneRecordingButton();
-});
-device.addEventListener("getSensorConfiguration", () => {
-  updateToggleMicrophoneRecordingButton();
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "getSensorConfiguration",
+    () => {
+      updateToggleMicrophoneRecordingButton();
+    },
+    { immediate: true },
+  );
 });
 const updateToggleMicrophoneRecordingButton = () => {
   let disabled =
-    !device.isConnected ||
-    device.sensorConfiguration.microphone == 0 ||
-    !device.hasMicrophone ||
-    device.microphoneStatus != "streaming";
+    !currentDevice.isConnected ||
+    currentDevice.sensorConfiguration.microphone == 0 ||
+    !currentDevice.hasMicrophone ||
+    currentDevice.microphoneStatus != "streaming";
 
-  toggleMicrophoneRecordingButton.innerText = device.isRecordingMicrophone
-    ? "stop recording"
-    : "start recording";
+  toggleMicrophoneRecordingButton.innerText =
+    currentDevice.isRecordingMicrophone ? "stop recording" : "start recording";
 
   toggleMicrophoneRecordingButton.disabled = disabled;
 };
-device.addEventListener("isRecordingMicrophone", () => {
-  updateToggleMicrophoneRecordingButton();
-  if (!device.isRecordingMicrophone) {
-    device.stopMicrophone();
-  }
-});
-device.addEventListener("microphoneStatus", () => {
-  updateToggleMicrophoneRecordingButton();
+onCurrentDevice((device) => {
+  device.addEventListener(
+    "isRecordingMicrophone",
+    () => {
+      updateToggleMicrophoneRecordingButton();
+      if (!device.isRecordingMicrophone) {
+        device.stopMicrophone();
+      }
+    },
+    { immediate: true },
+  );
+  device.addEventListener(
+    "microphoneStatus",
+    () => {
+      updateToggleMicrophoneRecordingButton();
+    },
+    { immediate: true },
+  );
 });
 
 const peaksOptions = {
@@ -315,7 +440,9 @@ const canvas = document.getElementById("audioVisualizer");
 const canvasCtx = canvas.getContext("2d");
 
 const analyser = audioContext.createAnalyser();
-device.microphoneGainNode.connect(analyser);
+onCurrentDevice((device) => {
+  device.microphoneGainNode.connect(analyser);
+});
 analyser.fftSize = 1024;
 
 const bufferLength = analyser.frequencyBinCount;
@@ -323,7 +450,7 @@ const dataArray = new Uint8Array(bufferLength);
 analyser.getByteTimeDomainData(dataArray);
 
 const audioVisualizationTypeSelect = document.getElementById(
-  "audioVisualizationType"
+  "audioVisualizationType",
 );
 let audioVisualizationType = audioVisualizationTypeSelect.value;
 audioVisualizationTypeSelect.addEventListener("input", () => {
@@ -334,7 +461,7 @@ audioVisualizationTypeSelect.addEventListener("input", () => {
 function draw() {
   requestAnimationFrame(draw);
 
-  if (device.microphoneStatus != "streaming") {
+  if (currentDevice?.microphoneStatus != "streaming") {
     return;
   }
 
@@ -384,7 +511,7 @@ function draw() {
         x,
         canvas.height - barHeight / 2,
         barWidth,
-        barHeight / 2
+        barHeight / 2,
       );
 
       x += barWidth + 1;

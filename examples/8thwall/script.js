@@ -162,7 +162,7 @@ const drawCanvasStreamCanvas = (element) => {
     0,
     0,
     sw,
-    sh // destination
+    sh, // destination
   );
 };
 const cameraStreamVideo = document.getElementById("cameraStreamVideo");
@@ -353,13 +353,13 @@ const deviceOrientationQuaternion = new THREE.Quaternion();
 const deviceOrientationLandscapeQuaternion =
   new THREE.Quaternion().setFromAxisAngle(
     new THREE.Vector3(0, 0, 1), // forward axis
-    Math.PI / 2 // 90 degrees
+    Math.PI / 2, // 90 degrees
   );
 const deviceOrientationCorrectionQuaternion = new THREE.Quaternion(
   -Math.sqrt(0.5),
   0,
   0,
-  Math.sqrt(0.5)
+  Math.sqrt(0.5),
 ).invert();
 /** @param {BS.Quaternion} quaternion */
 const quaternionToDeviceOrientation = (quaternion) => {
@@ -420,26 +420,26 @@ const onQuaternion = (quaternion, timestamp, absolute = false) => {
   };
   if (dispatchNativeMotionEvents) {
     _windowEventListenerMap["deviceorientation"].forEach((listener) =>
-      listener(deviceOrientationInitData)
+      listener(deviceOrientationInitData),
     );
     if (absolute) {
       _windowEventListenerMap["deviceorientationabsolute"].forEach((listener) =>
-        listener(deviceOrientationInitData)
+        listener(deviceOrientationInitData),
       );
     }
   } else {
     window.dispatchEvent(
       new DeviceOrientationEvent(
         deviceOrientationEventType,
-        deviceOrientationInitData
-      )
+        deviceOrientationInitData,
+      ),
     );
     if (absolute) {
       window.dispatchEvent(
         new DeviceOrientationEvent(
           deviceOrientationAbsoluteEventType,
-          deviceOrientationInitData
-        )
+          deviceOrientationInitData,
+        ),
       );
     }
   }
@@ -475,7 +475,7 @@ device.addEventListener("sensorData", (event) => {
   latestSensorData = latestSensorData ?? { timestamp };
   if (latestSensorData.timestamp != timestamp) {
     console.warn(
-      `timestamp mismatch - updating from ${latestSensorData.timestamp} to ${timestamp}`
+      `timestamp mismatch - updating from ${latestSensorData.timestamp} to ${timestamp}`,
     );
     latestSensorData = { timestamp };
   }
@@ -518,11 +518,11 @@ device.addEventListener("sensorData", (event) => {
     };
     if (dispatchNativeMotionEvents) {
       _windowEventListenerMap["devicemotion"].forEach((listener) =>
-        listener(deviceMotionInitData)
+        listener(deviceMotionInitData),
       );
     } else {
       window.dispatchEvent(
-        new DeviceMotionEvent(deviceMotionEventType, deviceMotionInitData)
+        new DeviceMotionEvent(deviceMotionEventType, deviceMotionInitData),
       );
     }
 
@@ -558,11 +558,11 @@ window.addEventListener(deviceMotionEventType, (event) => {
 
   if (dispatchNativeMotionEvents) {
     _windowEventListenerMap["devicemotion"].forEach((listener) =>
-      listener(deviceMotionInitData)
+      listener(deviceMotionInitData),
     );
   } else {
     window.dispatchEvent(
-      new DeviceMotionEvent(deviceMotionEventType, deviceMotionInitData)
+      new DeviceMotionEvent(deviceMotionEventType, deviceMotionInitData),
     );
   }
 });
@@ -582,26 +582,26 @@ window.addEventListener(deviceOrientationEventType, (event) => {
   };
   if (dispatchNativeMotionEvents) {
     _windowEventListenerMap["deviceorientation"].forEach((listener) =>
-      listener(deviceOrientationInitData)
+      listener(deviceOrientationInitData),
     );
     if (absolute) {
       _windowEventListenerMap["deviceorientationabsolute"].forEach((listener) =>
-        listener(deviceOrientationInitData)
+        listener(deviceOrientationInitData),
       );
     }
   } else {
     window.dispatchEvent(
       new DeviceOrientationEvent(
         deviceOrientationEventType,
-        deviceOrientationInitData
-      )
+        deviceOrientationInitData,
+      ),
     );
     if (absolute) {
       window.dispatchEvent(
         new DeviceOrientationEvent(
           deviceOrientationAbsoluteEventType,
-          deviceOrientationInitData
-        )
+          deviceOrientationInitData,
+        ),
       );
     }
   }
@@ -618,7 +618,7 @@ window.addEventListener(deviceOrientationAbsoluteEventType, (event) => {
       alpha,
       beta,
       gamma,
-    })
+    }),
   );
 });
 
@@ -667,7 +667,7 @@ window.addEventListener("devicemotion", (event) => {
         return value;
       }
     },
-    2
+    2,
   );
 });
 window.addEventListener("deviceorientation", (event) => {
@@ -681,7 +681,7 @@ window.addEventListener("deviceorientation", (event) => {
       gamma,
     },
     null,
-    2
+    2,
   );
 });
 // DEVICE MOTION END
@@ -707,7 +707,7 @@ setInterval(() => {
       euler: _euler,
     },
     null,
-    2
+    2,
   );
 }, sensorRate);
 
