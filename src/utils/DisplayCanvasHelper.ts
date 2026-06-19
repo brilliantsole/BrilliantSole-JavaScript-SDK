@@ -84,13 +84,7 @@ import {
   isWireframePolygon,
   DisplayColorRGBOrString,
 } from "./DisplayUtils.ts";
-import EventDispatcher, {
-  BoundEventListeners,
-  Event,
-  EventDispatcherTypes,
-  EventListenerMap,
-  EventMap,
-} from "./EventDispatcher.ts";
+import EventDispatcher, { EventDispatcherTypes } from "./EventDispatcher.ts";
 import { addEventListeners, removeEventListeners } from "./EventUtils.ts";
 import {
   clamp,
@@ -274,6 +268,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return this.#canvas;
   }
   set canvas(newCanvas) {
+    this.#setCanvas(newCanvas);
+  }
+  async #setCanvas(newCanvas?: HTMLCanvasElement) {
     _console.assertWithError(
       newCanvas?.nodeName == "CANVAS",
       `assigned non-canvas type ${newCanvas?.nodeName}`,
@@ -288,7 +285,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#context = this.#canvas?.getContext("2d", {
       willReadFrequently: true,
     })!;
-    this.#updateCanvas();
+    await this.#updateCanvas(false);
   }
   #context!: CanvasRenderingContext2D;
   get context() {
@@ -305,7 +302,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return this.width / this.height;
   }
 
-  #updateCanvas() {
+  async #updateCanvas(sendImmediately?: boolean) {
     if (!this.canvas) {
       return;
     }
@@ -325,7 +322,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#dispatchEvent("resize", { width: this.width, height: this.height });
 
-    this.clear();
+    await this.clear(sendImmediately);
   }
 
   // CONTEXT STACK
@@ -410,6 +407,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return this.#device?.displayManager;
   }
   set device(newDevice) {
+    this.#setDevice(newDevice);
+  }
+  async #setDevice(newDevice?: Device) {
     if (this.#device == newDevice) {
       // _console.log("redundant device assignment", newDevice);
       return;
@@ -424,17 +424,18 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         "display must have a display",
       );
     }
+
+    this.#isReady = false;
     if (this.#device) {
       removeEventListeners(this.device, this.#boundDeviceEventListeners);
-      this.#isReady = true;
     }
     this.#device = newDevice;
     addEventListeners(this.#device, this.#boundDeviceEventListeners);
     _console.log("assigned device", this.device);
     if (this.device) {
       this.numberOfColors = this.device.numberOfDisplayColors!;
-      this.#updateCanvas();
-      this.#updateDevice();
+      await this.#updateCanvas();
+      await this.#updateDevice();
       this.#isReady = this.device.isDisplayReady;
 
       this.#dispatchEvent("deviceIsConnected", {
@@ -447,6 +448,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
           device: this.device,
         },
       );
+    } else {
+      this.#isReady = true;
     }
     this.#dispatchEvent("device", {
       device: this.device,
@@ -481,10 +484,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       isConnected,
     });
   }
-  #onDeviceConnected(event: DeviceEventMap["connected"]) {
+  async #onDeviceConnected(event: DeviceEventMap["connected"]) {
     // _console.log("device connected");
-    this.#updateCanvas();
-    this.#updateDevice();
+    await this.#updateCanvas(false);
+    await this.#updateDevice(false);
+    await this.flushContextCommands();
     this.#dispatchEvent("deviceConnected", { device: this.device! });
     // FIX - messages flushed properly?
   }
@@ -550,14 +554,17 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
 
-  async #updateDevice() {
-    await this.#updateDeviceColors(true);
-    await this.#updateDeviceOpacity(true);
-    await this.#updateDeviceContextState(true);
-    await this.#updateDeviceBrightness(true);
+  async #updateDevice(sendImmediately?: boolean) {
+    await this.#updateDeviceColors(false);
+    await this.#updateDeviceOpacity(false);
+    await this.#updateDeviceContextState(false);
+    await this.#updateDeviceBrightness(false);
     await this.#updateDeviceSpriteSheets();
-    await this.#updateDeviceSelectedSpriteSheet(true);
+    await this.#updateDeviceSelectedSpriteSheet(false);
     //_console.log("deviceUpdated");
+    if (sendImmediately) {
+      await this.flushContextCommands();
+    }
     this.#dispatchEvent("deviceUpdated", { device: this.device! });
   }
 

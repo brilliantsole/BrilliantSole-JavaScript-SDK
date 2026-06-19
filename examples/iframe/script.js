@@ -111,6 +111,7 @@ const selectUrls = [
   { name: "punch", url: "../punch" },
   { name: "display wireframe", url: "../display-wireframe" },
   { name: "canvas", url: "../canvas" },
+  { name: "display text", url: "../display-text" },
 ];
 const createIframeContainer = () => {
   const iframeContainer = iframeContainerTemplate.content
@@ -193,7 +194,7 @@ const createIframeContainer = () => {
   iframeContainers.appendChild(iframeContainer);
 };
 createIframeContainer();
-createIframeContainer();
+// createIframeContainer();
 
 BS.WindowServer.clientSensorConfigurationToDeviceGuardManager.add(
   ({ client, message, sensorType, sensorRate }) => {

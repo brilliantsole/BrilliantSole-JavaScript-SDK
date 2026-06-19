@@ -17,6 +17,9 @@ const onCurrentDevice = (callback) => {
 
 BS.DeviceManager.addEventListener("deviceConnected", (event) => {
   const { device } = event.message;
+  if (device.type != "rightGlove") {
+    return;
+  }
   if (!currentDevice?.isConnected) {
     onDevice(device);
   }

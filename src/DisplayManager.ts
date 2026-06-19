@@ -392,46 +392,52 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    differences.forEach((difference) => {
+    for (let difference of differences) {
       switch (difference) {
         case "backgroundColorIndex":
-          this.selectBackgroundColor(newState.backgroundColorIndex!);
+          await this.selectBackgroundColor(
+            newState.backgroundColorIndex!,
+            false,
+          );
           break;
         case "fillBackground":
-          this.setFillBackground(newState.fillBackground!);
+          await this.setFillBackground(newState.fillBackground!, false);
           break;
         case "ignoreFill":
-          this.setIgnoreFill(newState.ignoreFill!);
+          await this.setIgnoreFill(newState.ignoreFill!, false);
           break;
         case "ignoreLine":
-          this.setIgnoreLine(newState.ignoreLine!);
+          await this.setIgnoreLine(newState.ignoreLine!, false);
           break;
         case "fillColorIndex":
-          this.selectFillColor(newState.fillColorIndex!);
+          await this.selectFillColor(newState.fillColorIndex!, false);
           break;
         case "lineColorIndex":
-          this.selectLineColor(newState.lineColorIndex!);
+          await this.selectLineColor(newState.lineColorIndex!, false);
           break;
         case "lineWidth":
-          this.setLineWidth(newState.lineWidth!);
+          await this.setLineWidth(newState.lineWidth!, false);
           break;
         case "horizontalAlignment":
-          this.setHorizontalAlignment(newState.horizontalAlignment!);
+          await this.setHorizontalAlignment(
+            newState.horizontalAlignment!,
+            false,
+          );
           break;
         case "verticalAlignment":
-          this.setVerticalAlignment(newState.verticalAlignment!);
+          await this.setVerticalAlignment(newState.verticalAlignment!, false);
           break;
         case "rotation":
-          this.setRotation(newState.rotation!, true);
+          await this.setRotation(newState.rotation!, true);
           break;
         case "segmentStartCap":
           if (
             differences.includes("segmentEndCap") &&
             newState.segmentStartCap == newState.segmentEndCap
           ) {
-            this.setSegmentCap(newState.segmentStartCap!);
+            await this.setSegmentCap(newState.segmentStartCap!, false);
           } else {
-            this.setSegmentStartCap(newState.segmentStartCap!);
+            await this.setSegmentStartCap(newState.segmentStartCap!, false);
           }
           break;
         case "segmentEndCap":
@@ -439,7 +445,7 @@ class DisplayManager implements DisplayManagerInterface {
             !differences.includes("segmentStartCap") ||
             newState.segmentStartCap != newState.segmentEndCap
           ) {
-            this.setSegmentEndCap(newState.segmentEndCap!);
+            await this.setSegmentEndCap(newState.segmentEndCap!, false);
           }
           break;
         case "segmentStartRadius":
@@ -447,9 +453,12 @@ class DisplayManager implements DisplayManagerInterface {
             differences.includes("segmentEndRadius") &&
             newState.segmentStartRadius == newState.segmentEndRadius
           ) {
-            this.setSegmentRadius(newState.segmentStartRadius!);
+            await this.setSegmentRadius(newState.segmentStartRadius!, false);
           } else {
-            this.setSegmentStartRadius(newState.segmentStartRadius!);
+            await this.setSegmentStartRadius(
+              newState.segmentStartRadius!,
+              false,
+            );
           }
           break;
         case "segmentEndRadius":
@@ -457,32 +466,32 @@ class DisplayManager implements DisplayManagerInterface {
             !differences.includes("segmentStartRadius") ||
             newState.segmentStartRadius != newState.segmentEndRadius
           ) {
-            this.setSegmentEndRadius(newState.segmentEndRadius!);
+            await this.setSegmentEndRadius(newState.segmentEndRadius!, false);
           }
           break;
         case "cropTop":
-          this.setCropTop(newState.cropTop!);
+          await this.setCropTop(newState.cropTop!, false);
           break;
         case "cropRight":
-          this.setCropRight(newState.cropRight!);
+          await this.setCropRight(newState.cropRight!, false);
           break;
         case "cropBottom":
-          this.setCropBottom(newState.cropBottom!);
+          await this.setCropBottom(newState.cropBottom!, false);
           break;
         case "cropLeft":
-          this.setCropLeft(newState.cropLeft!);
+          await this.setCropLeft(newState.cropLeft!, false);
           break;
         case "rotationCropTop":
-          this.setRotationCropTop(newState.rotationCropTop!);
+          await this.setRotationCropTop(newState.rotationCropTop!, false);
           break;
         case "rotationCropRight":
-          this.setRotationCropRight(newState.rotationCropRight!);
+          await this.setRotationCropRight(newState.rotationCropRight!, false);
           break;
         case "rotationCropBottom":
-          this.setRotationCropBottom(newState.rotationCropBottom!);
+          await this.setRotationCropBottom(newState.rotationCropBottom!, false);
           break;
         case "rotationCropLeft":
-          this.setRotationCropLeft(newState.rotationCropLeft!);
+          await this.setRotationCropLeft(newState.rotationCropLeft!, false);
           break;
         case "bitmapColorIndices":
           const bitmapColors: DisplayBitmapColorPair[] = [];
@@ -491,16 +500,16 @@ class DisplayManager implements DisplayManagerInterface {
               bitmapColors.push({ bitmapColorIndex, colorIndex });
             },
           );
-          this.selectBitmapColors(bitmapColors);
+          await this.selectBitmapColors(bitmapColors, false);
           break;
         case "bitmapScaleX":
           if (
             differences.includes("bitmapScaleY") &&
             newState.bitmapScaleX == newState.bitmapScaleY
           ) {
-            this.setBitmapScale(newState.bitmapScaleX!);
+            await this.setBitmapScale(newState.bitmapScaleX!, false);
           } else {
-            this.setBitmapScaleX(newState.bitmapScaleX!);
+            await this.setBitmapScaleX(newState.bitmapScaleX!, false);
           }
           break;
         case "bitmapScaleY":
@@ -508,7 +517,7 @@ class DisplayManager implements DisplayManagerInterface {
             !differences.includes("bitmapScaleX") ||
             newState.bitmapScaleX != newState.bitmapScaleY
           ) {
-            this.setBitmapScaleY(newState.bitmapScaleY!);
+            await this.setBitmapScaleY(newState.bitmapScaleY!, false);
           }
           break;
         case "spriteColorIndices":
@@ -518,16 +527,16 @@ class DisplayManager implements DisplayManagerInterface {
               spriteColors.push({ spriteColorIndex, colorIndex });
             },
           );
-          this.selectSpriteColors(spriteColors);
+          await this.selectSpriteColors(spriteColors, false);
           break;
         case "spriteScaleX":
           if (
             differences.includes("spriteScaleY") &&
             newState.spriteScaleX == newState.spriteScaleY
           ) {
-            this.setSpriteScale(newState.spriteScaleX!);
+            await this.setSpriteScale(newState.spriteScaleX!, false);
           } else {
-            this.setSpriteScaleX(newState.spriteScaleX!);
+            await this.setSpriteScaleX(newState.spriteScaleX!, false);
           }
           break;
         case "spriteScaleY":
@@ -535,32 +544,38 @@ class DisplayManager implements DisplayManagerInterface {
             !differences.includes("spriteScaleX") ||
             newState.spriteScaleX != newState.spriteScaleY
           ) {
-            this.setSpriteScaleY(newState.spriteScaleY!);
+            await this.setSpriteScaleY(newState.spriteScaleY!, false);
           }
           break;
         case "spritesLineHeight":
-          this.setSpritesLineHeight(newState.spritesLineHeight!);
+          await this.setSpritesLineHeight(newState.spritesLineHeight!, false);
           break;
         case "spritesDirection":
-          this.setSpritesDirection(newState.spritesDirection!);
+          await this.setSpritesDirection(newState.spritesDirection!, false);
           break;
         case "spritesLineDirection":
-          this.setSpritesLineDirection(newState.spritesLineDirection!);
+          await this.setSpritesLineDirection(
+            newState.spritesLineDirection!,
+            false,
+          );
           break;
         case "spritesSpacing":
-          this.setSpritesSpacing(newState.spritesSpacing!);
+          await this.setSpritesSpacing(newState.spritesSpacing!, false);
           break;
         case "spritesLineSpacing":
-          this.setSpritesLineSpacing(newState.spritesLineSpacing!);
+          await this.setSpritesLineSpacing(newState.spritesLineSpacing!, false);
           break;
         case "spritesAlignment":
-          this.setSpritesAlignment(newState.spritesAlignment!);
+          await this.setSpritesAlignment(newState.spritesAlignment!, false);
           break;
         case "spritesLineAlignment":
-          this.setSpritesLineAlignment(newState.spritesLineAlignment!);
+          await this.setSpritesLineAlignment(
+            newState.spritesLineAlignment!,
+            false,
+          );
           break;
       }
-    });
+    }
     if (sendImmediately) {
       await this.#sendContextCommands();
     }
@@ -3059,7 +3074,7 @@ class DisplayManager implements DisplayManagerInterface {
 
   #parseSpriteSheetIndex(dataView: DataView<ArrayBuffer>) {
     const spriteSheetIndex = dataView.getUint8(0);
-    _console.log({
+    _console.log(location.href, {
       pendingSpriteSheet: this.#pendingSpriteSheet,
       spriteSheetName: this.#pendingSpriteSheetName,
       spriteSheetIndex,
@@ -3068,15 +3083,19 @@ class DisplayManager implements DisplayManagerInterface {
       _console.log("pendingSpriteSheetName is undefined - skipping");
       return;
     }
+    if (this.#pendingSpriteSheetName == undefined) {
+      _console.log(
+        "expected spriteSheetName when receiving spriteSheetIndex - skipping",
+      );
+      return;
+    }
+    if (this.#pendingSpriteSheet == undefined) {
+      _console.log(
+        "expected pendingSpriteSheet when receiving spriteSheetIndex - skipping",
+      );
+      return;
+    }
 
-    _console.assertWithError(
-      this.#pendingSpriteSheetName != undefined,
-      "expected spriteSheetName when receiving spriteSheetIndex",
-    );
-    _console.assertWithError(
-      this.#pendingSpriteSheet != undefined,
-      "expected pendingSpriteSheet when receiving spriteSheetIndex",
-    );
     this.#spriteSheets[this.#pendingSpriteSheetName!] =
       this.#pendingSpriteSheet!;
     this.#spriteSheetIndices[this.#pendingSpriteSheetName!] = spriteSheetIndex;
