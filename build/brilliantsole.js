@@ -11931,10 +11931,6 @@
 	    }
 	    #updateMtu(newMtu) {
 	        _console$D.assertTypeWithError(newMtu, "number");
-	        if (this.#mtu == newMtu) {
-	            _console$D.log("redundant mtu assignment", newMtu);
-	            return;
-	        }
 	        this.#mtu = newMtu;
 	        this.#dispatchEvent("getMtu", { mtu: this.#mtu });
 	    }
@@ -31418,7 +31414,7 @@
 	    }
 	    async restoreContext(sendImmediately) {
 	        {
-	            await this.#restoreContext(sendImmediately);
+	            await this.#sendContextCommand("restoreContext", undefined, sendImmediately);
 	        }
 	    }
 	    async #clearContext(sendImmediately) {
@@ -33379,7 +33375,9 @@
 	        if (this.mtu) {
 	            while (arrayBuffers.length > 0) {
 	                if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
-	                    _console$p.error("every arrayBuffer is too big to send");
+	                    _console$p.error("every arrayBuffer is too big to send", arrayBuffers, {
+	                        mtu: this.mtu,
+	                    });
 	                    break;
 	                }
 	                _console$p.log("remaining arrayBuffers.length", arrayBuffers.length);
@@ -39157,6 +39155,7 @@
 	    }
 	    async #setDevice(newDevice) {
 	        if (this.#device == newDevice) {
+	            _console$4.log("redundant device assignment", newDevice);
 	            return;
 	        }
 	        if (newDevice) {
@@ -39214,12 +39213,14 @@
 	        });
 	    }
 	    async #onDeviceConnected(event) {
+	        _console$4.log("device connected");
 	        await this.#updateCanvas(false);
 	        await this.#updateDevice(false);
 	        await this.flushContextCommands();
 	        this.#dispatchEvent("deviceConnected", { device: this.device });
 	    }
 	    #onDeviceNotConnected(event) {
+	        _console$4.log("device not connected");
 	        this.#dispatchEvent("deviceNotConnected", { device: this.device });
 	    }
 	    async #onDeviceDisplayReady(event) {

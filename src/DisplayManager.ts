@@ -981,7 +981,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.setContextState(contextState, sendImmediately);
   }
   async restoreContext(sendImmediately?: boolean) {
-    if (true) {
+    if (false) {
       await this.#restoreContext(sendImmediately);
     } else {
       await this.#sendContextCommand(

@@ -134,7 +134,7 @@ class InformationManager {
       "newName",
       newName.length,
       MinNameLength,
-      MaxNameLength
+      MaxNameLength,
     );
     const setNameData = textEncoder.encode(newName);
     _console.log({ setNameData });
@@ -159,7 +159,7 @@ class InformationManager {
     _console.assertTypeWithError(typeEnum, "number");
     _console.assertWithError(
       typeEnum in DeviceTypes,
-      `invalid typeEnum ${typeEnum}`
+      `invalid typeEnum ${typeEnum}`,
     );
   }
   updateType(updatedType: DeviceType) {
@@ -245,10 +245,10 @@ class InformationManager {
   }
   #updateMtu(newMtu: number) {
     _console.assertTypeWithError(newMtu, "number");
-    if (this.#mtu == newMtu) {
-      _console.log("redundant mtu assignment", newMtu);
-      return;
-    }
+    // if (this.#mtu == newMtu) {
+    //   _console.log("redundant mtu assignment", newMtu);
+    //   return;
+    // }
     this.#mtu = newMtu;
 
     this.#dispatchEvent("getMtu", { mtu: this.#mtu });
@@ -282,7 +282,7 @@ class InformationManager {
     const promise = this.waitForEvent("getCurrentTime");
     this.sendMessage(
       [{ type: "setCurrentTime", data: dataView.buffer }],
-      sendImmediately
+      sendImmediately,
     );
     await promise;
   }
@@ -290,7 +290,7 @@ class InformationManager {
   // MESSAGE
   parseMessage(
     messageType: InformationMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
   ) {
     _console.log({ messageType });
 

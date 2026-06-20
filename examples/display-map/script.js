@@ -9,7 +9,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -36,12 +36,10 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
   }
 });
 displayCanvasHelper.addEventListener("deviceUpdated", async () => {
@@ -51,7 +49,7 @@ displayCanvasHelper.addEventListener("deviceUpdated", async () => {
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -76,7 +74,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -202,7 +200,7 @@ const draw = async () => {
       await displayCanvasHelper.drawSprite(
         -offsetX + cursorOffset.x,
         -offsetY + cursorOffset.y,
-        "map"
+        "map",
       );
       await displayCanvasHelper.saveContext();
       await displayCanvasHelper.setLineWidth(0);
@@ -246,7 +244,7 @@ const draw = async () => {
     const y = sinInterpolation * -30;
     await displayCanvasHelper.setRotation(
       Math.sign(interpolation - 0.5) * (1 - sinInterpolation) * 20,
-      false
+      false,
     );
     await displayCanvasHelper.setSpriteScale(0.5 + 0.5 * sinInterpolation);
     await displayCanvasHelper.drawSprite(x, y + 80, sign);
@@ -277,7 +275,7 @@ const draw = async () => {
           address: {
             country_code: "us",
           },
-        }
+        },
       );
       text += ` (${oh.getState() ? "open" : "closed"})`;
     }
@@ -303,7 +301,7 @@ const draw = async () => {
       await displayCanvasHelper.drawSpritesString(
         displayCanvasHelper.width / 2,
         y,
-        text
+        text,
       );
     }
     await displayCanvasHelper.restoreContext();
@@ -326,16 +324,19 @@ displayCanvasHelper.addEventListener("ready", () => {
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
 
-device.addEventListener("fileTransferProgress", (event) => {
-  const progress = event.message.progress;
-  //console.log({ progress });
-  fileTransferProgress.value = progress == 1 ? 0 : progress;
-});
-device.addEventListener("fileTransferStatus", () => {
-  if (device.fileTransferStatus == "idle") {
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadProgress",
+  (event) => {
+    const { progress } = event.message;
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+  },
+);
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadComplete",
+  (event) => {
     fileTransferProgress.value = 0;
-  }
-});
+  },
+);
 
 // URL
 
@@ -429,7 +430,7 @@ const updateClosestPlace = () => {
         let absRelativeAngle;
         const minAbsRelativeAngle = Math.min(
           Math.abs(angleRange.min),
-          Math.abs(angleRange.max)
+          Math.abs(angleRange.max),
         );
         if (
           Math.sign(angleRange.min) != Math.sign(angleRange.max) &&
@@ -584,7 +585,7 @@ const toggleGeolocation = () => {
     watchId = navigator.geolocation.watchPosition(
       geolocationSuccessCallback,
       geolocationErrorCallback,
-      { enableHighAccuracy: true }
+      { enableHighAccuracy: true },
     );
     console.log({ watchId });
   } else {
@@ -597,10 +598,10 @@ const toggleGeolocation = () => {
 };
 
 const toggleDeviceHeadingButton = document.getElementById(
-  "toggleDeviceHeading"
+  "toggleDeviceHeading",
 );
 toggleDeviceHeadingButton.addEventListener("click", () =>
-  toggleDeviceHeading()
+  toggleDeviceHeading(),
 );
 const orientationSensorRate = 20;
 const toggleDeviceHeading = () => {
@@ -702,7 +703,7 @@ const fetchMapData = async () => {
       latitude,
       longitude,
       latestMapDataLatitude,
-      latestMapDataLongitude
+      latestMapDataLongitude,
     );
     if (latestRadius == radius && distance < mapDataDistanceThreshold) {
       // console.log(
@@ -770,7 +771,7 @@ const setMapData = async (newMapData, lon, lat, rad, save = true) => {
     console.log("saving", { latitude, longitude });
     localStorage.setItem(
       mapDataLocalStorageKey,
-      JSON.stringify({ latitude, longitude, mapData, radius })
+      JSON.stringify({ latitude, longitude, mapData, radius }),
     );
   }
   await createMapDataSprites();
@@ -971,7 +972,7 @@ const createMapDataSprites = async () => {
         const nodes = el.nodes
           .map((nodeIndex) => allNodes[nodeIndex])
           .filter(
-            (nodeIndex, index, nodes) => nodes.indexOf(nodeIndex) == index
+            (nodeIndex, index, nodes) => nodes.indexOf(nodeIndex) == index,
           );
         const points = nodes.map((node) => {
           const [x, y] = project(node.lat, node.lon);
@@ -1035,7 +1036,7 @@ if (cachedMapDataString) {
 // SIZE
 
 const checkSpriteSheetSizeButton = document.getElementById(
-  "checkSpriteSheetSize"
+  "checkSpriteSheetSize",
 );
 const checkSpriteSheetSize = () => {
   const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(mapSpriteSheet);
@@ -1160,7 +1161,7 @@ displayCanvasHelper.canvas.addEventListener(
     }
     event.preventDefault();
   },
-  { passive: false }
+  { passive: false },
 );
 
 // FONT
@@ -1364,7 +1365,7 @@ const mapDataLocationLocalStorageKey = "mapDataLocation";
 window.addEventListener("beforeunload", () => {
   localStorage.setItem(
     mapDataLocationLocalStorageKey,
-    JSON.stringify({ latitude, longitude, heading, scale })
+    JSON.stringify({ latitude, longitude, heading, scale }),
   );
 });
 let cachedMapDataLocationString = localStorage.getItem("mapDataLocation");

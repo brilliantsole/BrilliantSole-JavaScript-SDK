@@ -353,7 +353,9 @@ abstract class BaseConnectionManager {
             (arrayBuffer) => arrayBuffer.byteLength > this.mtu! - 3,
           )
         ) {
-          _console.error("every arrayBuffer is too big to send");
+          _console.error("every arrayBuffer is too big to send", arrayBuffers, {
+            mtu: this.mtu,
+          });
           break;
         }
         _console.log("remaining arrayBuffers.length", arrayBuffers.length);

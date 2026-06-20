@@ -8,7 +8,7 @@ window.BS = BS;
 // CONNECT
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", (event) => {
   const { connectionStatus } = event.message;
@@ -37,19 +37,17 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
   }
 });
 
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -73,7 +71,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -295,10 +293,10 @@ window.senseDevice = senseDevice;
 
 // SENSE CONNECTION
 const toggleSenseConnectionButton = document.getElementById(
-  "toggleSenseConnection"
+  "toggleSenseConnection",
 );
 toggleSenseConnectionButton.addEventListener("click", () =>
-  senseDevice.toggleConnection()
+  senseDevice.toggleConnection(),
 );
 senseDevice.addEventListener("connectionStatus", (event) => {
   const { connectionStatus } = event.message;
@@ -322,12 +320,12 @@ senseDevice.addEventListener("connectionStatus", (event) => {
 const requiredSensorTypes = ["linearAcceleration", "gameRotation"];
 senseDevice.addEventListener("connected", () => {
   const hasAllSensorTypes = requiredSensorTypes.every((sensorType) =>
-    senseDevice.sensorTypes.includes(sensorType)
+    senseDevice.sensorTypes.includes(sensorType),
   );
   if (!hasAllSensorTypes) {
     console.error(
       `senseDevice "${senseDevice.name}" doesn't have requiredSensorTypes`,
-      requiredSensorTypes
+      requiredSensorTypes,
     );
     senseDevice.disconnect();
   }
@@ -339,7 +337,7 @@ const senseSensorRateOptgroup = senseSensorRateSelect.querySelector("optgroup");
 const senseSensorRates = [5, 10, 20];
 senseSensorRates.forEach((sensorRate) => {
   senseSensorRateOptgroup.appendChild(
-    new Option(`${sensorRate}ms`, sensorRate)
+    new Option(`${sensorRate}ms`, sensorRate),
   );
 });
 let sensorRate = senseSensorRates[1];
@@ -359,7 +357,7 @@ setSensorRate(sensorRate);
 
 /** @type {HTMLInputElement} */
 const toggleSenseSensorDataInput = document.getElementById(
-  "toggleSenseSensorData"
+  "toggleSenseSensorData",
 );
 senseDevice.addEventListener("isConnected", () => {
   toggleSenseSensorDataInput.disabled = !senseDevice.isConnected;
@@ -458,12 +456,12 @@ const setTrackingState = (newTrackingState) => {
         .multiplyScalar(9.8);
       console.log(
         "finalLinearAccelerationPosition",
-        finalLinearAccelerationPosition
+        finalLinearAccelerationPosition,
       );
       peakLinearAccelerationPosition.multiplyScalar(9.8);
       console.log(
         "peakLinearAccelerationPosition",
-        peakLinearAccelerationPosition
+        peakLinearAccelerationPosition,
       );
       break;
   }
@@ -628,30 +626,30 @@ senseDevice.addEventListener("linearAcceleration", (event) => {
   const aboveMax = linearAccelerationLength > max;
   setThresholdState(
     belowMin ? "below" : aboveMax ? "above" : "middle",
-    linearAccelerationLength
+    linearAccelerationLength,
   );
 
   if (trackingState == "tracking") {
     linearAccelerationVelocity.addScaledVector(
       linearAccelerationVector,
-      timestampDifferenceScalar
+      timestampDifferenceScalar,
     );
     linearAccelerationPosition.addScaledVector(
       linearAccelerationVelocity,
-      timestampDifferenceScalar
+      timestampDifferenceScalar,
     );
 
     peakLinearAccelerationPosition.x = Math.max(
       peakLinearAccelerationPosition.x,
-      linearAccelerationPosition.x
+      linearAccelerationPosition.x,
     );
     peakLinearAccelerationPosition.y = Math.max(
       peakLinearAccelerationPosition.y,
-      linearAccelerationPosition.y
+      linearAccelerationPosition.y,
     );
     peakLinearAccelerationPosition.z = Math.max(
       peakLinearAccelerationPosition.z,
-      linearAccelerationPosition.z
+      linearAccelerationPosition.z,
     );
 
     addPosition(linearAccelerationPosition.clone());
@@ -829,7 +827,7 @@ const addFont = async (font) => {
       font,
       fontSize,
       "english",
-      fontOptions
+      fontOptions,
     );
     fontSpriteSheets[fullName] = spriteSheet;
     await updateFontSelect();

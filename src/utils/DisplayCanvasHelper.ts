@@ -411,7 +411,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   async #setDevice(newDevice?: Device) {
     if (this.#device == newDevice) {
-      // _console.log("redundant device assignment", newDevice);
+      _console.log("redundant device assignment", newDevice);
       return;
     }
     if (newDevice) {
@@ -485,7 +485,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
   }
   async #onDeviceConnected(event: DeviceEventMap["connected"]) {
-    // _console.log("device connected");
+    _console.log("device connected");
     await this.#updateCanvas(false);
     await this.#updateDevice(false);
     await this.flushContextCommands();
@@ -493,7 +493,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     // FIX - messages flushed properly?
   }
   #onDeviceNotConnected(event: DeviceEventMap["notConnected"]) {
-    // _console.log("device not connected");
+    _console.log("device not connected");
     this.#dispatchEvent("deviceNotConnected", { device: this.device! });
   }
   async #onDeviceDisplayReady(event: DeviceEventMap["displayReady"]) {

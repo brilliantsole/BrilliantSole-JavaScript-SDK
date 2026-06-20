@@ -8,7 +8,7 @@ window.BS = BS;
 // CONNECT
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", (event) => {
   const { connectionStatus } = event.message;
@@ -37,19 +37,17 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
   }
 });
 
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -73,7 +71,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -255,10 +253,10 @@ window.senseDevice = senseDevice;
 
 // SENSE CONNECTION
 const toggleSenseConnectionButton = document.getElementById(
-  "toggleSenseConnection"
+  "toggleSenseConnection",
 );
 toggleSenseConnectionButton.addEventListener("click", () =>
-  senseDevice.toggleConnection()
+  senseDevice.toggleConnection(),
 );
 senseDevice.addEventListener("connectionStatus", (event) => {
   const { connectionStatus } = event.message;
@@ -282,12 +280,12 @@ senseDevice.addEventListener("connectionStatus", (event) => {
 const requiredSensorTypes = ["gameRotation"];
 senseDevice.addEventListener("connected", () => {
   const hasAllSensorTypes = requiredSensorTypes.every((sensorType) =>
-    senseDevice.sensorTypes.includes(sensorType)
+    senseDevice.sensorTypes.includes(sensorType),
   );
   if (!hasAllSensorTypes) {
     console.error(
       `senseDevice "${senseDevice.name}" doesn't have requiredSensorTypes`,
-      requiredSensorTypes
+      requiredSensorTypes,
     );
     senseDevice.disconnect();
   }
@@ -299,7 +297,7 @@ const senseSensorRateOptgroup = senseSensorRateSelect.querySelector("optgroup");
 const senseSensorRates = [5, 10, 20];
 senseSensorRates.forEach((sensorRate) => {
   senseSensorRateOptgroup.appendChild(
-    new Option(`${sensorRate}ms`, sensorRate)
+    new Option(`${sensorRate}ms`, sensorRate),
   );
 });
 let sensorRate = senseSensorRates[2];
@@ -319,7 +317,7 @@ setSensorRate(sensorRate);
 
 /** @type {HTMLInputElement} */
 const toggleSenseSensorDataInput = document.getElementById(
-  "toggleSenseSensorData"
+  "toggleSenseSensorData",
 );
 senseDevice.addEventListener("isConnected", () => {
   toggleSenseSensorDataInput.disabled = !senseDevice.isConnected;
@@ -670,13 +668,13 @@ const updateQuaternionInterpolation = () => {
     quaternionInterpolation = quaternionInterpolationParameter(
       startQuaternion,
       endQuaternion,
-      quaternion
+      quaternion,
     );
   } else {
     quaternionInterpolation = THREE.MathUtils.clamp(
       quaternionAngleToStart / endQuaternionAngleToStart,
       0,
-      1
+      1,
     );
   }
   console.log({ quaternionInterpolation });
@@ -684,13 +682,13 @@ const updateQuaternionInterpolation = () => {
 
 const finishCalibrationAngle = 20;
 const finishCalibrationAngleRadians = THREE.MathUtils.degToRad(
-  finishCalibrationAngle
+  finishCalibrationAngle,
 );
 
 let minCalibrationAngleThreshold = 0;
 let minCalibrationAngleThresholdRadians = 0;
 const minCalibrationAngleThresholdContainer = document.getElementById(
-  "minCalibrationAngleThreshold"
+  "minCalibrationAngleThreshold",
 );
 const minCalibrationAngleThresholdInput =
   minCalibrationAngleThresholdContainer.querySelector("input");
@@ -698,13 +696,13 @@ const minCalibrationAngleThresholdSpan =
   minCalibrationAngleThresholdContainer.querySelector(".value");
 minCalibrationAngleThresholdInput.addEventListener("input", () => {
   setMinCalibrationAngleThreshold(
-    Number(minCalibrationAngleThresholdInput.value)
+    Number(minCalibrationAngleThresholdInput.value),
   );
 });
 const setMinCalibrationAngleThreshold = (newMinCalibrationAngleThreshold) => {
   minCalibrationAngleThreshold = newMinCalibrationAngleThreshold;
   minCalibrationAngleThresholdRadians = THREE.MathUtils.degToRad(
-    minCalibrationAngleThreshold
+    minCalibrationAngleThreshold,
   );
   console.log({
     minCalibrationAngleThreshold,
@@ -726,7 +724,7 @@ const updateCalibration = () => {
     endQuaternionAngleToStart = quaternionAngleToStart;
     console.log(
       "updating endQuaternionAngleToStart",
-      endQuaternionAngleToStart
+      endQuaternionAngleToStart,
     );
     endQuaternion.copy(quaternion);
   }
@@ -1005,7 +1003,7 @@ const addFont = async (font) => {
       font,
       fontSize,
       "english",
-      fontOptions
+      fontOptions,
     );
     fontSpriteSheets[fullName] = spriteSheet;
     await updateFontSelect();

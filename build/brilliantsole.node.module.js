@@ -4520,10 +4520,6 @@ class InformationManager {
     }
     #updateMtu(newMtu) {
         _console$z.assertTypeWithError(newMtu, "number");
-        if (this.#mtu == newMtu) {
-            _console$z.log("redundant mtu assignment", newMtu);
-            return;
-        }
         this.#mtu = newMtu;
         this.#dispatchEvent("getMtu", { mtu: this.#mtu });
     }
@@ -9025,7 +9021,7 @@ class DisplayManager {
     }
     async restoreContext(sendImmediately) {
         {
-            await this.#restoreContext(sendImmediately);
+            await this.#sendContextCommand("restoreContext", undefined, sendImmediately);
         }
     }
     async #clearContext(sendImmediately) {
@@ -10982,7 +10978,9 @@ class BaseConnectionManager {
         if (this.mtu) {
             while (arrayBuffers.length > 0) {
                 if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
-                    _console$m.error("every arrayBuffer is too big to send");
+                    _console$m.error("every arrayBuffer is too big to send", arrayBuffers, {
+                        mtu: this.mtu,
+                    });
                     break;
                 }
                 _console$m.log("remaining arrayBuffers.length", arrayBuffers.length);

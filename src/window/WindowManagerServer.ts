@@ -1,11 +1,7 @@
 import { createConsole } from "../utils/Console.ts";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import EventDispatcher, {
-  BoundEventListeners,
-  Event,
   EventDispatcherTypes,
-  EventListenerMap,
-  EventMap,
 } from "../utils/EventDispatcher.ts";
 import {
   addEventListeners,

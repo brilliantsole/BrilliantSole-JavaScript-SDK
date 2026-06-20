@@ -15,7 +15,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -54,7 +54,7 @@ device.addEventListener("connected", async () => {
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -79,7 +79,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -112,7 +112,7 @@ setupColors();
 displayCanvasHelper.setColor(displayCanvasHelper.numberOfColors - 1, "white");
 displayCanvasHelper.selectSpriteColor(
   displayCanvasHelper.numberOfColors - 1,
-  displayCanvasHelper.numberOfColors - 1
+  displayCanvasHelper.numberOfColors - 1,
 );
 displayCanvasHelper.flushContextCommands();
 
@@ -269,7 +269,7 @@ const draw = async () => {
     let interpolation = THREE.MathUtils.inverseLerp(
       animationDuration,
       0,
-      timeUntilAnimationEnds
+      timeUntilAnimationEnds,
     );
     interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
     if (interpolation >= 1) {
@@ -305,7 +305,7 @@ const draw = async () => {
       const profileY = THREE.MathUtils.lerp(
         startYPositons.profile,
         endProfileY,
-        easedInterpolation
+        easedInterpolation,
       );
 
       const endProfileImageY = isMovingIn
@@ -317,7 +317,7 @@ const draw = async () => {
       const profileImageY = THREE.MathUtils.lerp(
         startYPositons.profileImage,
         endProfileImageY,
-        easedInterpolation
+        easedInterpolation,
       );
 
       // console.log({ profileY, profileImageY });
@@ -327,7 +327,7 @@ const draw = async () => {
       await displayCanvasHelper.selectSpriteSheet("english");
       await displayCanvasHelper.selectSpriteColor(
         1,
-        displayCanvasHelper.numberOfColors - 1
+        displayCanvasHelper.numberOfColors - 1,
       );
       const string = [
         `${profile.name} - ${profile.title}`,
@@ -363,19 +363,19 @@ const draw = async () => {
       const scanningY = THREE.MathUtils.lerp(
         startYPositons.scanning,
         endScanningY,
-        easedInterpolation
+        easedInterpolation,
       );
 
       await displayCanvasHelper.selectSpriteSheet("english");
       await displayCanvasHelper.selectSpriteColor(
         1,
-        displayCanvasHelper.numberOfColors - 1
+        displayCanvasHelper.numberOfColors - 1,
       );
       await displayCanvasHelper.setSpriteScale(fontScale);
       await displayCanvasHelper.drawSpritesString(
         displayCanvasHelper.width - paddingX,
         scanningY,
-        "scanning..."
+        "scanning...",
       );
 
       latestYPositions.scanning = scanningY;
@@ -406,16 +406,19 @@ displayCanvasHelper.addEventListener("ready", () => {
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
 
-device.addEventListener("fileTransferProgress", (event) => {
-  const progress = event.message.progress;
-  //console.log({ progress });
-  fileTransferProgress.value = progress == 1 ? 0 : progress;
-});
-device.addEventListener("fileTransferStatus", () => {
-  if (device.fileTransferStatus == "idle") {
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadProgress",
+  (event) => {
+    const { progress } = event.message;
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+  },
+);
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadComplete",
+  (event) => {
     fileTransferProgress.value = 0;
-  }
-});
+  },
+);
 
 // PASTE
 function isValidUrl(string) {
@@ -779,7 +782,7 @@ const updateCameraSources = async () => {
     .filter((device) => device.kind == "videoinput")
     .forEach((videoInputDevice) => {
       cameraInputOptgroup.appendChild(
-        new Option(videoInputDevice.label, videoInputDevice.deviceId)
+        new Option(videoInputDevice.label, videoInputDevice.deviceId),
       );
     });
   cameraInput.value = "none";
@@ -814,7 +817,7 @@ const stopCameraStream = () => {
   cameraVideo.setAttribute("hidden", "");
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateCameraSources()
+  updateCameraSources(),
 );
 updateCameraSources();
 
@@ -943,7 +946,7 @@ device.addEventListener("cameraStatus", (event) => {
 
 /** @type {HTMLTemplateElement} */
 const cameraConfigurationTypeTemplate = document.getElementById(
-  "cameraConfigurationTypeTemplate"
+  "cameraConfigurationTypeTemplate",
 );
 
 BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
@@ -968,7 +971,7 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
 
   cameraConfigurationTypeTemplate.parentNode.insertBefore(
     cameraConfigurationTypeContainer,
-    cameraConfigurationTypeTemplate.nextSibling
+    cameraConfigurationTypeTemplate.nextSibling,
   );
 
   /** @type {HTMLInputElement} */
@@ -1032,9 +1035,9 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
       device.addEventListener(
         "getCameraConfiguration",
         () => {
-          setTimeout(() => device.takePicture()), 100;
+          (setTimeout(() => device.takePicture()), 100);
         },
-        { once: true }
+        { once: true },
       );
     }
   });
@@ -1048,7 +1051,7 @@ let selectedProfile;
 let previouslySelectedProfile;
 const selectProfile = async (selectedProfileId) => {
   const newSelectedProfile = profiles.find(
-    (profile) => profile.id == selectedProfileId
+    (profile) => profile.id == selectedProfileId,
   );
   if (selectedProfile == newSelectedProfile) {
     //console.log("redundant profile selection", newSelectedProfile);
@@ -1273,7 +1276,7 @@ const getAverageEmbedding = (embeddings) => {
  */
 const findEmbeddingIndex = (embedding, embeddings) => {
   return embeddings.findIndex(
-    (_embedding) => cosineSimilarity(_embedding, embedding) == 1
+    (_embedding) => cosineSimilarity(_embedding, embedding) == 1,
   );
 };
 /**
@@ -1338,7 +1341,7 @@ const addProfileImage = (profile, imageBlob) => {
   allProfileImages[profile.id] = allProfileImages[profile.id] || [];
   const profileImages = allProfileImages[profile.id];
   const doesImageExist = profileImages.some(
-    (image) => image.imageBlob == imageBlob
+    (image) => image.imageBlob == imageBlob,
   );
   if (doesImageExist) {
     console.log("image already loaded", image);
@@ -1378,7 +1381,7 @@ const removeProfileImage = async (profile, image, imageBlob) => {
   const embedding = await getEmbeddingFromImage(imageBitmap);
   let { embeddings } = profile;
   embeddings = embeddings.filter(
-    (_embedding) => cosineSimilarity(embedding, _embedding) != 1
+    (_embedding) => cosineSimilarity(embedding, _embedding) != 1,
   );
   const averageEmbedding = getAverageEmbedding(embeddings);
   await updateProfile(profile, { embeddings, averageEmbedding });
@@ -1431,7 +1434,7 @@ await updateProfiles();
 async function getMediaElementBlob(
   element,
   type = "image/png",
-  maxHeight = 512
+  maxHeight = 512,
 ) {
   return new Promise((resolve, reject) => {
     try {
@@ -1680,7 +1683,7 @@ const createProfileImageSpriteSheet = async (profile) => {
     return;
   }
   const profileImage = profileImages.find((profileImage) =>
-    profileImage.classList.contains("selected")
+    profileImage.classList.contains("selected"),
   );
   if (!profileImage) {
     console.log("no profileImage found");
@@ -1698,7 +1701,7 @@ const createProfileImageSpriteSheet = async (profile) => {
       profileImage,
       imageHeight * aspectRatio,
       imageHeight,
-      25
+      25,
     );
     console.log("roundProfileImage", roundProfileImage);
     spriteSheet = await BS.canvasToSpriteSheet(
@@ -1706,7 +1709,7 @@ const createProfileImageSpriteSheet = async (profile) => {
       profile.id,
       profile.id,
       displayCanvasHelper.numberOfColors - 1,
-      profile.id
+      profile.id,
     );
     console.log("spriteSheet", spriteSheet);
   } else {
@@ -1717,7 +1720,7 @@ const createProfileImageSpriteSheet = async (profile) => {
       imageHeight * aspectRatio,
       imageHeight,
       displayCanvasHelper.numberOfColors - 1,
-      profile.id
+      profile.id,
     );
   }
   spriteSheet.palettes[0].colors[0] = "black";
