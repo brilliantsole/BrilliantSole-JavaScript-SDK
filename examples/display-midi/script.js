@@ -9,7 +9,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -36,19 +36,17 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
+BS.DeviceManager.addEventListener("deviceConnected", async (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
   }
 });
 
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -73,7 +71,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -167,11 +165,11 @@ let currentSystemIndex = 0;
 let numberOfSystems = 0;
 const setCurrentSystemIndex = async (
   newCurrentSystemIndex,
-  drawImmediately = true
+  drawImmediately = true,
 ) => {
   newCurrentSystemIndex = Math.max(
     0,
-    Math.min(newCurrentSystemIndex, currentVoices.length)
+    Math.min(newCurrentSystemIndex, currentVoices.length),
   );
   if (newCurrentSystemIndex == numberOfSystems) {
     if (isPracticingNote) {
@@ -194,11 +192,11 @@ const setCurrentSystemIndex = async (
 let currentVoiceIndex = 0;
 const setCurrentVoiceIndex = async (
   newCurrentVoiceIndex,
-  drawImmediately = true
+  drawImmediately = true,
 ) => {
   newCurrentVoiceIndex = Math.max(
     0,
-    Math.min(newCurrentVoiceIndex, currentVoices.length)
+    Math.min(newCurrentVoiceIndex, currentVoices.length),
   );
   if (newCurrentVoiceIndex == currentVoices.length) {
     setCurrentSystemIndex(currentSystemIndex + 1, drawImmediately);
@@ -215,10 +213,10 @@ const setCurrentVoiceIndex = async (
   currentVoiceConfig.voice = currentVoices[currentVoiceIndex];
   currentVoiceConfig.pitches = currentVoiceConfig.voice.pitches;
   currentVoiceConfig.frequencies = currentVoiceConfig.pitches.map((pitch) =>
-    abcPitchToToneFrequency(pitch)
+    abcPitchToToneFrequency(pitch),
   );
   currentVoiceConfig.frequencyMidis = currentVoiceConfig.frequencies.map(
-    (frequency) => frequency.toMidi()
+    (frequency) => frequency.toMidi(),
   );
   currentVoiceConfig.notePositions =
     currentVoiceConfig.voice.abselem.notePositions.map(({ x, y }) => ({
@@ -283,11 +281,11 @@ let draw = async () => {
     await displayCanvasHelper.selectSpriteColor(3, getCorrectNoteColorIndex());
     await displayCanvasHelper.selectSpriteColor(
       4,
-      getIncorrectNoteColorIndex()
+      getIncorrectNoteColorIndex(),
     );
     await displayCanvasHelper.selectSpriteColor(
       5,
-      getPitchHighlightedWhiteColorIndex()
+      getPitchHighlightedWhiteColorIndex(),
     );
 
     const { width, height } = sprite;
@@ -372,7 +370,7 @@ let draw = async () => {
       await displayCanvasHelper.drawSprite(
         2 * x - width / 2 - 0.037064552307128906,
         2 * y - height / 2 - 15.5494384765625 + yOffset,
-        sprite.name
+        sprite.name,
       );
 
       let drawSharp = downFrequency.toNote().includes("#");
@@ -387,7 +385,7 @@ let draw = async () => {
         await displayCanvasHelper.drawSprite(
           2 * x - width / 2 - 0.037064552307128906 - 21,
           2 * y - height / 2 - 15.5494384765625 + yOffset,
-          sharpSprite.name
+          sharpSprite.name,
         );
       }
 
@@ -405,7 +403,7 @@ let draw = async () => {
         2 * x - 0.037064552307128906,
         sprite.height + 20,
         10,
-        3
+        3,
       );
       await displayCanvasHelper.clearRotation();
     }
@@ -420,7 +418,7 @@ let draw = async () => {
       await displayCanvasHelper.drawSpritesString(
         2 * x - 3,
         sprite.height + 20 + 10,
-        frequencies[0].toNote().slice(0, -1)
+        frequencies[0].toNote().slice(0, -1),
       );
     }
   }
@@ -462,24 +460,24 @@ let draw = async () => {
         pitchDetectionFrequency.toMidi() == frequency.toMidi()
       ) {
         await displayCanvasHelper.selectFillColor(
-          getPitchHighlightedWhiteColorIndex()
+          getPitchHighlightedWhiteColorIndex(),
         );
       } else if (downFrequency) {
         if (isCurrent && shouldCorrectDrawnPianoDownKeys) {
           await displayCanvasHelper.selectFillColor(
             isCorrect
               ? getCorrectNoteColorIndex()
-              : getIncorrectNoteColorIndex()
+              : getIncorrectNoteColorIndex(),
           );
         } else {
           await displayCanvasHelper.selectFillColor(
-            getWhiteKeyDownColorIndex()
+            getWhiteKeyDownColorIndex(),
           );
         }
       } else {
         if (shouldHighlightCurrentVoiceNotes && isCorrect) {
           await displayCanvasHelper.selectFillColor(
-            getHighlightedWhiteColorIndex()
+            getHighlightedWhiteColorIndex(),
           );
         } else {
           await displayCanvasHelper.selectFillColor(getWhiteKeyColorIndex());
@@ -489,7 +487,7 @@ let draw = async () => {
         x + xOffset,
         y,
         whiteKeyWidth,
-        whiteKeyHeight
+        whiteKeyHeight,
       );
       xOffset += whiteKeyWidth + whiteKeySpacing;
       do {
@@ -517,24 +515,24 @@ let draw = async () => {
         pitchDetectionFrequency.toMidi() == frequency.toMidi()
       ) {
         await displayCanvasHelper.selectFillColor(
-          getPitchHighlightedBlackColorIndex()
+          getPitchHighlightedBlackColorIndex(),
         );
       } else if (downFrequency) {
         if (isCurrent && shouldCorrectDrawnPianoDownKeys) {
           await displayCanvasHelper.selectFillColor(
             isCorrect
               ? getCorrectNoteColorIndex()
-              : getIncorrectNoteColorIndex()
+              : getIncorrectNoteColorIndex(),
           );
         } else {
           await displayCanvasHelper.selectFillColor(
-            getBlackKeyDownColorIndex()
+            getBlackKeyDownColorIndex(),
           );
         }
       } else {
         if (shouldHighlightCurrentVoiceNotes && isCorrect) {
           await displayCanvasHelper.selectFillColor(
-            getHighlightedBlackColorIndex()
+            getHighlightedBlackColorIndex(),
           );
         } else {
           await displayCanvasHelper.selectFillColor(getBlackKeyColorIndex());
@@ -544,7 +542,7 @@ let draw = async () => {
         x + xOffset,
         y,
         blackKeyWidth,
-        blackKeyHeight
+        blackKeyHeight,
       );
       switch (i % 5) {
         case 1:
@@ -594,16 +592,19 @@ displayCanvasHelper.addEventListener("ready", async () => {
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
 
-device.addEventListener("fileTransferProgress", (event) => {
-  const progress = event.message.progress;
-  //console.log({ progress });
-  fileTransferProgress.value = progress == 1 ? 0 : progress;
-});
-device.addEventListener("fileTransferStatus", () => {
-  if (device.fileTransferStatus == "idle") {
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadProgress",
+  (event) => {
+    const { progress } = event.message;
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+  },
+);
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadComplete",
+  (event) => {
     fileTransferProgress.value = 0;
-  }
-});
+  },
+);
 
 // PASTE
 function isValidUrl(string) {
@@ -643,14 +644,14 @@ window.addEventListener("drop", async (e) => {
 // SIZE
 
 const checkSpriteSheetSizeButton = document.getElementById(
-  "checkSpriteSheetSize"
+  "checkSpriteSheetSize",
 );
 const checkSpriteSheetSize = () => {
   if (!displayCanvasHelper.selectedSpriteSheet) {
     return;
   }
   const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(
-    displayCanvasHelper.selectedSpriteSheet
+    displayCanvasHelper.selectedSpriteSheet,
   );
   checkSpriteSheetSizeButton.innerText = `size: ${(
     arrayBuffer.byteLength / 1024
@@ -836,7 +837,7 @@ const addFont = async (font) => {
       font,
       fontSize,
       "english",
-      fontOptions
+      fontOptions,
     );
     fontSpriteSheets[fullName] = spriteSheet;
     await updateFontSelect();
@@ -961,7 +962,7 @@ window.drawPianoConfig = drawPianoConfig;
 const frequencyRange = {
   min: Tone.Frequency(`C${drawPianoConfig.startOctave}`),
   max: Tone.Frequency(
-    `C${drawPianoConfig.startOctave + drawPianoConfig.octaves}`
+    `C${drawPianoConfig.startOctave + drawPianoConfig.octaves}`,
   ),
 };
 window.frequencyRange = frequencyRange;
@@ -984,14 +985,14 @@ const downFrequencies = [];
 /** @param {Frequency} frequency */
 const getDownFrequencyIndex = (frequency) => {
   const index = downFrequencies.findIndex(
-    (_frequency) => _frequency.toMidi() == frequency.toMidi()
+    (_frequency) => _frequency.toMidi() == frequency.toMidi(),
   );
   return index;
 };
 /** @param {Frequency} frequency */
 const getDownFrequency = (frequency) => {
   return downFrequencies.find(
-    (_frequency) => _frequency.toMidi() == frequency.toMidi()
+    (_frequency) => _frequency.toMidi() == frequency.toMidi(),
   );
 };
 /** @type {InputEventMap["noteon"]} */
@@ -1045,7 +1046,7 @@ const onFrequency = (frequency) => {
 
   frequency.voiceConfig = currentVoiceConfig;
   frequency.isCorrect = currentVoiceConfig.frequencyMidis.includes(
-    frequency.toMidi()
+    frequency.toMidi(),
   );
   downFrequencies.push(frequency);
   console.log({ note: frequency.toNote(), downFrequencies });
@@ -1298,7 +1299,7 @@ const svgToSpriteSheet = async (svg, spriteSheetName, spriteName) => {
       {
         height: systemSvgBox.height / abcScale,
         width: systemSvgBox.width / abcScale,
-      }
+      },
     );
     sprite = spriteSheet.sprites.find((sprite) => sprite.name == spriteName);
   } else {
@@ -1313,7 +1314,7 @@ const svgToSpriteSheet = async (svg, spriteSheetName, spriteName) => {
       {
         height: systemSvgBox.height / abcScale,
         width: systemSvgBox.width / abcScale,
-      }
+      },
     );
   }
 
@@ -1343,7 +1344,7 @@ const renderAbcOverlay = async () => {
   const tuneObjectArray = abcjs.renderAbc(
     abcContainer.id,
     "X:1\nK:C\nC2",
-    abcVisualParams
+    abcVisualParams,
   );
   //console.log("tuneObjectArray", tuneObjectArray);
 
@@ -1356,7 +1357,7 @@ const renderAbcOverlay = async () => {
     .forEach((e) => e.remove());
   svg
     .querySelectorAll(
-      dataNamesToRemove.map((_) => `[data-name="${_}"]`).join(",")
+      dataNamesToRemove.map((_) => `[data-name="${_}"]`).join(","),
     )
     .forEach((e) => e.remove());
   await svgToSpriteSheet(svg, "overlay", "noteWithDash");
@@ -1379,7 +1380,7 @@ const renderAbcOverlaySymbols = async () => {
   const tuneObjectArray = abcjs.renderAbc(
     abcContainer.id,
     "X:1\nK:C\n^C2",
-    abcVisualParams
+    abcVisualParams,
   );
   //console.log("tuneObjectArray", tuneObjectArray);
 
@@ -1392,7 +1393,7 @@ const renderAbcOverlaySymbols = async () => {
     .forEach((e) => e.remove());
   svg
     .querySelectorAll(
-      dataNamesToRemove.map((_) => `[data-name="${_}"]`).join(",")
+      dataNamesToRemove.map((_) => `[data-name="${_}"]`).join(","),
     )
     .forEach((e) => e.remove());
   svg.querySelector(".abcjs-ledger").remove();
@@ -1415,10 +1416,10 @@ const renderAbc = async (string) => {
   console.log(
     "tuneObjectArray",
     tuneObjectArray,
-    tuneObjectArray[0].getKeySignature()
+    tuneObjectArray[0].getKeySignature(),
   );
   allVoices = tuneObjectArray[0].lines.map((line) =>
-    line.staff[0].voices[0].filter((_) => _.pitches)
+    line.staff[0].voices[0].filter((_) => _.pitches),
   );
   console.log("allVoices", allVoices);
 
@@ -1473,7 +1474,7 @@ const updateMicrophoneSources = async () => {
   }
   audioDevices.forEach((audioInputDevice) => {
     selectMicrophoneOptgroup.appendChild(
-      new Option(audioInputDevice.label, audioInputDevice.deviceId)
+      new Option(audioInputDevice.label, audioInputDevice.deviceId),
     );
   });
   selectMicrophoneSelect.value = "none";
@@ -1531,7 +1532,7 @@ const stopMicrophoneStream = () => {
   microphoneAudio.setAttribute("hidden", "");
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateMicrophoneSources()
+  updateMicrophoneSources(),
 );
 device.addEventListener("isConnected", () => {
   updateMicrophoneSources();
@@ -1580,7 +1581,7 @@ let getPitchyPitch = () => {
   analyser.getFloatTimeDomainData(detectorInput);
   const [pitch, clarity] = detector.findPitch(
     detectorInput,
-    audioContext.sampleRate
+    audioContext.sampleRate,
   );
   //console.log({ pitch, clarity });
   if (clarity < clarityThreshold) {
@@ -1669,7 +1670,7 @@ const loadPitchDetection = async () => {
     "https://cdn.jsdelivr.net/gh/ml5js/ml5-data-and-models/models/pitch-detection/crepe/",
     audioContext,
     microphoneStream,
-    onModelLoaded
+    onModelLoaded,
   );
 };
 
@@ -1759,7 +1760,9 @@ const practiceNote = async () => {
     L:1/4
     ${systems
       .map((system) =>
-        system.map((note) => note.toNote().slice(0, -1).toUpperCase()).join(" ")
+        system
+          .map((note) => note.toNote().slice(0, -1).toUpperCase())
+          .join(" "),
       )
       .join(`\n`)}
   `);
@@ -1817,7 +1820,7 @@ const hideHint = () => {
 
 const addNoteToLearn = async () => {
   const notesToLearn = allNotesToLearn.filter(
-    (noteToLearn) => !learnedNotes.includes(noteToLearn)
+    (noteToLearn) => !learnedNotes.includes(noteToLearn),
   );
   console.log("notesToLearn", notesToLearn);
   noteToLearn = notesToLearn[0];

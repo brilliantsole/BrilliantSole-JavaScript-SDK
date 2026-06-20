@@ -11925,10 +11925,6 @@ class InformationManager {
     }
     #updateMtu(newMtu) {
         _console$D.assertTypeWithError(newMtu, "number");
-        if (this.#mtu == newMtu) {
-            _console$D.log("redundant mtu assignment", newMtu);
-            return;
-        }
         this.#mtu = newMtu;
         this.#dispatchEvent("getMtu", { mtu: this.#mtu });
     }
@@ -30966,112 +30962,112 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
-        differences.forEach((difference) => {
+        for (let difference of differences) {
             switch (difference) {
                 case "backgroundColorIndex":
-                    this.selectBackgroundColor(newState.backgroundColorIndex);
+                    await this.selectBackgroundColor(newState.backgroundColorIndex, false);
                     break;
                 case "fillBackground":
-                    this.setFillBackground(newState.fillBackground);
+                    await this.setFillBackground(newState.fillBackground, false);
                     break;
                 case "ignoreFill":
-                    this.setIgnoreFill(newState.ignoreFill);
+                    await this.setIgnoreFill(newState.ignoreFill, false);
                     break;
                 case "ignoreLine":
-                    this.setIgnoreLine(newState.ignoreLine);
+                    await this.setIgnoreLine(newState.ignoreLine, false);
                     break;
                 case "fillColorIndex":
-                    this.selectFillColor(newState.fillColorIndex);
+                    await this.selectFillColor(newState.fillColorIndex, false);
                     break;
                 case "lineColorIndex":
-                    this.selectLineColor(newState.lineColorIndex);
+                    await this.selectLineColor(newState.lineColorIndex, false);
                     break;
                 case "lineWidth":
-                    this.setLineWidth(newState.lineWidth);
+                    await this.setLineWidth(newState.lineWidth, false);
                     break;
                 case "horizontalAlignment":
-                    this.setHorizontalAlignment(newState.horizontalAlignment);
+                    await this.setHorizontalAlignment(newState.horizontalAlignment, false);
                     break;
                 case "verticalAlignment":
-                    this.setVerticalAlignment(newState.verticalAlignment);
+                    await this.setVerticalAlignment(newState.verticalAlignment, false);
                     break;
                 case "rotation":
-                    this.setRotation(newState.rotation, true);
+                    await this.setRotation(newState.rotation, true);
                     break;
                 case "segmentStartCap":
                     if (differences.includes("segmentEndCap") &&
                         newState.segmentStartCap == newState.segmentEndCap) {
-                        this.setSegmentCap(newState.segmentStartCap);
+                        await this.setSegmentCap(newState.segmentStartCap, false);
                     }
                     else {
-                        this.setSegmentStartCap(newState.segmentStartCap);
+                        await this.setSegmentStartCap(newState.segmentStartCap, false);
                     }
                     break;
                 case "segmentEndCap":
                     if (!differences.includes("segmentStartCap") ||
                         newState.segmentStartCap != newState.segmentEndCap) {
-                        this.setSegmentEndCap(newState.segmentEndCap);
+                        await this.setSegmentEndCap(newState.segmentEndCap, false);
                     }
                     break;
                 case "segmentStartRadius":
                     if (differences.includes("segmentEndRadius") &&
                         newState.segmentStartRadius == newState.segmentEndRadius) {
-                        this.setSegmentRadius(newState.segmentStartRadius);
+                        await this.setSegmentRadius(newState.segmentStartRadius, false);
                     }
                     else {
-                        this.setSegmentStartRadius(newState.segmentStartRadius);
+                        await this.setSegmentStartRadius(newState.segmentStartRadius, false);
                     }
                     break;
                 case "segmentEndRadius":
                     if (!differences.includes("segmentStartRadius") ||
                         newState.segmentStartRadius != newState.segmentEndRadius) {
-                        this.setSegmentEndRadius(newState.segmentEndRadius);
+                        await this.setSegmentEndRadius(newState.segmentEndRadius, false);
                     }
                     break;
                 case "cropTop":
-                    this.setCropTop(newState.cropTop);
+                    await this.setCropTop(newState.cropTop, false);
                     break;
                 case "cropRight":
-                    this.setCropRight(newState.cropRight);
+                    await this.setCropRight(newState.cropRight, false);
                     break;
                 case "cropBottom":
-                    this.setCropBottom(newState.cropBottom);
+                    await this.setCropBottom(newState.cropBottom, false);
                     break;
                 case "cropLeft":
-                    this.setCropLeft(newState.cropLeft);
+                    await this.setCropLeft(newState.cropLeft, false);
                     break;
                 case "rotationCropTop":
-                    this.setRotationCropTop(newState.rotationCropTop);
+                    await this.setRotationCropTop(newState.rotationCropTop, false);
                     break;
                 case "rotationCropRight":
-                    this.setRotationCropRight(newState.rotationCropRight);
+                    await this.setRotationCropRight(newState.rotationCropRight, false);
                     break;
                 case "rotationCropBottom":
-                    this.setRotationCropBottom(newState.rotationCropBottom);
+                    await this.setRotationCropBottom(newState.rotationCropBottom, false);
                     break;
                 case "rotationCropLeft":
-                    this.setRotationCropLeft(newState.rotationCropLeft);
+                    await this.setRotationCropLeft(newState.rotationCropLeft, false);
                     break;
                 case "bitmapColorIndices":
                     const bitmapColors = [];
                     newState.bitmapColorIndices.forEach((colorIndex, bitmapColorIndex) => {
                         bitmapColors.push({ bitmapColorIndex, colorIndex });
                     });
-                    this.selectBitmapColors(bitmapColors);
+                    await this.selectBitmapColors(bitmapColors, false);
                     break;
                 case "bitmapScaleX":
                     if (differences.includes("bitmapScaleY") &&
                         newState.bitmapScaleX == newState.bitmapScaleY) {
-                        this.setBitmapScale(newState.bitmapScaleX);
+                        await this.setBitmapScale(newState.bitmapScaleX, false);
                     }
                     else {
-                        this.setBitmapScaleX(newState.bitmapScaleX);
+                        await this.setBitmapScaleX(newState.bitmapScaleX, false);
                     }
                     break;
                 case "bitmapScaleY":
                     if (!differences.includes("bitmapScaleX") ||
                         newState.bitmapScaleX != newState.bitmapScaleY) {
-                        this.setBitmapScaleY(newState.bitmapScaleY);
+                        await this.setBitmapScaleY(newState.bitmapScaleY, false);
                     }
                     break;
                 case "spriteColorIndices":
@@ -31079,46 +31075,46 @@ class DisplayManager {
                     newState.spriteColorIndices.forEach((colorIndex, spriteColorIndex) => {
                         spriteColors.push({ spriteColorIndex, colorIndex });
                     });
-                    this.selectSpriteColors(spriteColors);
+                    await this.selectSpriteColors(spriteColors, false);
                     break;
                 case "spriteScaleX":
                     if (differences.includes("spriteScaleY") &&
                         newState.spriteScaleX == newState.spriteScaleY) {
-                        this.setSpriteScale(newState.spriteScaleX);
+                        await this.setSpriteScale(newState.spriteScaleX, false);
                     }
                     else {
-                        this.setSpriteScaleX(newState.spriteScaleX);
+                        await this.setSpriteScaleX(newState.spriteScaleX, false);
                     }
                     break;
                 case "spriteScaleY":
                     if (!differences.includes("spriteScaleX") ||
                         newState.spriteScaleX != newState.spriteScaleY) {
-                        this.setSpriteScaleY(newState.spriteScaleY);
+                        await this.setSpriteScaleY(newState.spriteScaleY, false);
                     }
                     break;
                 case "spritesLineHeight":
-                    this.setSpritesLineHeight(newState.spritesLineHeight);
+                    await this.setSpritesLineHeight(newState.spritesLineHeight, false);
                     break;
                 case "spritesDirection":
-                    this.setSpritesDirection(newState.spritesDirection);
+                    await this.setSpritesDirection(newState.spritesDirection, false);
                     break;
                 case "spritesLineDirection":
-                    this.setSpritesLineDirection(newState.spritesLineDirection);
+                    await this.setSpritesLineDirection(newState.spritesLineDirection, false);
                     break;
                 case "spritesSpacing":
-                    this.setSpritesSpacing(newState.spritesSpacing);
+                    await this.setSpritesSpacing(newState.spritesSpacing, false);
                     break;
                 case "spritesLineSpacing":
-                    this.setSpritesLineSpacing(newState.spritesLineSpacing);
+                    await this.setSpritesLineSpacing(newState.spritesLineSpacing, false);
                     break;
                 case "spritesAlignment":
-                    this.setSpritesAlignment(newState.spritesAlignment);
+                    await this.setSpritesAlignment(newState.spritesAlignment, false);
                     break;
                 case "spritesLineAlignment":
-                    this.setSpritesLineAlignment(newState.spritesLineAlignment);
+                    await this.setSpritesLineAlignment(newState.spritesLineAlignment, false);
                     break;
             }
-        });
+        }
         if (sendImmediately) {
             await this.#sendContextCommands();
         }
@@ -31412,7 +31408,7 @@ class DisplayManager {
     }
     async restoreContext(sendImmediately) {
         {
-            await this.#restoreContext(sendImmediately);
+            await this.#sendContextCommand("restoreContext", undefined, sendImmediately);
         }
     }
     async #clearContext(sendImmediately) {
@@ -32767,7 +32763,7 @@ class DisplayManager {
     }
     #parseSpriteSheetIndex(dataView) {
         const spriteSheetIndex = dataView.getUint8(0);
-        _console$s.log({
+        _console$s.log(location.href, {
             pendingSpriteSheet: this.#pendingSpriteSheet,
             spriteSheetName: this.#pendingSpriteSheetName,
             spriteSheetIndex,
@@ -32776,8 +32772,14 @@ class DisplayManager {
             _console$s.log("pendingSpriteSheetName is undefined - skipping");
             return;
         }
-        _console$s.assertWithError(this.#pendingSpriteSheetName != undefined, "expected spriteSheetName when receiving spriteSheetIndex");
-        _console$s.assertWithError(this.#pendingSpriteSheet != undefined, "expected pendingSpriteSheet when receiving spriteSheetIndex");
+        if (this.#pendingSpriteSheetName == undefined) {
+            _console$s.log("expected spriteSheetName when receiving spriteSheetIndex - skipping");
+            return;
+        }
+        if (this.#pendingSpriteSheet == undefined) {
+            _console$s.log("expected pendingSpriteSheet when receiving spriteSheetIndex - skipping");
+            return;
+        }
         this.#spriteSheets[this.#pendingSpriteSheetName] =
             this.#pendingSpriteSheet;
         this.#spriteSheetIndices[this.#pendingSpriteSheetName] = spriteSheetIndex;
@@ -33367,7 +33369,9 @@ class BaseConnectionManager {
         if (this.mtu) {
             while (arrayBuffers.length > 0) {
                 if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
-                    _console$p.error("every arrayBuffer is too big to send");
+                    _console$p.error("every arrayBuffer is too big to send", arrayBuffers, {
+                        mtu: this.mtu,
+                    });
                     break;
                 }
                 _console$p.log("remaining arrayBuffers.length", arrayBuffers.length);
@@ -39040,6 +39044,9 @@ class DisplayCanvasHelper {
         return this.#canvas;
     }
     set canvas(newCanvas) {
+        this.#setCanvas(newCanvas);
+    }
+    async #setCanvas(newCanvas) {
         _console$4.assertWithError(newCanvas?.nodeName == "CANVAS", `assigned non-canvas type ${newCanvas?.nodeName}`);
         if (this.#canvas == newCanvas) {
             return;
@@ -39048,7 +39055,7 @@ class DisplayCanvasHelper {
         this.#context = this.#canvas?.getContext("2d", {
             willReadFrequently: true,
         });
-        this.#updateCanvas();
+        await this.#updateCanvas(false);
     }
     #context;
     get context() {
@@ -39063,7 +39070,7 @@ class DisplayCanvasHelper {
     get aspectRatio() {
         return this.width / this.height;
     }
-    #updateCanvas() {
+    async #updateCanvas(sendImmediately) {
         if (!this.canvas) {
             return;
         }
@@ -39076,7 +39083,7 @@ class DisplayCanvasHelper {
         this.canvas.height = height;
         this.canvas.style.aspectRatio = `${width / height}`;
         this.#dispatchEvent("resize", { width: this.width, height: this.height });
-        this.clear();
+        await this.clear(sendImmediately);
     }
     #frontDrawStack = [];
     #rearDrawStack = [];
@@ -39138,24 +39145,28 @@ class DisplayCanvasHelper {
         return this.#device?.displayManager;
     }
     set device(newDevice) {
+        this.#setDevice(newDevice);
+    }
+    async #setDevice(newDevice) {
         if (this.#device == newDevice) {
+            _console$4.log("redundant device assignment", newDevice);
             return;
         }
         if (newDevice) {
             _console$4.assertWithError(newDevice.isConnected, "device must be connected");
             _console$4.assertWithError(newDevice.isDisplayAvailable, "display must have a display");
         }
+        this.#isReady = false;
         if (this.#device) {
             removeEventListeners(this.device, this.#boundDeviceEventListeners);
-            this.#isReady = true;
         }
         this.#device = newDevice;
         addEventListeners(this.#device, this.#boundDeviceEventListeners);
         _console$4.log("assigned device", this.device);
         if (this.device) {
             this.numberOfColors = this.device.numberOfDisplayColors;
-            this.#updateCanvas();
-            this.#updateDevice();
+            await this.#updateCanvas();
+            await this.#updateDevice();
             this.#isReady = this.device.isDisplayReady;
             this.#dispatchEvent("deviceIsConnected", {
                 device: this.device,
@@ -39164,6 +39175,9 @@ class DisplayCanvasHelper {
             this.#dispatchEvent(this.device.isConnected ? "deviceConnected" : "deviceNotConnected", {
                 device: this.device,
             });
+        }
+        else {
+            this.#isReady = true;
         }
         this.#dispatchEvent("device", {
             device: this.device,
@@ -39192,12 +39206,15 @@ class DisplayCanvasHelper {
             isConnected,
         });
     }
-    #onDeviceConnected(event) {
-        this.#updateCanvas();
-        this.#updateDevice();
+    async #onDeviceConnected(event) {
+        _console$4.log("device connected");
+        await this.#updateCanvas(false);
+        await this.#updateDevice(false);
+        await this.flushContextCommands();
         this.#dispatchEvent("deviceConnected", { device: this.device });
     }
     #onDeviceNotConnected(event) {
+        _console$4.log("device not connected");
         this.#dispatchEvent("deviceNotConnected", { device: this.device });
     }
     async #onDeviceDisplayReady(event) {
@@ -39244,13 +39261,16 @@ class DisplayCanvasHelper {
             this.#drawFrontDrawStack();
         }
     }
-    async #updateDevice() {
-        await this.#updateDeviceColors(true);
-        await this.#updateDeviceOpacity(true);
-        await this.#updateDeviceContextState(true);
-        await this.#updateDeviceBrightness(true);
+    async #updateDevice(sendImmediately) {
+        await this.#updateDeviceColors(false);
+        await this.#updateDeviceOpacity(false);
+        await this.#updateDeviceContextState(false);
+        await this.#updateDeviceBrightness(false);
         await this.#updateDeviceSpriteSheets();
-        await this.#updateDeviceSelectedSpriteSheet(true);
+        await this.#updateDeviceSelectedSpriteSheet(false);
+        if (sendImmediately) {
+            await this.flushContextCommands();
+        }
         this.#dispatchEvent("deviceUpdated", { device: this.device });
     }
     #numberOfColors = 0;

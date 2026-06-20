@@ -807,7 +807,7 @@ function onIFrameLoaded(gloveContainer) {
       return;
     }
     const { pressure } = event.message;
-    const pinchPressure = pressure.sensors[0];
+    const pinchPressure = pressure.sensors[13];
     const isPinching = pinchPressure.normalizedValue > 0.5;
     setIsCursorDown(isPinching);
   });

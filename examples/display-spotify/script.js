@@ -9,7 +9,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -36,19 +36,17 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
   }
 });
 
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -73,7 +71,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -221,7 +219,7 @@ const draw = async () => {
         currentLyricMetrics = displayCanvasHelper.stringToSpriteLinesMetrics(
           currentLyricLine,
           false,
-          maxLyricWidth
+          maxLyricWidth,
         );
         currentLyricSize = currentLyricMetrics.size;
         lyricInterpolationOffsetY += currentLyricSize.height / 2;
@@ -236,7 +234,7 @@ const draw = async () => {
         const nextLyricMetrics = displayCanvasHelper.stringToSpriteLinesMetrics(
           nextLyricLine,
           false,
-          maxLyricWidth
+          maxLyricWidth,
         );
         nextLyricSize = nextLyricMetrics.size;
         lyricInterpolationOffsetY += nextLyricSize.height / 2;
@@ -252,7 +250,7 @@ const draw = async () => {
           displayCanvasHelper.stringToSpriteLinesMetrics(
             nextNextLyricLine,
             false,
-            maxLyricWidth
+            maxLyricWidth,
           );
         nextNextLyricSize = nextNextLyricMetrics.size;
       }
@@ -271,8 +269,8 @@ const draw = async () => {
           Math.min(
             1,
             (spotifyPosition - currentLyric.timestamp) /
-              (currentLyric.duration - lyricAnimationDuration / 2)
-          )
+              (currentLyric.duration - lyricAnimationDuration / 2),
+          ),
         );
 
         //console.log({ lyricInterpolation });
@@ -292,14 +290,14 @@ const draw = async () => {
             1 -
             Math.max(
               0,
-              Math.min(1, timeUntilEndOfLyric / lyricAnimationDuration)
+              Math.min(1, timeUntilEndOfLyric / lyricAnimationDuration),
             );
           lyricAnimationInterpolation **= 2;
           //console.log({ lyricAnimationInterpolation });
           lyricInterpolationOffsetY = interpolate(
             0,
             lyricInterpolationOffsetY,
-            lyricAnimationInterpolation
+            lyricAnimationInterpolation,
           );
         } else {
           lyricInterpolationOffsetY = 0;
@@ -318,7 +316,7 @@ const draw = async () => {
             currentLyricY - lyricInterpolationOffsetY + lyricsOffsetY,
             currentLyricLine,
             false,
-            maxLyricWidth
+            maxLyricWidth,
           );
         };
 
@@ -335,7 +333,7 @@ const draw = async () => {
               nextLyricY - lyricInterpolationOffsetY + lyricsOffsetY,
               nextLyricLine,
               false,
-              maxLyricWidth
+              maxLyricWidth,
             );
           };
         }
@@ -354,17 +352,17 @@ const draw = async () => {
               nextNextLyricY - lyricInterpolationOffsetY + lyricsOffsetY,
               nextNextLyricLine,
               false,
-              maxLyricWidth
+              maxLyricWidth,
             );
           };
         }
 
         await displayCanvasHelper.selectBackgroundColor(
-          getCurrentTextBackgroundColorIndex()
+          getCurrentTextBackgroundColorIndex(),
         );
         await displayCanvasHelper.selectSpriteColor(
           0,
-          getCurrentTextBackgroundColorIndex()
+          getCurrentTextBackgroundColorIndex(),
         );
         if (isAnimatingLyric) {
           await drawNextLyric();
@@ -372,11 +370,11 @@ const draw = async () => {
           await drawCurrentLyric();
         }
         await displayCanvasHelper.selectBackgroundColor(
-          getTextBackgroundColorIndex()
+          getTextBackgroundColorIndex(),
         );
         await displayCanvasHelper.selectSpriteColor(
           0,
-          getTextBackgroundColorIndex()
+          getTextBackgroundColorIndex(),
         );
         if (isAnimatingLyric) {
           await drawCurrentLyric();
@@ -404,7 +402,7 @@ const draw = async () => {
               lyricInterpolationOffsetY,
             lineDurationTimerWidth / 2 - 4,
             -90,
-            arcLyricInterpolation * 360
+            arcLyricInterpolation * 360,
           );
         }
       }
@@ -432,7 +430,7 @@ const draw = async () => {
         const isEarly = timeSinceLastTrackStringOffsetXUpdate < 0;
         timeSinceLastTrackStringOffsetXUpdate = Math.max(
           0,
-          timeSinceLastTrackStringOffsetXUpdate
+          timeSinceLastTrackStringOffsetXUpdate,
         );
         trackStringOffsetX +=
           timeSinceLastTrackStringOffsetXUpdate * trackStringOffsetXScalar;
@@ -441,7 +439,7 @@ const draw = async () => {
           trackMetrics.size.width - trackStringMaxWidth + 50;
         trackStringOffsetX = Math.min(
           trackStringOffsetX,
-          trackMetrics.size.width - trackStringMaxWidth + 50
+          trackMetrics.size.width - trackStringMaxWidth + 50,
         );
         // console.log({ isDoneMoving, timeSinceLastTrackStringOffsetXUpdate });
         if (isDoneMoving && timeSinceLastTrackStringOffsetXUpdate > 2000) {
@@ -455,7 +453,7 @@ const draw = async () => {
       await displayCanvasHelper.drawSpritesString(
         imageHeight + imagePadding - trackStringOffsetX,
         displayCanvasHelper.height - timelineHeight - 10,
-        trackString
+        trackString,
       );
       await displayCanvasHelper.restoreContext();
     }
@@ -467,7 +465,7 @@ const draw = async () => {
       await displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
       await displayCanvasHelper.selectSpriteColor(
         2,
-        getCurrentTextBackgroundColorIndex()
+        getCurrentTextBackgroundColorIndex(),
       );
       // await displayCanvasHelper.selectBackgroundColor(1);
       // await displayCanvasHelper.setFillBackground(true);
@@ -480,7 +478,7 @@ const draw = async () => {
         imageHeight + imagePadding,
         displayCanvasHelper.height - 6,
         spriteWidth,
-        38
+        38,
       );
       await displayCanvasHelper.setHorizontalAlignment("start");
 
@@ -488,13 +486,13 @@ const draw = async () => {
       const height = spriteHeight - 8;
       const x = -width / 2;
       await displayCanvasHelper.selectFillColor(
-        spotifyPaused || isSpotifyTimeInputChanging ? 1 : 2
+        spotifyPaused || isSpotifyTimeInputChanging ? 1 : 2,
       );
       await displayCanvasHelper.drawRect(
         x + 3,
         0,
         width * timelineInterpolation,
-        height - 6
+        height - 6,
       );
       await displayCanvasHelper.setLineWidth(6);
       await displayCanvasHelper.setIgnoreFill(true);
@@ -515,7 +513,7 @@ const draw = async () => {
       await displayCanvasHelper.drawSprite(
         0,
         displayCanvasHelper.height,
-        "album"
+        "album",
       );
       await displayCanvasHelper.selectSpriteSheetPalette("album", 0);
       await displayCanvasHelper.restoreContext();
@@ -541,16 +539,19 @@ displayCanvasHelper.addEventListener("ready", () => {
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
 
-device.addEventListener("fileTransferProgress", (event) => {
-  const progress = event.message.progress;
-  //console.log({ progress });
-  fileTransferProgress.value = progress == 1 ? 0 : progress;
-});
-device.addEventListener("fileTransferStatus", () => {
-  if (device.fileTransferStatus == "idle") {
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadProgress",
+  (event) => {
+    const { progress } = event.message;
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+  },
+);
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadComplete",
+  (event) => {
     fileTransferProgress.value = 0;
-  }
-});
+  },
+);
 
 // PASTE
 function isValidUrl(string) {
@@ -600,7 +601,7 @@ async function playSpotifySong(trackId) {
       body: JSON.stringify({
         uris: [`spotify:track:${trackId}`],
       }),
-    }
+    },
   );
 
   if (response.ok) {
@@ -614,7 +615,7 @@ async function playSpotifySong(trackId) {
 // SPOTIFY
 
 const spotifyToggleAuthorizationButton = document.getElementById(
-  "spotifyToggleAuthorization"
+  "spotifyToggleAuthorization",
 );
 const updateSpotifyAuthorizeButton = () => {
   const enabled =
@@ -776,7 +777,7 @@ window.addEventListener("load", () => {
 
 let isSpotifyWebPlaybackSDKReady = false;
 const setIsSpotifyWebPlaybackSDKReady = async (
-  newIsSpotifyWebPlaybackSDKReady
+  newIsSpotifyWebPlaybackSDKReady,
 ) => {
   isSpotifyWebPlaybackSDKReady = newIsSpotifyWebPlaybackSDKReady;
   console.log({ isSpotifyWebPlaybackSDKReady });
@@ -885,7 +886,7 @@ const setSpotifyState = async (newSpotifyState) => {
           (char) =>
             char.charCodeAt(0) != undefined &&
             !BS.englishRegex.test(char) &&
-            (useCustomNoteSprite ? char != noteCharacter : true)
+            (useCustomNoteSprite ? char != noteCharacter : true),
         )
         .filter((char) => char != `\n`);
 
@@ -900,7 +901,7 @@ const setSpotifyState = async (newSpotifyState) => {
           string: newNonEnglishCharacters.join(""),
           usePath: true,
           ...fontMetrics,
-        }
+        },
       );
       console.log("nonEnglishSpriteSheet", nonEnglishSpriteSheet);
       await displayCanvasHelper.uploadSpriteSheet(nonEnglishSpriteSheet);
@@ -954,17 +955,17 @@ const setupSpotifyPlayer = async () => {
   });
 
   spotifyPlayer.addListener("initialization_error", ({ message }) =>
-    console.error(message)
+    console.error(message),
   );
   spotifyPlayer.addListener("authentication_error", ({ message }) => {
     console.error(message);
     refreshSpotifyAccessToken();
   });
   spotifyPlayer.addListener("account_error", ({ message }) =>
-    console.error(message)
+    console.error(message),
   );
   spotifyPlayer.addListener("not_ready", ({ device_id }) =>
-    console.log("Device ID has gone offline", device_id)
+    console.log("Device ID has gone offline", device_id),
   );
 
   spotifyPlayer.addListener("player_state_changed", (state) => {
@@ -977,10 +978,10 @@ const setupSpotifyPlayer = async () => {
 };
 
 const toggleSpotifyPlaybackButton = document.getElementById(
-  "toggleSpotifyPlayback"
+  "toggleSpotifyPlayback",
 );
 toggleSpotifyPlaybackButton.addEventListener("click", () =>
-  toggleSpotifyPlayback()
+  toggleSpotifyPlayback(),
 );
 const toggleSpotifyPlayback = async () => {
   if (!spotifyPlayer) {
@@ -997,10 +998,10 @@ const updateToggleSpotifyPlaybackButton = () => {
 };
 
 const previousSpotifyTrackButton = document.getElementById(
-  "previousSpotifyTrack"
+  "previousSpotifyTrack",
 );
 previousSpotifyTrackButton.addEventListener("click", () =>
-  previousSpotifyTrack()
+  previousSpotifyTrack(),
 );
 let spotifyPositionThreshold = 2000;
 const previousSpotifyTrack = async () => {
@@ -1070,7 +1071,7 @@ const seekSpotifyPlayer = BS.ThrottleUtils.throttle(
     }
   },
   200,
-  true
+  true,
 );
 spotifyTimeInput.addEventListener("input", () => {
   setIsSpotifyTimeInputChanging(true);
@@ -1109,7 +1110,7 @@ const _updateSpotifyTime = () => {
     }
   }
   spotifyTimeSpan.innerText = `${millisecondsToMinutes(
-    spotifyPosition
+    spotifyPosition,
   )}/${millisecondsToMinutes(duration)}`;
 
   if (!isSpotifyTimeInputChanging) {
@@ -1166,7 +1167,7 @@ const setSpotifyVolume = BS.ThrottleUtils.throttle(
     await updateSpotifyVolumeInput();
   },
   100,
-  true
+  true,
 );
 spotifyVolumeInput.addEventListener("input", () => {
   setIsSpotifyVolumeInputChanging(true);
@@ -1375,7 +1376,7 @@ spotifyAlbumArt.addEventListener("load", async () => {
       spotifyAlbumArt,
       imageHeight * aspectRatio,
       imageHeight,
-      12
+      12,
     );
     console.log("roundProfileImage", roundProfileImage);
     spotifyAlbumArtSpriteSheet = await BS.canvasToSpriteSheet(
@@ -1383,7 +1384,7 @@ spotifyAlbumArt.addEventListener("load", async () => {
       "album",
       "album",
       getImageNumberOfColors(),
-      "album"
+      "album",
     );
   } else {
     spotifyAlbumArtSpriteSheet = await BS.imageToSpriteSheet(
@@ -1393,7 +1394,7 @@ spotifyAlbumArt.addEventListener("load", async () => {
       imageHeight * aspectRatio,
       imageHeight,
       getImageNumberOfColors(),
-      "album"
+      "album",
     );
   }
   spotifyAlbumArtSpriteSheet.palettes[0].colors[0] = "black";
@@ -1642,7 +1643,7 @@ const addFont = async (font) => {
       font,
       fontSize,
       "english",
-      fontOptions
+      fontOptions,
     );
     fontSpriteSheets[fullName] = spriteSheet;
     await updateFontSelect();
@@ -1690,7 +1691,7 @@ const selectFont = async (newFontName) => {
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
 await loadFontUrl(
   "https://fonts.googleapis.com/css2?family=Noto+Sans+KR",
-  false
+  false,
 );
 
 // MUSICAL NOTE
@@ -1789,7 +1790,7 @@ displayCanvas.addEventListener("mousemove", (event) => {
 
   if (movementX && isMouseDown) {
     seekSpotifyPlayer(
-      spotifyState.position + movementX * spotifyMouseMovementXScalar
+      spotifyState.position + movementX * spotifyMouseMovementXScalar,
     );
     didMouseSeek = true;
   }

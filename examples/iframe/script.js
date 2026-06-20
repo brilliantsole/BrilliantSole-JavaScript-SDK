@@ -111,6 +111,18 @@ const selectUrls = [
   { name: "punch", url: "../punch" },
   { name: "display wireframe", url: "../display-wireframe" },
   { name: "canvas", url: "../canvas" },
+  { name: "display text", url: "../display-text" },
+  { name: "display image", url: "../display-image" },
+  { name: "display prompt", url: "../display-prompt" },
+  { name: "display 3d", url: "../display-3d" },
+  { name: "display graph", url: "../display-graph" },
+  { name: "display map", url: "../display-map" },
+  { name: "display midi", url: "../display-midi" },
+  { name: "display music", url: "../display-music" },
+  { name: "display pitch", url: "../display-pitch" },
+  { name: "display toss", url: "../display-toss" },
+  { name: "display workout", url: "../display-workout" },
+  { name: "display face", url: "../display-face" },
 ];
 const createIframeContainer = () => {
   const iframeContainer = iframeContainerTemplate.content

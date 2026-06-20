@@ -1,4 +1,4 @@
-import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
+import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
 import { DeviceType } from "../InformationManager.ts";
 import { ConnectionType } from "../connection/BaseConnectionManager.ts";
 import Device from "../Device.ts";
@@ -29,10 +29,12 @@ export interface ScannerEventMessages {
     scanningAvailable: {};
     scanningNotAvailable: {};
 }
-export type ScannerEventDispatcher = EventDispatcher<BaseScanner, ScannerEventType, ScannerEventMessages>;
-export type ScannerEventMap = EventMap<BaseScanner, ScannerEventType, ScannerEventMessages>;
-export type ScannerEvent = Event<BaseScanner, ScannerEventType, ScannerEventMessages>;
-export type BoundScannerEventListeners = BoundEventListeners<BaseScanner, ScannerEventType, ScannerEventMessages>;
+export type ScannerEventDispatcherTypes = EventDispatcherTypes<BaseScanner, ScannerEventType, ScannerEventMessages>;
+export type ScannerEvent = ScannerEventDispatcherTypes["Event"];
+export type ScannerEventMap = ScannerEventDispatcherTypes["EventMap"];
+export type ScannerEventListenerMap = ScannerEventDispatcherTypes["EventListenerMap"];
+export type ScannerEventDispatcher = ScannerEventDispatcherTypes["EventDispatcher"];
+export type BoundScannerEventListeners = ScannerEventDispatcherTypes["BoundEventListeners"];
 export type DiscoveredDevicesMap = {
     [deviceId: string]: DiscoveredDevice;
 };

@@ -1,7 +1,5 @@
 import EventDispatcher, {
-  BoundEventListeners,
-  Event,
-  EventMap,
+  EventDispatcherTypes,
 } from "../utils/EventDispatcher.ts";
 import { addEventListeners } from "../utils/EventUtils.ts";
 import { createConsole } from "../utils/Console.ts";
@@ -48,26 +46,19 @@ export interface ScannerEventMessages {
   scanningNotAvailable: {};
 }
 
-export type ScannerEventDispatcher = EventDispatcher<
+export type ScannerEventDispatcherTypes = EventDispatcherTypes<
   BaseScanner,
   ScannerEventType,
   ScannerEventMessages
 >;
-export type ScannerEventMap = EventMap<
-  BaseScanner,
-  ScannerEventType,
-  ScannerEventMessages
->;
-export type ScannerEvent = Event<
-  BaseScanner,
-  ScannerEventType,
-  ScannerEventMessages
->;
-export type BoundScannerEventListeners = BoundEventListeners<
-  BaseScanner,
-  ScannerEventType,
-  ScannerEventMessages
->;
+export type ScannerEvent = ScannerEventDispatcherTypes["Event"];
+export type ScannerEventMap = ScannerEventDispatcherTypes["EventMap"];
+export type ScannerEventListenerMap =
+  ScannerEventDispatcherTypes["EventListenerMap"];
+export type ScannerEventDispatcher =
+  ScannerEventDispatcherTypes["EventDispatcher"];
+export type BoundScannerEventListeners =
+  ScannerEventDispatcherTypes["BoundEventListeners"];
 
 export type DiscoveredDevicesMap = { [deviceId: string]: DiscoveredDevice };
 

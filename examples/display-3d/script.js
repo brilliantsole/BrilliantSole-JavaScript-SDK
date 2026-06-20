@@ -64,12 +64,10 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
   }
 });
 
@@ -1108,16 +1106,19 @@ displayCanvasHelper.addEventListener("ready", () => {
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
 
-device.addEventListener("fileTransferProgress", (event) => {
-  const progress = event.message.progress;
-  //console.log({ progress });
-  fileTransferProgress.value = progress == 1 ? 0 : progress;
-});
-device.addEventListener("fileTransferStatus", () => {
-  if (device.fileTransferStatus == "idle") {
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadProgress",
+  (event) => {
+    const { progress } = event.message;
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+  },
+);
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadComplete",
+  (event) => {
     fileTransferProgress.value = 0;
-  }
-});
+  },
+);
 
 const checkSpriteSheetSizeButton = document.getElementById(
   "checkSpriteSheetSize",

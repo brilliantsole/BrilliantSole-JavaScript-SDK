@@ -1,9 +1,6 @@
 import { createConsole } from "../utils/Console.ts";
 import EventDispatcher, {
-  BoundEventListeners,
-  Event,
-  EventListenerMap,
-  EventMap,
+  EventDispatcherTypes,
   wildcardEventType,
   WildcardEventType,
 } from "../utils/EventDispatcher.ts";
@@ -86,31 +83,19 @@ export type DevicePairEventMessages = BaseDevicePairEventMessages &
   DevicePairSensorDataEventMessages &
   DevicePairDeviceEventMessages;
 
-export type DevicePairEventDispatcher = EventDispatcher<
+export type DevicePairEventDispatcherTypes = EventDispatcherTypes<
   DevicePair,
   DevicePairEventType,
   DevicePairEventMessages
 >;
-export type DevicePairEventMap = EventMap<
-  DevicePair,
-  DeviceEventType,
-  DevicePairEventMessages
->;
-export type DevicePairEventListenerMap = EventListenerMap<
-  DevicePair,
-  DeviceEventType,
-  DevicePairEventMessages
->;
-export type DevicePairEvent = Event<
-  DevicePair,
-  DeviceEventType,
-  DevicePairEventMessages
->;
-export type BoundDevicePairEventListeners = BoundEventListeners<
-  DevicePair,
-  DeviceEventType,
-  DevicePairEventMessages
->;
+export type DevicePairEvent = DevicePairEventDispatcherTypes["Event"];
+export type DevicePairEventMap = DevicePairEventDispatcherTypes["EventMap"];
+export type DevicePairEventListenerMap =
+  DevicePairEventDispatcherTypes["EventListenerMap"];
+export type DevicePairEventDispatcher =
+  DevicePairEventDispatcherTypes["EventDispatcher"];
+export type BoundDevicePairEventListeners =
+  DevicePairEventDispatcherTypes["BoundEventListeners"];
 
 export const DevicePairTypes = ["insoles", "gloves"] as const;
 export type DevicePairType = (typeof DevicePairTypes)[number];

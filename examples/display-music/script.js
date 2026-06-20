@@ -9,7 +9,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -36,19 +36,17 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
   }
 });
 
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -73,7 +71,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -173,7 +171,7 @@ const draw = async () => {
     await displayCanvasHelper.setHorizontalAlignment("start");
 
     let cursorsToDraw = cursors.filter(
-      (cursor) => cursor.systemIndex == systemIndex
+      (cursor) => cursor.systemIndex == systemIndex,
     );
     if (cursorsToDraw.includes(currentCursor)) {
       cursorsToDraw = cursorsToDraw.slice(cursorsToDraw.indexOf(currentCursor));
@@ -212,7 +210,7 @@ const draw = async () => {
         x + offsetX,
         y + offsetY,
         width,
-        height
+        height,
       );
     }
 
@@ -227,7 +225,7 @@ const draw = async () => {
   if (currentCursor && drawnCursors.includes(currentCursor)) {
     await displayCanvasHelper.setColor(
       drawnCursors.indexOf(currentCursor),
-      cursorColor
+      cursorColor,
     );
   }
   await displayCanvasHelper.show();
@@ -255,16 +253,19 @@ displayCanvasHelper.addEventListener("ready", async () => {
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
 
-device.addEventListener("fileTransferProgress", (event) => {
-  const progress = event.message.progress;
-  //console.log({ progress });
-  fileTransferProgress.value = progress == 1 ? 0 : progress;
-});
-device.addEventListener("fileTransferStatus", () => {
-  if (device.fileTransferStatus == "idle") {
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadProgress",
+  (event) => {
+    const { progress } = event.message;
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+  },
+);
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadComplete",
+  (event) => {
     fileTransferProgress.value = 0;
-  }
-});
+  },
+);
 
 // PASTE
 function isValidUrl(string) {
@@ -366,14 +367,14 @@ window.addEventListener("drop", async (e) => {
 // SIZE
 
 const checkSpriteSheetSizeButton = document.getElementById(
-  "checkSpriteSheetSize"
+  "checkSpriteSheetSize",
 );
 const checkSpriteSheetSize = () => {
   if (!displayCanvasHelper.selectedSpriteSheet) {
     return;
   }
   const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(
-    displayCanvasHelper.selectedSpriteSheet
+    displayCanvasHelper.selectedSpriteSheet,
   );
   checkSpriteSheetSizeButton.innerText = `size: ${(
     arrayBuffer.byteLength / 1024
@@ -559,7 +560,7 @@ const addFont = async (font) => {
       font,
       fontSize,
       "english",
-      fontOptions
+      fontOptions,
     );
     fontSpriteSheets[fullName] = spriteSheet;
     await updateFontSelect();
@@ -742,7 +743,7 @@ const setOsmdSystemIndex = async (newIndex, render = false) => {
   currentSystemIndex = newIndex;
   currentSystemIndex = Math.max(
     0,
-    Math.min(currentSystemIndex, numberOfSystems - 1)
+    Math.min(currentSystemIndex, numberOfSystems - 1),
   );
   console.log({
     currentSystemIndex,
@@ -794,7 +795,7 @@ osmdSystemInput.addEventListener("input", () => {
 
 let systemsPerDisplay = 2;
 const osmdSystemsPerDisplayContainer = document.getElementById(
-  "osmdSystemsPerDisplay"
+  "osmdSystemsPerDisplay",
 );
 const osmdSystemsPerDisplayInput =
   osmdSystemsPerDisplayContainer.querySelector("input");
@@ -820,7 +821,7 @@ const updateOsmdInstrument = () => {
   osmd.Sheet.Instruments.forEach((instrument, index) => {
     const { Name, IdString } = instrument;
     osmdInstrumentOptgroup.appendChild(
-      new Option(`${Name} (${IdString})`, index)
+      new Option(`${Name} (${IdString})`, index),
     );
   });
 
@@ -920,7 +921,7 @@ const setShowCursor = async (newShowCursor) => {
   if (showCursor && drawnCursors.includes(currentCursor)) {
     await displayCanvasHelper.setColor(
       drawnCursors.indexOf(currentCursor),
-      cursorColor
+      cursorColor,
     );
   }
   await displayCanvasHelper.flushContextCommands();
@@ -994,7 +995,7 @@ const onCurrentTimeUpdate = async (render = true) => {
     await displayCanvasHelper.setColor(
       drawnCursors.indexOf(_currentCursor),
       "black",
-      true
+      true,
     );
   }
 
@@ -1021,7 +1022,7 @@ const onCurrentTimeUpdate = async (render = true) => {
   } else {
     await displayCanvasHelper.setColor(
       drawnCursors.indexOf(currentCursor),
-      cursorColor
+      cursorColor,
     );
     await displayCanvasHelper.flushContextCommands();
   }
@@ -1100,7 +1101,7 @@ const createOsmdSystemSpriteSheet = async (systemIndex) => {
       } else {
         _staffLine.remove();
       }
-    }
+    },
   );
   document.body.appendChild(systemSvg);
   //console.log("staffLine", staffLine);
@@ -1150,7 +1151,7 @@ const createOsmdSystemSpriteSheet = async (systemIndex) => {
     {
       height: box.height,
       width: box.width,
-    }
+    },
   );
   //console.log("spriteSheet", spriteSheet);
   spriteSheets[systemIndex] = spriteSheet;
@@ -1294,7 +1295,7 @@ window.getCursorByTime = getCursorByTime;
 // INSOLE
 const insoleDevice = new BS.Device();
 const toggleInsoleConnectionButton = document.getElementById(
-  "toggleInsoleConnection"
+  "toggleInsoleConnection",
 );
 toggleInsoleConnectionButton.addEventListener("click", () => {
   insoleDevice.toggleConnection();
@@ -1343,7 +1344,7 @@ insoleDevice.addEventListener("connected", () => {
 
 /** @type {HTMLProgressElement} */
 const modelFileTransferProgress = document.getElementById(
-  "modelFileTransferProgress"
+  "modelFileTransferProgress",
 );
 insoleDevice.addEventListener("fileTransferProgress", (event) => {
   const { progress } = event.message;
@@ -1368,5 +1369,5 @@ insoleDevice.addEventListener("tfliteInference", (event) => {
 didLoad = true;
 
 await loadOsmd(
-  "https://raw.githubusercontent.com/opensheetmusicdisplay/opensheetmusicdisplay/refs/heads/develop/demo/BrahWiMeSample.musicxml"
+  "https://raw.githubusercontent.com/opensheetmusicdisplay/opensheetmusicdisplay/refs/heads/develop/demo/BrahWiMeSample.musicxml",
 );

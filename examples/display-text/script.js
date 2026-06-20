@@ -1,30 +1,137 @@
 import * as BS from "../../build/brilliantsole.module.js";
 
-// DEVICE
-const device = new BS.Device();
-window.device = device;
-window.BS = BS;
+/** @typedef {(device: BS.Device)=>void} DeviceCallback */
+/** @typedef {(device: BS.Device)=>boolean} DeviceFilterCallback */
 
-// CONNECT
+/** @param {DeviceFilterCallback} deviceFilter */
+const createDeviceStore = (deviceFilter) => {
+  /** @type {BS.Device?} */
+  let currentDevice;
 
-const toggleConnectionButton = document.getElementById("toggleConnection");
-toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection(),
-);
-device.addEventListener("connectionStatus", () => {
-  let disabled = false;
-  let innerText = device.connectionStatus;
-  switch (device.connectionStatus) {
-    case "notConnected":
-      innerText = "connect";
-      break;
-    case "connected":
-      innerText = "disconnect";
-      break;
+  /** @type {DeviceCallback[]} */
+  const onDeviceCallbacks = [];
+
+  /** @param {BS.Device} device */
+  const onDevice = (device, replaceCurrentDevice = false) => {
+    if (currentDevice?.isConnected) {
+      if (!replaceCurrentDevice) {
+        return;
+      }
+      currentDevice.removeAllEventListeners();
+    }
+    currentDevice = device;
+    console.log("currentDevice", currentDevice);
+
+    onDeviceCallbacks.forEach((callback) => callback(device));
+  };
+
+  BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+    const { device } = event.message;
+    if (deviceFilter(device) && !currentDevice?.isConnected) {
+      onDevice(device);
+    }
+  });
+
+  BS.DeviceManager.addEventListener("deviceNotConnected", (event) => {
+    const { device } = event.message;
+    if (currentDevice == device) {
+      console.log("currentDevice is gone");
+      currentDevice.removeAllEventListeners();
+      const nextConnectedDevice = BS.DeviceManager.connectedDevices.find(
+        (device) => deviceFilter(device),
+      );
+      console.log("nextConnectedDevice", nextConnectedDevice);
+      if (nextConnectedDevice) {
+        onDevice(nextConnectedDevice);
+      }
+    }
+  });
+
+  return {
+    getDevice: () => currentDevice,
+
+    /** @param {DeviceCallback} callback */
+    addListener: (callback) => {
+      onDeviceCallbacks.push(callback);
+    },
+
+    /** @param {DeviceCallback} callback */
+    removeListener: (callback) => {
+      if (onDeviceCallbacks.includes(callback)) {
+        onDeviceCallbacks.splice(onDeviceCallbacks.indexOf(callback, 1));
+      }
+    },
+  };
+};
+
+const deviceStores = {
+  glasses: createDeviceStore((device) => device.isDisplayAvailable),
+};
+window.deviceStores = deviceStores;
+const hasAllDevices = () => {
+  console.log(Object.values(deviceStores).map(({ getDevice }) => getDevice()));
+  Object.values(deviceStores).some(({ getDevice }) => getDevice());
+};
+
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  const isDeviceUsed = Object.values(deviceStores).some(({ getDevice }) => {
+    return getDevice() == device;
+  });
+  if (!isDeviceUsed) {
+    console.log("device isn't used");
+    // device.disconnect();
   }
-  updateMicrophoneSources();
-  toggleConnectionButton.disabled = disabled;
-  toggleConnectionButton.innerText = innerText;
+});
+
+// ADD DEVICE
+
+const addDeviceButton = document.getElementById("addDevice");
+addDeviceButton.addEventListener("click", () => {
+  BS.Device.Connect();
+});
+BS.DeviceManager.addEventListener("deviceIsConnected", () => {
+  addDeviceButton.disabed = hasAllDevices();
+});
+
+// CONNECTION
+
+/** @type {HTMLButtonElement} */
+const toggleGlassesConnectionButton = document.getElementById(
+  "toggleGlassesConnection",
+);
+
+deviceStores.glasses.addListener((device) => {
+  device.addEventListener(
+    "connectionStatus",
+    (event) => {
+      const { connectionStatus } = event.message;
+
+      let innerText = connectionStatus;
+      let disabled = true;
+      switch (connectionStatus) {
+        case "notConnected":
+          innerText = "connect";
+          break;
+        case "connected":
+          innerText = "disconnect";
+          disabled = false;
+          break;
+      }
+
+      toggleGlassesConnectionButton.innerText = innerText;
+      toggleGlassesConnectionButton.disabled = disabled;
+    },
+    { immediate: true },
+  );
+});
+
+toggleGlassesConnectionButton.addEventListener("click", () => {
+  const device = deviceStores.glasses.getDevice();
+  if (!device) {
+    return;
+  }
+  device.toggleConnection(true);
 });
 
 // CANVAS
@@ -40,13 +147,8 @@ displayCanvasHelper.setFillBackground(true, true);
 displayCanvasHelper.selectBackgroundColor(2, true);
 displayCanvasHelper.selectSpriteColor(0, 2, true);
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
-    displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
-  }
+deviceStores.glasses.addListener((device) => {
+  displayCanvasHelper.device = device;
 });
 
 // BRIGHTNESS
@@ -568,15 +670,17 @@ setMaxAudioLength(Number(maxAudioLengthInput.value));
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
 
-device.addEventListener("fileTransferProgress", (event) => {
-  const progress = event.message.progress;
-  //console.log({ progress });
-  fileTransferProgress.value = progress == 1 ? 0 : progress;
-});
-device.addEventListener("fileTransferStatus", () => {
-  if (device.fileTransferStatus == "idle") {
-    fileTransferProgress.value = 0;
-  }
+deviceStores.glasses.addListener((device) => {
+  device.addEventListener("fileTransferProgress", (event) => {
+    const progress = event.message.progress;
+    //console.log({ progress });
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+  });
+  device.addEventListener("fileTransferStatus", () => {
+    if (device.fileTransferStatus == "idle") {
+      fileTransferProgress.value = 0;
+    }
+  });
 });
 
 // FONTS
@@ -917,7 +1021,7 @@ const updateMicrophoneSources = async () => {
   const audioDevices = devices.filter((device) => device.kind == "audioinput");
   selectMicrophoneOptgroup.innerHTML = "";
   selectMicrophoneOptgroup.appendChild(new Option("none"));
-  if (device.hasMicrophone) {
+  if (deviceStores.glasses.getDevice()?.hasMicrophone) {
     selectMicrophoneOptgroup.appendChild(new Option("device"));
   }
   audioDevices.forEach((audioInputDevice) => {
@@ -931,11 +1035,12 @@ const updateMicrophoneSources = async () => {
 /** @type {MediaStream?} */
 let microphoneStream;
 const selectMicrophone = async (deviceId) => {
+  const device = deviceStores.glasses.getDevice();
   stopMicrophoneStream();
   if (deviceId == "none") {
     await stopTranscribing();
     microphoneAudio.setAttribute("hidden", "");
-    if (device.hasMicrophone) {
+    if (device?.hasMicrophone) {
       await device.stopMicrophone();
     }
   } else {
@@ -1198,8 +1303,7 @@ const audioContext = new (window.AudioContext || window.webkitAudioContext)({
   sampleRate: 16_000,
   latencyHint: "interactive",
 });
-device.audioContext = audioContext;
-device.microphoneGainNode.gain.value = 5;
+
 window.audioContext = audioContext;
 const checkAudioContextState = () => {
   const { state } = audioContext;
@@ -1215,8 +1319,10 @@ audioContext.addEventListener("statechange", () => {
 });
 checkAudioContextState();
 
-device.audioContext = audioContext;
-device.microphoneGainNode.gain.value = 10;
+deviceStores.glasses.addListener((device) => {
+  device.audioContext = audioContext;
+  device.microphoneGainNode.gain.value = 10;
+});
 
 // TEXT TRANSLATION
 

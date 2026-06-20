@@ -167,12 +167,10 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
   }
 });
 

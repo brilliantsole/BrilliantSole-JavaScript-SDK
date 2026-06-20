@@ -9,7 +9,7 @@ window.BS = BS;
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection()
+  device.toggleConnection(),
 );
 device.addEventListener("connectionStatus", () => {
   let disabled = false;
@@ -36,19 +36,17 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
   }
 });
 
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
-  "setDisplayBrightnessSelect"
+  "setDisplayBrightnessSelect",
 );
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
@@ -73,7 +71,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     displayCanvasHelper.setColor(colorIndex, colorString, true);
   },
   100,
-  true
+  true,
 );
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
@@ -179,7 +177,7 @@ const draw = async (overrideIsMicrophoneLoaded = false) => {
     drawOffset.x * displayCanvasHelper.width,
     drawOffset.y * displayCanvasHelper.height,
     drawSize.width,
-    drawSize.height
+    drawSize.height,
   );
   await displayCanvasHelper.setIgnoreFill(true);
   await displayCanvasHelper.setLineWidth(drawLineWidth);
@@ -188,14 +186,14 @@ const draw = async (overrideIsMicrophoneLoaded = false) => {
     0,
     drawSize.width / 2 - drawLineWidth,
     -90,
-    normalizedPitchOffset * 145
+    normalizedPitchOffset * 145,
   );
   await displayCanvasHelper.setSpriteScale(fontScale);
   await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await displayCanvasHelper.drawSpritesString(
     0,
     0,
-    frequency.toNote().slice(0, -1)
+    frequency.toNote().slice(0, -1),
   );
   await displayCanvasHelper.endSprite();
 
@@ -234,16 +232,19 @@ const setAutoDraw = (newAutoDraw) => {
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
 
-device.addEventListener("fileTransferProgress", (event) => {
-  const progress = event.message.progress;
-  //console.log({ progress });
-  fileTransferProgress.value = progress == 1 ? 0 : progress;
-});
-device.addEventListener("fileTransferStatus", () => {
-  if (device.fileTransferStatus == "idle") {
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadProgress",
+  (event) => {
+    const { progress } = event.message;
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+  },
+);
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadComplete",
+  (event) => {
     fileTransferProgress.value = 0;
-  }
-});
+  },
+);
 
 // PASTE
 function isValidUrl(string) {
@@ -454,7 +455,7 @@ const addFont = async (font) => {
       font,
       fontSize,
       "english",
-      fontOptions
+      fontOptions,
     );
     fontSpriteSheets[fullName] = spriteSheet;
     await updateFontSelect();
@@ -574,7 +575,7 @@ let getPitch = () => {
   analyser.getFloatTimeDomainData(detectorInput);
   const [pitch, clarity] = detector.findPitch(
     detectorInput,
-    audioContext.sampleRate
+    audioContext.sampleRate,
   );
   //console.log({ pitch, clarity });
   if (clarity < clarityThreshold) {
@@ -667,7 +668,7 @@ const updateMicrophoneSources = async () => {
   }
   audioDevices.forEach((audioInputDevice) => {
     selectMicrophoneOptgroup.appendChild(
-      new Option(audioInputDevice.label, audioInputDevice.deviceId)
+      new Option(audioInputDevice.label, audioInputDevice.deviceId),
     );
   });
   selectMicrophoneSelect.value = "none";
@@ -722,7 +723,7 @@ const stopMicrophoneStream = () => {
   microphoneAudio.setAttribute("hidden", "");
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
-  updateMicrophoneSources()
+  updateMicrophoneSources(),
 );
 device.addEventListener("isConnected", () => {
   updateMicrophoneSources();

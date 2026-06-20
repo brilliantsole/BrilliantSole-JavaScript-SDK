@@ -5,30 +5,143 @@ import * as BS from "../../build/brilliantsole.module.js";
 /** @typedef {import("../utils/three/three.module.min").Quaternion} TQuaternion */
 /** @typedef {import("../utils/three/three.module.min").Euler} TEuler */
 
-// DEVICE
-const device = new BS.Device();
-window.device = device;
-window.BS = BS;
+/** @typedef {(device: BS.Device)=>void} DeviceCallback */
+/** @typedef {(device: BS.Device)=>boolean} DeviceFilterCallback */
 
-// CONNECT
+/** @param {DeviceFilterCallback} deviceFilter */
+const createDeviceStore = (deviceFilter) => {
+  /** @type {BS.Device?} */
+  let currentDevice;
 
-const toggleConnectionButton = document.getElementById("toggleConnection");
-toggleConnectionButton.addEventListener("click", () =>
-  device.toggleConnection(),
-);
-device.addEventListener("connectionStatus", () => {
-  let disabled = false;
-  let innerText = device.connectionStatus;
-  switch (device.connectionStatus) {
-    case "notConnected":
-      innerText = "connect";
-      break;
-    case "connected":
-      innerText = "disconnect";
-      break;
+  /** @type {DeviceCallback[]} */
+  const onDeviceCallbacks = [];
+
+  /** @param {BS.Device} device */
+  const onDevice = (device, replaceCurrentDevice = false) => {
+    if (currentDevice?.isConnected) {
+      if (!replaceCurrentDevice) {
+        return;
+      }
+      currentDevice.removeAllEventListeners();
+    }
+    currentDevice = device;
+    console.log("currentDevice", currentDevice);
+
+    onDeviceCallbacks.forEach((callback) => callback(device));
+  };
+
+  BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+    const { device } = event.message;
+    if (deviceFilter(device) && !currentDevice?.isConnected) {
+      onDevice(device);
+    }
+  });
+
+  BS.DeviceManager.addEventListener("deviceNotConnected", (event) => {
+    const { device } = event.message;
+    if (currentDevice == device) {
+      console.log("currentDevice is gone");
+      currentDevice.removeAllEventListeners();
+      const nextConnectedDevice = BS.DeviceManager.connectedDevices.find(
+        (device) => deviceFilter(device),
+      );
+      console.log("nextConnectedDevice", nextConnectedDevice);
+      if (nextConnectedDevice) {
+        onDevice(nextConnectedDevice);
+      }
+    }
+  });
+
+  return {
+    getDevice: () => currentDevice,
+
+    /** @param {DeviceCallback} callback */
+    addListener: (callback) => {
+      onDeviceCallbacks.push(callback);
+    },
+
+    /** @param {DeviceCallback} callback */
+    removeListener: (callback) => {
+      if (onDeviceCallbacks.includes(callback)) {
+        onDeviceCallbacks.splice(onDeviceCallbacks.indexOf(callback, 1));
+      }
+    },
+  };
+};
+
+const deviceStores = {
+  glasses: createDeviceStore((device) => device.isDisplayAvailable),
+  rotator: createDeviceStore(
+    (device) =>
+      !device.isDisplayAvailable && device.sensorTypes.includes("gameRotation"),
+  ),
+  rightGlove: createDeviceStore((device) => device.type == "rightGlove"),
+};
+window.deviceStores = deviceStores;
+const hasAllDevices = () => {
+  console.log(Object.values(deviceStores).map(({ getDevice }) => getDevice()));
+  Object.values(deviceStores).some(({ getDevice }) => getDevice());
+};
+
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  const isDeviceUsed = Object.values(deviceStores).some(({ getDevice }) => {
+    return getDevice() == device;
+  });
+  if (!isDeviceUsed) {
+    console.log("device isn't used");
+    // device.disconnect();
   }
-  toggleConnectionButton.disabled = disabled;
-  toggleConnectionButton.innerText = innerText;
+});
+
+// ADD DEVICE
+
+const addDeviceButton = document.getElementById("addDevice");
+addDeviceButton.addEventListener("click", () => {
+  BS.Device.Connect();
+});
+BS.DeviceManager.addEventListener("deviceIsConnected", () => {
+  addDeviceButton.disabed = hasAllDevices();
+});
+
+// CONNECTION
+
+/** @type {HTMLButtonElement} */
+const toggleGlassesConnectionButton = document.getElementById(
+  "toggleGlassesConnection",
+);
+
+deviceStores.glasses.addListener((device) => {
+  device.addEventListener(
+    "connectionStatus",
+    (event) => {
+      const { connectionStatus } = event.message;
+
+      let innerText = connectionStatus;
+      let disabled = true;
+      switch (connectionStatus) {
+        case "notConnected":
+          innerText = "connect";
+          break;
+        case "connected":
+          innerText = "disconnect";
+          disabled = false;
+          break;
+      }
+
+      toggleGlassesConnectionButton.innerText = innerText;
+      toggleGlassesConnectionButton.disabled = disabled;
+    },
+    { immediate: true },
+  );
+});
+
+toggleGlassesConnectionButton.addEventListener("click", () => {
+  const device = deviceStores.glasses.getDevice();
+  if (!device) {
+    return;
+  }
+  device.toggleConnection(true);
 });
 
 // CANVAS
@@ -42,13 +155,8 @@ displayCanvasHelper.setSegmentRadius(2, true);
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-device.addEventListener("connected", () => {
-  if (device.isDisplayAvailable) {
-    displayCanvasHelper.device = device;
-  } else {
-    console.error("device doesn't have a display");
-    device.disconnect();
-  }
+deviceStores.glasses.addListener((device) => {
+  displayCanvasHelper.device = device;
 });
 
 // BRIGHTNESS
@@ -136,6 +244,10 @@ const draw = async () => {
   if (!didLoad) {
     return;
   }
+  if (!displayCanvasHelper.isReady) {
+    console.log("not ready yet");
+    return;
+  }
 
   if (isDrawing) {
     //console.warn("busy drawing");
@@ -152,7 +264,7 @@ const draw = async () => {
       await drawScene(punchScene);
       break;
     case "glove":
-      await displayCanvasHelper.selectFillColor(1);
+      await displayCanvasHelper.selectFillColor(1, false);
       await drawScene(gloveScene, (entity) => entity.nodeName == "A-PLANE");
       await displayCanvasHelper.selectFillColor(
         draggingEntity
@@ -160,6 +272,7 @@ const draw = async () => {
           : intersecting
             ? intersectingColorIndex
             : boxColorIndex,
+        false,
       );
       await drawScene(gloveScene, (entity) => entity.nodeName == "A-BOX");
       await drawGloveCursor();
@@ -189,15 +302,18 @@ drawButton.addEventListener("click", () => {
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
 
-device.addEventListener("fileTransferProgress", (event) => {
-  const progress = event.message.progress;
-  //console.log({ progress });
-  fileTransferProgress.value = progress == 1 ? 0 : progress;
-});
-device.addEventListener("fileTransferStatus", () => {
-  if (device.fileTransferStatus == "idle") {
-    fileTransferProgress.value = 0;
-  }
+deviceStores.glasses.addListener((device) => {
+  device.addEventListener("fileTransferProgress", (event) => {
+    const { progress } = event.message;
+    //console.log({ progress });
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+  });
+  device.addEventListener("fileTransferStatus", (event) => {
+    const { fileTransferStatus } = event.message;
+    if (fileTransferStatus == "idle") {
+      fileTransferProgress.value = 0;
+    }
+  });
 });
 
 // SCENE MODE
@@ -251,10 +367,10 @@ const drawScene = async (scene, filterCallback) => {
     };
     await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
     await displayCanvasHelper.selectSpriteSheet("scene");
-    await displayCanvasHelper.selectSpriteColor(1, 1);
-    await displayCanvasHelper.drawSprite(640 / 2, 400 / 2, "wireframe");
+    await displayCanvasHelper.selectSpriteColor(1, 1, false);
+    await displayCanvasHelper.drawSprite(640 / 2, 400 / 2, "wireframe", false);
   } else {
-    await displayCanvasHelper.drawWireframe(wireframe);
+    await displayCanvasHelper.drawWireframe(wireframe, false);
   }
 };
 window.drawScene = drawScene;
@@ -496,11 +612,11 @@ const drawGloveCursor = async () => {
   } else if (intersecting) {
     lineColorIndex = intersectingColorIndex;
   }
-  await displayCanvasHelper.selectLineColor(lineColorIndex);
-  await displayCanvasHelper.selectFillColor(1);
+  await displayCanvasHelper.selectLineColor(lineColorIndex, false);
+  await displayCanvasHelper.selectFillColor(1, false);
   if (fillCircle) {
   } else {
-    await displayCanvasHelper.setIgnoreFill(true);
+    await displayCanvasHelper.setIgnoreFill(true, false);
   }
 
   interpolatedGloveCursorPosition.lerpVectors(
@@ -576,15 +692,15 @@ const drawGloveCursor = async () => {
     radiusY *= bounceScalarY;
   }
 
-  await displayCanvasHelper.setLineWidth(4);
+  await displayCanvasHelper.setLineWidth(4, false);
   if (!isBouncing) {
     radiusX *= scaleX;
     radiusY *= scaleY;
-    await displayCanvasHelper.setRotation(rotation, true);
+    await displayCanvasHelper.setRotation(rotation, true, false);
   }
-  await displayCanvasHelper.drawEllipse(x, y, radiusX, radiusY);
+  await displayCanvasHelper.drawEllipse(x, y, radiusX, radiusY, false);
 
-  await displayCanvasHelper.restoreContext();
+  await displayCanvasHelper.restoreContext(false);
 };
 
 // CAMERA
@@ -899,7 +1015,7 @@ const drawHand = async () => {
     HAND_CONNECTIONS.forEach(([startIndex, endIndex]) => {
       wireframe.edges.push({ startIndex, endIndex });
     });
-    await displayCanvasHelper.drawWireframe(wireframe);
+    await displayCanvasHelper.drawWireframe(wireframe, false);
   }
 };
 
@@ -1091,7 +1207,7 @@ const drawFace = async () => {
     wireframe.edges.pop();
 
     console.log("face wireframe", wireframe);
-    await displayCanvasHelper.drawWireframe(wireframe);
+    await displayCanvasHelper.drawWireframe(wireframe, false);
   }
 };
 
@@ -1142,7 +1258,7 @@ const drawPose = async () => {
     PoseLandmarker.POSE_CONNECTIONS.forEach(({ start, end }) => {
       wireframe.edges.push({ startIndex: start, endIndex: end });
     });
-    await displayCanvasHelper.drawWireframe(wireframe);
+    await displayCanvasHelper.drawWireframe(wireframe, false);
   }
 };
 
@@ -1213,6 +1329,9 @@ autoDrawInput.addEventListener("input", () => {
 });
 let autoDraw = autoDrawInput.checked;
 const setAutoDraw = (newAutoDraw) => {
+  if (autoDraw == newAutoDraw) {
+    return;
+  }
   autoDraw = newAutoDraw;
   console.log({ autoDraw });
   autoDrawInput.checked = autoDraw;
@@ -1220,6 +1339,10 @@ const setAutoDraw = (newAutoDraw) => {
     draw();
   }
 };
+
+displayCanvasHelper.addEventListener("deviceConnected", () => {
+  setAutoDraw(true);
+});
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
@@ -1247,11 +1370,12 @@ const setOrientation = (newOrientationEnabled) => {
     _cameraRig.setAttribute("look-controls", "");
   }
 };
-device.addEventListener("connected", () => {
+deviceStores.glasses.addListener((device) => {
   updateOrientation();
 });
 const updateOrientation = () => {
-  if (device.isConnected) {
+  const device = deviceStores.glasses.getDevice();
+  if (device) {
     device.setSensorConfiguration({
       orientation: orientationEnabled ? orientationSensorRate : 0,
     });
@@ -1263,19 +1387,21 @@ let orientationOffsetYaw = 0;
 const orientationVector3 = new THREE.Vector3();
 /** @type {TEuler} */
 const orientationEuler = new THREE.Euler(0, 0, 0, "YXZ");
-device.addEventListener("orientation", (event) => {
-  const { orientation } = event.message;
+deviceStores.glasses.addListener((device) => {
+  device.addEventListener("orientation", (event) => {
+    const { orientation } = event.message;
 
-  orientationVector3
-    .set(orientation.pitch, orientation.heading, orientation.roll)
-    .multiplyScalar(Math.PI / 180);
-  orientationEuler.setFromVector3(orientationVector3);
+    orientationVector3
+      .set(orientation.pitch, orientation.heading, orientation.roll)
+      .multiplyScalar(Math.PI / 180);
+    orientationEuler.setFromVector3(orientationVector3);
 
-  _cameraRig.object3D.rotation.set(
-    orientationEuler.x,
-    orientationEuler.y - orientationOffsetYaw,
-    orientationEuler.z,
-  );
+    _cameraRig.object3D.rotation.set(
+      orientationEuler.x,
+      orientationEuler.y - orientationOffsetYaw,
+      orientationEuler.z,
+    );
+  });
 });
 
 const calibrateOrientationButton = document.getElementById(
@@ -1289,27 +1415,43 @@ calibrateOrientationButton.addEventListener("click", () => {
 });
 
 // ROTATOR
-const rotator = new BS.Device();
 
+/** @type {HTMLButtonElement} */
 const toggleRotatorConnectionButton = document.getElementById(
   "toggleRotatorConnection",
 );
-toggleRotatorConnectionButton.addEventListener("click", () =>
-  rotator.toggleConnection(),
-);
-rotator.addEventListener("connectionStatus", () => {
-  let disabled = false;
-  let innerText = rotator.connectionStatus;
-  switch (rotator.connectionStatus) {
-    case "notConnected":
-      innerText = "connect";
-      break;
-    case "connected":
-      innerText = "disconnect";
-      break;
+
+deviceStores.rotator.addListener((device) => {
+  device.addEventListener(
+    "connectionStatus",
+    (event) => {
+      const { connectionStatus } = event.message;
+
+      let innerText = connectionStatus;
+      let disabled = true;
+      switch (connectionStatus) {
+        case "notConnected":
+          innerText = "connect";
+          break;
+        case "connected":
+          innerText = "disconnect";
+          disabled = false;
+          break;
+      }
+
+      toggleRotatorConnectionButton.innerText = innerText;
+      toggleRotatorConnectionButton.disabled = disabled;
+    },
+    { immediate: true },
+  );
+});
+
+toggleRotatorConnectionButton.addEventListener("click", () => {
+  const device = deviceStores.rotator.getDevice();
+  if (!device) {
+    return;
   }
-  toggleRotatorConnectionButton.disabled = disabled;
-  toggleRotatorConnectionButton.innerText = innerText;
+  device.toggleConnection(true);
 });
 
 const toggleRotatorCheckbox = document.getElementById("toggleRotator");
@@ -1323,12 +1465,13 @@ const setRotator = (newRotatorEnabled) => {
   console.log({ rotatorEnabled });
   updateRotator();
 };
-rotator.addEventListener("connected", () => {
+deviceStores.rotator.addListener((device) => {
   updateRotator();
 });
 const updateRotator = () => {
-  if (rotator.isConnected) {
-    rotator.setSensorConfiguration({
+  const device = deviceStores.rotator.getDevice();
+  if (device?.isConnected) {
+    device.setSensorConfiguration({
       gameRotation: rotatorEnabled ? rotatorSensorRate : 0,
     });
   }
@@ -1339,13 +1482,15 @@ const rotatorEntity = scene.querySelector(".rotator");
 const rotatorQuaternion = new THREE.Quaternion();
 /** @type {TQuaternion} */
 const rotatorOffsetQuaternion = new THREE.Quaternion();
-rotator.addEventListener("gameRotation", (event) => {
-  const { gameRotation } = event.message;
-  rotatorQuaternion.copy(gameRotation);
-  rotatorEntity.object3D.quaternion.multiplyQuaternions(
-    rotatorOffsetQuaternion,
-    rotatorQuaternion,
-  );
+deviceStores.rotator.addListener((device) => {
+  device.addEventListener("gameRotation", (event) => {
+    const { gameRotation } = event.message;
+    rotatorQuaternion.copy(gameRotation);
+    rotatorEntity.object3D.quaternion.multiplyQuaternions(
+      rotatorOffsetQuaternion,
+      rotatorQuaternion,
+    );
+  });
 });
 
 const calibrateRotatorButton = document.getElementById("calibrateRotator");

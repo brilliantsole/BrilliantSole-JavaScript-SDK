@@ -49,7 +49,6 @@ import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
 import GuardManager from "../utils/GuardManager.ts";
 import {
   parseSensorConfiguration,
-  SensorConfiguration,
   serializeSensorConfiguration,
 } from "../sensor/SensorConfigurationManager.ts";
 import {
@@ -92,35 +91,22 @@ interface ServerEventMessages<ServerClient extends BaseServerClient> {
   clientDisconnected: { client: ServerClient };
 }
 
-export type ServerEventDispatcher<ServerClient extends BaseServerClient> =
-  EventDispatcher<
-    BaseServer<ServerClient>,
-    ServerEventType,
-    ServerEventMessages<ServerClient>
-  >;
-export type ServerEvent<ServerClient extends BaseServerClient> = Event<
-  BaseServer<ServerClient>,
-  ServerEventType,
-  ServerEventMessages<ServerClient>
->;
-export type ServerEventMap<ServerClient extends BaseServerClient> = EventMap<
-  BaseServer<ServerClient>,
-  ServerEventType,
-  ServerEventMessages<ServerClient>
->;
-export type BoundServerEventListeners<ServerClient extends BaseServerClient> =
-  BoundEventListeners<
-    BaseServer<ServerClient>,
-    ServerEventType,
-    ServerEventMessages<ServerClient>
-  >;
-
-export type ServerEventDisptcherTypes<ServerClient extends BaseServerClient> =
+export type ServerEventDispatcherTypes<ServerClient extends BaseServerClient> =
   EventDispatcherTypes<
     BaseServer<ServerClient>,
     ServerEventType,
     ServerEventMessages<ServerClient>
   >;
+export type ServerEvent<ServerClient extends BaseServerClient> =
+  ServerEventDispatcherTypes<ServerClient>["Event"];
+export type ServerEventMap<ServerClient extends BaseServerClient> =
+  ServerEventDispatcherTypes<ServerClient>["EventMap"];
+export type ServerEventListenerMap<ServerClient extends BaseServerClient> =
+  ServerEventDispatcherTypes<ServerClient>["EventListenerMap"];
+export type ServerEventDispatcher<ServerClient extends BaseServerClient> =
+  ServerEventDispatcherTypes<ServerClient>["EventDispatcher"];
+export type BoundServerEventListeners<ServerClient extends BaseServerClient> =
+  ServerEventDispatcherTypes<ServerClient>["BoundEventListeners"];
 
 export interface BaseServerClientContext<
   ServerClient extends BaseServerClient,
