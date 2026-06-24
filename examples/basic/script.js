@@ -4426,6 +4426,10 @@ onCurrentDevice(() => {
             console.log("focusout", input);
             input.isChanging = false;
           });
+          input?.addEventListener("mousedown", (event) => {
+            console.log("mousedown", input);
+            input.isChanging = true;
+          });
           input?.addEventListener("change", (event) => {
             console.log("change", input);
             input.isChanging = false;
