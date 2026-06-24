@@ -62,6 +62,7 @@ import { RequiredTfliteMessageTypes } from "../TfliteManager.ts";
 import { RequiredCameraMessageTypes } from "../CameraManager.ts";
 import { RequiredMicrophoneMessageTypes } from "../MicrophoneManager.ts";
 import { RequiredDisplayMessageTypes } from "../DisplayManager.ts";
+import { serializeContextCommands } from "../utils/DisplayContextCommand.ts";
 
 const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...DeviceInformationTypes,
@@ -369,7 +370,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
   #createDeviceMessage(
     device: Device,
-    messageType: ConnectionMessageType,
+    messageType: DeviceEventType,
     dataView?: DataView,
   ): DeviceMessage {
     switch (messageType) {
@@ -377,16 +378,35 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         return {
           type: "cameraData",
           // @ts-expect-error
-          data: dataView || device._buildCameraData(),
+          data: dataView ?? device._buildCameraData(),
         };
+        break;
+      case "displayContextCommands":
+        return {
+          type: "displayContextCommands",
+          data: serializeContextCommands(
+            device.displayManager,
+            device.displayManager.serializeContextState(),
+          ),
+        };
+        break;
       default:
-        _console.assertWithError(
-          device.latestConnectionMessages.has(messageType),
-          `device doesn't have messageType "${messageType}"`,
-        );
+        if (
+          ConnectionMessageTypes.includes(messageType as ConnectionMessageType)
+        ) {
+          const connectionMessageType = messageType as ConnectionMessageType;
+          _console.assertWithError(
+            device.latestConnectionMessages.has(connectionMessageType),
+            `device doesn't have messageType "${messageType}"`,
+          );
+          dataView =
+            dataView ??
+            device.latestConnectionMessages.get(connectionMessageType);
+        }
+
         return {
           type: messageType as DeviceEventType,
-          data: dataView || device.latestConnectionMessages.get(messageType),
+          data: dataView,
         };
     }
   }
@@ -826,6 +846,20 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           if (device.hasCamera) {
             if (this.#allowDeviceToClient(device, client, "cameraData")) {
               messages.push(this.#createDeviceMessage(device, "cameraData"));
+            }
+          }
+
+          if (device.isDisplayAvailable) {
+            if (
+              this.#allowDeviceToClient(
+                device,
+                client,
+                "displayContextCommands",
+              )
+            ) {
+              messages.push(
+                this.#createDeviceMessage(device, "displayContextCommands"),
+              );
             }
           }
 

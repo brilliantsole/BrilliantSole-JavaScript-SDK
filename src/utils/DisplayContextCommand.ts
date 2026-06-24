@@ -9,6 +9,8 @@ import {
   displayCurveTypesPerByte,
   DisplaySpriteColorPair,
   DisplayWireframe,
+  DisplayWireframeEdge,
+  displayPointDataTypeToSize,
 } from "../DisplayManager.ts";
 import {
   concatenateArrayBuffers,
@@ -16,7 +18,11 @@ import {
 } from "./ArrayBufferUtils.ts";
 import { rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
-import { drawBitmapHeaderLength, getBitmapData } from "./DisplayBitmapUtils.ts";
+import {
+  drawBitmapHeaderLength,
+  getBitmapData,
+  parseBitmap,
+} from "./DisplayBitmapUtils.ts";
 import {
   DisplayAlignment,
   DisplayAlignments,
@@ -26,7 +32,10 @@ import {
   DisplaySegmentCaps,
 } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
-import { DisplaySpriteSerializedLines } from "./DisplaySpriteSheetUtils.ts";
+import {
+  DisplaySpriteSerializedLine,
+  DisplaySpriteSerializedLines,
+} from "./DisplaySpriteSheetUtils.ts";
 import {
   assertValidAlignment,
   assertValidColor,
@@ -46,16 +55,12 @@ import {
   serializePoints,
   getPointDataType,
   DisplayColorRGBOrString,
+  parseRotation,
+  parseScale,
+  parsePoints,
+  getNumberOfConrolPoints,
 } from "./DisplayUtils.ts";
-import {
-  clamp,
-  degToRad,
-  Int16Max,
-  Int16Min,
-  normalizeRadians,
-  twoPi,
-  Vector2,
-} from "./MathUtils.ts";
+import { clamp, degToRad, normalizeRadians, Vector2 } from "./MathUtils.ts";
 import { deepEqual } from "./ObjectUtils.ts";
 
 const _console = createConsole("DisplayContextCommand", { log: false });
@@ -726,7 +731,7 @@ export function serializeContextCommand(
         }
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint8(0, colorIndex);
-        dataView.setUint8(1, opacity * 255);
+        dataView.setUint8(1, Math.round(opacity * 255));
       }
       break;
     case "setOpacity":
@@ -1140,8 +1145,8 @@ export function serializeContextCommand(
         dataView = new DataView(new ArrayBuffer(2 * 4));
         dataView.setInt16(0, x, true);
         dataView.setInt16(2, y, true);
-        dataView.setInt16(4, width, true);
-        dataView.setInt16(6, height, true);
+        dataView.setUint16(4, width, true);
+        dataView.setUint16(6, height, true);
       }
       break;
     case "drawRect":
@@ -1339,10 +1344,7 @@ export function serializeContextCommand(
         startAngle = normalizeRadians(startAngle);
 
         angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-        angleOffset = clamp(angleOffset, -twoPi, twoPi);
-
-        angleOffset /= twoPi;
-        angleOffset *= (angleOffset > 0 ? Int16Max - 1 : -Int16Min) - 1;
+        angleOffset = normalizeRadians(angleOffset);
 
         isRadians = true;
 
@@ -1351,7 +1353,11 @@ export function serializeContextCommand(
         dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, radius, true);
         dataView.setUint16(6, formatRotation(startAngle, isRadians), true);
-        dataView.setInt16(8, angleOffset, true);
+        dataView.setInt16(
+          8,
+          formatRotation(angleOffset, isRadians, true),
+          true,
+        );
       }
       break;
     case "drawArcEllipse":
@@ -1370,10 +1376,7 @@ export function serializeContextCommand(
         startAngle = normalizeRadians(startAngle);
 
         angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-        angleOffset = clamp(angleOffset, -twoPi, twoPi);
-
-        angleOffset /= twoPi;
-        angleOffset *= (angleOffset > 0 ? Int16Max : -Int16Min) - 1;
+        angleOffset = normalizeRadians(angleOffset);
 
         isRadians = true;
 
@@ -1544,6 +1547,763 @@ export function serializeContextCommands(
     serializedContextCommands,
   );
   return serializedContextCommands;
+}
+
+export function parseContextCommands(
+  displayManager: DisplayManagerInterface,
+  dataView: DataView,
+) {
+  _console.log("parseContextCommands", displayManager, dataView);
+  const contextCommands: DisplayContextCommand[] = [];
+  let offset = 0;
+  while (offset < dataView.byteLength) {
+    const commandTypeIndex = dataView.getUint8(offset++);
+    const type = DisplayContextCommandTypes[commandTypeIndex];
+    _console.assertWithError(
+      type,
+      `invalid commandTypeIndex ${commandTypeIndex}`,
+    );
+    let command: DisplayContextCommand | undefined;
+
+    switch (type) {
+      case "show":
+      case "clear":
+      case "saveContext":
+      case "restoreContext":
+      case "clearRotation":
+      case "clearCrop":
+      case "clearRotationCrop":
+      case "resetBitmapScale":
+      case "resetSpriteColors":
+      case "resetSpriteScale":
+      case "resetAlignment":
+      case "endSprite":
+      case "clearContext":
+        command = { type };
+        break;
+      case "setColor":
+        {
+          const colorIndex = dataView.getUint8(offset++);
+          const r = dataView.getUint8(offset++);
+          const g = dataView.getUint8(offset++);
+          const b = dataView.getUint8(offset++);
+          command = { type, colorIndex, color: { r, g, b } };
+        }
+        break;
+      case "setColorOpacity":
+        {
+          const colorIndex = dataView.getUint8(offset++);
+          const opacity = dataView.getUint8(offset++) / 255;
+          command = { type, colorIndex, opacity };
+        }
+        break;
+      case "setOpacity":
+        {
+          const opacity = dataView.getUint8(offset++) / 255;
+          command = { type, opacity };
+        }
+        break;
+      case "selectFillColor":
+        {
+          const fillColorIndex = dataView.getUint8(offset++);
+          command = { type, fillColorIndex };
+        }
+        break;
+      case "selectBackgroundColor":
+        {
+          const backgroundColorIndex = dataView.getUint8(offset++);
+          command = { type, backgroundColorIndex };
+        }
+        break;
+      case "selectLineColor":
+        {
+          const lineColorIndex = dataView.getUint8(offset++);
+          command = { type, lineColorIndex };
+        }
+        break;
+      case "setIgnoreFill":
+        {
+          const ignoreFill = Boolean(dataView.getUint8(offset++));
+          command = { type, ignoreFill };
+        }
+        break;
+      case "setIgnoreLine":
+        {
+          const ignoreLine = Boolean(dataView.getUint8(offset++));
+          command = { type, ignoreLine };
+        }
+        break;
+      case "setFillBackground":
+        {
+          const fillBackground = Boolean(dataView.getUint8(offset++));
+          command = { type, fillBackground };
+        }
+        break;
+      case "setLineWidth":
+        {
+          const lineWidth = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, lineWidth };
+        }
+        break;
+      case "setHorizontalAlignment":
+        {
+          const horizontalAlignment =
+            DisplayAlignments[dataView.getUint8(offset++)];
+          _console.assertEnumWithError(horizontalAlignment, DisplayAlignments);
+          command = { type, horizontalAlignment };
+        }
+        break;
+      case "setVerticalAlignment":
+        {
+          const verticalAlignment =
+            DisplayAlignments[dataView.getUint8(offset++)];
+          _console.assertEnumWithError(verticalAlignment, DisplayAlignments);
+          command = { type, verticalAlignment };
+        }
+        break;
+      case "setRotation":
+        {
+          const isRadians = true;
+          const rotation = parseRotation(
+            dataView.getUint16(offset, true),
+            isRadians,
+          );
+          offset += 2;
+          command = { type, rotation, isRadians };
+        }
+        break;
+      case "setSegmentStartCap":
+        {
+          const segmentStartCap =
+            DisplaySegmentCaps[dataView.getUint8(offset++)];
+          _console.assertEnumWithError(segmentStartCap, DisplaySegmentCaps);
+          command = { type, segmentStartCap };
+        }
+        break;
+      case "setSegmentEndCap":
+        {
+          const segmentEndCap = DisplaySegmentCaps[dataView.getUint8(offset++)];
+          _console.assertEnumWithError(segmentEndCap, DisplaySegmentCaps);
+          command = { type, segmentEndCap };
+        }
+        break;
+      case "setSegmentCap":
+        {
+          const segmentCap = DisplaySegmentCaps[dataView.getUint8(offset++)];
+          _console.assertEnumWithError(segmentCap, DisplaySegmentCaps);
+          command = { type, segmentCap };
+        }
+        break;
+      case "setSegmentStartRadius":
+        {
+          const segmentStartRadius = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, segmentStartRadius };
+        }
+        break;
+      case "setSegmentEndRadius":
+        {
+          const segmentEndRadius = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, segmentEndRadius };
+        }
+        break;
+      case "setSegmentRadius":
+        {
+          const segmentRadius = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, segmentRadius };
+        }
+        break;
+      case "setCropTop":
+        {
+          const cropTop = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, cropTop };
+        }
+        break;
+      case "setCropRight":
+        {
+          const cropRight = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, cropRight };
+        }
+        break;
+      case "setCropBottom":
+        {
+          const cropBottom = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, cropBottom };
+        }
+        break;
+      case "setCropLeft":
+        {
+          const cropLeft = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, cropLeft };
+        }
+        break;
+      case "setRotationCropTop":
+        {
+          const rotationCropTop = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, rotationCropTop };
+        }
+        break;
+      case "setRotationCropRight":
+        {
+          const rotationCropRight = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, rotationCropRight };
+        }
+        break;
+      case "setRotationCropBottom":
+        {
+          const rotationCropBottom = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, rotationCropBottom };
+        }
+        break;
+      case "setRotationCropLeft":
+        {
+          const rotationCropLeft = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, rotationCropLeft };
+        }
+        break;
+      case "selectBitmapColor":
+        {
+          const bitmapColorIndex = dataView.getUint8(offset++);
+          const colorIndex = dataView.getUint8(offset++);
+          command = { type, bitmapColorIndex, colorIndex };
+        }
+        break;
+      case "selectBitmapColors":
+        {
+          const numberOfBitmapColorPairs = dataView.getUint8(offset++);
+          const bitmapColorPairs: DisplayBitmapColorPair[] = [];
+          for (let i = 0; i < numberOfBitmapColorPairs; i++) {
+            const bitmapColorIndex = dataView.getUint8(offset++);
+            const colorIndex = dataView.getUint8(offset++);
+            bitmapColorPairs.push({ bitmapColorIndex, colorIndex });
+          }
+          command = { type, bitmapColorPairs };
+        }
+        break;
+      case "setBitmapScaleX":
+        {
+          const bitmapScaleX = parseScale(dataView.getInt16(offset, true));
+          offset += 2;
+          command = { type, bitmapScaleX };
+        }
+        break;
+      case "setBitmapScaleY":
+        {
+          const bitmapScaleY = parseScale(dataView.getInt16(offset, true));
+          offset += 2;
+          command = { type, bitmapScaleY };
+        }
+        break;
+      case "setBitmapScale":
+        {
+          const bitmapScale = parseScale(dataView.getInt16(offset, true));
+          offset += 2;
+          command = { type, bitmapScale };
+        }
+        break;
+      case "selectSpriteColor":
+        {
+          const spriteColorIndex = dataView.getUint8(offset++);
+          const colorIndex = dataView.getUint8(offset++);
+          command = { type, spriteColorIndex, colorIndex };
+        }
+        break;
+      case "selectSpriteColors":
+        {
+          const numberOfSpriteColorPairs = dataView.getUint8(offset++);
+          const spriteColorPairs: DisplaySpriteColorPair[] = [];
+          for (let i = 0; i < numberOfSpriteColorPairs; i++) {
+            const spriteColorIndex = dataView.getUint8(offset++);
+            const colorIndex = dataView.getUint8(offset++);
+            spriteColorPairs.push({ spriteColorIndex, colorIndex });
+          }
+          command = { type, spriteColorPairs };
+        }
+        break;
+      case "setSpriteScaleX":
+        {
+          const spriteScaleX = parseScale(dataView.getInt16(offset, true));
+          offset += 2;
+          command = { type, spriteScaleX };
+        }
+        break;
+      case "setSpriteScaleY":
+        {
+          const spriteScaleY = parseScale(dataView.getInt16(offset, true));
+          offset += 2;
+          command = { type, spriteScaleY };
+        }
+        break;
+      case "setSpriteScale":
+        {
+          const spriteScale = parseScale(dataView.getInt16(offset, true));
+          offset += 2;
+          command = { type, spriteScale };
+        }
+        break;
+      case "setSpritesLineHeight":
+        {
+          const spritesLineHeight = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, spritesLineHeight };
+        }
+        break;
+      case "setSpritesDirection":
+        {
+          const spritesDirection =
+            DisplayDirections[dataView.getUint8(offset++)];
+          _console.assertEnumWithError(spritesDirection, DisplayDirections);
+          command = { type, spritesDirection };
+        }
+        break;
+      case "setSpritesLineDirection":
+        {
+          const spritesLineDirection =
+            DisplayDirections[dataView.getUint8(offset++)];
+          _console.assertEnumWithError(spritesLineDirection, DisplayDirections);
+          command = { type, spritesLineDirection };
+        }
+        break;
+      case "setSpritesSpacing":
+        {
+          const spritesSpacing = dataView.getInt16(offset, true);
+          offset += 2;
+          command = { type, spritesSpacing };
+        }
+        break;
+      case "setSpritesLineSpacing":
+        {
+          const spritesLineSpacing = dataView.getInt16(offset, true);
+          offset += 2;
+          command = { type, spritesLineSpacing };
+        }
+        break;
+      case "setSpritesAlignment":
+        {
+          const spritesAlignment =
+            DisplayAlignments[dataView.getUint8(offset++)];
+          _console.assertEnumWithError(spritesAlignment, DisplayAlignments);
+          command = { type, spritesAlignment };
+        }
+        break;
+      case "setSpritesLineAlignment":
+        {
+          const spritesLineAlignment =
+            DisplayAlignments[dataView.getUint8(offset++)];
+          _console.assertEnumWithError(spritesLineAlignment, DisplayAlignments);
+          command = { type, spritesLineAlignment };
+        }
+        break;
+      case "clearRect":
+        {
+          const x = dataView.getInt16(offset, true);
+          offset += 2;
+          const y = dataView.getInt16(offset, true);
+          offset += 2;
+          const width = dataView.getUint16(offset, true);
+          offset += 2;
+          const height = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, x, y, width, height };
+        }
+        break;
+      case "drawRect":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+          const width = dataView.getUint16(offset, true);
+          offset += 2;
+          const height = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, offsetX, offsetY, width, height };
+        }
+        break;
+      case "drawRoundRect":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+          const width = dataView.getUint16(offset, true);
+          offset += 2;
+          const height = dataView.getUint16(offset, true);
+          offset += 2;
+          const borderRadius = dataView.getUint8(offset++);
+          command = { type, offsetX, offsetY, width, height, borderRadius };
+        }
+        break;
+      case "drawCircle":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+          const radius = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, offsetX, offsetY, radius };
+        }
+        break;
+      case "drawEllipse":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+          const radiusX = dataView.getUint16(offset, true);
+          offset += 2;
+          const radiusY = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, offsetX, offsetY, radiusX, radiusY };
+        }
+        break;
+      case "drawRegularPolygon":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+          const radius = dataView.getUint16(offset, true);
+          offset += 2;
+          const numberOfSides = dataView.getUint8(offset++);
+          command = { type, offsetX, offsetY, radius, numberOfSides };
+        }
+        break;
+      case "drawPolygon":
+        {
+          const { points, offset: newOffset } = parsePoints(dataView, offset);
+          offset = newOffset;
+          command = { type, points };
+        }
+        break;
+      case "drawWireframe":
+        {
+          const { points, offset: newOffset } = parsePoints(dataView, offset);
+          offset = newOffset;
+
+          const numberOfEdges = dataView.getUint8(offset++);
+          _console.assertWithError(
+            numberOfEdges >= 2,
+            `numberOfEdges ${numberOfEdges} must be at least 2`,
+          );
+          const edges: DisplayWireframeEdge[] = [];
+          for (let i = 0; i < numberOfEdges; i++) {
+            const startIndex = dataView.getUint8(offset++);
+            const endIndex = dataView.getUint8(offset++);
+            edges.push({ startIndex, endIndex });
+          }
+
+          const wireframe: DisplayWireframe = { points, edges };
+          command = { type, wireframe };
+        }
+        break;
+      case "drawQuadraticBezierCurve":
+      case "drawCubicBezierCurve":
+        {
+          const controlPoints: Vector2[] = [];
+          const curveType: DisplayBezierCurveType =
+            type == "drawCubicBezierCurve" ? "cubic" : "quadratic";
+          const numberOfConrolPoints = getNumberOfConrolPoints(curveType);
+          for (let i = 0; i < numberOfConrolPoints; i++) {
+            const x = dataView.getInt16(offset, true);
+            offset += 2;
+            const y = dataView.getInt16(offset, true);
+            offset += 2;
+            controlPoints.push({ x, y });
+          }
+          command = { type, controlPoints };
+        }
+        break;
+      case "drawQuadraticBezierCurves":
+      case "drawCubicBezierCurves":
+        {
+          const { points: controlPoints, offset: newOffset } = parsePoints(
+            dataView,
+            offset,
+          );
+          offset = newOffset;
+          command = { type, controlPoints };
+        }
+        break;
+      case "drawPath":
+      case "drawClosedPath":
+        {
+          const curves: DisplayBezierCurve[] = [];
+          const pointDataType =
+            DisplayPointDataTypes[dataView.getUint8(offset++)];
+          _console.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+          const numberOfCurves = dataView.getUint8(offset++);
+          const curveTypeDataLength = Math.ceil(
+            numberOfCurves / displayCurveTypesPerByte,
+          );
+          const totalNumberOfControlPoints = dataView.getUint8(offset++);
+          const pathDataLength =
+            curveTypeDataLength +
+            totalNumberOfControlPoints *
+              displayPointDataTypeToSize[pointDataType];
+          _console.assertWithError(
+            offset + pathDataLength > dataView.byteLength,
+            `offset + pathDataLength ${offset + pathDataLength} exceeds dataView.byteLength ${dataView.byteLength}`,
+          );
+
+          const curveTypeDataOffset = offset;
+          offset += curveTypeDataLength;
+
+          for (let index = 0; index < numberOfCurves; index++) {
+            const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
+            const typeBitShift =
+              (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
+            const typeValue = dataView.getUint8(
+              curveTypeDataOffset + typeByteIndex,
+            );
+            const typeIndex =
+              (typeValue >> typeBitShift) &
+              ((1 << displayCurveTypeBitWidth) - 1);
+            const type = DisplayBezierCurveTypes[typeIndex];
+
+            const { points: controlPoints, offset: newOffset } = parsePoints(
+              dataView,
+              offset,
+            );
+            offset = newOffset;
+            curves.push({ type, controlPoints });
+          }
+
+          command = { type, curves };
+        }
+        break;
+      case "drawSegment":
+        {
+          const startX = dataView.getInt16(offset, true);
+          offset += 2;
+          const startY = dataView.getInt16(offset, true);
+          offset += 2;
+          const endX = dataView.getInt16(offset, true);
+          offset += 2;
+          const endY = dataView.getInt16(offset, true);
+          offset += 2;
+          command = { type, startX, startY, endX, endY };
+        }
+        break;
+      case "drawSegments":
+        {
+          const { points, offset: newOffset } = parsePoints(dataView, offset);
+          offset = newOffset;
+          command = { type, points };
+        }
+        break;
+      case "drawArc":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+
+          const isRadians = true;
+
+          const radius = dataView.getUint16(offset, true);
+          offset += 2;
+
+          const startAngle = parseRotation(
+            dataView.getUint16(offset, true),
+            isRadians,
+          );
+          offset += 2;
+
+          const angleOffset = parseRotation(
+            dataView.getInt16(offset, true),
+            isRadians,
+          );
+          offset += 2;
+
+          command = {
+            type,
+            offsetX,
+            offsetY,
+            radius,
+            isRadians,
+            startAngle,
+            angleOffset,
+          };
+        }
+        break;
+      case "drawArcEllipse":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+
+          const isRadians = true;
+
+          const radiusX = dataView.getUint16(offset, true);
+          offset += 2;
+          const radiusY = dataView.getUint16(offset, true);
+          offset += 2;
+
+          const startAngle = parseRotation(
+            dataView.getUint16(offset, true),
+            isRadians,
+          );
+          offset += 2;
+
+          const angleOffset = parseRotation(
+            dataView.getInt16(offset, true),
+            isRadians,
+          );
+          offset += 2;
+
+          command = {
+            type,
+            offsetX,
+            offsetY,
+            radiusX,
+            radiusY,
+            isRadians,
+            startAngle,
+            angleOffset,
+          };
+        }
+        break;
+      case "drawBitmap":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+          const { bitmap, offset: newOffset } = parseBitmap(dataView, offset);
+          offset = newOffset;
+          command = { type, offsetX, offsetY, bitmap };
+        }
+        break;
+      case "selectSpriteSheet":
+        {
+          const spriteSheetIndex = dataView.getUint8(offset++);
+          command = { type, spriteSheetIndex };
+        }
+        break;
+      case "drawSprite":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+
+          _console.assertWithError(
+            displayManager.selectedSpriteSheet,
+            "displayManager doesn't have a selected spriteSheet",
+          );
+          const use2Bytes =
+            displayManager.selectedSpriteSheet!.sprites.length > 255;
+          let spriteIndex: number;
+          if (use2Bytes) {
+            spriteIndex = dataView.getUint16(offset, true);
+            offset += 2;
+          } else {
+            spriteIndex = dataView.getUint8(offset++);
+          }
+
+          command = { type, offsetX, offsetY, spriteIndex, use2Bytes };
+        }
+        break;
+      case "drawSprites":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+          const linesDataLength = dataView.getUint16(offset, true);
+          offset += 2;
+
+          const linesDataEnd = offset + linesDataLength;
+
+          const spriteSerializedLines: DisplaySpriteSerializedLines = [];
+
+          while (offset < linesDataEnd) {
+            const lineDataLength = dataView.getUint16(offset, true);
+            offset += 2;
+
+            const lineDataEnd = offset + lineDataLength;
+
+            const spriteLine: DisplaySpriteSerializedLine = [];
+
+            while (offset < lineDataEnd) {
+              const spriteSheetIndex = dataView.getUint8(offset++);
+              const spriteCount = dataView.getUint8(offset++);
+
+              const spriteSheet =
+                displayManager.getSpriteSheetByIndex(spriteSheetIndex);
+              _console.assertWithError(
+                spriteSheet,
+                `no spriteSheet found for spriteSheetIndex ${spriteSheetIndex}`,
+              );
+
+              const use2Bytes = spriteSheet!.sprites.length > 255;
+
+              const spriteIndices: number[] = [];
+              for (let i = 0; i < spriteCount; i++) {
+                spriteIndices.push(
+                  use2Bytes
+                    ? dataView.getUint16(offset, true)
+                    : dataView.getUint8(offset),
+                );
+                offset += use2Bytes ? 2 : 1;
+              }
+
+              spriteLine.push({
+                spriteSheetIndex,
+                spriteIndices,
+                use2Bytes,
+              });
+            }
+
+            spriteSerializedLines.push(spriteLine);
+          }
+
+          command = { type, offsetX, offsetY, spriteSerializedLines };
+        }
+        break;
+      case "startSprite":
+        {
+          const offsetX = dataView.getInt16(offset, true);
+          offset += 2;
+          const offsetY = dataView.getInt16(offset, true);
+          offset += 2;
+          const width = dataView.getUint16(offset, true);
+          offset += 2;
+          const height = dataView.getUint16(offset, true);
+          offset += 2;
+          command = { type, offsetX, offsetY, width, height };
+        }
+        break;
+      default:
+        _console.error(`uncaught commandType "${type}"`);
+        break;
+    }
+
+    _console.log("command", command);
+
+    _console.assertWithError(
+      command,
+      `no command found for commandType "${type}"`,
+    );
+
+    contextCommands.push(command!);
+  }
+  _console.log("parsed contextCommands", contextCommands);
+  return contextCommands;
 }
 
 const DrawDisplayContextCommandTypes = [

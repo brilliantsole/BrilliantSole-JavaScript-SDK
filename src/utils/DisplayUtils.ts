@@ -28,6 +28,7 @@ import {
 import {
   getVector2Distance,
   Int16Max,
+  Int16Min,
   Uint16Max,
   Vector2,
 } from "./MathUtils.ts";
@@ -52,12 +53,33 @@ export function formatRotation(
     rotation /= 360;
   }
   if (isSigned) {
-    rotation *= Int16Max;
+    rotation *= (rotation > 0 ? Int16Max - 1 : -Int16Min) - 1;
   } else {
     rotation *= Uint16Max;
   }
   rotation = Math.floor(rotation);
   _console.log({ formattedRotation: rotation });
+  return rotation;
+}
+export function parseRotation(
+  formattedRotation: number,
+  isRadians?: boolean,
+  isSigned?: boolean,
+) {
+  let rotation = formattedRotation;
+
+  if (isSigned) {
+    rotation /= Int16Max;
+  } else {
+    rotation /= Uint16Max;
+  }
+
+  if (isRadians) {
+    rotation *= 2 * Math.PI;
+  } else {
+    rotation *= 360;
+  }
+  _console.log({ parsedRotation: rotation });
   return rotation;
 }
 
@@ -70,13 +92,19 @@ export function roundToStep(value: number, step: number) {
 export const minDisplayScale = -50;
 export const maxDisplayScale = 50;
 export const displayScaleStep = 0.002;
-export function formatScale(bitmapScale: number) {
-  bitmapScale /= displayScaleStep;
-  //_console.log({ formattedBitmapScale: bitmapScale });
-  return bitmapScale;
+
+export function formatScale(scale: number) {
+  scale /= displayScaleStep;
+  //_console.log({ formattedScale: scale });
+  return scale;
 }
-export function roundScale(bitmapScale: number) {
-  return roundToStep(bitmapScale, displayScaleStep);
+export function parseScale(scale: number) {
+  scale *= displayScaleStep;
+  //_console.log({ parsedScale: scale });
+  return scale;
+}
+export function roundScale(scale: number) {
+  return roundToStep(scale, displayScaleStep);
 }
 
 export function assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
@@ -294,15 +322,22 @@ export function assertValidNumberOfControlPoints(
   controlPoints: Vector2[],
   isPath = false,
 ) {
+  const numberOfControlPoints = getNumberOfConrolPoints(curveType, isPath);
+  _console.assertWithError(
+    controlPoints.length == numberOfControlPoints,
+    `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`,
+  );
+}
+export function getNumberOfConrolPoints(
+  curveType: DisplayBezierCurveType,
+  isPath = false,
+) {
   let numberOfControlPoints =
     displayCurveTypeToNumberOfControlPoints[curveType];
   if (isPath) {
     numberOfControlPoints -= 1;
   }
-  _console.assertWithError(
-    controlPoints.length == numberOfControlPoints,
-    `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`,
-  );
+  return numberOfControlPoints;
 }
 export function assertValidPathNumberOfControlPoints(
   curveType: DisplayBezierCurveType,
@@ -580,4 +615,42 @@ export function serializePoints(
     }
   });
   return dataView;
+}
+
+export function parsePoints(dataView: DataView, offset: number) {
+  const points: Vector2[] = [];
+  const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
+  _console.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+  const numberOfPoints = dataView.getUint8(offset++);
+  _console.assertWithError(
+    numberOfPoints >= 3,
+    `numberOfPoints ${numberOfPoints} must be at least 3`,
+  );
+
+  for (let i = 0; i < numberOfPoints; i++) {
+    let x, y: number;
+    switch (pointDataType) {
+      case "int8":
+        x = dataView.getInt8(offset++);
+        y = dataView.getInt8(offset++);
+        break;
+      case "int16":
+        x = dataView.getInt16(offset, true);
+        offset += 2;
+        y = dataView.getInt16(offset, true);
+        offset += 2;
+        break;
+      case "float":
+        x = dataView.getFloat32(offset, true);
+        offset += 4;
+        y = dataView.getFloat32(offset, true);
+        offset += 4;
+        break;
+      default:
+        throw Error(`uncaught pointDataType "${pointDataType}"`);
+    }
+    points.push({ x, y });
+  }
+
+  return { points, offset };
 }

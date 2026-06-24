@@ -26,10 +26,10 @@ export function getBitmapData(bitmap: DisplayBitmap) {
   const dataView = new DataView(new ArrayBuffer(pixelDataLength));
   const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors)!;
   const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+  const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
   bitmap.pixels.forEach((bitmapColorIndex, pixelIndex) => {
     const byteIndex = Math.floor(pixelIndex / pixelsPerByte);
     const byteSlot = pixelIndex % pixelsPerByte;
-    const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
     const bitOffset = pixelBitWidth * byteSlot;
     const shift = 8 - pixelBitWidth - bitOffset;
     let value = dataView.getUint8(byteIndex);
@@ -40,14 +40,49 @@ export function getBitmapData(bitmap: DisplayBitmap) {
   return dataView;
 }
 
+export function parseBitmap(dataView: DataView, offset: number) {
+  const width = dataView.getUint16(offset, true);
+  offset += 2;
+  const numberOfPixels = dataView.getUint32(offset, true);
+  offset += 4;
+  const numberOfColors = dataView.getUint8(offset++);
+  const pixelDataLength = dataView.getUint16(offset, true);
+  offset += 2;
+
+  const height = Math.round(numberOfPixels / width);
+
+  const pixelDepth = numberOfColorsToPixelDepth(numberOfColors)!;
+  const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+  const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
+  const pixels: number[] = [];
+  let pixelIndex = 0;
+  for (let byteIndex = 0; byteIndex < pixelDataLength; byteIndex++) {
+    const value = dataView.getUint8(offset++);
+    for (let byteSlot = 0; byteSlot < pixelsPerByte; byteSlot++) {
+      const bitOffset = pixelBitWidth * byteSlot;
+      const shift = 8 - pixelBitWidth - bitOffset;
+      const bitmapColorIndex = (value >> shift) & ((1 << pixelBitWidth) - 1);
+      pixels[pixelIndex++] = bitmapColorIndex;
+    }
+  }
+
+  const bitmap: DisplayBitmap = {
+    width,
+    height,
+    numberOfColors,
+    pixels,
+  };
+  return { bitmap, offset };
+}
+
 export async function quantizeCanvas(
   canvas: HTMLCanvasElement,
   numberOfColors: number,
-  colors?: string[]
+  colors?: string[],
 ) {
   _console.assertWithError(
     numberOfColors > 1,
-    "numberOfColors must be greater than 1"
+    "numberOfColors must be greater than 1",
   );
 
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
@@ -85,7 +120,7 @@ export async function quantizeCanvas(
   const quantizedImageData = new ImageData(
     new Uint8ClampedArray(quantizedPixels.buffer),
     canvas.width,
-    canvas.height
+    canvas.height,
   );
   ctx.putImageData(quantizedImageData, 0, 0);
 
@@ -171,7 +206,7 @@ export async function quantizeImage(
   height: number,
   numberOfColors: number,
   colors?: string[],
-  canvas?: HTMLCanvasElement
+  canvas?: HTMLCanvasElement,
 ) {
   canvas = canvas || document.createElement("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
@@ -193,7 +228,7 @@ export function resizeImage(
   image: CanvasImageSource,
   width: number,
   height: number,
-  canvas?: HTMLCanvasElement
+  canvas?: HTMLCanvasElement,
 ) {
   canvas = canvas || document.createElement("canvas");
 
@@ -214,7 +249,7 @@ export function cropCanvas(
   y: number,
   width: number,
   height: number,
-  targetCanvas?: HTMLCanvasElement
+  targetCanvas?: HTMLCanvasElement,
 ) {
   targetCanvas = targetCanvas || document.createElement("canvas");
   const ctx = targetCanvas.getContext("2d", { willReadFrequently: true })!;
@@ -252,7 +287,7 @@ export function removeAlphaFromCanvas(canvas: HTMLCanvasElement) {
 export async function canvasToBlob(
   canvas: HTMLCanvasElement,
   type: "image/png" | "image/jpeg" = "image/jpeg",
-  quality: number = 1
+  quality: number = 1,
 ) {
   const promise = new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -264,7 +299,7 @@ export async function canvasToBlob(
         }
       },
       type,
-      quality
+      quality,
     );
   });
   const blob = await promise;
@@ -277,7 +312,7 @@ export async function resizeAndQuantizeImage(
   height: number,
   numberOfColors: number,
   colors?: string[],
-  canvas?: HTMLCanvasElement
+  canvas?: HTMLCanvasElement,
 ) {
   canvas = canvas || document.createElement("canvas");
   resizeImage(image, width, height, canvas);
@@ -291,7 +326,7 @@ export async function imageToBitmap(
   height: number,
   colors: string[],
   bitmapColorIndices: number[],
-  numberOfColors?: number
+  numberOfColors?: number,
 ) {
   if (numberOfColors == undefined) {
     numberOfColors = colors.length;
@@ -304,7 +339,7 @@ export async function imageToBitmap(
     width,
     height,
     numberOfColors,
-    bitmapColors
+    bitmapColors,
   );
   const bitmap: DisplayBitmap = {
     numberOfColors,
@@ -319,11 +354,11 @@ const drawSpriteBitmapCommandHeaderLength = 1 + 2 + 2 + 2 + 2 + 1 + 2; // comman
 export async function canvasToBitmaps(
   canvas: HTMLCanvasElement,
   numberOfColors: number,
-  mtu: number
+  mtu: number,
 ) {
   const { blob, colors, colorIndices } = await quantizeCanvas(
     canvas,
-    numberOfColors
+    numberOfColors,
   );
   const bitmapRows: DisplayBitmap[][] = [];
 
@@ -331,11 +366,11 @@ export async function canvasToBitmaps(
 
   const numberOfPixels = width * height;
   const pixelDepth = DisplayPixelDepths.find(
-    (pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors
+    (pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors,
   )!;
   _console.assertWithError(
     pixelDepth,
-    `no pixelDepth found that covers ${numberOfColors} colors`
+    `no pixelDepth found that covers ${numberOfColors} colors`,
   );
   const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
   const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
@@ -395,7 +430,7 @@ export async function canvasToBitmaps(
           offsetY,
           bitmapWidth,
           bitmapHeight,
-          bitmapCanvas
+          bitmapCanvas,
         );
         // _console.log(`cropping bitmap`, {
         //   bitmapWidth,
@@ -409,7 +444,7 @@ export async function canvasToBitmaps(
           bitmapHeight,
           colors,
           bitmapColorIndices,
-          numberOfColors
+          numberOfColors,
         );
         // _console.log("bitmap", bitmap);
         bitmapRow.push(bitmap);
@@ -426,7 +461,7 @@ export async function imageToBitmaps(
   width: number,
   height: number,
   numberOfColors: number,
-  mtu: number
+  mtu: number,
 ) {
   const canvas = resizeImage(image, width, height);
   return canvasToBitmaps(canvas, numberOfColors, mtu);
@@ -450,14 +485,14 @@ export function assertValidBitmapPixels(bitmap: DisplayBitmap) {
     "bitmap.pixels.length",
     bitmap.pixels.length,
     bitmap.width * (bitmap.height - 1) + 1,
-    bitmap.width * bitmap.height
+    bitmap.width * bitmap.height,
   );
   bitmap.pixels.forEach((pixel, index) => {
     _console.assertRangeWithError(
       `bitmap.pixels[${index}]`,
       pixel,
       0,
-      bitmap.numberOfColors - 1
+      bitmap.numberOfColors - 1,
     );
   });
 }
@@ -469,12 +504,12 @@ export async function canvasToSprite(
   paletteName: string,
   overridePalette: boolean,
   spriteSheet: DisplaySpriteSheet,
-  paletteOffset = 0
+  paletteOffset = 0,
 ) {
   const { width, height } = canvas;
 
   let palette = spriteSheet.palettes?.find(
-    (palette) => palette.name == paletteName
+    (palette) => palette.name == paletteName,
   );
   if (!palette) {
     palette = {
@@ -503,7 +538,7 @@ export async function canvasToSprite(
   const results = await quantizeCanvas(
     canvas,
     numberOfColors,
-    !overridePalette ? palette.colors : undefined
+    !overridePalette ? palette.colors : undefined,
   );
   const blob = results.blob;
   const colorIndices = results.colorIndices;
@@ -529,7 +564,7 @@ export async function canvasToSprite(
   sprite.commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
 
   const spriteIndex = spriteSheet.sprites.findIndex(
-    (sprite) => sprite.name == spriteName
+    (sprite) => sprite.name == spriteName,
   );
   if (spriteIndex == -1) {
     spriteSheet.sprites.push(sprite);
@@ -549,7 +584,7 @@ export async function imageToSprite(
   paletteName: string,
   overridePalette: boolean,
   spriteSheet: DisplaySpriteSheet,
-  paletteOffset = 0
+  paletteOffset = 0,
 ) {
   const canvas = resizeImage(image, width, height);
   return canvasToSprite(
@@ -559,14 +594,14 @@ export async function imageToSprite(
     paletteName,
     overridePalette,
     spriteSheet,
-    paletteOffset
+    paletteOffset,
   );
 }
 
 const spriteSheetWithSingleBitmapCommandLength =
   calculateSpriteSheetHeaderLength(1) + drawSpriteBitmapCommandHeaderLength;
 function spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(
-  numberOfColors: number
+  numberOfColors: number,
 ) {
   return (
     spriteSheetWithSingleBitmapCommandLength + (1 + 1 + numberOfColors * 2)
@@ -579,7 +614,7 @@ export async function canvasToSpriteSheet(
   spriteName: string,
   numberOfColors: number,
   paletteName: string,
-  maxFileLength?: number
+  maxFileLength?: number,
 ) {
   const spriteSheet: DisplaySpriteSheet = {
     name: spriteSheetName,
@@ -595,17 +630,17 @@ export async function canvasToSpriteSheet(
       numberOfColors,
       paletteName,
       true,
-      spriteSheet
+      spriteSheet,
     );
   } else {
     const { width, height } = canvas;
     const numberOfPixels = width * height;
     const pixelDepth = DisplayPixelDepths.find(
-      (pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors
+      (pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors,
     )!;
     _console.assertWithError(
       pixelDepth,
-      `no pixelDepth found that covers ${numberOfColors} colors`
+      `no pixelDepth found that covers ${numberOfColors} colors`,
     );
     const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
     const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
@@ -625,7 +660,7 @@ export async function canvasToSpriteSheet(
         5);
     const imageRowPixelDataLength = Math.ceil(width / pixelsPerByte);
     const maxSpriteHeight = Math.floor(
-      maxPixelDataLength / imageRowPixelDataLength
+      maxPixelDataLength / imageRowPixelDataLength,
     );
     // _console.log({
     //   maxPixelDataLength,
@@ -641,7 +676,7 @@ export async function canvasToSpriteSheet(
         numberOfColors,
         paletteName,
         true,
-        spriteSheet
+        spriteSheet,
       );
     } else {
       const { colors } = await quantizeCanvas(canvas, numberOfColors);
@@ -666,7 +701,7 @@ export async function canvasToSpriteSheet(
           numberOfColors,
           paletteName,
           false,
-          spriteSheet
+          spriteSheet,
         );
         imageIndex++;
       }
@@ -684,7 +719,7 @@ export async function imageToSpriteSheet(
   height: number,
   numberOfColors: number,
   paletteName: string,
-  maxFileLength?: number
+  maxFileLength?: number,
 ) {
   const canvas = resizeImage(image, width, height);
   return canvasToSpriteSheet(
@@ -693,6 +728,6 @@ export async function imageToSpriteSheet(
     spriteName,
     numberOfColors,
     paletteName,
-    maxFileLength
+    maxFileLength,
   );
 }

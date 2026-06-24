@@ -235,6 +235,7 @@ export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
   "getFileTypes",
 
   "isWifiAvailable",
+  "isDisplayAvailable",
   "getLedInformation",
 ];
 
@@ -433,6 +434,17 @@ class Device {
       const { sensorConfiguration } = event.message;
       this.#cameraManager.sensorRate = sensorConfiguration.camera ?? 0;
     });
+    this.addEventListener("isDisplayAvailable", (event) => {
+      if (this.connectionType == "client") {
+        return;
+      }
+      if (this.connectionStatus != "connecting") {
+        return;
+      }
+      if (this.isDisplayAvailable) {
+        this.#displayManager.requestRequiredInformation();
+      }
+    });
     this.addEventListener("getFileTypes", () => {
       if (this.connectionType == "client") {
         return;
@@ -456,17 +468,6 @@ class Device {
       }
       if (this.isWifiAvailable) {
         this.#wifiManager.requestRequiredInformation();
-      }
-    });
-    this.addEventListener("getType", () => {
-      if (this.connectionType == "client") {
-        return;
-      }
-      if (this.connectionStatus != "connecting") {
-        return;
-      }
-      if (this.type == "glasses") {
-        this.#displayManager.requestRequiredInformation();
       }
     });
     this.addEventListener("fileTransferProgress", (event) => {
@@ -662,7 +663,10 @@ class Device {
       let hasConnectionMessage = this.latestConnectionMessages.has(messageType);
       if (!hasConnectionMessage) {
         // TODO: - remove when standard
-        if (messageType == "getLedInformation") {
+        if (
+          messageType == "getLedInformation" ||
+          messageType == "isDisplayAvailable"
+        ) {
           hasConnectionMessage = true;
         } else {
           _console.log(`didn't receive "${messageType}" message`);
@@ -1802,7 +1806,7 @@ class Device {
     return this.#displayManager.isAvailable;
   }
   get isDisplayReady() {
-    return this.#displayManager.isReady;
+    return this.isConnected && this.#displayManager.isReady;
   }
   get displayContextState() {
     return this.#displayManager.contextState;

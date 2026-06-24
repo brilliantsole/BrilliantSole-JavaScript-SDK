@@ -6,7 +6,6 @@ import {
   DisplayBezierCurve,
   DisplayBezierCurveType,
   DisplayWireframe,
-  DisplaySize,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
@@ -31,7 +30,6 @@ import {
 } from "./DisplaySpriteSheetUtils.ts";
 import {
   DisplayScaleDirection,
-  DisplayColorRGB,
   DisplayCropDirection,
   DisplayColorRGBOrString,
 } from "./DisplayUtils.ts";
@@ -43,6 +41,9 @@ export interface DisplayManagerInterface {
   get isReady(): boolean;
 
   get contextState(): DisplayContextState;
+  serializeContextState(): DisplayContextCommand[];
+
+  parseContextCommands(dataView: DataView): Promise<void>;
 
   flushContextCommands(): Promise<void>;
 
@@ -52,8 +53,16 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean,
   ): Promise<void>;
 
-  show(sendImmediately?: boolean): Promise<void>;
-  clear(sendImmediately?: boolean): Promise<void>;
+  show(
+    sendImmediately?: boolean,
+    waitUntilReady?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
+  clear(
+    sendImmediately?: boolean,
+    waitUntilReady?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
 
   get colors(): string[];
   get numberOfColors(): number;
@@ -61,6 +70,7 @@ export interface DisplayManagerInterface {
     colorIndex: number,
     color: DisplayColorRGBOrString,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   assertValidColorIndex(colorIndex: number): void;
@@ -73,119 +83,176 @@ export interface DisplayManagerInterface {
     colorIndex: number,
     opacity: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
+  setOpacity(
+    opacity: number,
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
 
-  saveContext(sendImmediately?: boolean): Promise<void>;
-  restoreContext(sendImmediately?: boolean): Promise<void>;
+  saveContext(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
+  restoreContext(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
 
   selectFillColor(
     fillColorIndex: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   selectBackgroundColor(
     backgroundColorIndex: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   selectLineColor(
     lineColorIndex: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
+  setLineWidth(
+    lineWidth: number,
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
 
-  setIgnoreFill(ignoreFill: boolean, sendImmediately?: boolean): Promise<void>;
-  setIgnoreLine(ignoreLine: boolean, sendImmediately?: boolean): Promise<void>;
+  setIgnoreFill(
+    ignoreFill: boolean,
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
+  setIgnoreLine(
+    ignoreLine: boolean,
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
   setFillBackground(
     fillBackground: boolean,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   setAlignment(
     alignmentDirection: DisplayAlignmentDirection,
     alignment: DisplayAlignment,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setHorizontalAlignment(
     horizontalAlignment: DisplayAlignment,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setVerticalAlignment(
     verticalAlignment: DisplayAlignment,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  resetAlignment(sendImmediately?: boolean): Promise<void>;
+  resetAlignment(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
 
   setRotation(
     rotation: number,
     isRadians?: boolean,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  clearRotation(sendImmediately?: boolean): Promise<void>;
+  clearRotation(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
 
   setSegmentStartCap(
     segmentStartCap: DisplaySegmentCap,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSegmentEndCap(
     segmentEndCap: DisplaySegmentCap,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSegmentCap(
     segmentCap: DisplaySegmentCap,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   setSegmentStartRadius(
     segmentStartRadius: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSegmentEndRadius(
     segmentEndRadius: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSegmentRadius(
     segmentRadius: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   setCrop(
     cropDirection: DisplayCropDirection,
     crop: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  setCropTop(cropTop: number, sendImmediately?: boolean): Promise<void>;
-  setCropRight(cropRight: number, sendImmediately?: boolean): Promise<void>;
-  setCropBottom(cropBottom: number, sendImmediately?: boolean): Promise<void>;
-  setCropLeft(cropLeft: number, sendImmediately?: boolean): Promise<void>;
-  clearCrop(sendImmediately?: boolean): Promise<void>;
+  setCropTop(
+    cropTop: number,
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
+  setCropRight(
+    cropRight: number,
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
+  setCropBottom(
+    cropBottom: number,
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
+  setCropLeft(
+    cropLeft: number,
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
+  clearCrop(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
 
   setRotationCrop(
     cropDirection: DisplayCropDirection,
     crop: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setRotationCropTop(
     rotationCropTop: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setRotationCropRight(
     rotationCropRight: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setRotationCropBottom(
     rotationCropBottom: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setRotationCropLeft(
     rotationCropLeft: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  clearRotationCrop(sendImmediately?: boolean): Promise<void>;
+  clearRotationCrop(
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
 
   selectBitmapColor(
     bitmapColorIndex: number,
     colorIndex: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   get bitmapColorIndices(): number[];
@@ -193,39 +260,53 @@ export interface DisplayManagerInterface {
   selectBitmapColors(
     bitmapColorPairs: DisplayBitmapColorPair[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   setBitmapColor(
     bitmapColorIndex: number,
     color: DisplayColorRGBOrString,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setBitmapColorOpacity(
     bitmapColorIndex: number,
     opacity: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   setBitmapScaleDirection(
     direction: DisplayScaleDirection,
     bitmapScale: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setBitmapScaleX(
     bitmapScaleX: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setBitmapScaleY(
     bitmapScaleY: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
-  resetBitmapScale(sendImmediately?: boolean): Promise<void>;
+  setBitmapScale(
+    bitmapScale: number,
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
+  resetBitmapScale(
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
 
   selectSpriteColor(
     spriteColorIndex: number,
     colorIndex: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   get spriteColorIndices(): number[];
@@ -233,81 +314,107 @@ export interface DisplayManagerInterface {
   selectSpriteColors(
     spriteColorPairs: DisplaySpriteColorPair[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  resetSpriteColors(sendImmediately?: boolean): Promise<void>;
+  resetSpriteColors(
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
 
   setSpriteColor(
     spriteColorIndex: number,
     color: DisplayColorRGBOrString,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSpriteColorOpacity(
     spriteColorIndex: number,
     opacity: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   setSpriteScaleDirection(
     direction: DisplayScaleDirection,
     spriteScale: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSpriteScaleX(
     spriteScaleX: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSpriteScaleY(
     spriteScaleY: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
-  resetSpriteScale(sendImmediately?: boolean): Promise<void>;
+  setSpriteScale(
+    spriteScale: number,
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
+  resetSpriteScale(
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
 
   setSpritesLineHeight(
     spritesLineHeight: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   setSpritesDirectionGeneric(
     direction: DisplayDirection,
     isOrthogonal: boolean,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSpritesDirection(
     spritesDirection: DisplayDirection,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSpritesLineDirection(
     spritesLineDirection: DisplayDirection,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   setSpritesSpacingGeneric(
     spacing: number,
     isOrthogonal: boolean,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSpritesSpacing(
     spritesSpacing: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSpritesLineSpacing(
     spritesSpacing: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   setSpritesAlignmentGeneric(
     alignment: DisplayAlignment,
     isOrthogonal: boolean,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSpritesAlignment(
     spritesAlignment: DisplayAlignment,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   setSpritesLineAlignment(
     spritesLineAlignment: DisplayAlignment,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   clearRect(
@@ -316,6 +423,7 @@ export interface DisplayManagerInterface {
     width: number,
     height: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawRect(
     offsetX: number,
@@ -323,6 +431,7 @@ export interface DisplayManagerInterface {
     width: number,
     height: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawRoundRect(
     offsetX: number,
@@ -331,12 +440,14 @@ export interface DisplayManagerInterface {
     height: number,
     borderRadius: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawCircle(
     offsetX: number,
     offsetY: number,
     radius: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawEllipse(
     offsetX: number,
@@ -344,6 +455,7 @@ export interface DisplayManagerInterface {
     radiusX: number,
     radiusY: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawRegularPolygon(
     offsetX: number,
@@ -351,55 +463,70 @@ export interface DisplayManagerInterface {
     radius: number,
     numberOfSides: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  drawPolygon(points: Vector2[], sendImmediately?: boolean): Promise<void>;
+  drawPolygon(
+    points: Vector2[],
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
 
   drawWireframe(
     wireframe: DisplayWireframe,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   drawCurve(
     curveType: DisplayBezierCurveType,
     controlPoints: Vector2[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawCurves(
     curveType: DisplayBezierCurveType,
     controlPoints: Vector2[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   drawQuadraticBezierCurve(
     controlPoints: Vector2[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawQuadraticBezierCurves(
     controlPoints: Vector2[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   drawCubicBezierCurve(
     controlPoints: Vector2[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawCubicBezierCurves(
     controlPoints: Vector2[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   _drawPath(
     isClosed: boolean,
     curves: DisplayBezierCurve[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawPath(
     curves: DisplayBezierCurve[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawClosedPath(
     curves: DisplayBezierCurve[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   drawSegment(
@@ -408,8 +535,13 @@ export interface DisplayManagerInterface {
     endX: number,
     endY: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
+  drawSegments(
+    points: Vector2[],
+    sendImmediately?: boolean,
+    isParsing?: boolean,
+  ): Promise<void>;
 
   drawArc(
     offsetX: number,
@@ -419,6 +551,7 @@ export interface DisplayManagerInterface {
     angleOffset: number,
     isRadians?: boolean,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawArcEllipse(
     offsetX: number,
@@ -429,6 +562,7 @@ export interface DisplayManagerInterface {
     angleOffset: number,
     isRadians?: boolean,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   drawBitmap(
@@ -436,16 +570,19 @@ export interface DisplayManagerInterface {
     offsetY: number,
     bitmap: DisplayBitmap,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   runContextCommand(
     command: DisplayContextCommand,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   runContextCommands(
     commands: DisplayContextCommand[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   imageToBitmap(
@@ -487,12 +624,14 @@ export interface DisplayManagerInterface {
   selectSpriteSheet(
     spriteSheetName: string,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawSprite(
     offsetX: number,
     offsetY: number,
     spriteName: string,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   stringToSpriteLines(
     string: string,
@@ -511,6 +650,7 @@ export interface DisplayManagerInterface {
     offsetY: number,
     spriteLines: DisplaySpriteLines,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   drawSpritesString(
     offsetX: number,
@@ -520,6 +660,7 @@ export interface DisplayManagerInterface {
     maxLineBreadth?: number,
     separators?: string[],
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   assertLoadedSpriteSheet(spriteSheetName: string): void;
   assertSelectedSpriteSheet(spriteSheetName: string): void;
@@ -544,6 +685,7 @@ export interface DisplayManagerInterface {
     spriteSheet: DisplaySpriteSheet,
     paletteName?: string,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
@@ -552,6 +694,8 @@ export interface DisplayManagerInterface {
   spriteSheets: Record<string, DisplaySpriteSheet>;
   spriteSheetIndices: Record<string, number>;
 
+  getSpriteSheetByIndex(index: number): DisplaySpriteSheet | undefined;
+
   assertSpriteSheetPalette(paletteName: string): void;
   assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
   assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;
@@ -559,17 +703,20 @@ export interface DisplayManagerInterface {
     paletteName: string,
     offset?: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   selectSpriteSheetPaletteSwap(
     paletteSwapName: string,
     offset?: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
   selectSpritePaletteSwap(
     spriteName: string,
     paletteSwapName: string,
     offset?: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
@@ -580,51 +727,58 @@ export interface DisplayManagerInterface {
     width: number,
     height: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ): Promise<void>;
-  endSprite(sendImmediately?: boolean): Promise<void>;
-  clearContext(sendImmediately?: boolean): Promise<void>;
+  endSprite(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
+  clearContext(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
 }
 
 export async function runDisplayContextCommand(
   displayManager: DisplayManagerInterface,
   command: DisplayContextCommand,
   sendImmediately?: boolean,
+  isParsing?: boolean,
 ) {
   if (command.hide) {
     return;
   }
   switch (command.type) {
     case "show":
-      await displayManager.show(sendImmediately);
+      await displayManager.show(sendImmediately, false, isParsing);
       break;
     case "clear":
-      await displayManager.clear(sendImmediately);
+      await displayManager.clear(sendImmediately, false, isParsing);
       break;
     case "saveContext":
-      //await displayManager.saveContext(sendImmediately);
+      // await displayManager.saveContext(sendImmediately, isParsing);
       break;
     case "restoreContext":
-      //await displayManager.restoreContext(sendImmediately);
+      // await displayManager.restoreContext(sendImmediately, isParsing);
       break;
     case "clearRotation":
-      await displayManager.clearRotation(sendImmediately);
+      await displayManager.clearRotation(sendImmediately, isParsing);
       break;
     case "clearCrop":
-      await displayManager.clearCrop(sendImmediately);
+      await displayManager.clearCrop(sendImmediately, isParsing);
       break;
     case "clearRotationCrop":
-      await displayManager.clearRotationCrop(sendImmediately);
+      await displayManager.clearRotationCrop(sendImmediately, isParsing);
       break;
     case "resetBitmapScale":
-      await displayManager.resetBitmapScale(sendImmediately);
+      await displayManager.resetBitmapScale(sendImmediately, isParsing);
       break;
     case "resetSpriteScale":
-      await displayManager.resetSpriteScale(sendImmediately);
+      await displayManager.resetSpriteScale(sendImmediately, isParsing);
       break;
     case "setColor":
       {
         const { colorIndex, color } = command;
-        await displayManager.setColor(colorIndex, color, sendImmediately);
+        await displayManager.setColor(
+          colorIndex,
+          color,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setColorOpacity":
@@ -634,13 +788,14 @@ export async function runDisplayContextCommand(
           colorIndex,
           opacity,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "setOpacity":
       {
         const { opacity } = command;
-        await displayManager.setOpacity(opacity, sendImmediately);
+        await displayManager.setOpacity(opacity, sendImmediately, isParsing);
       }
       break;
     case "selectBackgroundColor":
@@ -649,43 +804,68 @@ export async function runDisplayContextCommand(
         await displayManager.selectBackgroundColor(
           backgroundColorIndex,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "selectFillColor":
       {
         const { fillColorIndex } = command;
-        await displayManager.selectFillColor(fillColorIndex, sendImmediately);
+        await displayManager.selectFillColor(
+          fillColorIndex,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "selectLineColor":
       {
         const { lineColorIndex } = command;
-        await displayManager.selectLineColor(lineColorIndex, sendImmediately);
+        await displayManager.selectLineColor(
+          lineColorIndex,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setIgnoreFill":
       {
         const { ignoreFill } = command;
-        await displayManager.setIgnoreFill(ignoreFill, sendImmediately);
+        await displayManager.setIgnoreFill(
+          ignoreFill,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setIgnoreLine":
       {
         const { ignoreLine } = command;
-        await displayManager.setIgnoreLine(ignoreLine, sendImmediately);
+        await displayManager.setIgnoreLine(
+          ignoreLine,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setFillBackground":
       {
         const { fillBackground } = command;
-        await displayManager.setFillBackground(fillBackground, sendImmediately);
+        await displayManager.setFillBackground(
+          fillBackground,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setLineWidth":
       {
         const { lineWidth } = command;
-        await displayManager.setLineWidth(lineWidth, sendImmediately);
+        await displayManager.setLineWidth(
+          lineWidth,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setRotation":
@@ -693,7 +873,12 @@ export async function runDisplayContextCommand(
         let { rotation, isRadians } = command;
         rotation = isRadians ? rotation : degToRad(rotation);
         rotation;
-        await displayManager.setRotation(rotation, true, sendImmediately);
+        await displayManager.setRotation(
+          rotation,
+          true,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setSegmentStartCap":
@@ -702,19 +887,28 @@ export async function runDisplayContextCommand(
         await displayManager.setSegmentStartCap(
           segmentStartCap,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "setSegmentEndCap":
       {
         const { segmentEndCap } = command;
-        await displayManager.setSegmentEndCap(segmentEndCap, sendImmediately);
+        await displayManager.setSegmentEndCap(
+          segmentEndCap,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setSegmentCap":
       {
         const { segmentCap } = command;
-        await displayManager.setSegmentCap(segmentCap, sendImmediately);
+        await displayManager.setSegmentCap(
+          segmentCap,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setSegmentStartRadius":
@@ -723,6 +917,7 @@ export async function runDisplayContextCommand(
         await displayManager.setSegmentStartRadius(
           segmentStartRadius,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -732,13 +927,18 @@ export async function runDisplayContextCommand(
         await displayManager.setSegmentEndRadius(
           segmentEndRadius,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "setSegmentRadius":
       {
         const { segmentRadius } = command;
-        await displayManager.setSegmentRadius(segmentRadius, sendImmediately);
+        await displayManager.setSegmentRadius(
+          segmentRadius,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setHorizontalAlignment":
@@ -747,6 +947,7 @@ export async function runDisplayContextCommand(
         await displayManager.setHorizontalAlignment(
           horizontalAlignment,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -756,36 +957,45 @@ export async function runDisplayContextCommand(
         await displayManager.setVerticalAlignment(
           verticalAlignment,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "resetAlignment":
       {
-        await displayManager.resetAlignment(sendImmediately);
+        await displayManager.resetAlignment(sendImmediately, isParsing);
       }
       break;
     case "setCropTop":
       {
         const { cropTop } = command;
-        await displayManager.setCropTop(cropTop, sendImmediately);
+        await displayManager.setCropTop(cropTop, sendImmediately, isParsing);
       }
       break;
     case "setCropRight":
       {
         const { cropRight } = command;
-        await displayManager.setCropRight(cropRight, sendImmediately);
+        await displayManager.setCropRight(
+          cropRight,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setCropBottom":
       {
         const { cropBottom } = command;
-        await displayManager.setCropBottom(cropBottom, sendImmediately);
+        await displayManager.setCropBottom(
+          cropBottom,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setCropLeft":
       {
         const { cropLeft } = command;
-        await displayManager.setCropLeft(cropLeft, sendImmediately);
+        await displayManager.setCropLeft(cropLeft, sendImmediately, isParsing);
       }
       break;
     case "setRotationCropTop":
@@ -794,6 +1004,7 @@ export async function runDisplayContextCommand(
         await displayManager.setRotationCropTop(
           rotationCropTop,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -803,6 +1014,7 @@ export async function runDisplayContextCommand(
         await displayManager.setRotationCropRight(
           rotationCropRight,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -812,6 +1024,7 @@ export async function runDisplayContextCommand(
         await displayManager.setRotationCropBottom(
           rotationCropBottom,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -821,6 +1034,7 @@ export async function runDisplayContextCommand(
         await displayManager.setRotationCropLeft(
           rotationCropLeft,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -831,6 +1045,7 @@ export async function runDisplayContextCommand(
           bitmapColorIndex,
           colorIndex,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -840,25 +1055,38 @@ export async function runDisplayContextCommand(
         await displayManager.selectBitmapColors(
           bitmapColorPairs,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "setBitmapScaleX":
       {
         const { bitmapScaleX } = command;
-        await displayManager.setBitmapScaleX(bitmapScaleX, sendImmediately);
+        await displayManager.setBitmapScaleX(
+          bitmapScaleX,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setBitmapScaleY":
       {
         const { bitmapScaleY } = command;
-        await displayManager.setBitmapScaleY(bitmapScaleY, sendImmediately);
+        await displayManager.setBitmapScaleY(
+          bitmapScaleY,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setBitmapScale":
       {
         const { bitmapScale } = command;
-        await displayManager.setBitmapScale(bitmapScale, sendImmediately);
+        await displayManager.setBitmapScale(
+          bitmapScale,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "selectSpriteColor":
@@ -868,6 +1096,7 @@ export async function runDisplayContextCommand(
           spriteColorIndex,
           colorIndex,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -877,32 +1106,52 @@ export async function runDisplayContextCommand(
         await displayManager.selectSpriteColors(
           spriteColorPairs,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "setSpriteScaleX":
       {
         const { spriteScaleX } = command;
-        await displayManager.setSpriteScaleX(spriteScaleX, sendImmediately);
+        await displayManager.setSpriteScaleX(
+          spriteScaleX,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setSpriteScaleY":
       {
         const { spriteScaleY } = command;
-        await displayManager.setSpriteScaleY(spriteScaleY, sendImmediately);
+        await displayManager.setSpriteScaleY(
+          spriteScaleY,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setSpriteScale":
       {
         const { spriteScale } = command;
-        await displayManager.setSpriteScale(spriteScale, sendImmediately);
+        await displayManager.setSpriteScale(
+          spriteScale,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
 
     case "clearRect":
       {
         const { x, y, width, height } = command;
-        await displayManager.clearRect(x, y, width, height, sendImmediately);
+        await displayManager.clearRect(
+          x,
+          y,
+          width,
+          height,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "drawRect":
@@ -914,6 +1163,7 @@ export async function runDisplayContextCommand(
           width,
           height,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -927,6 +1177,7 @@ export async function runDisplayContextCommand(
           height,
           borderRadius,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -938,6 +1189,7 @@ export async function runDisplayContextCommand(
           offsetY,
           radius,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -950,13 +1202,14 @@ export async function runDisplayContextCommand(
           radiusX,
           radiusY,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "drawPolygon":
       {
         const { points } = command;
-        await displayManager.drawPolygon(points, sendImmediately);
+        await displayManager.drawPolygon(points, sendImmediately, isParsing);
       }
       break;
     case "drawRegularPolygon":
@@ -968,13 +1221,18 @@ export async function runDisplayContextCommand(
           radius,
           numberOfSides,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "drawWireframe":
       {
         const { wireframe } = command;
-        await displayManager.drawWireframe(wireframe, sendImmediately);
+        await displayManager.drawWireframe(
+          wireframe,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "drawSegment":
@@ -986,6 +1244,7 @@ export async function runDisplayContextCommand(
           endX,
           endY,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -995,6 +1254,7 @@ export async function runDisplayContextCommand(
         await displayManager.drawSegments(
           points.map(({ x, y }) => ({ x: x, y: y })),
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1013,6 +1273,7 @@ export async function runDisplayContextCommand(
           angleOffset,
           true,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1039,6 +1300,7 @@ export async function runDisplayContextCommand(
           angleOffset,
           true,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1050,6 +1312,7 @@ export async function runDisplayContextCommand(
           offsetY,
           bitmap,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1063,6 +1326,7 @@ export async function runDisplayContextCommand(
           offsetY,
           spriteName,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1072,13 +1336,18 @@ export async function runDisplayContextCommand(
         await displayManager.setSpritesLineHeight(
           spritesLineHeight,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "setSpritesSpacing":
       {
         const { spritesSpacing } = command;
-        await displayManager.setSpritesSpacing(spritesSpacing, sendImmediately);
+        await displayManager.setSpritesSpacing(
+          spritesSpacing,
+          sendImmediately,
+          isParsing,
+        );
       }
       break;
     case "setSpritesAlignment":
@@ -1087,6 +1356,7 @@ export async function runDisplayContextCommand(
         await displayManager.setSpritesAlignment(
           spritesAlignment,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1096,6 +1366,7 @@ export async function runDisplayContextCommand(
         await displayManager.setSpritesDirection(
           spritesDirection,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1105,6 +1376,7 @@ export async function runDisplayContextCommand(
         await displayManager.setSpritesLineAlignment(
           spritesLineAlignment,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1114,6 +1386,7 @@ export async function runDisplayContextCommand(
         await displayManager.setSpritesLineDirection(
           spritesLineDirection,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1123,6 +1396,7 @@ export async function runDisplayContextCommand(
         await displayManager.setSpritesLineSpacing(
           spritesLineSpacing,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1162,6 +1436,7 @@ export async function runDisplayContextCommand(
           offsetY,
           spriteLines,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1174,11 +1449,12 @@ export async function runDisplayContextCommand(
         await displayManager.selectSpriteSheet(
           spriteSheetName!,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "resetSpriteColors":
-      await displayManager.resetSpriteColors(sendImmediately);
+      await displayManager.resetSpriteColors(sendImmediately, isParsing);
       break;
 
     case "drawQuadraticBezierCurve":
@@ -1187,6 +1463,7 @@ export async function runDisplayContextCommand(
         await displayManager.drawQuadraticBezierCurve(
           controlPoints,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1196,6 +1473,7 @@ export async function runDisplayContextCommand(
         await displayManager.drawQuadraticBezierCurves(
           controlPoints,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1205,6 +1483,7 @@ export async function runDisplayContextCommand(
         await displayManager.drawCubicBezierCurve(
           controlPoints,
           sendImmediately,
+          isParsing,
         );
       }
       break;
@@ -1214,19 +1493,20 @@ export async function runDisplayContextCommand(
         await displayManager.drawCubicBezierCurves(
           controlPoints,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "drawClosedPath":
       {
         const { curves } = command;
-        await displayManager.drawClosedPath(curves, sendImmediately);
+        await displayManager.drawClosedPath(curves, sendImmediately, isParsing);
       }
       break;
     case "drawPath":
       {
         const { curves } = command;
-        await displayManager.drawPath(curves, sendImmediately);
+        await displayManager.drawPath(curves, sendImmediately, isParsing);
       }
       break;
     case "startSprite":
@@ -1238,14 +1518,15 @@ export async function runDisplayContextCommand(
           width,
           height,
           sendImmediately,
+          isParsing,
         );
       }
       break;
     case "endSprite":
-      await displayManager.endSprite(sendImmediately);
+      await displayManager.endSprite(sendImmediately, isParsing);
       break;
     case "clearContext":
-      await displayManager.clearContext(sendImmediately);
+      await displayManager.clearContext(sendImmediately, isParsing);
       break;
   }
 }
@@ -1254,15 +1535,19 @@ export async function runDisplayContextCommands(
   displayManager: DisplayManagerInterface,
   commands: DisplayContextCommand[],
   sendImmediately?: boolean,
+  isParsing?: boolean,
 ) {
-  _console.log("runDisplayContextCommands", commands);
-  commands
-    .filter((command) => !command.hide)
-    .forEach((command) => {
-      runDisplayContextCommand(displayManager, command, false);
-    });
+  _console.log("runDisplayContextCommands", commands, {
+    sendImmediately,
+  });
+
+  commands = commands.filter((command) => !command.hide);
+
+  for (let command of commands) {
+    await runDisplayContextCommand(displayManager, command, false, isParsing);
+  }
   if (sendImmediately) {
-    displayManager.flushContextCommands();
+    await displayManager.flushContextCommands();
   }
 }
 
@@ -1378,6 +1663,7 @@ export async function selectSpriteSheetPalette(
   offset?: number,
   indicesOnly?: boolean,
   sendImmediately?: boolean,
+  isParsing?: boolean,
 ) {
   offset = offset || 0;
 
@@ -1399,10 +1685,20 @@ export async function selectSpriteSheetPalette(
         opacity = 1;
       }
       //_console.log({ index, offset, color });
-      displayManagerInterface.setColor(index + offset, color, false);
-      displayManagerInterface.setColorOpacity(index + offset, opacity, false);
+      displayManagerInterface.setColor(index + offset, color, false, isParsing);
+      displayManagerInterface.setColorOpacity(
+        index + offset,
+        opacity,
+        false,
+        isParsing,
+      );
     }
-    displayManagerInterface.selectSpriteColor(index, index + offset);
+    displayManagerInterface.selectSpriteColor(
+      index,
+      index + offset,
+      false,
+      isParsing,
+    );
   }
 
   if (sendImmediately) {
@@ -1414,6 +1710,7 @@ export async function selectSpriteSheetPaletteSwap(
   paletteSwapName: string,
   offset?: number,
   sendImmediately?: boolean,
+  isParsing?: boolean,
 ) {
   offset = offset || 0;
   displayManagerInterface.assertAnySelectedSpriteSheet();
@@ -1434,7 +1731,11 @@ export async function selectSpriteSheetPaletteSwap(
       colorIndex,
     });
   }
-  displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
+  displayManagerInterface.selectSpriteColors(
+    spriteColorPairs,
+    false,
+    isParsing,
+  );
 
   if (sendImmediately) {
     displayManagerInterface.flushContextCommands();
@@ -1446,6 +1747,7 @@ export async function selectSpritePaletteSwap(
   paletteSwapName: string,
   offset?: number,
   sendImmediately?: boolean,
+  isParsing?: boolean,
 ) {
   offset = offset || 0;
   displayManagerInterface.assertAnySelectedSpriteSheet();
@@ -1467,7 +1769,11 @@ export async function selectSpritePaletteSwap(
       colorIndex,
     });
   }
-  displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
+  displayManagerInterface.selectSpriteColors(
+    spriteColorPairs,
+    false,
+    isParsing,
+  );
 
   if (sendImmediately) {
     displayManagerInterface.flushContextCommands();
@@ -1482,17 +1788,34 @@ export async function drawSpriteFromSpriteSheet(
   spriteSheet: DisplaySpriteSheet,
   paletteName?: string,
   sendImmediately?: boolean,
+  isParsing?: boolean,
 ) {
   const reducedSpriteSheet = reduceSpriteSheet(spriteSheet, [spriteName]);
   await displayManagerInterface.uploadSpriteSheet(reducedSpriteSheet);
   await displayManagerInterface.selectSpriteSheet(spriteSheet.name);
-  await displayManagerInterface.drawSprite(
-    offsetX,
-    offsetY,
-    spriteName,
-    sendImmediately,
-  );
+  await displayManagerInterface.drawSprite(offsetX, offsetY, spriteName, false);
   if (paletteName != undefined) {
-    await displayManagerInterface.selectSpriteSheetPalette(paletteName);
+    await displayManagerInterface.selectSpriteSheetPalette(
+      paletteName,
+      undefined,
+      false,
+      isParsing,
+    );
+  }
+  if (sendImmediately) {
+    await displayManagerInterface.flushContextCommands();
+  }
+}
+
+export function getSpriteSheetByIndex(
+  displayManagerInterface: DisplayManagerInterface,
+  index: number,
+) {
+  for (const [spriteSheetName, _index] of Object.entries(
+    displayManagerInterface.spriteSheetIndices,
+  )) {
+    if (_index == index) {
+      return displayManagerInterface.spriteSheets[spriteSheetName];
+    }
   }
 }
