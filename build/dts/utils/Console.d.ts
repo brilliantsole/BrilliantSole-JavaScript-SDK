@@ -7,6 +7,7 @@ export interface ConsoleLevelFlags {
     assert?: boolean;
     table?: boolean;
 }
+export declare function assertWithError(condition: unknown, message: string): asserts condition;
 declare class Console {
     #private;
     constructor(type: string);

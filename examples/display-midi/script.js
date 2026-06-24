@@ -42,6 +42,10 @@ BS.DeviceManager.addEventListener("deviceConnected", async (event) => {
     displayCanvasHelper.device = device;
   }
 });
+BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
+// BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
+// BS.setConsoleLevelFlagsForType("Device", { log: true });
 
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
@@ -253,25 +257,35 @@ document.addEventListener("keydown", (event) => {
 let didLoad = false;
 let draw = async () => {
   if (isUploading) {
+    console.log("busy uploading - skipping drawing");
+    isWaitingToRedraw = true;
     return;
   }
   if (!didLoad) {
-    console.log("hasn't loaded yet");
+    console.log("hasn't loaded yet - skipping drawing");
+    isWaitingToRedraw = true;
+    return;
+  }
+  if (!displayCanvasHelper.isReady) {
+    console.log("not ready - skipping drawing");
+    isWaitingToRedraw = true;
     return;
   }
 
   if (!abcSpriteSheets[currentSystemIndex]) {
+    console.log("no abc spritesheets - skipping drawing");
+    isWaitingToRedraw = true;
     return;
   }
 
   if (isDrawing) {
-    console.warn("busy drawing");
+    console.warn("busy drawing - skipping drawing");
     isWaitingToRedraw = true;
     return;
   }
   isDrawing = true;
 
-  // console.log("drawing");
+  console.log("drawing now", { now: Date.now() });
 
   if (shouldDrawSheet) {
     const spriteSheet = abcSpriteSheets[currentSystemIndex];
@@ -563,6 +577,9 @@ let draw = async () => {
   }
 
   latestDrawTime = Date.now();
+  isWaitingToRedraw = false;
+
+  await displayCanvasHelper.selectFillColor(1);
   await displayCanvasHelper.show();
 };
 const debouncedDraw = false ? draw : BS.ThrottleUtils.debounce(draw, 40, false);
@@ -571,18 +588,22 @@ window.draw = draw;
 let latestDrawTime = 0;
 window.minDrawTime = 120;
 displayCanvasHelper.addEventListener("ready", async () => {
-  const now = Date.now();
-  const drawTime = now - latestDrawTime;
-  console.log(`drawTime: ${drawTime}ms`);
+  console.log("ready!");
+  if (false) {
+    const now = Date.now();
+    const drawTime = now - latestDrawTime;
+    console.log(`drawTime: ${drawTime}ms`);
 
-  const waitTime = minDrawTime - drawTime;
-  if (waitTime > 0) {
-    await BS.wait(waitTime);
+    const remainingWaitTime = minDrawTime - drawTime;
+    if (remainingWaitTime > 0) {
+      await BS.wait(remainingWaitTime);
+    }
   }
 
   isDrawing = false;
   if (isWaitingToRedraw) {
     isWaitingToRedraw = false;
+    console.log("drawing due to isWaitingToRedraw");
     draw();
   }
 });
@@ -871,10 +892,12 @@ const selectFont = async (newFontName) => {
     console.log(`selected font "${newFontName}"`, selectedFont);
     //console.log(`selected fonts`, selectedFonts);
   }
+  console.log("selectFont", { newFontName }, selectedFont);
   selectFontSelect.value = newFontName;
   const spriteSheet = fontSpriteSheets[newFontName];
   fontMetrics = BS.getFontMetrics(selectedFont, fontSize, fontOptions);
   spritesLineHeight = BS.getFontMaxHeight(selectedFont, fontSize);
+  // await BS.wait(1000);
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
   await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);

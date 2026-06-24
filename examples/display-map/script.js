@@ -42,9 +42,14 @@ BS.DeviceManager.addEventListener("deviceConnected", (event) => {
     displayCanvasHelper.device = device;
   }
 });
-displayCanvasHelper.addEventListener("deviceUpdated", async () => {
+displayCanvasHelper.addEventListener("deviceConnected", async () => {
   await draw();
 });
+
+BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayManagerInterface", { log: true });
 
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
@@ -140,10 +145,22 @@ const mapSize = { isRelative: false, width: 300, height: 200 };
 const draw = async () => {
   if (isUploading) {
     console.log("busy uploading");
+    isWaitingToRedraw = true;
+    return;
+  }
+  if (!displayCanvasHelper.isReady) {
+    console.log("not ready");
+    isWaitingToRedraw = true;
     return;
   }
   if (!didLoad) {
     console.log("hasn't loaded yet");
+    isWaitingToRedraw = true;
+    return;
+  }
+  if (!displayCanvasHelper.spriteSheets["map"]) {
+    console.log("no map yet");
+    isWaitingToRedraw = true;
     return;
   }
 
@@ -154,10 +171,10 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  //console.log("drawing...");
+  console.log("drawing...");
 
   if (mapData) {
-    await displayCanvasHelper.saveContext();
+    await displayCanvasHelper.saveContext(false);
 
     // console.log("drawing map...");
     const x = mapLocation.isRelative
@@ -173,21 +190,28 @@ const draw = async () => {
       ? displayCanvasHelper.height * mapSize.height
       : mapSize.height;
     //console.log({ x, y, width, height });
-    await displayCanvasHelper.saveContext();
-    await displayCanvasHelper.setIgnoreFill(true);
-    await displayCanvasHelper.setLineWidth(3);
-    await displayCanvasHelper.drawRoundRect(x, y, width + 10, height + 10, 10);
-    await displayCanvasHelper.restoreContext();
+    await displayCanvasHelper.saveContext(false);
+    await displayCanvasHelper.setIgnoreFill(true, false);
+    await displayCanvasHelper.setLineWidth(3, false);
+    await displayCanvasHelper.drawRoundRect(
+      x,
+      y,
+      width + 10,
+      height + 10,
+      10,
+      false,
+    );
+    await displayCanvasHelper.restoreContext(false);
 
     if (!drawSpriteAsIs) {
-      await displayCanvasHelper.selectSpriteColor(1, 1);
-      await displayCanvasHelper.selectSpriteColor(2, 2);
-      await displayCanvasHelper.selectSpriteColor(3, 3);
-      await displayCanvasHelper.startSprite(x, y, width, height);
+      await displayCanvasHelper.selectSpriteColor(1, 1, false);
+      await displayCanvasHelper.selectSpriteColor(2, 2, false);
+      await displayCanvasHelper.selectSpriteColor(3, 3, false);
+      await displayCanvasHelper.startSprite(x, y, width, height, false);
     }
-    await displayCanvasHelper.selectSpriteSheet("map");
-    await displayCanvasHelper.setSpriteScale(scale);
-    await displayCanvasHelper.setRotation(heading, false);
+    await displayCanvasHelper.selectSpriteSheet("map", false);
+    await displayCanvasHelper.setSpriteScale(scale, false);
+    await displayCanvasHelper.setRotation(heading, false, false);
     if (!drawSpriteAsIs) {
       const [x, y] = project(latitude, longitude);
       const [cx, cy] = project(latestMapDataLatitude, latestMapDataLongitude);
@@ -201,31 +225,37 @@ const draw = async () => {
         -offsetX + cursorOffset.x,
         -offsetY + cursorOffset.y,
         "map",
+        false,
       );
-      await displayCanvasHelper.saveContext();
-      await displayCanvasHelper.setLineWidth(0);
-      await displayCanvasHelper.selectFillColor(3);
-      await displayCanvasHelper.drawCircle(cursorOffset.x, cursorOffset.y, 10);
-      await displayCanvasHelper.restoreContext();
+      await displayCanvasHelper.saveContext(false);
+      await displayCanvasHelper.setLineWidth(0, false);
+      await displayCanvasHelper.selectFillColor(3, false);
+      await displayCanvasHelper.drawCircle(
+        cursorOffset.x,
+        cursorOffset.y,
+        10,
+        false,
+      );
+      await displayCanvasHelper.restoreContext(false);
     } else {
-      await displayCanvasHelper.selectSpriteColor(1, 1);
-      await displayCanvasHelper.selectSpriteColor(2, 2);
-      await displayCanvasHelper.selectSpriteColor(3, 3);
-      await displayCanvasHelper.drawSprite(x, y, "map");
+      await displayCanvasHelper.selectSpriteColor(1, 1, false);
+      await displayCanvasHelper.selectSpriteColor(2, 2, false);
+      await displayCanvasHelper.selectSpriteColor(3, 3, false);
+      await displayCanvasHelper.drawSprite(x, y, "map", false);
     }
     if (!drawSpriteAsIs) {
-      await displayCanvasHelper.endSprite();
+      await displayCanvasHelper.endSprite(false);
     }
-    await displayCanvasHelper.restoreContext();
-    await displayCanvasHelper.resetSpriteColors();
+    await displayCanvasHelper.restoreContext(false);
+    await displayCanvasHelper.resetSpriteColors(false);
   }
 
   {
-    await displayCanvasHelper.saveContext();
-    await displayCanvasHelper.selectSpriteColor(1, 1);
-    await displayCanvasHelper.selectSpriteSheet("english");
-    await displayCanvasHelper.setVerticalAlignment("center");
-    await displayCanvasHelper.setHorizontalAlignment("center");
+    await displayCanvasHelper.saveContext(false);
+    await displayCanvasHelper.selectSpriteColor(1, 1, false);
+    await displayCanvasHelper.selectSpriteSheet("english", false);
+    await displayCanvasHelper.setVerticalAlignment("center", false);
+    await displayCanvasHelper.setHorizontalAlignment("center", false);
     const _heading = (heading + 45) % 360;
     const sign =
       headingSigns.find((headingSign) => {
@@ -245,11 +275,15 @@ const draw = async () => {
     await displayCanvasHelper.setRotation(
       Math.sign(interpolation - 0.5) * (1 - sinInterpolation) * 20,
       false,
+      false,
     );
-    await displayCanvasHelper.setSpriteScale(0.5 + 0.5 * sinInterpolation);
-    await displayCanvasHelper.drawSprite(x, y + 80, sign);
+    await displayCanvasHelper.setSpriteScale(
+      0.5 + 0.5 * sinInterpolation,
+      false,
+    );
+    await displayCanvasHelper.drawSprite(x, y + 80, sign, false);
 
-    await displayCanvasHelper.restoreContext();
+    await displayCanvasHelper.restoreContext(false);
   }
 
   if (selectedPlace || (previouslySelectedPlace && isAnimatingPlace)) {
@@ -258,13 +292,13 @@ const draw = async () => {
     const { tags } = place;
     const { name, opening_hours: openingHours } = tags;
     // console.log("place", tags.name);
-    await displayCanvasHelper.saveContext();
-    await displayCanvasHelper.selectSpriteSheet("english");
-    await displayCanvasHelper.selectSpriteColor(1, 1);
-    await displayCanvasHelper.setVerticalAlignment("end");
-    await displayCanvasHelper.setHorizontalAlignment("center");
-    await displayCanvasHelper.setSpriteScale(1);
-    await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+    await displayCanvasHelper.saveContext(false);
+    await displayCanvasHelper.selectSpriteSheet("english", false);
+    await displayCanvasHelper.selectSpriteColor(1, 1, false);
+    await displayCanvasHelper.setVerticalAlignment("end", false);
+    await displayCanvasHelper.setHorizontalAlignment("center", false);
+    await displayCanvasHelper.setSpriteScale(1, false);
+    await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight, false);
     let text = name;
     if (openingHours) {
       const oh = new opening_hours(
@@ -302,9 +336,10 @@ const draw = async () => {
         displayCanvasHelper.width / 2,
         y,
         text,
+        false,
       );
     }
-    await displayCanvasHelper.restoreContext();
+    await displayCanvasHelper.restoreContext(false);
   }
 
   await displayCanvasHelper.show();

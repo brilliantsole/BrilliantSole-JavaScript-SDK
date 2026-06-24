@@ -1,6 +1,11 @@
 import * as BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
 
+BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
+
 // ADD DEVICE
 
 const addDeviceButton = document.getElementById("addDevice");

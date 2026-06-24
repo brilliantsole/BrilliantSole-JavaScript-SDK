@@ -3349,6 +3349,7 @@ onCurrentDevice(() => {
 });
 const drawShape = (updatedParams) => {
   if (currentDevice.isConnected && currentDevice.isDisplayAvailable) {
+    // console.log(currentDevice.isDisplayReady);
     if (!currentDevice.isDisplayReady) {
       drawWhenReady = true;
       pendingParams = updatedParams;
@@ -3356,7 +3357,7 @@ const drawShape = (updatedParams) => {
     }
     lastDrawTime = Date.now();
 
-    if (false)
+    if (true)
       console.log("draw", {
         drawShapeType,
         drawWidth,
@@ -4370,8 +4371,10 @@ onCurrentDevice(() => {
         const range = setLedContainer.querySelector(`input[type="range"]`);
         let onRangeInput = () => {
           if (!range.isChanging) {
+            console.log("not changing - ignoring");
             return;
           }
+          console.log("setting led", { index, brightness: +range.value });
           currentDevice.setLed({ index, brightness: +range.value });
         };
         onRangeInput = BS.ThrottleUtils.throttle(
@@ -4384,8 +4387,10 @@ onCurrentDevice(() => {
         const colorInput = setLedContainer.querySelector(`input[type="color"]`);
         let onColorInput = () => {
           if (!colorInput.isChanging) {
+            console.log("not changing - ignoring");
             return;
           }
+          console.log("setting led", { index, color: colorInput.value });
           currentDevice.setLed({ index, color: colorInput.value });
         };
         onColorInput = BS.ThrottleUtils.throttle(
@@ -4403,8 +4408,13 @@ onCurrentDevice(() => {
         );
         let onCheckboxInput = () => {
           if (!checkbox.isChanging) {
+            console.log("not changing - ignoring");
             return;
           }
+          console.log("setting led", {
+            index,
+            brightness: checkbox.checked ? 255 : 0,
+          });
           currentDevice.setLed({
             index,
             brightness: checkbox.checked ? 255 : 0,
@@ -4425,6 +4435,10 @@ onCurrentDevice(() => {
           input?.addEventListener("focusout", () => {
             console.log("focusout", input);
             input.isChanging = false;
+          });
+          input?.addEventListener("mousedown", (event) => {
+            console.log("mousedown", input);
+            input.isChanging = true;
           });
           input?.addEventListener("change", (event) => {
             console.log("change", input);

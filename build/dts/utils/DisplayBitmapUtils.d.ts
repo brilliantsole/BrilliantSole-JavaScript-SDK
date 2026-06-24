@@ -2,6 +2,10 @@ import { DisplayBitmap } from "../DisplayManager.ts";
 import { DisplaySprite, DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
 export declare const drawBitmapHeaderLength: number;
 export declare function getBitmapData(bitmap: DisplayBitmap): DataView<ArrayBuffer>;
+export declare function parseBitmap(dataView: DataView, offset: number): {
+    bitmap: DisplayBitmap;
+    offset: number;
+};
 export declare function quantizeCanvas(canvas: HTMLCanvasElement, numberOfColors: number, colors?: string[]): Promise<{
     blob: Blob;
     colors: string[];

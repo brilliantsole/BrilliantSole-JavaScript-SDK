@@ -83,6 +83,15 @@ const table: LogFunction = isInNode
   : __console.table!.bind(__console);
 const assert: AssertLogFunction = __console.assert.bind(__console);
 
+export function assertWithError(
+  condition: unknown,
+  message: string,
+): asserts condition {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
 class Console {
   static #consoles: { [type: string]: Console } = {};
 
@@ -149,9 +158,7 @@ class Console {
 
   /** @throws {Error} if condition is not met */
   assertWithError(condition: any, message: string) {
-    if (!Boolean(condition)) {
-      throw new Error(message);
-    }
+    assertWithError(condition, message);
   }
 
   /** @throws {Error} if value's type doesn't match */
