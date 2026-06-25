@@ -41,7 +41,7 @@ class DisplayContextStateHelper {
         differences.push(key);
       }
     });
-    _console.log("diff", other, differences);
+    _console.log("diff displayContextState", other, differences);
     return differences;
   }
   update(newState: PartialDisplayContextState) {
@@ -99,7 +99,7 @@ class DisplayContextStateHelper {
     const contextCommands: DisplayContextCommand[] = [];
     const differences = this.diff(other);
     const state = other;
-    _console.log("serialize", other, differences);
+    _console.log("serialize displayContextState", other, differences);
     differences.forEach((difference) => {
       if (state[difference] == undefined) {
         return;
@@ -385,7 +385,7 @@ class DisplayContextStateHelper {
           break;
       }
     });
-    _console.log("serialized state", contextCommands);
+    _console.log("serialized displayContextState", contextCommands);
     return contextCommands;
   }
 }

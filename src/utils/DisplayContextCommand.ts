@@ -670,7 +670,7 @@ export type DisplayContextCommand =
   | SelectDisplayFillBackgroundCommand
   | StartDisplaySpriteCommand;
 
-export function serializeContextCommand(
+export function serializeDisplayContextCommandData(
   displayManager: DisplayManagerInterface,
   command: DisplayContextCommand,
 ) {
@@ -694,6 +694,7 @@ export function serializeContextCommand(
     case "setColor":
       {
         const { color, colorIndex } = command;
+        displayManager.assertValidColorIndex(colorIndex);
 
         let colorRGB: DisplayColorRGB;
         if (typeof color == "string") {
@@ -701,12 +702,6 @@ export function serializeContextCommand(
         } else {
           colorRGB = color;
         }
-        const colorHex = rgbToHex(colorRGB);
-        if (displayManager.colors[colorIndex] == colorHex) {
-          _console.log(`redundant color #${colorIndex} ${colorHex}`);
-          return;
-        }
-
         //_console.log(`setting color #${colorIndex}`, colorRGB);
         displayManager.assertValidColorIndex(colorIndex);
         assertValidColor(colorRGB);
@@ -722,13 +717,6 @@ export function serializeContextCommand(
         const { colorIndex, opacity } = command;
         displayManager.assertValidColorIndex(colorIndex);
         assertValidOpacity(opacity);
-        if (
-          Math.floor(255 * displayManager.opacities[colorIndex]) ==
-          Math.floor(255 * opacity)
-        ) {
-          _console.log(`redundant opacity #${colorIndex} ${opacity}`);
-          return;
-        }
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint8(0, colorIndex);
         dataView.setUint8(1, Math.round(opacity * 255));
@@ -1518,7 +1506,7 @@ export function serializeContextCommand(
 
   return dataView;
 }
-export function serializeContextCommands(
+export function serializeDisplayContextCommands(
   displayManager: DisplayManagerInterface,
   commands: DisplayContextCommand[],
 ) {
@@ -1528,7 +1516,7 @@ export function serializeContextCommands(
       const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
         command.type,
       );
-      const serializedContextCommand = serializeContextCommand(
+      const serializedContextCommand = serializeDisplayContextCommandData(
         displayManager,
         command,
       );
@@ -1549,7 +1537,7 @@ export function serializeContextCommands(
   return serializedContextCommands;
 }
 
-export function parseContextCommands(
+export function parseDisplayContextCommands(
   displayManager: DisplayManagerInterface,
   dataView: DataView,
 ) {
@@ -1564,6 +1552,7 @@ export function parseContextCommands(
       `invalid commandTypeIndex ${commandTypeIndex}`,
     );
     let command: DisplayContextCommand | undefined;
+    _console.log(`parsing "${type}" (${offset}/${dataView.byteLength})`);
 
     switch (type) {
       case "show":

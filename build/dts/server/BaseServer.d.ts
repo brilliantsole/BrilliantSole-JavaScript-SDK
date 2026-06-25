@@ -3,6 +3,7 @@ import { DeviceMessage, ServerMessage } from "./ServerUtils.ts";
 import Device from "../Device.ts";
 import GuardManager from "../utils/GuardManager.ts";
 import { SensorType } from "../sensor/SensorDataManager.ts";
+import { DisplayContextCommand } from "../utils/DisplayContextCommand.ts";
 export interface BaseServerClient {
 }
 export declare const ServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
@@ -55,6 +56,12 @@ export interface BaseServerClientDeviceSensorConfigurationGuardManagerArg<Server
     sensorRate: number;
     server: Server;
 }
+export interface BaseServerClientDeviceDisplayContextCommandGuardManagerArg<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> {
+    device: Device;
+    client: ServerClient;
+    displayContextCommand: DisplayContextCommand;
+    server: Server;
+}
 declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     #private;
     get addEventListener(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", ServerEventMessages<ServerClient>, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
@@ -77,6 +84,7 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     deviceToClientGuardManager: GuardManager<[BaseServerClientDeviceGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
     deviceSensorDataToClientGuardManager: GuardManager<[BaseServerClientDeviceSensorDataGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
     clientSensorConfigurationToDeviceGuardManager: GuardManager<[BaseServerClientDeviceSensorConfigurationGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
+    clientDisplayContextCommandToDeviceGuardManager: GuardManager<[BaseServerClientDeviceDisplayContextCommandGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
     protected parseClientMessage(client: ServerClient, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
     protected parseClientDeviceMessage(client: ServerClient, device: Device, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
 }

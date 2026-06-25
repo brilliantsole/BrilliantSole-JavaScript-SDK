@@ -5,6 +5,7 @@ BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
+BS.setConsoleLevelFlagsForType("BaseServer", { log: true });
 
 // ADD DEVICE
 
@@ -224,6 +225,13 @@ BS.WindowServer.deviceSensorDataToClientGuardManager.add(
   ({ client, message, sensorType, sensorData }) => {
     // console.log("allow sensorData?", { sensorType, sensorData });
     return client.iframe.dataset.allowSensorData == "true";
+    return true;
+  },
+);
+
+BS.WindowServer.clientDisplayContextCommandToDeviceGuardManager.add(
+  ({ client, message, displayContextCommand }) => {
+    console.log("allow displayContextCommand?", displayContextCommand);
     return true;
   },
 );

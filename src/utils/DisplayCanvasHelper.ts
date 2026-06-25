@@ -55,6 +55,8 @@ import {
   selectSpritePaletteSwap,
   selectSpriteSheetPalette,
   selectSpriteSheetPaletteSwap,
+  serializeColors,
+  serializeOpacities,
 } from "./DisplayManagerInterface.ts";
 import {
   assertValidColor,
@@ -98,7 +100,7 @@ import {
 import { wait } from "./Timer.ts";
 import {
   DisplayContextCommand,
-  parseContextCommands,
+  parseDisplayContextCommands,
 } from "./DisplayContextCommand.ts";
 import {
   assertValidSpriteLines,
@@ -820,12 +822,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    this.assertValidColorIndex(colorIndex);
+
     let colorRGB: DisplayColorRGB;
     if (typeof color == "string") {
       colorRGB = stringToRGB(color);
     } else {
       colorRGB = color;
     }
+    assertValidColor(colorRGB);
+
     const colorHex = rgbToHex(colorRGB);
     if (this.colors[colorIndex] == colorHex) {
       // _console.log(`redundant color #${colorIndex} ${colorHex}`);
@@ -833,9 +839,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
 
     // _console.log(`setting color #${colorIndex}`, color);
-    this.assertValidColorIndex(colorIndex);
-    assertValidColor(colorRGB);
-
     this.#setColor(colorIndex, colorHex);
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
@@ -850,6 +853,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         this.#onSentContextCommands();
       }
     }
+  }
+  serializeColors(): DisplayContextCommand[] {
+    return serializeColors(this);
   }
 
   async setColorOpacity(
@@ -896,6 +902,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#opacities.forEach((_, colorIndex) => {
       this.#setColorOpacity(colorIndex, opacity);
     });
+  }
+  serializeOpacities(): DisplayContextCommand[] {
+    return serializeOpacities(this);
   }
 
   // CONTEXT COMMANDS
@@ -4616,7 +4625,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       isParsing,
     });
 
-    const contextCommands = parseContextCommands(this, dataView);
+    const contextCommands = parseDisplayContextCommands(this, dataView);
     await this.runContextCommands(contextCommands, sendImmediately, isParsing);
   }
 

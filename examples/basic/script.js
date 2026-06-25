@@ -9,6 +9,12 @@ window.BS = BS;
 //BS.setAllConsoleLevelFlags({ log: false });
 //BS.setConsoleLevelFlagsForType("PressureDataManager", { log: true });
 
+BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
+// BS.setConsoleLevelFlagsForType("Device", { log: true });
+
 // GET DEVICES
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById(

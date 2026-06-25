@@ -17,6 +17,7 @@ export interface DisplayManagerInterface {
     get colors(): string[];
     get numberOfColors(): number;
     setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
+    serializeColors(): DisplayContextCommand[];
     assertValidColorIndex(colorIndex: number): void;
     assertValidLineWidth(lineWidth: number): void;
     assertValidNumberOfColors(numberOfColors: number): void;
@@ -24,6 +25,7 @@ export interface DisplayManagerInterface {
     get opacities(): number[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
+    serializeOpacities(): DisplayContextCommand[];
     saveContext(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
     restoreContext(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
@@ -179,3 +181,5 @@ export declare function selectSpriteSheetPaletteSwap(displayManagerInterface: Di
 export declare function selectSpritePaletteSwap(displayManagerInterface: DisplayManagerInterface, spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
 export declare function drawSpriteFromSpriteSheet(displayManagerInterface: DisplayManagerInterface, offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
 export declare function getSpriteSheetByIndex(displayManagerInterface: DisplayManagerInterface, index: number): DisplaySpriteSheet | undefined;
+export declare function serializeColors(displayManager: DisplayManagerInterface, other?: string[]): DisplayContextCommand[];
+export declare function serializeOpacities(displayManager: DisplayManagerInterface, other?: number[]): DisplayContextCommand[];

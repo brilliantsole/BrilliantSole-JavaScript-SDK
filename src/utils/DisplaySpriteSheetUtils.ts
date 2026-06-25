@@ -8,7 +8,7 @@ import { createConsole } from "./Console.ts";
 import { quantizeCanvas } from "./DisplayBitmapUtils.ts";
 import {
   DisplayContextCommand,
-  serializeContextCommands,
+  serializeDisplayContextCommands,
 } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import opentype, { type Glyph, type Font } from "opentype.js";
@@ -97,7 +97,7 @@ export function serializeSpriteSheet(
   numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
 
   const spritePayloads = sprites.map((sprite, index) => {
-    const commandsData = serializeContextCommands(
+    const commandsData = serializeDisplayContextCommands(
       displayManager,
       sprite.commands,
     );

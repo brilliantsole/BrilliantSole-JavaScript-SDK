@@ -62,7 +62,11 @@ import { RequiredTfliteMessageTypes } from "../TfliteManager.ts";
 import { RequiredCameraMessageTypes } from "../CameraManager.ts";
 import { RequiredMicrophoneMessageTypes } from "../MicrophoneManager.ts";
 import { RequiredDisplayMessageTypes } from "../DisplayManager.ts";
-import { serializeContextCommands } from "../utils/DisplayContextCommand.ts";
+import {
+  DisplayContextCommand,
+  parseDisplayContextCommands,
+  serializeDisplayContextCommands,
+} from "../utils/DisplayContextCommand.ts";
 
 const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...DeviceInformationTypes,
@@ -161,6 +165,15 @@ export interface BaseServerClientDeviceSensorConfigurationGuardManagerArg<
   client: ServerClient;
   sensorType: SensorType;
   sensorRate: number;
+  server: Server;
+}
+export interface BaseServerClientDeviceDisplayContextCommandGuardManagerArg<
+  Server extends BaseServer<ServerClient>,
+  ServerClient extends BaseServerClient,
+> {
+  device: Device;
+  client: ServerClient;
+  displayContextCommand: DisplayContextCommand;
   server: Server;
 }
 
@@ -384,10 +397,11 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       case "displayContextCommands":
         return {
           type: "displayContextCommands",
-          data: serializeContextCommands(
-            device.displayManager,
-            device.displayManager.serializeContextState(),
-          ),
+          data: serializeDisplayContextCommands(device.displayManager, [
+            ...device.displayManager.serializeColors(),
+            ...device.displayManager.serializeOpacities(),
+            ...device.displayManager.serializeContextState(),
+          ]),
         };
         break;
       default:
@@ -662,6 +676,27 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       client,
       sensorType,
       sensorRate,
+      server: this,
+    });
+  }
+
+  clientDisplayContextCommandToDeviceGuardManager = new GuardManager<
+    [
+      BaseServerClientDeviceDisplayContextCommandGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
+  >();
+  #allowDeviceDisplayContextCommandsToClient(
+    device: Device,
+    client: ServerClient,
+    displayContextCommand: DisplayContextCommand,
+  ) {
+    return this.clientDisplayContextCommandToDeviceGuardManager.evaluate({
+      device,
+      client,
+      displayContextCommand,
       server: this,
     });
   }
@@ -957,6 +992,46 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                   device,
                   "getSensorConfiguration",
                 );
+              }
+            }
+            break;
+          case "displayContextCommands":
+            if (!this.clientDisplayContextCommandToDeviceGuardManager.isEmpty) {
+              const displayContextCommands = parseDisplayContextCommands(
+                device.displayManager,
+                dataView,
+              );
+              _console.log(
+                "trimming displayContextCommands...",
+                displayContextCommands,
+              );
+              const filteredDisplayContextCommands =
+                displayContextCommands.filter((displayContextCommand) => {
+                  return this.#allowDeviceDisplayContextCommandsToClient(
+                    device,
+                    client,
+                    displayContextCommand,
+                  );
+                });
+              _console.log(
+                "filteredDisplayContextCommands",
+                filteredDisplayContextCommands,
+              );
+              device.displayManager.runContextCommands(
+                filteredDisplayContextCommands,
+                false,
+                true,
+              );
+
+              const filteredDisplayContextCommandsData =
+                serializeDisplayContextCommands(
+                  device.displayManager,
+                  filteredDisplayContextCommands,
+                );
+              if (filteredDisplayContextCommandsData.byteLength > 0) {
+                message.data = filteredDisplayContextCommandsData;
+              } else {
+                _console.log("no filteredDisplayContextCommandsData");
               }
             }
             break;

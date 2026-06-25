@@ -68,8 +68,8 @@ import {
   DisplayContextCommand,
   DisplayContextCommandType,
   DisplayContextCommandTypes,
-  parseContextCommands,
-  serializeContextCommand,
+  parseDisplayContextCommands,
+  serializeDisplayContextCommandData,
 } from "./utils/DisplayContextCommand.ts";
 import {
   assertAnySelectedSpriteSheet,
@@ -91,6 +91,8 @@ import {
   selectSpritePaletteSwap,
   selectSpriteSheetPalette,
   selectSpriteSheetPaletteSwap,
+  serializeColors,
+  serializeOpacities,
 } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
@@ -765,26 +767,31 @@ class DisplayManager implements DisplayManagerInterface {
     } else {
       colorRGB = color;
     }
+
     const colorHex = rgbToHex(colorRGB);
     if (this.colors[colorIndex] == colorHex) {
-      _console.log(`redundant color #${colorIndex} ${colorHex}`);
+      // _console.log(`redundant color #${colorIndex} ${colorHex}`);
       return;
     }
 
-    //_console.log(`setting color #${colorIndex}`, colorRGB);
-    this.assertValidColorIndex(colorIndex);
-    assertValidColor(colorRGB);
-    const dataView = new DataView(new ArrayBuffer(4));
-    dataView.setUint8(0, colorIndex);
-    dataView.setUint8(1, colorRGB.r);
-    dataView.setUint8(2, colorRGB.g);
-    dataView.setUint8(3, colorRGB.b);
+    const commandType: DisplayContextCommandType = "setColor";
+
+    const dataView = serializeDisplayContextCommandData(this, {
+      type: commandType,
+      colorIndex,
+      color,
+    });
+    if (!dataView) {
+      return;
+    }
+
     await this.#sendContextCommand(
-      "setColor",
+      commandType,
       dataView.buffer,
       sendImmediately,
       isParsing,
     );
+
     this.colors[colorIndex] = colorHex;
     this.#dispatchEvent("displayColor", {
       colorIndex,
@@ -792,9 +799,15 @@ class DisplayManager implements DisplayManagerInterface {
       colorHex,
     });
   }
+  serializeColors(): DisplayContextCommand[] {
+    return serializeColors(this);
+  }
   #opacities: number[] = [];
   get opacities() {
     return this.#opacities;
+  }
+  serializeOpacities(): DisplayContextCommand[] {
+    return serializeOpacities(this);
   }
   async setColorOpacity(
     colorIndex: number,
@@ -802,8 +815,15 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (
+      Math.floor(255 * this.#opacities[colorIndex]) == Math.floor(255 * opacity)
+    ) {
+      // _console.log(`redundant opacity #${colorIndex} ${opacity}`);
+      return;
+    }
+
     const commandType: DisplayContextCommandType = "setColorOpacity";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       colorIndex,
       opacity,
@@ -826,7 +846,7 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     const commandType: DisplayContextCommandType = "setOpacity";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       opacity,
     });
@@ -905,7 +925,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "selectFillColor";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       fillColorIndex,
     });
@@ -933,7 +953,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "selectBackgroundColor";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       backgroundColorIndex,
     });
@@ -961,7 +981,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "selectLineColor";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       lineColorIndex,
     });
@@ -988,7 +1008,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setIgnoreFill";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       ignoreFill,
     });
@@ -1015,7 +1035,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setIgnoreLine";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       ignoreLine,
     });
@@ -1042,7 +1062,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setFillBackground";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       fillBackground,
     });
@@ -1078,7 +1098,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setLineWidth";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       lineWidth,
     });
@@ -1113,7 +1133,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     // @ts-ignore
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: alignmentCommand,
       [alignmentKey]: alignment,
     });
@@ -1161,7 +1181,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "resetAlignment";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
     });
     if (!dataView) {
@@ -1192,7 +1212,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setRotation";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       rotation,
       isRadians,
@@ -1217,7 +1237,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "clearRotation";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
     });
     await this.#sendContextCommand(
@@ -1242,7 +1262,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setSegmentStartCap";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       segmentStartCap,
     });
@@ -1270,7 +1290,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setSegmentEndCap";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       segmentEndCap,
     });
@@ -1299,7 +1319,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setSegmentCap";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       segmentCap,
     });
@@ -1327,7 +1347,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setSegmentStartRadius";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       segmentStartRadius,
     });
@@ -1354,7 +1374,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setSegmentEndRadius";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       segmentEndRadius,
     });
@@ -1382,7 +1402,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setSegmentRadius";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       segmentRadius,
     });
@@ -1415,7 +1435,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     // @ts-ignore
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: cropCommand,
       [cropKey]: crop,
     });
@@ -1469,7 +1489,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "clearCrop";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
     });
     await this.#sendContextCommand(
@@ -1498,7 +1518,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     // @ts-ignore
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: cropCommand,
       [cropKey]: crop,
     });
@@ -1572,7 +1592,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "clearRotationCrop";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
     });
     await this.#sendContextCommand(
@@ -1601,7 +1621,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "selectBitmapColor";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       bitmapColorIndex,
       colorIndex,
@@ -1648,7 +1668,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "selectBitmapColors";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       bitmapColorPairs,
     });
@@ -1720,7 +1740,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const dataView = serializeContextCommand(this, command);
+    const dataView = serializeDisplayContextCommandData(this, command);
     if (!dataView) {
       return;
     }
@@ -1780,7 +1800,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "resetBitmapScale";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
     });
     await this.#sendContextCommand(
@@ -1809,7 +1829,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "selectSpriteColor";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       spriteColorIndex,
       colorIndex,
@@ -1856,7 +1876,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "selectSpriteColors";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       spriteColorPairs,
     });
@@ -1907,7 +1927,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "resetSpriteColors";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
     });
     await this.#sendContextCommand(
@@ -1950,7 +1970,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const dataView = serializeContextCommand(this, command);
+    const dataView = serializeDisplayContextCommandData(this, command);
     if (!dataView) {
       return;
     }
@@ -2010,7 +2030,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "resetSpriteScale";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
     });
     await this.#sendContextCommand(
@@ -2036,7 +2056,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const commandType: DisplayContextCommandType = "setSpritesLineHeight";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       spritesLineHeight,
     });
@@ -2073,7 +2093,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     // @ts-expect-error
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       [stateKey]: direction,
     });
@@ -2133,7 +2153,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     // @ts-expect-error
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       [stateKey]: spacing,
     });
@@ -2193,7 +2213,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     // @ts-expect-error
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       [stateKey]: alignment,
     });
@@ -2242,7 +2262,7 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     const commandType: DisplayContextCommandType = "clearRect";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       x,
       y,
@@ -2268,7 +2288,7 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     const commandType: DisplayContextCommandType = "drawRect";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,
@@ -2295,7 +2315,7 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     const commandType: DisplayContextCommandType = "drawRoundRect";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,
@@ -2321,7 +2341,7 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     const commandType: DisplayContextCommandType = "drawCircle";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,
@@ -2346,7 +2366,7 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     const commandType: DisplayContextCommandType = "drawEllipse";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,
@@ -2372,7 +2392,7 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     const commandType: DisplayContextCommandType = "drawRegularPolygon";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,
@@ -2396,7 +2416,7 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
     const commandType: DisplayContextCommandType = "drawPolygon";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       points,
     });
@@ -2428,7 +2448,7 @@ class DisplayManager implements DisplayManagerInterface {
       }
     }
     const commandType: DisplayContextCommandType = "drawWireframe";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       wireframe,
     });
@@ -2462,7 +2482,7 @@ class DisplayManager implements DisplayManagerInterface {
       curveType == "cubic"
         ? "drawCubicBezierCurve"
         : "drawQuadraticBezierCurve";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       controlPoints,
     });
@@ -2487,7 +2507,7 @@ class DisplayManager implements DisplayManagerInterface {
       curveType == "cubic"
         ? "drawCubicBezierCurves"
         : "drawQuadraticBezierCurves";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       controlPoints,
     });
@@ -2561,7 +2581,7 @@ class DisplayManager implements DisplayManagerInterface {
     const commandType: DisplayContextCommandType = isClosed
       ? "drawClosedPath"
       : "drawPath";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       curves,
     });
@@ -2607,7 +2627,7 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     const commandType: DisplayContextCommandType = "drawSegment";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       startX,
       startY,
@@ -2631,7 +2651,7 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
     const commandType: DisplayContextCommandType = "drawSegments";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       points,
     });
@@ -2668,7 +2688,7 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     const commandType: DisplayContextCommandType = "drawArc";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,
@@ -2699,7 +2719,7 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     const commandType: DisplayContextCommandType = "drawArcEllipse";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,
@@ -2754,7 +2774,7 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     this.assertValidBitmap(bitmap, true);
     const commandType: DisplayContextCommandType = "drawBitmap";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,
@@ -2835,7 +2855,7 @@ class DisplayManager implements DisplayManagerInterface {
       isParsing,
     });
 
-    const contextCommands = parseContextCommands(this, dataView);
+    const contextCommands = parseDisplayContextCommands(this, dataView);
     await this.runContextCommands(contextCommands, sendImmediately, isParsing);
   }
 
@@ -3004,7 +3024,7 @@ class DisplayManager implements DisplayManagerInterface {
     const spriteSheetIndex = this.spriteSheetIndices[spriteSheetName];
     //_console.log("selecting", { spriteSheetIndex, spriteSheetName });
     const commandType: DisplayContextCommandType = "selectSpriteSheet";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       spriteSheetIndex,
     });
@@ -3043,7 +3063,7 @@ class DisplayManager implements DisplayManagerInterface {
     );
     spriteIndex = spriteIndex!;
     const commandType: DisplayContextCommandType = "drawSprite";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,
@@ -3078,7 +3098,7 @@ class DisplayManager implements DisplayManagerInterface {
     );
     _console.log("spriteSerializedLines", spriteSerializedLines);
     const commandType: DisplayContextCommandType = "drawSprites";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,
@@ -3450,7 +3470,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.#resetContextState();
 
     const commandType: DisplayContextCommandType = "startSprite";
-    const dataView = serializeContextCommand(this, {
+    const dataView = serializeDisplayContextCommandData(this, {
       type: commandType,
       offsetX,
       offsetY,

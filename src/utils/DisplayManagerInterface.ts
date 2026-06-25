@@ -7,6 +7,7 @@ import {
   DisplayBezierCurveType,
   DisplayWireframe,
 } from "../DisplayManager.ts";
+import { colorDistanceSq } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
@@ -72,6 +73,7 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ): Promise<void>;
+  serializeColors(): DisplayContextCommand[];
 
   assertValidColorIndex(colorIndex: number): void;
   assertValidLineWidth(lineWidth: number): void;
@@ -90,6 +92,7 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ): Promise<void>;
+  serializeOpacities(): DisplayContextCommand[];
 
   saveContext(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
   restoreContext(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
@@ -1818,4 +1821,31 @@ export function getSpriteSheetByIndex(
       return displayManagerInterface.spriteSheets[spriteSheetName];
     }
   }
+}
+
+export function serializeColors(
+  displayManager: DisplayManagerInterface,
+  other?: string[],
+): DisplayContextCommand[] {
+  other = other ?? new Array(displayManager.numberOfColors).fill("#000000");
+  const commands: DisplayContextCommand[] = [];
+  displayManager.colors.forEach((color, colorIndex) => {
+    if (color != other[colorIndex]) {
+      commands.push({ type: "setColor", colorIndex, color });
+    }
+  });
+  return commands;
+}
+export function serializeOpacities(
+  displayManager: DisplayManagerInterface,
+  other?: number[],
+): DisplayContextCommand[] {
+  other = other ?? new Array(displayManager.numberOfColors).fill(1);
+  const commands: DisplayContextCommand[] = [];
+  displayManager.opacities.forEach((opacity, colorIndex) => {
+    if (opacity != other[colorIndex]) {
+      commands.push({ type: "setColorOpacity", colorIndex, opacity });
+    }
+  });
+  return commands;
 }
