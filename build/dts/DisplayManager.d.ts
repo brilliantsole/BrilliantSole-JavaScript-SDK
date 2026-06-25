@@ -121,7 +121,9 @@ export interface DisplayEventMessages {
         spriteSheetName: string;
         spriteSheet: DisplaySpriteSheet;
     };
-    displayContextCommands: {};
+    displayContextCommands: {
+        displayContextCommands: DisplayContextCommand[];
+    };
 }
 export type DisplayEventDispatcher = EventDispatcher<Device, DisplayEventType, DisplayEventMessages>;
 export type SendDisplayMessageCallback = SendMessageCallback<DisplayMessageType>;

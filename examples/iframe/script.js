@@ -7,6 +7,9 @@ BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
 BS.setConsoleLevelFlagsForType("BaseServer", { log: true });
 
+const displayCanvasHelper = new BS.DisplayCanvasHelper();
+window.displayCanvasHelper = displayCanvasHelper;
+
 // ADD DEVICE
 
 const addDeviceButton = document.getElementById("addDevice");
@@ -94,6 +97,13 @@ if (connectOnLoad) {
   console.log("getDevices", devices);
   devices.forEach((device) => device.reconnect());
 }
+
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device.isDisplayAvailable) {
+    displayCanvasHelper.device = device;
+  }
+});
 
 // IFRAME
 

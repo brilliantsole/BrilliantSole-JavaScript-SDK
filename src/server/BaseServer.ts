@@ -1033,6 +1033,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               } else {
                 _console.log("no filteredDisplayContextCommandsData");
               }
+              // TODO - send back "corrected" contextState (e.g. tries to change color but it "blocked")
             }
             break;
         }

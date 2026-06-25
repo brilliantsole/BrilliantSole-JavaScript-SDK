@@ -300,7 +300,9 @@ export interface DisplayEventMessages {
     spriteSheetName: string;
     spriteSheet: DisplaySpriteSheet;
   };
-  displayContextCommands: {};
+  displayContextCommands: {
+    displayContextCommands: DisplayContextCommand[];
+  };
 }
 
 export type DisplayEventDispatcher = EventDispatcher<
@@ -679,7 +681,10 @@ class DisplayManager implements DisplayManagerInterface {
     );
     this.#contextCommandBuffers.length = 0;
     await this.sendMessage([{ type: "displayContextCommands", data }], true);
-    this.#dispatchEvent("displayContextCommands", {});
+    // FILL
+    this.#dispatchEvent("displayContextCommands", {
+      displayContextCommands: [],
+    });
   }
   async flushContextCommands() {
     await this.#sendContextCommands();

@@ -1506,25 +1506,33 @@ export function serializeDisplayContextCommandData(
 
   return dataView;
 }
+export function serializeDisplayContextCommand(
+  displayManager: DisplayManagerInterface,
+  command: DisplayContextCommand,
+) {
+  if (command.hide) {
+    return;
+  }
+
+  const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
+    command.type,
+  );
+  const serializedContextCommand = serializeDisplayContextCommandData(
+    displayManager,
+    command,
+  );
+  return concatenateArrayBuffers(
+    UInt8ByteBuffer(displayContextCommandEnum),
+    serializedContextCommand,
+  );
+}
 export function serializeDisplayContextCommands(
   displayManager: DisplayManagerInterface,
   commands: DisplayContextCommand[],
 ) {
-  const serializedContextCommandArray = commands
-    .filter((command) => !command.hide)
-    .map((command) => {
-      const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
-        command.type,
-      );
-      const serializedContextCommand = serializeDisplayContextCommandData(
-        displayManager,
-        command,
-      );
-      return concatenateArrayBuffers(
-        UInt8ByteBuffer(displayContextCommandEnum),
-        serializedContextCommand,
-      );
-    });
+  const serializedContextCommandArray = commands.map((command) =>
+    serializeDisplayContextCommand(displayManager, command),
+  );
   const serializedContextCommands = concatenateArrayBuffers(
     serializedContextCommandArray,
   );

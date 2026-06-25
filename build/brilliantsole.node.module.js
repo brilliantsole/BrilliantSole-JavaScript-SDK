@@ -6919,14 +6919,16 @@ function serializeDisplayContextCommandData(displayManager, command) {
     }
     return dataView;
 }
+function serializeDisplayContextCommand(displayManager, command) {
+    if (command.hide) {
+        return;
+    }
+    const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(command.type);
+    const serializedContextCommand = serializeDisplayContextCommandData(displayManager, command);
+    return concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), serializedContextCommand);
+}
 function serializeDisplayContextCommands(displayManager, commands) {
-    const serializedContextCommandArray = commands
-        .filter((command) => !command.hide)
-        .map((command) => {
-        const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(command.type);
-        const serializedContextCommand = serializeDisplayContextCommandData(displayManager, command);
-        return concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), serializedContextCommand);
-    });
+    const serializedContextCommandArray = commands.map((command) => serializeDisplayContextCommand(displayManager, command));
     const serializedContextCommands = concatenateArrayBuffers(serializedContextCommandArray);
     _console$t.log("serializedContextCommands", commands, serializedContextCommandArray, serializedContextCommands);
     return serializedContextCommands;
@@ -9828,7 +9830,9 @@ class DisplayManager {
         _console$p.log(`sending displayContextCommands`, this.#contextCommandBuffers.slice(), data);
         this.#contextCommandBuffers.length = 0;
         await this.sendMessage([{ type: "displayContextCommands", data }], true);
-        this.#dispatchEvent("displayContextCommands", {});
+        this.#dispatchEvent("displayContextCommands", {
+            displayContextCommands: [],
+        });
     }
     async flushContextCommands() {
         await this.#sendContextCommands();

@@ -544,9 +544,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       spriteSheetName,
     });
   }
-  #onDeviceDisplayContextCommands(
+  async #onDeviceDisplayContextCommands(
     event: DeviceEventMap["displayContextCommands"],
   ) {
+    const { displayContextCommands } = event.message;
+    await this.runContextCommands(displayContextCommands, false, true);
     this.#onSentContextCommands();
   }
 
