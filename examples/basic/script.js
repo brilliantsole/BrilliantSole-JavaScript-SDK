@@ -3099,7 +3099,7 @@ onCurrentDevice(() => {
     { immediate: true },
   );
   currentDevice.addEventListener("displayColor", (event) => {
-    const { colorIndex, colorRGB, colorHex } = event.message;
+    const { colorIndex, color, colorHex } = event.message;
     displayColorsContainer
       .querySelectorAll(".displayColor")
       [colorIndex].querySelector("input").value = colorHex;

@@ -1542,6 +1542,7 @@ export async function runDisplayContextCommands(
 ) {
   _console.log("runDisplayContextCommands", commands, {
     sendImmediately,
+    isParsing,
   });
 
   commands = commands.filter((command) => !command.hide);
@@ -1549,7 +1550,7 @@ export async function runDisplayContextCommands(
   for (let command of commands) {
     await runDisplayContextCommand(displayManager, command, false, isParsing);
   }
-  if (sendImmediately) {
+  if (sendImmediately && !isParsing) {
     await displayManager.flushContextCommands();
   }
 }

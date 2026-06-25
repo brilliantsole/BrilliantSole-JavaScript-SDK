@@ -152,7 +152,7 @@ export interface DisplayCanvasHelperEventMessages {
   };
   color: {
     colorIndex: number;
-    colorRGB: DisplayColorRGB;
+    color: DisplayColorRGB;
     colorHex: string;
   };
   colorOpacity: {
@@ -548,7 +548,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     event: DeviceEventMap["displayContextCommands"],
   ) {
     const { displayContextCommands } = event.message;
-    await this.runContextCommands(displayContextCommands, false, true);
+    _console.log("onDeviceDisplayContextCommands", displayContextCommands);
+    // await this.runContextCommands(displayContextCommands, false, true);
     this.#onSentContextCommands();
   }
 
@@ -627,8 +628,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#pendingColors.forEach((colorHex, colorIndex) => {
       this.#colors[colorIndex] = colorHex;
-      const colorRGB = hexToRGB(colorHex);
-      this.#dispatchEvent("color", { colorIndex, colorHex, colorRGB });
+      const color = hexToRGB(colorHex);
+      this.#dispatchEvent("color", { colorIndex, colorHex, color });
     });
     this.#pendingColors.length = 0;
     _console.log("flushColors");
@@ -785,7 +786,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     waitUntilReady = false,
     isParsing?: boolean,
   ) {
-    _console.log("clearDisplay", { sendImmediately, waitUntilReady });
+    _console.log("clearDisplay", {
+      sendImmediately,
+      waitUntilReady,
+      isParsing,
+    });
 
     this.#frontDrawStack.length = 0;
     this.#rearDrawStack.length = 0;
@@ -826,15 +831,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     this.assertValidColorIndex(colorIndex);
 
-    let colorRGB: DisplayColorRGB;
     if (typeof color == "string") {
-      colorRGB = stringToRGB(color);
+      color = stringToRGB(color);
     } else {
-      colorRGB = color;
+      color = color;
     }
-    assertValidColor(colorRGB);
+    assertValidColor(color);
 
-    const colorHex = rgbToHex(colorRGB);
+    const colorHex = rgbToHex(color);
     if (this.colors[colorIndex] == colorHex) {
       // _console.log(`redundant color #${colorIndex} ${colorHex}`);
       return;
@@ -1000,7 +1004,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    _console.log("selectFillColor", { fillColorIndex, sendImmediately });
+    _console.log("selectFillColor", {
+      fillColorIndex,
+      sendImmediately,
+      isParsing,
+    });
     this.assertValidColorIndex(fillColorIndex);
     const differences = this.#contextStateHelper.update({
       fillColorIndex,
@@ -3749,6 +3757,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     angleOffset: number,
     isRadians?: boolean,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ) {
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
@@ -3774,6 +3783,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         angleOffset,
         true,
         sendImmediately,
+        isParsing,
       );
     } else {
       if (sendImmediately) {
@@ -4829,6 +4839,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     offset?: number,
     indicesOnly?: boolean,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ) {
     await selectSpriteSheetPalette(
       this,
@@ -4836,18 +4847,21 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       offset,
       indicesOnly,
       sendImmediately,
+      isParsing,
     );
   }
   async selectSpriteSheetPaletteSwap(
     paletteSwapName: string,
     offset?: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ) {
     await selectSpriteSheetPaletteSwap(
       this,
       paletteSwapName,
       offset,
       sendImmediately,
+      isParsing,
     );
   }
   async selectSpritePaletteSwap(
@@ -4855,6 +4869,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     paletteSwapName: string,
     offset?: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ) {
     await selectSpritePaletteSwap(
       this,
@@ -4862,6 +4877,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       paletteSwapName,
       offset,
       sendImmediately,
+      isParsing,
     );
   }
 
@@ -4969,6 +4985,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     width: number,
     height: number,
     sendImmediately?: boolean,
+    isParsing?: boolean,
   ) {
     _console.assertWithError(
       !this.#isDrawingBlankSprite,
@@ -4986,6 +5003,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         width,
         height,
         sendImmediately,
+        isParsing,
       );
     } else {
       if (sendImmediately) {
@@ -4999,7 +5017,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#setIsDrawingSprite(false);
     this.#setIgnoreDevice(false);
   }
-  async endSprite(sendImmediately?: boolean) {
+  async endSprite(sendImmediately?: boolean, isParsing?: boolean) {
     _console.assertWithError(
       this.#isDrawingBlankSprite,
       `not drawing blank sprite`,
@@ -5009,7 +5027,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#endSprite();
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.endSprite(sendImmediately);
+      await this.deviceDisplayManager!.endSprite(sendImmediately, isParsing);
     } else {
       if (sendImmediately) {
         this.#onSentContextCommands();

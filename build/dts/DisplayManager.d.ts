@@ -94,7 +94,7 @@ export interface DisplayEventMessages {
     };
     displayColor: {
         colorIndex: number;
-        colorRGB: DisplayColorRGB;
+        color: DisplayColorRGB;
         colorHex: string;
     };
     displayColorOpacity: {
@@ -148,7 +148,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get contextState(): DisplayContextState;
     serializeContextState(): DisplayContextCommand[];
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -176,8 +176,8 @@ declare class DisplayManager implements DisplayManagerInterface {
     serializeOpacities(): DisplayContextCommand[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
-    saveContext(sendImmediately?: boolean): Promise<void>;
-    restoreContext(sendImmediately?: boolean): Promise<void>;
+    saveContext(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
+    restoreContext(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
     clearContext(sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean, isParsing?: boolean): Promise<void>;
     selectBackgroundColor(backgroundColorIndex: number, sendImmediately?: boolean, isParsing?: boolean): Promise<void>;

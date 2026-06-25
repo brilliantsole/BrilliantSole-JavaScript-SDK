@@ -29,7 +29,6 @@ import {
   DisplayRotationCropDirectionToStateKey,
   maxDisplayScale,
   roundScale,
-  DisplaySpriteScaleDirectionToCommandType,
   minDisplayScale,
   assertValidAlignment,
   DisplayAlignmentDirectionToCommandType,
@@ -69,6 +68,7 @@ import {
   DisplayContextCommandType,
   DisplayContextCommandTypes,
   parseDisplayContextCommands,
+  serializeDisplayContextCommand,
   serializeDisplayContextCommandData,
 } from "./utils/DisplayContextCommand.ts";
 import {
@@ -272,7 +272,7 @@ export interface DisplayEventMessages {
   };
   displayColor: {
     colorIndex: number;
-    colorRGB: DisplayColorRGB;
+    color: DisplayColorRGB;
     colorHex: string;
   };
   displayColorOpacity: {
@@ -621,22 +621,13 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   // DISPLAY CONTEXT
-  #assertValidDisplayContextCommandType(
-    displayContextCommand: DisplayContextCommandType,
-  ) {
-    _console.assertEnumWithError(
-      displayContextCommand,
-      DisplayContextCommandTypes,
-    );
-  }
-
   get #maxCommandDataLength() {
     return this.mtu - 7;
   }
   #contextCommandBuffers: ArrayBuffer[] = [];
+  #contextCommands: DisplayContextCommand[] = [];
   async #sendContextCommand(
-    contextCommandType: DisplayContextCommandType,
-    arrayBuffer?: ArrayBufferLike,
+    contextCommand: DisplayContextCommand,
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
@@ -644,27 +635,37 @@ class DisplayManager implements DisplayManagerInterface {
       _console.log("isParsing - skipping");
       return;
     }
-    this.#assertValidDisplayContextCommandType(contextCommandType);
-    _console.log(
-      "sendContextCommand",
-      { displayContextCommand: contextCommandType, sendImmediately },
-      arrayBuffer,
+    _console.log("sendContextCommand", contextCommand, {
+      sendImmediately,
+      isParsing,
+    });
+    const serializedContextCommand = serializeDisplayContextCommand(
+      this,
+      contextCommand,
     );
-    const displayContextCommandEnum =
-      DisplayContextCommandTypes.indexOf(contextCommandType);
-    const _arrayBuffer = concatenateArrayBuffers(
-      UInt8ByteBuffer(displayContextCommandEnum),
-      arrayBuffer,
-    );
+    if (!serializedContextCommand) {
+      return;
+    }
+
+    if (serializedContextCommand.byteLength > this.#maxCommandDataLength) {
+      _console.error(
+        `serializedContextCommand ${serializedContextCommand.byteLength} too large (max ${
+          this.#maxCommandDataLength
+        })`,
+      );
+      return;
+    }
+
     const newLength = this.#contextCommandBuffers.reduce(
       (sum, buffer) => sum + buffer.byteLength,
-      _arrayBuffer.byteLength,
+      serializedContextCommand.byteLength,
     );
     if (newLength > this.#maxCommandDataLength) {
       _console.log("displayContextCommandBuffers too full - sending now");
       await this.#sendContextCommands();
     }
-    this.#contextCommandBuffers.push(_arrayBuffer);
+    this.#contextCommandBuffers.push(serializedContextCommand);
+    this.#contextCommands.push(contextCommand);
     if (sendImmediately) {
       await this.#sendContextCommands();
     }
@@ -680,10 +681,12 @@ class DisplayManager implements DisplayManagerInterface {
       data,
     );
     this.#contextCommandBuffers.length = 0;
+    const displayContextCommands = this.#contextCommands.slice();
+    this.#contextCommands.length = 0;
+
     await this.sendMessage([{ type: "displayContextCommands", data }], true);
-    // FILL
     this.#dispatchEvent("displayContextCommands", {
-      displayContextCommands: [],
+      displayContextCommands,
     });
   }
   async flushContextCommands() {
@@ -704,8 +707,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.#isReady = false;
     this.#lastShowRequestTime = Date.now();
     await this.#sendContextCommand(
-      "show",
-      undefined,
+      { type: "show" },
       sendImmediately,
       isParsing,
     );
@@ -735,8 +737,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.#isReady = false;
     this.#lastShowRequestTime = Date.now();
     await this.#sendContextCommand(
-      "clear",
-      undefined,
+      { type: "clear" },
       sendImmediately,
       isParsing,
     );
@@ -766,33 +767,20 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    let colorRGB: DisplayColorRGB;
     if (typeof color == "string") {
-      colorRGB = stringToRGB(color);
+      color = stringToRGB(color);
     } else {
-      colorRGB = color;
+      color = color;
     }
 
-    const colorHex = rgbToHex(colorRGB);
+    const colorHex = rgbToHex(color);
     if (this.colors[colorIndex] == colorHex) {
       // _console.log(`redundant color #${colorIndex} ${colorHex}`);
       return;
     }
 
-    const commandType: DisplayContextCommandType = "setColor";
-
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      colorIndex,
-      color,
-    });
-    if (!dataView) {
-      return;
-    }
-
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setColor", color, colorIndex },
       sendImmediately,
       isParsing,
     );
@@ -800,7 +788,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.colors[colorIndex] = colorHex;
     this.#dispatchEvent("displayColor", {
       colorIndex,
-      colorRGB,
+      color,
       colorHex,
     });
   }
@@ -827,18 +815,8 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
 
-    const commandType: DisplayContextCommandType = "setColorOpacity";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      colorIndex,
-      opacity,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setColorOpacity", colorIndex, opacity },
       sendImmediately,
       isParsing,
     );
@@ -850,17 +828,12 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    const commandType: DisplayContextCommandType = "setOpacity";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      opacity,
-    });
-    if (!dataView) {
+    if (this.opacities.every((_opacity) => opacity == _opacity)) {
+      // _console.log(`redundant opacity ${opacity}`);
       return;
     }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setOpacity", opacity },
       sendImmediately,
       isParsing,
     );
@@ -872,11 +845,15 @@ class DisplayManager implements DisplayManagerInterface {
   async #saveContext(sendImmediately?: boolean) {
     this.#contextStack.push(structuredClone(this.contextState));
   }
-  async saveContext(sendImmediately?: boolean) {
+  async saveContext(sendImmediately?: boolean, isParsing?: boolean) {
     if (true) {
       await this.#saveContext(sendImmediately);
     } else {
-      await this.#sendContextCommand("saveContext", undefined, sendImmediately);
+      await this.#sendContextCommand(
+        { type: "saveContext" },
+        sendImmediately,
+        isParsing,
+      );
     }
   }
   async #restoreContext(sendImmediately?: boolean) {
@@ -887,14 +864,14 @@ class DisplayManager implements DisplayManagerInterface {
     }
     await this.setContextState(contextState, sendImmediately);
   }
-  async restoreContext(sendImmediately?: boolean) {
+  async restoreContext(sendImmediately?: boolean, isParsing?: boolean) {
     if (false) {
       await this.#restoreContext(sendImmediately);
     } else {
       await this.#sendContextCommand(
-        "restoreContext",
-        undefined,
+        { type: "restoreContext" },
         sendImmediately,
+        isParsing,
       );
     }
   }
@@ -910,8 +887,7 @@ class DisplayManager implements DisplayManagerInterface {
   async clearContext(sendImmediately?: boolean, isParsing?: boolean) {
     await this.#clearContext(sendImmediately);
     await this.#sendContextCommand(
-      "clearContext",
-      undefined,
+      { type: "clearContext" },
       sendImmediately,
       isParsing,
     );
@@ -929,17 +905,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "selectFillColor";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      fillColorIndex,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "selectFillColor", fillColorIndex },
       sendImmediately,
       isParsing,
     );
@@ -957,17 +924,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "selectBackgroundColor";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      backgroundColorIndex,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "selectBackgroundColor", backgroundColorIndex },
       sendImmediately,
       isParsing,
     );
@@ -985,17 +943,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "selectLineColor";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      lineColorIndex,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "selectLineColor", lineColorIndex },
       sendImmediately,
       isParsing,
     );
@@ -1012,17 +961,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setIgnoreFill";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      ignoreFill,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setIgnoreFill", ignoreFill },
       sendImmediately,
       isParsing,
     );
@@ -1039,17 +979,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setIgnoreLine";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      ignoreLine,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setIgnoreLine", ignoreLine },
       sendImmediately,
       isParsing,
     );
@@ -1066,17 +997,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setFillBackground";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      fillBackground,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setFillBackground", fillBackground },
       sendImmediately,
       isParsing,
     );
@@ -1102,17 +1024,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setLineWidth";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      lineWidth,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setLineWidth", lineWidth },
       sendImmediately,
       isParsing,
     );
@@ -1137,17 +1050,9 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    // @ts-ignore
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: alignmentCommand,
-      [alignmentKey]: alignment,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      alignmentCommand,
-      dataView.buffer,
+      // @ts-expect-error
+      { type: alignmentCommand, [alignmentKey]: alignment },
       sendImmediately,
       isParsing,
     );
@@ -1185,16 +1090,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "resetAlignment";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView?.buffer,
+      { type: "resetAlignment" },
       sendImmediately,
       isParsing,
     );
@@ -1216,18 +1113,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setRotation";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      rotation,
-      isRadians,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setRotation", rotation, isRadians },
       sendImmediately,
       isParsing,
     );
@@ -1241,13 +1128,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "clearRotation";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-    });
     await this.#sendContextCommand(
-      commandType,
-      dataView?.buffer,
+      { type: "clearRotation" },
       sendImmediately,
       isParsing,
     );
@@ -1266,17 +1148,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setSegmentStartCap";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      segmentStartCap,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setSegmentStartCap", segmentStartCap },
       sendImmediately,
       isParsing,
     );
@@ -1294,17 +1167,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setSegmentEndCap";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      segmentEndCap,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setSegmentEndCap", segmentEndCap },
       sendImmediately,
       isParsing,
     );
@@ -1323,17 +1187,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setSegmentCap";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      segmentCap,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setSegmentCap", segmentCap },
       sendImmediately,
       isParsing,
     );
@@ -1351,17 +1206,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setSegmentStartRadius";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      segmentStartRadius,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setSegmentStartRadius", segmentStartRadius },
       sendImmediately,
       isParsing,
     );
@@ -1378,17 +1224,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setSegmentEndRadius";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      segmentEndRadius,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setSegmentEndRadius", segmentEndRadius },
       sendImmediately,
       isParsing,
     );
@@ -1406,17 +1243,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setSegmentRadius";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      segmentRadius,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setSegmentRadius", segmentRadius },
       sendImmediately,
       isParsing,
     );
@@ -1439,17 +1267,9 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    // @ts-ignore
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: cropCommand,
-      [cropKey]: crop,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      cropCommand,
-      dataView.buffer,
+      // @ts-expect-error
+      { type: cropCommand, [cropKey]: crop },
       sendImmediately,
       isParsing,
     );
@@ -1493,13 +1313,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "clearCrop";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-    });
     await this.#sendContextCommand(
-      commandType,
-      dataView?.buffer,
+      { type: "clearCrop" },
       sendImmediately,
       isParsing,
     );
@@ -1522,17 +1337,9 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    // @ts-ignore
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: cropCommand,
-      [cropKey]: crop,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      cropCommand,
-      dataView.buffer,
+      // @ts-expect-error
+      { type: cropCommand, [cropKey]: crop },
       sendImmediately,
       isParsing,
     );
@@ -1596,13 +1403,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "clearRotationCrop";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-    });
     await this.#sendContextCommand(
-      commandType,
-      dataView?.buffer,
+      { type: "clearRotationCrop" },
       sendImmediately,
       isParsing,
     );
@@ -1625,18 +1427,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "selectBitmapColor";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      bitmapColorIndex,
-      colorIndex,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "selectBitmapColor", bitmapColorIndex, colorIndex },
       sendImmediately,
       isParsing,
     );
@@ -1672,17 +1464,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "selectBitmapColors";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      bitmapColorPairs,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "selectBitmapColors", bitmapColorPairs },
       sendImmediately,
       isParsing,
     );
@@ -1749,12 +1532,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
-      sendImmediately,
-      isParsing,
-    );
+    await this.#sendContextCommand(command, sendImmediately, isParsing);
 
     this.#onContextStateUpdate(differences);
   }
@@ -1804,13 +1582,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "resetBitmapScale";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-    });
     await this.#sendContextCommand(
-      commandType,
-      dataView?.buffer,
+      { type: "resetBitmapScale" },
       sendImmediately,
       isParsing,
     );
@@ -1833,18 +1606,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "selectSpriteColor";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      spriteColorIndex,
-      colorIndex,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "selectSpriteColor", spriteColorIndex, colorIndex },
       sendImmediately,
       isParsing,
     );
@@ -1880,17 +1643,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "selectSpriteColors";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      spriteColorPairs,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "selectSpriteColors", spriteColorPairs },
       sendImmediately,
       isParsing,
     );
@@ -1931,13 +1685,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "resetSpriteColors";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-    });
     await this.#sendContextCommand(
-      commandType,
-      dataView?.buffer,
+      { type: "resetSpriteColors" },
       sendImmediately,
       isParsing,
     );
@@ -1952,8 +1701,7 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
     spriteScale = roundScale(spriteScale);
-    const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
-    _console.log({ [commandType]: spriteScale, direction });
+    _console.log({ direction, spriteScale });
     const newState: PartialDisplayContextState = {};
     let command: DisplayContextCommand;
     switch (direction) {
@@ -1979,12 +1727,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
-      sendImmediately,
-      isParsing,
-    );
+    await this.#sendContextCommand(command, sendImmediately, isParsing);
 
     this.#onContextStateUpdate(differences);
   }
@@ -2034,13 +1777,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "resetSpriteScale";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-    });
     await this.#sendContextCommand(
-      commandType,
-      dataView?.buffer,
+      { type: "resetSpriteScale" },
       sendImmediately,
       isParsing,
     );
@@ -2060,17 +1798,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    const commandType: DisplayContextCommandType = "setSpritesLineHeight";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      spritesLineHeight,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "setSpritesLineHeight", spritesLineHeight },
       sendImmediately,
       isParsing,
     );
@@ -2097,17 +1826,9 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    // @ts-expect-error
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      [stateKey]: direction,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      //@ts-expect-error
+      { type: commandType, [stateKey]: direction },
       sendImmediately,
       isParsing,
     );
@@ -2157,17 +1878,9 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    // @ts-expect-error
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      [stateKey]: spacing,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      //@ts-expect-error
+      { type: commandType, [stateKey]: spacing },
       sendImmediately,
       isParsing,
     );
@@ -2217,17 +1930,12 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    // @ts-expect-error
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      [stateKey]: alignment,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      //@ts-expect-error
+      {
+        type: commandType,
+        [stateKey]: alignment,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2266,20 +1974,14 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    const commandType: DisplayContextCommandType = "clearRect";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      x,
-      y,
-      width,
-      height,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "clearRect",
+        x,
+        y,
+        width,
+        height,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2292,20 +1994,14 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    const commandType: DisplayContextCommandType = "drawRect";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      offsetX,
-      offsetY,
-      width,
-      height,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "drawRect",
+        offsetX,
+        offsetY,
+        width,
+        height,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2319,21 +2015,15 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    const commandType: DisplayContextCommandType = "drawRoundRect";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      offsetX,
-      offsetY,
-      width,
-      height,
-      borderRadius,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "drawRoundRect",
+        offsetX,
+        offsetY,
+        width,
+        height,
+        borderRadius,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2345,19 +2035,13 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    const commandType: DisplayContextCommandType = "drawCircle";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      offsetX,
-      offsetY,
-      radius,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "drawCircle",
+        offsetX,
+        offsetY,
+        radius,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2370,20 +2054,14 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    const commandType: DisplayContextCommandType = "drawEllipse";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      offsetX,
-      offsetY,
-      radiusX,
-      radiusY,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "drawEllipse",
+        offsetX,
+        offsetY,
+        radiusX,
+        radiusY,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2396,20 +2074,14 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    const commandType: DisplayContextCommandType = "drawRegularPolygon";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      offsetX,
-      offsetY,
-      radius,
-      numberOfSides,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "drawRegularPolygon",
+        offsetX,
+        offsetY,
+        radius,
+        numberOfSides,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2420,17 +2092,8 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-    const commandType: DisplayContextCommandType = "drawPolygon";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      points,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "drawPolygon", points },
       sendImmediately,
       isParsing,
     );
@@ -2460,6 +2123,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
+    // TODO: - split into sub-wireframes
     if (dataView.byteLength > this.#maxCommandDataLength) {
       _console.error(
         `wireframe data ${dataView.byteLength} too large (max ${
@@ -2469,8 +2133,10 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "drawWireframe",
+        wireframe,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2487,16 +2153,11 @@ class DisplayManager implements DisplayManagerInterface {
       curveType == "cubic"
         ? "drawCubicBezierCurve"
         : "drawQuadraticBezierCurve";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      controlPoints,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: commandType,
+        controlPoints,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2519,6 +2180,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
+    // TODO: - split into sub-curves
     if (dataView.byteLength > this.#maxCommandDataLength) {
       _console.error(
         `curve data ${dataView.byteLength} too large (max ${
@@ -2528,8 +2190,10 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: commandType,
+        controlPoints,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2593,6 +2257,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
+    // TODO: - split into sub-curves if not closed
     if (dataView.byteLength > this.#maxCommandDataLength) {
       _console.error(
         `path data ${dataView.byteLength} too large (max ${
@@ -2602,8 +2267,10 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: commandType,
+        curves,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2631,20 +2298,14 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    const commandType: DisplayContextCommandType = "drawSegment";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      startX,
-      startY,
-      endX,
-      endY,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "drawSegment",
+        startX,
+        startY,
+        endX,
+        endY,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2672,14 +2333,16 @@ class DisplayManager implements DisplayManagerInterface {
       await this.drawSegments(firstHalf, false);
       _console.log("sending second half", secondHalf);
       await this.drawSegments(secondHalf, sendImmediately);
-      return;
+    } else {
+      await this.#sendContextCommand(
+        {
+          type: "drawSegments",
+          points,
+        },
+        sendImmediately,
+        isParsing,
+      );
     }
-    await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
-      sendImmediately,
-      isParsing,
-    );
   }
 
   async drawArc(
@@ -2692,22 +2355,16 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    const commandType: DisplayContextCommandType = "drawArc";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      offsetX,
-      offsetY,
-      radius,
-      startAngle,
-      angleOffset,
-      isRadians,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "drawArc",
+        offsetX,
+        offsetY,
+        radius,
+        startAngle,
+        angleOffset,
+        isRadians,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2723,23 +2380,17 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
-    const commandType: DisplayContextCommandType = "drawArcEllipse";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      offsetX,
-      offsetY,
-      radiusX,
-      radiusY,
-      startAngle,
-      angleOffset,
-      isRadians,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "drawArcEllipse",
+        offsetX,
+        offsetY,
+        radiusX,
+        radiusY,
+        startAngle,
+        angleOffset,
+        isRadians,
+      },
       sendImmediately,
       isParsing,
     );
@@ -2778,19 +2429,8 @@ class DisplayManager implements DisplayManagerInterface {
     isParsing?: boolean,
   ) {
     this.assertValidBitmap(bitmap, true);
-    const commandType: DisplayContextCommandType = "drawBitmap";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      offsetX,
-      offsetY,
-      bitmap,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "drawBitmap", offsetX, offsetY, bitmap },
       sendImmediately,
       isParsing,
     );
@@ -3028,17 +2668,8 @@ class DisplayManager implements DisplayManagerInterface {
     }
     const spriteSheetIndex = this.spriteSheetIndices[spriteSheetName];
     //_console.log("selecting", { spriteSheetIndex, spriteSheetName });
-    const commandType: DisplayContextCommandType = "selectSpriteSheet";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      spriteSheetIndex,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "selectSpriteSheet", spriteSheetIndex },
       sendImmediately,
       isParsing,
     );
@@ -3066,21 +2697,15 @@ class DisplayManager implements DisplayManagerInterface {
       spriteIndex != -1,
       `sprite "${spriteName}" not found in spriteSheet`,
     );
-    spriteIndex = spriteIndex!;
-    const commandType: DisplayContextCommandType = "drawSprite";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      offsetX,
-      offsetY,
-      spriteIndex,
-      use2Bytes: this.selectedSpriteSheet!.sprites.length > 255,
-    });
-    if (!dataView) {
-      return;
-    }
+
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      {
+        type: "drawSprite",
+        offsetX,
+        offsetY,
+        spriteIndex,
+        use2Bytes: this.selectedSpriteSheet!.sprites.length > 255,
+      },
       sendImmediately,
       isParsing,
     );
@@ -3231,14 +2856,13 @@ class DisplayManager implements DisplayManagerInterface {
         _console.log("ending sprites sprite...");
         await this.endSprite(sendImmediately);
       }
-      return;
+    } else {
+      await this.#sendContextCommand(
+        { type: "drawSprites", spriteSerializedLines, offsetX, offsetY },
+        sendImmediately,
+        isParsing,
+      );
     }
-    await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
-      sendImmediately,
-      isParsing,
-    );
   }
 
   async drawSpritesString(
@@ -3474,20 +3098,8 @@ class DisplayManager implements DisplayManagerInterface {
     this.#saveContext(sendImmediately);
     this.#resetContextState();
 
-    const commandType: DisplayContextCommandType = "startSprite";
-    const dataView = serializeDisplayContextCommandData(this, {
-      type: commandType,
-      offsetX,
-      offsetY,
-      width,
-      height,
-    });
-    if (!dataView) {
-      return;
-    }
     await this.#sendContextCommand(
-      commandType,
-      dataView.buffer,
+      { type: "startSprite", offsetX, offsetY, width, height },
       sendImmediately,
       isParsing,
     );
@@ -3503,8 +3115,7 @@ class DisplayManager implements DisplayManagerInterface {
 
     // _console.log("endSprite");
     await this.#sendContextCommand(
-      "endSprite",
-      undefined,
+      { type: "endSprite" },
       sendImmediately,
       isParsing,
     );

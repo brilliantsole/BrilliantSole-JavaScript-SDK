@@ -693,23 +693,20 @@ export function serializeDisplayContextCommandData(
       break;
     case "setColor":
       {
-        const { color, colorIndex } = command;
+        let { color, colorIndex } = command;
         displayManager.assertValidColorIndex(colorIndex);
 
-        let colorRGB: DisplayColorRGB;
         if (typeof color == "string") {
-          colorRGB = stringToRGB(color);
-        } else {
-          colorRGB = color;
+          color = stringToRGB(color);
         }
-        //_console.log(`setting color #${colorIndex}`, colorRGB);
+        //_console.log(`setting color #${colorIndex}`, color);
         displayManager.assertValidColorIndex(colorIndex);
-        assertValidColor(colorRGB);
+        assertValidColor(color);
         dataView = new DataView(new ArrayBuffer(4));
         dataView.setUint8(0, colorIndex);
-        dataView.setUint8(1, colorRGB.r);
-        dataView.setUint8(2, colorRGB.g);
-        dataView.setUint8(3, colorRGB.b);
+        dataView.setUint8(1, color.r);
+        dataView.setUint8(2, color.g);
+        dataView.setUint8(3, color.b);
       }
       break;
     case "setColorOpacity":
@@ -1502,6 +1499,10 @@ export function serializeDisplayContextCommandData(
         dataView.setUint16(6, height, true);
       }
       break;
+    default:
+      // @ts-expect-error
+      throw Error(`uncaught command.type ${command!.type}`);
+      break;
   }
 
   return dataView;
@@ -1513,6 +1514,8 @@ export function serializeDisplayContextCommand(
   if (command.hide) {
     return;
   }
+
+  _console.assertEnumWithError(command.type, DisplayContextCommandTypes);
 
   const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
     command.type,
