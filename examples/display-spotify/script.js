@@ -126,10 +126,6 @@ displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
   isUploading = false;
   console.log({ isUploading });
 });
-displayCanvasHelper.addEventListener("deviceConnected", () => {
-  isUpdated = false;
-  console.log({ isUpdated });
-});
 displayCanvasHelper.addEventListener("deviceUpdated", () => {
   isUpdated = true;
   console.log({ isUpdated });
@@ -152,18 +148,21 @@ let lyricsOffsetY = 0;
 const draw = async () => {
   if (isUploading) {
     console.warn("can't draw - isUploading");
+    isWaitingToRedraw = true;
     return;
   }
-  if (!isUpdated) {
-    console.warn("can't draw - !isUpdated");
+  if (!displayCanvasHelper.isReady) {
+    isWaitingToRedraw = true;
     return;
   }
   if (!didLoad) {
     console.warn("can't draw - hasn't loaded yet");
+    isWaitingToRedraw = true;
     return;
   }
   if (!spotifyPlayer || !spotifyState) {
     console.warn("can't draw - !spotifyPlayer or !spotifyState");
+    isWaitingToRedraw = true;
     return;
   }
   if (isDrawing) {

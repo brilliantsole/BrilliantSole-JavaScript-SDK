@@ -736,10 +736,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     _console.log("showDisplay", { sendImmediately, waitUntilReady });
 
-    this.#frontDrawStack = this.#rearDrawStack.slice();
-    this.#rearDrawStack.length = 0;
+    if (!isParsing) {
+      this.#frontDrawStack = this.#rearDrawStack.slice();
+      this.#rearDrawStack.length = 0;
 
-    this.#setIsReady(false);
+      this.#setIsReady(false);
+    }
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.show(
@@ -748,6 +750,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         isParsing,
       );
     } else {
+      if (isParsing) {
+        return;
+      }
       await wait(this.#interval);
       if (this.device) {
         return;
@@ -792,33 +797,34 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       isParsing,
     });
 
-    this.#frontDrawStack.length = 0;
-    this.#rearDrawStack.length = 0;
+    if (isParsing) {
+      this.#frontDrawStack.length = 0;
+      this.#rearDrawStack.length = 0;
 
-    this.#setIsReady(false);
-    this.#save();
-    this.#context.resetTransform();
-    this.#context.clearRect(0, 0, this.width, this.height);
-    this.#restore();
-    this.#drawBackground();
+      this.#setIsReady(false);
+      this.#save();
+      this.#context.resetTransform();
+      this.#context.clearRect(0, 0, this.width, this.height);
+      this.#restore();
+      this.#drawBackground();
 
-    this.#isDrawingBlankSprite = false;
+      this.#isDrawingBlankSprite = false;
+    }
 
-    if (true) {
-      if (this.device?.isConnected && !this.#ignoreDevice) {
-        await this.deviceDisplayManager!.clear(
-          sendImmediately,
-          waitUntilReady,
-          isParsing,
-        );
-      } else {
-        await wait(this.#interval);
-        if (this.device) {
-          return;
-        }
-        this.#setIsReady(true);
-      }
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.clear(
+        sendImmediately,
+        waitUntilReady,
+        isParsing,
+      );
     } else {
+      if (isParsing) {
+        return;
+      }
+      await wait(this.#interval);
+      if (this.device) {
+        return;
+      }
       this.#setIsReady(true);
     }
   }
@@ -922,6 +928,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   async saveContext(sendImmediately?: boolean, isParsing?: boolean) {
+    if (isParsing) {
+      return;
+    }
     //_console.log("saveContext");
     if (true) {
       await this.#saveContext(sendImmediately);
@@ -946,6 +955,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   async restoreContext(sendImmediately?: boolean, isParsing?: boolean) {
+    if (isParsing) {
+      return;
+    }
     //_console.log("restoreContext");
     if (true) {
       await this.#restoreContext(sendImmediately);
@@ -970,6 +982,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   async clearContext(sendImmediately?: boolean, isParsing?: boolean) {
+    if (isParsing) {
+      return;
+    }
     //_console.log("clearContext");
     await this.#clearContext(sendImmediately);
     if (this.device?.isConnected && !this.#ignoreDevice) {
@@ -2237,6 +2252,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#clearRectToCanvas(x, y, width, height, contextState),
@@ -2540,6 +2558,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     const contextState = structuredClone(this.contextState);
     //console.log("drawRect contextState", contextState);
     this.#rearDrawStack.push(() =>
@@ -2612,6 +2633,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawRoundRectToCanvas(
@@ -2670,6 +2694,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawCircleToCanvas(offsetX, offsetY, radius, contextState),
@@ -2714,6 +2741,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawEllipseToCanvas(
@@ -2817,6 +2847,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     if (numberOfSides < 3) {
       _console.error(`invalid numberOfSides ${numberOfSides}`);
       return;
@@ -3049,6 +3082,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     wireframe = trimWireframe(wireframe);
     if (wireframe.points.length == 0) {
       return;
@@ -3224,6 +3260,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     assertValidNumberOfControlPoints(curveType, controlPoints);
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
@@ -3279,6 +3318,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     assertValidPathNumberOfControlPoints(curveType, controlPoints);
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
@@ -3303,6 +3345,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     await this.drawCurve(
       "quadratic",
       controlPoints,
@@ -3315,6 +3360,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     await this.drawCurves(
       "quadratic",
       controlPoints,
@@ -3328,6 +3376,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     await this.drawCurve("cubic", controlPoints, sendImmediately, isParsing);
   }
   async drawCubicBezierCurves(
@@ -3335,6 +3386,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     await this.drawCurves("cubic", controlPoints, sendImmediately, isParsing);
   }
 
@@ -3376,6 +3430,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     assertValidPath(curves);
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
@@ -3399,6 +3456,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     await this._drawPath(false, curves, sendImmediately, isParsing);
   }
   async drawClosedPath(
@@ -3406,6 +3466,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     await this._drawPath(true, curves, sendImmediately, isParsing);
   }
 
@@ -3583,6 +3646,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     if (startX == endX && startY == endY) {
       _console.error(`cannot draw segment of length 0`);
       return;
@@ -3710,6 +3776,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
     // _console.log({ points });
     const contextState = structuredClone(this.contextState);
@@ -3759,6 +3828,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
 
@@ -3883,6 +3955,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
     isRadians = true;
@@ -4007,6 +4082,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     this.assertValidBitmap(bitmap);
     // _console.log("drawBitmap", { offsetX, offsetY, bitmap, sendImmediately });
     const contextState = structuredClone(this.contextState);
@@ -4166,6 +4244,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
+
     _console.assertWithError(
       this.selectedSpriteSheet,
       "no spriteSheet selected",
@@ -4428,6 +4510,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     _console.assertWithError(
       this.contextState.spritesLineHeight > 0,
       `spritesLineHeight must be >0`,
@@ -4460,6 +4545,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     return drawSpriteFromSpriteSheet(
       this,
       offsetX,
@@ -4481,6 +4569,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     const spriteLines = this.stringToSpriteLines(
       string,
       requireAll,
@@ -4841,6 +4932,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     await selectSpriteSheetPalette(
       this,
       paletteName,
@@ -4856,6 +4950,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     await selectSpriteSheetPaletteSwap(
       this,
       paletteSwapName,
@@ -4871,6 +4968,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     await selectSpritePaletteSwap(
       this,
       spriteName,
@@ -4987,6 +5087,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isParsing?: boolean,
   ) {
+    if (isParsing) {
+      return;
+    }
     _console.assertWithError(
       !this.#isDrawingBlankSprite,
       `already drawing blank sprite`,
@@ -5018,6 +5121,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#setIgnoreDevice(false);
   }
   async endSprite(sendImmediately?: boolean, isParsing?: boolean) {
+    if (isParsing) {
+      return;
+    }
     _console.assertWithError(
       this.#isDrawingBlankSprite,
       `not drawing blank sprite`,
