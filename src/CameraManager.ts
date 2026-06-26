@@ -904,6 +904,8 @@ class CameraManager {
       case "cameraData":
         this.#parseCameraData(dataView);
         break;
+      case "cameraCommand":
+        break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }

@@ -376,6 +376,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   // DEVICE LISTENERS
   #boundDeviceListeners: BoundDeviceEventListeners = {
     connectionMessage: this.#onDeviceConnectionMessage.bind(this),
+    // TODO: - listen for displayContextCommands and send them back to other iframes
   };
 
   #createDeviceMessage(
@@ -431,8 +432,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     }
 
     const { messageType, dataView } = deviceConnectionMessage;
-
-    // FILL - guard
 
     switch (messageType) {
       case "sensorData":

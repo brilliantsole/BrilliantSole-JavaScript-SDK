@@ -7,9 +7,6 @@ BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
 BS.setConsoleLevelFlagsForType("BaseServer", { log: true });
 
-const displayCanvasHelper = new BS.DisplayCanvasHelper();
-window.displayCanvasHelper = displayCanvasHelper;
-
 // ADD DEVICE
 
 const addDeviceButton = document.getElementById("addDevice");
@@ -104,6 +101,64 @@ BS.DeviceManager.addEventListener("deviceConnected", (event) => {
     displayCanvasHelper.device = device;
   }
 });
+
+// CANVAS
+/** @type {HTMLCanvasElement} */
+const displayCanvas = document.getElementById("display");
+
+// DISPLAY CANVAS HELPER
+const displayCanvasHelper = new BS.DisplayCanvasHelper();
+// displayCanvasHelper.setBrightness("veryLow");
+displayCanvasHelper.canvas = displayCanvas;
+window.displayCanvasHelper = displayCanvasHelper;
+
+BS.DeviceManager.addEventListener("deviceConnected", async (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
+    displayCanvasHelper.device = device;
+  }
+});
+// COLORS
+
+/** @type {HTMLTemplateElement} */
+const displayColorTemplate = document.getElementById("displayColorTemplate");
+const displayColorsContainer = document.getElementById("displayColors");
+const setDisplayColor = BS.ThrottleUtils.throttle(
+  (colorIndex, colorString) => {
+    console.log({ colorIndex, colorString });
+    displayCanvasHelper.setColor(colorIndex, colorString, true);
+  },
+  100,
+  true,
+);
+/** @type {HTMLInputElement[]} */
+const displayColorInputs = [];
+const setupColors = () => {
+  displayColorsContainer.innerHTML = "";
+  for (
+    let colorIndex = 0;
+    colorIndex < displayCanvasHelper.numberOfColors;
+    colorIndex++
+  ) {
+    const displayColorContainer = displayColorTemplate.content
+      .cloneNode(true)
+      .querySelector(".displayColor");
+
+    const colorInput = displayColorContainer.querySelector(".color");
+    displayColorInputs[colorIndex] = colorInput;
+    colorInput.addEventListener("input", () => {
+      setDisplayColor(colorIndex, colorInput.value);
+    });
+
+    displayColorsContainer.appendChild(displayColorContainer);
+  }
+};
+displayCanvasHelper.addEventListener("numberOfColors", () => setupColors());
+displayCanvasHelper.addEventListener("color", (event) => {
+  const { colorHex, colorIndex } = event.message;
+  displayColorInputs[colorIndex].value = colorHex;
+});
+setupColors();
 
 // IFRAME
 

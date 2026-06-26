@@ -23,6 +23,21 @@
       height: 100%;
       width: 100%;
     }
+    #display {
+      background-color: black;
+      margin-bottom: 1rem;
+    }
+    #displayContainer {
+      height: 100px;
+      display: flex;
+    }
+
+    #displayColors {
+      display: inline-block;
+    }
+    .displayColor {
+      display: inline-block;
+    }
   </style>
   <body>
     <nav>
@@ -30,6 +45,17 @@
     </nav>
 
     <h1>iframe | BrilliantSole JavaScript SDK</h1>
+
+    <div id="displayContainer">
+      <canvas id="display" width="640" height="400"></canvas>
+      <div id="displayColors">
+        <template id="displayColorTemplate">
+          <div class="displayColor">
+            <input class="color" type="color" value="#000000" />
+          </div>
+        </template>
+      </div>
+    </div>
 
     <button id="addDevice">add device</button>
     <br /><br />

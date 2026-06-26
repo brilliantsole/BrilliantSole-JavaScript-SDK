@@ -749,12 +749,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     _console.log("showDisplay", { sendImmediately, waitUntilReady });
 
-    if (!isSending) {
-      this.#frontDrawStack = this.#rearDrawStack.slice();
-      this.#rearDrawStack.length = 0;
+    this.#frontDrawStack = this.#rearDrawStack.slice();
+    this.#rearDrawStack.length = 0;
 
-      this.#setIsReady(false);
-    }
+    this.#setIsReady(false);
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.show(
@@ -763,9 +761,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         isSending,
       );
     } else {
-      if (isSending) {
-        return;
-      }
       await wait(this.#interval);
       if (this.device) {
         return;
@@ -810,19 +805,17 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       isSending,
     });
 
-    if (isSending) {
-      this.#frontDrawStack.length = 0;
-      this.#rearDrawStack.length = 0;
+    this.#frontDrawStack.length = 0;
+    this.#rearDrawStack.length = 0;
 
-      this.#setIsReady(false);
-      this.#save();
-      this.#context.resetTransform();
-      this.#context.clearRect(0, 0, this.width, this.height);
-      this.#restore();
-      this.#drawBackground();
+    this.#setIsReady(false);
+    this.#save();
+    this.#context.resetTransform();
+    this.#context.clearRect(0, 0, this.width, this.height);
+    this.#restore();
+    this.#drawBackground();
 
-      this.#isDrawingBlankSprite = false;
-    }
+    this.#isDrawingBlankSprite = false;
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.clear(
@@ -831,9 +824,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         isSending,
       );
     } else {
-      if (isSending) {
-        return;
-      }
       await wait(this.#interval);
       if (this.device) {
         return;
