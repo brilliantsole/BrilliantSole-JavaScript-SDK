@@ -43,7 +43,7 @@ declare class FirmwareManager {
     get waitForEvent(): <T extends "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, options?: {
         immediate?: boolean;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete", FirmwareEventMessages, T>>;
-    parseMessage(messageType: FirmwareMessageType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: FirmwareMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     uploadFirmware(file: FileLike): Promise<void>;
     get status(): "idle" | "uploading" | "uploaded" | "pending" | "testing" | "erasing";
     get images(): FirmwareImage[];

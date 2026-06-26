@@ -1,9 +1,6 @@
 import { createConsole } from "../utils/Console.ts";
 import EventDispatcher, {
-  BoundEventListeners,
-  Event,
   EventDispatcherTypes,
-  EventMap,
 } from "../utils/EventDispatcher.ts";
 import {
   createServerMessage,
@@ -435,6 +432,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
     const { messageType, dataView } = deviceConnectionMessage;
 
+    // FILL - guard
+
     switch (messageType) {
       case "sensorData":
         if (!this.deviceSensorDataToClientGuardManager.isEmpty) {
@@ -592,15 +591,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       >,
     ]
   >();
-  deviceToClientGuardManager = new GuardManager<
-    [
-      BaseServerClientDeviceGuardManagerArg<
-        BaseServer<ServerClient>,
-        ServerClient
-      >,
-    ]
-  >();
-
   #allowClientToDevice(
     client: ServerClient,
     device: Device,
@@ -613,6 +603,15 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       server: this,
     });
   }
+
+  deviceToClientGuardManager = new GuardManager<
+    [
+      BaseServerClientDeviceGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
+  >();
   #allowDeviceToClient(
     device: Device,
     client: ServerClient,
@@ -688,7 +687,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       >,
     ]
   >();
-  #allowDeviceDisplayContextCommandsToClient(
+  #allowDeviceDisplayContextCommandToClient(
     device: Device,
     client: ServerClient,
     displayContextCommand: DisplayContextCommand,
@@ -951,20 +950,18 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     device: Device,
     dataView: DataView<ArrayBuffer>,
   ) {
-    if (
-      this.clientToDeviceGuardManager.isEmpty &&
-      this.clientSensorConfigurationToDeviceGuardManager.isEmpty
-    ) {
-      return dataView;
-    }
     const filteredTxMessages: ArrayBuffer[] = [];
     parseMessage(
       dataView,
       TxRxMessageTypes,
       (messageType, dataView) => {
         _console.log("filtering txMessage", { messageType, dataView });
+
         let message: DeviceMessage = { type: messageType, data: dataView };
+
         switch (message.type) {
+          // FILL - file
+          // FILL - spriteSheet
           case "setSensorConfiguration":
             if (!this.clientSensorConfigurationToDeviceGuardManager.isEmpty) {
               _console.log("trimming sensorConfiguration...");
@@ -1007,7 +1004,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               );
               const filteredDisplayContextCommands =
                 displayContextCommands.filter((displayContextCommand) => {
-                  return this.#allowDeviceDisplayContextCommandsToClient(
+                  return this.#allowDeviceDisplayContextCommandToClient(
                     device,
                     client,
                     displayContextCommand,
@@ -1017,11 +1014,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 "filteredDisplayContextCommands",
                 filteredDisplayContextCommands,
               );
-              device.displayManager.runContextCommands(
-                filteredDisplayContextCommands,
-                false,
-                true,
-              );
+              // TODO - if commands that block changing contextState, send back "corrected" commands
 
               const filteredDisplayContextCommandsData =
                 serializeDisplayContextCommands(
@@ -1033,14 +1026,15 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               } else {
                 _console.log("no filteredDisplayContextCommandsData");
               }
-              // TODO - send back "corrected" contextState (e.g. tries to change color but it's "blocked")
             }
             break;
         }
+
         if (this.#allowClientToDevice(client, device, message)) {
           filteredTxMessages.push(
             createMessage(TxRxMessageTypes, true, message),
           );
+          device._onConnectionMessageSent(messageType, dataView);
         }
       },
       null,

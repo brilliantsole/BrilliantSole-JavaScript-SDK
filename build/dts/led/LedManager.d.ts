@@ -52,7 +52,7 @@ declare class LedManager {
     setLeds(ledConfigurations: LedConfiguration[], sendImmediately?: boolean): Promise<void>;
     setLed(ledConfiguration: LedConfiguration, sendImmediately?: boolean): Promise<void>;
     clearLeds(sendImmediately?: boolean): Promise<void>;
-    parseMessage(messageType: LedMessageType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: LedMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     onSendTxMessages(): void;
     clear(): void;
 }

@@ -415,6 +415,19 @@ export {
   DisplayCanvasHelperEventMap,
   DisplayCanvasHelperEventListenerMap,
 };
+
+import {
+  default as DisplayCanvasHelperManager,
+  DisplayCanvasHelperManagerEvent,
+  DisplayCanvasHelperManagerEventMap,
+  DisplayCanvasHelperManagerEventListenerMap,
+} from "./utils/DisplayCanvasHelperManager.ts";
+export {
+  DisplayCanvasHelperManager,
+  DisplayCanvasHelperManagerEvent,
+  DisplayCanvasHelperManagerEventMap,
+  DisplayCanvasHelperManagerEventListenerMap,
+};
 /** BROWSER_END */
 
 /** BROWSER_START */

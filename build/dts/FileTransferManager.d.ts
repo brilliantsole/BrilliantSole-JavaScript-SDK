@@ -67,15 +67,15 @@ declare class FileTransferManager {
     get waitForEvent(): <T extends "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived">(type: T, options?: {
         immediate?: boolean;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived", FileTransferEventMessages, T>>;
-    get fileTypes(): ("cameraImage" | "spriteSheet" | "tflite" | "wifiServerCert" | "wifiServerKey")[];
+    get fileTypes(): ("spriteSheet" | "tflite" | "wifiServerCert" | "wifiServerKey" | "cameraImage")[];
     static get MaxLength(): number;
     /** kB */
     get maxLength(): number;
-    get type(): "cameraImage" | "spriteSheet" | "tflite" | "wifiServerCert" | "wifiServerKey" | undefined;
+    get type(): "spriteSheet" | "tflite" | "wifiServerCert" | "wifiServerKey" | "cameraImage" | undefined;
     get length(): number;
     get checksum(): number;
     get status(): "idle" | "sending" | "receiving";
-    parseMessage(messageType: FileTransferMessageType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: FileTransferMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     send(type: FileType, file: FileLike, override?: boolean): Promise<boolean>;
     mtu: number;
     receive(type: FileType): Promise<void>;

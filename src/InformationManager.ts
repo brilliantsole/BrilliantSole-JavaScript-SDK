@@ -291,8 +291,9 @@ class InformationManager {
   parseMessage(
     messageType: InformationMessageType,
     dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
   ) {
-    _console.log({ messageType });
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "isCharging":

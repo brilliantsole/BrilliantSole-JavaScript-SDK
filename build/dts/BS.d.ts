@@ -73,6 +73,8 @@ export { WildcardEventType, wildcardEventType };
 /** BROWSER_START */
 import { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap } from "./utils/DisplayCanvasHelper.ts";
 export { DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, };
+import { default as DisplayCanvasHelperManager, DisplayCanvasHelperManagerEvent, DisplayCanvasHelperManagerEventMap, DisplayCanvasHelperManagerEventListenerMap } from "./utils/DisplayCanvasHelperManager.ts";
+export { DisplayCanvasHelperManager, DisplayCanvasHelperManagerEvent, DisplayCanvasHelperManagerEventMap, DisplayCanvasHelperManagerEventListenerMap, };
 /** BROWSER_END */
 /** BROWSER_START */
 import { Font, Glyph } from "opentype.js";

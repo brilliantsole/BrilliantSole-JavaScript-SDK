@@ -110,6 +110,7 @@ import {
   getSpriteLinesMetrics,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { wait } from "./utils/Timer.ts";
+import { default as DisplayCanvasHelperManager } from "./utils/DisplayCanvasHelperManager.ts";
 
 const _console = createConsole("DisplayManager", { log: false });
 
@@ -629,15 +630,15 @@ class DisplayManager implements DisplayManagerInterface {
   async #sendContextCommand(
     contextCommand: DisplayContextCommand,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    if (isParsing) {
-      _console.log("isParsing - skipping");
+    if (isSending) {
+      _console.log("isSending - skipping");
       return;
     }
     _console.log("sendContextCommand", contextCommand, {
       sendImmediately,
-      isParsing,
+      isSending,
     });
     const serializedContextCommand = serializeDisplayContextCommand(
       this,
@@ -684,10 +685,10 @@ class DisplayManager implements DisplayManagerInterface {
     const displayContextCommands = this.#contextCommands.slice();
     this.#contextCommands.length = 0;
 
+    await this.sendMessage([{ type: "displayContextCommands", data }], true);
     this.#dispatchEvent("displayContextCommands", {
       displayContextCommands,
     });
-    await this.sendMessage([{ type: "displayContextCommands", data }], true);
   }
   async flushContextCommands() {
     await this.#sendContextCommands();
@@ -695,9 +696,9 @@ class DisplayManager implements DisplayManagerInterface {
   async show(
     sendImmediately = true,
     waitUntilReady = false,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    _console.log("showDisplay", { sendImmediately, waitUntilReady, isParsing });
+    _console.log("showDisplay", { sendImmediately, waitUntilReady, isSending });
 
     let promise: Promise<DisplayEventMessages["displayReady"]> | undefined;
     if (waitUntilReady) {
@@ -709,10 +710,10 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "show" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
 
-    if (isParsing) {
+    if (isSending) {
       await this.#onDisplayReady();
     } else if (waitUntilReady) {
       await promise;
@@ -721,12 +722,12 @@ class DisplayManager implements DisplayManagerInterface {
   async clear(
     sendImmediately = true,
     waitUntilReady = false,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.log("clearDisplay", {
       sendImmediately,
       waitUntilReady,
-      isParsing,
+      isSending,
     });
 
     let promise: Promise<DisplayEventMessages["displayReady"]> | undefined;
@@ -739,10 +740,10 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "clear" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
 
-    if (isParsing) {
+    if (isSending) {
       await this.#onDisplayReady();
     } else if (waitUntilReady) {
       await promise;
@@ -765,7 +766,7 @@ class DisplayManager implements DisplayManagerInterface {
     colorIndex: number,
     color: DisplayColorRGBOrString,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     if (typeof color == "string") {
       color = stringToRGB(color);
@@ -782,7 +783,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setColor", color, colorIndex },
       sendImmediately,
-      isParsing,
+      isSending,
     );
 
     this.colors[colorIndex] = colorHex;
@@ -806,7 +807,7 @@ class DisplayManager implements DisplayManagerInterface {
     colorIndex: number,
     opacity: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     if (
       Math.floor(255 * this.#opacities[colorIndex]) == Math.floor(255 * opacity)
@@ -818,7 +819,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setColorOpacity", colorIndex, opacity },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#opacities[colorIndex] = opacity;
     this.#dispatchEvent("displayColorOpacity", { colorIndex, opacity });
@@ -826,7 +827,7 @@ class DisplayManager implements DisplayManagerInterface {
   async setOpacity(
     opacity: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     if (this.opacities.every((_opacity) => opacity == _opacity)) {
       // _console.log(`redundant opacity ${opacity}`);
@@ -835,7 +836,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setOpacity", opacity },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#opacities.fill(opacity);
     this.#dispatchEvent("displayOpacity", { opacity });
@@ -845,14 +846,14 @@ class DisplayManager implements DisplayManagerInterface {
   async #saveContext(sendImmediately?: boolean) {
     this.#contextStack.push(structuredClone(this.contextState));
   }
-  async saveContext(sendImmediately?: boolean, isParsing?: boolean) {
+  async saveContext(sendImmediately?: boolean, isSending?: boolean) {
     if (true) {
       await this.#saveContext(sendImmediately);
     } else {
       await this.#sendContextCommand(
         { type: "saveContext" },
         sendImmediately,
-        isParsing,
+        isSending,
       );
     }
   }
@@ -864,14 +865,14 @@ class DisplayManager implements DisplayManagerInterface {
     }
     await this.setContextState(contextState, sendImmediately);
   }
-  async restoreContext(sendImmediately?: boolean, isParsing?: boolean) {
+  async restoreContext(sendImmediately?: boolean, isSending?: boolean) {
     if (false) {
       await this.#restoreContext(sendImmediately);
     } else {
       await this.#sendContextCommand(
         { type: "restoreContext" },
         sendImmediately,
-        isParsing,
+        isSending,
       );
     }
   }
@@ -884,19 +885,19 @@ class DisplayManager implements DisplayManagerInterface {
     // FILL
     await this.setContextState(contextState, sendImmediately);
   }
-  async clearContext(sendImmediately?: boolean, isParsing?: boolean) {
+  async clearContext(sendImmediately?: boolean, isSending?: boolean) {
     await this.#clearContext(sendImmediately);
     await this.#sendContextCommand(
       { type: "clearContext" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
   async selectFillColor(
     fillColorIndex: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     this.assertValidColorIndex(fillColorIndex);
     const differences = this.#contextStateHelper.update({
@@ -908,14 +909,14 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "selectFillColor", fillColorIndex },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async selectBackgroundColor(
     backgroundColorIndex: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     this.assertValidColorIndex(backgroundColorIndex);
     const differences = this.#contextStateHelper.update({
@@ -927,14 +928,14 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "selectBackgroundColor", backgroundColorIndex },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async selectLineColor(
     lineColorIndex: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     this.assertValidColorIndex(lineColorIndex);
     const differences = this.#contextStateHelper.update({
@@ -946,14 +947,14 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "selectLineColor", lineColorIndex },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setIgnoreFill(
     ignoreFill: boolean,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     const differences = this.#contextStateHelper.update({
       ignoreFill,
@@ -964,14 +965,14 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setIgnoreFill", ignoreFill },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setIgnoreLine(
     ignoreLine: boolean,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     const differences = this.#contextStateHelper.update({
       ignoreLine,
@@ -982,14 +983,14 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setIgnoreLine", ignoreLine },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setFillBackground(
     fillBackground: boolean,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     const differences = this.#contextStateHelper.update({
       fillBackground,
@@ -1000,7 +1001,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setFillBackground", fillBackground },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1015,7 +1016,7 @@ class DisplayManager implements DisplayManagerInterface {
   async setLineWidth(
     lineWidth: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     this.assertValidLineWidth(lineWidth);
     const differences = this.#contextStateHelper.update({
@@ -1027,7 +1028,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setLineWidth", lineWidth },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1036,7 +1037,7 @@ class DisplayManager implements DisplayManagerInterface {
     alignmentDirection: DisplayAlignmentDirection,
     alignment: DisplayAlignment,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     assertValidAlignmentDirection(alignmentDirection);
     const alignmentCommand =
@@ -1054,35 +1055,35 @@ class DisplayManager implements DisplayManagerInterface {
       // @ts-expect-error
       { type: alignmentCommand, [alignmentKey]: alignment },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setHorizontalAlignment(
     horizontalAlignment: DisplayAlignment,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setAlignment(
       "horizontal",
       horizontalAlignment,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setVerticalAlignment(
     verticalAlignment: DisplayAlignment,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setAlignment(
       "vertical",
       verticalAlignment,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
-  async resetAlignment(sendImmediately?: boolean, isParsing?: boolean) {
+  async resetAlignment(sendImmediately?: boolean, isSending?: boolean) {
     const differences = this.#contextStateHelper.update({
       verticalAlignment: DefaultDisplayContextState.verticalAlignment,
       horizontalAlignment: DefaultDisplayContextState.horizontalAlignment,
@@ -1093,7 +1094,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "resetAlignment" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1102,7 +1103,7 @@ class DisplayManager implements DisplayManagerInterface {
     rotation: number,
     isRadians?: boolean,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     rotation = isRadians ? rotation : degToRad(rotation);
     rotation = normalizeRadians(rotation);
@@ -1116,12 +1117,12 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setRotation", rotation, isRadians },
       sendImmediately,
-      isParsing,
+      isSending,
     );
 
     this.#onContextStateUpdate(differences);
   }
-  async clearRotation(sendImmediately?: boolean, isParsing?: boolean) {
+  async clearRotation(sendImmediately?: boolean, isSending?: boolean) {
     const differences = this.#contextStateHelper.update({
       rotation: 0,
     });
@@ -1131,7 +1132,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "clearRotation" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1139,7 +1140,7 @@ class DisplayManager implements DisplayManagerInterface {
   async setSegmentStartCap(
     segmentStartCap: DisplaySegmentCap,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     assertValidSegmentCap(segmentStartCap);
     const differences = this.#contextStateHelper.update({
@@ -1151,14 +1152,14 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setSegmentStartCap", segmentStartCap },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setSegmentEndCap(
     segmentEndCap: DisplaySegmentCap,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     assertValidSegmentCap(segmentEndCap);
     const differences = this.#contextStateHelper.update({
@@ -1170,14 +1171,14 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setSegmentEndCap", segmentEndCap },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setSegmentCap(
     segmentCap: DisplaySegmentCap,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     assertValidSegmentCap(segmentCap);
     const differences = this.#contextStateHelper.update({
@@ -1190,7 +1191,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setSegmentCap", segmentCap },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1198,7 +1199,7 @@ class DisplayManager implements DisplayManagerInterface {
   async setSegmentStartRadius(
     segmentStartRadius: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     const differences = this.#contextStateHelper.update({
       segmentStartRadius,
@@ -1209,14 +1210,14 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setSegmentStartRadius", segmentStartRadius },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setSegmentEndRadius(
     segmentEndRadius: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     const differences = this.#contextStateHelper.update({
       segmentEndRadius,
@@ -1227,14 +1228,14 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setSegmentEndRadius", segmentEndRadius },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setSegmentRadius(
     segmentRadius: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     const differences = this.#contextStateHelper.update({
       segmentStartRadius: segmentRadius,
@@ -1246,7 +1247,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setSegmentRadius", segmentRadius },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1255,7 +1256,7 @@ class DisplayManager implements DisplayManagerInterface {
     cropDirection: DisplayCropDirection,
     crop: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
     crop = Math.max(0, crop);
@@ -1271,39 +1272,39 @@ class DisplayManager implements DisplayManagerInterface {
       // @ts-expect-error
       { type: cropCommand, [cropKey]: crop },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setCropTop(
     cropTop: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    await this.setCrop("top", cropTop, sendImmediately, isParsing);
+    await this.setCrop("top", cropTop, sendImmediately, isSending);
   }
   async setCropRight(
     cropRight: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    await this.setCrop("right", cropRight, sendImmediately, isParsing);
+    await this.setCrop("right", cropRight, sendImmediately, isSending);
   }
   async setCropBottom(
     cropBottom: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    await this.setCrop("bottom", cropBottom, sendImmediately, isParsing);
+    await this.setCrop("bottom", cropBottom, sendImmediately, isSending);
   }
   async setCropLeft(
     cropLeft: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    await this.setCrop("left", cropLeft, sendImmediately, isParsing);
+    await this.setCrop("left", cropLeft, sendImmediately, isSending);
   }
-  async clearCrop(sendImmediately?: boolean, isParsing?: boolean) {
+  async clearCrop(sendImmediately?: boolean, isSending?: boolean) {
     const differences = this.#contextStateHelper.update({
       cropTop: 0,
       cropRight: 0,
@@ -1316,7 +1317,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "clearCrop" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1325,7 +1326,7 @@ class DisplayManager implements DisplayManagerInterface {
     cropDirection: DisplayCropDirection,
     crop: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
     const cropCommand =
@@ -1341,59 +1342,59 @@ class DisplayManager implements DisplayManagerInterface {
       // @ts-expect-error
       { type: cropCommand, [cropKey]: crop },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setRotationCropTop(
     rotationCropTop: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setRotationCrop(
       "top",
       rotationCropTop,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setRotationCropRight(
     rotationCropRight: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setRotationCrop(
       "right",
       rotationCropRight,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setRotationCropBottom(
     rotationCropBottom: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setRotationCrop(
       "bottom",
       rotationCropBottom,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setRotationCropLeft(
     rotationCropLeft: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setRotationCrop(
       "left",
       rotationCropLeft,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
-  async clearRotationCrop(sendImmediately?: boolean, isParsing?: boolean) {
+  async clearRotationCrop(sendImmediately?: boolean, isSending?: boolean) {
     const differences = this.#contextStateHelper.update({
       rotationCropTop: 0,
       rotationCropRight: 0,
@@ -1406,7 +1407,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "clearRotationCrop" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1415,7 +1416,7 @@ class DisplayManager implements DisplayManagerInterface {
     bitmapColorIndex: number,
     colorIndex: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     this.assertValidColorIndex(bitmapColorIndex);
     this.assertValidColorIndex(colorIndex);
@@ -1430,7 +1431,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "selectBitmapColor", bitmapColorIndex, colorIndex },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1443,7 +1444,7 @@ class DisplayManager implements DisplayManagerInterface {
   async selectBitmapColors(
     bitmapColorPairs: DisplayBitmapColorPair[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.assertRangeWithError(
       "bitmapColors",
@@ -1467,7 +1468,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "selectBitmapColors", bitmapColorPairs },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1475,33 +1476,33 @@ class DisplayManager implements DisplayManagerInterface {
     bitmapColorIndex: number,
     color: DisplayColorRGBOrString,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return this.setColor(
       this.bitmapColorIndices[bitmapColorIndex],
       color,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setBitmapColorOpacity(
     bitmapColorIndex: number,
     opacity: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return this.setColorOpacity(
       this.bitmapColorIndices[bitmapColorIndex],
       opacity,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setBitmapScaleDirection(
     direction: DisplayScaleDirection,
     bitmapScale: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
     bitmapScale = roundScale(bitmapScale);
@@ -1532,47 +1533,47 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendContextCommand(command, sendImmediately, isParsing);
+    await this.#sendContextCommand(command, sendImmediately, isSending);
 
     this.#onContextStateUpdate(differences);
   }
   async setBitmapScaleX(
     bitmapScaleX: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return this.setBitmapScaleDirection(
       "x",
       bitmapScaleX,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setBitmapScaleY(
     bitmapScaleY: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return this.setBitmapScaleDirection(
       "y",
       bitmapScaleY,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setBitmapScale(
     bitmapScale: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return this.setBitmapScaleDirection(
       "all",
       bitmapScale,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
-  async resetBitmapScale(sendImmediately?: boolean, isParsing?: boolean) {
+  async resetBitmapScale(sendImmediately?: boolean, isSending?: boolean) {
     //return this.setBitmapScaleDirection("all", 1, sendImmediately);
 
     const differences = this.#contextStateHelper.update({
@@ -1585,7 +1586,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "resetBitmapScale" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1594,7 +1595,7 @@ class DisplayManager implements DisplayManagerInterface {
     spriteColorIndex: number,
     colorIndex: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     this.assertValidColorIndex(spriteColorIndex);
     this.assertValidColorIndex(colorIndex);
@@ -1609,7 +1610,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "selectSpriteColor", spriteColorIndex, colorIndex },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1622,7 +1623,7 @@ class DisplayManager implements DisplayManagerInterface {
   async selectSpriteColors(
     spriteColorPairs: DisplaySpriteColorPair[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.assertRangeWithError(
       "spriteColors",
@@ -1646,7 +1647,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "selectSpriteColors", spriteColorPairs },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1654,30 +1655,30 @@ class DisplayManager implements DisplayManagerInterface {
     spriteColorIndex: number,
     color: DisplayColorRGBOrString,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return this.setColor(
       this.spriteColorIndices[spriteColorIndex],
       color,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setSpriteColorOpacity(
     spriteColorIndex: number,
     opacity: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return this.setColorOpacity(
       this.spriteColorIndices[spriteColorIndex],
       opacity,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
-  async resetSpriteColors(sendImmediately?: boolean, isParsing?: boolean) {
+  async resetSpriteColors(sendImmediately?: boolean, isSending?: boolean) {
     const spriteColorIndices = new Array(this.numberOfColors).fill(0);
     const differences = this.#contextStateHelper.update({
       spriteColorIndices,
@@ -1688,7 +1689,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "resetSpriteColors" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1697,7 +1698,7 @@ class DisplayManager implements DisplayManagerInterface {
     direction: DisplayScaleDirection,
     spriteScale: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
     spriteScale = roundScale(spriteScale);
@@ -1727,47 +1728,47 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    await this.#sendContextCommand(command, sendImmediately, isParsing);
+    await this.#sendContextCommand(command, sendImmediately, isSending);
 
     this.#onContextStateUpdate(differences);
   }
   async setSpriteScaleX(
     spriteScaleX: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return this.setSpriteScaleDirection(
       "x",
       spriteScaleX,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setSpriteScaleY(
     spriteScaleY: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return this.setSpriteScaleDirection(
       "y",
       spriteScaleY,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setSpriteScale(
     spriteScale: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return this.setSpriteScaleDirection(
       "all",
       spriteScale,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
-  async resetSpriteScale(sendImmediately?: boolean, isParsing?: boolean) {
+  async resetSpriteScale(sendImmediately?: boolean, isSending?: boolean) {
     //return this.setSpriteScaleDirection("all", 1, sendImmediately);
 
     const differences = this.#contextStateHelper.update({
@@ -1780,7 +1781,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "resetSpriteScale" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1788,7 +1789,7 @@ class DisplayManager implements DisplayManagerInterface {
   async setSpritesLineHeight(
     spritesLineHeight: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     spritesLineHeight = Math.round(spritesLineHeight);
     this.assertValidLineWidth(spritesLineHeight);
@@ -1801,7 +1802,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "setSpritesLineHeight", spritesLineHeight },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -1810,7 +1811,7 @@ class DisplayManager implements DisplayManagerInterface {
     direction: DisplayDirection,
     isOrthogonal: boolean,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     assertValidDirection(direction);
     const stateKey: DisplayContextStateKey = isOrthogonal
@@ -1830,32 +1831,32 @@ class DisplayManager implements DisplayManagerInterface {
       //@ts-expect-error
       { type: commandType, [stateKey]: direction },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setSpritesDirection(
     spritesDirection: DisplayDirection,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setSpritesDirectionGeneric(
       spritesDirection,
       false,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setSpritesLineDirection(
     spritesLineDirection: DisplayDirection,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setSpritesDirectionGeneric(
       spritesLineDirection,
       true,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
@@ -1863,7 +1864,7 @@ class DisplayManager implements DisplayManagerInterface {
     spacing: number,
     isOrthogonal: boolean,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     const stateKey: DisplayContextStateKey = isOrthogonal
       ? "spritesLineSpacing"
@@ -1882,32 +1883,32 @@ class DisplayManager implements DisplayManagerInterface {
       //@ts-expect-error
       { type: commandType, [stateKey]: spacing },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setSpritesSpacing(
     spritesSpacing: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setSpritesSpacingGeneric(
       spritesSpacing,
       false,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setSpritesLineSpacing(
     spritesSpacing: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setSpritesSpacingGeneric(
       spritesSpacing,
       true,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
@@ -1915,7 +1916,7 @@ class DisplayManager implements DisplayManagerInterface {
     alignment: DisplayAlignment,
     isOrthogonal: boolean,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     assertValidAlignment(alignment);
     const stateKey: DisplayContextStateKey = isOrthogonal
@@ -1937,32 +1938,32 @@ class DisplayManager implements DisplayManagerInterface {
         [stateKey]: alignment,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
   async setSpritesAlignment(
     spritesAlignment: DisplayAlignment,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setSpritesAlignmentGeneric(
       spritesAlignment,
       false,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async setSpritesLineAlignment(
     spritesLineAlignment: DisplayAlignment,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.setSpritesAlignmentGeneric(
       spritesLineAlignment,
       true,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
@@ -1972,7 +1973,7 @@ class DisplayManager implements DisplayManagerInterface {
     width: number,
     height: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.#sendContextCommand(
       {
@@ -1983,7 +1984,7 @@ class DisplayManager implements DisplayManagerInterface {
         height,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawRect(
@@ -1992,7 +1993,7 @@ class DisplayManager implements DisplayManagerInterface {
     width: number,
     height: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.#sendContextCommand(
       {
@@ -2003,7 +2004,7 @@ class DisplayManager implements DisplayManagerInterface {
         height,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawRoundRect(
@@ -2013,7 +2014,7 @@ class DisplayManager implements DisplayManagerInterface {
     height: number,
     borderRadius: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.#sendContextCommand(
       {
@@ -2025,7 +2026,7 @@ class DisplayManager implements DisplayManagerInterface {
         borderRadius,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawCircle(
@@ -2033,7 +2034,7 @@ class DisplayManager implements DisplayManagerInterface {
     offsetY: number,
     radius: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.#sendContextCommand(
       {
@@ -2043,7 +2044,7 @@ class DisplayManager implements DisplayManagerInterface {
         radius,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawEllipse(
@@ -2052,7 +2053,7 @@ class DisplayManager implements DisplayManagerInterface {
     radiusX: number,
     radiusY: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.#sendContextCommand(
       {
@@ -2063,7 +2064,7 @@ class DisplayManager implements DisplayManagerInterface {
         radiusY,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawRegularPolygon(
@@ -2072,7 +2073,7 @@ class DisplayManager implements DisplayManagerInterface {
     radius: number,
     numberOfSides: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.#sendContextCommand(
       {
@@ -2083,26 +2084,26 @@ class DisplayManager implements DisplayManagerInterface {
         numberOfSides,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawPolygon(
     points: Vector2[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
     await this.#sendContextCommand(
       { type: "drawPolygon", points },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
   async drawWireframe(
     wireframe: DisplayWireframe,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     wireframe = trimWireframe(wireframe);
     if (wireframe.points.length == 0) {
@@ -2138,7 +2139,7 @@ class DisplayManager implements DisplayManagerInterface {
         wireframe,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
@@ -2146,7 +2147,7 @@ class DisplayManager implements DisplayManagerInterface {
     curveType: DisplayBezierCurveType,
     controlPoints: Vector2[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     assertValidNumberOfControlPoints(curveType, controlPoints);
     const commandType: DisplayContextCommandType =
@@ -2159,14 +2160,14 @@ class DisplayManager implements DisplayManagerInterface {
         controlPoints,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawCurves(
     curveType: DisplayBezierCurveType,
     controlPoints: Vector2[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     assertValidPathNumberOfControlPoints(curveType, controlPoints);
     const commandType: DisplayContextCommandType =
@@ -2195,55 +2196,55 @@ class DisplayManager implements DisplayManagerInterface {
         controlPoints,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
   async drawQuadraticBezierCurve(
     controlPoints: Vector2[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.drawCurve(
       "quadratic",
       controlPoints,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawQuadraticBezierCurves(
     controlPoints: Vector2[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.drawCurves(
       "quadratic",
       controlPoints,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
   async drawCubicBezierCurve(
     controlPoints: Vector2[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    await this.drawCurve("cubic", controlPoints, sendImmediately, isParsing);
+    await this.drawCurve("cubic", controlPoints, sendImmediately, isSending);
   }
   async drawCubicBezierCurves(
     controlPoints: Vector2[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    await this.drawCurves("cubic", controlPoints, sendImmediately, isParsing);
+    await this.drawCurves("cubic", controlPoints, sendImmediately, isSending);
   }
 
   async _drawPath(
     isClosed: boolean,
     curves: DisplayBezierCurve[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     assertValidPath(curves);
 
@@ -2272,22 +2273,22 @@ class DisplayManager implements DisplayManagerInterface {
         curves,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawPath(
     curves: DisplayBezierCurve[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    await this._drawPath(false, curves, sendImmediately, isParsing);
+    await this._drawPath(false, curves, sendImmediately, isSending);
   }
   async drawClosedPath(
     curves: DisplayBezierCurve[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    await this._drawPath(true, curves, sendImmediately, isParsing);
+    await this._drawPath(true, curves, sendImmediately, isSending);
   }
 
   async drawSegment(
@@ -2296,7 +2297,7 @@ class DisplayManager implements DisplayManagerInterface {
     endX: number,
     endY: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.#sendContextCommand(
       {
@@ -2307,13 +2308,13 @@ class DisplayManager implements DisplayManagerInterface {
         endY,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawSegments(
     points: Vector2[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
     const commandType: DisplayContextCommandType = "drawSegments";
@@ -2340,7 +2341,7 @@ class DisplayManager implements DisplayManagerInterface {
           points,
         },
         sendImmediately,
-        isParsing,
+        isSending,
       );
     }
   }
@@ -2353,7 +2354,7 @@ class DisplayManager implements DisplayManagerInterface {
     angleOffset: number,
     isRadians?: boolean,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.#sendContextCommand(
       {
@@ -2366,7 +2367,7 @@ class DisplayManager implements DisplayManagerInterface {
         isRadians,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async drawArcEllipse(
@@ -2378,7 +2379,7 @@ class DisplayManager implements DisplayManagerInterface {
     angleOffset: number,
     isRadians?: boolean,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await this.#sendContextCommand(
       {
@@ -2392,7 +2393,7 @@ class DisplayManager implements DisplayManagerInterface {
         isRadians,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
@@ -2426,13 +2427,13 @@ class DisplayManager implements DisplayManagerInterface {
     offsetY: number,
     bitmap: DisplayBitmap,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     this.assertValidBitmap(bitmap, true);
     await this.#sendContextCommand(
       { type: "drawBitmap", offsetX, offsetY, bitmap },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
@@ -2474,34 +2475,49 @@ class DisplayManager implements DisplayManagerInterface {
   async runContextCommand(
     command: DisplayContextCommand,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
-    return runDisplayContextCommand(this, command, sendImmediately, isParsing);
+    return runDisplayContextCommand(this, command, sendImmediately, isSending);
   }
   async runContextCommands(
     commands: DisplayContextCommand[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return runDisplayContextCommands(
       this,
       commands,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async parseContextCommands(
     dataView: DataView,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.log("parseContextCommands", dataView, {
       sendImmediately,
-      isParsing,
+      isSending,
     });
 
-    const contextCommands = parseDisplayContextCommands(this, dataView);
-    await this.runContextCommands(contextCommands, sendImmediately, isParsing);
+    const displayCanvasHelper =
+      DisplayCanvasHelperManager.findDisplayCanvasHelpersByDisplayManager(this);
+
+    if (displayCanvasHelper) {
+      await displayCanvasHelper.parseContextCommands(
+        dataView,
+        sendImmediately,
+        isSending,
+      );
+    } else {
+      const contextCommands = parseDisplayContextCommands(this, dataView);
+      await this.runContextCommands(
+        contextCommands,
+        sendImmediately,
+        isSending,
+      );
+    }
   }
 
   #isReady = true;
@@ -2657,7 +2673,7 @@ class DisplayManager implements DisplayManagerInterface {
   async selectSpriteSheet(
     spriteSheetName: string,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     this.assertLoadedSpriteSheet(spriteSheetName);
     const differences = this.#contextStateHelper.update({
@@ -2671,7 +2687,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "selectSpriteSheet", spriteSheetIndex },
       sendImmediately,
-      isParsing,
+      isSending,
     );
     this.#onContextStateUpdate(differences);
   }
@@ -2680,7 +2696,7 @@ class DisplayManager implements DisplayManagerInterface {
     offsetY: number,
     spriteName: string,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.assertWithError(
       this.selectedSpriteSheet,
@@ -2707,7 +2723,7 @@ class DisplayManager implements DisplayManagerInterface {
         use2Bytes: this.selectedSpriteSheet!.sprites.length > 255,
       },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
@@ -2716,7 +2732,7 @@ class DisplayManager implements DisplayManagerInterface {
     offsetY: number,
     spriteLines: DisplaySpriteLines,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.assertWithError(
       this.contextState.spritesLineHeight > 0,
@@ -2860,7 +2876,7 @@ class DisplayManager implements DisplayManagerInterface {
       await this.#sendContextCommand(
         { type: "drawSprites", spriteSerializedLines, offsetX, offsetY },
         sendImmediately,
-        isParsing,
+        isSending,
       );
     }
   }
@@ -2873,7 +2889,7 @@ class DisplayManager implements DisplayManagerInterface {
     maxLineBreadth?: number,
     separators?: string[],
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     const spriteLines = this.stringToSpriteLines(
       string,
@@ -2886,7 +2902,7 @@ class DisplayManager implements DisplayManagerInterface {
       offsetY,
       spriteLines,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   stringToSpriteLines(
@@ -2927,7 +2943,7 @@ class DisplayManager implements DisplayManagerInterface {
     spriteSheet: DisplaySpriteSheet,
     paletteName?: string,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     return drawSpriteFromSpriteSheet(
       this,
@@ -2937,7 +2953,7 @@ class DisplayManager implements DisplayManagerInterface {
       spriteSheet,
       paletteName,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
@@ -2982,8 +2998,9 @@ class DisplayManager implements DisplayManagerInterface {
   parseMessage(
     messageType: DisplayMessageType,
     dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
   ) {
-    _console.log({ messageType, dataView });
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "isDisplayAvailable":
@@ -3016,7 +3033,7 @@ class DisplayManager implements DisplayManagerInterface {
       case "displayCommand":
         break;
       case "displayContextCommands":
-        this.parseContextCommands(dataView);
+        this.parseContextCommands(dataView, false, isSending);
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
@@ -3039,7 +3056,7 @@ class DisplayManager implements DisplayManagerInterface {
     offset?: number,
     indicesOnly?: boolean,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await selectSpriteSheetPalette(
       this,
@@ -3047,21 +3064,21 @@ class DisplayManager implements DisplayManagerInterface {
       offset,
       indicesOnly,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async selectSpriteSheetPaletteSwap(
     paletteSwapName: string,
     offset?: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await selectSpriteSheetPaletteSwap(
       this,
       paletteSwapName,
       offset,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
   async selectSpritePaletteSwap(
@@ -3069,7 +3086,7 @@ class DisplayManager implements DisplayManagerInterface {
     paletteSwapName: string,
     offset?: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     await selectSpritePaletteSwap(
       this,
@@ -3077,7 +3094,7 @@ class DisplayManager implements DisplayManagerInterface {
       paletteSwapName,
       offset,
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 
@@ -3088,7 +3105,7 @@ class DisplayManager implements DisplayManagerInterface {
     width: number,
     height: number,
     sendImmediately?: boolean,
-    isParsing?: boolean,
+    isSending?: boolean,
   ) {
     _console.assertWithError(
       !this.#isDrawingBlankSprite,
@@ -3101,10 +3118,10 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "startSprite", offsetX, offsetY, width, height },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
-  async endSprite(sendImmediately?: boolean, isParsing?: boolean) {
+  async endSprite(sendImmediately?: boolean, isSending?: boolean) {
     this.#restoreContext(sendImmediately);
 
     _console.assertWithError(
@@ -3117,7 +3134,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendContextCommand(
       { type: "endSprite" },
       sendImmediately,
-      isParsing,
+      isSending,
     );
   }
 

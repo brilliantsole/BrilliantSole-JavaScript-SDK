@@ -353,8 +353,10 @@ class DeviceManager {
       const connectionManager = new WebBluetoothConnectionManager();
       connectionManager.device = bluetoothDevice;
       if (bluetoothDevice.name) {
+        // @ts-expect-error
         device._informationManager.updateName(bluetoothDevice.name);
       }
+      // @ts-expect-error
       device._informationManager.updateType(deviceInformation.type);
       device.connectionManager = connectionManager;
       this.#pushAvailableDevice(device);

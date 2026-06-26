@@ -424,8 +424,9 @@ class FileTransferManager {
   parseMessage(
     messageType: FileTransferMessageType,
     dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
   ) {
-    _console.log({ messageType });
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "getFileTypes":

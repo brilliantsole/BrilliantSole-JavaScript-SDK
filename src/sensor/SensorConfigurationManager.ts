@@ -276,8 +276,9 @@ class SensorConfigurationManager {
   parseMessage(
     messageType: SensorConfigurationMessageType,
     dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
   ) {
-    _console.log({ messageType });
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "getSensorConfiguration":

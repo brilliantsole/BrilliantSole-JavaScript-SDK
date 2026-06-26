@@ -58,6 +58,6 @@ declare class VibrationManager {
     triggerVibration(vibrationConfiguration: VibrationConfiguration, sendImmediately?: boolean): Promise<void>;
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;
     get vibrationLocations(): ("right" | "left" | "front" | "rear")[];
-    parseMessage(messageType: VibrationMessageType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: VibrationMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
 }
 export default VibrationManager;

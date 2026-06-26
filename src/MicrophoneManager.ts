@@ -161,7 +161,7 @@ class MicrophoneManager {
   // MICROPHONE COMMAND
   async #sendMicrophoneCommand(
     command: MicrophoneCommand,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ) {
     _console.assertEnumWithError(command, MicrophoneCommands);
     _console.log(`sending microphone command "${command}"`);
@@ -177,7 +177,7 @@ class MicrophoneManager {
           data: UInt8ByteBuffer(commandEnum),
         },
       ],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -185,19 +185,19 @@ class MicrophoneManager {
   #assertIsIdle() {
     _console.assertWithError(
       this.#microphoneStatus == "idle",
-      `microphone is not idle - currently ${this.#microphoneStatus}`
+      `microphone is not idle - currently ${this.#microphoneStatus}`,
     );
   }
   #assertIsNotIdle() {
     _console.assertWithError(
       this.#microphoneStatus != "idle",
-      `microphone is idle`
+      `microphone is idle`,
     );
   }
   #assertIsStreaming() {
     _console.assertWithError(
       this.#microphoneStatus == "streaming",
-      `microphone is not recording - currently ${this.#microphoneStatus}`
+      `microphone is not recording - currently ${this.#microphoneStatus}`,
     );
   }
 
@@ -273,7 +273,7 @@ class MicrophoneManager {
         const audioBuffer = this.#audioContext.createBuffer(
           1,
           samples.length,
-          Number(this.sampleRate!)
+          Number(this.sampleRate!),
         );
         audioBuffer.getChannelData(0).set(samples);
 
@@ -348,7 +348,7 @@ class MicrophoneManager {
         MicrophoneConfigurationTypes[microphoneConfigurationTypeIndex];
       _console.assertWithError(
         microphoneConfigurationType,
-        `invalid microphoneConfigurationTypeIndex ${microphoneConfigurationTypeIndex}`
+        `invalid microphoneConfigurationTypeIndex ${microphoneConfigurationTypeIndex}`,
       );
       let rawValue = dataView.getUint8(byteOffset++);
       const values = MicrophoneConfigurationValues[microphoneConfigurationType];
@@ -361,7 +361,7 @@ class MicrophoneManager {
 
     _console.log({ parsedMicrophoneConfiguration });
     this.#availableMicrophoneConfigurationTypes = Object.keys(
-      parsedMicrophoneConfiguration
+      parsedMicrophoneConfiguration,
     ) as MicrophoneConfigurationType[];
     this.#microphoneConfiguration = parsedMicrophoneConfiguration;
     this.#dispatchEvent("getMicrophoneConfiguration", {
@@ -370,10 +370,10 @@ class MicrophoneManager {
   }
 
   #isMicrophoneConfigurationRedundant(
-    microphoneConfiguration: MicrophoneConfiguration
+    microphoneConfiguration: MicrophoneConfiguration,
   ) {
     let microphoneConfigurationTypes = Object.keys(
-      microphoneConfiguration
+      microphoneConfiguration,
     ) as MicrophoneConfigurationType[];
     return microphoneConfigurationTypes.every((microphoneConfigurationType) => {
       return (
@@ -383,7 +383,7 @@ class MicrophoneManager {
     });
   }
   async setMicrophoneConfiguration(
-    newMicrophoneConfiguration: MicrophoneConfiguration
+    newMicrophoneConfiguration: MicrophoneConfiguration,
   ) {
     _console.log({ newMicrophoneConfiguration });
     if (this.#isMicrophoneConfigurationRedundant(newMicrophoneConfiguration)) {
@@ -391,7 +391,7 @@ class MicrophoneManager {
       return;
     }
     const setMicrophoneConfigurationData = this.#createData(
-      newMicrophoneConfiguration
+      newMicrophoneConfiguration,
     );
     _console.log({ setMicrophoneConfigurationData });
 
@@ -406,59 +406,59 @@ class MicrophoneManager {
   }
 
   #assertAvailableMicrophoneConfigurationType(
-    microphoneConfigurationType: MicrophoneConfigurationType
+    microphoneConfigurationType: MicrophoneConfigurationType,
   ) {
     _console.assertWithError(
       this.#availableMicrophoneConfigurationTypes,
-      "must get initial microphoneConfiguration"
+      "must get initial microphoneConfiguration",
     );
     const isMicrophoneConfigurationTypeAvailable =
       this.#availableMicrophoneConfigurationTypes?.includes(
-        microphoneConfigurationType
+        microphoneConfigurationType,
       );
     _console.assertWithError(
       isMicrophoneConfigurationTypeAvailable,
-      `unavailable microphone configuration type "${microphoneConfigurationType}"`
+      `unavailable microphone configuration type "${microphoneConfigurationType}"`,
     );
     return isMicrophoneConfigurationTypeAvailable;
   }
 
   static AssertValidMicrophoneConfigurationType(
-    microphoneConfigurationType: MicrophoneConfigurationType
+    microphoneConfigurationType: MicrophoneConfigurationType,
   ) {
     _console.assertEnumWithError(
       microphoneConfigurationType,
-      MicrophoneConfigurationTypes
+      MicrophoneConfigurationTypes,
     );
   }
   static AssertValidMicrophoneConfigurationTypeEnum(
-    microphoneConfigurationTypeEnum: number
+    microphoneConfigurationTypeEnum: number,
   ) {
     _console.assertTypeWithError(microphoneConfigurationTypeEnum, "number");
     _console.assertWithError(
       microphoneConfigurationTypeEnum in MicrophoneConfigurationTypes,
-      `invalid microphoneConfigurationTypeEnum ${microphoneConfigurationTypeEnum}`
+      `invalid microphoneConfigurationTypeEnum ${microphoneConfigurationTypeEnum}`,
     );
   }
 
   #createData(microphoneConfiguration: MicrophoneConfiguration) {
     let microphoneConfigurationTypes = Object.keys(
-      microphoneConfiguration
+      microphoneConfiguration,
     ) as MicrophoneConfigurationType[];
     microphoneConfigurationTypes = microphoneConfigurationTypes.filter(
       (microphoneConfigurationType) =>
         this.#assertAvailableMicrophoneConfigurationType(
-          microphoneConfigurationType
-        )
+          microphoneConfigurationType,
+        ),
     );
 
     const dataView = new DataView(
-      new ArrayBuffer(microphoneConfigurationTypes.length * 2)
+      new ArrayBuffer(microphoneConfigurationTypes.length * 2),
     );
     microphoneConfigurationTypes.forEach(
       (microphoneConfigurationType, index) => {
         MicrophoneManager.AssertValidMicrophoneConfigurationType(
-          microphoneConfigurationType
+          microphoneConfigurationType,
         );
         const microphoneConfigurationTypeEnum =
           MicrophoneConfigurationTypes.indexOf(microphoneConfigurationType);
@@ -475,7 +475,7 @@ class MicrophoneManager {
         // @ts-expect-error
         const rawValue = values.indexOf(value);
         dataView.setUint8(index * 2 + 1, rawValue);
-      }
+      },
     );
     _console.log({ sensorConfigurationData: dataView });
     return dataView;
@@ -484,9 +484,10 @@ class MicrophoneManager {
   // MESSAGE
   parseMessage(
     messageType: MicrophoneMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
   ) {
-    _console.log({ messageType, dataView });
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "microphoneStatus":
@@ -535,7 +536,7 @@ class MicrophoneManager {
   get gainNode() {
     _console.assertWithError(
       this.#audioContext,
-      "audioContext assignment required for gainNode"
+      "audioContext assignment required for gainNode",
     );
     if (!this.#gainNode) {
       _console.log("creating gainNode...");
@@ -549,7 +550,7 @@ class MicrophoneManager {
   get mediaStreamDestination() {
     _console.assertWithError(
       this.#audioContext,
-      "audioContext assignment required for mediaStreamDestination"
+      "audioContext assignment required for mediaStreamDestination",
     );
     if (!this.#mediaStreamDestination) {
       _console.log("creating mediaStreamDestination...");
@@ -558,7 +559,7 @@ class MicrophoneManager {
       this.gainNode?.connect(this.#mediaStreamDestination);
       _console.log(
         "created mediaStreamDestination",
-        this.#mediaStreamDestination
+        this.#mediaStreamDestination,
       );
     }
     return this.#mediaStreamDestination;
@@ -593,10 +594,10 @@ class MicrophoneManager {
     ) {
       _console.log(
         "parsing microphone data...",
-        this.#microphoneRecordingData.length
+        this.#microphoneRecordingData.length,
       );
       const arrayBuffer = concatenateArrayBuffers(
-        ...this.#microphoneRecordingData
+        ...this.#microphoneRecordingData,
       );
       const samples = new Float32Array(arrayBuffer);
 

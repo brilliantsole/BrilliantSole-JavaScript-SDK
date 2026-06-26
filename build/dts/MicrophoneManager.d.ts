@@ -73,7 +73,7 @@ declare class MicrophoneManager {
     setMicrophoneConfiguration(newMicrophoneConfiguration: MicrophoneConfiguration): Promise<void>;
     static AssertValidMicrophoneConfigurationType(microphoneConfigurationType: MicrophoneConfigurationType): void;
     static AssertValidMicrophoneConfigurationTypeEnum(microphoneConfigurationTypeEnum: number): void;
-    parseMessage(messageType: MicrophoneMessageType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: MicrophoneMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     get audioContext(): AudioContext | undefined;
     set audioContext(newAudioContext: AudioContext | undefined);
     get gainNode(): GainNode;

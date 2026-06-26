@@ -93,7 +93,7 @@ declare class TfliteManager {
     toggleInferencingEnabled(): Promise<void>;
     enableInferencing(): Promise<void>;
     disableInferencing(): Promise<void>;
-    parseMessage(messageType: TfliteMessageType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: TfliteMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     get configuration(): TfliteFileConfiguration | undefined;
     sendConfiguration(configuration: TfliteFileConfiguration, sendImmediately?: boolean): void;
     clear(): void;

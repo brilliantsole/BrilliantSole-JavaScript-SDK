@@ -72,14 +72,14 @@ class DeviceInformationManager {
   }
   get #isComplete() {
     return DeviceInformationTypes.filter((key) => key != "serialNumber").every(
-      (key) => key in this.#information
+      (key) => key in this.#information,
     );
   }
 
   #update(partialDeviceInformation: Partial<DeviceInformation>) {
     _console.log({ partialDeviceInformation });
     const deviceInformationNames = Object.keys(
-      partialDeviceInformation
+      partialDeviceInformation,
     ) as (keyof DeviceInformation)[];
     deviceInformationNames.forEach((deviceInformationName) => {
       // @ts-expect-error
@@ -101,9 +101,10 @@ class DeviceInformationManager {
 
   parseMessage(
     messageType: DeviceInformationType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
   ) {
-    _console.log({ messageType });
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "manufacturerName":

@@ -38,6 +38,6 @@ declare class SensorConfigurationManager {
     static get ZeroSensorConfiguration(): SensorConfiguration;
     get zeroSensorConfiguration(): SensorConfiguration;
     clearSensorConfiguration(): Promise<void>;
-    parseMessage(messageType: SensorConfigurationMessageType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: SensorConfigurationMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
 }
 export default SensorConfigurationManager;

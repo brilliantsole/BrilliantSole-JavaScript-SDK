@@ -889,8 +889,9 @@ class CameraManager {
   parseMessage(
     messageType: CameraMessageType,
     dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
   ) {
-    _console.log({ messageType, dataView });
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "cameraStatus":

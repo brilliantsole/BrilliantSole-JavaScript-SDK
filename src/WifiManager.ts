@@ -122,7 +122,7 @@ class WifiManager {
         "wifiSSID",
         newWifiSSID.length,
         MinWifiSSIDLength,
-        MaxWifiSSIDLength
+        MaxWifiSSIDLength,
       );
     }
 
@@ -160,7 +160,7 @@ class WifiManager {
         "wifiPassword",
         newWifiPassword.length,
         MinWifiPasswordLength,
-        MaxWifiPasswordLength
+        MaxWifiPasswordLength,
       );
     }
 
@@ -188,13 +188,13 @@ class WifiManager {
   }
   async setWifiConnectionEnabled(
     newWifiConnectionEnabled: boolean,
-    sendImmediately: boolean = true
+    sendImmediately: boolean = true,
   ) {
     this.#assertWifiIsAvailable();
     _console.assertTypeWithError(newWifiConnectionEnabled, "boolean");
     if (this.#wifiConnectionEnabled == newWifiConnectionEnabled) {
       _console.log(
-        `redundant wifiConnectionEnabled assignment ${newWifiConnectionEnabled}`
+        `redundant wifiConnectionEnabled assignment ${newWifiConnectionEnabled}`,
       );
       return;
     }
@@ -209,7 +209,7 @@ class WifiManager {
           data: UInt8ByteBuffer(Number(newWifiConnectionEnabled)),
         },
       ],
-      sendImmediately
+      sendImmediately,
     );
     await promise;
   }
@@ -266,8 +266,12 @@ class WifiManager {
   }
 
   // MESSAGE
-  parseMessage(messageType: WifiMessageType, dataView: DataView<ArrayBuffer>) {
-    _console.log({ messageType });
+  parseMessage(
+    messageType: WifiMessageType,
+    dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
+  ) {
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "isWifiAvailable":

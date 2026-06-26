@@ -80,14 +80,15 @@ class FirmwareManager {
 
   parseMessage(
     messageType: FirmwareMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
   ) {
-    _console.log({ messageType });
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "smp":
         this.#mcuManager._notification(
-          Array.from(new Uint8Array(dataView.buffer))
+          Array.from(new Uint8Array(dataView.buffer)),
         );
         this.#dispatchEvent("smp", { dataView });
         break;
@@ -143,7 +144,7 @@ class FirmwareManager {
     _console.assertTypeWithError(imageIndex, "number");
     _console.assertWithError(
       imageIndex == 0 || imageIndex == 1,
-      "imageIndex must be 0 or 1"
+      "imageIndex must be 0 or 1",
     );
   }
   async getImages() {
@@ -176,8 +177,8 @@ class FirmwareManager {
     _console.log("testing firmware image...");
     this.sendMessage(
       Uint8Array.from(
-        this.#mcuManager.cmdImageTest(this.#images[imageIndex].hash)
-      ).buffer
+        this.#mcuManager.cmdImageTest(this.#images[imageIndex].hash),
+      ).buffer,
     );
 
     await promise;
@@ -209,8 +210,8 @@ class FirmwareManager {
     _console.log("confirming image...");
     this.sendMessage(
       Uint8Array.from(
-        this.#mcuManager.cmdImageConfirm(this.#images[imageIndex].hash)
-      ).buffer
+        this.#mcuManager.cmdImageConfirm(this.#images[imageIndex].hash),
+      ).buffer,
     );
 
     await promise;
@@ -254,26 +255,26 @@ class FirmwareManager {
 
     this.#mcuManager.onFileDownloadNext(this.#onMcuFileDownloadNext);
     this.#mcuManager.onFileDownloadProgress(
-      this.#onMcuFileDownloadProgress.bind(this)
+      this.#onMcuFileDownloadProgress.bind(this),
     );
     this.#mcuManager.onFileDownloadFinished(
-      this.#onMcuFileDownloadFinished.bind(this)
+      this.#onMcuFileDownloadFinished.bind(this),
     );
 
     this.#mcuManager.onFileUploadNext(this.#onMcuFileUploadNext.bind(this));
     this.#mcuManager.onFileUploadProgress(
-      this.#onMcuFileUploadProgress.bind(this)
+      this.#onMcuFileUploadProgress.bind(this),
     );
     this.#mcuManager.onFileUploadFinished(
-      this.#onMcuFileUploadFinished.bind(this)
+      this.#onMcuFileUploadFinished.bind(this),
     );
 
     this.#mcuManager.onImageUploadNext(this.#onMcuImageUploadNext.bind(this));
     this.#mcuManager.onImageUploadProgress(
-      this.#onMcuImageUploadProgress.bind(this)
+      this.#onMcuImageUploadProgress.bind(this),
     );
     this.#mcuManager.onImageUploadFinished(
-      this.#onMcuImageUploadFinished.bind(this)
+      this.#onMcuImageUploadFinished.bind(this),
     );
   }
 
@@ -369,11 +370,11 @@ class FirmwareManager {
     if (this.#images.length == 2) {
       if (!this.#images[1].bootable) {
         _console.warn(
-          'Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image'
+          'Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image',
         );
       } else if (!this.#images[0].confirmed) {
         _console.log(
-          'Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.'
+          'Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.',
         );
         newStatus = "testing";
       } else {
@@ -382,7 +383,7 @@ class FirmwareManager {
           newStatus = "pending";
         } else {
           _console.log(
-            "Slot 1 has a valid image. run testImage() to test it or upload a different image."
+            "Slot 1 has a valid image. run testImage() to test it or upload a different image.",
           );
           newStatus = "uploaded";
         }

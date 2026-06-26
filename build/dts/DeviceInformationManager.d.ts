@@ -51,6 +51,6 @@ declare class DeviceInformationManager {
     eventDispatcher: DeviceInformationEventDispatcher;
     get information(): DeviceInformation;
     clear(): void;
-    parseMessage(messageType: DeviceInformationType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: DeviceInformationType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
 }
 export default DeviceInformationManager;

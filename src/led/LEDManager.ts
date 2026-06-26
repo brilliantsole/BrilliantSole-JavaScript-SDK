@@ -300,8 +300,12 @@ class LedManager {
   }
 
   // MESSAGE
-  parseMessage(messageType: LedMessageType, dataView: DataView<ArrayBuffer>) {
-    _console.log({ messageType }, dataView);
+  parseMessage(
+    messageType: LedMessageType,
+    dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
+  ) {
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "getLedInformation":

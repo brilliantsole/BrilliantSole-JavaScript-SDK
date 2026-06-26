@@ -953,8 +953,9 @@ class Device {
   #onConnectionMessageReceived(
     messageType: ConnectionMessageType,
     dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
   ) {
-    _console.log({ messageType, dataView });
+    _console.log({ messageType, dataView, isSending });
     switch (messageType) {
       case "batteryLevel":
         const batteryLevel = dataView.getUint8(0);
@@ -971,6 +972,7 @@ class Device {
           this.#fileTransferManager.parseMessage(
             messageType as FileTransferMessageType,
             dataView,
+            isSending,
           );
         } else if (
           TfliteMessageTypes.includes(messageType as TfliteMessageType)
@@ -978,6 +980,7 @@ class Device {
           this.#tfliteManager.parseMessage(
             messageType as TfliteMessageType,
             dataView,
+            isSending,
           );
         } else if (
           SensorDataMessageTypes.includes(messageType as SensorDataMessageType)
@@ -985,6 +988,7 @@ class Device {
           this.#sensorDataManager.parseMessage(
             messageType as SensorDataMessageType,
             dataView,
+            isSending,
           );
         } else if (
           SensorMetaDataMessageTypes.includes(
@@ -994,6 +998,7 @@ class Device {
           this.#sensorDataManager.parseMessage(
             messageType as SensorMetaDataMessageType,
             dataView,
+            isSending,
           );
         } else if (
           FirmwareMessageTypes.includes(messageType as FirmwareMessageType)
@@ -1001,6 +1006,7 @@ class Device {
           this.#firmwareManager.parseMessage(
             messageType as FirmwareMessageType,
             dataView,
+            isSending,
           );
         } else if (
           DeviceInformationTypes.includes(messageType as DeviceInformationType)
@@ -1008,6 +1014,7 @@ class Device {
           this.#deviceInformationManager.parseMessage(
             messageType as DeviceInformationType,
             dataView,
+            isSending,
           );
         } else if (
           InformationMessageTypes.includes(
@@ -1017,6 +1024,7 @@ class Device {
           this._informationManager.parseMessage(
             messageType as InformationMessageType,
             dataView,
+            isSending,
           );
         } else if (
           SensorConfigurationMessageTypes.includes(
@@ -1026,6 +1034,7 @@ class Device {
           this.#sensorConfigurationManager.parseMessage(
             messageType as SensorConfigurationMessageType,
             dataView,
+            isSending,
           );
         } else if (
           VibrationMessageTypes.includes(messageType as VibrationMessageType)
@@ -1033,11 +1042,13 @@ class Device {
           this.#vibrationManager.parseMessage(
             messageType as VibrationMessageType,
             dataView,
+            isSending,
           );
         } else if (WifiMessageTypes.includes(messageType as WifiMessageType)) {
           this.#wifiManager.parseMessage(
             messageType as WifiMessageType,
             dataView,
+            isSending,
           );
         } else if (
           CameraMessageTypes.includes(messageType as CameraMessageType)
@@ -1045,6 +1056,7 @@ class Device {
           this.#cameraManager.parseMessage(
             messageType as CameraMessageType,
             dataView,
+            isSending,
           );
         } else if (
           MicrophoneMessageTypes.includes(messageType as MicrophoneMessageType)
@@ -1052,6 +1064,7 @@ class Device {
           this.#microphoneManager.parseMessage(
             messageType as MicrophoneMessageType,
             dataView,
+            isSending,
           );
         } else if (
           DisplayMessageTypes.includes(messageType as DisplayMessageType)
@@ -1059,15 +1072,21 @@ class Device {
           this.#displayManager.parseMessage(
             messageType as DisplayMessageType,
             dataView,
+            isSending,
           );
         } else if (LedMessageTypes.includes(messageType as LedMessageType)) {
           this.#ledManager.parseMessage(
             messageType as LedMessageType,
             dataView,
+            isSending,
           );
         } else {
           throw Error(`uncaught messageType ${messageType}`);
         }
+    }
+
+    if (isSending) {
+      return;
     }
 
     this.latestConnectionMessages.set(messageType, dataView);
@@ -1091,6 +1110,14 @@ class Device {
       return;
     }
     this.#sendTxMessages();
+  }
+
+  _onConnectionMessageSent(
+    messageType: ConnectionMessageType,
+    dataView: DataView<ArrayBuffer>,
+  ) {
+    _console.log("_onConnectionMessageSent", { messageType }, dataView);
+    this.#onConnectionMessageReceived(messageType, dataView, true);
   }
 
   latestConnectionMessages: Map<ConnectionMessageType, DataView> = new Map();
@@ -1118,8 +1145,7 @@ class Device {
   }
 
   // INFORMATION
-  /** @private */
-  _informationManager = new InformationManager();
+  private _informationManager = new InformationManager();
 
   get id() {
     return this._informationManager.id;

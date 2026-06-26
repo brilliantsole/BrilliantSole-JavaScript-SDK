@@ -70,11 +70,11 @@ declare class CameraManager {
     constructor();
     sendMessage: SendCameraMessageCallback;
     eventDispatcher: CameraEventDispatcher;
-    get waitForEvent(): <T extends "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "isRecordingCamera" | "startRecordingCamera" | "stopRecordingCamera" | "cameraRecording" | "autoPicture">(type: T, options?: {
+    get waitForEvent(): <T extends "cameraImage" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "isRecordingCamera" | "startRecordingCamera" | "stopRecordingCamera" | "cameraRecording" | "autoPicture">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "isRecordingCamera" | "startRecordingCamera" | "stopRecordingCamera" | "cameraRecording" | "autoPicture", CameraEventMessages, T>>;
+    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "cameraImage" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "isRecordingCamera" | "startRecordingCamera" | "stopRecordingCamera" | "cameraRecording" | "autoPicture", CameraEventMessages, T>>;
     requestRequiredInformation(sendImmediately?: boolean): void;
-    get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
+    get cameraStatus(): "asleep" | "idle" | "focusing" | "takingPicture";
     focus(): Promise<void>;
     takePicture(): Promise<void>;
     stop(): Promise<void>;
@@ -96,7 +96,7 @@ declare class CameraManager {
     toggleRecording(audioStream?: MediaStream): void;
     get autoPicture(): boolean;
     set autoPicture(newAutoPicture: boolean);
-    parseMessage(messageType: CameraMessageType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: CameraMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     clear(): void;
 }
 export default CameraManager;

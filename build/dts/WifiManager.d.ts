@@ -53,7 +53,7 @@ declare class WifiManager {
     get isWifiConnected(): boolean;
     get ipAddress(): string | undefined;
     get isWifiSecure(): boolean;
-    parseMessage(messageType: WifiMessageType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: WifiMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     clear(): void;
 }
 export default WifiManager;

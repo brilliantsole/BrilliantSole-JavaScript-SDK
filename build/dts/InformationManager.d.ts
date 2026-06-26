@@ -51,7 +51,7 @@ declare class InformationManager {
     get name(): string;
     updateName(updatedName: string): void;
     setName(newName: string): Promise<void>;
-    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic";
+    get type(): "generic" | "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
     get typeEnum(): number;
     updateType(updatedType: DeviceType): void;
     setType(newType: DeviceType): Promise<void>;
@@ -62,7 +62,7 @@ declare class InformationManager {
     get side(): Side;
     get mtu(): number;
     get isCurrentTimeSet(): boolean;
-    parseMessage(messageType: InformationMessageType, dataView: DataView<ArrayBuffer>): void;
+    parseMessage(messageType: InformationMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     clear(): void;
     connectionType?: ConnectionType;
 }

@@ -112,7 +112,7 @@ class TfliteManager {
   #assertValidTaskEnum(taskEnum: number) {
     _console.assertWithError(
       taskEnum in TfliteTasks,
-      `invalid taskEnum ${taskEnum}`
+      `invalid taskEnum ${taskEnum}`,
     );
   }
 
@@ -167,7 +167,7 @@ class TfliteManager {
     const setNameData = textEncoder.encode(newName);
     this.sendMessage(
       [{ type: "setTfliteName", data: setNameData.buffer }],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -201,7 +201,7 @@ class TfliteManager {
     const taskEnum = TfliteTasks.indexOf(newTask);
     this.sendMessage(
       [{ type: "setTfliteTask", data: UInt8ByteBuffer(taskEnum) }],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -228,7 +228,7 @@ class TfliteManager {
     newSampleRate -= newSampleRate % SensorRateStep;
     _console.assertWithError(
       newSampleRate >= SensorRateStep,
-      `sampleRate must be multiple of ${SensorRateStep} greater than 0 (got ${newSampleRate})`
+      `sampleRate must be multiple of ${SensorRateStep} greater than 0 (got ${newSampleRate})`,
     );
     if (this.#sampleRate == newSampleRate) {
       _console.log(`redundant sampleRate assignment ${newSampleRate}`);
@@ -241,7 +241,7 @@ class TfliteManager {
     dataView.setUint16(0, newSampleRate, true);
     this.sendMessage(
       [{ type: "setTfliteSampleRate", data: dataView.buffer }],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -252,7 +252,7 @@ class TfliteManager {
     const tfliteSensorType = sensorType as TfliteSensorType;
     _console.assertWithError(
       TfliteSensorTypes.includes(tfliteSensorType),
-      `invalid tflite sensorType "${sensorType}"`
+      `invalid tflite sensorType "${sensorType}"`,
     );
   }
 
@@ -287,7 +287,7 @@ class TfliteManager {
   }
   async setSensorTypes(
     newSensorTypes: SensorType[],
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ) {
     newSensorTypes.forEach((sensorType) => {
       TfliteManager.AssertValidSensorType(sensorType);
@@ -314,7 +314,7 @@ class TfliteManager {
           data: Uint8Array.from(newSensorTypeEnums).buffer,
         },
       ],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -367,7 +367,7 @@ class TfliteManager {
     dataView.setUint16(0, newCaptureDelay, true);
     this.sendMessage(
       [{ type: "setTfliteCaptureDelay", data: dataView.buffer }],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -391,7 +391,7 @@ class TfliteManager {
     _console.assertTypeWithError(newThreshold, "number");
     _console.assertWithError(
       newThreshold >= 0,
-      `threshold must be positive (got ${newThreshold})`
+      `threshold must be positive (got ${newThreshold})`,
     );
     if (this.#threshold == newThreshold) {
       _console.log(`redundant threshold assignment ${newThreshold}`);
@@ -404,7 +404,7 @@ class TfliteManager {
     dataView.setFloat32(0, newThreshold, true);
     this.sendMessage(
       [{ type: "setTfliteThreshold", data: dataView.buffer }],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -428,7 +428,7 @@ class TfliteManager {
   }
   async setInferencingEnabled(
     newInferencingEnabled: boolean,
-    sendImmediately: boolean = true
+    sendImmediately: boolean = true,
   ) {
     _console.assertTypeWithError(newInferencingEnabled, "boolean");
     if (!newInferencingEnabled && !this.isReady) {
@@ -437,7 +437,7 @@ class TfliteManager {
     this.#assertIsReady();
     if (this.#inferencingEnabled == newInferencingEnabled) {
       _console.log(
-        `redundant inferencingEnabled assignment ${newInferencingEnabled}`
+        `redundant inferencingEnabled assignment ${newInferencingEnabled}`,
       );
       return;
     }
@@ -452,7 +452,7 @@ class TfliteManager {
           data: UInt8ByteBuffer(Number(newInferencingEnabled)),
         },
       ],
-      sendImmediately
+      sendImmediately,
     );
 
     await promise;
@@ -524,9 +524,10 @@ class TfliteManager {
 
   parseMessage(
     messageType: TfliteMessageType,
-    dataView: DataView<ArrayBuffer>
+    dataView: DataView<ArrayBuffer>,
+    isSending?: boolean,
   ) {
-    _console.log({ messageType });
+    _console.log({ messageType, isSending }, dataView);
 
     switch (messageType) {
       case "getTfliteName":
@@ -574,7 +575,7 @@ class TfliteManager {
   }
   sendConfiguration(
     configuration: TfliteFileConfiguration,
-    sendImmediately?: boolean
+    sendImmediately?: boolean,
   ) {
     if (configuration == this.#configuration) {
       _console.log("redundant tflite configuration assignment");
