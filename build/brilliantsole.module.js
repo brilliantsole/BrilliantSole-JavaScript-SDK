@@ -32220,10 +32220,10 @@ class DisplayManager {
         this.#contextCommandBuffers.length = 0;
         const displayContextCommands = this.#contextCommands.slice();
         this.#contextCommands.length = 0;
-        await this.sendMessage([{ type: "displayContextCommands", data }], true);
         this.#dispatchEvent("displayContextCommands", {
             displayContextCommands,
         });
+        await this.sendMessage([{ type: "displayContextCommands", data }], true);
     }
     async flushContextCommands() {
         await this.#sendContextCommands();
