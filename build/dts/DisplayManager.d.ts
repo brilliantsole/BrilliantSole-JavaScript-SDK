@@ -7,6 +7,7 @@ import { DisplayContextCommand } from "./utils/DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
 import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, DisplaySpriteSheet, DisplaySpriteLines } from "./utils/DisplaySpriteSheetUtils.ts";
+import { default as DisplayCanvasHelper } from "./utils/DisplayCanvasHelper.ts";
 export declare const DefaultNumberOfDisplayColors = 16;
 export declare const DisplayCommands: readonly ["sleep", "wake"];
 export type DisplayCommand = (typeof DisplayCommands)[number];
@@ -148,7 +149,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get contextState(): DisplayContextState;
     serializeContextState(): DisplayContextCommand[];
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "asleep" | "awake";
+    get displayStatus(): "awake" | "asleep";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -162,7 +163,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushContextCommands(): Promise<void>;
@@ -321,6 +322,8 @@ declare class DisplayManager implements DisplayManagerInterface {
     selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     startSprite(offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     endSprite(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
+    get displayCanvasHelper(): DisplayCanvasHelper | undefined;
+    set displayCanvasHelper(displayCanvasHelper: DisplayCanvasHelper | undefined);
     reset(): void;
     get mtu(): number;
     set mtu(newMtu: number);

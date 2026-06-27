@@ -446,9 +446,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#setIsReady(false);
     if (this.#device) {
+      // @ts-expect-error
+      this.#device.displayManager.displayCanvasHelper = undefined;
       removeEventListeners(this.device, this.#boundDeviceEventListeners);
     }
     this.#device = newDevice;
+    // @ts-expect-error
+    this.#device!.displayManager.displayCanvasHelper = this;
     addEventListeners(this.#device, this.#boundDeviceEventListeners);
     _console.log("assigned device", this.device);
     if (this.device) {

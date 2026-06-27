@@ -4039,6 +4039,9 @@ const updateBitmapCanvas = () => {
   if (!currentDevice) {
     return;
   }
+  if (drawShapeType != "bitmap") {
+    return;
+  }
   bitmapContext.clearRect(0, 0, bitmapCanvasWidth, bitmapCanvasHeight);
   bitmapContext.fillStyle = currentDevice.displayBitmapColors[0];
   bitmapContext.fillRect(0, 0, bitmapCanvasWidth, bitmapCanvasHeight);

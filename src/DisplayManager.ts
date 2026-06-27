@@ -110,7 +110,7 @@ import {
   getSpriteLinesMetrics,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { wait } from "./utils/Timer.ts";
-import { default as DisplayCanvasHelperManager } from "./utils/DisplayCanvasHelperManager.ts";
+import { default as DisplayCanvasHelper } from "./utils/DisplayCanvasHelper.ts";
 
 const _console = createConsole("DisplayManager", { log: false });
 
@@ -2480,19 +2480,45 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
-    return runDisplayContextCommand(this, command, sendImmediately, isSending);
+    _console.log("runContextCommand", command, {
+      sendImmediately,
+      isSending,
+    });
+
+    if (this.displayCanvasHelper) {
+      await this.displayCanvasHelper.runContextCommand(
+        command,
+        sendImmediately,
+        isSending,
+      );
+    } else {
+      await runDisplayContextCommand(this, command, sendImmediately, isSending);
+    }
   }
   async runContextCommands(
     commands: DisplayContextCommand[],
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
-    return runDisplayContextCommands(
-      this,
-      commands,
+    _console.log("runContextCommands", commands, {
       sendImmediately,
       isSending,
-    );
+    });
+
+    if (this.displayCanvasHelper) {
+      await this.displayCanvasHelper.runContextCommands(
+        commands,
+        sendImmediately,
+        isSending,
+      );
+    } else {
+      await runDisplayContextCommands(
+        this,
+        commands,
+        sendImmediately,
+        isSending,
+      );
+    }
   }
   async parseContextCommands(
     dataView: DataView,
@@ -2504,11 +2530,8 @@ class DisplayManager implements DisplayManagerInterface {
       isSending,
     });
 
-    const displayCanvasHelper =
-      DisplayCanvasHelperManager.findDisplayCanvasHelpersByDisplayManager(this);
-
-    if (displayCanvasHelper) {
-      await displayCanvasHelper.parseContextCommands(
+    if (this.displayCanvasHelper) {
+      await this.displayCanvasHelper.parseContextCommands(
         dataView,
         sendImmediately,
         isSending,
@@ -3139,6 +3162,16 @@ class DisplayManager implements DisplayManagerInterface {
       sendImmediately,
       isSending,
     );
+  }
+
+  #displayCanvasHelper?: DisplayCanvasHelper;
+  get displayCanvasHelper(): DisplayCanvasHelper | undefined {
+    return this.#displayCanvasHelper;
+  }
+  set displayCanvasHelper(
+    displayCanvasHelper: DisplayCanvasHelper | undefined,
+  ) {
+    this.#displayCanvasHelper = displayCanvasHelper;
   }
 
   reset() {
