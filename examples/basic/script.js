@@ -2896,6 +2896,19 @@ onCurrentDevice(() => {
   );
 });
 
+// DISPLAY CANVAS HELPER
+const displayCanvasHelper = new BS.DisplayCanvasHelper();
+// displayCanvasHelper.setBrightness("veryLow");
+displayCanvasHelper.canvas = displayCanvas;
+window.displayCanvasHelper = displayCanvasHelper;
+
+BS.DeviceManager.addEventListener("deviceConnected", async (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
+    displayCanvasHelper.device = device;
+  }
+});
+
 // DISPLAY
 
 /** @type {HTMLSpanElement} */

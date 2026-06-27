@@ -113,3 +113,17 @@ export async function getFileBuffer(file: FileLike) {
 export function UInt8ByteBuffer(value: number) {
   return Uint8Array.from([value]).buffer;
 }
+
+export function areArrayBuffersEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  if (a === b) return true;
+  if (a.byteLength !== b.byteLength) return false;
+
+  const viewA = new Uint8Array(a);
+  const viewB = new Uint8Array(b);
+
+  for (let i = 0; i < viewA.length; i++) {
+    if (viewA[i] !== viewB[i]) return false;
+  }
+
+  return true;
+}

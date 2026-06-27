@@ -6,3 +6,4 @@ export declare function sliceDataView(dataView: DataView<ArrayBuffer>, begin: nu
 export type FileLike = number[] | ArrayBuffer | DataView | URL | string | File | Buffer;
 export declare function getFileBuffer(file: FileLike): Promise<ArrayBufferLike | Uint8Array<ArrayBuffer>>;
 export declare function UInt8ByteBuffer(value: number): ArrayBuffer;
+export declare function areArrayBuffersEqual(a: ArrayBuffer, b: ArrayBuffer): boolean;

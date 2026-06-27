@@ -1,4 +1,7 @@
-export function createArray(arrayLength: number, objectOrCallback: ((index: number) => any) | object) {
+export function createArray(
+  arrayLength: number,
+  objectOrCallback: ((index: number) => any) | object,
+) {
   return new Array(arrayLength).fill(1).map((_, index) => {
     if (typeof objectOrCallback == "function") {
       const callback = objectOrCallback;

@@ -36,7 +36,10 @@ import {
   DiscoveredDevice,
   ScannerEventMap,
 } from "../scanner/BaseScanner.ts";
-import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
+import {
+  areArrayBuffersEqual,
+  concatenateArrayBuffers,
+} from "../utils/ArrayBufferUtils.ts";
 import DeviceManager, {
   DeviceManagerEventMap,
   BoundDeviceManagerEventListeners,
@@ -232,6 +235,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   #onClientConnected(event: ServerEventMap<ServerClient>["clientConnected"]) {
     const client = event.message.client;
     if (!this.clients.includes(client)) {
+      this.#recentClientDisplayContextCommandDataArrayBuffers.set(client, []);
       this.clients.push(client);
     }
     _console.log("onClientConnected");
@@ -243,6 +247,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     const client = event.message.client;
     if (this.clients.includes(client)) {
       this.clients.splice(this.clients.indexOf(client), 1);
+      this.#recentClientDisplayContextCommandDataArrayBuffers.delete(client);
     }
 
     _console.log("onClientDisconnected");
@@ -498,26 +503,90 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       this.#allowDeviceToClients(device, deviceMessage),
     );
   }
+  #recentClientDisplayContextCommandDataArrayBuffers: Map<
+    ServerClient,
+    ArrayBuffer[]
+  > = new Map();
   #onDeviceDisplayContextCommands(
     deviceEvent: DeviceEventMap["displayContextCommands"],
   ) {
-    const { target: device, message: deviceConnectionMessage } = deviceEvent;
+    const {
+      target: device,
+      message: deviceConnectionMessage,
+      type,
+    } = deviceEvent;
     _console.log("onDeviceDisplayContextCommands", deviceConnectionMessage);
 
     if (!device.isConnected) {
       return;
     }
 
-    // this.clients.forEach((client) => {
-    //   this.#sendToClient(client, message);
-    // });
+    const { displayContextCommands } = deviceConnectionMessage;
 
-    // serializeDisplayContextCommands(
-    //   devicedi,
-    //   deviceConnectionMessage.displayContextCommands,
-    // );
+    const displayContextCommandsData = serializeDisplayContextCommands(
+      device.displayManager,
+      displayContextCommands,
+    );
 
-    // FILL - broadcast to clients (except client that created it)
+    this.clients.forEach((client) => {
+      const recentClientDisplayContextCommandDataArrayBuffers =
+        this.#recentClientDisplayContextCommandDataArrayBuffers.get(client);
+      if (
+        recentClientDisplayContextCommandDataArrayBuffers &&
+        recentClientDisplayContextCommandDataArrayBuffers?.length > 0
+      ) {
+        const arrayBufferIndex =
+          recentClientDisplayContextCommandDataArrayBuffers.findIndex(
+            (arrayBuffer) =>
+              areArrayBuffersEqual(arrayBuffer, displayContextCommandsData),
+          );
+        if (arrayBufferIndex != -1) {
+          _console.log("skipping displayContextCommands from client", client, {
+            arrayBufferIndex,
+          });
+          recentClientDisplayContextCommandDataArrayBuffers.splice(
+            arrayBufferIndex,
+            1,
+          );
+          return;
+        }
+      }
+      const filteredDisplayContextCommands = displayContextCommands.filter(
+        (displayContextCommand) => {
+          return this.#allowDeviceDisplayContextCommandToClient(
+            device,
+            client,
+            displayContextCommand,
+          );
+        },
+      );
+      _console.log(
+        "filteredDisplayContextCommands",
+        filteredDisplayContextCommands,
+      );
+
+      const filteredDisplayContextCommandsData =
+        serializeDisplayContextCommands(
+          device.displayManager,
+          filteredDisplayContextCommands,
+        );
+      if (filteredDisplayContextCommandsData.byteLength == 0) {
+        _console.log("no filteredDisplayContextCommandsData");
+        return;
+      }
+
+      const deviceMessage: DeviceMessage = {
+        type,
+        data: filteredDisplayContextCommandsData,
+      };
+
+      if (this.#allowDeviceToClient(device, client, deviceMessage)) {
+        this.#sendToClient(
+          client,
+          this.#createDeviceServerMessage(device, deviceMessage),
+        );
+      }
+    });
   }
 
   // STATIC DEVICE LISTENERS
@@ -1067,11 +1136,14 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                   device.displayManager,
                   filteredDisplayContextCommands,
                 );
-              if (filteredDisplayContextCommandsData.byteLength > 0) {
-                message.data = filteredDisplayContextCommandsData;
-              } else {
+              if (filteredDisplayContextCommandsData.byteLength == 0) {
                 _console.log("no filteredDisplayContextCommandsData");
+                return;
               }
+              this.#recentClientDisplayContextCommandDataArrayBuffers
+                .get(client)!
+                .push(filteredDisplayContextCommandsData);
+              message.data = filteredDisplayContextCommandsData;
             }
             break;
         }

@@ -717,7 +717,7 @@ class DisplayManager implements DisplayManagerInterface {
     );
 
     if (isSending) {
-      //await this.#onDisplayReady();
+      // await this.#onDisplayReady();
     } else if (waitUntilReady) {
       await promise;
     }
@@ -3036,7 +3036,7 @@ class DisplayManager implements DisplayManagerInterface {
       case "displayCommand":
         break;
       case "displayContextCommands":
-        this.parseContextCommands(dataView, true, isSending);
+        this.parseContextCommands(dataView, true, true);
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);

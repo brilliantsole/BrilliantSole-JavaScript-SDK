@@ -45,6 +45,15 @@
       font-weight: bolder;
     }
 
+    #displayCanvas {
+      background-color: black;
+      margin-bottom: 1rem;
+    }
+    #displayCanvasContainer {
+      height: 100px;
+      display: flex;
+    }
+
     #cameraImage {
       min-height: 300px;
     }
@@ -191,6 +200,10 @@
             <input type="color" value="#000000" />
           </label>
         </template>
+      </div>
+
+      <div id="displayCanvasContainer">
+        <canvas id="displayCanvas" width="640" height="400"></canvas>
       </div>
 
       <div id="displayColorOpacities">
