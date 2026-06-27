@@ -4039,7 +4039,7 @@ const updateBitmapCanvas = () => {
   if (!currentDevice) {
     return;
   }
-  if (drawShapeType != "bitmap") {
+  if (drawShapeType != "drawBitmap") {
     return;
   }
   bitmapContext.clearRect(0, 0, bitmapCanvasWidth, bitmapCanvasHeight);

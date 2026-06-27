@@ -1089,9 +1089,9 @@ function degToRad(deg) {
 function radToDeg(rad) {
     return rad * (180 / Math.PI);
 }
-const twoPi = Math.PI * 2;
+const twoPi$1 = Math.PI * 2;
 function normalizeRadians(rad) {
-    return ((rad % twoPi) + twoPi) % twoPi;
+    return ((rad % twoPi$1) + twoPi$1) % twoPi$1;
 }
 function pointInPolygon(pt, polygon) {
     let inside = false;
@@ -5754,13 +5754,23 @@ function formatRotation(rotation, isRadians, isSigned) {
     if (isRadians) {
         const rotationRad = rotation;
         _console$u.log({ rotationRad });
-        rotation %= 2 * Math.PI;
-        rotation /= 2 * Math.PI;
+        if (isSigned) {
+            rotation = clamp(rotation, -twoPi$1, twoPi$1);
+        }
+        else {
+            rotation %= twoPi$1;
+        }
+        rotation /= twoPi$1;
     }
     else {
         const rotationDeg = rotation;
         _console$u.log({ rotationDeg });
-        rotation %= 360;
+        if (isSigned) {
+            rotation = clamp(rotation, -360, 360);
+        }
+        else {
+            rotation %= 360;
+        }
         rotation /= 360;
     }
     if (isSigned) {
@@ -5775,7 +5785,10 @@ function formatRotation(rotation, isRadians, isSigned) {
 }
 function parseRotation(formattedRotation, isRadians, isSigned) {
     let rotation = formattedRotation;
-    {
+    if (isSigned) {
+        rotation /= Int16Max;
+    }
+    else {
         rotation /= Uint16Max;
     }
     {
@@ -6804,7 +6817,7 @@ function serializeDisplayContextCommandData(displayManager, command) {
                 startAngle = isRadians ? startAngle : degToRad(startAngle);
                 startAngle = normalizeRadians(startAngle);
                 angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                angleOffset = normalizeRadians(angleOffset);
+                angleOffset = clamp(angleOffset, -twoPi$1, twoPi$1);
                 isRadians = true;
                 dataView = new DataView(new ArrayBuffer(2 * 5));
                 dataView.setInt16(0, offsetX, true);
@@ -6820,7 +6833,7 @@ function serializeDisplayContextCommandData(displayManager, command) {
                 startAngle = isRadians ? startAngle : degToRad(startAngle);
                 startAngle = normalizeRadians(startAngle);
                 angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                angleOffset = normalizeRadians(angleOffset);
+                angleOffset = clamp(angleOffset, -twoPi$1, twoPi$1);
                 isRadians = true;
                 dataView = new DataView(new ArrayBuffer(2 * 6));
                 dataView.setInt16(0, offsetX, true);
@@ -6828,7 +6841,7 @@ function serializeDisplayContextCommandData(displayManager, command) {
                 dataView.setUint16(4, radiusX, true);
                 dataView.setUint16(6, radiusY, true);
                 dataView.setUint16(8, formatRotation(startAngle, isRadians), true);
-                dataView.setUint16(10, angleOffset, true);
+                dataView.setUint16(10, formatRotation(angleOffset, isRadians, true), true);
             }
             break;
         case "drawBitmap":
@@ -7465,7 +7478,7 @@ function parseDisplayContextCommands(displayManager, dataView) {
                     offset += 2;
                     const startAngle = parseRotation(dataView.getUint16(offset, true));
                     offset += 2;
-                    const angleOffset = parseRotation(dataView.getInt16(offset, true));
+                    const angleOffset = parseRotation(dataView.getInt16(offset, true), isRadians, true);
                     offset += 2;
                     command = {
                         type,
@@ -7491,7 +7504,7 @@ function parseDisplayContextCommands(displayManager, dataView) {
                     offset += 2;
                     const startAngle = parseRotation(dataView.getUint16(offset, true));
                     offset += 2;
-                    const angleOffset = parseRotation(dataView.getInt16(offset, true));
+                    const angleOffset = parseRotation(dataView.getInt16(offset, true), isRadians, true);
                     offset += 2;
                     command = {
                         type,

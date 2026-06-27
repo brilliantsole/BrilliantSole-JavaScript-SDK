@@ -26,9 +26,11 @@ import {
   DisplaySegmentCaps,
 } from "./DisplayContextState.ts";
 import {
+  clamp,
   getVector2Distance,
   Int16Max,
   Int16Min,
+  twoPi,
   Uint16Max,
   Vector2,
 } from "./MathUtils.ts";
@@ -44,14 +46,23 @@ export function formatRotation(
   if (isRadians) {
     const rotationRad = rotation;
     _console.log({ rotationRad });
-    rotation %= 2 * Math.PI;
-    rotation /= 2 * Math.PI;
+    if (isSigned) {
+      rotation = clamp(rotation, -twoPi, twoPi);
+    } else {
+      rotation %= twoPi;
+    }
+    rotation /= twoPi;
   } else {
     const rotationDeg = rotation;
     _console.log({ rotationDeg });
-    rotation %= 360;
+    if (isSigned) {
+      rotation = clamp(rotation, -360, 360);
+    } else {
+      rotation %= 360;
+    }
     rotation /= 360;
   }
+
   if (isSigned) {
     rotation *= (rotation > 0 ? Int16Max - 1 : -Int16Min) - 1;
   } else {

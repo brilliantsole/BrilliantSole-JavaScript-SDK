@@ -60,7 +60,13 @@ import {
   parsePoints,
   getNumberOfConrolPoints,
 } from "./DisplayUtils.ts";
-import { clamp, degToRad, normalizeRadians, Vector2 } from "./MathUtils.ts";
+import {
+  clamp,
+  degToRad,
+  normalizeRadians,
+  twoPi,
+  Vector2,
+} from "./MathUtils.ts";
 import { deepEqual } from "./ObjectUtils.ts";
 
 const _console = createConsole("DisplayContextCommand", { log: false });
@@ -1329,7 +1335,7 @@ export function serializeDisplayContextCommandData(
         startAngle = normalizeRadians(startAngle);
 
         angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-        angleOffset = normalizeRadians(angleOffset);
+        angleOffset = clamp(angleOffset, -twoPi, twoPi);
 
         isRadians = true;
 
@@ -1361,7 +1367,7 @@ export function serializeDisplayContextCommandData(
         startAngle = normalizeRadians(startAngle);
 
         angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-        angleOffset = normalizeRadians(angleOffset);
+        angleOffset = clamp(angleOffset, -twoPi, twoPi);
 
         isRadians = true;
 
@@ -1371,7 +1377,11 @@ export function serializeDisplayContextCommandData(
         dataView.setUint16(4, radiusX, true);
         dataView.setUint16(6, radiusY, true);
         dataView.setUint16(8, formatRotation(startAngle, isRadians), true);
-        dataView.setUint16(10, angleOffset, true);
+        dataView.setUint16(
+          10,
+          formatRotation(angleOffset, isRadians, true),
+          true,
+        );
       }
       break;
     case "drawBitmap":
@@ -2125,6 +2135,7 @@ export function parseDisplayContextCommands(
           const angleOffset = parseRotation(
             dataView.getInt16(offset, true),
             isRadians,
+            true,
           );
           offset += 2;
 
@@ -2162,6 +2173,7 @@ export function parseDisplayContextCommands(
           const angleOffset = parseRotation(
             dataView.getInt16(offset, true),
             isRadians,
+            true,
           );
           offset += 2;
 

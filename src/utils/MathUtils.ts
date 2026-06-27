@@ -7,7 +7,7 @@ export function getInterpolation(
   value: number,
   min: number,
   max: number,
-  span: number
+  span: number,
 ) {
   if (span == undefined) {
     span = max - min;
@@ -28,7 +28,7 @@ const timestampThreshold = 60_000;
 
 export function parseTimestamp(
   dataView: DataView<ArrayBuffer>,
-  byteOffset: number
+  byteOffset: number,
 ) {
   const now = Date.now();
   const nowWithoutLower2Bytes = removeLower2Bytes(now);
@@ -81,7 +81,7 @@ export function getVector2Midpoint(a: Vector2, b: Vector2): Vector2 {
 
 export function multiplyVector2ByScalar(
   vector: Vector2,
-  scalar: number
+  scalar: number,
 ): Vector2 {
   let { x, y } = vector;
   x *= scalar;

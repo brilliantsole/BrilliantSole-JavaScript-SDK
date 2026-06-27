@@ -3774,6 +3774,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+    isRadians = true;
 
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
@@ -3783,7 +3784,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         radius,
         startAngle,
         angleOffset,
-        true,
+        isRadians,
         contextState,
       ),
     );
@@ -3794,7 +3795,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         radius,
         startAngle,
         angleOffset,
-        true,
+        isRadians,
         sendImmediately,
         isSending,
       );
@@ -3909,7 +3910,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         radiusY,
         startAngle,
         angleOffset,
-        true,
+        isRadians,
         contextState,
       ),
     );
@@ -3921,7 +3922,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         radiusY,
         startAngle,
         angleOffset,
-        true,
+        isRadians,
         sendImmediately,
         isSending,
       );
