@@ -1550,7 +1550,7 @@ export async function runDisplayContextCommands(
   for (let command of commands) {
     await runDisplayContextCommand(displayManager, command, false, isSending);
   }
-  if (sendImmediately && !isSending) {
+  if (sendImmediately) {
     await displayManager.flushContextCommands();
   }
 }

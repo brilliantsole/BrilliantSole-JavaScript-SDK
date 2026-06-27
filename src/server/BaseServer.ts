@@ -376,7 +376,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   // DEVICE LISTENERS
   #boundDeviceListeners: BoundDeviceEventListeners = {
     connectionMessage: this.#onDeviceConnectionMessage.bind(this),
-    // TODO: - listen for displayContextCommands and send them back to other iframes
+    displayContextCommands: this.#onDeviceDisplayContextCommands.bind(this),
   };
 
   #createDeviceMessage(
@@ -497,6 +497,27 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       this.#createDeviceServerMessage(device, deviceMessage),
       this.#allowDeviceToClients(device, deviceMessage),
     );
+  }
+  #onDeviceDisplayContextCommands(
+    deviceEvent: DeviceEventMap["displayContextCommands"],
+  ) {
+    const { target: device, message: deviceConnectionMessage } = deviceEvent;
+    _console.log("onDeviceDisplayContextCommands", deviceConnectionMessage);
+
+    if (!device.isConnected) {
+      return;
+    }
+
+    // this.clients.forEach((client) => {
+    //   this.#sendToClient(client, message);
+    // });
+
+    // serializeDisplayContextCommands(
+    //   devicedi,
+    //   deviceConnectionMessage.displayContextCommands,
+    // );
+
+    // FILL - broadcast to clients (except client that created it)
   }
 
   // STATIC DEVICE LISTENERS
@@ -663,7 +684,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       >,
     ]
   >();
-  #allowDeviceSensorConfigurationToClient(
+  #allowClientSensorConfigurationToDevice(
     device: Device,
     client: ServerClient,
     sensorType: SensorType,
@@ -686,12 +707,33 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       >,
     ]
   >();
-  #allowDeviceDisplayContextCommandToClient(
+  #allowClientDisplayContextCommandToDevice(
     device: Device,
     client: ServerClient,
     displayContextCommand: DisplayContextCommand,
   ) {
     return this.clientDisplayContextCommandToDeviceGuardManager.evaluate({
+      device,
+      client,
+      displayContextCommand,
+      server: this,
+    });
+  }
+
+  deviceDisplayContextCommandToClientGuardManager = new GuardManager<
+    [
+      BaseServerClientDeviceDisplayContextCommandGuardManagerArg<
+        BaseServer<ServerClient>,
+        ServerClient
+      >,
+    ]
+  >();
+  #allowDeviceDisplayContextCommandToClient(
+    device: Device,
+    client: ServerClient,
+    displayContextCommand: DisplayContextCommand,
+  ) {
+    return this.deviceDisplayContextCommandToClientGuardManager.evaluate({
       device,
       client,
       displayContextCommand,
@@ -948,6 +990,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     client: ServerClient,
     device: Device,
     dataView: DataView<ArrayBuffer>,
+    deviceMessages: DeviceMessage[],
   ) {
     const filteredTxMessages: ArrayBuffer[] = [];
     parseMessage(
@@ -959,15 +1002,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         let message: DeviceMessage = { type: messageType, data: dataView };
 
         switch (message.type) {
-          // FILL - file
-          // FILL - spriteSheet
           case "setSensorConfiguration":
             if (!this.clientSensorConfigurationToDeviceGuardManager.isEmpty) {
               _console.log("trimming sensorConfiguration...");
               const sensorConfiguration = parseSensorConfiguration(
                 message.data,
                 (sensorType, sensorRate) => {
-                  return this.#allowDeviceSensorConfigurationToClient(
+                  return this.#allowClientSensorConfigurationToDevice(
                     device,
                     client,
                     sensorType,
@@ -984,10 +1025,16 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 _console.log(
                   "no sensorConfigurationData - sending existing sensorConfiguration",
                 );
-                message = this.#createDeviceMessage(
+                const getSensorConfigurationMessage = this.#createDeviceMessage(
                   device,
                   "getSensorConfiguration",
                 );
+                if (!true) {
+                  message = getSensorConfigurationMessage;
+                } else {
+                  deviceMessages.push(getSensorConfigurationMessage);
+                  return;
+                }
               }
             }
             break;
@@ -1003,7 +1050,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               );
               const filteredDisplayContextCommands =
                 displayContextCommands.filter((displayContextCommand) => {
-                  return this.#allowDeviceDisplayContextCommandToClient(
+                  return this.#allowClientDisplayContextCommandToDevice(
                     device,
                     client,
                     displayContextCommand,
@@ -1013,7 +1060,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 "filteredDisplayContextCommands",
                 filteredDisplayContextCommands,
               );
-              // TODO - if commands that block changing contextState, send back "corrected" commands
+              // FILL - if commands that block changing contextState, send back "corrected" commands
 
               const filteredDisplayContextCommandsData =
                 serializeDisplayContextCommands(
@@ -1033,7 +1080,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           filteredTxMessages.push(
             createMessage(TxRxMessageTypes, true, message),
           );
-          device._onConnectionMessageSent(messageType, dataView);
+          device._onRemoteConnectionMessageSent(messageType, dataView);
         }
       },
       null,
@@ -1066,6 +1113,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           client,
           device,
           dataView,
+          deviceMessages,
         );
         device.connectionManager!.sendTxData(dataView.buffer);
         break;

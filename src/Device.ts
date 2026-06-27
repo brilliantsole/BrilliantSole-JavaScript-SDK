@@ -545,6 +545,10 @@ class Device {
         this.#onConnectionMessageReceived.bind(this);
       newConnectionManager.onMessagesReceived =
         this.#onConnectionMessagesReceived.bind(this);
+      newConnectionManager.onMessageSent =
+        this.#onConnectionMessageSent.bind(this);
+      newConnectionManager.onMessagesSent =
+        this.#onConnectionMessagesSent.bind(this);
     }
 
     this.#connectionManager = newConnectionManager;
@@ -1112,12 +1116,19 @@ class Device {
     this.#sendTxMessages();
   }
 
-  _onConnectionMessageSent(
+  _onRemoteConnectionMessageSent(
     messageType: ConnectionMessageType,
     dataView: DataView<ArrayBuffer>,
   ) {
     _console.log("_onConnectionMessageSent", { messageType }, dataView);
     this.#onConnectionMessageReceived(messageType, dataView, true);
+  }
+
+  #onConnectionMessageSent(message: TxMessage) {
+    _console.log("onConnectionMessageSent", message);
+  }
+  #onConnectionMessagesSent(messages: TxMessage[]) {
+    _console.log("onConnectionMessagesSent", messages);
   }
 
   latestConnectionMessages: Map<ConnectionMessageType, DataView> = new Map();

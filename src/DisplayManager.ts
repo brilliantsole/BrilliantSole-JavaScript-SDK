@@ -632,60 +632,63 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
-    if (isSending) {
-      _console.log("isSending - skipping");
-      return;
-    }
     _console.log("sendContextCommand", contextCommand, {
       sendImmediately,
       isSending,
     });
-    const serializedContextCommand = serializeDisplayContextCommand(
-      this,
-      contextCommand,
-    );
-    if (!serializedContextCommand) {
-      return;
-    }
 
-    if (serializedContextCommand.byteLength > this.#maxCommandDataLength) {
-      _console.error(
-        `serializedContextCommand ${serializedContextCommand.byteLength} too large (max ${
-          this.#maxCommandDataLength
-        })`,
+    if (!isSending) {
+      const serializedContextCommand = serializeDisplayContextCommand(
+        this,
+        contextCommand,
       );
-      return;
-    }
+      if (!serializedContextCommand) {
+        return;
+      }
 
-    const newLength = this.#contextCommandBuffers.reduce(
-      (sum, buffer) => sum + buffer.byteLength,
-      serializedContextCommand.byteLength,
-    );
-    if (newLength > this.#maxCommandDataLength) {
-      _console.log("displayContextCommandBuffers too full - sending now");
-      await this.#sendContextCommands();
+      if (serializedContextCommand.byteLength > this.#maxCommandDataLength) {
+        _console.error(
+          `serializedContextCommand ${serializedContextCommand.byteLength} too large (max ${
+            this.#maxCommandDataLength
+          })`,
+        );
+        return;
+      }
+
+      const newLength = this.#contextCommandBuffers.reduce(
+        (sum, buffer) => sum + buffer.byteLength,
+        serializedContextCommand.byteLength,
+      );
+      if (newLength > this.#maxCommandDataLength) {
+        _console.log("displayContextCommandBuffers too full - sending now");
+        await this.#sendContextCommands();
+      }
+      this.#contextCommandBuffers.push(serializedContextCommand);
     }
-    this.#contextCommandBuffers.push(serializedContextCommand);
     this.#contextCommands.push(contextCommand);
+
     if (sendImmediately) {
       await this.#sendContextCommands();
     }
   }
   async #sendContextCommands() {
-    if (this.#contextCommandBuffers.length == 0) {
+    const displayContextCommands = this.#contextCommands.slice();
+    _console.log("sendContextCommands", { displayContextCommands });
+    if (displayContextCommands.length == 0) {
       return;
     }
-    const data = concatenateArrayBuffers(this.#contextCommandBuffers);
-    _console.log(
-      `sending displayContextCommands`,
-      this.#contextCommandBuffers.slice(),
-      data,
-    );
-    this.#contextCommandBuffers.length = 0;
-    const displayContextCommands = this.#contextCommands.slice();
     this.#contextCommands.length = 0;
+    if (this.#contextCommandBuffers.length > 0) {
+      const data = concatenateArrayBuffers(this.#contextCommandBuffers);
+      _console.log(
+        `sending displayContextCommands`,
+        this.#contextCommandBuffers.slice(),
+        data,
+      );
+      this.#contextCommandBuffers.length = 0;
 
-    await this.sendMessage([{ type: "displayContextCommands", data }], true);
+      await this.sendMessage([{ type: "displayContextCommands", data }], true);
+    }
     this.#dispatchEvent("displayContextCommands", {
       displayContextCommands,
     });
@@ -714,7 +717,7 @@ class DisplayManager implements DisplayManagerInterface {
     );
 
     if (isSending) {
-      await this.#onDisplayReady();
+      //await this.#onDisplayReady();
     } else if (waitUntilReady) {
       await promise;
     }
@@ -744,7 +747,7 @@ class DisplayManager implements DisplayManagerInterface {
     );
 
     if (isSending) {
-      await this.#onDisplayReady();
+      // await this.#onDisplayReady();
     } else if (waitUntilReady) {
       await promise;
     }
@@ -3033,7 +3036,7 @@ class DisplayManager implements DisplayManagerInterface {
       case "displayCommand":
         break;
       case "displayContextCommands":
-        this.parseContextCommands(dataView, false, isSending);
+        this.parseContextCommands(dataView, true, isSending);
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);

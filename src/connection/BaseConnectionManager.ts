@@ -138,6 +138,9 @@ export type MessageReceivedCallback = (
 ) => void;
 export type MessagesReceivedCallback = () => void;
 
+export type MessageSentCallback = (message: TxMessage) => void;
+export type MessagesSentCallback = (messages: TxMessage[]) => void;
+
 abstract class BaseConnectionManager {
   static #AssertValidTxRxMessageType(messageType: TxRxMessageType) {
     _console.assertEnumWithError(messageType, TxRxMessageTypes);
@@ -149,6 +152,8 @@ abstract class BaseConnectionManager {
   onStatusUpdated?: ConnectionStatusCallback;
   onMessageReceived?: MessageReceivedCallback;
   onMessagesReceived?: MessagesReceivedCallback;
+  onMessageSent?: MessageSentCallback;
+  onMessagesSent?: MessagesSentCallback;
 
   protected get baseConstructor() {
     return this.constructor as typeof BaseConnectionManager;
@@ -327,37 +332,26 @@ abstract class BaseConnectionManager {
     }
     this.#isSendingMessages = true;
 
-    _console.log("sendTxMessages", this.#pendingMessages.slice());
-
-    const arrayBuffers = this.#pendingMessages.map((message) => {
-      if (false) {
-        BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
-        const messageTypeEnum = TxRxMessageTypes.indexOf(message.type);
-        const dataLength = new DataView(new ArrayBuffer(2));
-        dataLength.setUint16(0, message.data?.byteLength || 0, true);
-        return concatenateArrayBuffers(
-          messageTypeEnum,
-          dataLength,
-          message.data,
+    const arrayBuffers: ArrayBuffer[] = [];
+    const pendingMessages = this.#pendingMessages.filter((message) => {
+      const arrayBuffer = createMessage(TxRxMessageTypes, true, message);
+      if (arrayBuffer.byteLength > this.mtu! - 3) {
+        _console.error(
+          `arrayBuffer is too big to send (max ${this.mtu! - 3}, got ${arrayBuffer.byteLength})`,
+          {
+            message,
+          },
         );
-      } else {
-        return createMessage(TxRxMessageTypes, true, message);
+        return false;
       }
+      arrayBuffers.push(arrayBuffer);
+      return true;
     });
     this.#pendingMessages.length = 0;
+    _console.log("sendTxMessages", pendingMessages);
 
     if (this.mtu) {
       while (arrayBuffers.length > 0) {
-        if (
-          arrayBuffers.every(
-            (arrayBuffer) => arrayBuffer.byteLength > this.mtu! - 3,
-          )
-        ) {
-          _console.error("every arrayBuffer is too big to send", arrayBuffers, {
-            mtu: this.mtu,
-          });
-          break;
-        }
         _console.log("remaining arrayBuffers.length", arrayBuffers.length);
         let arrayBufferByteLength = 0;
         let arrayBufferCount = 0;
@@ -388,6 +382,11 @@ abstract class BaseConnectionManager {
     }
 
     this.#isSendingMessages = false;
+
+    pendingMessages.forEach((pendingMessage) => {
+      this.onMessageSent!(pendingMessage);
+    });
+    this.onMessagesSent!(pendingMessages);
 
     this.sendTxMessages(undefined, true);
   }

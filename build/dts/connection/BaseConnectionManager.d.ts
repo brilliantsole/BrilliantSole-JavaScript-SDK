@@ -62,12 +62,16 @@ export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
 export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView<ArrayBuffer>) => void;
 export type MessagesReceivedCallback = () => void;
+export type MessageSentCallback = (message: TxMessage) => void;
+export type MessagesSentCallback = (messages: TxMessage[]) => void;
 declare abstract class BaseConnectionManager {
     #private;
     abstract get bluetoothId(): string;
     onStatusUpdated?: ConnectionStatusCallback;
     onMessageReceived?: MessageReceivedCallback;
     onMessagesReceived?: MessagesReceivedCallback;
+    onMessageSent?: MessageSentCallback;
+    onMessagesSent?: MessagesSentCallback;
     protected get baseConstructor(): typeof BaseConnectionManager;
     static get isSupported(): boolean;
     get isSupported(): boolean;
