@@ -7,10 +7,11 @@ import { DisplayContextCommand } from "../utils/DisplayContextCommand.ts";
 export declare const ServerTypes: readonly ["window", "webSocket", "udp"];
 export type ServerType = (typeof ServerTypes)[number];
 export interface BaseServerClient {
+    readonly type: ServerType;
 }
 export declare const ServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
 export type ServerEventType = (typeof ServerEventTypes)[number];
-interface ServerEventMessages<ServerClient extends BaseServerClient> {
+export interface ServerEventMessages<ServerClient extends BaseServerClient> {
     clientConnected: {
         client: ServerClient;
     };

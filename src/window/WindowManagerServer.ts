@@ -22,6 +22,7 @@ import { default as WindowServer } from "../server/window/WindowServer.ts";
 const _console = createConsole("WindowManager", { log: false });
 
 export interface WindowManagerServerClient {
+  type: "window";
   iframe: HTMLIFrameElement;
   messageChannel?: MessageChannel;
   didSendMessagePort?: boolean;
@@ -217,7 +218,7 @@ class WindowManagerServer {
         return;
       }
       addEventListeners(iframe, this.#boundIframeEventListeners);
-      client = { iframe, allowRedirects: true };
+      client = { iframe, allowRedirects: true, type: "window" };
       this.#clients.push(client);
       this.#dispatchEvent("clientConnected", { client });
     }

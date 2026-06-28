@@ -9,8 +9,10 @@ import {
 
 const _console = createConsole("WindowServer", { log: false });
 
-interface WindowServerClient
-  extends BaseServerClient, WindowManagerServerClient {}
+export interface WindowServerClient
+  extends BaseServerClient, WindowManagerServerClient {
+  type: "window";
+}
 
 class WindowServer extends BaseServer<WindowServerClient> {
   static type = "window" as const;
@@ -50,22 +52,22 @@ class WindowServer extends BaseServer<WindowServerClient> {
       event: WindowManagerServerEventMap[K],
     ) => void;
   } = {
-    clientConnected: this.#onWindowManaagerServerClientConnected.bind(this),
+    clientConnected: this.#onWindowManagerServerClientConnected.bind(this),
     clientDisconnected:
-      this.#onWindowManaagerServerClientDisconnected.bind(this),
+      this.#onWindowManagerServerClientDisconnected.bind(this),
   };
-  #onWindowManaagerServerClientConnected(
+  #onWindowManagerServerClientConnected(
     event: WindowManagerServerEventMap["clientConnected"],
   ) {
     const { client } = event.message;
-    _console.log("onWindowManaagerServerClientConnected", client);
+    _console.log("onWindowManagerServerClientConnected", client);
     this.dispatchEvent("clientConnected", { client });
   }
-  #onWindowManaagerServerClientDisconnected(
+  #onWindowManagerServerClientDisconnected(
     event: WindowManagerServerEventMap["clientDisconnected"],
   ) {
     const { client } = event.message;
-    _console.log("onWindowManaagerServerClientDisconnected", client);
+    _console.log("onWindowManagerServerClientDisconnected", client);
     this.dispatchEvent("clientDisconnected", { client });
   }
 }

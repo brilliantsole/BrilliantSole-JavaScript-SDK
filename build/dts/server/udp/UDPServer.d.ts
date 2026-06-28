@@ -2,7 +2,8 @@ import BaseServer, { BaseServerClient, BaseServerClientContext } from "../BaseSe
 import { Timer } from "../../utils/Timer.ts";
 /** NODE_START */
 import type * as dgram from "dgram";
-interface UDPServerClient extends dgram.RemoteInfo, BaseServerClient {
+export interface UDPServerClient extends dgram.RemoteInfo, BaseServerClient {
+    type: "udp";
     receivePort?: number;
     isAlive?: boolean;
     removeSelfTimer: Timer;

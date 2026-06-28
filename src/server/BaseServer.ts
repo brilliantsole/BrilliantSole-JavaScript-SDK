@@ -86,7 +86,9 @@ const _console = createConsole("BaseServer", { log: false });
 export const ServerTypes = ["window", "webSocket", "udp"] as const;
 export type ServerType = (typeof ServerTypes)[number];
 
-export interface BaseServerClient {}
+export interface BaseServerClient {
+  readonly type: ServerType;
+}
 
 export const ServerEventTypes = [
   "clientConnected",
@@ -94,7 +96,7 @@ export const ServerEventTypes = [
 ] as const;
 export type ServerEventType = (typeof ServerEventTypes)[number];
 
-interface ServerEventMessages<ServerClient extends BaseServerClient> {
+export interface ServerEventMessages<ServerClient extends BaseServerClient> {
   clientConnected: { client: ServerClient };
   clientDisconnected: { client: ServerClient };
 }

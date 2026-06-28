@@ -28,7 +28,8 @@ import type * as dgram from "dgram";
 
 const _console = createConsole("UDPServer", { log: false });
 
-interface UDPServerClient extends dgram.RemoteInfo, BaseServerClient {
+export interface UDPServerClient extends dgram.RemoteInfo, BaseServerClient {
+  type: "udp";
   receivePort?: number;
   isAlive?: boolean;
   removeSelfTimer: Timer;
@@ -51,6 +52,7 @@ class UDPServer extends BaseServer<UDPServerClient> {
     );
     if (!client && createIfNotFound) {
       client = {
+        type: "udp",
         ...remoteInfo,
         isAlive: true,
         removeSelfTimer: new Timer(() => {

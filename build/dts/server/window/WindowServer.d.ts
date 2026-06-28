@@ -1,6 +1,7 @@
 import BaseServer, { BaseServerClient } from "../BaseServer.ts";
 import { WindowManagerServerClient } from "../../window/WindowManagerServer.ts";
-interface WindowServerClient extends BaseServerClient, WindowManagerServerClient {
+export interface WindowServerClient extends BaseServerClient, WindowManagerServerClient {
+    type: "window";
 }
 declare class WindowServer extends BaseServer<WindowServerClient> {
     #private;

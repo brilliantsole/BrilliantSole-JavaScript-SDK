@@ -39160,17 +39160,17 @@ let WindowServer$1 = class WindowServer extends BaseServer {
         });
     }
     #boundWindowManagerServerEventListeners = {
-        clientConnected: this.#onWindowManaagerServerClientConnected.bind(this),
-        clientDisconnected: this.#onWindowManaagerServerClientDisconnected.bind(this),
+        clientConnected: this.#onWindowManagerServerClientConnected.bind(this),
+        clientDisconnected: this.#onWindowManagerServerClientDisconnected.bind(this),
     };
-    #onWindowManaagerServerClientConnected(event) {
+    #onWindowManagerServerClientConnected(event) {
         const { client } = event.message;
-        _console$b.log("onWindowManaagerServerClientConnected", client);
+        _console$b.log("onWindowManagerServerClientConnected", client);
         this.dispatchEvent("clientConnected", { client });
     }
-    #onWindowManaagerServerClientDisconnected(event) {
+    #onWindowManagerServerClientDisconnected(event) {
         const { client } = event.message;
-        _console$b.log("onWindowManaagerServerClientDisconnected", client);
+        _console$b.log("onWindowManagerServerClientDisconnected", client);
         this.dispatchEvent("clientDisconnected", { client });
     }
 };
@@ -39295,7 +39295,7 @@ class WindowManagerServer {
                 return;
             }
             addEventListeners(iframe, this.#boundIframeEventListeners);
-            client = { iframe, allowRedirects: true };
+            client = { iframe, allowRedirects: true, type: "window" };
             this.#clients.push(client);
             this.#dispatchEvent("clientConnected", { client });
         }

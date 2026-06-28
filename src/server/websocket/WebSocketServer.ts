@@ -28,9 +28,10 @@ import type * as ws from "ws";
 import { parseMessage } from "../../utils/ParseUtils.ts";
 /** NODE_END */
 
-interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
+export interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
   isAlive: boolean;
   pingClientTimer?: Timer;
+  type: "webSocket";
 }
 
 export interface WebSocketServerClientContext extends BaseServerClientContext<WebSocketServerClient> {}

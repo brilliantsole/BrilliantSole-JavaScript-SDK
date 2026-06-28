@@ -1,6 +1,7 @@
 import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
 import { WindowManagerMessage } from "./WindowManagerUtils.ts";
 export interface WindowManagerServerClient {
+    type: "window";
     iframe: HTMLIFrameElement;
     messageChannel?: MessageChannel;
     didSendMessagePort?: boolean;

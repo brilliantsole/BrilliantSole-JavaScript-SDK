@@ -3,9 +3,10 @@ import BaseServer, { BaseServerClient, BaseServerClientContext } from "../BaseSe
 /** NODE_START */
 import type * as ws from "ws";
 /** NODE_END */
-interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
+export interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
     isAlive: boolean;
     pingClientTimer?: Timer;
+    type: "webSocket";
 }
 export interface WebSocketServerClientContext extends BaseServerClientContext<WebSocketServerClient> {
 }

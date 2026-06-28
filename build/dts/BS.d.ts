@@ -114,8 +114,8 @@ export { Scanner };
 export { WebSocketServer };
 export { UDPServer };
 /** NODE_END */
-import { Server, Servers } from "./server/Server.ts";
-export { Server, Servers };
+import { Server, Servers, ServerClient } from "./server/Server.ts";
+export { Server, Servers, ServerClient };
 import { Client, Clients } from "./server/Client.ts";
 export { Client, Clients };
 /** BROWSER_START */

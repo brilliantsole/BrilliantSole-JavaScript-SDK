@@ -1,10 +1,13 @@
 /** NODE_START */
-import { default as UDPServer } from "./udp/UDPServer.ts";
-import { default as WebSocketServer } from "./websocket/WebSocketServer.ts";
+import { default as UDPServer, UDPServerClient } from "./udp/UDPServer.ts";
+import {
+  default as WebSocketServer,
+  WebSocketServerClient,
+} from "./websocket/WebSocketServer.ts";
 /** NODE_END */
 
 /** BROWSER_START */
-import { WindowServer } from "./window/WindowServer.ts";
+import { WindowServer, WindowServerClient } from "./window/WindowServer.ts";
 /** BROWSER_END */
 
 export const Servers = [
@@ -19,3 +22,14 @@ export const Servers = [
 ] as const;
 
 export type Server = InstanceType<(typeof Servers)[number]>;
+
+export type ServerClient =
+  /** BROWSER_START */
+  | WindowServerClient
+  /** BROWSER_END */
+
+  /** NODE_START */
+  | WebSocketServerClient
+  | UDPServerClient
+  /** NODE_END */
+  | never;
