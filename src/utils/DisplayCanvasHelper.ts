@@ -446,12 +446,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#setIsReady(false);
     if (this.#device) {
-      // @ts-expect-error
       this.#device.displayManager.displayCanvasHelper = undefined;
       removeEventListeners(this.device, this.#boundDeviceEventListeners);
     }
     this.#device = newDevice;
-    // @ts-expect-error
     this.#device!.displayManager.displayCanvasHelper = this;
     addEventListeners(this.#device, this.#boundDeviceEventListeners);
     _console.log("assigned device", this.device);
@@ -662,7 +660,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     for (const [index, color] of this.colors.entries()) {
       _console.log("updating color", { index, color });
-      await this.device?.setDisplayColor(index, color, false);
+
+      await this.deviceDisplayManager?.setColor(
+        index,
+        color,
+        false,
+        false,
+        this,
+      );
     }
     if (sendImmediately) {
       await this.flushContextCommands();
@@ -700,7 +705,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     for (const [index, opacity] of this.#opacities.entries()) {
-      await this.device?.setDisplayColorOpacity(index, opacity, false);
+      await this.deviceDisplayManager?.setColorOpacity(
+        index,
+        opacity,
+        false,
+        false,
+        this,
+      );
     }
     if (sendImmediately) {
       await this.flushContextCommands();
@@ -740,9 +751,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     // _console.log("updateDeviceContextState");
-    await this.device?.setDisplayContextState(
+
+    await this.deviceDisplayManager?.setContextState(
       this.contextState,
       sendImmediately,
+      this,
     );
   }
 
@@ -763,6 +776,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         sendImmediately,
         waitUntilReady,
         isSending,
+        this,
       );
     } else {
       await wait(this.#interval);
@@ -826,6 +840,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         sendImmediately,
         waitUntilReady,
         isSending,
+        this,
       );
     } else {
       await wait(this.#interval);
@@ -866,6 +881,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         color,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -898,6 +914,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         opacity,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -916,6 +933,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         opacity,
         sendImmediately,
         isSending,
+        this,
       );
     }
     this.#opacities.forEach((_, colorIndex) => {
@@ -943,6 +961,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         await this.deviceDisplayManager!.saveContext(
           sendImmediately,
           isSending,
+          this,
         );
       }
     }
@@ -967,6 +986,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         await this.deviceDisplayManager!.restoreContext(
           sendImmediately,
           isSending,
+          this,
         );
       }
     }
@@ -986,7 +1006,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     //_console.log("clearContext");
     await this.#clearContext(sendImmediately);
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.clearContext(sendImmediately, isSending);
+      await this.deviceDisplayManager!.clearContext(
+        sendImmediately,
+        isSending,
+        this,
+      );
     }
   }
 
@@ -1004,6 +1028,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         backgroundColorIndex,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1032,6 +1057,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         fillColorIndex,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1055,6 +1081,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         lineColorIndex,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1077,6 +1104,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         ignoreFill,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1098,6 +1126,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         ignoreLine,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1119,6 +1148,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         fillBackground,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1150,6 +1180,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         lineWidth,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1189,6 +1220,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         alignment,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1231,6 +1263,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.deviceDisplayManager!.resetAlignment(
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1249,6 +1282,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     rotation = isRadians ? rotation : degToRad(rotation);
     rotation = normalizeRadians(rotation);
     // _console.log({ rotation });
+    isRadians = true;
 
     const differences = this.#contextStateHelper.update({
       rotation,
@@ -1257,9 +1291,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.setRotation(
         rotation,
-        true,
+        isRadians,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1276,6 +1311,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.deviceDisplayManager!.clearRotation(
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1300,6 +1336,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         segmentStartCap,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1324,6 +1361,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         segmentEndCap,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1349,6 +1387,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         segmentCap,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1372,6 +1411,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         segmentStartRadius,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1395,6 +1435,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         segmentEndRadius,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1420,6 +1461,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         segmentRadius,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1447,6 +1489,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         crop,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1492,7 +1535,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.clearCrop(sendImmediately, isSending);
+      await this.deviceDisplayManager!.clearCrop(
+        sendImmediately,
+        isSending,
+        this,
+      );
     } else {
       if (sendImmediately) {
         this.#onSentContextCommands();
@@ -1522,6 +1569,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         crop,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1590,6 +1638,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.deviceDisplayManager!.clearRotationCrop(
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1626,6 +1675,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         colorIndex,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1662,6 +1712,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         bitmapColorPairs,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1728,6 +1779,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         bitmapScale,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1785,6 +1837,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.deviceDisplayManager!.resetBitmapScale(
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1837,6 +1890,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         colorIndex,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1879,6 +1933,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         spriteColorPairs,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1925,6 +1980,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.deviceDisplayManager!.resetSpriteColors(
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -1963,6 +2019,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         spriteScale,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2020,6 +2077,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.deviceDisplayManager!.resetSpriteScale(
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2045,6 +2103,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         spritesLineHeight,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2074,6 +2133,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         isOrthogonal,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2126,6 +2186,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         isOrthogonal,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2179,6 +2240,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         isOrthogonal,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2262,6 +2324,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         height,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2566,6 +2629,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         height,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2645,6 +2709,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         borderRadius,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2694,6 +2759,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         radius,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2745,6 +2811,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         radiusY,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -2852,6 +2919,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         numberOfSides,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -3001,13 +3069,22 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#restore();
   }
-  async drawPolygon(points: Vector2[], sendImmediately?: boolean) {
+  async drawPolygon(
+    points: Vector2[],
+    sendImmediately?: boolean,
+    isSending?: boolean,
+  ) {
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawPolygonToCanvas(0, 0, points, contextState),
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.drawPolygon(points, sendImmediately);
+      await this.deviceDisplayManager!.drawPolygon(
+        points,
+        sendImmediately,
+        isSending,
+        this,
+      );
     }
   }
   #getWireframeBoundingBox(
@@ -3082,6 +3159,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         wireframe,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -3248,6 +3326,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         controlPoints,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -3303,6 +3382,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         controlPoints,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -3400,6 +3480,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         curves,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -3612,6 +3693,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         endY,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -3734,6 +3816,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         points,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -3798,6 +3881,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         isRadians,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -3925,6 +4009,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         isRadians,
         sendImmediately,
         isSending,
+        this,
       );
     }
   }
@@ -4034,6 +4119,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         bitmap,
         sendImmediately,
         isSending,
+        this,
       );
     }
   }
@@ -4059,7 +4145,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#spriteSheets[spriteSheet.name] = spriteSheet;
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.uploadSpriteSheet(spriteSheet);
+      await this.deviceDisplayManager!.uploadSpriteSheet(spriteSheet, this);
     }
   }
   async uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
@@ -4201,6 +4287,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         spriteName,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -4458,6 +4545,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         spriteLines,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -4578,6 +4666,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.deviceDisplayManager!.setBrightness(
         newBrightness,
         sendImmediately,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -4595,7 +4684,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     // _console.log("updateDeviceBrightness");
-    await this.device?.setDisplayBrightness(this.brightness, sendImmediately);
+    await this.deviceDisplayManager?.setBrightness(
+      this.brightness,
+      sendImmediately,
+      this,
+    );
   }
   async #updateDeviceSpriteSheets() {
     if (!this.device?.isConnected) {
@@ -4607,7 +4700,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     await this.uploadSpriteSheets(sortedSpriteSheets);
   }
-  async #updateDeviceSelectedSpriteSheet(sendImmediately?: boolean) {
+  async #updateDeviceSelectedSpriteSheet(
+    sendImmediately?: boolean,
+    isSending?: boolean,
+  ) {
     if (!this.device?.isConnected) {
       return;
     }
@@ -4615,9 +4711,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     _console.log("updateDeviceSelectedSpriteSheet");
-    await this.device?.selectDisplaySpriteSheet(
+    await this.deviceDisplayManager?.selectSpriteSheet(
       this.selectedSpriteSheetName,
       sendImmediately,
+      isSending,
+      this,
     );
   }
 
@@ -5018,6 +5116,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         height,
         sendImmediately,
         isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
@@ -5041,7 +5140,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#endSprite();
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.endSprite(sendImmediately, isSending);
+      await this.deviceDisplayManager!.endSprite(
+        sendImmediately,
+        isSending,
+        this,
+      );
     } else {
       if (sendImmediately) {
         this.#onSentContextCommands();

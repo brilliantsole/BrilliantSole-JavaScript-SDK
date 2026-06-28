@@ -2203,7 +2203,8 @@ class Device {
 
   get displayManager() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager as DisplayManagerInterface;
+    // return this.#displayManager as DisplayManagerInterface;
+    return this.#displayManager;
   }
 
   get uploadDisplaySpriteSheet() {
