@@ -27,8 +27,12 @@ import {
   ClientConnectionType,
   ConnectionTypes,
 } from "../connection/BaseConnectionManager.ts";
+import { ServerTypes } from "./BaseServer.ts";
 
 const _console = createConsole("BaseClient", { log: false });
+
+export const ClientTypes = ServerTypes;
+export type ClientType = (typeof ClientTypes)[number];
 
 export const ClientConnectionStatuses = [
   "notConnected",
@@ -74,6 +78,9 @@ export type BoundClientEventListeners =
 export type ServerURL = string | URL;
 
 abstract class BaseClient {
+  static type: ClientType;
+  abstract readonly type: ClientType;
+
   protected get baseConstructor() {
     return this.constructor as typeof BaseClient;
   }

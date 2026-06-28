@@ -4,10 +4,13 @@ interface WindowServerClient extends BaseServerClient, WindowManagerServerClient
 }
 declare class WindowServer extends BaseServer<WindowServerClient> {
     #private;
+    static type: "window";
+    readonly type: "window";
     static readonly shared: WindowServer;
     protected init(): void;
     constructor();
     protected sendToClient(client: WindowServerClient, message: ArrayBuffer): void;
 }
+export { WindowServer };
 declare const _default: WindowServer;
 export default _default;

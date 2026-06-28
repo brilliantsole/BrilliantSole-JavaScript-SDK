@@ -4,6 +4,8 @@ import Device from "../Device.ts";
 import GuardManager from "../utils/GuardManager.ts";
 import { SensorType } from "../sensor/SensorDataManager.ts";
 import { DisplayContextCommand } from "../utils/DisplayContextCommand.ts";
+export declare const ServerTypes: readonly ["window", "webSocket", "udp"];
+export type ServerType = (typeof ServerTypes)[number];
 export interface BaseServerClient {
 }
 export declare const ServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
@@ -64,6 +66,8 @@ export interface BaseServerClientDeviceDisplayContextCommandGuardManagerArg<Serv
 }
 declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     #private;
+    static type: ServerType;
+    abstract readonly type: ServerType;
     get addEventListener(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", ServerEventMessages<ServerClient>, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
     protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: ServerEventMessages<ServerClient>[T]) => void;
     get removeEventListener(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", ServerEventMessages<ServerClient>, T>) => void) => void;

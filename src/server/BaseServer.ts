@@ -83,6 +83,9 @@ const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
 
 const _console = createConsole("BaseServer", { log: false });
 
+export const ServerTypes = ["window", "webSocket", "udp"] as const;
+export type ServerType = (typeof ServerTypes)[number];
+
 export interface BaseServerClient {}
 
 export const ServerEventTypes = [
@@ -178,6 +181,9 @@ export interface BaseServerClientDeviceDisplayContextCommandGuardManagerArg<
 }
 
 abstract class BaseServer<ServerClient extends BaseServerClient> {
+  static type: ServerType;
+  abstract readonly type: ServerType;
+
   // EVENT DISPATCHER
   #eventDispatcher: ServerEventDispatcher<ServerClient> = new EventDispatcher(
     this as BaseServer<ServerClient>,

@@ -549,9 +549,12 @@ export { WebSocketServer };
 export { UDPServer };
 /** NODE_END */
 
-/** LS_START */
-// export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
-/** LS_END */
+import { Server, Servers } from "./server/Server.ts";
+export { Server, Servers };
+
+import { Client, Clients } from "./server/Client.ts";
+export { Client, Clients };
+
 /** BROWSER_START */
 import { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
 export { WebSocketClient };

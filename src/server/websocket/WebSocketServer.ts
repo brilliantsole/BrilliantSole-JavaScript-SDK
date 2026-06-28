@@ -36,6 +36,9 @@ interface WebSocketServerClient extends ws.WebSocket, BaseServerClient {
 export interface WebSocketServerClientContext extends BaseServerClientContext<WebSocketServerClient> {}
 
 class WebSocketServer extends BaseServer<WebSocketServerClient> {
+  static type = "webSocket" as const;
+  readonly type = WebSocketServer.type;
+
   // WEBSOCKET SERVER
 
   #server?: ws.WebSocketServer;

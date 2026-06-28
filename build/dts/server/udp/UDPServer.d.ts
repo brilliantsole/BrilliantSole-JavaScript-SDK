@@ -12,6 +12,8 @@ export interface UDPServerClientContext extends BaseServerClientContext<UDPServe
 }
 declare class UDPServer extends BaseServer<UDPServerClient> {
     #private;
+    static type: "udp";
+    readonly type: "udp";
     get socket(): dgram.Socket | undefined;
     set socket(newSocket: dgram.Socket | undefined);
     protected sendToClient(client: UDPServerClient, message: ArrayBuffer): void;

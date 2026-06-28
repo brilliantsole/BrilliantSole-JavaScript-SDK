@@ -11,6 +11,8 @@ export interface WebSocketServerClientContext extends BaseServerClientContext<We
 }
 declare class WebSocketServer extends BaseServer<WebSocketServerClient> {
     #private;
+    static type: "webSocket";
+    readonly type: "webSocket";
     get server(): ws.WebSocketServer | undefined;
     set server(newServer: ws.WebSocketServer | undefined);
     protected sendToClient(client: WebSocketServerClient, message: ArrayBuffer): void;

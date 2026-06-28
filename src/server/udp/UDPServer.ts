@@ -38,6 +38,9 @@ interface UDPServerClient extends dgram.RemoteInfo, BaseServerClient {
 export interface UDPServerClientContext extends BaseServerClientContext<UDPServerClient> {}
 
 class UDPServer extends BaseServer<UDPServerClient> {
+  static type = "udp" as const;
+  readonly type = UDPServer.type;
+
   #getClientByRemoteInfo(
     remoteInfo: dgram.RemoteInfo,
     createIfNotFound = false,

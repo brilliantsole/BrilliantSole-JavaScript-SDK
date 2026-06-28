@@ -2,6 +2,8 @@ import { ServerMessageOrMessageType } from "../ServerUtils.ts";
 import BaseClient, { ServerURL } from "../BaseClient.ts";
 declare class WebSocketClient extends BaseClient {
     #private;
+    static type: "webSocket";
+    readonly type: "webSocket";
     get webSocket(): WebSocket | undefined;
     set webSocket(newWebSocket: WebSocket | undefined);
     get isConnected(): boolean;

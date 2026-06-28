@@ -14,6 +14,9 @@ import {
 const _console = createConsole("WindowClient", { log: false });
 
 class WindowClient extends BaseClient {
+  static type = "window" as const;
+  readonly type = WindowClient.type;
+
   static readonly shared = new WindowClient();
 
   constructor() {
@@ -85,4 +88,5 @@ class WindowClient extends BaseClient {
   }
 }
 
+export { WindowClient };
 export default WindowClient.shared;

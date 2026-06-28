@@ -13,6 +13,9 @@ interface WindowServerClient
   extends BaseServerClient, WindowManagerServerClient {}
 
 class WindowServer extends BaseServer<WindowServerClient> {
+  static type = "window" as const;
+  readonly type = WindowServer.type;
+
   static readonly shared = new WindowServer();
 
   protected init() {
@@ -66,5 +69,6 @@ class WindowServer extends BaseServer<WindowServerClient> {
     this.dispatchEvent("clientDisconnected", { client });
   }
 }
+export { WindowServer };
 
 export default WindowServer.shared;
