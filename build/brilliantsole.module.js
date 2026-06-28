@@ -32266,7 +32266,9 @@ class DisplayManager {
         this.#isReady = false;
         this.#lastShowRequestTime = Date.now();
         await this.#sendContextCommand({ type: "show" }, sendImmediately, isSending);
-        if (isSending) ;
+        if (isSending) {
+            this.#isReady = true;
+        }
         else if (waitUntilReady) {
             await promise;
         }
@@ -32284,7 +32286,9 @@ class DisplayManager {
         this.#isReady = false;
         this.#lastShowRequestTime = Date.now();
         await this.#sendContextCommand({ type: "clear" }, sendImmediately, isSending);
-        if (isSending) ;
+        if (isSending) {
+            this.#isReady = true;
+        }
         else if (waitUntilReady) {
             await promise;
         }
@@ -39919,7 +39923,7 @@ class DisplayCanvasHelper {
         this.canvas.height = height;
         this.canvas.style.aspectRatio = `${width / height}`;
         this.#dispatchEvent("resize", { width: this.width, height: this.height });
-        await this.clear(sendImmediately, waitUntilReady);
+        await this.clear(sendImmediately, waitUntilReady, this.#isSettingDevice);
     }
     #frontDrawStack = [];
     #rearDrawStack = [];
@@ -40010,7 +40014,7 @@ class DisplayCanvasHelper {
         if (this.device) {
             this.#isSettingDevice = true;
             this.numberOfColors = this.device.numberOfDisplayColors;
-            await this.#updateCanvas(true, true);
+            await this.#updateCanvas(true, false);
             await this.#updateDevice();
             this.#dispatchEvent("deviceIsConnected", {
                 device: this.device,

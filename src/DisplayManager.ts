@@ -718,6 +718,7 @@ class DisplayManager implements DisplayManagerInterface {
 
     if (isSending) {
       // await this.#onDisplayReady();
+      this.#isReady = true;
     } else if (waitUntilReady) {
       await promise;
     }
@@ -748,6 +749,7 @@ class DisplayManager implements DisplayManagerInterface {
 
     if (isSending) {
       // await this.#onDisplayReady();
+      this.#isReady = true;
     } else if (waitUntilReady) {
       await promise;
     }

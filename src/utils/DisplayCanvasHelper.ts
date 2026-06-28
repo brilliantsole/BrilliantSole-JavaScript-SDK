@@ -333,7 +333,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#dispatchEvent("resize", { width: this.width, height: this.height });
 
-    await this.clear(sendImmediately, waitUntilReady);
+    await this.clear(sendImmediately, waitUntilReady, this.#isSettingDevice);
   }
 
   // CONTEXT STACK
@@ -458,7 +458,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device) {
       this.#isSettingDevice = true;
       this.numberOfColors = this.device.numberOfDisplayColors!;
-      await this.#updateCanvas(true, true);
+      await this.#updateCanvas(true, false);
       await this.#updateDevice();
       this.#dispatchEvent("deviceIsConnected", {
         device: this.device,
