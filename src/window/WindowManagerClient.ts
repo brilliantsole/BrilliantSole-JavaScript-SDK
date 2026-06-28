@@ -18,6 +18,7 @@ import {
 
 import { parseMessage } from "../utils/ParseUtils.ts";
 import { MessageLike } from "../server/ServerUtils.ts";
+import { Singleton } from "../utils/TypeScriptUtils.ts";
 
 const _console = createConsole("WindowManagerClient", { log: false });
 
@@ -61,6 +62,7 @@ export type WindowManagerClientEventDispatcher =
 export type BoundWindowManagerClientEventListeners =
   WindowManagerClientEventDispatcherTypes["BoundEventListeners"];
 
+@Singleton
 class WindowManagerClient {
   // EVENT DISPATCHER
   #eventDispatcher: WindowManagerClientEventDispatcher = new EventDispatcher(
@@ -86,15 +88,9 @@ class WindowManagerClient {
     return this.#eventDispatcher.removeAllEventListeners;
   }
 
-  static readonly shared = new WindowManagerClient();
+  static readonly shared: WindowManagerClient;
 
   constructor() {
-    if (WindowManagerClient.shared && this != WindowManagerClient.shared) {
-      throw Error(
-        "WindowManagerClient is a singleton - use WindowManagerClient.shared",
-      );
-    }
-
     addEventListeners(window, this.#boundWindowEventListeners);
 
     this.connect();

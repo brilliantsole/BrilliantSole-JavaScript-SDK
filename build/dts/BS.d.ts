@@ -10,6 +10,8 @@ import { isTensorFlowAvailable, listTensorflowModels, isTensorFlowModelAvailable
 export { isTensorFlowAvailable, listTensorflowModels, isTensorFlowModelAvailable, getTensorFlowModel, };
 import { default as DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners } from "./DeviceManager.ts";
 export { DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners, };
+import { default as ServerManager } from "./server/ServerManager.ts";
+export { ServerManager };
 /** BROWSER_START */
 import { default as WindowManagerServer } from "./window/WindowManagerServer.ts";
 export { WindowManagerServer };
@@ -114,8 +116,8 @@ export { Scanner };
 export { WebSocketServer };
 export { UDPServer };
 /** NODE_END */
-import { Server, Servers, ServerClient } from "./server/Server.ts";
-export { Server, Servers, ServerClient };
+import { Server, Servers, ServerClient, ServerEvent, ServerEventDispatcher, ServerEventDispatcherTypes, ServerEventListenerMap, ServerEventMap, BoundServerEventListeners } from "./server/Server.ts";
+export { Server, Servers, ServerClient, ServerEvent, ServerEventDispatcher, ServerEventDispatcherTypes, ServerEventListenerMap, ServerEventMap, BoundServerEventListeners, };
 import { Client, Clients } from "./server/Client.ts";
 export { Client, Clients };
 /** BROWSER_START */

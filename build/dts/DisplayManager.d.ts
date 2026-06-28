@@ -141,9 +141,9 @@ declare class DisplayManager implements DisplayManagerInterface {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "spriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete">(type: T, options?: {
+    get waitForEvent(): <T extends "spriteSheetIndex" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "spriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete", DisplayEventMessages, T>>;
+    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "spriteSheetIndex" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete", DisplayEventMessages, T>>;
     requestRequiredInformation(): void;
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
@@ -163,7 +163,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     flushContextCommands(): Promise<void>;

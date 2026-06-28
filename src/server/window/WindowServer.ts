@@ -6,6 +6,7 @@ import {
   WindowManagerServerClient,
   WindowManagerServerEventMap,
 } from "../../window/WindowManagerServer.ts";
+import { Singleton } from "../../utils/TypeScriptUtils.ts";
 
 const _console = createConsole("WindowServer", { log: false });
 
@@ -14,11 +15,12 @@ export interface WindowServerClient
   type: "window";
 }
 
+@Singleton
 class WindowServer extends BaseServer<WindowServerClient> {
   static type = "window" as const;
   readonly type = WindowServer.type;
 
-  static readonly shared = new WindowServer();
+  static readonly shared: WindowServer;
 
   protected init() {
     addEventListeners(
@@ -31,10 +33,6 @@ class WindowServer extends BaseServer<WindowServerClient> {
     super();
 
     this.clearSensorConfigurationsWhenNoClients = false; // may set to true if it's a headless "app" hub
-
-    if (WindowServer.shared && this != WindowServer.shared) {
-      throw Error("WindowServer is a singleton - use WindowServer.shared");
-    }
   }
 
   // CLIENTS

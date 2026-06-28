@@ -19,12 +19,12 @@ export interface ServerEventMessages<ServerClient extends BaseServerClient> {
         client: ServerClient;
     };
 }
-export type ServerEventDispatcherTypes<ServerClient extends BaseServerClient> = EventDispatcherTypes<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
-export type ServerEvent<ServerClient extends BaseServerClient> = ServerEventDispatcherTypes<ServerClient>["Event"];
-export type ServerEventMap<ServerClient extends BaseServerClient> = ServerEventDispatcherTypes<ServerClient>["EventMap"];
-export type ServerEventListenerMap<ServerClient extends BaseServerClient> = ServerEventDispatcherTypes<ServerClient>["EventListenerMap"];
-export type ServerEventDispatcher<ServerClient extends BaseServerClient> = ServerEventDispatcherTypes<ServerClient>["EventDispatcher"];
-export type BoundServerEventListeners<ServerClient extends BaseServerClient> = ServerEventDispatcherTypes<ServerClient>["BoundEventListeners"];
+export type BaseServerEventDispatcherTypes<ServerClient extends BaseServerClient> = EventDispatcherTypes<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
+export type BaseServerEvent<ServerClient extends BaseServerClient> = BaseServerEventDispatcherTypes<ServerClient>["Event"];
+export type BaseServerEventMap<ServerClient extends BaseServerClient> = BaseServerEventDispatcherTypes<ServerClient>["EventMap"];
+export type BaseServerEventListenerMap<ServerClient extends BaseServerClient> = BaseServerEventDispatcherTypes<ServerClient>["EventListenerMap"];
+export type BaseServerEventDispatcher<ServerClient extends BaseServerClient> = BaseServerEventDispatcherTypes<ServerClient>["EventDispatcher"];
+export type BoundBaseServerEventListeners<ServerClient extends BaseServerClient> = BaseServerEventDispatcherTypes<ServerClient>["BoundEventListeners"];
 export interface BaseServerClientContext<ServerClient extends BaseServerClient> {
     client: ServerClient;
     responseMessages: (ArrayBuffer | undefined)[];
@@ -75,6 +75,7 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     get waitForEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, options?: {
         immediate?: boolean;
     }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", ServerEventMessages<ServerClient>, T>>;
+    private static OnServer;
     constructor();
     clients: ServerClient[];
     static get ClearSensorConfigurationsWhenNoClients(): boolean;

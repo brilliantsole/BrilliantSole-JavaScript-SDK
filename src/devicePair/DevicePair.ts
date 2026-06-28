@@ -277,7 +277,7 @@ class DevicePair {
     this.#dispatchEvent(wildcardDeviceEventType, {
       ...message,
       device,
-      deviceType,
+      deviceEventType: deviceType,
       side: device.side,
     });
 

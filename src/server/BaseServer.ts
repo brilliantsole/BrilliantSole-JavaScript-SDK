@@ -101,22 +101,24 @@ export interface ServerEventMessages<ServerClient extends BaseServerClient> {
   clientDisconnected: { client: ServerClient };
 }
 
-export type ServerEventDispatcherTypes<ServerClient extends BaseServerClient> =
-  EventDispatcherTypes<
-    BaseServer<ServerClient>,
-    ServerEventType,
-    ServerEventMessages<ServerClient>
-  >;
-export type ServerEvent<ServerClient extends BaseServerClient> =
-  ServerEventDispatcherTypes<ServerClient>["Event"];
-export type ServerEventMap<ServerClient extends BaseServerClient> =
-  ServerEventDispatcherTypes<ServerClient>["EventMap"];
-export type ServerEventListenerMap<ServerClient extends BaseServerClient> =
-  ServerEventDispatcherTypes<ServerClient>["EventListenerMap"];
-export type ServerEventDispatcher<ServerClient extends BaseServerClient> =
-  ServerEventDispatcherTypes<ServerClient>["EventDispatcher"];
-export type BoundServerEventListeners<ServerClient extends BaseServerClient> =
-  ServerEventDispatcherTypes<ServerClient>["BoundEventListeners"];
+export type BaseServerEventDispatcherTypes<
+  ServerClient extends BaseServerClient,
+> = EventDispatcherTypes<
+  BaseServer<ServerClient>,
+  ServerEventType,
+  ServerEventMessages<ServerClient>
+>;
+export type BaseServerEvent<ServerClient extends BaseServerClient> =
+  BaseServerEventDispatcherTypes<ServerClient>["Event"];
+export type BaseServerEventMap<ServerClient extends BaseServerClient> =
+  BaseServerEventDispatcherTypes<ServerClient>["EventMap"];
+export type BaseServerEventListenerMap<ServerClient extends BaseServerClient> =
+  BaseServerEventDispatcherTypes<ServerClient>["EventListenerMap"];
+export type BaseServerEventDispatcher<ServerClient extends BaseServerClient> =
+  BaseServerEventDispatcherTypes<ServerClient>["EventDispatcher"];
+export type BoundBaseServerEventListeners<
+  ServerClient extends BaseServerClient,
+> = BaseServerEventDispatcherTypes<ServerClient>["BoundEventListeners"];
 
 export interface BaseServerClientContext<
   ServerClient extends BaseServerClient,
@@ -187,10 +189,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   abstract readonly type: ServerType;
 
   // EVENT DISPATCHER
-  #eventDispatcher: ServerEventDispatcher<ServerClient> = new EventDispatcher(
-    this as BaseServer<ServerClient>,
-    ServerEventTypes,
-  );
+  #eventDispatcher: BaseServerEventDispatcher<ServerClient> =
+    new EventDispatcher(this as BaseServer<ServerClient>, ServerEventTypes);
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
   }
@@ -206,12 +206,18 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
   // CONSTRUCTOR
 
+  // DISPLAY CANVAS HELPER MANAGER
+  private static OnServer: (server: BaseServer<BaseServerClient>) => void;
+
   constructor() {
     _console.assertWithError(scanner, "no scanner defined");
 
     addEventListeners(scanner, this.#boundScannerListeners);
     addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
     addEventListeners(this, this.#boundServerListeners);
+
+    // @ts-expect-error
+    BaseServer.OnServer(this);
   }
 
   clients: ServerClient[] = [];
@@ -236,11 +242,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   // SERVER LISTENERS
-  #boundServerListeners: BoundServerEventListeners<ServerClient> = {
+  #boundServerListeners: BoundBaseServerEventListeners<ServerClient> = {
     clientConnected: this.#onClientConnected.bind(this),
     clientDisconnected: this.#onClientDisconnected.bind(this),
   };
-  #onClientConnected(event: ServerEventMap<ServerClient>["clientConnected"]) {
+  #onClientConnected(
+    event: BaseServerEventMap<ServerClient>["clientConnected"],
+  ) {
     const client = event.message.client;
     if (!this.clients.includes(client)) {
       this.#recentClientDisplayContextCommandDataArrayBuffers.set(client, []);
@@ -250,7 +258,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     _console.log(`currently have ${this.clients.length} clients`);
   }
   #onClientDisconnected(
-    event: ServerEventMap<ServerClient>["clientDisconnected"],
+    event: BaseServerEventMap<ServerClient>["clientDisconnected"],
   ) {
     const client = event.message.client;
     if (this.clients.includes(client)) {

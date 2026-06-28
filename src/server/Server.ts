@@ -1,3 +1,5 @@
+import BaseServer, { BaseServerEventDispatcherTypes } from "./BaseServer.ts";
+
 /** NODE_START */
 import { default as UDPServer, UDPServerClient } from "./udp/UDPServer.ts";
 import {
@@ -21,7 +23,7 @@ export const Servers = [
   /** NODE_END */
 ] as const;
 
-export type Server = InstanceType<(typeof Servers)[number]>;
+export type Server = InstanceType<NonNullable<(typeof Servers)[number]>>;
 
 export type ServerClient =
   /** BROWSER_START */
@@ -33,3 +35,15 @@ export type ServerClient =
   | UDPServerClient
   /** NODE_END */
   | never;
+
+export type ServerEventDispatcherTypes =
+  BaseServerEventDispatcherTypes<ServerClient>;
+
+export type ServerEvent = ServerEventDispatcherTypes["Event"];
+export type ServerEventMap = ServerEventDispatcherTypes["EventMap"];
+export type ServerEventListenerMap =
+  ServerEventDispatcherTypes["EventListenerMap"];
+export type ServerEventDispatcher =
+  ServerEventDispatcherTypes["EventDispatcher"];
+export type BoundServerEventListeners =
+  ServerEventDispatcherTypes["BoundEventListeners"];

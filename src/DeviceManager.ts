@@ -23,6 +23,7 @@ import {
   ExtendInterfaceValues,
   IfAny,
   KeyOf,
+  Singleton,
 } from "./utils/TypeScriptUtils.ts";
 
 const _console = createConsole("DeviceManager", { log: false });
@@ -74,7 +75,7 @@ export type WildcardDeviceEventMessage<BaseMessage> = {
     (K extends keyof DeviceEventMessages
       ? IfAny<DeviceEventMessages[K], {}, DeviceEventMessages[K]>
       : {}) & {
-      deviceType: K;
+      deviceEventType: K;
       device: Device;
     };
 }[DeviceEventType];
@@ -110,14 +111,11 @@ export type DeviceManagerEventDispatcher =
 export type BoundDeviceManagerEventListeners =
   DeviceManagerEventDisptcherTypes["BoundEventListeners"];
 
+@Singleton
 class DeviceManager {
-  static readonly shared = new DeviceManager();
+  static readonly shared: DeviceManager;
 
   constructor() {
-    if (DeviceManager.shared && this != DeviceManager.shared) {
-      throw Error("DeviceManager is a singleton - use DeviceManager.shared");
-    }
-
     // @ts-expect-error
     Device.OnDevice = this.onDevice.bind(this);
     // @ts-expect-error
@@ -457,22 +455,22 @@ class DeviceManager {
     this._checkDeviceAvailability(device);
   }
   #onDeviceEvent(deviceEvent: DeviceEventMap[WildcardEventType]) {
-    const { type: deviceType, target: device, message } = deviceEvent;
+    const { type: deviceEventType, target: device, message } = deviceEvent;
 
     this.#dispatchEvent(wildcardDeviceEventType, {
       ...message,
       device,
-      deviceType,
+      deviceEventType,
     });
 
-    getDeviceManagerDeviceEventTypes(deviceType as DeviceEventType).forEach(
-      (_type) => {
-        this.#dispatchEvent(_type, {
-          ...message,
-          device,
-        });
-      },
-    );
+    getDeviceManagerDeviceEventTypes(
+      deviceEventType as DeviceEventType,
+    ).forEach((eventType) => {
+      this.#dispatchEvent(eventType, {
+        ...message,
+        device,
+      });
+    });
   }
 
   private _checkDeviceAvailability(device: Device) {

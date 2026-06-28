@@ -18,6 +18,7 @@ import {
 } from "./WindowManagerUtils.ts";
 
 import { default as WindowServer } from "../server/window/WindowServer.ts";
+import { Singleton } from "../utils/TypeScriptUtils.ts";
 
 const _console = createConsole("WindowManager", { log: false });
 
@@ -63,6 +64,7 @@ export type WindowManagerServerEventDispatcher =
 export type BoundWindowManagerServerEventListeners =
   WindowManagerServerEventDispatcherTypes["BoundEventListeners"];
 
+@Singleton
 class WindowManagerServer {
   // EVENT DISPATCHER
   #eventDispatcher: WindowManagerServerEventDispatcher = new EventDispatcher(
@@ -91,13 +93,9 @@ class WindowManagerServer {
   }
 
   // CONSTRUCTOR
-  static readonly shared = new WindowManagerServer();
+  static readonly shared: WindowManagerServer;
 
   constructor() {
-    if (WindowManagerServer.shared && this != WindowManagerServer.shared) {
-      throw Error("WindowManager is a singleton - use WindowManager.shared");
-    }
-
     addEventListeners(window, this.#boundWindowEventListeners);
 
     this.#iframeObserver = new MutationObserver((mutations) => {

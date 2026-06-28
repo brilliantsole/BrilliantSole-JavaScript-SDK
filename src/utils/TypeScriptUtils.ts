@@ -34,3 +34,30 @@ export type AddPrefixToInterfaceKeys<Interface, P extends string> = {
 export type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;
 
 export type OneOrMany<T> = T | T[];
+
+export function Singleton<T extends abstract new (...args: any[]) => any>(
+  target: T,
+  context: ClassDecoratorContext,
+) {
+  let shared: InstanceType<T> | undefined;
+
+  return class extends target {
+    static get shared() {
+      return (shared ??= new this());
+    }
+
+    constructor(...args: any[]) {
+      if (shared) {
+        throw new Error(
+          `${target.name} is a singleton - use ${target.name}.shared`,
+        );
+      }
+
+      super(...args);
+
+      shared = this;
+    }
+  } as T & {
+    readonly shared: InstanceType<T>;
+  };
+}

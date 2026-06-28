@@ -10,21 +10,19 @@ import {
   default as WindowManagerClient,
   WindowManagerClientEventMap,
 } from "../../window/WindowManagerClient.ts";
+import { Singleton } from "../../utils/TypeScriptUtils.ts";
 
 const _console = createConsole("WindowClient", { log: false });
 
+@Singleton
 class WindowClient extends BaseClient {
   static type = "window" as const;
   readonly type = WindowClient.type;
 
-  static readonly shared = new WindowClient();
+  static readonly shared: WindowClient;
 
   constructor() {
     super();
-
-    if (WindowClient.shared && this != WindowClient.shared) {
-      throw Error("WindowClient is a singleton - use WindowClient.shared");
-    }
 
     addEventListeners(WindowManagerClient, this.#boundWindowEventListeners);
   }

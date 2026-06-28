@@ -1,3 +1,4 @@
+import { BaseServerEventDispatcherTypes } from "./BaseServer.ts";
 /** NODE_START */
 import { default as UDPServer, UDPServerClient } from "./udp/UDPServer.ts";
 import { default as WebSocketServer, WebSocketServerClient } from "./websocket/WebSocketServer.ts";
@@ -6,7 +7,7 @@ import { default as WebSocketServer, WebSocketServerClient } from "./websocket/W
 import { WindowServer, WindowServerClient } from "./window/WindowServer.ts";
 /** BROWSER_END */
 export declare const Servers: readonly [typeof WindowServer, typeof WebSocketServer, typeof UDPServer];
-export type Server = InstanceType<(typeof Servers)[number]>;
+export type Server = InstanceType<NonNullable<(typeof Servers)[number]>>;
 export type ServerClient = 
 /** BROWSER_START */
 WindowServerClient
@@ -15,3 +16,9 @@ WindowServerClient
  | WebSocketServerClient | UDPServerClient
 /** NODE_END */
  | never;
+export type ServerEventDispatcherTypes = BaseServerEventDispatcherTypes<ServerClient>;
+export type ServerEvent = ServerEventDispatcherTypes["Event"];
+export type ServerEventMap = ServerEventDispatcherTypes["EventMap"];
+export type ServerEventListenerMap = ServerEventDispatcherTypes["EventListenerMap"];
+export type ServerEventDispatcher = ServerEventDispatcherTypes["EventDispatcher"];
+export type BoundServerEventListeners = ServerEventDispatcherTypes["BoundEventListeners"];

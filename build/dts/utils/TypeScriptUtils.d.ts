@@ -19,3 +19,6 @@ export type AddPrefixToInterfaceKeys<Interface, P extends string> = {
 };
 export type IfAny<T, Y, N> = 0 extends 1 & T ? Y : N;
 export type OneOrMany<T> = T | T[];
+export declare function Singleton<T extends abstract new (...args: any[]) => any>(target: T, context: ClassDecoratorContext): T & {
+    readonly shared: InstanceType<T>;
+};

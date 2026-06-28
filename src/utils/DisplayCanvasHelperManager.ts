@@ -12,6 +12,7 @@ import {
   ExtendInterfaceValues,
   IfAny,
   KeyOf,
+  Singleton,
 } from "../utils/TypeScriptUtils.ts";
 import DisplayCanvasHelper, {
   BoundDisplayCanvasHelperEventListeners,
@@ -75,7 +76,7 @@ export type WildcardDisplayCanvasHelperEventMessage<BaseMessage> = {
           DisplayCanvasHelperEventMessages[K]
         >
       : {}) & {
-      displayCanvasHelperType: K;
+      displayCanvasHelperEventType: K;
       displayCanvasHelper: DisplayCanvasHelper;
     };
 }[DisplayCanvasHelperEventType];
@@ -114,22 +115,14 @@ export type DisplayCanvasHelperManagerEventDispatcher =
 export type BoundDisplayCanvasHelperManagerEventListeners =
   DisplayCanvasHelperManagerEventDisptcherTypes["BoundEventListeners"];
 
+@Singleton
 class DisplayCanvasHelperManager {
-  static readonly shared = new DisplayCanvasHelperManager();
+  static readonly shared: DisplayCanvasHelperManager;
 
   constructor() {
-    if (
-      DisplayCanvasHelperManager.shared &&
-      this != DisplayCanvasHelperManager.shared
-    ) {
-      throw Error(
-        "DisplayCanvasHelperManager is a singleton - use DisplayCanvasHelperManager.shared",
-      );
-    }
-
     // @ts-expect-error
     DisplayCanvasHelper.OnDisplayCanvasHelper =
-      this.onDisplayCanvasHelper.bind(this);
+      this.#onDisplayCanvasHelper.bind(this);
   }
 
   #displayCanvasHelpers: DisplayCanvasHelper[] = [];
@@ -153,7 +146,7 @@ class DisplayCanvasHelperManager {
     {
       [wildcardEventType]: this.#onDisplayCanvasHelperEvent.bind(this),
     };
-  private onDisplayCanvasHelper(displayCanvasHelper: DisplayCanvasHelper) {
+  #onDisplayCanvasHelper(displayCanvasHelper: DisplayCanvasHelper) {
     _console.log("onDisplayCanvasHelper", displayCanvasHelper);
     addEventListeners(
       displayCanvasHelper,
@@ -197,7 +190,7 @@ class DisplayCanvasHelperManager {
     displayCanvasHelperEvent: DisplayCanvasHelperEventMap[WildcardEventType],
   ) {
     const {
-      type: displayCanvasHelperType,
+      type: displayCanvasHelperEventType,
       target: displayCanvasHelper,
       message,
     } = displayCanvasHelperEvent;
@@ -206,13 +199,13 @@ class DisplayCanvasHelperManager {
     this.#dispatchEvent(wildcardDisplayCanvasHelperEventType, {
       ...message,
       displayCanvasHelper,
-      displayCanvasHelperType,
+      displayCanvasHelperEventType,
     });
 
     getDisplayCanvasHelperManagerDisplayCanvasHelperEventTypes(
-      displayCanvasHelperType as DisplayCanvasHelperEventType,
-    ).forEach((_type) => {
-      this.#dispatchEvent(_type, {
+      displayCanvasHelperEventType as DisplayCanvasHelperEventType,
+    ).forEach((eventType) => {
+      this.#dispatchEvent(eventType, {
         ...message,
         displayCanvasHelper,
       });
