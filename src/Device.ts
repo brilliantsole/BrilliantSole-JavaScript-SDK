@@ -2,7 +2,7 @@ import { createConsole } from "./utils/Console.ts";
 import EventDispatcher, {
   EventDispatcherTypes,
 } from "./utils/EventDispatcher.ts";
-import BaseConnectionManager, {
+import {
   TxMessage,
   TxRxMessageType,
   ConnectionStatus,
@@ -13,6 +13,7 @@ import BaseConnectionManager, {
   ConnectionStatusEventMessages,
   ConnectOptions,
 } from "./connection/BaseConnectionManager.ts";
+import { ConnectionManager } from "./connection/ConnectionManager.ts";
 import { isInBrowser, isInNode } from "./utils/environment.ts";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.ts";
 import SensorConfigurationManager, {
@@ -135,10 +136,7 @@ import WifiManager, {
 import WebSocketConnectionManager from "./connection/websocket/WebSocketConnectionManager.ts";
 import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
 
-/** NODE_START */
-import UDPConnectionManager from "./connection/udp/UDPConnectionManager.ts";
-import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
-/** NODE_END */
+/** NODE_START */ import UDPConnectionManager from "./connection/udp/UDPConnectionManager.ts"; /** NODE_END */
 
 import autoBind from "auto-bind";
 import LedManager, {
@@ -341,7 +339,7 @@ class Device {
     }
   }
 
-  static #DefaultConnectionManager(): BaseConnectionManager {
+  static #DefaultConnectionManager(): ConnectionManager {
     return new WebBluetoothConnectionManager();
   }
 
@@ -525,7 +523,7 @@ class Device {
 
   // CONNECTION MANAGER
 
-  #connectionManager?: BaseConnectionManager;
+  #connectionManager?: ConnectionManager;
   get connectionManager() {
     return this.#connectionManager;
   }
@@ -583,19 +581,17 @@ class Device {
     if (options) {
       switch (options.type) {
         case "webBluetooth":
-          if (this.connectionType != "webBluetooth") {
+          if (this.connectionManager?.type != "webBluetooth") {
             this.connectionManager = new WebBluetoothConnectionManager();
           }
           break;
         case "webSocket":
           {
             let createConnectionManager = false;
-            if (this.connectionType == "webSocket") {
-              const connectionManager = this
-                .connectionManager as WebSocketConnectionManager;
+            if (this.connectionManager?.type == "webSocket") {
               if (
-                connectionManager.ipAddress != options.ipAddress ||
-                connectionManager.isSecure != options.isWifiSecure
+                this.connectionManager.ipAddress != options.ipAddress ||
+                this.connectionManager.isSecure != options.isWifiSecure
               ) {
                 createConnectionManager = true;
               }
@@ -615,10 +611,8 @@ class Device {
         case "udp":
           {
             let createConnectionManager = false;
-            if (this.connectionType == "udp") {
-              const connectionManager = this
-                .connectionManager as UDPConnectionManager;
-              if (connectionManager.ipAddress != options.ipAddress) {
+            if (this.connectionManager?.type == "udp") {
+              if (this.connectionManager.ipAddress != options.ipAddress) {
                 createConnectionManager = true;
               }
               this.reconnectOnDisconnection = true;
@@ -642,13 +636,13 @@ class Device {
 
     if (options?.type == "client") {
       _console.assertWithError(
-        this.connectionType == "client",
+        this.connectionManager.type == "client",
         "expected clientConnectionManager",
       );
-      const clientConnectionManager = this
-        .connectionManager as ClientConnectionManager;
-      clientConnectionManager.subType = options.subType;
-      return clientConnectionManager.connect();
+      if (this.connectionManager.type == "client") {
+        this.connectionManager.subType = options.subType;
+        return this.connectionManager.connect();
+      }
     }
     _console.log("connectionManager type", this.connectionManager.type);
     return this.connectionManager.connect();

@@ -170,9 +170,7 @@ abstract class BaseConnectionManager {
   }
 
   static type: ConnectionType;
-  get type(): ConnectionType {
-    return this.baseConstructor.type;
-  }
+  abstract readonly type: ConnectionType;
 
   /** @throws {Error} if not supported */
   #assertIsSupported() {

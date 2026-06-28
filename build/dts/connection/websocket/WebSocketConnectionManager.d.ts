@@ -1,4 +1,4 @@
-import BaseConnectionManager, { ConnectionType } from "../BaseConnectionManager.ts";
+import BaseConnectionManager from "../BaseConnectionManager.ts";
 declare class WebSocketConnectionManager extends BaseConnectionManager {
     #private;
     get bluetoothId(): string;
@@ -6,7 +6,8 @@ declare class WebSocketConnectionManager extends BaseConnectionManager {
     constructor(ipAddress?: string, isSecure?: boolean, bluetoothId?: string);
     get isAvailable(): boolean;
     static get isSupported(): boolean;
-    static get type(): ConnectionType;
+    static type: "webSocket";
+    readonly type: "webSocket";
     get webSocket(): WebSocket | undefined;
     set webSocket(newWebSocket: WebSocket | undefined);
     get ipAddress(): string;

@@ -530,6 +530,12 @@ export {
   TxRxMessageTypes,
 };
 
+import {
+  ConnectionManager,
+  ConnectionManagers,
+} from "./connection/ConnectionManager.ts";
+export { ConnectionManager, ConnectionManagers };
+
 import { DiscoveredDevice } from "./scanner/BaseScanner.ts";
 export { DiscoveredDevice };
 

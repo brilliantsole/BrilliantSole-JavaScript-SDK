@@ -1,4 +1,4 @@
-import BaseConnectionManager, { ConnectionType, ClientConnectionType } from "./BaseConnectionManager.ts";
+import BaseConnectionManager, { ClientConnectionType } from "./BaseConnectionManager.ts";
 import { ClientDeviceMessage } from "../server/ServerUtils.ts";
 import BaseClient from "../server/BaseClient.ts";
 import { DiscoveredDevice } from "../BS.ts";
@@ -7,7 +7,8 @@ export type SendClientConnectMessageCallback = (connectionType?: ClientConnectio
 declare class ClientConnectionManager extends BaseConnectionManager {
     #private;
     static get isSupported(): boolean;
-    static get type(): ConnectionType;
+    static type: "client";
+    readonly type: "client";
     subType?: ClientConnectionType;
     get canUpdateFirmware(): boolean;
     client: BaseClient;

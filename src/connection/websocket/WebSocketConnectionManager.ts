@@ -67,9 +67,9 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   static get isSupported() {
     return true;
   }
-  static get type(): ConnectionType {
-    return "webSocket";
-  }
+
+  static type = "webSocket" as const;
+  readonly type = WebSocketConnectionManager.type;
 
   // WEBSOCKET
   #webSocket?: WebSocket;

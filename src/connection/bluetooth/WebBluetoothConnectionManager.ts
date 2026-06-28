@@ -15,28 +15,21 @@ import {
   getServiceNameFromUUID,
   getCharacteristicNameFromUUID,
   getCharacteristicProperties,
-} from "./bluetoothUUIDs.ts";
-import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
-import {
   BluetoothCharacteristicName,
   BluetoothServiceName,
 } from "./bluetoothUUIDs.ts";
-import { ConnectionType } from "../BaseConnectionManager.ts";
+import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 
 const _console = createConsole("WebBluetoothConnectionManager", { log: false });
 
 type WebBluetoothInterface = webbluetooth.Bluetooth | Bluetooth;
-
-interface BluetoothService extends BluetoothRemoteGATTService {
-  name?: BluetoothServiceName;
-}
-interface BluetoothCharacteristic extends BluetoothRemoteGATTCharacteristic {
-  name?: BluetoothCharacteristicName;
-}
-
 var bluetooth: WebBluetoothInterface | undefined;
+
 /** NODE_START */
 import * as webbluetooth from "webbluetooth";
+/** NODE_END */
+
+/** NODE_START */
 if (isInNode) {
   bluetooth = webbluetooth.bluetooth;
 }
@@ -47,6 +40,15 @@ if (isInBrowser) {
   bluetooth = window.navigator.bluetooth;
 }
 /** BROWSER_END */
+
+class weirdRollupFix {}
+
+export interface BluetoothService extends BluetoothRemoteGATTService {
+  name?: BluetoothServiceName;
+}
+export interface BluetoothCharacteristic extends BluetoothRemoteGATTCharacteristic {
+  name?: BluetoothCharacteristicName;
+}
 
 class WebBluetoothConnectionManager extends BluetoothConnectionManager {
   get bluetoothId() {
@@ -70,9 +72,9 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
   static get isSupported() {
     return Boolean(bluetooth);
   }
-  static get type(): ConnectionType {
-    return "webBluetooth";
-  }
+
+  static type = "webBluetooth" as const;
+  readonly type = WebBluetoothConnectionManager.type;
 
   #device?: BluetoothDevice;
   get device() {

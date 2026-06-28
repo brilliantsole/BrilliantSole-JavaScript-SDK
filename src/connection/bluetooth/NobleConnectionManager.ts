@@ -36,7 +36,6 @@ import {
   BluetoothCharacteristicName,
   BluetoothServiceName,
 } from "./bluetoothUUIDs.ts";
-import { ConnectionType } from "../BaseConnectionManager.ts";
 import NobleScanner from "../../scanner/NobleScanner.ts";
 
 interface HasConnectionManager {
@@ -67,9 +66,9 @@ class NobleConnectionManager extends BluetoothConnectionManager {
   static get isSupported() {
     return isInNode;
   }
-  static get type(): ConnectionType {
-    return "noble";
-  }
+
+  static type = "noble" as const;
+  readonly type = NobleConnectionManager.type;
 
   get isConnected() {
     return this.#noblePeripheral?.state == "connected";

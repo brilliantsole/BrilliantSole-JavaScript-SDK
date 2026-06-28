@@ -1,7 +1,6 @@
 import { createConsole } from "../utils/Console.ts";
 import { isInBrowser } from "../utils/environment.ts";
 import BaseConnectionManager, {
-  ConnectionType,
   ConnectionMessageType,
   ClientConnectionType,
 } from "./BaseConnectionManager.ts";
@@ -32,9 +31,9 @@ class ClientConnectionManager extends BaseConnectionManager {
   static get isSupported() {
     return isInBrowser;
   }
-  static get type(): ConnectionType {
-    return "client";
-  }
+
+  static type = "client" as const;
+  readonly type = ClientConnectionManager.type;
 
   subType?: ClientConnectionType;
 

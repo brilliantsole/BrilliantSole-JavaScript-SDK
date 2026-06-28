@@ -70,9 +70,9 @@ class UDPConnectionManager extends BaseConnectionManager {
   static get isSupported() {
     return isInNode;
   }
-  static get type(): ConnectionType {
-    return "udp";
-  }
+
+  static type = "udp" as const;
+  readonly type = UDPConnectionManager.type;
 
   // IP ADDRESS
   #ipAddress!: string;

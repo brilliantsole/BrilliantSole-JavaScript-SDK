@@ -102,6 +102,8 @@ import { LedType, LedTypes, LedValue, LedValueType, LedValueTypes, LedConfigurat
 export { LedType, LedTypes, LedValue, LedValueType, LedValueTypes, LedConfiguration, Led, };
 import { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes } from "./connection/BaseConnectionManager.ts";
 export { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes, };
+import { ConnectionManager, ConnectionManagers } from "./connection/ConnectionManager.ts";
+export { ConnectionManager, ConnectionManagers };
 import { DiscoveredDevice } from "./scanner/BaseScanner.ts";
 export { DiscoveredDevice };
 /** NODE_START */

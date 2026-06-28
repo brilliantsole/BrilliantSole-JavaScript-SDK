@@ -38,7 +38,7 @@ declare class ButtonSensorDataManager {
     constructor();
     get eventDispatcher(): ButtonSensorEventDispatcher;
     set eventDispatcher(eventDispatcher: ButtonSensorEventDispatcher);
-    get dispatchEvent(): <T extends "button" | "numberOfButtons" | "buttonDown" | "buttonUp">(type: T, message: ButtonSensorEventMessages[T]) => void;
+    get dispatchEvent(): <T extends "numberOfButtons" | "button" | "buttonDown" | "buttonUp">(type: T, message: ButtonSensorEventMessages[T]) => void;
     parseData(dataView: DataView<ArrayBuffer>): Button[];
     get numberOfButtons(): number;
     set numberOfButtons(newNumberOfButtons: number);

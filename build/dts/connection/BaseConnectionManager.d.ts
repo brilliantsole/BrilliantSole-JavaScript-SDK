@@ -77,7 +77,7 @@ declare abstract class BaseConnectionManager {
     get isSupported(): boolean;
     get canUpdateFirmware(): boolean;
     static type: ConnectionType;
-    get type(): ConnectionType;
+    abstract readonly type: ConnectionType;
     constructor();
     get status(): "notConnected" | "connecting" | "connected" | "disconnecting";
     protected set status(newConnectionStatus: "notConnected" | "connecting" | "connected" | "disconnecting");

@@ -2,7 +2,6 @@ import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 /** NODE_START */
 import * as noble from "@stoprocent/noble";
 import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs.ts";
-import { ConnectionType } from "../BaseConnectionManager.ts";
 import NobleScanner from "../../scanner/NobleScanner.ts";
 interface HasConnectionManager {
     connectionManager: NobleConnectionManager | undefined;
@@ -22,7 +21,8 @@ declare class NobleConnectionManager extends BluetoothConnectionManager {
     get bluetoothId(): string;
     get canUpdateFirmware(): boolean;
     static get isSupported(): boolean;
-    static get type(): ConnectionType;
+    static type: "noble";
+    readonly type: "noble";
     get isConnected(): boolean;
     connect(): Promise<boolean>;
     disconnect(): Promise<boolean>;

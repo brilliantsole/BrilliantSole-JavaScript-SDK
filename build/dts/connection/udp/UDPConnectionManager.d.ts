@@ -1,4 +1,4 @@
-import BaseConnectionManager, { ConnectionType } from "../BaseConnectionManager.ts";
+import BaseConnectionManager from "../BaseConnectionManager.ts";
 import * as dgram from "dgram";
 export declare const UDPSendPort = 3000;
 export declare const UDPPingInterval = 2000;
@@ -9,7 +9,8 @@ declare class UDPConnectionManager extends BaseConnectionManager {
     constructor(ipAddress: string, bluetoothId?: string, receivePort?: number);
     get isAvailable(): boolean;
     static get isSupported(): boolean;
-    static get type(): ConnectionType;
+    static type: "udp";
+    readonly type: "udp";
     get ipAddress(): string;
     set ipAddress(newIpAddress: string);
     get receivePort(): number | undefined;
