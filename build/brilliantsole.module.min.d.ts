@@ -230,7 +230,7 @@ type PartialDisplayContextState = Partial<DisplayContextState>;
 interface DisplayManagerInterface {
     get isReady(): boolean;
     get contextState(): DisplayContextState;
-    serializeContextState(): DisplayContextCommand[];
+    serializeContextState(): DisplayContextCommand$1[];
     parseContextCommands(dataView: DataView): Promise<void>;
     flushContextCommands(): Promise<void>;
     get brightness(): DisplayBrightness;
@@ -240,7 +240,7 @@ interface DisplayManagerInterface {
     get colors(): string[];
     get numberOfColors(): number;
     setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    serializeColors(): DisplayContextCommand[];
+    serializeColors(): DisplayContextCommand$1[];
     assertValidColorIndex(colorIndex: number): void;
     assertValidLineWidth(lineWidth: number): void;
     assertValidNumberOfColors(numberOfColors: number): void;
@@ -248,7 +248,7 @@ interface DisplayManagerInterface {
     get opacities(): number[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    serializeOpacities(): DisplayContextCommand[];
+    serializeOpacities(): DisplayContextCommand$1[];
     saveContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     restoreContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
@@ -337,8 +337,8 @@ interface DisplayManagerInterface {
     drawArc(offsetX: number, offsetY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     drawArcEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     drawBitmap(offsetX: number, offsetY: number, bitmap: DisplayBitmap, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean, isSending?: boolean): Promise<void>;
+    runContextCommand(command: DisplayContextCommand$1, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
+    runContextCommands(commands: DisplayContextCommand$1[], sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
         blob: Blob;
         bitmap: DisplayBitmap;
@@ -681,7 +681,7 @@ interface DrawDisplaySpritesCommand extends BaseOffsetPositionDisplayContextComm
 interface StartDisplaySpriteCommand extends BaseDisplayCenterRectCommand {
     type: "startSprite";
 }
-type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayBackgroundColorCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleXCommand | SetDisplaySpriteScaleYCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayRegularPolygonCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand | DrawDisplaySpritesCommand | SelectDisplaySpriteSheetCommand | SetDisplayHorizontalAlignmentCommand | SetDisplayVerticalAlignmentCommand | SetDisplaySpritesDirectionCommand | SetDisplaySpritesLineDirectionCommand | SetDisplaySpritesSpacingCommand | SetDisplaySpritesLineSpacingCommand | SetDisplaySpritesAlignmentCommand | SetDisplaySpritesLineAlignmentCommand | SetDisplaySpritesLineHeightCommand | DrawDisplayWireframeCommand | DrawDisplayBezierCurveCommand | DrawDisplayPathCommand | SelectDisplayIgnoreFillCommand | SelectDisplayIgnoreLineCommand | SelectDisplayFillBackgroundCommand | StartDisplaySpriteCommand;
+type DisplayContextCommand$1 = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayBackgroundColorCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleXCommand | SetDisplaySpriteScaleYCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayRegularPolygonCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand | DrawDisplaySpritesCommand | SelectDisplaySpriteSheetCommand | SetDisplayHorizontalAlignmentCommand | SetDisplayVerticalAlignmentCommand | SetDisplaySpritesDirectionCommand | SetDisplaySpritesLineDirectionCommand | SetDisplaySpritesSpacingCommand | SetDisplaySpritesLineSpacingCommand | SetDisplaySpritesAlignmentCommand | SetDisplaySpritesLineAlignmentCommand | SetDisplaySpritesLineHeightCommand | DrawDisplayWireframeCommand | DrawDisplayBezierCurveCommand | DrawDisplayPathCommand | SelectDisplayIgnoreFillCommand | SelectDisplayIgnoreLineCommand | SelectDisplayFillBackgroundCommand | StartDisplaySpriteCommand;
 
 type DisplaySpriteSubLine = {
     spriteSheetName: string;
@@ -706,7 +706,7 @@ type DisplaySprite = {
     width: number;
     height: number;
     paletteSwaps?: DisplaySpritePaletteSwap[];
-    commands: DisplayContextCommand[];
+    commands: DisplayContextCommand$1[];
 };
 type DisplaySpriteSheetPaletteSwap = {
     name: string;
@@ -879,12 +879,12 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     #private;
     private static OnDisplayCanvasHelper;
     constructor();
-    get addEventListener(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void) => void;
-    get waitForEvent(): <T extends "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, options?: {
+    get addEventListener(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void) => void;
+    get waitForEvent(): <T extends "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>>;
-    get removeEventListeners(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => void;
+    }) => Promise<ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>>;
+    get removeEventListeners(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "brightness" | "color" | "contextState" | "numberOfColors" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => void;
     removeAllEventListeners(): void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
@@ -904,17 +904,17 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get colors(): string[];
     get opacities(): number[];
     get contextState(): DisplayContextState;
-    serializeContextState(): DisplayContextCommand[];
+    serializeContextState(): DisplayContextCommand$1[];
     show(sendImmediately?: boolean, waitUntilReady?: boolean, isSending?: boolean): Promise<void>;
     get interval(): number;
     set interval(newInterval: number);
     get isReady(): boolean;
     clear(sendImmediately?: boolean, waitUntilReady?: boolean, isSending?: boolean): Promise<void>;
     setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    serializeColors(): DisplayContextCommand[];
+    serializeColors(): DisplayContextCommand$1[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    serializeOpacities(): DisplayContextCommand[];
+    serializeOpacities(): DisplayContextCommand$1[];
     saveContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     restoreContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     clearContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
@@ -1033,11 +1033,11 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     stringToSpriteLinesMetrics(string: string, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLinesMetrics;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
-    runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean, isSending?: boolean): Promise<void>;
+    runContextCommand(command: DisplayContextCommand$1, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
+    runContextCommands(commands: DisplayContextCommand$1[], sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     parseContextCommands(dataView: DataView, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     previewSprite(offsetX: number, offsetY: number, sprite: DisplaySprite, spriteSheet: DisplaySpriteSheet): void;
-    previewSpriteCommands(commands: DisplayContextCommand[]): void;
+    previewSpriteCommands(commands: DisplayContextCommand$1[]): void;
     assertSpriteSheetPalette(paletteName: string): void;
     assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
     assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;
@@ -1156,7 +1156,7 @@ interface DisplayEventMessages {
         spriteSheet: DisplaySpriteSheet;
     };
     displayContextCommands: {
-        displayContextCommands: DisplayContextCommand[];
+        displayContextCommands: DisplayContextCommand$1[];
     };
 }
 type DisplayEventDispatcher = EventDispatcher<Device, DisplayEventType, DisplayEventMessages>;
@@ -1180,7 +1180,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     requestRequiredInformation(): void;
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
-    serializeContextState(): DisplayContextCommand[];
+    serializeContextState(): DisplayContextCommand$1[];
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
@@ -1205,9 +1205,9 @@ declare class DisplayManager implements DisplayManagerInterface {
     assertValidColorIndex(colorIndex: number): void;
     get colors(): string[];
     setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
-    serializeColors(): DisplayContextCommand[];
+    serializeColors(): DisplayContextCommand$1[];
     get opacities(): number[];
-    serializeOpacities(): DisplayContextCommand[];
+    serializeOpacities(): DisplayContextCommand$1[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     saveContext(sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
@@ -1316,8 +1316,8 @@ declare class DisplayManager implements DisplayManagerInterface {
         colors: string[];
         colorIndices: number[];
     }>;
-    runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean, isSending?: boolean): Promise<void>;
+    runContextCommand(command: DisplayContextCommand$1, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
+    runContextCommands(commands: DisplayContextCommand$1[], sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     parseContextCommands(dataView: DataView, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     get isReady(): boolean;
     get spriteSheets(): Record<string, DisplaySpriteSheet>;
@@ -1990,8 +1990,8 @@ interface Message<MessageType extends string> {
     type: MessageType;
     data?: MessageLike | MessageLike[];
 }
-type ServerMessage = Message<ServerMessageType>;
-type ServerMessageOrMessageType = ServerMessage | ServerMessageType;
+type ServerMessage$1 = Message<ServerMessageType>;
+type ServerMessageOrMessageType = ServerMessage$1 | ServerMessageType;
 type DeviceMessage = Message<DeviceEventType>;
 type ClientDeviceMessage = Message<ConnectionMessageType>;
 
@@ -2340,7 +2340,7 @@ declare class Device {
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    get connectionType(): "webSocket" | "udp" | "webBluetooth" | "noble" | "client" | undefined;
+    get connectionType(): "webSocket" | "udp" | "client" | "noble" | "webBluetooth" | undefined;
     disconnect(): Promise<boolean | undefined>;
     toggleConnection(options: ConnectOptions): Promise<void>;
     toggleConnection(reconnect?: boolean): Promise<void>;
@@ -2696,18 +2696,6 @@ declare class DeviceManager {
 }
 declare const _default$6: DeviceManager;
 
-type Guard<TArgs extends unknown[]> = (...args: TArgs) => boolean;
-declare class GuardManager<TArgs extends unknown[]> {
-    #private;
-    add(guard: Guard<TArgs>): void;
-    remove(guard: Guard<TArgs>): void;
-    evaluate(...args: TArgs): boolean;
-    clear(): void;
-    get length(): number;
-    set length(newLength: number);
-    get isEmpty(): boolean;
-}
-
 declare const ServerTypes: readonly ["window", "webSocket", "udp"];
 type ServerType = (typeof ServerTypes)[number];
 interface BaseServerClient {
@@ -2724,37 +2712,6 @@ interface BaseServerEventMessages<ServerClient extends BaseServerClient> {
     };
 }
 type BaseServerEventDispatcherTypes<ServerClient extends BaseServerClient> = EventDispatcherTypes<BaseServer<ServerClient>, ServerEventType, BaseServerEventMessages<ServerClient>>;
-interface BaseServerClientGuardManagerArg<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> {
-    client: ServerClient;
-    message?: ServerMessage;
-    server: Server;
-}
-interface BaseServerClientDeviceGuardManagerArg<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> {
-    device: Device;
-    client: ServerClient;
-    message?: DeviceMessage;
-    server: Server;
-}
-interface BaseServerClientDeviceSensorDataGuardManagerArg<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> {
-    device: Device;
-    client: ServerClient;
-    sensorType: SensorType;
-    sensorData: DataView;
-    server: Server;
-}
-interface BaseServerClientDeviceSensorConfigurationGuardManagerArg<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> {
-    device: Device;
-    client: ServerClient;
-    sensorType: SensorType;
-    sensorRate: number;
-    server: Server;
-}
-interface BaseServerClientDeviceDisplayContextCommandGuardManagerArg<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> {
-    device: Device;
-    client: ServerClient;
-    displayContextCommand: DisplayContextCommand;
-    server: Server;
-}
 declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     #private;
     static type: ServerType;
@@ -2774,14 +2731,6 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
     protected abstract sendToClient(client: ServerClient, message: ArrayBuffer): void;
     private broadcastMessage;
-    clientToServerGuardManager: GuardManager<[BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
-    serverToClientGuardManager: GuardManager<[BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
-    clientToDeviceGuardManager: GuardManager<[BaseServerClientDeviceGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
-    deviceToClientGuardManager: GuardManager<[BaseServerClientDeviceGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
-    deviceSensorDataToClientGuardManager: GuardManager<[BaseServerClientDeviceSensorDataGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
-    clientSensorConfigurationToDeviceGuardManager: GuardManager<[BaseServerClientDeviceSensorConfigurationGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
-    clientDisplayContextCommandToDeviceGuardManager: GuardManager<[BaseServerClientDeviceDisplayContextCommandGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
-    deviceDisplayContextCommandToClientGuardManager: GuardManager<[BaseServerClientDeviceDisplayContextCommandGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
     protected parseClientMessage(client: ServerClient, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
     protected parseClientDeviceMessage(client: ServerClient, device: Device, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
 }
@@ -2856,6 +2805,18 @@ type ServerEventListenerMap = ServerEventDispatcherTypes["EventListenerMap"];
 type ServerEventDispatcher = ServerEventDispatcherTypes["EventDispatcher"];
 type BoundServerEventListeners = ServerEventDispatcherTypes["BoundEventListeners"];
 
+type Guard<TArgs extends unknown[]> = (...args: TArgs) => boolean;
+declare class GuardManager<TArgs extends unknown[]> {
+    #private;
+    add(guard: Guard<TArgs>): void;
+    remove(guard: Guard<TArgs>): void;
+    evaluate(...args: TArgs): boolean;
+    clear(): void;
+    get length(): number;
+    set length(newLength: number);
+    get isEmpty(): boolean;
+}
+
 interface BaseServerManagerServerEventMessage {
     server: Server;
 }
@@ -2877,14 +2838,53 @@ interface BaseServerManagerEventMessages {
     [wildcardServerEventType]: WildcardServerEventMessage<BaseServerManagerServerEventMessage>;
 }
 type ServerManagerEventMessages = ServerManagerServerEventMessages & BaseServerManagerEventMessages;
+interface BaseServerClientGuardManagerArg {
+    client: ServerClient$1;
+    message?: ServerMessage$1;
+    server: Server;
+}
+interface BaseServerClientDeviceGuardManagerArg {
+    device: Device;
+    client: ServerClient$1;
+    message?: DeviceMessage;
+    server: Server;
+}
+interface BaseServerClientDeviceSensorDataGuardManagerArg {
+    device: Device;
+    client: ServerClient$1;
+    sensorType: SensorType;
+    sensorData: DataView;
+    server: Server;
+}
+interface BaseServerClientDeviceSensorConfigurationGuardManagerArg {
+    device: Device;
+    client: ServerClient$1;
+    sensorType: SensorType;
+    sensorRate: number;
+    server: Server;
+}
+interface BaseServerClientDeviceDisplayContextCommandGuardManagerArg {
+    device: Device;
+    client: ServerClient$1;
+    displayContextCommand: DisplayContextCommand$1;
+    server: Server;
+}
 declare class ServerManager {
     #private;
     static readonly shared: ServerManager;
     constructor();
     get servers(): Server[];
-    get addEventListener(): <T extends "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers" | "*">(type: T, listener: (event: ListenerEvent<ServerManager, "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers", ServerManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers" | "*">(type: T, listener: (event: ListenerEvent<ServerManager, "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers", ServerManagerEventMessages, T>) => void) => void;
-    get removeEventListeners(): <T extends "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers" | "*">(type: T) => void;
+    get addEventListener(): <T extends "*" | "server" | "server*" | "serverClientConnected" | "serverClientDisconnected" | "servers">(type: T, listener: (event: ListenerEvent<ServerManager, "server" | "server*" | "serverClientConnected" | "serverClientDisconnected" | "servers", ServerManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "server" | "server*" | "serverClientConnected" | "serverClientDisconnected" | "servers">(type: T, listener: (event: ListenerEvent<ServerManager, "server" | "server*" | "serverClientConnected" | "serverClientDisconnected" | "servers", ServerManagerEventMessages, T>) => void) => void;
+    get removeEventListeners(): <T extends "*" | "server" | "server*" | "serverClientConnected" | "serverClientDisconnected" | "servers">(type: T) => void;
+    clientToServerGuardManager: GuardManager<[BaseServerClientGuardManagerArg]>;
+    serverToClientGuardManager: GuardManager<[BaseServerClientGuardManagerArg]>;
+    clientToDeviceGuardManager: GuardManager<[BaseServerClientDeviceGuardManagerArg]>;
+    deviceToClientGuardManager: GuardManager<[BaseServerClientDeviceGuardManagerArg]>;
+    deviceSensorDataToClientGuardManager: GuardManager<[BaseServerClientDeviceSensorDataGuardManagerArg]>;
+    clientSensorConfigurationToDeviceGuardManager: GuardManager<[BaseServerClientDeviceSensorConfigurationGuardManagerArg]>;
+    clientDisplayContextCommandToDeviceGuardManager: GuardManager<[BaseServerClientDeviceDisplayContextCommandGuardManagerArg]>;
+    deviceDisplayContextCommandToClientGuardManager: GuardManager<[BaseServerClientDeviceDisplayContextCommandGuardManagerArg]>;
 }
 declare const _default$3: ServerManager;
 
@@ -2967,7 +2967,7 @@ type ParseSvgOptions = {
     includeText?: boolean;
 };
 declare function svgToDisplayContextCommands(svgString: string | SVGSVGElement, numberOfColors: number, paletteOffset: number, colors?: string[], options?: ParseSvgOptions): Promise<{
-    commands: DisplayContextCommand[];
+    commands: DisplayContextCommand$1[];
     colors: string[];
     width: number;
     height: number;
@@ -3001,7 +3001,7 @@ interface BaseDisplayCanvasHelperManagerEventMessages {
     };
     [wildcardDisplayCanvasHelperEventType]: WildcardDisplayCanvasHelperEventMessage<BaseDisplayCanvasHelperManagerDisplayCanvasHelperEventMessage>;
 }
-declare const DisplayCanvasHelperManagerEventTypes: readonly [...("displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperResize" | "displayCanvasHelperBrightness" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated")[], "displayCanvasHelper", "displayCanvasHelpers", "displayCanvasHelper*"];
+declare const DisplayCanvasHelperManagerEventTypes: readonly [...("displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperBrightness" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperResize" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated")[], "displayCanvasHelper", "displayCanvasHelpers", "displayCanvasHelper*"];
 type DisplayCanvasHelperManagerEventType = (typeof DisplayCanvasHelperManagerEventTypes)[number];
 type DisplayCanvasHelperManagerEventMessages = DisplayCanvasHelperManagerDisplayCanvasHelperEventMessages & BaseDisplayCanvasHelperManagerEventMessages;
 type DisplayCanvasHelperManagerEventDisptcherTypes = EventDispatcherTypes<DisplayCanvasHelperManager, DisplayCanvasHelperManagerEventType, DisplayCanvasHelperManagerEventMessages>;
@@ -3015,9 +3015,9 @@ declare class DisplayCanvasHelperManager {
     get displayCanvasHelpers(): DisplayCanvasHelper[];
     findDisplayCanvasHelpersByDevice(device: Device): DisplayCanvasHelper | undefined;
     findDisplayCanvasHelpersByDisplayManager(displayManager: DisplayManager): DisplayCanvasHelper | undefined;
-    get addEventListener(): <T extends "*" | "displayCanvasHelper" | "displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperResize" | "displayCanvasHelperBrightness" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated" | "displayCanvasHelper*" | "displayCanvasHelpers">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelperManager, "displayCanvasHelper" | "displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperResize" | "displayCanvasHelperBrightness" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated" | "displayCanvasHelper*" | "displayCanvasHelpers", DisplayCanvasHelperManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "*" | "displayCanvasHelper" | "displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperResize" | "displayCanvasHelperBrightness" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated" | "displayCanvasHelper*" | "displayCanvasHelpers">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelperManager, "displayCanvasHelper" | "displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperResize" | "displayCanvasHelperBrightness" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated" | "displayCanvasHelper*" | "displayCanvasHelpers", DisplayCanvasHelperManagerEventMessages, T>) => void) => void;
-    get removeEventListeners(): <T extends "*" | "displayCanvasHelper" | "displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperResize" | "displayCanvasHelperBrightness" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated" | "displayCanvasHelper*" | "displayCanvasHelpers">(type: T) => void;
+    get addEventListener(): <T extends "*" | "displayCanvasHelper*" | "displayCanvasHelper" | "displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperBrightness" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperResize" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated" | "displayCanvasHelpers">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelperManager, "displayCanvasHelper*" | "displayCanvasHelper" | "displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperBrightness" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperResize" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated" | "displayCanvasHelpers", DisplayCanvasHelperManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "displayCanvasHelper*" | "displayCanvasHelper" | "displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperBrightness" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperResize" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated" | "displayCanvasHelpers">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelperManager, "displayCanvasHelper*" | "displayCanvasHelper" | "displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperBrightness" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperResize" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated" | "displayCanvasHelpers", DisplayCanvasHelperManagerEventMessages, T>) => void) => void;
+    get removeEventListeners(): <T extends "*" | "displayCanvasHelper*" | "displayCanvasHelper" | "displayCanvasHelperDevice" | "displayCanvasHelperDeviceNotConnected" | "displayCanvasHelperDeviceConnected" | "displayCanvasHelperDeviceIsConnected" | "displayCanvasHelperBrightness" | "displayCanvasHelperColor" | "displayCanvasHelperContextState" | "displayCanvasHelperNumberOfColors" | "displayCanvasHelperColorOpacity" | "displayCanvasHelperResize" | "displayCanvasHelperUpdate" | "displayCanvasHelperReady" | "displayCanvasHelperDeviceSpriteSheetUploadStart" | "displayCanvasHelperDeviceSpriteSheetUploadProgress" | "displayCanvasHelperDeviceSpriteSheetUploadComplete" | "displayCanvasHelperDeviceUpdated" | "displayCanvasHelpers">(type: T) => void;
 }
 declare const _default: DisplayCanvasHelperManager;
 
@@ -3182,4 +3182,4 @@ declare const ThrottleUtils: {
 };
 
 export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, _default$6 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, _default as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment_d as Environment, EventUtils, FileTransferDirections, FileTypes, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, _default$3 as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient$1 as WebSocketClient, _default$1 as WindowClient, _default$2 as WindowManagerClient, _default$5 as WindowManagerServer, _default$4 as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
-export type { BoundDeviceEventListeners, BoundDeviceManagerEventListeners, BoundDevicePairEventListeners, BoundServerEventListeners, CameraCommand, CameraConfiguration, CameraConfigurationType, CenterOfPressure, Client, ConnectionEventType, ConnectionManager, ConnectionMessageType, ContinuousSensorType, DeviceEvent, DeviceEventListenerMap, DeviceEventMap, DeviceEventType, DeviceInformation, DeviceManagerEvent, DeviceManagerEventListenerMap, DeviceManagerEventMap, DevicePairEvent, DevicePairEventListenerMap, DevicePairEventMap, DevicePairType, DeviceType, DiscoveredDevice, DisplayAlignment, DisplayBezierCurveType, DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayCanvasHelperEvent, DisplayCanvasHelperEventListenerMap, DisplayCanvasHelperEventMap, DisplayCanvasHelperManagerEvent, DisplayCanvasHelperManagerEventListenerMap, DisplayCanvasHelperManagerEventMap, DisplayColorRGB, DisplayColorRGBOrString, DisplayContextCommand, DisplayContextCommandType, DisplayDirection, DisplaySegmentCap, DisplaySize, DisplaySprite, DisplaySpriteColorPair, DisplaySpriteContextCommandType, DisplaySpriteLine, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSubLine, DisplayWireframe, DisplayWireframeEdge, Euler, FileTransferDirection, FileType, FontMetrics, FontToSpriteSheetOptions, Led, LedConfiguration, LedType, LedValue, LedValueType, MicrophoneBitDepth, MicrophoneCommand, MicrophoneConfiguration, MicrophoneConfigurationType, MicrophoneSampleRate, PressureData, PressureSensorPosition, PressureSensorValue, Quaternion, Range, SensorConfiguration, SensorType, Server, ServerClient$1 as ServerClient, ServerEvent, ServerEventDispatcher, ServerEventDispatcherTypes, ServerEventListenerMap, ServerEventMap, Side, TfliteFileConfiguration, TfliteSensorType, TfliteTask, TxRxMessageType, Vector2, Vector3, VibrationConfiguration, VibrationLocation, VibrationType, VibrationWaveformConfiguration, VibrationWaveformEffect, VibrationWaveformEffectConfiguration, VibrationWaveformEffectSegment, VibrationWaveformSegment, WildcardEventType };
+export type { BoundDeviceEventListeners, BoundDeviceManagerEventListeners, BoundDevicePairEventListeners, BoundServerEventListeners, CameraCommand, CameraConfiguration, CameraConfigurationType, CenterOfPressure, Client, ConnectionEventType, ConnectionManager, ConnectionMessageType, ContinuousSensorType, DeviceEvent, DeviceEventListenerMap, DeviceEventMap, DeviceEventType, DeviceInformation, DeviceManagerEvent, DeviceManagerEventListenerMap, DeviceManagerEventMap, DevicePairEvent, DevicePairEventListenerMap, DevicePairEventMap, DevicePairType, DeviceType, DiscoveredDevice, DisplayAlignment, DisplayBezierCurveType, DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayCanvasHelperEvent, DisplayCanvasHelperEventListenerMap, DisplayCanvasHelperEventMap, DisplayCanvasHelperManagerEvent, DisplayCanvasHelperManagerEventListenerMap, DisplayCanvasHelperManagerEventMap, DisplayColorRGB, DisplayColorRGBOrString, DisplayContextCommand$1 as DisplayContextCommand, DisplayContextCommandType, DisplayDirection, DisplaySegmentCap, DisplaySize, DisplaySprite, DisplaySpriteColorPair, DisplaySpriteContextCommandType, DisplaySpriteLine, DisplaySpriteLines, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSubLine, DisplayWireframe, DisplayWireframeEdge, Euler, FileTransferDirection, FileType, FontMetrics, FontToSpriteSheetOptions, Led, LedConfiguration, LedType, LedValue, LedValueType, MicrophoneBitDepth, MicrophoneCommand, MicrophoneConfiguration, MicrophoneConfigurationType, MicrophoneSampleRate, PressureData, PressureSensorPosition, PressureSensorValue, Quaternion, Range, SensorConfiguration, SensorType, Server, ServerClient$1 as ServerClient, ServerEvent, ServerEventDispatcher, ServerEventDispatcherTypes, ServerEventListenerMap, ServerEventMap, Side, TfliteFileConfiguration, TfliteSensorType, TfliteTask, TxRxMessageType, Vector2, Vector3, VibrationConfiguration, VibrationLocation, VibrationType, VibrationWaveformConfiguration, VibrationWaveformEffect, VibrationWaveformEffectConfiguration, VibrationWaveformEffectSegment, VibrationWaveformSegment, WildcardEventType };

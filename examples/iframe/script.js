@@ -279,7 +279,7 @@ createIframeContainer();
 createIframeContainer();
 window.createIframeContainer = createIframeContainer;
 
-BS.WindowServer.clientSensorConfigurationToDeviceGuardManager.add(
+BS.ServerManager.clientSensorConfigurationToDeviceGuardManager.add(
   ({ client, message, sensorType, sensorRate }) => {
     // console.log("allow sensorConfiguration?", { sensorType, sensorRate });
     return client.iframe.dataset.allowSensorData == "true";
@@ -287,7 +287,7 @@ BS.WindowServer.clientSensorConfigurationToDeviceGuardManager.add(
   },
 );
 
-BS.WindowServer.deviceSensorDataToClientGuardManager.add(
+BS.ServerManager.deviceSensorDataToClientGuardManager.add(
   ({ client, message, sensorType, sensorData }) => {
     // console.log("allow sensorData?", { sensorType, sensorData });
     return client.iframe.dataset.allowSensorData == "true";
@@ -295,7 +295,7 @@ BS.WindowServer.deviceSensorDataToClientGuardManager.add(
   },
 );
 
-BS.WindowServer.clientDisplayContextCommandToDeviceGuardManager.add(
+BS.ServerManager.clientDisplayContextCommandToDeviceGuardManager.add(
   ({ client, message, displayContextCommand }) => {
     console.log("allow displayContextCommand?", displayContextCommand);
     return true;

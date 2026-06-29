@@ -46,7 +46,6 @@ import DeviceManager, {
 } from "../DeviceManager.ts";
 import { RequiredWifiMessageTypes } from "../WifiManager.ts";
 import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
-import GuardManager from "../utils/GuardManager.ts";
 import {
   parseSensorConfiguration,
   serializeSensorConfiguration,
@@ -135,55 +134,6 @@ export interface BaseServerClientDeviceContext<
   client: ServerClient;
   deviceMessages: DeviceMessage[];
   device: Device;
-}
-
-export interface BaseServerClientGuardManagerArg<
-  Server extends BaseServer<ServerClient>,
-  ServerClient extends BaseServerClient,
-> {
-  client: ServerClient;
-  message?: ServerMessage;
-  server: Server;
-}
-
-export interface BaseServerClientDeviceGuardManagerArg<
-  Server extends BaseServer<ServerClient>,
-  ServerClient extends BaseServerClient,
-> {
-  device: Device;
-  client: ServerClient;
-  message?: DeviceMessage;
-  server: Server;
-}
-
-export interface BaseServerClientDeviceSensorDataGuardManagerArg<
-  Server extends BaseServer<ServerClient>,
-  ServerClient extends BaseServerClient,
-> {
-  device: Device;
-  client: ServerClient;
-  sensorType: SensorType;
-  sensorData: DataView;
-  server: Server;
-}
-export interface BaseServerClientDeviceSensorConfigurationGuardManagerArg<
-  Server extends BaseServer<ServerClient>,
-  ServerClient extends BaseServerClient,
-> {
-  device: Device;
-  client: ServerClient;
-  sensorType: SensorType;
-  sensorRate: number;
-  server: Server;
-}
-export interface BaseServerClientDeviceDisplayContextCommandGuardManagerArg<
-  Server extends BaseServer<ServerClient>,
-  ServerClient extends BaseServerClient,
-> {
-  device: Device;
-  client: ServerClient;
-  displayContextCommand: DisplayContextCommand;
-  server: Server;
 }
 
 abstract class BaseServer<ServerClient extends BaseServerClient> {
@@ -460,7 +410,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
     switch (messageType) {
       case "sensorData":
-        if (!this.deviceSensorDataToClientGuardManager.isEmpty) {
+        if (!ServerManager.deviceSensorDataToClientGuardManager.isEmpty) {
           const clientSensorDataMessageMap: Map<ServerClient, ArrayBuffer[]> =
             new Map();
 
@@ -658,13 +608,15 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   // PARSING
-  clientToServerGuardManager = new GuardManager<
-    [BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]
-  >();
-  serverToClientGuardManager = new GuardManager<
-    [BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]
-  >();
-
+  #allowClientToServer(client: ServerClient, message?: ServerMessage) {
+    return ServerManager.clientToServerGuardManager.evaluate({
+      message,
+      // @ts-expect-error
+      client,
+      // @ts-expect-error
+      server: this,
+    });
+  }
   #allowServerToClient(
     client: ServerClient,
     message?: ServerMessageOrMessageType,
@@ -672,9 +624,11 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     if (typeof message == "string") {
       message = { type: message };
     }
-    return this.serverToClientGuardManager.evaluate({
+    return ServerManager.serverToClientGuardManager.evaluate({
+      // @ts-expect-error
       client,
       message,
+      // @ts-expect-error
       server: this,
     });
   }
@@ -683,44 +637,20 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       this.#allowServerToClient(client, message),
     );
   }
-
-  #allowClientToServer(client: ServerClient, message?: ServerMessage) {
-    return this.clientToServerGuardManager.evaluate({
-      message,
-      client,
-      server: this,
-    });
-  }
-
-  clientToDeviceGuardManager = new GuardManager<
-    [
-      BaseServerClientDeviceGuardManagerArg<
-        BaseServer<ServerClient>,
-        ServerClient
-      >,
-    ]
-  >();
   #allowClientToDevice(
     client: ServerClient,
     device: Device,
     message?: DeviceMessage,
   ) {
-    return this.clientToDeviceGuardManager.evaluate({
+    return ServerManager.clientToDeviceGuardManager.evaluate({
       device,
+      // @ts-expect-error
       client,
       message,
+      // @ts-expect-error
       server: this,
     });
   }
-
-  deviceToClientGuardManager = new GuardManager<
-    [
-      BaseServerClientDeviceGuardManagerArg<
-        BaseServer<ServerClient>,
-        ServerClient
-      >,
-    ]
-  >();
   #allowDeviceToClient(
     device: Device,
     client: ServerClient,
@@ -729,10 +659,12 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     if (typeof message == "string") {
       message = { type: message };
     }
-    return this.deviceToClientGuardManager.evaluate({
+    return ServerManager.deviceToClientGuardManager.evaluate({
       device,
+      // @ts-expect-error
       client,
       message,
+      // @ts-expect-error
       server: this,
     });
   }
@@ -741,93 +673,71 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       this.#allowDeviceToClient(device, client, message),
     );
   }
-
-  deviceSensorDataToClientGuardManager = new GuardManager<
-    [
-      BaseServerClientDeviceSensorDataGuardManagerArg<
-        BaseServer<ServerClient>,
-        ServerClient
-      >,
-    ]
-  >();
   #allowDeviceSensorDataToClient(
     device: Device,
     client: ServerClient,
     sensorType: SensorType,
     sensorData: DataView,
   ) {
-    return this.deviceSensorDataToClientGuardManager.evaluate({
+    return ServerManager.deviceSensorDataToClientGuardManager.evaluate({
       device,
+      // @ts-expect-error
       client,
       sensorType,
       sensorData,
+      // @ts-expect-error
       server: this,
     });
   }
-
-  clientSensorConfigurationToDeviceGuardManager = new GuardManager<
-    [
-      BaseServerClientDeviceSensorConfigurationGuardManagerArg<
-        BaseServer<ServerClient>,
-        ServerClient
-      >,
-    ]
-  >();
   #allowClientSensorConfigurationToDevice(
     device: Device,
     client: ServerClient,
     sensorType: SensorType,
     sensorRate: number,
   ) {
-    return this.clientSensorConfigurationToDeviceGuardManager.evaluate({
-      device,
-      client,
-      sensorType,
-      sensorRate,
-      server: this,
-    });
+    return ServerManager.clientSensorConfigurationToDeviceGuardManager.evaluate(
+      {
+        device,
+        // @ts-expect-error
+        client,
+        sensorType,
+        sensorRate,
+        // @ts-expect-error
+        server: this,
+      },
+    );
   }
-
-  clientDisplayContextCommandToDeviceGuardManager = new GuardManager<
-    [
-      BaseServerClientDeviceDisplayContextCommandGuardManagerArg<
-        BaseServer<ServerClient>,
-        ServerClient
-      >,
-    ]
-  >();
   #allowClientDisplayContextCommandToDevice(
     device: Device,
     client: ServerClient,
     displayContextCommand: DisplayContextCommand,
   ) {
-    return this.clientDisplayContextCommandToDeviceGuardManager.evaluate({
-      device,
-      client,
-      displayContextCommand,
-      server: this,
-    });
+    return ServerManager.clientDisplayContextCommandToDeviceGuardManager.evaluate(
+      {
+        device,
+        // @ts-expect-error
+        client,
+        displayContextCommand,
+        // @ts-expect-error
+        server: this,
+      },
+    );
   }
-
-  deviceDisplayContextCommandToClientGuardManager = new GuardManager<
-    [
-      BaseServerClientDeviceDisplayContextCommandGuardManagerArg<
-        BaseServer<ServerClient>,
-        ServerClient
-      >,
-    ]
-  >();
   #allowDeviceDisplayContextCommandToClient(
     device: Device,
     client: ServerClient,
     displayContextCommand: DisplayContextCommand,
   ) {
-    return this.deviceDisplayContextCommandToClientGuardManager.evaluate({
-      device,
-      client,
-      displayContextCommand,
-      server: this,
-    });
+    return ServerManager.deviceDisplayContextCommandToClientGuardManager.evaluate(
+      {
+        device,
+        // @ts-expect-error
+        client,
+        displayContextCommand,
+        // @ts-expect-error
+        server: this,
+      },
+    );
   }
 
   protected parseClientMessage(
@@ -1092,7 +1002,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
         switch (message.type) {
           case "setSensorConfiguration":
-            if (!this.clientSensorConfigurationToDeviceGuardManager.isEmpty) {
+            if (
+              !ServerManager.clientSensorConfigurationToDeviceGuardManager
+                .isEmpty
+            ) {
               _console.log("trimming sensorConfiguration...");
               const sensorConfiguration = parseSensorConfiguration(
                 message.data,
@@ -1128,7 +1041,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             }
             break;
           case "displayContextCommands":
-            if (!this.clientDisplayContextCommandToDeviceGuardManager.isEmpty) {
+            if (
+              !ServerManager.clientDisplayContextCommandToDeviceGuardManager
+                .isEmpty
+            ) {
               const displayContextCommands = parseDisplayContextCommands(
                 device.displayManager,
                 dataView,
@@ -1217,3 +1133,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 }
 
 export default BaseServer;
+
+import { default as ServerManager } from "./ServerManager.ts";
+import { ServerClient as _ServerClient } from "./Server.ts";

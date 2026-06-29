@@ -20,7 +20,12 @@ import {
   ServerEventMap,
   ServerEventMessages,
 } from "./Server.ts";
+import { SensorType } from "../sensor/SensorDataManager.ts";
 import { capitalizeFirstCharacter } from "../utils/stringUtils.ts";
+import GuardManager from "../utils/GuardManager.ts";
+import { DeviceMessage, ServerMessage } from "./ServerUtils.ts";
+import Device from "../Device.ts";
+import { DisplayContextCommand } from "../utils/DisplayContextCommand.ts";
 
 const _console = createConsole("ServerManager", { log: true });
 
@@ -93,6 +98,39 @@ export type ServerManagerEventDispatcher =
   ServerManagerEventDisptcherTypes["EventDispatcher"];
 export type BoundServerManagerEventListeners =
   ServerManagerEventDisptcherTypes["BoundEventListeners"];
+
+export interface BaseServerClientGuardManagerArg {
+  client: ServerClient;
+  message?: ServerMessage;
+  server: Server;
+}
+export interface BaseServerClientDeviceGuardManagerArg {
+  device: Device;
+  client: ServerClient;
+  message?: DeviceMessage;
+  server: Server;
+}
+
+export interface BaseServerClientDeviceSensorDataGuardManagerArg {
+  device: Device;
+  client: ServerClient;
+  sensorType: SensorType;
+  sensorData: DataView;
+  server: Server;
+}
+export interface BaseServerClientDeviceSensorConfigurationGuardManagerArg {
+  device: Device;
+  client: ServerClient;
+  sensorType: SensorType;
+  sensorRate: number;
+  server: Server;
+}
+export interface BaseServerClientDeviceDisplayContextCommandGuardManagerArg {
+  device: Device;
+  client: ServerClient;
+  displayContextCommand: DisplayContextCommand;
+  server: Server;
+}
 
 @Singleton
 class ServerManager {
@@ -174,6 +212,32 @@ class ServerManager {
       server.broadcastMessage(message, clients);
     });
   }
+
+  // GUARDS
+  clientToServerGuardManager = new GuardManager<
+    [BaseServerClientGuardManagerArg]
+  >();
+  serverToClientGuardManager = new GuardManager<
+    [BaseServerClientGuardManagerArg]
+  >();
+  clientToDeviceGuardManager = new GuardManager<
+    [BaseServerClientDeviceGuardManagerArg]
+  >();
+  deviceToClientGuardManager = new GuardManager<
+    [BaseServerClientDeviceGuardManagerArg]
+  >();
+  deviceSensorDataToClientGuardManager = new GuardManager<
+    [BaseServerClientDeviceSensorDataGuardManagerArg]
+  >();
+  clientSensorConfigurationToDeviceGuardManager = new GuardManager<
+    [BaseServerClientDeviceSensorConfigurationGuardManagerArg]
+  >();
+  clientDisplayContextCommandToDeviceGuardManager = new GuardManager<
+    [BaseServerClientDeviceDisplayContextCommandGuardManagerArg]
+  >();
+  deviceDisplayContextCommandToClientGuardManager = new GuardManager<
+    [BaseServerClientDeviceDisplayContextCommandGuardManagerArg]
+  >();
 }
 
 export default ServerManager.shared;
