@@ -1,4 +1,7 @@
-import BaseServer, { BaseServerEventDispatcherTypes } from "./BaseServer.ts";
+import BaseServer, {
+  BaseServerEventDispatcherTypes,
+  BaseServerEventMessages,
+} from "./BaseServer.ts";
 
 /** NODE_START */
 import { default as UDPServer, UDPServerClient } from "./udp/UDPServer.ts";
@@ -35,6 +38,8 @@ export type ServerClient =
   | UDPServerClient
   /** NODE_END */
   | never;
+
+export type ServerEventMessages = BaseServerEventMessages<ServerClient>;
 
 export type ServerEventDispatcherTypes =
   BaseServerEventDispatcherTypes<ServerClient>;

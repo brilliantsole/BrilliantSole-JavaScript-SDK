@@ -1,4 +1,4 @@
-import { BaseServerEventDispatcherTypes } from "./BaseServer.ts";
+import { BaseServerEventDispatcherTypes, BaseServerEventMessages } from "./BaseServer.ts";
 /** NODE_START */
 import { default as UDPServer, UDPServerClient } from "./udp/UDPServer.ts";
 import { default as WebSocketServer, WebSocketServerClient } from "./websocket/WebSocketServer.ts";
@@ -16,6 +16,7 @@ WindowServerClient
  | WebSocketServerClient | UDPServerClient
 /** NODE_END */
  | never;
+export type ServerEventMessages = BaseServerEventMessages<ServerClient>;
 export type ServerEventDispatcherTypes = BaseServerEventDispatcherTypes<ServerClient>;
 export type ServerEvent = ServerEventDispatcherTypes["Event"];
 export type ServerEventMap = ServerEventDispatcherTypes["EventMap"];

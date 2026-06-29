@@ -37,6 +37,19 @@ function removeLines(context) {
   const isInBrowser = context == "browser";
   const isInNode = context == "node";
 
+  /**
+   *
+   * @param {string} string
+   * @param {boolean | () => boolean} condition
+   * @returns
+   */
+  const remove = (string, condition) => {
+    condition = typeof condition == "function" ? condition() : condition;
+    return {
+      [string]: condition ? string : "",
+    };
+  };
+
   return replace({
     preventAssignment: true,
     delimiters: ["", ""],
@@ -45,6 +58,8 @@ function removeLines(context) {
       "/** BROWSER_END */": isInBrowser ? "" : "BROWSER_END */",
       "/** NODE_START */": isInNode ? "" : "/** NODE_START",
       "/** NODE_END */": isInNode ? "" : "NODE_END */",
+      ...remove("typeof WebSocketServer, typeof UDPServer", isInNode),
+      ...remove("typeof WindowServer", isInBrowser),
     },
   });
 }

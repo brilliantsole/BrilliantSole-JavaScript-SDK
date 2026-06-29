@@ -2175,6 +2175,10 @@ type ClientType = (typeof ClientTypes)[number];
 declare const ClientConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 type ClientConnectionStatus = (typeof ClientConnectionStatuses)[number];
 interface ClientConnectionEventMessages {
+    notConnected: any;
+    connecting: any;
+    connected: any;
+    disconnecting: any;
     connectionStatus: {
         connectionStatus: ClientConnectionStatus;
     };
@@ -2189,14 +2193,15 @@ declare abstract class BaseClient {
     static type: ClientType;
     abstract readonly type: ClientType;
     protected get baseConstructor(): typeof BaseClient;
+    private static OnClient;
     get devices(): {
         [deviceId: string]: Device;
     };
-    get addEventListener(): <T extends "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: ListenerEvent<BaseClient, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", ClientEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: ListenerEvent<BaseClient, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", ClientEventMessages, T>) => void) => void;
-    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, options?: {
+    get addEventListener(): <T extends "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: ListenerEvent<BaseClient, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", ClientEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: ListenerEvent<BaseClient, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", ClientEventMessages, T>) => void) => void;
+    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<ListenerEvent<BaseClient, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", ClientEventMessages, T>>;
+    }) => Promise<ListenerEvent<BaseClient, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", ClientEventMessages, T>>;
     abstract isConnected: boolean;
     protected assertConnection(): void;
     abstract isDisconnected: boolean;
@@ -2809,7 +2814,7 @@ interface BaseServerClient {
 }
 declare const ServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
 type ServerEventType = (typeof ServerEventTypes)[number];
-interface ServerEventMessages<ServerClient extends BaseServerClient> {
+interface BaseServerEventMessages<ServerClient extends BaseServerClient> {
     clientConnected: {
         client: ServerClient;
     };
@@ -2817,7 +2822,7 @@ interface ServerEventMessages<ServerClient extends BaseServerClient> {
         client: ServerClient;
     };
 }
-type BaseServerEventDispatcherTypes<ServerClient extends BaseServerClient> = EventDispatcherTypes<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
+type BaseServerEventDispatcherTypes<ServerClient extends BaseServerClient> = EventDispatcherTypes<BaseServer<ServerClient>, ServerEventType, BaseServerEventMessages<ServerClient>>;
 interface BaseServerClientGuardManagerArg<Server extends BaseServer<ServerClient>, ServerClient extends BaseServerClient> {
     client: ServerClient;
     message?: ServerMessage;
@@ -2853,12 +2858,12 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     #private;
     static type: ServerType;
     abstract readonly type: ServerType;
-    get addEventListener(): <T extends "clientConnected" | "clientDisconnected" | "*">(type: T, listener: (event: ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", ServerEventMessages<ServerClient>, T>) => void, options?: EventDispatcherOptions) => void;
-    protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: ServerEventMessages<ServerClient>[T]) => void;
-    get removeEventListener(): <T extends "clientConnected" | "clientDisconnected" | "*">(type: T, listener: (event: ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", ServerEventMessages<ServerClient>, T>) => void) => void;
+    get addEventListener(): <T extends "clientConnected" | "clientDisconnected" | "*">(type: T, listener: (event: ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", BaseServerEventMessages<ServerClient>, T>) => void, options?: EventDispatcherOptions) => void;
+    protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: BaseServerEventMessages<ServerClient>[T]) => void;
+    get removeEventListener(): <T extends "clientConnected" | "clientDisconnected" | "*">(type: T, listener: (event: ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", BaseServerEventMessages<ServerClient>, T>) => void) => void;
     get waitForEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", ServerEventMessages<ServerClient>, T>>;
+    }) => Promise<ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", BaseServerEventMessages<ServerClient>, T>>;
     private static OnServer;
     constructor();
     clients: ServerClient[];
@@ -2867,7 +2872,7 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     get clearSensorConfigurationsWhenNoClients(): boolean;
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
     protected abstract sendToClient(client: ServerClient, message: ArrayBuffer): void;
-    broadcastMessage(message: ArrayBuffer, clients?: ServerClient[]): void;
+    private broadcastMessage;
     clientToServerGuardManager: GuardManager<[BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
     serverToClientGuardManager: GuardManager<[BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
     clientToDeviceGuardManager: GuardManager<[BaseServerClientDeviceGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
@@ -2927,8 +2932,8 @@ declare class WebSocketServer extends BaseServer<WebSocketServerClient> {
 /** BROWSER_START
 import { WindowServer, WindowServerClient } from "./window/WindowServer.ts";
 BROWSER_END */
-declare const Servers: readonly [typeof WindowServer, typeof WebSocketServer, typeof UDPServer];
-type Server = InstanceType<(typeof Servers)[number]>;
+declare const Servers: readonly [, typeof WebSocketServer, typeof UDPServer];
+type Server = InstanceType<NonNullable<(typeof Servers)[number]>>;
 type ServerClient$1 = 
 /** BROWSER_START
 WindowServerClient
@@ -2937,6 +2942,7 @@ BROWSER_END */
  | WebSocketServerClient | UDPServerClient
 
  | never;
+type ServerEventMessages = BaseServerEventMessages<ServerClient$1>;
 type ServerEventDispatcherTypes = BaseServerEventDispatcherTypes<ServerClient$1>;
 type ServerEvent = ServerEventDispatcherTypes["Event"];
 type ServerEventMap = ServerEventDispatcherTypes["EventMap"];
@@ -2944,11 +2950,35 @@ type ServerEventListenerMap = ServerEventDispatcherTypes["EventListenerMap"];
 type ServerEventDispatcher = ServerEventDispatcherTypes["EventDispatcher"];
 type BoundServerEventListeners = ServerEventDispatcherTypes["BoundEventListeners"];
 
+interface BaseServerManagerServerEventMessage {
+    server: Server;
+}
+type ServerManagerServerEventMessages = ExtendInterfaceValues<AddPrefixToInterfaceKeys<ServerEventMessages, "server">, BaseServerManagerServerEventMessage>;
+declare const wildcardServerEventType: "server*";
+type WildcardServerEventMessage<BaseMessage> = {
+    [K in ServerEventType]: BaseMessage & (K extends keyof ServerEventMessages ? IfAny<ServerEventMessages[K], {}, ServerEventMessages[K]> : {}) & {
+        serverEventType: K;
+        server: Server;
+    };
+}[ServerEventType];
+interface BaseServerManagerEventMessages {
+    server: {
+        server: Server;
+    };
+    servers: {
+        servers: Server[];
+    };
+    [wildcardServerEventType]: WildcardServerEventMessage<BaseServerManagerServerEventMessage>;
+}
+type ServerManagerEventMessages = ServerManagerServerEventMessages & BaseServerManagerEventMessages;
 declare class ServerManager {
     #private;
     static readonly shared: ServerManager;
     constructor();
     get servers(): Server[];
+    get addEventListener(): <T extends "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers" | "*">(type: T, listener: (event: ListenerEvent<ServerManager, "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers", ServerManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers" | "*">(type: T, listener: (event: ListenerEvent<ServerManager, "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers", ServerManagerEventMessages, T>) => void) => void;
+    get removeEventListeners(): <T extends "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers" | "*">(type: T) => void;
 }
 declare const _default: ServerManager;
 

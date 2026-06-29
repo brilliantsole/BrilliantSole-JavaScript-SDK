@@ -204,7 +204,7 @@ function setAllConsoleLevelFlags(levelFlags) {
 
 const _console$W = createConsole("EventDispatcher", { log: false });
 const wildcardEventType = "*";
-class EventDispatcher {
+let EventDispatcher$1 = class EventDispatcher {
     #listeners = {};
     #latestEvents = {};
     #target;
@@ -339,7 +339,7 @@ class EventDispatcher {
             });
         });
     }
-}
+};
 
 const _console$V = createConsole("Timer", { log: false });
 async function wait(delay) {
@@ -7987,7 +7987,7 @@ function classifySubpath(subpath, previous, fillRule) {
     }
 }
 
-function capitalizeFirstCharacter(string) {
+function capitalizeFirstCharacter$1(string) {
     return string[0].toUpperCase() + string.slice(1);
 }
 function removeRedundantCharacters(string) {
@@ -14193,7 +14193,7 @@ class Device {
     static #DefaultConnectionManager() {
         return new WebBluetoothConnectionManager();
     }
-    #eventDispatcher = new EventDispatcher(this, DeviceEventTypes);
+    #eventDispatcher = new EventDispatcher$1(this, DeviceEventTypes);
     get addEventListener() {
         return this.#eventDispatcher.addEventListener;
     }
@@ -15858,7 +15858,7 @@ function Singleton(target, context) {
 
 const _console$f = createConsole("DeviceManager", { log: false });
 function getDeviceManagerDeviceEventTypes(deviceEventType) {
-    return ["device"].map((prefix) => `${prefix}${capitalizeFirstCharacter(deviceEventType)}`);
+    return ["device"].map((prefix) => `${prefix}${capitalizeFirstCharacter$1(deviceEventType)}`);
 }
 const DeviceManagerDeviceEventTypes = DeviceEventTypes.flatMap((eventType) => getDeviceManagerDeviceEventTypes(eventType));
 const wildcardDeviceEventType = "device*";
@@ -16071,7 +16071,7 @@ let DeviceManager = (() => {
             this.#dispatchAvailableDevices();
             return this.availableDevices;
         }
-        #eventDispatcher = new EventDispatcher(this, DeviceManagerEventTypes);
+        #eventDispatcher = new EventDispatcher$1(this, DeviceManagerEventTypes);
         get addEventListener() {
             return this.#eventDispatcher.addEventListener;
         }
@@ -16229,7 +16229,7 @@ class BaseScanner {
         isScanning: this.#onIsScanning.bind(this),
         isScanningAvailable: this.#onIsScanningAvailable.bind(this),
     };
-    #eventDispatcher = new EventDispatcher(this, ScannerEventTypes);
+    #eventDispatcher = new EventDispatcher$1(this, ScannerEventTypes);
     get addEventListener() {
         return this.#eventDispatcher.addEventListener;
     }
@@ -16952,7 +16952,7 @@ const ServerEventTypes = [
 ];
 class BaseServer {
     static type;
-    #eventDispatcher = new EventDispatcher(this, ServerEventTypes);
+    #eventDispatcher = new EventDispatcher$1(this, ServerEventTypes);
     get addEventListener() {
         return this.#eventDispatcher.addEventListener;
     }
@@ -17026,7 +17026,9 @@ class BaseServer {
     }
     broadcastMessage(message, clients = this.clients) {
         _console$a.log("broadcasting", message);
-        clients.forEach((client) => {
+        clients
+            .filter((client) => this.clients.includes(client))
+            .forEach((client) => {
             this.#sendToClient(client, message);
         });
     }
@@ -17563,6 +17565,20 @@ class BaseServer {
 _a$1 = BaseServer;
 
 const _console$9 = createConsole("ServerManager", { log: true });
+function getServerManagerServerEventTypes(serverEventType) {
+    return ["server"].map((prefix) => `${prefix}${capitalizeFirstCharacter$1(serverEventType)}`);
+}
+const ServerManagerServerEventTypes = ServerEventTypes.flatMap((eventType) => getServerManagerServerEventTypes(eventType));
+const wildcardServerEventType = "server*";
+const BaseServerManagerEventTypes = [
+    "server",
+    "servers",
+    wildcardServerEventType,
+];
+const ServerManagerEventTypes = [
+    ...ServerManagerServerEventTypes,
+    ...BaseServerManagerEventTypes,
+];
 let ServerManager = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
@@ -17594,12 +17610,44 @@ let ServerManager = (() => {
             if (!this.#servers.includes(server)) {
                 _console$9.log("server", server);
                 this.#servers.push(server);
+                this.#dispatchEvent("server", { server });
+                this.#dispatchEvent("servers", {
+                    servers: this.servers,
+                });
             }
         }
         #onServerEvent(serverEvent) {
             const { type: serverEventType, target: server, message } = serverEvent;
             _console$9.log("onServerEvent", serverEvent);
-            return;
+            this.#dispatchEvent(wildcardServerEventType, {
+                ...message,
+                server: server,
+                serverEventType,
+            });
+            getServerManagerServerEventTypes(serverEventType).forEach((eventType) => {
+                this.#dispatchEvent(eventType, {
+                    ...message,
+                    server: server,
+                });
+            });
+        }
+        #eventDispatcher = new EventDispatcher$1(this, ServerManagerEventTypes);
+        get addEventListener() {
+            return this.#eventDispatcher.addEventListener;
+        }
+        get #dispatchEvent() {
+            return this.#eventDispatcher.dispatchEvent;
+        }
+        get removeEventListener() {
+            return this.#eventDispatcher.removeEventListener;
+        }
+        get removeEventListeners() {
+            return this.#eventDispatcher.removeEventListeners;
+        }
+        #broadcastMessage(message, clients) {
+            this.servers.forEach((server) => {
+                server.broadcastMessage(message, clients);
+            });
         }
     });
     return _classThis;
@@ -17750,7 +17798,7 @@ class DevicePairSensorDataManager {
 
 const _console$6 = createConsole("DevicePair", { log: false });
 function getDevicePairDeviceEventTypes(deviceEventType) {
-    return ["device", ...Sides].map((prefix) => `${prefix}${capitalizeFirstCharacter(deviceEventType)}`);
+    return ["device", ...Sides].map((prefix) => `${prefix}${capitalizeFirstCharacter$1(deviceEventType)}`);
 }
 const DevicePairDeviceEventTypes = DeviceEventTypes.flatMap((eventType) => getDevicePairDeviceEventTypes(eventType));
 const DevicePairConnectionEventTypes = [
@@ -17776,7 +17824,7 @@ class DevicePair {
     get type() {
         return this.#type;
     }
-    #eventDispatcher = new EventDispatcher(this, DevicePairEventTypes);
+    #eventDispatcher = new EventDispatcher$1(this, DevicePairEventTypes);
     get addEventListener() {
         return this.#eventDispatcher.addEventListener;
     }
@@ -18496,16 +18544,14 @@ const ClientEventTypes = [
     ...ClientConnectionStatuses,
     "connectionStatus",
     "isConnected",
-    "isScanningAvailable",
-    "isScanning",
-    "discoveredDevice",
-    "expiredDiscoveredDevice",
+    ...ScannerEventTypes,
 ];
 class BaseClient {
     static type;
     get baseConstructor() {
         return this.constructor;
     }
+    static OnClient;
     #reset() {
         this.#isScanningAvailable = false;
         this.#isScanning = false;
@@ -18520,7 +18566,7 @@ class BaseClient {
     get devices() {
         return this.#devices;
     }
-    #eventDispatcher = new EventDispatcher(this, ClientEventTypes);
+    #eventDispatcher = new EventDispatcher$1(this, ClientEventTypes);
     get addEventListener() {
         return this.#eventDispatcher.addEventListener;
     }

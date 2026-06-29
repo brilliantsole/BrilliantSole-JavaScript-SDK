@@ -96,7 +96,9 @@ export const ServerEventTypes = [
 ] as const;
 export type ServerEventType = (typeof ServerEventTypes)[number];
 
-export interface ServerEventMessages<ServerClient extends BaseServerClient> {
+export interface BaseServerEventMessages<
+  ServerClient extends BaseServerClient,
+> {
   clientConnected: { client: ServerClient };
   clientDisconnected: { client: ServerClient };
 }
@@ -106,7 +108,7 @@ export type BaseServerEventDispatcherTypes<
 > = EventDispatcherTypes<
   BaseServer<ServerClient>,
   ServerEventType,
-  ServerEventMessages<ServerClient>
+  BaseServerEventMessages<ServerClient>
 >;
 export type BaseServerEvent<ServerClient extends BaseServerClient> =
   BaseServerEventDispatcherTypes<ServerClient>["Event"];
@@ -291,14 +293,16 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     }
   }
 
-  broadcastMessage(
+  private broadcastMessage(
     message: ArrayBuffer,
     clients: ServerClient[] = this.clients,
   ) {
     _console.log("broadcasting", message);
-    clients.forEach((client) => {
-      this.#sendToClient(client, message);
-    });
+    clients
+      .filter((client) => this.clients.includes(client))
+      .forEach((client) => {
+        this.#sendToClient(client, message);
+      });
   }
 
   // SCANNER

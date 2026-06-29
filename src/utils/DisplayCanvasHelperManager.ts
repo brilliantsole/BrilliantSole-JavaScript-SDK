@@ -163,7 +163,6 @@ class DisplayCanvasHelperManager {
   }
 
   // STATIC EVENTLISTENERS
-
   #eventDispatcher: DisplayCanvasHelperManagerEventDispatcher =
     new EventDispatcher(
       this as DisplayCanvasHelperManager,

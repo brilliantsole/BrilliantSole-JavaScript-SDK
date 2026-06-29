@@ -11,7 +11,7 @@ export interface BaseServerClient {
 }
 export declare const ServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
 export type ServerEventType = (typeof ServerEventTypes)[number];
-export interface ServerEventMessages<ServerClient extends BaseServerClient> {
+export interface BaseServerEventMessages<ServerClient extends BaseServerClient> {
     clientConnected: {
         client: ServerClient;
     };
@@ -19,7 +19,7 @@ export interface ServerEventMessages<ServerClient extends BaseServerClient> {
         client: ServerClient;
     };
 }
-export type BaseServerEventDispatcherTypes<ServerClient extends BaseServerClient> = EventDispatcherTypes<BaseServer<ServerClient>, ServerEventType, ServerEventMessages<ServerClient>>;
+export type BaseServerEventDispatcherTypes<ServerClient extends BaseServerClient> = EventDispatcherTypes<BaseServer<ServerClient>, ServerEventType, BaseServerEventMessages<ServerClient>>;
 export type BaseServerEvent<ServerClient extends BaseServerClient> = BaseServerEventDispatcherTypes<ServerClient>["Event"];
 export type BaseServerEventMap<ServerClient extends BaseServerClient> = BaseServerEventDispatcherTypes<ServerClient>["EventMap"];
 export type BaseServerEventListenerMap<ServerClient extends BaseServerClient> = BaseServerEventDispatcherTypes<ServerClient>["EventListenerMap"];
@@ -69,12 +69,12 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     #private;
     static type: ServerType;
     abstract readonly type: ServerType;
-    get addEventListener(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", ServerEventMessages<ServerClient>, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
-    protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: ServerEventMessages<ServerClient>[T]) => void;
-    get removeEventListener(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", ServerEventMessages<ServerClient>, T>) => void) => void;
+    get addEventListener(): <T extends "clientConnected" | "clientDisconnected" | "*">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", BaseServerEventMessages<ServerClient>, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
+    protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: BaseServerEventMessages<ServerClient>[T]) => void;
+    get removeEventListener(): <T extends "clientConnected" | "clientDisconnected" | "*">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", BaseServerEventMessages<ServerClient>, T>) => void) => void;
     get waitForEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", ServerEventMessages<ServerClient>, T>>;
+    }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", BaseServerEventMessages<ServerClient>, T>>;
     private static OnServer;
     constructor();
     clients: ServerClient[];
@@ -83,7 +83,7 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     get clearSensorConfigurationsWhenNoClients(): boolean;
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
     protected abstract sendToClient(client: ServerClient, message: ArrayBuffer): void;
-    broadcastMessage(message: ArrayBuffer, clients?: ServerClient[]): void;
+    private broadcastMessage;
     clientToServerGuardManager: GuardManager<[BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
     serverToClientGuardManager: GuardManager<[BaseServerClientGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;
     clientToDeviceGuardManager: GuardManager<[BaseServerClientDeviceGuardManagerArg<BaseServer<ServerClient>, ServerClient>]>;

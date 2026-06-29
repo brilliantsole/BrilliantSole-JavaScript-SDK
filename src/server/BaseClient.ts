@@ -20,6 +20,7 @@ import {
   DiscoveredDevice,
   DiscoveredDevicesMap,
   ScannerEventMessages,
+  ScannerEventTypes,
 } from "../scanner/BaseScanner.ts";
 import ClientConnectionManager from "../connection/ClientConnectionManager.ts";
 import { DeviceManager } from "../BS.ts";
@@ -46,14 +47,15 @@ export const ClientEventTypes = [
   ...ClientConnectionStatuses,
   "connectionStatus",
   "isConnected",
-  "isScanningAvailable",
-  "isScanning",
-  "discoveredDevice",
-  "expiredDiscoveredDevice",
+  ...ScannerEventTypes,
 ] as const;
 export type ClientEventType = (typeof ClientEventTypes)[number];
 
 interface ClientConnectionEventMessages {
+  notConnected: any;
+  connecting: any;
+  connected: any;
+  disconnecting: any;
   connectionStatus: { connectionStatus: ClientConnectionStatus };
   isConnected: { isConnected: boolean };
 }
@@ -84,6 +86,9 @@ abstract class BaseClient {
   protected get baseConstructor() {
     return this.constructor as typeof BaseClient;
   }
+
+  // DISPLAY CANVAS HELPER MANAGER
+  private static OnClient: (client: BaseClient) => void;
 
   #reset() {
     this.#isScanningAvailable = false;
