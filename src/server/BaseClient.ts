@@ -30,7 +30,7 @@ import {
 } from "../connection/BaseConnectionManager.ts";
 import { ServerTypes } from "./BaseServer.ts";
 
-const _console = createConsole("BaseClient", { log: true });
+const _console = createConsole("BaseClient", { log: false });
 
 export const ClientTypes = ServerTypes;
 export type ClientType = (typeof ClientTypes)[number];

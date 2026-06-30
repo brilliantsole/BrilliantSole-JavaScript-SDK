@@ -39330,7 +39330,7 @@ class ClientConnectionManager extends BaseConnectionManager {
 }
 
 var _a$1;
-const _console$8 = createConsole("BaseClient", { log: true });
+const _console$8 = createConsole("BaseClient", { log: false });
 const ClientConnectionStatuses = [
     "notConnected",
     "connecting",
