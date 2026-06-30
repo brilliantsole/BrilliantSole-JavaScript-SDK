@@ -252,8 +252,8 @@ class UDPServer extends BaseServer<UDPServerClient> {
   }
 
   // CLIENT MESSAGING
-  #sendToClient(client: UDPServerClient, message: ArrayBuffer) {
-    if (message.byteLength == 0) {
+  #sendToClient(client: UDPServerClient, arrayBuffer: ArrayBuffer) {
+    if (arrayBuffer.byteLength == 0) {
       _console.log("no response to send");
       return false;
     }
@@ -264,13 +264,13 @@ class UDPServer extends BaseServer<UDPServerClient> {
     }
 
     _console.log(
-      `sending ${message.byteLength} bytes to ${this.#clientToString(
+      `sending ${arrayBuffer.byteLength} bytes to ${this.#clientToString(
         client,
       )}...`,
     );
     try {
       this.#socket!.send(
-        new Uint8Array(message),
+        new Uint8Array(arrayBuffer),
         client.receivePort,
         client.address,
         (error, bytes) => {
@@ -288,13 +288,19 @@ class UDPServer extends BaseServer<UDPServerClient> {
     }
     return true;
   }
-  protected sendToClient(client: UDPServerClient, message: ArrayBuffer) {
-    if (!super.sendToClient(client, message)) {
+  protected sendToClient(
+    client: UDPServerClient,
+    arrayBuffer: ArrayBuffer,
+    isWrapped?: boolean,
+  ) {
+    if (!super.sendToClient(client, arrayBuffer, isWrapped)) {
       return false;
     }
     return this.#sendToClient(
       client,
-      createUDPServerMessage({ type: "serverMessage", data: message }),
+      isWrapped
+        ? arrayBuffer
+        : createUDPServerMessage({ type: "serverMessage", data: arrayBuffer }),
     );
   }
 

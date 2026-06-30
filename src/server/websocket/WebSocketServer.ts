@@ -214,29 +214,35 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
   }
 
   // CLIENT MESSAGING
-  #sendToClient(client: WebSocketServerClient, message: ArrayBuffer) {
-    if (message.byteLength == 0) {
+  #sendToClient(client: WebSocketServerClient, arrayBuffer: ArrayBuffer) {
+    if (arrayBuffer.byteLength == 0) {
       _console.log("nothing to send back");
       return false;
     }
 
-    _console.log(`sending ${message.byteLength} bytes to client`);
+    _console.log(`sending ${arrayBuffer.byteLength} bytes to client`);
 
     try {
-      client.send(message);
+      client.send(arrayBuffer);
     } catch (error) {
       _console.log("error sending message", error);
       return false;
     }
     return true;
   }
-  protected sendToClient(client: WebSocketServerClient, message: ArrayBuffer) {
-    if (!super.sendToClient(client, message)) {
+  protected sendToClient(
+    client: WebSocketServerClient,
+    arrayBuffer: ArrayBuffer,
+    isWrapped?: boolean,
+  ) {
+    if (!super.sendToClient(client, arrayBuffer, isWrapped)) {
       return false;
     }
     return this.#sendToClient(
       client,
-      createWebSocketMessage({ type: "serverMessage", data: message }),
+      isWrapped
+        ? arrayBuffer
+        : createWebSocketMessage({ type: "serverMessage", data: arrayBuffer }),
     );
   }
 

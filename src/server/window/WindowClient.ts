@@ -12,7 +12,7 @@ import {
 } from "../../window/WindowManagerClient.ts";
 import { Singleton } from "../../utils/TypeScriptUtils.ts";
 
-const _console = createConsole("WindowClient", { log: false });
+const _console = createConsole("WindowClient", { log: true });
 
 @Singleton
 class WindowClient extends BaseClient {

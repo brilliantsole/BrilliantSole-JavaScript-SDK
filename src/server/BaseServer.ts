@@ -230,16 +230,24 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   // CLIENT MESSAGING
-  protected sendToClient(client: ServerClient, message: ArrayBuffer) {
+  protected sendToClient(
+    client: ServerClient,
+    arrayBuffer: ArrayBuffer,
+    isWrapped?: boolean,
+  ) {
     return this.#allowServerToClient(client);
   }
 
-  broadcast(message: ArrayBuffer, clients: ServerClient[] = this.clients) {
-    _console.log("broadcasting", message);
+  broadcast(
+    arrayBuffer: ArrayBuffer,
+    clients: ServerClient[] = this.clients,
+    isWrapped?: boolean,
+  ) {
+    _console.log("broadcasting", arrayBuffer);
     clients
       .filter((client) => this.clients.includes(client))
       .forEach((client) => {
-        this.sendToClient(client, message);
+        this.sendToClient(client, arrayBuffer, isWrapped);
       });
   }
 
@@ -1048,6 +1056,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   protected sendClientContext(
     clientContext: BaseServerClientContext<BaseServerClient>,
   ) {
+    _console.log("sendClientContext", clientContext);
+
     clientContext.responseMessages =
       clientContext.responseMessages.filter(Boolean);
     clientContext.broadcastMessages =
@@ -1060,7 +1070,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     );
     _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
     // @ts-expect-error
-    this.sendToClient(clientContext.client, responseMessage);
+    this.sendToClient(clientContext.client, responseMessage, true);
 
     const localBroadcastMessage = concatenateArrayBuffers(
       clientContext.localBroadcastMessages,
@@ -1072,6 +1082,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     this.broadcast(
       localBroadcastMessage,
       this.clients.filter((client) => client != clientContext.client),
+      true,
     );
 
     const broadcastMessage = concatenateArrayBuffers(
@@ -1079,7 +1090,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     );
     _console.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
     // @ts-expect-error
-    ServerManager.broadcast(broadcastMessage);
+    ServerManager.broadcast(broadcastMessage, undefined, true);
   }
 }
 

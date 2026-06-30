@@ -10,7 +10,6 @@ import {
 import { parseMessage } from "../utils/ParseUtils.ts";
 import {
   createWindowManagerMessage,
-  WindowManagerMessage,
   windowManagerMessageKey,
   WindowManagerMessageType,
   WindowManagerMessageTypes,
@@ -21,7 +20,7 @@ import { default as WindowServer } from "../server/window/WindowServer.ts";
 import { Singleton } from "../utils/TypeScriptUtils.ts";
 import { BaseServerClientContext } from "../server/BaseServer.ts";
 
-const _console = createConsole("WindowManagerServer", { log: false });
+const _console = createConsole("WindowManagerServer", { log: true });
 
 export interface WindowManagerServerClient {
   type: "window";
@@ -30,6 +29,7 @@ export interface WindowManagerServerClient {
   didSendMessagePort?: boolean;
   didLoad?: boolean;
   allowRedirects?: boolean;
+  transfer?: Transferable[];
 }
 export interface WindowManagerServerClientContext extends BaseServerClientContext<WindowManagerServerClient> {
   transfer: Transferable[];
@@ -141,46 +141,39 @@ class WindowManagerServer {
     return this.clients.find((client) => client.messageChannel?.port1 == port);
   }
 
-  #sendToClient(
-    client: WindowManagerServerClient,
-    message: ArrayBuffer,
-    transfer?: Transferable[] | undefined,
-  ) {
-    if (message.byteLength == 0) {
+  #sendToClient(client: WindowManagerServerClient, arrayBuffer: ArrayBuffer) {
+    if (arrayBuffer.byteLength == 0) {
       _console.log("nothing to send to client");
       return false;
     }
 
-    _console.log("sendToClient", client, message, { transfer });
+    _console.log("sendToClient", client, arrayBuffer);
     const { messageChannel, iframe, didSendMessagePort } = client;
     // _console.log({ messageChannel, didSendMessagePort });
     if (messageChannel && didSendMessagePort) {
-      messageChannel.port1.postMessage(message, { transfer });
+      messageChannel.port1.postMessage(arrayBuffer, {
+        transfer: client.transfer,
+      });
     } else {
       if (messageChannel) {
         client.didSendMessagePort = true;
       }
       iframe.contentWindow!.postMessage(
         {
-          [windowManagerMessageKey]: message,
+          [windowManagerMessageKey]: arrayBuffer,
         },
         "*",
-        transfer,
+        client.transfer,
       );
+    }
+    if (client.transfer) {
+      delete client.transfer;
     }
     return true;
   }
 
-  sendToClient(
-    client: WindowManagerServerClient,
-    ...messages: WindowManagerMessage[]
-  ) {
-    return this.#sendToClient(client, createWindowManagerMessage(...messages));
-  }
-  broadcast(...messages: WindowManagerMessage[]) {
-    this.clients.forEach((client) => {
-      this.sendToClient(client, ...messages);
-    });
+  sendToClient(client: WindowManagerServerClient, arrayBuffer: ArrayBuffer) {
+    return this.#sendToClient(client, arrayBuffer);
   }
 
   // WINDOW
@@ -348,11 +341,10 @@ class WindowManagerServer {
   ) {
     _console.log("parseWindowManagerClientMessage", client, dataView);
 
-    let transfer: Transferable[] = [];
     const clientContext: WindowManagerServerClientContext = {
       responseMessages: [],
       client,
-      transfer,
+      transfer: [],
       localBroadcastMessages: [],
       broadcastMessages: [],
     };
@@ -364,6 +356,8 @@ class WindowManagerServer {
       clientContext,
       true,
     );
+
+    client.transfer = clientContext.transfer;
 
     // @ts-expect-error
     WindowServer.sendClientContext(clientContext);

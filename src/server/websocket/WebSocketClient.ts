@@ -22,7 +22,7 @@ import {
 } from "./WebSocketUtils.ts";
 import { parseMessage } from "../../utils/ParseUtils.ts";
 
-const _console = createConsole("WebSocketClient", { log: true });
+const _console = createConsole("WebSocketClient", { log: false });
 
 class WebSocketClient extends BaseClient {
   static type = "webSocket" as const;

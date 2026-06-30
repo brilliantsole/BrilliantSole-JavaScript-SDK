@@ -38565,15 +38565,15 @@ class BaseServer {
             });
         }
     }
-    sendToClient(client, message) {
+    sendToClient(client, arrayBuffer, isWrapped) {
         return this.#allowServerToClient(client);
     }
-    broadcast(message, clients = this.clients) {
-        _console$f.log("broadcasting", message);
+    broadcast(arrayBuffer, clients = this.clients, isWrapped) {
+        _console$f.log("broadcasting", arrayBuffer);
         clients
             .filter((client) => this.clients.includes(client))
             .forEach((client) => {
-            this.sendToClient(client, message);
+            this.sendToClient(client, arrayBuffer, isWrapped);
         });
     }
     #boundScannerListeners = {
@@ -39064,6 +39064,7 @@ class BaseServer {
         }
     }
     sendClientContext(clientContext) {
+        _console$f.log("sendClientContext", clientContext);
         clientContext.responseMessages =
             clientContext.responseMessages.filter(Boolean);
         clientContext.broadcastMessages =
@@ -39072,13 +39073,13 @@ class BaseServer {
             clientContext.localBroadcastMessages.filter(Boolean);
         const responseMessage = concatenateArrayBuffers(clientContext.responseMessages);
         _console$f.log(`sending ${responseMessage.byteLength} bytes to client...`);
-        this.sendToClient(clientContext.client, responseMessage);
+        this.sendToClient(clientContext.client, responseMessage, true);
         const localBroadcastMessage = concatenateArrayBuffers(clientContext.localBroadcastMessages);
         _console$f.log(`locally broadcasting ${localBroadcastMessage.byteLength} bytes...`);
-        this.broadcast(localBroadcastMessage, this.clients.filter((client) => client != clientContext.client));
+        this.broadcast(localBroadcastMessage, this.clients.filter((client) => client != clientContext.client), true);
         const broadcastMessage = concatenateArrayBuffers(clientContext.broadcastMessages);
         _console$f.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
-        ServerManager_default.broadcast(broadcastMessage);
+        ServerManager_default.broadcast(broadcastMessage, undefined, true);
     }
 }
 _a$2 = BaseServer;
@@ -39194,12 +39195,13 @@ let ServerManager = (() => {
         get removeEventListeners() {
             return this.#eventDispatcher.removeEventListeners;
         }
-        broadcast(message, clients) {
-            if (message.byteLength == 0) {
+        broadcast(arrayBuffer, clients, isWrapped) {
+            if (arrayBuffer.byteLength == 0) {
                 return;
             }
+            _console$e.log("broadcast", arrayBuffer, clients, { isWrapped });
             this.servers.forEach((server) => {
-                server.broadcast(message, clients);
+                server.broadcast(arrayBuffer, clients, isWrapped);
             });
         }
         clientToServerGuardManager = new GuardManager();
@@ -39825,7 +39827,7 @@ const windowManagerPingMessage = createWindowManagerMessage("ping");
 const windowManagerPongMessage = createWindowManagerMessage("pong");
 
 const _console$9 = createConsole("WindowServer", { log: false });
-let WindowServer$1 = (() => {
+let WindowServer = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -39849,14 +39851,16 @@ let WindowServer$1 = (() => {
             super();
             this.clearSensorConfigurationsWhenNoClients = false;
         }
-        sendToClient(client, message) {
-            if (!super.sendToClient(client, message)) {
+        sendToClient(client, arrayBuffer, isWrapped) {
+            if (!super.sendToClient(client, arrayBuffer, isWrapped)) {
                 return false;
             }
-            return WindowManagerServer_default.sendToClient(client, {
-                type: "serverMessage",
-                data: message,
-            });
+            return WindowManagerServer_default.sendToClient(client, isWrapped
+                ? arrayBuffer
+                : createWindowManagerMessage({
+                    type: "serverMessage",
+                    data: arrayBuffer,
+                }));
         }
         #boundWindowManagerServerEventListeners = {
             clientConnected: this.#onWindowManagerServerClientConnected.bind(this),
@@ -39878,9 +39882,9 @@ let WindowServer$1 = (() => {
     };
     return WindowServer = _classThis;
 })();
-var WindowServer = WindowServer$1.shared;
+var WindowServer$1 = WindowServer.shared;
 
-const _console$8 = createConsole("WindowManagerServer", { log: false });
+const _console$8 = createConsole("WindowManagerServer", { log: true });
 const WindowManagerServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -39917,7 +39921,7 @@ let WindowManagerServer = (() => {
         }
         removeAllEventListeners() {
             this.#eventDispatcher.removeAllEventListeners();
-            WindowServer.init();
+            WindowServer$1.init();
         }
         static shared;
         constructor() {
@@ -39957,33 +39961,33 @@ let WindowManagerServer = (() => {
         #getClientByMessagePort(port) {
             return this.clients.find((client) => client.messageChannel?.port1 == port);
         }
-        #sendToClient(client, message, transfer) {
-            if (message.byteLength == 0) {
+        #sendToClient(client, arrayBuffer) {
+            if (arrayBuffer.byteLength == 0) {
                 _console$8.log("nothing to send to client");
                 return false;
             }
-            _console$8.log("sendToClient", client, message, { transfer });
+            _console$8.log("sendToClient", client, arrayBuffer);
             const { messageChannel, iframe, didSendMessagePort } = client;
             if (messageChannel && didSendMessagePort) {
-                messageChannel.port1.postMessage(message, { transfer });
+                messageChannel.port1.postMessage(arrayBuffer, {
+                    transfer: client.transfer,
+                });
             }
             else {
                 if (messageChannel) {
                     client.didSendMessagePort = true;
                 }
                 iframe.contentWindow.postMessage({
-                    [windowManagerMessageKey]: message,
-                }, "*", transfer);
+                    [windowManagerMessageKey]: arrayBuffer,
+                }, "*", client.transfer);
+            }
+            if (client.transfer) {
+                delete client.transfer;
             }
             return true;
         }
-        sendToClient(client, ...messages) {
-            return this.#sendToClient(client, createWindowManagerMessage(...messages));
-        }
-        broadcast(...messages) {
-            this.clients.forEach((client) => {
-                this.sendToClient(client, ...messages);
-            });
+        sendToClient(client, arrayBuffer) {
+            return this.#sendToClient(client, arrayBuffer);
         }
         #boundWindowEventListeners = {
             message: this.#onWindowMessage.bind(this),
@@ -40105,16 +40109,16 @@ let WindowManagerServer = (() => {
         }
         #parseWindowManagerClientMessage(client, dataView) {
             _console$8.log("parseWindowManagerClientMessage", client, dataView);
-            let transfer = [];
             const clientContext = {
                 responseMessages: [],
                 client,
-                transfer,
+                transfer: [],
                 localBroadcastMessages: [],
                 broadcastMessages: [],
             };
             parseMessage(dataView, WindowManagerMessageTypes, this.#onClientMessage.bind(this), clientContext, true);
-            WindowServer.sendClientContext(clientContext);
+            client.transfer = clientContext.transfer;
+            WindowServer$1.sendClientContext(clientContext);
         }
         #onClientMessage(messageType, dataView, clientContext) {
             const { responseMessages, transfer, client, localBroadcastMessages, broadcastMessages, } = clientContext;
@@ -40128,7 +40132,7 @@ let WindowManagerServer = (() => {
                 case "pong":
                     break;
                 case "serverMessage":
-                    const _clientContext = WindowServer.parseClientMessage(client, dataView);
+                    const _clientContext = WindowServer$1.parseClientMessage(client, dataView);
                     if (_clientContext) {
                         if (_clientContext.responseMessages.length > 0) {
                             responseMessages.push(createWindowManagerMessage({
@@ -40159,7 +40163,7 @@ let WindowManagerServer = (() => {
     return _classThis;
 })();
 var WindowManagerServer_default = WindowManagerServer.shared;
-WindowServer.init();
+WindowServer$1.init();
 
 const _console$7 = createConsole("WindowManagerClient", { log: false });
 const WindowManagerClientConnectionStatuses = [
@@ -40174,7 +40178,7 @@ const WindowManagerClientEventTypes = [
     "isConnected",
     "serverMessage",
 ];
-let WindowManagerClient$1 = (() => {
+let WindowManagerClient = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -40225,6 +40229,7 @@ let WindowManagerClient$1 = (() => {
             if (event.source != window.parent) {
                 return;
             }
+            _console$7.log("onWindowMessage", event);
             const arrayBuffer = event.data[windowManagerMessageKey];
             if (!arrayBuffer) {
                 return;
@@ -40359,9 +40364,9 @@ let WindowManagerClient$1 = (() => {
     });
     return _classThis;
 })();
-var WindowManagerClient = WindowManagerClient$1.shared;
+var WindowManagerClient$1 = WindowManagerClient.shared;
 
-const _console$6 = createConsole("WindowClient", { log: false });
+const _console$6 = createConsole("WindowClient", { log: true });
 let WindowClient = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
@@ -40381,7 +40386,7 @@ let WindowClient = (() => {
         static shared;
         constructor() {
             super();
-            addEventListeners(WindowManagerClient, this.#boundWindowEventListeners);
+            addEventListeners(WindowManagerClient$1, this.#boundWindowEventListeners);
         }
         #boundWindowEventListeners = {
             connectionStatus: this.#onWindowManagerClientConnectionStatus.bind(this),
@@ -40396,10 +40401,10 @@ let WindowClient = (() => {
             this.parseMessage(event.message.dataView);
         }
         get isConnected() {
-            return WindowManagerClient.isConnected;
+            return WindowManagerClient$1.isConnected;
         }
         get isDisconnected() {
-            return WindowManagerClient.isDisconnected;
+            return WindowManagerClient$1.isDisconnected;
         }
         connect() {
             this.#onConnectionCommand();
@@ -40418,7 +40423,7 @@ let WindowClient = (() => {
         }
         sendServerMessage(...messages) {
             _console$6.log("sendServerMessage", messages);
-            WindowManagerClient.sendMessage({
+            WindowManagerClient$1.sendMessage({
                 type: "serverMessage",
                 data: createServerMessage(...messages),
             });
@@ -43873,7 +43878,7 @@ const ConnectionManagers = [
 ];
 
 const Servers = [
-    WindowServer$1,
+    WindowServer,
 ];
 
 const Clients = [
@@ -44020,5 +44025,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager_default as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager_default as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient$1 as WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer$1 as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
 //# sourceMappingURL=brilliantsole.module.js.map

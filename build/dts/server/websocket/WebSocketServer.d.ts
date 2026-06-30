@@ -16,6 +16,6 @@ declare class WebSocketServer extends BaseServer<WebSocketServerClient> {
     readonly type: "webSocket";
     get server(): ws.WebSocketServer | undefined;
     set server(newServer: ws.WebSocketServer | undefined);
-    protected sendToClient(client: WebSocketServerClient, message: ArrayBuffer): boolean;
+    protected sendToClient(client: WebSocketServerClient, arrayBuffer: ArrayBuffer, isWrapped?: boolean): boolean;
 }
 export default WebSocketServer;

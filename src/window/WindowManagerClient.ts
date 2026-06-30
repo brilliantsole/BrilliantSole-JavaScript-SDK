@@ -112,7 +112,7 @@ class WindowManagerClient {
     if (event.source != window.parent) {
       return;
     }
-    // _console.log("onWindowMessage", event);
+    _console.log("onWindowMessage", event);
 
     const arrayBuffer: ArrayBuffer | undefined =
       event.data[windowManagerMessageKey];

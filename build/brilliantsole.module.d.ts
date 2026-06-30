@@ -2739,15 +2739,11 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     static set ClearSensorConfigurationsWhenNoClients(newValue: boolean);
     get clearSensorConfigurationsWhenNoClients(): boolean;
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
-    protected sendToClient(client: ServerClient, message: ArrayBuffer): boolean;
-    broadcast(message: ArrayBuffer, clients?: ServerClient[]): void;
+    protected sendToClient(client: ServerClient, arrayBuffer: ArrayBuffer, isWrapped?: boolean): boolean;
+    broadcast(arrayBuffer: ArrayBuffer, clients?: ServerClient[], isWrapped?: boolean): void;
     protected parseClientMessage(client: ServerClient, dataView: DataView<ArrayBuffer>): BaseServerClientContext<BaseServerClient> | undefined;
     protected sendClientContext(clientContext: BaseServerClientContext<BaseServerClient>): void;
 }
-
-declare const WindowManagerMessageTypes: readonly ["ping", "pong", "serverMessage"];
-type WindowManagerMessageType = (typeof WindowManagerMessageTypes)[number];
-type WindowManagerMessage = MessageOrMessageType<WindowManagerMessageType>;
 
 interface WindowManagerServerClient {
     type: "window";
@@ -2756,6 +2752,7 @@ interface WindowManagerServerClient {
     didSendMessagePort?: boolean;
     didLoad?: boolean;
     allowRedirects?: boolean;
+    transfer?: Transferable[];
 }
 interface WindowManagerServerEventMessages {
     clientConnected: {
@@ -2777,8 +2774,7 @@ declare class WindowManagerServer {
     static readonly shared: WindowManagerServer;
     constructor();
     get clients(): WindowManagerServerClient[];
-    sendToClient(client: WindowManagerServerClient, ...messages: WindowManagerMessage[]): boolean;
-    broadcast(...messages: WindowManagerMessage[]): void;
+    sendToClient(client: WindowManagerServerClient, arrayBuffer: ArrayBuffer): boolean;
 }
 declare const _default$6: WindowManagerServer;
 
@@ -2792,7 +2788,7 @@ declare class WindowServer extends BaseServer<WindowServerClient> {
     static readonly shared: WindowServer;
     protected init(): void;
     constructor();
-    protected sendToClient(client: WindowServerClient, message: ArrayBuffer): boolean;
+    protected sendToClient(client: WindowServerClient, arrayBuffer: ArrayBuffer, isWrapped?: boolean): boolean;
 }
 
 declare const _default$5: WindowServer;
@@ -2957,6 +2953,10 @@ declare class ClientManager {
 }
 declare const _default$2: ClientManager;
 
+declare const WindowManagerMessageTypes: readonly ["ping", "pong", "serverMessage"];
+type WindowManagerMessageType = (typeof WindowManagerMessageTypes)[number];
+type WindowManagerMessage = MessageOrMessageType<WindowManagerMessageType>;
+
 declare const WindowManagerClientConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 type ClientConnectionStatus = (typeof WindowManagerClientConnectionStatuses)[number];
 interface WindowManagerClientEventMessages {
@@ -2972,12 +2972,12 @@ interface WindowManagerClientEventMessages {
 }
 declare class WindowManagerClient {
     #private;
-    get addEventListener(): <T extends "*" | "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: ListenerEvent<WindowManagerClient, "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", WindowManagerClientEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "*" | "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: ListenerEvent<WindowManagerClient, "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", WindowManagerClientEventMessages, T>) => void) => void;
-    get waitForEvent(): <T extends "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, options?: {
+    get addEventListener(): <T extends "*" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage">(type: T, listener: (event: ListenerEvent<WindowManagerClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage", WindowManagerClientEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage">(type: T, listener: (event: ListenerEvent<WindowManagerClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage", WindowManagerClientEventMessages, T>) => void) => void;
+    get waitForEvent(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<ListenerEvent<WindowManagerClient, "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", WindowManagerClientEventMessages, T>>;
-    get removeEventListeners(): <T extends "*" | "serverMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T) => void;
+    }) => Promise<ListenerEvent<WindowManagerClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage", WindowManagerClientEventMessages, T>>;
+    get removeEventListeners(): <T extends "*" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage">(type: T) => void;
     get removeAllEventListeners(): () => void;
     static readonly shared: WindowManagerClient;
     constructor();

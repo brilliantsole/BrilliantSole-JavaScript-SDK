@@ -16973,15 +16973,15 @@ class BaseServer {
             });
         }
     }
-    sendToClient(client, message) {
+    sendToClient(client, arrayBuffer, isWrapped) {
         return this.#allowServerToClient(client);
     }
-    broadcast(message, clients = this.clients) {
-        _console$b.log("broadcasting", message);
+    broadcast(arrayBuffer, clients = this.clients, isWrapped) {
+        _console$b.log("broadcasting", arrayBuffer);
         clients
             .filter((client) => this.clients.includes(client))
             .forEach((client) => {
-            this.sendToClient(client, message);
+            this.sendToClient(client, arrayBuffer, isWrapped);
         });
     }
     #boundScannerListeners = {
@@ -17472,6 +17472,7 @@ class BaseServer {
         }
     }
     sendClientContext(clientContext) {
+        _console$b.log("sendClientContext", clientContext);
         clientContext.responseMessages =
             clientContext.responseMessages.filter(Boolean);
         clientContext.broadcastMessages =
@@ -17480,13 +17481,13 @@ class BaseServer {
             clientContext.localBroadcastMessages.filter(Boolean);
         const responseMessage = concatenateArrayBuffers(clientContext.responseMessages);
         _console$b.log(`sending ${responseMessage.byteLength} bytes to client...`);
-        this.sendToClient(clientContext.client, responseMessage);
+        this.sendToClient(clientContext.client, responseMessage, true);
         const localBroadcastMessage = concatenateArrayBuffers(clientContext.localBroadcastMessages);
         _console$b.log(`locally broadcasting ${localBroadcastMessage.byteLength} bytes...`);
-        this.broadcast(localBroadcastMessage, this.clients.filter((client) => client != clientContext.client));
+        this.broadcast(localBroadcastMessage, this.clients.filter((client) => client != clientContext.client), true);
         const broadcastMessage = concatenateArrayBuffers(clientContext.broadcastMessages);
         _console$b.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
-        ServerManager_default.broadcast(broadcastMessage);
+        ServerManager_default.broadcast(broadcastMessage, undefined, true);
     }
 }
 _a$1 = BaseServer;
@@ -17602,12 +17603,13 @@ let ServerManager = (() => {
         get removeEventListeners() {
             return this.#eventDispatcher.removeEventListeners;
         }
-        broadcast(message, clients) {
-            if (message.byteLength == 0) {
+        broadcast(arrayBuffer, clients, isWrapped) {
+            if (arrayBuffer.byteLength == 0) {
                 return;
             }
+            _console$a.log("broadcast", arrayBuffer, clients, { isWrapped });
             this.servers.forEach((server) => {
-                server.broadcast(message, clients);
+                server.broadcast(arrayBuffer, clients, isWrapped);
             });
         }
         clientToServerGuardManager = new GuardManager();
@@ -18772,14 +18774,14 @@ class WebSocketServer extends BaseServer {
                 break;
         }
     }
-    #sendToClient(client, message) {
-        if (message.byteLength == 0) {
+    #sendToClient(client, arrayBuffer) {
+        if (arrayBuffer.byteLength == 0) {
             _console$3.log("nothing to send back");
             return false;
         }
-        _console$3.log(`sending ${message.byteLength} bytes to client`);
+        _console$3.log(`sending ${arrayBuffer.byteLength} bytes to client`);
         try {
-            client.send(message);
+            client.send(arrayBuffer);
         }
         catch (error) {
             _console$3.log("error sending message", error);
@@ -18787,11 +18789,13 @@ class WebSocketServer extends BaseServer {
         }
         return true;
     }
-    sendToClient(client, message) {
-        if (!super.sendToClient(client, message)) {
+    sendToClient(client, arrayBuffer, isWrapped) {
+        if (!super.sendToClient(client, arrayBuffer, isWrapped)) {
             return false;
         }
-        return this.#sendToClient(client, createWebSocketMessage$1({ type: "serverMessage", data: message }));
+        return this.#sendToClient(client, isWrapped
+            ? arrayBuffer
+            : createWebSocketMessage$1({ type: "serverMessage", data: arrayBuffer }));
     }
     #pingClient(client) {
         if (!client.isAlive) {
@@ -18964,8 +18968,8 @@ class UDPServer extends BaseServer {
             data: responseDataView,
         });
     }
-    #sendToClient(client, message) {
-        if (message.byteLength == 0) {
+    #sendToClient(client, arrayBuffer) {
+        if (arrayBuffer.byteLength == 0) {
             _console$1.log("no response to send");
             return false;
         }
@@ -18973,9 +18977,9 @@ class UDPServer extends BaseServer {
             _console$1.log("client has no defined receivePort");
             return false;
         }
-        _console$1.log(`sending ${message.byteLength} bytes to ${this.#clientToString(client)}...`);
+        _console$1.log(`sending ${arrayBuffer.byteLength} bytes to ${this.#clientToString(client)}...`);
         try {
-            this.#socket.send(new Uint8Array(message), client.receivePort, client.address, (error, bytes) => {
+            this.#socket.send(new Uint8Array(arrayBuffer), client.receivePort, client.address, (error, bytes) => {
                 if (error) {
                     _console$1.error("error sending data", error);
                     return;
@@ -18990,11 +18994,13 @@ class UDPServer extends BaseServer {
         }
         return true;
     }
-    sendToClient(client, message) {
-        if (!super.sendToClient(client, message)) {
+    sendToClient(client, arrayBuffer, isWrapped) {
+        if (!super.sendToClient(client, arrayBuffer, isWrapped)) {
             return false;
         }
-        return this.#sendToClient(client, createUDPServerMessage({ type: "serverMessage", data: message }));
+        return this.#sendToClient(client, isWrapped
+            ? arrayBuffer
+            : createUDPServerMessage({ type: "serverMessage", data: arrayBuffer }));
     }
     #removeClient(client) {
         _console$1.log(`removing client ${this.#clientToString(client)}...`);
@@ -19008,7 +19014,7 @@ const Servers = [
     UDPServer,
 ];
 
-const _console = createConsole("WebSocketClient", { log: true });
+const _console = createConsole("WebSocketClient", { log: false });
 class WebSocketClient extends BaseClient {
     static type = "webSocket";
     type = WebSocketClient.type;

@@ -7,6 +7,7 @@ import {
   WindowManagerServerEventMap,
 } from "../../window/WindowManagerServer.ts";
 import { Singleton } from "../../utils/TypeScriptUtils.ts";
+import { createWindowManagerMessage } from "../../window/WindowManagerUtils.ts";
 
 const _console = createConsole("WindowServer", { log: false });
 
@@ -37,14 +38,23 @@ class WindowServer extends BaseServer<WindowServerClient> {
 
   // CLIENTS
 
-  protected sendToClient(client: WindowServerClient, message: ArrayBuffer) {
-    if (!super.sendToClient(client, message)) {
+  protected sendToClient(
+    client: WindowServerClient,
+    arrayBuffer: ArrayBuffer,
+    isWrapped?: boolean,
+  ) {
+    if (!super.sendToClient(client, arrayBuffer, isWrapped)) {
       return false;
     }
-    return WindowManagerServer.sendToClient(client, {
-      type: "serverMessage",
-      data: message,
-    });
+    return WindowManagerServer.sendToClient(
+      client,
+      isWrapped
+        ? arrayBuffer
+        : createWindowManagerMessage({
+            type: "serverMessage",
+            data: arrayBuffer,
+          }),
+    );
   }
 
   // WINDOW

@@ -205,13 +205,18 @@ class ServerManager {
   // }
 
   // MESSAGING
-  private broadcast(message: ArrayBuffer, clients?: ServerClient[]) {
-    if (message.byteLength == 0) {
+  private broadcast(
+    arrayBuffer: ArrayBuffer,
+    clients?: ServerClient[],
+    isWrapped?: boolean,
+  ) {
+    if (arrayBuffer.byteLength == 0) {
       return;
     }
+    _console.log("broadcast", arrayBuffer, clients, { isWrapped });
     this.servers.forEach((server) => {
       // @ts-expect-error
-      server.broadcast(message, clients);
+      server.broadcast(arrayBuffer, clients, isWrapped);
     });
   }
 
