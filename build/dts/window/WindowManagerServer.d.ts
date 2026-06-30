@@ -7,6 +7,7 @@ export interface WindowManagerServerClient {
     didSendMessagePort?: boolean;
     didLoad?: boolean;
     transfer?: Transferable[];
+    origin: string;
 }
 export interface WindowManagerServerClientContext extends BaseServerClientContext<WindowManagerServerClient> {
     transfer: Transferable[];

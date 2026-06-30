@@ -457,7 +457,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#isSettingDevice = true;
       this.numberOfColors = this.device.numberOfDisplayColors!;
       await this.#updateCanvas(true, false);
-      await this.#updateDevice();
+      await this.#updateDevice(true);
       this.#dispatchEvent("deviceIsConnected", {
         device: this.device,
         isConnected: this.device!.isConnected,

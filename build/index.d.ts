@@ -2752,6 +2752,7 @@ interface WindowManagerServerClient {
     didSendMessagePort?: boolean;
     didLoad?: boolean;
     transfer?: Transferable[];
+    origin: string;
 }
 interface WindowManagerServerEventMessages {
     clientConnected: {

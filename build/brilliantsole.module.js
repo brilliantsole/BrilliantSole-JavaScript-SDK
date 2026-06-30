@@ -40023,6 +40023,9 @@ let WindowManagerServer = (() => {
                     return;
                 }
                 client = this.#createClient(iframe);
+                if (!client) {
+                    return;
+                }
             }
             _console$8.log("onWindowMessage", client, data);
             const dataView = new DataView(data);
@@ -40030,14 +40033,22 @@ let WindowManagerServer = (() => {
             this.#parseWindowManagerClientMessage(client, dataView);
         }
         #createClient(iframe) {
-            addEventListeners(iframe, this.#boundIframeEventListeners);
-            const client = {
-                iframe,
-                type: "window",
-            };
-            this.#clients.push(client);
-            this.#dispatchEvent("clientConnected", { client });
-            return client;
+            try {
+                const { origin } = new URL(iframe.src);
+                addEventListeners(iframe, this.#boundIframeEventListeners);
+                const client = {
+                    iframe,
+                    type: "window",
+                    origin,
+                };
+                this.#clients.push(client);
+                this.#dispatchEvent("clientConnected", { client });
+                return client;
+            }
+            catch (error) {
+                _console$8.error(`failed to create origin for client ${iframe.src}`);
+                return;
+            }
         }
         #destroyClient(client) {
             _console$8.log("onClientDisconnected", client);
@@ -40635,7 +40646,7 @@ class DisplayCanvasHelper {
             this.#isSettingDevice = true;
             this.numberOfColors = this.device.numberOfDisplayColors;
             await this.#updateCanvas(true, false);
-            await this.#updateDevice();
+            await this.#updateDevice(true);
             this.#dispatchEvent("deviceIsConnected", {
                 device: this.device,
                 isConnected: this.device.isConnected,

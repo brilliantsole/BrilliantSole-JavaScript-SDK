@@ -29,6 +29,7 @@ export interface WindowManagerServerClient {
   didSendMessagePort?: boolean;
   didLoad?: boolean;
   transfer?: Transferable[];
+  origin: string;
 }
 export interface WindowManagerServerClientContext extends BaseServerClientContext<WindowManagerServerClient> {
   transfer: Transferable[];
@@ -208,6 +209,9 @@ class WindowManagerServer {
         return;
       }
       client = this.#createClient(iframe);
+      if (!client) {
+        return;
+      }
     }
     _console.log("onWindowMessage", client, data);
     const dataView = new DataView(data) as DataView<ArrayBuffer>;
@@ -219,14 +223,21 @@ class WindowManagerServer {
   }
 
   #createClient(iframe: HTMLIFrameElement) {
-    addEventListeners(iframe, this.#boundIframeEventListeners);
-    const client: WindowManagerServerClient = {
-      iframe,
-      type: "window",
-    };
-    this.#clients.push(client);
-    this.#dispatchEvent("clientConnected", { client });
-    return client;
+    try {
+      const { origin } = new URL(iframe.src);
+      addEventListeners(iframe, this.#boundIframeEventListeners);
+      const client: WindowManagerServerClient = {
+        iframe,
+        type: "window",
+        origin,
+      };
+      this.#clients.push(client);
+      this.#dispatchEvent("clientConnected", { client });
+      return client;
+    } catch (error) {
+      _console.error(`failed to create origin for client ${iframe.src}`);
+      return;
+    }
   }
   #destroyClient(client: WindowManagerServerClient) {
     _console.log("onClientDisconnected", client);
