@@ -36,10 +36,7 @@ import {
   DiscoveredDevice,
   ScannerEventMap,
 } from "../scanner/BaseScanner.ts";
-import {
-  areArrayBuffersEqual,
-  concatenateArrayBuffers,
-} from "../utils/ArrayBufferUtils.ts";
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import DeviceManager, {
   DeviceManagerEventMap,
   BoundDeviceManagerEventListeners,
@@ -233,26 +230,16 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   // CLIENT MESSAGING
-  protected abstract sendToClient(
-    client: ServerClient,
-    message: ArrayBuffer,
-  ): void;
-
-  #sendToClient(client: ServerClient, message: ArrayBuffer) {
-    if (this.#allowServerToClient(client)) {
-      this.sendToClient(client, message);
-    }
+  protected sendToClient(client: ServerClient, message: ArrayBuffer) {
+    return this.#allowServerToClient(client);
   }
 
-  private broadcastMessage(
-    message: ArrayBuffer,
-    clients: ServerClient[] = this.clients,
-  ) {
+  broadcast(message: ArrayBuffer, clients: ServerClient[] = this.clients) {
     _console.log("broadcasting", message);
     clients
       .filter((client) => this.clients.includes(client))
       .forEach((client) => {
-        this.#sendToClient(client, message);
+        this.sendToClient(client, message);
       });
   }
 
@@ -265,7 +252,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   };
 
   #onScannerIsAvailable(event: ScannerEventMap["isScanningAvailable"]) {
-    this.broadcastMessage(
+    this.broadcast(
       this.#isScanningAvailableMessage,
       this.#filterServerToClients("isScanningAvailable"),
     );
@@ -278,7 +265,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   #onScannerIsScanning(event: ScannerEventMap["isScanning"]) {
-    this.broadcastMessage(
+    this.broadcast(
       this.#isScanningMessage,
       this.#filterServerToClients("isScanning"),
     );
@@ -294,7 +281,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     const { discoveredDevice } = event.message;
     _console.log(discoveredDevice);
 
-    this.broadcastMessage(
+    this.broadcast(
       this.#createDiscoveredDeviceMessage(discoveredDevice),
       this.#filterServerToClients("discoveredDevice"),
     );
@@ -312,7 +299,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   ) {
     const { discoveredDevice } = event.message;
     _console.log("expired", discoveredDevice);
-    this.broadcastMessage(
+    this.broadcast(
       this.#createExpiredDiscoveredDeviceMessage(discoveredDevice),
       this.#filterServerToClients("discoveredDevice"),
     );
@@ -451,7 +438,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               dataView,
             );
 
-            this.#sendToClient(
+            this.sendToClient(
               client,
               this.#createDeviceServerMessage(device, deviceMessage),
             );
@@ -468,7 +455,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       messageType,
       dataView,
     );
-    this.broadcastMessage(
+    this.broadcast(
       this.#createDeviceServerMessage(device, deviceMessage),
       this.#allowDeviceToClients(device, deviceMessage),
     );
@@ -502,7 +489,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   ) {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceIsConnected", device.bluetoothId);
-    this.broadcastMessage(
+    this.broadcast(
       this.#createDeviceIsConnectedMessage(device),
       this.#allowDeviceToClients(device, "isConnected"),
     );
@@ -756,7 +743,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           device.addEventListener(
             "notConnected",
             () => {
-              this.broadcastMessage(
+              this.broadcast(
                 this.#createDeviceIsConnectedMessage(device),
                 this.#allowDeviceToClients(device, "isConnected"),
               );
@@ -1056,6 +1043,43 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         deviceMessages.push(message);
         break;
     }
+  }
+
+  protected sendClientContext(
+    clientContext: BaseServerClientContext<BaseServerClient>,
+  ) {
+    clientContext.responseMessages =
+      clientContext.responseMessages.filter(Boolean);
+    clientContext.broadcastMessages =
+      clientContext.broadcastMessages.filter(Boolean);
+    clientContext.localBroadcastMessages =
+      clientContext.localBroadcastMessages.filter(Boolean);
+
+    const responseMessage = concatenateArrayBuffers(
+      clientContext.responseMessages,
+    );
+    _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
+    // @ts-expect-error
+    this.sendToClient(clientContext.client, responseMessage);
+
+    const localBroadcastMessage = concatenateArrayBuffers(
+      clientContext.localBroadcastMessages,
+    );
+
+    _console.log(
+      `locally broadcasting ${localBroadcastMessage.byteLength} bytes...`,
+    );
+    this.broadcast(
+      localBroadcastMessage,
+      this.clients.filter((client) => client != clientContext.client),
+    );
+
+    const broadcastMessage = concatenateArrayBuffers(
+      clientContext.broadcastMessages,
+    );
+    _console.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
+    // @ts-expect-error
+    ServerManager.broadcast(broadcastMessage);
   }
 }
 

@@ -162,37 +162,8 @@ class UDPServer extends BaseServer<UDPServerClient> {
       clientContext,
       true,
     );
-    clientContext.responseMessages =
-      clientContext.responseMessages.filter(Boolean);
-    clientContext.broadcastMessages =
-      clientContext.broadcastMessages.filter(Boolean);
-    clientContext.localBroadcastMessages =
-      clientContext.localBroadcastMessages.filter(Boolean);
 
-    const responseMessage = concatenateArrayBuffers(
-      clientContext.responseMessages,
-    );
-    _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
-    this.#sendToClient(client, responseMessage);
-
-    const localBroadcastMessage = concatenateArrayBuffers(
-      clientContext.localBroadcastMessages,
-    );
-
-    _console.log(
-      `locally broadcasting ${localBroadcastMessage.byteLength} bytes...`,
-    );
-    this.#broadcast(
-      localBroadcastMessage,
-      this.clients.filter((_client) => _client != client),
-    );
-
-    const broadcastMessage = concatenateArrayBuffers(
-      clientContext.broadcastMessages,
-    );
-    _console.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
-    // @ts-expect-error
-    ServerManager.broadcast(broadcastMessage);
+    this.sendClientContext(clientContext);
   }
   #onClientMessage(
     messageType: UDPServerMessageType,
@@ -281,23 +252,15 @@ class UDPServer extends BaseServer<UDPServerClient> {
   }
 
   // CLIENT MESSAGING
-  #broadcast(message: ArrayBuffer, clients: UDPServerClient[] = this.clients) {
-    if (message.byteLength == 0) {
-      return;
-    }
-    clients.forEach((client) => {
-      this.#sendToClient(client, message);
-    });
-  }
   #sendToClient(client: UDPServerClient, message: ArrayBuffer) {
     if (message.byteLength == 0) {
       _console.log("no response to send");
-      return;
+      return false;
     }
 
     if (client.receivePort == undefined) {
       _console.log("client has no defined receivePort");
-      return;
+      return false;
     }
 
     _console.log(
@@ -321,10 +284,15 @@ class UDPServer extends BaseServer<UDPServerClient> {
       );
     } catch (error) {
       _console.error("serious error sending data", error);
+      return false;
     }
+    return true;
   }
   protected sendToClient(client: UDPServerClient, message: ArrayBuffer) {
-    this.#sendToClient(
+    if (!super.sendToClient(client, message)) {
+      return false;
+    }
+    return this.#sendToClient(
       client,
       createUDPServerMessage({ type: "serverMessage", data: message }),
     );
@@ -339,5 +307,3 @@ class UDPServer extends BaseServer<UDPServerClient> {
 }
 
 export default UDPServer;
-
-import { default as ServerManager } from "../ServerManager.ts";

@@ -38,7 +38,10 @@ class WindowServer extends BaseServer<WindowServerClient> {
   // CLIENTS
 
   protected sendToClient(client: WindowServerClient, message: ArrayBuffer) {
-    WindowManagerServer.sendToClient(client, {
+    if (!super.sendToClient(client, message)) {
+      return false;
+    }
+    return WindowManagerServer.sendToClient(client, {
       type: "serverMessage",
       data: message,
     });

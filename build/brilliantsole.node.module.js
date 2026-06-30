@@ -16973,17 +16973,15 @@ class BaseServer {
             });
         }
     }
-    #sendToClient(client, message) {
-        if (this.#allowServerToClient(client)) {
-            this.sendToClient(client, message);
-        }
+    sendToClient(client, message) {
+        return this.#allowServerToClient(client);
     }
-    broadcastMessage(message, clients = this.clients) {
+    broadcast(message, clients = this.clients) {
         _console$b.log("broadcasting", message);
         clients
             .filter((client) => this.clients.includes(client))
             .forEach((client) => {
-            this.#sendToClient(client, message);
+            this.sendToClient(client, message);
         });
     }
     #boundScannerListeners = {
@@ -16993,7 +16991,7 @@ class BaseServer {
         expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
     };
     #onScannerIsAvailable(event) {
-        this.broadcastMessage(this.#isScanningAvailableMessage, this.#filterServerToClients("isScanningAvailable"));
+        this.broadcast(this.#isScanningAvailableMessage, this.#filterServerToClients("isScanningAvailable"));
     }
     get #isScanningAvailableMessage() {
         return createServerMessage({
@@ -17002,7 +17000,7 @@ class BaseServer {
         });
     }
     #onScannerIsScanning(event) {
-        this.broadcastMessage(this.#isScanningMessage, this.#filterServerToClients("isScanning"));
+        this.broadcast(this.#isScanningMessage, this.#filterServerToClients("isScanning"));
     }
     get #isScanningMessage() {
         return createServerMessage({
@@ -17013,7 +17011,7 @@ class BaseServer {
     #onScannerDiscoveredDevice(event) {
         const { discoveredDevice } = event.message;
         _console$b.log(discoveredDevice);
-        this.broadcastMessage(this.#createDiscoveredDeviceMessage(discoveredDevice), this.#filterServerToClients("discoveredDevice"));
+        this.broadcast(this.#createDiscoveredDeviceMessage(discoveredDevice), this.#filterServerToClients("discoveredDevice"));
     }
     #createDiscoveredDeviceMessage(discoveredDevice) {
         return createServerMessage({
@@ -17024,7 +17022,7 @@ class BaseServer {
     #onExpiredDiscoveredDevice(event) {
         const { discoveredDevice } = event.message;
         _console$b.log("expired", discoveredDevice);
-        this.broadcastMessage(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice), this.#filterServerToClients("discoveredDevice"));
+        this.broadcast(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice), this.#filterServerToClients("discoveredDevice"));
     }
     #createExpiredDiscoveredDeviceMessage(discoveredDevice) {
         return createServerMessage({
@@ -17093,7 +17091,7 @@ class BaseServer {
         const { messageType, dataView } = deviceConnectionMessage;
         switch (messageType) {
             case "sensorData":
-                if (!ServerManager.deviceSensorDataToClientGuardManager.isEmpty) {
+                if (!ServerManager_default.deviceSensorDataToClientGuardManager.isEmpty) {
                     const clientSensorDataMessageMap = new Map();
                     const timestampArrayBuffer = dataView.buffer.slice(0, 2);
                     parseSensorData(dataView, (sensorType, sensorDataView, context, isLast) => {
@@ -17112,14 +17110,14 @@ class BaseServer {
                     clientSensorDataMessageMap.forEach((data, client) => {
                         const dataView = new DataView(concatenateArrayBuffers(timestampArrayBuffer, ...data));
                         const deviceMessage = this.#createDeviceMessage(device, "sensorData", dataView);
-                        this.#sendToClient(client, this.#createDeviceServerMessage(device, deviceMessage));
+                        this.sendToClient(client, this.#createDeviceServerMessage(device, deviceMessage));
                     });
                     return;
                 }
                 break;
         }
         const deviceMessage = this.#createDeviceMessage(device, messageType, dataView);
-        this.broadcastMessage(this.#createDeviceServerMessage(device, deviceMessage), this.#allowDeviceToClients(device, deviceMessage));
+        this.broadcast(this.#createDeviceServerMessage(device, deviceMessage), this.#allowDeviceToClients(device, deviceMessage));
     }
     #boundDeviceManagerListeners = {
         deviceConnected: this.#onDeviceConnected.bind(this),
@@ -17139,7 +17137,7 @@ class BaseServer {
     #onDeviceIsConnected(staticDeviceEvent) {
         const { device } = staticDeviceEvent.message;
         _console$b.log("onDeviceIsConnected", device.bluetoothId);
-        this.broadcastMessage(this.#createDeviceIsConnectedMessage(device), this.#allowDeviceToClients(device, "isConnected"));
+        this.broadcast(this.#createDeviceIsConnectedMessage(device), this.#allowDeviceToClients(device, "isConnected"));
     }
     #createDeviceIsConnectedMessage(device) {
         return this.#createDeviceServerMessage(device, {
@@ -17155,7 +17153,7 @@ class BaseServer {
         });
     }
     #allowClientToServer(client, message) {
-        return ServerManager.clientToServerGuardManager.evaluate({
+        return ServerManager_default.clientToServerGuardManager.evaluate({
             message,
             client,
             server: this,
@@ -17165,7 +17163,7 @@ class BaseServer {
         if (typeof message == "string") {
             message = { type: message };
         }
-        return ServerManager.serverToClientGuardManager.evaluate({
+        return ServerManager_default.serverToClientGuardManager.evaluate({
             client,
             message,
             server: this,
@@ -17175,7 +17173,7 @@ class BaseServer {
         return this.clients.filter((client) => this.#allowServerToClient(client, message));
     }
     #allowClientToDevice(client, device, message) {
-        return ServerManager.clientToDeviceGuardManager.evaluate({
+        return ServerManager_default.clientToDeviceGuardManager.evaluate({
             device,
             client,
             message,
@@ -17186,7 +17184,7 @@ class BaseServer {
         if (typeof message == "string") {
             message = { type: message };
         }
-        return ServerManager.deviceToClientGuardManager.evaluate({
+        return ServerManager_default.deviceToClientGuardManager.evaluate({
             device,
             client,
             message,
@@ -17197,7 +17195,7 @@ class BaseServer {
         return this.clients.filter((client) => this.#allowDeviceToClient(device, client, message));
     }
     #allowDeviceSensorDataToClient(device, client, sensorType, sensorData) {
-        return ServerManager.deviceSensorDataToClientGuardManager.evaluate({
+        return ServerManager_default.deviceSensorDataToClientGuardManager.evaluate({
             device,
             client,
             sensorType,
@@ -17206,7 +17204,7 @@ class BaseServer {
         });
     }
     #allowClientSensorConfigurationToDevice(device, client, sensorType, sensorRate) {
-        return ServerManager.clientSensorConfigurationToDeviceGuardManager.evaluate({
+        return ServerManager_default.clientSensorConfigurationToDeviceGuardManager.evaluate({
             device,
             client,
             sensorType,
@@ -17215,7 +17213,7 @@ class BaseServer {
         });
     }
     #allowClientDisplayContextCommandToDevice(device, client, displayContextCommand) {
-        return ServerManager.clientDisplayContextCommandToDeviceGuardManager.evaluate({
+        return ServerManager_default.clientDisplayContextCommandToDeviceGuardManager.evaluate({
             device,
             client,
             displayContextCommand,
@@ -17304,7 +17302,7 @@ class BaseServer {
                     }
                     _console$b.log(`disconnecting from device with id ${deviceId}...`);
                     device.addEventListener("notConnected", () => {
-                        this.broadcastMessage(this.#createDeviceIsConnectedMessage(device), this.#allowDeviceToClients(device, "isConnected"));
+                        this.broadcast(this.#createDeviceIsConnectedMessage(device), this.#allowDeviceToClients(device, "isConnected"));
                     }, { once: true });
                     device.disconnect();
                 }
@@ -17403,7 +17401,7 @@ class BaseServer {
             let message = { type: messageType, data: dataView };
             switch (message.type) {
                 case "setSensorConfiguration":
-                    if (!ServerManager.clientSensorConfigurationToDeviceGuardManager
+                    if (!ServerManager_default.clientSensorConfigurationToDeviceGuardManager
                         .isEmpty) {
                         _console$b.log("trimming sensorConfiguration...");
                         const sensorConfiguration = parseSensorConfiguration(message.data, (sensorType, sensorRate) => {
@@ -17425,7 +17423,7 @@ class BaseServer {
                     }
                     break;
                 case "displayContextCommands":
-                    if (!ServerManager.clientDisplayContextCommandToDeviceGuardManager
+                    if (!ServerManager_default.clientDisplayContextCommandToDeviceGuardManager
                         .isEmpty) {
                         const displayContextCommands = parseDisplayContextCommands(device.displayManager, dataView);
                         _console$b.log("trimming displayContextCommands...", displayContextCommands);
@@ -17472,6 +17470,23 @@ class BaseServer {
                 deviceMessages.push(message);
                 break;
         }
+    }
+    sendClientContext(clientContext) {
+        clientContext.responseMessages =
+            clientContext.responseMessages.filter(Boolean);
+        clientContext.broadcastMessages =
+            clientContext.broadcastMessages.filter(Boolean);
+        clientContext.localBroadcastMessages =
+            clientContext.localBroadcastMessages.filter(Boolean);
+        const responseMessage = concatenateArrayBuffers(clientContext.responseMessages);
+        _console$b.log(`sending ${responseMessage.byteLength} bytes to client...`);
+        this.sendToClient(clientContext.client, responseMessage);
+        const localBroadcastMessage = concatenateArrayBuffers(clientContext.localBroadcastMessages);
+        _console$b.log(`locally broadcasting ${localBroadcastMessage.byteLength} bytes...`);
+        this.broadcast(localBroadcastMessage, this.clients.filter((client) => client != clientContext.client));
+        const broadcastMessage = concatenateArrayBuffers(clientContext.broadcastMessages);
+        _console$b.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
+        ServerManager_default.broadcast(broadcastMessage);
     }
 }
 _a$1 = BaseServer;
@@ -17522,7 +17537,7 @@ const ServerManagerEventTypes = [
     ...ServerManagerServerEventTypes,
     ...BaseServerManagerEventTypes,
 ];
-let ServerManager$1 = (() => {
+let ServerManager = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -17592,7 +17607,7 @@ let ServerManager$1 = (() => {
                 return;
             }
             this.servers.forEach((server) => {
-                server.broadcastMessage(message, clients);
+                server.broadcast(message, clients);
             });
         }
         clientToServerGuardManager = new GuardManager();
@@ -17606,7 +17621,7 @@ let ServerManager$1 = (() => {
     });
     return _classThis;
 })();
-var ServerManager = ServerManager$1.shared;
+var ServerManager_default = ServerManager.shared;
 
 const _console$9 = createConsole("ClientConnectionManager", { log: false });
 [
@@ -17738,7 +17753,7 @@ class ClientConnectionManager extends BaseConnectionManager {
 }
 
 var _a;
-const _console$5 = createConsole("BaseClient", { log: false });
+const _console$8 = createConsole("BaseClient", { log: false });
 const ClientConnectionStatuses = [
     "notConnected",
     "connecting",
@@ -17788,17 +17803,17 @@ class BaseClient {
         return this.#eventDispatcher.waitForEvent;
     }
     assertConnection() {
-        _console$5.assertWithError(this.isConnected, "notConnected");
+        _console$8.assertWithError(this.isConnected, "notConnected");
     }
     assertDisconnection() {
-        _console$5.assertWithError(this.isDisconnected, "not disconnected");
+        _console$8.assertWithError(this.isDisconnected, "not disconnected");
     }
     static _reconnectOnDisconnection = true;
     static get ReconnectOnDisconnection() {
         return this._reconnectOnDisconnection;
     }
     static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$5.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        _console$8.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this._reconnectOnDisconnection = newReconnectOnDisconnection;
     }
     _reconnectOnDisconnection = this.baseConstructor.ReconnectOnDisconnection;
@@ -17806,7 +17821,7 @@ class BaseClient {
         return this._reconnectOnDisconnection;
     }
     set reconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$5.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        _console$8.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this._reconnectOnDisconnection = newReconnectOnDisconnection;
     }
     #_connectionStatus = "notConnected";
@@ -17814,8 +17829,8 @@ class BaseClient {
         return this.#_connectionStatus;
     }
     set _connectionStatus(newConnectionStatus) {
-        _console$5.assertTypeWithError(newConnectionStatus, "string");
-        _console$5.log({ newConnectionStatus });
+        _console$8.assertTypeWithError(newConnectionStatus, "string");
+        _console$8.log({ newConnectionStatus });
         if (this.#_connectionStatus == newConnectionStatus) {
             return;
         }
@@ -17847,7 +17862,7 @@ class BaseClient {
         return _a.#RequiredMessageTypes;
     }
     _sendRequiredMessages() {
-        _console$5.log("sending required messages", this.#requiredMessageTypes);
+        _console$8.log("sending required messages", this.#requiredMessageTypes);
         this.sendServerMessage(...this.#requiredMessageTypes);
     }
     #receivedMessageTypes = [];
@@ -17855,49 +17870,49 @@ class BaseClient {
         if (this.connectionStatus != "connecting") {
             return;
         }
-        _console$5.log("checking if fully connected...");
+        _console$8.log("checking if fully connected...");
         if (!this.#receivedMessageTypes.includes("isScanningAvailable")) {
-            _console$5.log("not fully connected - didn't receive isScanningAvailable");
+            _console$8.log("not fully connected - didn't receive isScanningAvailable");
             return;
         }
         if (this.isScanningAvailable) {
             if (!this.#receivedMessageTypes.includes("isScanning")) {
-                _console$5.log("not fully connected - didn't receive isScanning");
+                _console$8.log("not fully connected - didn't receive isScanning");
                 return;
             }
         }
-        _console$5.log("fully connected");
+        _console$8.log("fully connected");
         this._connectionStatus = "connected";
     }
     parseMessage(dataView) {
-        _console$5.log("parseMessage", { dataView });
+        _console$8.log("parseMessage", { dataView });
         parseMessage(dataView, ServerMessageTypes, this.#parseMessageCallback.bind(this), null, true);
         this.#checkIfFullyConnected();
     }
     #parseMessageCallback(messageType, dataView) {
         let byteOffset = 0;
-        _console$5.log({ messageType }, dataView);
+        _console$8.log({ messageType }, dataView);
         switch (messageType) {
             case "isScanningAvailable":
                 {
                     const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
-                    _console$5.log({ isScanningAvailable });
+                    _console$8.log({ isScanningAvailable });
                     this.#isScanningAvailable = isScanningAvailable;
                 }
                 break;
             case "isScanning":
                 {
                     const isScanning = Boolean(dataView.getUint8(byteOffset++));
-                    _console$5.log({ isScanning });
+                    _console$8.log({ isScanning });
                     this.#isScanning = isScanning;
                 }
                 break;
             case "discoveredDevice":
                 {
                     const { string: discoveredDeviceString } = parseStringFromDataView(dataView, byteOffset);
-                    _console$5.log({ discoveredDeviceString });
+                    _console$8.log({ discoveredDeviceString });
                     const discoveredDevice = JSON.parse(discoveredDeviceString);
-                    _console$5.log({ discoveredDevice });
+                    _console$8.log({ discoveredDevice });
                     this.onDiscoveredDevice(discoveredDevice);
                 }
                 break;
@@ -17913,9 +17928,9 @@ class BaseClient {
                         break;
                     }
                     const { string: connectedBluetoothDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
-                    _console$5.log({ connectedBluetoothDeviceIdStrings });
+                    _console$8.log({ connectedBluetoothDeviceIdStrings });
                     const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings).connectedDevices;
-                    _console$5.log({ connectedBluetoothDeviceIds });
+                    _console$8.log({ connectedBluetoothDeviceIds });
                     this.onConnectedBluetoothDeviceIds(connectedBluetoothDeviceIds);
                 }
                 break;
@@ -17927,14 +17942,14 @@ class BaseClient {
                     if (!device) {
                         device = this.onConnectedBluetoothDeviceIds([bluetoothId])[0];
                     }
-                    _console$5.assertWithError(device, `no device found for id ${bluetoothId}`);
+                    _console$8.assertWithError(device, `no device found for id ${bluetoothId}`);
                     const connectionManager = device.connectionManager;
                     const _dataView = sliceDataView(dataView, byteOffset);
                     connectionManager.onClientMessage(_dataView);
                 }
                 break;
             default:
-                _console$5.error(`uncaught messageType "${messageType}"`);
+                _console$8.error(`uncaught messageType "${messageType}"`);
                 break;
         }
         if (this.connectionStatus == "connecting") {
@@ -17946,7 +17961,7 @@ class BaseClient {
         return this.#_isScanningAvailable;
     }
     set #isScanningAvailable(newIsAvailable) {
-        _console$5.assertTypeWithError(newIsAvailable, "boolean");
+        _console$8.assertTypeWithError(newIsAvailable, "boolean");
         this.#_isScanningAvailable = newIsAvailable;
         this.#dispatchEvent("isScanningAvailable", {
             isScanningAvailable: this.isScanningAvailable,
@@ -17960,7 +17975,7 @@ class BaseClient {
     }
     #assertIsScanningAvailable() {
         this.assertConnection();
-        _console$5.assertWithError(this.isScanningAvailable, "scanning is not available");
+        _console$8.assertWithError(this.isScanningAvailable, "scanning is not available");
     }
     requestIsScanningAvailable() {
         this.sendServerMessage("isScanningAvailable");
@@ -17970,7 +17985,7 @@ class BaseClient {
         return this.#_isScanning;
     }
     set #isScanning(newIsScanning) {
-        _console$5.assertTypeWithError(newIsScanning, "boolean");
+        _console$8.assertTypeWithError(newIsScanning, "boolean");
         this.#_isScanning = newIsScanning;
         this.#dispatchEvent("isScanning", { isScanning: this.isScanning });
     }
@@ -17981,10 +17996,10 @@ class BaseClient {
         this.sendServerMessage("isScanning");
     }
     #assertIsScanning() {
-        _console$5.assertWithError(this.isScanning, "is not scanning");
+        _console$8.assertWithError(this.isScanning, "is not scanning");
     }
     #assertIsNotScanning() {
-        _console$5.assertWithError(!this.isScanning, "is already scanning");
+        _console$8.assertWithError(!this.isScanning, "is already scanning");
     }
     startScan() {
         this.#assertIsNotScanning();
@@ -18008,7 +18023,7 @@ class BaseClient {
         return this.#discoveredDevices;
     }
     onDiscoveredDevice(discoveredDevice) {
-        _console$5.log({ discoveredDevice });
+        _console$8.log({ discoveredDevice });
         this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
         this.#dispatchEvent("discoveredDevice", { discoveredDevice });
     }
@@ -18016,13 +18031,13 @@ class BaseClient {
         this.sendServerMessage({ type: "discoveredDevices" });
     }
     #onExpiredDiscoveredDevice(bluetoothId) {
-        _console$5.log({ expiredBluetoothDeviceId: bluetoothId });
+        _console$8.log({ expiredBluetoothDeviceId: bluetoothId });
         const discoveredDevice = this.#discoveredDevices[bluetoothId];
         if (!discoveredDevice) {
-            _console$5.warn(`no discoveredDevice found with id "${bluetoothId}"`);
+            _console$8.warn(`no discoveredDevice found with id "${bluetoothId}"`);
             return;
         }
-        _console$5.log({ expiredDiscoveredDevice: discoveredDevice });
+        _console$8.log({ expiredDiscoveredDevice: discoveredDevice });
         delete this.#discoveredDevices[bluetoothId];
         this.#dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
     }
@@ -18031,7 +18046,7 @@ class BaseClient {
     }
     requestConnectionToDevice(bluetoothId, connectionType) {
         this.assertConnection();
-        _console$5.assertTypeWithError(bluetoothId, "string");
+        _console$8.assertTypeWithError(bluetoothId, "string");
         const device = this.#getOrCreateDevice(bluetoothId);
         if (device.connectionStatus == "notConnected") {
             if (connectionType) {
@@ -18080,7 +18095,7 @@ class BaseClient {
         return device;
     }
     onConnectedBluetoothDeviceIds(bluetoothIds) {
-        _console$5.log({ bluetoothIds });
+        _console$8.log({ bluetoothIds });
         return bluetoothIds.map((bluetoothId) => {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
@@ -18094,9 +18109,9 @@ class BaseClient {
     }
     requestDisconnectionFromDevice(bluetoothId) {
         this.assertConnection();
-        _console$5.assertTypeWithError(bluetoothId, "string");
+        _console$8.assertTypeWithError(bluetoothId, "string");
         const device = this.devices[bluetoothId];
-        _console$5.assertWithError(device, `no device found with id ${bluetoothId}`);
+        _console$8.assertWithError(device, `no device found with id ${bluetoothId}`);
         device.disconnect();
         return device;
     }
@@ -18118,7 +18133,7 @@ class BaseClient {
 }
 _a = BaseClient;
 
-const _console$4 = createConsole("ClientManager", { log: true });
+const _console$7 = createConsole("ClientManager", { log: true });
 function getClientManagerClientEventTypes(clientEventType) {
     return ["client"].map((prefix) => `${prefix}${capitalizeFirstCharacter(clientEventType)}`);
 }
@@ -18159,10 +18174,10 @@ let ClientManager = (() => {
             [wildcardEventType]: this.#onClientEvent.bind(this),
         };
         #onClient(client) {
-            _console$4.log("onClient", client);
+            _console$7.log("onClient", client);
             addEventListeners(client, this.#boundClientEventListeners);
             if (!this.#clients.includes(client)) {
-                _console$4.log("client", client);
+                _console$7.log("client", client);
                 this.#clients.push(client);
                 this.#dispatchEvent("client", { client });
                 this.#dispatchEvent("clients", {
@@ -18172,7 +18187,7 @@ let ClientManager = (() => {
         }
         #onClientEvent(clientEvent) {
             const { type: clientEventType, target: client, message } = clientEvent;
-            _console$4.log("onClientEvent", clientEvent);
+            _console$7.log("onClientEvent", clientEvent);
             this.#dispatchEvent(wildcardClientEventType, {
                 ...message,
                 client: client,
@@ -18203,7 +18218,7 @@ let ClientManager = (() => {
 })();
 var ClientManager_default = ClientManager.shared;
 
-const _console$8 = createConsole("DevicePairPressureSensorDataManager", {
+const _console$6 = createConsole("DevicePairPressureSensorDataManager", {
     log: false,
 });
 class DevicePairPressureSensorDataManager {
@@ -18221,14 +18236,14 @@ class DevicePairPressureSensorDataManager {
     onDevicePressureData(event) {
         const { pressure, timestamp } = event.message;
         const { side } = event.target;
-        _console$8.log({ pressure, side });
+        _console$6.log({ pressure, side });
         this.#rawPressure[side] = pressure;
         this.#pressureTimestamps[side] = timestamp;
         if (this.#hasAllPressureData) {
             return this.#updatePressureData();
         }
         else {
-            _console$8.log("doesn't have all pressure data yet...");
+            _console$6.log("doesn't have all pressure data yet...");
         }
     }
     get #hasAllPressureData() {
@@ -18292,12 +18307,12 @@ class DevicePairPressureSensorDataManager {
             pressureData.normalizedCenter =
                 this.#centerOfPressureHelper.updateAndGetNormalization(pressureData.center);
         }
-        _console$8.log({ devicePairPressureData: pressureData });
+        _console$6.log({ devicePairPressureData: pressureData });
         return pressureData;
     }
 }
 
-const _console$7 = createConsole("DevicePairSensorDataManager", { log: false });
+const _console$5 = createConsole("DevicePairSensorDataManager", { log: false });
 const DevicePairSensorTypes = ["pressure", "sensorData"];
 const DevicePairSensorDataEventTypes = DevicePairSensorTypes;
 class DevicePairSensorDataManager {
@@ -18312,7 +18327,7 @@ class DevicePairSensorDataManager {
     }
     onDeviceSensorData(event) {
         const { timestamp, sensorType } = event.message;
-        _console$7.log({ sensorType, timestamp, event });
+        _console$5.log({ sensorType, timestamp, event });
         if (!this.#timestamps[sensorType]) {
             this.#timestamps[sensorType] = {};
         }
@@ -18323,7 +18338,7 @@ class DevicePairSensorDataManager {
                 value = this.pressureSensorDataManager.onDevicePressureData(event);
                 break;
             default:
-                _console$7.log(`uncaught sensorType "${sensorType}"`);
+                _console$5.log(`uncaught sensorType "${sensorType}"`);
                 break;
         }
         if (value) {
@@ -18340,12 +18355,12 @@ class DevicePairSensorDataManager {
             });
         }
         else {
-            _console$7.log("no value received");
+            _console$5.log("no value received");
         }
     }
 }
 
-const _console$6 = createConsole("DevicePair", { log: false });
+const _console$4 = createConsole("DevicePair", { log: false });
 function getDevicePairDeviceEventTypes(deviceEventType) {
     return ["device", ...Sides].map((prefix) => `${prefix}${capitalizeFirstCharacter(deviceEventType)}`);
 }
@@ -18410,7 +18425,7 @@ class DevicePair {
         return this.isPartiallyConnected && !this.isConnected;
     }
     #assertIsConnected() {
-        _console$6.assertWithError(this.isConnected, "devicePair must be connected");
+        _console$4.assertWithError(this.isConnected, "devicePair must be connected");
     }
     #isDeviceCorrectType(device) {
         switch (this.type) {
@@ -18422,13 +18437,13 @@ class DevicePair {
     }
     assignDevice(device) {
         if (!this.#isDeviceCorrectType(device)) {
-            _console$6.log(`device is incorrect type ${device.type} for ${this.type} devicePair`);
+            _console$4.log(`device is incorrect type ${device.type} for ${this.type} devicePair`);
             return;
         }
         const side = device.side;
         const currentDevice = this[side];
         if (device == currentDevice) {
-            _console$6.log("device already assigned");
+            _console$4.log("device already assigned");
             return;
         }
         if (currentDevice) {
@@ -18443,7 +18458,7 @@ class DevicePair {
                 this.#right = device;
                 break;
         }
-        _console$6.log(`assigned ${side} ${this.type} device`, device);
+        _console$4.log(`assigned ${side} ${this.type} device`, device);
         this.resetPressureRange();
         this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
         this.#dispatchEvent("deviceIsConnected", {
@@ -18464,7 +18479,7 @@ class DevicePair {
             if (this[side] != device) {
                 return false;
             }
-            _console$6.log(`removing ${side} ${this.type} device`, device);
+            _console$4.log(`removing ${side} ${this.type} device`, device);
             removeEventListeners(device, this.#boundDeviceEventListeners);
             switch (side) {
                 case "left":
@@ -18633,7 +18648,7 @@ const ConnectionManagers = [
     UDPConnectionManager,
 ];
 
-const _console$2 = createConsole("WebSocketServer", { log: false });
+const _console$3 = createConsole("WebSocketServer", { log: false });
 class WebSocketServer extends BaseServer {
     static type = "webSocket";
     type = WebSocketServer.type;
@@ -18643,17 +18658,17 @@ class WebSocketServer extends BaseServer {
     }
     set server(newServer) {
         if (this.#server == newServer) {
-            _console$2.log("redundant WebSocket server assignment");
+            _console$3.log("redundant WebSocket server assignment");
             return;
         }
-        _console$2.log("assigning WebSocket server...");
+        _console$3.log("assigning WebSocket server...");
         if (this.#server) {
-            _console$2.log("clearing existing WebSocket server...");
+            _console$3.log("clearing existing WebSocket server...");
             removeEventListeners(this.#server, this.#boundWebSocketServerListeners);
         }
         addEventListeners(newServer, this.#boundWebSocketServerListeners);
         this.#server = newServer;
-        _console$2.log("assigned WebSocket server");
+        _console$3.log("assigned WebSocket server");
     }
     #boundWebSocketServerListeners = {
         close: this.#onWebSocketServerClose.bind(this),
@@ -18663,10 +18678,10 @@ class WebSocketServer extends BaseServer {
         listening: this.#onWebSocketServerListening.bind(this),
     };
     #onWebSocketServerClose() {
-        _console$2.log("server.close");
+        _console$3.log("server.close");
     }
     #onWebSocketServerConnection(client) {
-        _console$2.log("server.connection");
+        _console$3.log("server.connection");
         client.isAlive = true;
         client.pingClientTimer = new Timer(() => this.#pingClient(client), webSocketPingTimeout);
         client.pingClientTimer.start();
@@ -18674,12 +18689,12 @@ class WebSocketServer extends BaseServer {
         this.dispatchEvent("clientConnected", { client });
     }
     #onWebSocketServerError(error) {
-        _console$2.error(error);
+        _console$3.error(error);
     }
     #onWebSocketServerHeaders() {
     }
     #onWebSocketServerListening() {
-        _console$2.log("server.listening");
+        _console$3.log("server.listening");
     }
     #boundWebSocketClientListeners = {
         open: this.#onWebSocketClientOpen.bind(this),
@@ -18688,29 +18703,29 @@ class WebSocketServer extends BaseServer {
         error: this.#onWebSocketClientError.bind(this),
     };
     #onWebSocketClientOpen(event) {
-        _console$2.log("client.open");
+        _console$3.log("client.open");
     }
     #onWebSocketClientMessage(event) {
-        _console$2.log("client.message");
+        _console$3.log("client.message");
         const client = event.target;
         client.isAlive = true;
         client.pingClientTimer.restart();
         const dataView = new DataView(dataToArrayBuffer(event.data));
-        _console$2.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
+        _console$3.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
         this.#parseWebSocketClientMessage(client, dataView);
     }
     #onWebSocketClientClose(event) {
-        _console$2.log("client.close");
+        _console$3.log("client.close");
         const client = event.target;
         client.pingClientTimer.stop();
         removeEventListeners(client, this.#boundWebSocketClientListeners);
         this.dispatchEvent("clientDisconnected", { client });
     }
     #onWebSocketClientError(event) {
-        _console$2.error("client.error", event.message);
+        _console$3.error("client.error", event.message);
     }
     #parseWebSocketClientMessage(client, dataView) {
-        _console$2.log("parseWebSocketClientMessage", client, dataView);
+        _console$3.log("parseWebSocketClientMessage", client, dataView);
         const clientContext = {
             responseMessages: [],
             client,
@@ -18718,25 +18733,11 @@ class WebSocketServer extends BaseServer {
             broadcastMessages: [],
         };
         parseMessage(dataView, WebSocketMessageTypes$1, this.#onClientMessage.bind(this), clientContext, true);
-        clientContext.responseMessages =
-            clientContext.responseMessages.filter(Boolean);
-        clientContext.broadcastMessages =
-            clientContext.broadcastMessages.filter(Boolean);
-        clientContext.localBroadcastMessages =
-            clientContext.localBroadcastMessages.filter(Boolean);
-        const responseMessage = concatenateArrayBuffers(clientContext.responseMessages);
-        _console$2.log(`sending ${responseMessage.byteLength} bytes to client...`);
-        this.#sendToClient(client, responseMessage);
-        const localBroadcastMessage = concatenateArrayBuffers(clientContext.localBroadcastMessages);
-        _console$2.log(`locally broadcasting ${localBroadcastMessage.byteLength} bytes...`);
-        this.#broadcast(localBroadcastMessage, this.clients.filter((_client) => _client != client));
-        const broadcastMessage = concatenateArrayBuffers(clientContext.broadcastMessages);
-        _console$2.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
-        ServerManager.broadcast(broadcastMessage);
+        this.sendClientContext(clientContext);
     }
     #onClientMessage(messageType, dataView, context) {
         const { responseMessages, client, broadcastMessages, localBroadcastMessages, } = context;
-        _console$2.log("onClientMessage", { messageType });
+        _console$3.log("onClientMessage", { messageType });
         switch (messageType) {
             case "ping":
                 responseMessages.push(webSocketPongMessage);
@@ -18767,33 +18768,30 @@ class WebSocketServer extends BaseServer {
                 }
                 break;
             default:
-                _console$2.error(`uncaught messageType "${messageType}"`);
+                _console$3.error(`uncaught messageType "${messageType}"`);
                 break;
         }
     }
-    #broadcast(message, clients = this.clients) {
-        if (message.byteLength == 0) {
-            return;
-        }
-        clients.forEach((client) => {
-            this.#sendToClient(client, message);
-        });
-    }
     #sendToClient(client, message) {
         if (message.byteLength == 0) {
-            _console$2.log("nothing to send back");
-            return;
+            _console$3.log("nothing to send back");
+            return false;
         }
-        _console$2.log(`sending ${message.byteLength} bytes to client`);
+        _console$3.log(`sending ${message.byteLength} bytes to client`);
         try {
             client.send(message);
         }
         catch (error) {
-            _console$2.log("error sending message", error);
+            _console$3.log("error sending message", error);
+            return false;
         }
+        return true;
     }
     sendToClient(client, message) {
-        this.#sendToClient(client, createWebSocketMessage$1({ type: "serverMessage", data: message }));
+        if (!super.sendToClient(client, message)) {
+            return false;
+        }
+        return this.#sendToClient(client, createWebSocketMessage$1({ type: "serverMessage", data: message }));
     }
     #pingClient(client) {
         if (!client.isAlive) {
@@ -18805,7 +18803,7 @@ class WebSocketServer extends BaseServer {
     }
 }
 
-const _console$3 = createConsole("UDPUtils", { log: false });
+const _console$2 = createConsole("UDPUtils", { log: false });
 const removeUDPClientTimeout = 4_000;
 const UDPServerMessageTypes = [
     "ping",
@@ -18814,7 +18812,7 @@ const UDPServerMessageTypes = [
     "serverMessage",
 ];
 function createUDPServerMessage(...messages) {
-    _console$3.log("createUDPServerMessage", ...messages);
+    _console$2.log("createUDPServerMessage", ...messages);
     return createMessage(UDPServerMessageTypes, true, ...messages);
 }
 createUDPServerMessage("ping");
@@ -18909,21 +18907,7 @@ class UDPServer extends BaseServer {
             broadcastMessages: [],
         };
         parseMessage(dataView, UDPServerMessageTypes, this.#onClientMessage.bind(this), clientContext, true);
-        clientContext.responseMessages =
-            clientContext.responseMessages.filter(Boolean);
-        clientContext.broadcastMessages =
-            clientContext.broadcastMessages.filter(Boolean);
-        clientContext.localBroadcastMessages =
-            clientContext.localBroadcastMessages.filter(Boolean);
-        const responseMessage = concatenateArrayBuffers(clientContext.responseMessages);
-        _console$1.log(`sending ${responseMessage.byteLength} bytes to client...`);
-        this.#sendToClient(client, responseMessage);
-        const localBroadcastMessage = concatenateArrayBuffers(clientContext.localBroadcastMessages);
-        _console$1.log(`locally broadcasting ${localBroadcastMessage.byteLength} bytes...`);
-        this.#broadcast(localBroadcastMessage, this.clients.filter((_client) => _client != client));
-        const broadcastMessage = concatenateArrayBuffers(clientContext.broadcastMessages);
-        _console$1.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
-        ServerManager.broadcast(broadcastMessage);
+        this.sendClientContext(clientContext);
     }
     #onClientMessage(messageType, dataView, context) {
         const { client, responseMessages, broadcastMessages, localBroadcastMessages, } = context;
@@ -18980,22 +18964,14 @@ class UDPServer extends BaseServer {
             data: responseDataView,
         });
     }
-    #broadcast(message, clients = this.clients) {
-        if (message.byteLength == 0) {
-            return;
-        }
-        clients.forEach((client) => {
-            this.#sendToClient(client, message);
-        });
-    }
     #sendToClient(client, message) {
         if (message.byteLength == 0) {
             _console$1.log("no response to send");
-            return;
+            return false;
         }
         if (client.receivePort == undefined) {
             _console$1.log("client has no defined receivePort");
-            return;
+            return false;
         }
         _console$1.log(`sending ${message.byteLength} bytes to ${this.#clientToString(client)}...`);
         try {
@@ -19010,10 +18986,15 @@ class UDPServer extends BaseServer {
         }
         catch (error) {
             _console$1.error("serious error sending data", error);
+            return false;
         }
+        return true;
     }
     sendToClient(client, message) {
-        this.#sendToClient(client, createUDPServerMessage({ type: "serverMessage", data: message }));
+        if (!super.sendToClient(client, message)) {
+            return false;
+        }
+        return this.#sendToClient(client, createUDPServerMessage({ type: "serverMessage", data: message }));
     }
     #removeClient(client) {
         _console$1.log(`removing client ${this.#clientToString(client)}...`);
@@ -19171,5 +19152,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantsole.node.module.js.map

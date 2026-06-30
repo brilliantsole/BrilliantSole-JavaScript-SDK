@@ -211,7 +211,7 @@ class ServerManager {
     }
     this.servers.forEach((server) => {
       // @ts-expect-error
-      server.broadcastMessage(message, clients);
+      server.broadcast(message, clients);
     });
   }
 

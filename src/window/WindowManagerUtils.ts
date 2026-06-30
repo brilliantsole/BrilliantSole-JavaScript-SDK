@@ -1,5 +1,5 @@
 import { createConsole } from "../utils/Console.ts";
-import { createMessage, Message } from "../server/ServerUtils.ts";
+import { createMessage, MessageOrMessageType } from "../server/ServerUtils.ts";
 
 const _console = createConsole("WindowManagerUtils", { log: false });
 
@@ -12,8 +12,8 @@ export type WindowManagerMessageType =
   (typeof WindowManagerMessageTypes)[number];
 
 export type WindowManagerMessage =
-  | WindowManagerMessageType
-  | Message<WindowManagerMessageType>;
+  MessageOrMessageType<WindowManagerMessageType>;
+
 export function createWindowManagerMessage(
   ...messages: WindowManagerMessage[]
 ) {

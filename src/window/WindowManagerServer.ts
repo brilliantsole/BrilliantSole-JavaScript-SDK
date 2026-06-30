@@ -141,17 +141,6 @@ class WindowManagerServer {
     return this.clients.find((client) => client.messageChannel?.port1 == port);
   }
 
-  #broadcast(
-    message: ArrayBuffer,
-    clients: WindowManagerServerClient[] = this.clients,
-  ) {
-    if (message.byteLength == 0) {
-      return;
-    }
-    clients.forEach((client) => {
-      this.#sendToClient(client, message);
-    });
-  }
   #sendToClient(
     client: WindowManagerServerClient,
     message: ArrayBuffer,
@@ -159,7 +148,7 @@ class WindowManagerServer {
   ) {
     if (message.byteLength == 0) {
       _console.log("nothing to send to client");
-      return;
+      return false;
     }
 
     _console.log("sendToClient", client, message, { transfer });
@@ -179,13 +168,14 @@ class WindowManagerServer {
         transfer,
       );
     }
+    return true;
   }
 
   sendToClient(
     client: WindowManagerServerClient,
     ...messages: WindowManagerMessage[]
   ) {
-    this.#sendToClient(client, createWindowManagerMessage(...messages));
+    return this.#sendToClient(client, createWindowManagerMessage(...messages));
   }
   broadcast(...messages: WindowManagerMessage[]) {
     this.clients.forEach((client) => {
@@ -375,37 +365,8 @@ class WindowManagerServer {
       true,
     );
 
-    clientContext.responseMessages =
-      clientContext.responseMessages.filter(Boolean);
-    clientContext.broadcastMessages =
-      clientContext.broadcastMessages.filter(Boolean);
-    clientContext.localBroadcastMessages =
-      clientContext.localBroadcastMessages.filter(Boolean);
-
-    const responseMessage = concatenateArrayBuffers(
-      clientContext.responseMessages,
-    );
-    _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
-    this.#sendToClient(client, responseMessage, transfer);
-
-    const localBroadcastMessage = concatenateArrayBuffers(
-      clientContext.localBroadcastMessages,
-    );
-
-    _console.log(
-      `locally broadcasting ${localBroadcastMessage.byteLength} bytes...`,
-    );
-    this.#broadcast(
-      localBroadcastMessage,
-      this.clients.filter((_client) => _client != client),
-    );
-
-    const broadcastMessage = concatenateArrayBuffers(
-      clientContext.broadcastMessages,
-    );
-    _console.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
     // @ts-expect-error
-    ServerManager.broadcast(broadcastMessage);
+    WindowServer.sendClientContext(clientContext);
   }
 
   #onClientMessage(
@@ -475,5 +436,3 @@ class WindowManagerServer {
 export default WindowManagerServer.shared;
 // @ts-expect-error
 WindowServer.init();
-
-import { default as ServerManager } from "../server/ServerManager.ts";

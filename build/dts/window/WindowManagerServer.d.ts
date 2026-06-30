@@ -40,7 +40,7 @@ declare class WindowManagerServer {
     static readonly shared: WindowManagerServer;
     constructor();
     get clients(): WindowManagerServerClient[];
-    sendToClient(client: WindowManagerServerClient, ...messages: WindowManagerMessage[]): void;
+    sendToClient(client: WindowManagerServerClient, ...messages: WindowManagerMessage[]): boolean;
     broadcast(...messages: WindowManagerMessage[]): void;
 }
 declare const _default: WindowManagerServer;

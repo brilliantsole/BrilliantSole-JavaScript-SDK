@@ -37958,7 +37958,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager = (() => {
+let DeviceManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -38275,7 +38275,7 @@ let DeviceManager = (() => {
     });
     return _classThis;
 })();
-var DeviceManager$1 = DeviceManager.shared;
+var DeviceManager = DeviceManager$1.shared;
 
 var _a$3;
 const _console$h = createConsole("BaseScanner", { log: false });
@@ -38473,12 +38473,12 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$g = createConsole("Scanner", { log: false });
-let scanner;
+let scanner$1;
 {
     _console$g.log("Scanner not available");
-    scanner = new NullScanner();
+    scanner$1 = new NullScanner();
 }
-var scanner$1 = scanner;
+var scanner = scanner$1;
 
 var _a$2;
 const RequiredDeviceInformationMessageTypes = [
@@ -38515,9 +38515,9 @@ class BaseServer {
     }
     static OnServer;
     constructor() {
-        _console$f.assertWithError(scanner$1, "no scanner defined");
-        addEventListeners(scanner$1, this.#boundScannerListeners);
-        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
+        _console$f.assertWithError(scanner, "no scanner defined");
+        addEventListeners(scanner, this.#boundScannerListeners);
+        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
         _a$2.OnServer(this);
     }
@@ -38559,23 +38559,21 @@ class BaseServer {
         _console$f.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager$1.connectedDevices.forEach((device) => {
+            DeviceManager.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
         }
     }
-    #sendToClient(client, message) {
-        if (this.#allowServerToClient(client)) {
-            this.sendToClient(client, message);
-        }
+    sendToClient(client, message) {
+        return this.#allowServerToClient(client);
     }
-    broadcastMessage(message, clients = this.clients) {
+    broadcast(message, clients = this.clients) {
         _console$f.log("broadcasting", message);
         clients
             .filter((client) => this.clients.includes(client))
             .forEach((client) => {
-            this.#sendToClient(client, message);
+            this.sendToClient(client, message);
         });
     }
     #boundScannerListeners = {
@@ -38585,27 +38583,27 @@ class BaseServer {
         expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
     };
     #onScannerIsAvailable(event) {
-        this.broadcastMessage(this.#isScanningAvailableMessage, this.#filterServerToClients("isScanningAvailable"));
+        this.broadcast(this.#isScanningAvailableMessage, this.#filterServerToClients("isScanningAvailable"));
     }
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner$1.isScanningAvailable,
+            data: scanner.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
-        this.broadcastMessage(this.#isScanningMessage, this.#filterServerToClients("isScanning"));
+        this.broadcast(this.#isScanningMessage, this.#filterServerToClients("isScanning"));
     }
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner$1.isScanning,
+            data: scanner.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
         const { discoveredDevice } = event.message;
         _console$f.log(discoveredDevice);
-        this.broadcastMessage(this.#createDiscoveredDeviceMessage(discoveredDevice), this.#filterServerToClients("discoveredDevice"));
+        this.broadcast(this.#createDiscoveredDeviceMessage(discoveredDevice), this.#filterServerToClients("discoveredDevice"));
     }
     #createDiscoveredDeviceMessage(discoveredDevice) {
         return createServerMessage({
@@ -38616,7 +38614,7 @@ class BaseServer {
     #onExpiredDiscoveredDevice(event) {
         const { discoveredDevice } = event.message;
         _console$f.log("expired", discoveredDevice);
-        this.broadcastMessage(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice), this.#filterServerToClients("discoveredDevice"));
+        this.broadcast(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice), this.#filterServerToClients("discoveredDevice"));
     }
     #createExpiredDiscoveredDeviceMessage(discoveredDevice) {
         return createServerMessage({
@@ -38625,9 +38623,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner$1.discoveredDevicesArray
+        const serverMessages = scanner.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -38639,7 +38637,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -38685,7 +38683,7 @@ class BaseServer {
         const { messageType, dataView } = deviceConnectionMessage;
         switch (messageType) {
             case "sensorData":
-                if (!ServerManager$1.deviceSensorDataToClientGuardManager.isEmpty) {
+                if (!ServerManager_default.deviceSensorDataToClientGuardManager.isEmpty) {
                     const clientSensorDataMessageMap = new Map();
                     const timestampArrayBuffer = dataView.buffer.slice(0, 2);
                     parseSensorData(dataView, (sensorType, sensorDataView, context, isLast) => {
@@ -38704,14 +38702,14 @@ class BaseServer {
                     clientSensorDataMessageMap.forEach((data, client) => {
                         const dataView = new DataView(concatenateArrayBuffers(timestampArrayBuffer, ...data));
                         const deviceMessage = this.#createDeviceMessage(device, "sensorData", dataView);
-                        this.#sendToClient(client, this.#createDeviceServerMessage(device, deviceMessage));
+                        this.sendToClient(client, this.#createDeviceServerMessage(device, deviceMessage));
                     });
                     return;
                 }
                 break;
         }
         const deviceMessage = this.#createDeviceMessage(device, messageType, dataView);
-        this.broadcastMessage(this.#createDeviceServerMessage(device, deviceMessage), this.#allowDeviceToClients(device, deviceMessage));
+        this.broadcast(this.#createDeviceServerMessage(device, deviceMessage), this.#allowDeviceToClients(device, deviceMessage));
     }
     #boundDeviceManagerListeners = {
         deviceConnected: this.#onDeviceConnected.bind(this),
@@ -38731,7 +38729,7 @@ class BaseServer {
     #onDeviceIsConnected(staticDeviceEvent) {
         const { device } = staticDeviceEvent.message;
         _console$f.log("onDeviceIsConnected", device.bluetoothId);
-        this.broadcastMessage(this.#createDeviceIsConnectedMessage(device), this.#allowDeviceToClients(device, "isConnected"));
+        this.broadcast(this.#createDeviceIsConnectedMessage(device), this.#allowDeviceToClients(device, "isConnected"));
     }
     #createDeviceIsConnectedMessage(device) {
         return this.#createDeviceServerMessage(device, {
@@ -38747,7 +38745,7 @@ class BaseServer {
         });
     }
     #allowClientToServer(client, message) {
-        return ServerManager$1.clientToServerGuardManager.evaluate({
+        return ServerManager_default.clientToServerGuardManager.evaluate({
             message,
             client,
             server: this,
@@ -38757,7 +38755,7 @@ class BaseServer {
         if (typeof message == "string") {
             message = { type: message };
         }
-        return ServerManager$1.serverToClientGuardManager.evaluate({
+        return ServerManager_default.serverToClientGuardManager.evaluate({
             client,
             message,
             server: this,
@@ -38767,7 +38765,7 @@ class BaseServer {
         return this.clients.filter((client) => this.#allowServerToClient(client, message));
     }
     #allowClientToDevice(client, device, message) {
-        return ServerManager$1.clientToDeviceGuardManager.evaluate({
+        return ServerManager_default.clientToDeviceGuardManager.evaluate({
             device,
             client,
             message,
@@ -38778,7 +38776,7 @@ class BaseServer {
         if (typeof message == "string") {
             message = { type: message };
         }
-        return ServerManager$1.deviceToClientGuardManager.evaluate({
+        return ServerManager_default.deviceToClientGuardManager.evaluate({
             device,
             client,
             message,
@@ -38789,7 +38787,7 @@ class BaseServer {
         return this.clients.filter((client) => this.#allowDeviceToClient(device, client, message));
     }
     #allowDeviceSensorDataToClient(device, client, sensorType, sensorData) {
-        return ServerManager$1.deviceSensorDataToClientGuardManager.evaluate({
+        return ServerManager_default.deviceSensorDataToClientGuardManager.evaluate({
             device,
             client,
             sensorType,
@@ -38798,7 +38796,7 @@ class BaseServer {
         });
     }
     #allowClientSensorConfigurationToDevice(device, client, sensorType, sensorRate) {
-        return ServerManager$1.clientSensorConfigurationToDeviceGuardManager.evaluate({
+        return ServerManager_default.clientSensorConfigurationToDeviceGuardManager.evaluate({
             device,
             client,
             sensorType,
@@ -38807,7 +38805,7 @@ class BaseServer {
         });
     }
     #allowClientDisplayContextCommandToDevice(device, client, displayContextCommand) {
-        return ServerManager$1.clientDisplayContextCommandToDeviceGuardManager.evaluate({
+        return ServerManager_default.clientDisplayContextCommandToDeviceGuardManager.evaluate({
             device,
             client,
             displayContextCommand,
@@ -38852,10 +38850,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner$1.startScan();
+                scanner.startScan();
                 break;
             case "stopScan":
-                scanner$1.stopScan();
+                scanner.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -38873,12 +38871,12 @@ class BaseServer {
                     else {
                         _console$f.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
-                        scanner$1.connectToDevice(deviceId, connectionType);
+                        scanner.connectToDevice(deviceId, connectionType);
                     }
                 }
                 break;
@@ -38888,15 +38886,15 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner$1.devices[deviceId];
+                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner.devices[deviceId];
                     if (!device) {
                         _console$f.error(`no device found with id ${deviceId}`);
                         break;
                     }
                     _console$f.log(`disconnecting from device with id ${deviceId}...`);
                     device.addEventListener("notConnected", () => {
-                        this.broadcastMessage(this.#createDeviceIsConnectedMessage(device), this.#allowDeviceToClients(device, "isConnected"));
+                        this.broadcast(this.#createDeviceIsConnectedMessage(device), this.#allowDeviceToClients(device, "isConnected"));
                     }, { once: true });
                     device.disconnect();
                 }
@@ -38912,7 +38910,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$f.error(`no device found with id ${deviceId}`);
                         break;
@@ -38936,7 +38934,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$f.error(`no device found with id ${deviceId}`);
                         break;
@@ -38995,7 +38993,7 @@ class BaseServer {
             let message = { type: messageType, data: dataView };
             switch (message.type) {
                 case "setSensorConfiguration":
-                    if (!ServerManager$1.clientSensorConfigurationToDeviceGuardManager
+                    if (!ServerManager_default.clientSensorConfigurationToDeviceGuardManager
                         .isEmpty) {
                         _console$f.log("trimming sensorConfiguration...");
                         const sensorConfiguration = parseSensorConfiguration(message.data, (sensorType, sensorRate) => {
@@ -39017,7 +39015,7 @@ class BaseServer {
                     }
                     break;
                 case "displayContextCommands":
-                    if (!ServerManager$1.clientDisplayContextCommandToDeviceGuardManager
+                    if (!ServerManager_default.clientDisplayContextCommandToDeviceGuardManager
                         .isEmpty) {
                         const displayContextCommands = parseDisplayContextCommands(device.displayManager, dataView);
                         _console$f.log("trimming displayContextCommands...", displayContextCommands);
@@ -39064,6 +39062,23 @@ class BaseServer {
                 deviceMessages.push(message);
                 break;
         }
+    }
+    sendClientContext(clientContext) {
+        clientContext.responseMessages =
+            clientContext.responseMessages.filter(Boolean);
+        clientContext.broadcastMessages =
+            clientContext.broadcastMessages.filter(Boolean);
+        clientContext.localBroadcastMessages =
+            clientContext.localBroadcastMessages.filter(Boolean);
+        const responseMessage = concatenateArrayBuffers(clientContext.responseMessages);
+        _console$f.log(`sending ${responseMessage.byteLength} bytes to client...`);
+        this.sendToClient(clientContext.client, responseMessage);
+        const localBroadcastMessage = concatenateArrayBuffers(clientContext.localBroadcastMessages);
+        _console$f.log(`locally broadcasting ${localBroadcastMessage.byteLength} bytes...`);
+        this.broadcast(localBroadcastMessage, this.clients.filter((client) => client != clientContext.client));
+        const broadcastMessage = concatenateArrayBuffers(clientContext.broadcastMessages);
+        _console$f.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
+        ServerManager_default.broadcast(broadcastMessage);
     }
 }
 _a$2 = BaseServer;
@@ -39184,7 +39199,7 @@ let ServerManager = (() => {
                 return;
             }
             this.servers.forEach((server) => {
-                server.broadcastMessage(message, clients);
+                server.broadcast(message, clients);
             });
         }
         clientToServerGuardManager = new GuardManager();
@@ -39198,7 +39213,7 @@ let ServerManager = (() => {
     });
     return _classThis;
 })();
-var ServerManager$1 = ServerManager.shared;
+var ServerManager_default = ServerManager.shared;
 
 const _console$d = createConsole("ClientConnectionManager", { log: false });
 [
@@ -39330,7 +39345,7 @@ class ClientConnectionManager extends BaseConnectionManager {
 }
 
 var _a$1;
-const _console$8 = createConsole("BaseClient", { log: false });
+const _console$c = createConsole("BaseClient", { log: false });
 const ClientConnectionStatuses = [
     "notConnected",
     "connecting",
@@ -39380,17 +39395,17 @@ class BaseClient {
         return this.#eventDispatcher.waitForEvent;
     }
     assertConnection() {
-        _console$8.assertWithError(this.isConnected, "notConnected");
+        _console$c.assertWithError(this.isConnected, "notConnected");
     }
     assertDisconnection() {
-        _console$8.assertWithError(this.isDisconnected, "not disconnected");
+        _console$c.assertWithError(this.isDisconnected, "not disconnected");
     }
     static _reconnectOnDisconnection = true;
     static get ReconnectOnDisconnection() {
         return this._reconnectOnDisconnection;
     }
     static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$8.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        _console$c.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this._reconnectOnDisconnection = newReconnectOnDisconnection;
     }
     _reconnectOnDisconnection = this.baseConstructor.ReconnectOnDisconnection;
@@ -39398,7 +39413,7 @@ class BaseClient {
         return this._reconnectOnDisconnection;
     }
     set reconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$8.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        _console$c.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this._reconnectOnDisconnection = newReconnectOnDisconnection;
     }
     #_connectionStatus = "notConnected";
@@ -39406,8 +39421,8 @@ class BaseClient {
         return this.#_connectionStatus;
     }
     set _connectionStatus(newConnectionStatus) {
-        _console$8.assertTypeWithError(newConnectionStatus, "string");
-        _console$8.log({ newConnectionStatus });
+        _console$c.assertTypeWithError(newConnectionStatus, "string");
+        _console$c.log({ newConnectionStatus });
         if (this.#_connectionStatus == newConnectionStatus) {
             return;
         }
@@ -39439,7 +39454,7 @@ class BaseClient {
         return _a$1.#RequiredMessageTypes;
     }
     _sendRequiredMessages() {
-        _console$8.log("sending required messages", this.#requiredMessageTypes);
+        _console$c.log("sending required messages", this.#requiredMessageTypes);
         this.sendServerMessage(...this.#requiredMessageTypes);
     }
     #receivedMessageTypes = [];
@@ -39447,49 +39462,49 @@ class BaseClient {
         if (this.connectionStatus != "connecting") {
             return;
         }
-        _console$8.log("checking if fully connected...");
+        _console$c.log("checking if fully connected...");
         if (!this.#receivedMessageTypes.includes("isScanningAvailable")) {
-            _console$8.log("not fully connected - didn't receive isScanningAvailable");
+            _console$c.log("not fully connected - didn't receive isScanningAvailable");
             return;
         }
         if (this.isScanningAvailable) {
             if (!this.#receivedMessageTypes.includes("isScanning")) {
-                _console$8.log("not fully connected - didn't receive isScanning");
+                _console$c.log("not fully connected - didn't receive isScanning");
                 return;
             }
         }
-        _console$8.log("fully connected");
+        _console$c.log("fully connected");
         this._connectionStatus = "connected";
     }
     parseMessage(dataView) {
-        _console$8.log("parseMessage", { dataView });
+        _console$c.log("parseMessage", { dataView });
         parseMessage(dataView, ServerMessageTypes, this.#parseMessageCallback.bind(this), null, true);
         this.#checkIfFullyConnected();
     }
     #parseMessageCallback(messageType, dataView) {
         let byteOffset = 0;
-        _console$8.log({ messageType }, dataView);
+        _console$c.log({ messageType }, dataView);
         switch (messageType) {
             case "isScanningAvailable":
                 {
                     const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
-                    _console$8.log({ isScanningAvailable });
+                    _console$c.log({ isScanningAvailable });
                     this.#isScanningAvailable = isScanningAvailable;
                 }
                 break;
             case "isScanning":
                 {
                     const isScanning = Boolean(dataView.getUint8(byteOffset++));
-                    _console$8.log({ isScanning });
+                    _console$c.log({ isScanning });
                     this.#isScanning = isScanning;
                 }
                 break;
             case "discoveredDevice":
                 {
                     const { string: discoveredDeviceString } = parseStringFromDataView(dataView, byteOffset);
-                    _console$8.log({ discoveredDeviceString });
+                    _console$c.log({ discoveredDeviceString });
                     const discoveredDevice = JSON.parse(discoveredDeviceString);
-                    _console$8.log({ discoveredDevice });
+                    _console$c.log({ discoveredDevice });
                     this.onDiscoveredDevice(discoveredDevice);
                 }
                 break;
@@ -39505,9 +39520,9 @@ class BaseClient {
                         break;
                     }
                     const { string: connectedBluetoothDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
-                    _console$8.log({ connectedBluetoothDeviceIdStrings });
+                    _console$c.log({ connectedBluetoothDeviceIdStrings });
                     const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings).connectedDevices;
-                    _console$8.log({ connectedBluetoothDeviceIds });
+                    _console$c.log({ connectedBluetoothDeviceIds });
                     this.onConnectedBluetoothDeviceIds(connectedBluetoothDeviceIds);
                 }
                 break;
@@ -39519,14 +39534,14 @@ class BaseClient {
                     if (!device) {
                         device = this.onConnectedBluetoothDeviceIds([bluetoothId])[0];
                     }
-                    _console$8.assertWithError(device, `no device found for id ${bluetoothId}`);
+                    _console$c.assertWithError(device, `no device found for id ${bluetoothId}`);
                     const connectionManager = device.connectionManager;
                     const _dataView = sliceDataView(dataView, byteOffset);
                     connectionManager.onClientMessage(_dataView);
                 }
                 break;
             default:
-                _console$8.error(`uncaught messageType "${messageType}"`);
+                _console$c.error(`uncaught messageType "${messageType}"`);
                 break;
         }
         if (this.connectionStatus == "connecting") {
@@ -39538,7 +39553,7 @@ class BaseClient {
         return this.#_isScanningAvailable;
     }
     set #isScanningAvailable(newIsAvailable) {
-        _console$8.assertTypeWithError(newIsAvailable, "boolean");
+        _console$c.assertTypeWithError(newIsAvailable, "boolean");
         this.#_isScanningAvailable = newIsAvailable;
         this.#dispatchEvent("isScanningAvailable", {
             isScanningAvailable: this.isScanningAvailable,
@@ -39552,7 +39567,7 @@ class BaseClient {
     }
     #assertIsScanningAvailable() {
         this.assertConnection();
-        _console$8.assertWithError(this.isScanningAvailable, "scanning is not available");
+        _console$c.assertWithError(this.isScanningAvailable, "scanning is not available");
     }
     requestIsScanningAvailable() {
         this.sendServerMessage("isScanningAvailable");
@@ -39562,7 +39577,7 @@ class BaseClient {
         return this.#_isScanning;
     }
     set #isScanning(newIsScanning) {
-        _console$8.assertTypeWithError(newIsScanning, "boolean");
+        _console$c.assertTypeWithError(newIsScanning, "boolean");
         this.#_isScanning = newIsScanning;
         this.#dispatchEvent("isScanning", { isScanning: this.isScanning });
     }
@@ -39573,10 +39588,10 @@ class BaseClient {
         this.sendServerMessage("isScanning");
     }
     #assertIsScanning() {
-        _console$8.assertWithError(this.isScanning, "is not scanning");
+        _console$c.assertWithError(this.isScanning, "is not scanning");
     }
     #assertIsNotScanning() {
-        _console$8.assertWithError(!this.isScanning, "is already scanning");
+        _console$c.assertWithError(!this.isScanning, "is already scanning");
     }
     startScan() {
         this.#assertIsNotScanning();
@@ -39600,7 +39615,7 @@ class BaseClient {
         return this.#discoveredDevices;
     }
     onDiscoveredDevice(discoveredDevice) {
-        _console$8.log({ discoveredDevice });
+        _console$c.log({ discoveredDevice });
         this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
         this.#dispatchEvent("discoveredDevice", { discoveredDevice });
     }
@@ -39608,13 +39623,13 @@ class BaseClient {
         this.sendServerMessage({ type: "discoveredDevices" });
     }
     #onExpiredDiscoveredDevice(bluetoothId) {
-        _console$8.log({ expiredBluetoothDeviceId: bluetoothId });
+        _console$c.log({ expiredBluetoothDeviceId: bluetoothId });
         const discoveredDevice = this.#discoveredDevices[bluetoothId];
         if (!discoveredDevice) {
-            _console$8.warn(`no discoveredDevice found with id "${bluetoothId}"`);
+            _console$c.warn(`no discoveredDevice found with id "${bluetoothId}"`);
             return;
         }
-        _console$8.log({ expiredDiscoveredDevice: discoveredDevice });
+        _console$c.log({ expiredDiscoveredDevice: discoveredDevice });
         delete this.#discoveredDevices[bluetoothId];
         this.#dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
     }
@@ -39623,7 +39638,7 @@ class BaseClient {
     }
     requestConnectionToDevice(bluetoothId, connectionType) {
         this.assertConnection();
-        _console$8.assertTypeWithError(bluetoothId, "string");
+        _console$c.assertTypeWithError(bluetoothId, "string");
         const device = this.#getOrCreateDevice(bluetoothId);
         if (device.connectionStatus == "notConnected") {
             if (connectionType) {
@@ -39672,12 +39687,12 @@ class BaseClient {
         return device;
     }
     onConnectedBluetoothDeviceIds(bluetoothIds) {
-        _console$8.log({ bluetoothIds });
+        _console$c.log({ bluetoothIds });
         return bluetoothIds.map((bluetoothId) => {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager$1._checkDeviceAvailability(device);
+            DeviceManager._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -39686,9 +39701,9 @@ class BaseClient {
     }
     requestDisconnectionFromDevice(bluetoothId) {
         this.assertConnection();
-        _console$8.assertTypeWithError(bluetoothId, "string");
+        _console$c.assertTypeWithError(bluetoothId, "string");
         const device = this.devices[bluetoothId];
-        _console$8.assertWithError(device, `no device found with id ${bluetoothId}`);
+        _console$c.assertWithError(device, `no device found with id ${bluetoothId}`);
         device.disconnect();
         return device;
     }
@@ -39710,7 +39725,7 @@ class BaseClient {
 }
 _a$1 = BaseClient;
 
-const _console$7 = createConsole("ClientManager", { log: true });
+const _console$b = createConsole("ClientManager", { log: true });
 function getClientManagerClientEventTypes(clientEventType) {
     return ["client"].map((prefix) => `${prefix}${capitalizeFirstCharacter(clientEventType)}`);
 }
@@ -39751,10 +39766,10 @@ let ClientManager = (() => {
             [wildcardEventType]: this.#onClientEvent.bind(this),
         };
         #onClient(client) {
-            _console$7.log("onClient", client);
+            _console$b.log("onClient", client);
             addEventListeners(client, this.#boundClientEventListeners);
             if (!this.#clients.includes(client)) {
-                _console$7.log("client", client);
+                _console$b.log("client", client);
                 this.#clients.push(client);
                 this.#dispatchEvent("client", { client });
                 this.#dispatchEvent("clients", {
@@ -39764,7 +39779,7 @@ let ClientManager = (() => {
         }
         #onClientEvent(clientEvent) {
             const { type: clientEventType, target: client, message } = clientEvent;
-            _console$7.log("onClientEvent", clientEvent);
+            _console$b.log("onClientEvent", clientEvent);
             this.#dispatchEvent(wildcardClientEventType, {
                 ...message,
                 client: client,
@@ -39795,22 +39810,22 @@ let ClientManager = (() => {
 })();
 var ClientManager_default = ClientManager.shared;
 
-const _console$c = createConsole("WindowManagerUtils", { log: false });
+const _console$a = createConsole("WindowManagerUtils", { log: false });
 const WindowManagerMessageTypes = [
     "ping",
     "pong",
     "serverMessage",
 ];
 function createWindowManagerMessage(...messages) {
-    _console$c.log("createWindowManagerMessage", ...messages);
+    _console$a.log("createWindowManagerMessage", ...messages);
     return createMessage(WindowManagerMessageTypes, true, ...messages);
 }
 const windowManagerMessageKey = "BrilliantWear";
 const windowManagerPingMessage = createWindowManagerMessage("ping");
 const windowManagerPongMessage = createWindowManagerMessage("pong");
 
-const _console$b = createConsole("WindowServer", { log: false });
-let WindowServer = (() => {
+const _console$9 = createConsole("WindowServer", { log: false });
+let WindowServer$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -39835,7 +39850,10 @@ let WindowServer = (() => {
             this.clearSensorConfigurationsWhenNoClients = false;
         }
         sendToClient(client, message) {
-            WindowManagerServer_default.sendToClient(client, {
+            if (!super.sendToClient(client, message)) {
+                return false;
+            }
+            return WindowManagerServer_default.sendToClient(client, {
                 type: "serverMessage",
                 data: message,
             });
@@ -39846,12 +39864,12 @@ let WindowServer = (() => {
         };
         #onWindowManagerServerClientConnected(event) {
             const { client } = event.message;
-            _console$b.log("onWindowManagerServerClientConnected", client);
+            _console$9.log("onWindowManagerServerClientConnected", client);
             this.dispatchEvent("clientConnected", { client });
         }
         #onWindowManagerServerClientDisconnected(event) {
             const { client } = event.message;
-            _console$b.log("onWindowManagerServerClientDisconnected", client);
+            _console$9.log("onWindowManagerServerClientDisconnected", client);
             this.dispatchEvent("clientDisconnected", { client });
         }
         static {
@@ -39860,9 +39878,9 @@ let WindowServer = (() => {
     };
     return WindowServer = _classThis;
 })();
-var WindowServer$1 = WindowServer.shared;
+var WindowServer = WindowServer$1.shared;
 
-const _console$a = createConsole("WindowManagerServer", { log: false });
+const _console$8 = createConsole("WindowManagerServer", { log: false });
 const WindowManagerServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -39899,7 +39917,7 @@ let WindowManagerServer = (() => {
         }
         removeAllEventListeners() {
             this.#eventDispatcher.removeAllEventListeners();
-            WindowServer$1.init();
+            WindowServer.init();
         }
         static shared;
         constructor() {
@@ -39939,20 +39957,12 @@ let WindowManagerServer = (() => {
         #getClientByMessagePort(port) {
             return this.clients.find((client) => client.messageChannel?.port1 == port);
         }
-        #broadcast(message, clients = this.clients) {
-            if (message.byteLength == 0) {
-                return;
-            }
-            clients.forEach((client) => {
-                this.#sendToClient(client, message);
-            });
-        }
         #sendToClient(client, message, transfer) {
             if (message.byteLength == 0) {
-                _console$a.log("nothing to send to client");
-                return;
+                _console$8.log("nothing to send to client");
+                return false;
             }
-            _console$a.log("sendToClient", client, message, { transfer });
+            _console$8.log("sendToClient", client, message, { transfer });
             const { messageChannel, iframe, didSendMessagePort } = client;
             if (messageChannel && didSendMessagePort) {
                 messageChannel.port1.postMessage(message, { transfer });
@@ -39965,9 +39975,10 @@ let WindowManagerServer = (() => {
                     [windowManagerMessageKey]: message,
                 }, "*", transfer);
             }
+            return true;
         }
         sendToClient(client, ...messages) {
-            this.#sendToClient(client, createWindowManagerMessage(...messages));
+            return this.#sendToClient(client, createWindowManagerMessage(...messages));
         }
         broadcast(...messages) {
             this.clients.forEach((client) => {
@@ -39995,7 +40006,7 @@ let WindowManagerServer = (() => {
             if (!client) {
                 const iframe = this.#iframes.find((iframe) => iframe.contentWindow == event.source);
                 if (!iframe) {
-                    _console$a.error("no iframe found for event", event);
+                    _console$8.error("no iframe found for event", event);
                     return;
                 }
                 addEventListeners(iframe, this.#boundIframeEventListeners);
@@ -40003,9 +40014,9 @@ let WindowManagerServer = (() => {
                 this.#clients.push(client);
                 this.#dispatchEvent("clientConnected", { client });
             }
-            _console$a.log("onWindowMessage", client, data);
+            _console$8.log("onWindowMessage", client, data);
             const dataView = new DataView(data);
-            _console$a.log(`received ${dataView.byteLength} bytes via window`, dataView.buffer);
+            _console$8.log(`received ${dataView.byteLength} bytes via window`, dataView.buffer);
             this.#parseWindowManagerClientMessage(client, dataView);
         }
         #iframeObserver;
@@ -40020,22 +40031,22 @@ let WindowManagerServer = (() => {
         #iframes = [];
         #onIframeAdded(iframe) {
             if (this.#iframes.includes(iframe)) {
-                _console$a.log("redundant iframe added", iframe);
+                _console$8.log("redundant iframe added", iframe);
                 return;
             }
-            _console$a.log("iframe added", iframe);
+            _console$8.log("iframe added", iframe);
             this.#iframes.push(iframe);
         }
         #onIframeRemoved(iframe) {
             if (!this.#iframes.includes(iframe)) {
                 return;
             }
-            _console$a.log("iframe removed", iframe);
+            _console$8.log("iframe removed", iframe);
             this.#iframes.splice(this.#iframes.indexOf(iframe));
             removeEventListeners(iframe, this.#boundIframeEventListeners);
             const client = this.#getClientByiFrame(iframe);
             if (!client) {
-                _console$a.error("no client found for iframe", iframe);
+                _console$8.error("no client found for iframe", iframe);
                 return;
             }
             const { messageChannel } = client;
@@ -40055,22 +40066,22 @@ let WindowManagerServer = (() => {
             if (!client) {
                 return;
             }
-            _console$a.log("onIframeLoad", client);
+            _console$8.log("onIframeLoad", client);
             if (client.didLoad) {
-                _console$a.log("client loaded twice");
+                _console$8.log("client loaded twice");
                 if (!client.allowRedirects) {
-                    _console$a.log("force reloading...");
+                    _console$8.log("force reloading...");
                     client.didLoad = false;
                     iframe.src = iframe.src;
                 }
             }
             else {
-                _console$a.log("client first load");
+                _console$8.log("client first load");
                 client.didLoad = true;
             }
         }
         #createMessageChannel(client) {
-            _console$a.log("createMessageChannel", client);
+            _console$8.log("createMessageChannel", client);
             const messageChannel = new MessageChannel();
             addEventListeners(messageChannel.port1, this.#boundMessageChannelPortEventListeners);
             messageChannel.port1.start();
@@ -40084,16 +40095,16 @@ let WindowManagerServer = (() => {
             const port = event.currentTarget;
             const client = this.#getClientByMessagePort(port);
             if (!client) {
-                _console$a.error("no client found for port", port);
+                _console$8.error("no client found for port", port);
                 return;
             }
             const arrayBuffer = event.data;
             const dataView = new DataView(arrayBuffer);
-            _console$a.log(`received ${dataView.byteLength} bytes via port`, dataView.buffer, client);
+            _console$8.log(`received ${dataView.byteLength} bytes via port`, dataView.buffer, client);
             this.#parseWindowManagerClientMessage(client, dataView);
         }
         #parseWindowManagerClientMessage(client, dataView) {
-            _console$a.log("parseWindowManagerClientMessage", client, dataView);
+            _console$8.log("parseWindowManagerClientMessage", client, dataView);
             let transfer = [];
             const clientContext = {
                 responseMessages: [],
@@ -40103,25 +40114,11 @@ let WindowManagerServer = (() => {
                 broadcastMessages: [],
             };
             parseMessage(dataView, WindowManagerMessageTypes, this.#onClientMessage.bind(this), clientContext, true);
-            clientContext.responseMessages =
-                clientContext.responseMessages.filter(Boolean);
-            clientContext.broadcastMessages =
-                clientContext.broadcastMessages.filter(Boolean);
-            clientContext.localBroadcastMessages =
-                clientContext.localBroadcastMessages.filter(Boolean);
-            const responseMessage = concatenateArrayBuffers(clientContext.responseMessages);
-            _console$a.log(`sending ${responseMessage.byteLength} bytes to client...`);
-            this.#sendToClient(client, responseMessage, transfer);
-            const localBroadcastMessage = concatenateArrayBuffers(clientContext.localBroadcastMessages);
-            _console$a.log(`locally broadcasting ${localBroadcastMessage.byteLength} bytes...`);
-            this.#broadcast(localBroadcastMessage, this.clients.filter((_client) => _client != client));
-            const broadcastMessage = concatenateArrayBuffers(clientContext.broadcastMessages);
-            _console$a.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
-            ServerManager$1.broadcast(broadcastMessage);
+            WindowServer.sendClientContext(clientContext);
         }
         #onClientMessage(messageType, dataView, clientContext) {
             const { responseMessages, transfer, client, localBroadcastMessages, broadcastMessages, } = clientContext;
-            _console$a.log("onClientMessage", { messageType }, clientContext);
+            _console$8.log("onClientMessage", { messageType }, clientContext);
             switch (messageType) {
                 case "ping":
                     this.#createMessageChannel(client);
@@ -40131,7 +40128,7 @@ let WindowManagerServer = (() => {
                 case "pong":
                     break;
                 case "serverMessage":
-                    const _clientContext = WindowServer$1.parseClientMessage(client, dataView);
+                    const _clientContext = WindowServer.parseClientMessage(client, dataView);
                     if (_clientContext) {
                         if (_clientContext.responseMessages.length > 0) {
                             responseMessages.push(createWindowManagerMessage({
@@ -40154,7 +40151,7 @@ let WindowManagerServer = (() => {
                     }
                     break;
                 default:
-                    _console$a.error(`uncaught messageType "${messageType}"`);
+                    _console$8.error(`uncaught messageType "${messageType}"`);
                     break;
             }
         }
@@ -40162,9 +40159,9 @@ let WindowManagerServer = (() => {
     return _classThis;
 })();
 var WindowManagerServer_default = WindowManagerServer.shared;
-WindowServer$1.init();
+WindowServer.init();
 
-const _console$9 = createConsole("WindowManagerClient", { log: false });
+const _console$7 = createConsole("WindowManagerClient", { log: false });
 const WindowManagerClientConnectionStatuses = [
     "notConnected",
     "connecting",
@@ -40177,7 +40174,7 @@ const WindowManagerClientEventTypes = [
     "isConnected",
     "serverMessage",
 ];
-let WindowManagerClient = (() => {
+let WindowManagerClient$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -40236,9 +40233,9 @@ let WindowManagerClient = (() => {
             if (ports?.length > 0) {
                 this.#onMessagePort(ports[0]);
             }
-            _console$9.log("onWindowMessage", arrayBuffer, ports);
+            _console$7.log("onWindowMessage", arrayBuffer, ports);
             const dataView = new DataView(arrayBuffer);
-            _console$9.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
+            _console$7.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
             this.#parseWindowManagerMessage(dataView);
         }
         #port;
@@ -40251,7 +40248,7 @@ let WindowManagerClient = (() => {
                 this.#port.close();
             }
             this.#port = port;
-            _console$9.log("port", this.#port);
+            _console$7.log("port", this.#port);
             addEventListeners(this.#port, this.#boundMessageChannelPortEventListeners);
             this.#port.start();
         }
@@ -40259,15 +40256,15 @@ let WindowManagerClient = (() => {
             message: this.#onMessagePortMessage.bind(this),
         };
         #onMessagePortMessage(event) {
-            _console$9.log("onMessagePortMessage", event);
+            _console$7.log("onMessagePortMessage", event);
             const port = event.currentTarget;
             if (this.#port != port) {
-                _console$9.error("received message from wrong port");
+                _console$7.error("received message from wrong port");
                 return;
             }
             const arrayBuffer = event.data;
             const dataView = new DataView(arrayBuffer);
-            _console$9.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
+            _console$7.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
             this.#parseWindowManagerMessage(dataView);
         }
         #parseWindowManagerMessage(dataView) {
@@ -40285,7 +40282,7 @@ let WindowManagerClient = (() => {
                     this.#dispatchEvent("serverMessage", { dataView });
                     break;
                 default:
-                    _console$9.error(`uncaught messageType "${messageType}"`);
+                    _console$7.error(`uncaught messageType "${messageType}"`);
                     break;
             }
         }
@@ -40294,8 +40291,8 @@ let WindowManagerClient = (() => {
             return this.#connectionStatus;
         }
         set connectionStatus(newConnectionStatus) {
-            _console$9.assertTypeWithError(newConnectionStatus, "string");
-            _console$9.log({ newConnectionStatus });
+            _console$7.assertTypeWithError(newConnectionStatus, "string");
+            _console$7.log({ newConnectionStatus });
             if (this.#connectionStatus == newConnectionStatus) {
                 return;
             }
@@ -40318,10 +40315,10 @@ let WindowManagerClient = (() => {
             return !this.isConnected;
         }
         #assertConnection() {
-            _console$9.assertWithError(this.isConnected, "notConnected");
+            _console$7.assertWithError(this.isConnected, "notConnected");
         }
         #assertDisconnection() {
-            _console$9.assertWithError(this.isDisconnected, "not disconnected");
+            _console$7.assertWithError(this.isDisconnected, "not disconnected");
         }
         connect() {
             this.#ping();
@@ -40339,7 +40336,7 @@ let WindowManagerClient = (() => {
             if (message != windowManagerPingMessage) {
                 this.#assertConnection();
             }
-            _console$9.log("sendMessage", message, { transfer });
+            _console$7.log("sendMessage", message, { transfer });
             if (this.#port) {
                 this.#port.postMessage(message, { transfer });
             }
@@ -40350,7 +40347,7 @@ let WindowManagerClient = (() => {
             }
         }
         sendMessage(...messages) {
-            _console$9.log("sendMessage", ...messages);
+            _console$7.log("sendMessage", ...messages);
             this.#sendMessage(createWindowManagerMessage(...messages));
         }
         #ping() {
@@ -40362,7 +40359,7 @@ let WindowManagerClient = (() => {
     });
     return _classThis;
 })();
-var WindowManagerClient$1 = WindowManagerClient.shared;
+var WindowManagerClient = WindowManagerClient$1.shared;
 
 const _console$6 = createConsole("WindowClient", { log: false });
 let WindowClient = (() => {
@@ -40384,7 +40381,7 @@ let WindowClient = (() => {
         static shared;
         constructor() {
             super();
-            addEventListeners(WindowManagerClient$1, this.#boundWindowEventListeners);
+            addEventListeners(WindowManagerClient, this.#boundWindowEventListeners);
         }
         #boundWindowEventListeners = {
             connectionStatus: this.#onWindowManagerClientConnectionStatus.bind(this),
@@ -40399,10 +40396,10 @@ let WindowClient = (() => {
             this.parseMessage(event.message.dataView);
         }
         get isConnected() {
-            return WindowManagerClient$1.isConnected;
+            return WindowManagerClient.isConnected;
         }
         get isDisconnected() {
-            return WindowManagerClient$1.isDisconnected;
+            return WindowManagerClient.isDisconnected;
         }
         connect() {
             this.#onConnectionCommand();
@@ -40421,7 +40418,7 @@ let WindowClient = (() => {
         }
         sendServerMessage(...messages) {
             _console$6.log("sendServerMessage", messages);
-            WindowManagerClient$1.sendMessage({
+            WindowManagerClient.sendMessage({
                 type: "serverMessage",
                 data: createServerMessage(...messages),
             });
@@ -43808,7 +43805,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager$1.addEventListener("deviceConnected", (event) => {
+        DeviceManager.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -43876,7 +43873,7 @@ const ConnectionManagers = [
 ];
 
 const Servers = [
-    WindowServer,
+    WindowServer$1,
 ];
 
 const Clients = [
@@ -44023,5 +44020,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager_default as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager$1 as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient$1 as WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer$1 as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager_default as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
 //# sourceMappingURL=brilliantsole.module.js.map

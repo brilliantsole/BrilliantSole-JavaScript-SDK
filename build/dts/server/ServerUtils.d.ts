@@ -9,15 +9,16 @@ export interface Message<MessageType extends string> {
     type: MessageType;
     data?: MessageLike | MessageLike[];
 }
+export type MessageOrMessageType<MessageType extends string> = Message<MessageType> | MessageType;
 export declare function createMessage<MessageType extends string>(enumeration: readonly MessageType[], use2Bytes: boolean, ...messages: (Message<MessageType> | MessageType)[]): ArrayBuffer;
 export type ServerMessage = Message<ServerMessageType>;
-export type ServerMessageOrMessageType = ServerMessage | ServerMessageType;
+export type ServerMessageOrMessageType = MessageOrMessageType<ServerMessageType>;
 export declare function createServerMessage(...messages: ServerMessageOrMessageType[]): ArrayBuffer;
 export type DeviceMessage = Message<DeviceEventType>;
-export type DeviceMessageOrMessageType = DeviceEventType | DeviceMessage;
+export type DeviceMessageOrMessageType = MessageOrMessageType<DeviceEventType>;
 export declare function createDeviceMessage(...messages: DeviceMessageOrMessageType[]): ArrayBuffer;
 export type ClientDeviceMessage = Message<ConnectionMessageType>;
-export type ClientDeviceMessageOrMessageType = ConnectionMessageType | ClientDeviceMessage;
+export type ClientDeviceMessageOrMessageType = MessageOrMessageType<ConnectionMessageType>;
 export declare function createClientDeviceMessage(...messages: ClientDeviceMessageOrMessageType[]): ArrayBuffer;
 export declare const isScanningAvailableRequestMessage: ArrayBuffer;
 export declare const isScanningRequestMessage: ArrayBuffer;

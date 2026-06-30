@@ -73,9 +73,9 @@ declare class ServerManager {
     static readonly shared: ServerManager;
     constructor();
     get servers(): Server[];
-    get addEventListener(): <T extends "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers" | "*">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<ServerManager, "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers", ServerManagerEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers" | "*">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<ServerManager, "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers", ServerManagerEventMessages, T>) => void) => void;
-    get removeEventListeners(): <T extends "server*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "servers" | "*">(type: T) => void;
+    get addEventListener(): <T extends "*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "server*" | "servers">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<ServerManager, "server" | "serverClientConnected" | "serverClientDisconnected" | "server*" | "servers", ServerManagerEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "server*" | "servers">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<ServerManager, "server" | "serverClientConnected" | "serverClientDisconnected" | "server*" | "servers", ServerManagerEventMessages, T>) => void) => void;
+    get removeEventListeners(): <T extends "*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "server*" | "servers">(type: T) => void;
     private broadcast;
     clientToServerGuardManager: GuardManager<[BaseServerClientGuardManagerArg]>;
     serverToClientGuardManager: GuardManager<[BaseServerClientGuardManagerArg]>;

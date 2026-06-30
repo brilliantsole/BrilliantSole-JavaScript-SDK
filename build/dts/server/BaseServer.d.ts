@@ -51,8 +51,9 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     static set ClearSensorConfigurationsWhenNoClients(newValue: boolean);
     get clearSensorConfigurationsWhenNoClients(): boolean;
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
-    protected abstract sendToClient(client: ServerClient, message: ArrayBuffer): void;
-    private broadcastMessage;
+    protected sendToClient(client: ServerClient, message: ArrayBuffer): boolean;
+    broadcast(message: ArrayBuffer, clients?: ServerClient[]): void;
     protected parseClientMessage(client: ServerClient, dataView: DataView<ArrayBuffer>): BaseServerClientContext<BaseServerClient> | undefined;
+    protected sendClientContext(clientContext: BaseServerClientContext<BaseServerClient>): void;
 }
 export default BaseServer;

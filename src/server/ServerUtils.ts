@@ -49,6 +49,9 @@ export interface Message<MessageType extends string> {
   type: MessageType;
   data?: MessageLike | MessageLike[];
 }
+export type MessageOrMessageType<MessageType extends string> =
+  | Message<MessageType>
+  | MessageType;
 
 export function createMessage<MessageType extends string>(
   enumeration: readonly MessageType[],
@@ -100,14 +103,15 @@ export function createMessage<MessageType extends string>(
 }
 
 export type ServerMessage = Message<ServerMessageType>;
-export type ServerMessageOrMessageType = ServerMessage | ServerMessageType;
+export type ServerMessageOrMessageType =
+  MessageOrMessageType<ServerMessageType>;
 export function createServerMessage(...messages: ServerMessageOrMessageType[]) {
   _console.log("createServerMessage", ...messages);
   return createMessage(ServerMessageTypes, true, ...messages);
 }
 
 export type DeviceMessage = Message<DeviceEventType>;
-export type DeviceMessageOrMessageType = DeviceEventType | DeviceMessage;
+export type DeviceMessageOrMessageType = MessageOrMessageType<DeviceEventType>;
 export function createDeviceMessage(...messages: DeviceMessageOrMessageType[]) {
   _console.log("createDeviceMessage", ...messages);
   return createMessage(DeviceEventTypes, true, ...messages);
@@ -115,8 +119,7 @@ export function createDeviceMessage(...messages: DeviceMessageOrMessageType[]) {
 
 export type ClientDeviceMessage = Message<ConnectionMessageType>;
 export type ClientDeviceMessageOrMessageType =
-  | ConnectionMessageType
-  | ClientDeviceMessage;
+  MessageOrMessageType<ConnectionMessageType>;
 export function createClientDeviceMessage(
   ...messages: ClientDeviceMessageOrMessageType[]
 ) {
