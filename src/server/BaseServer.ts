@@ -241,9 +241,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   broadcast(
     arrayBuffer: ArrayBuffer,
     clients: ServerClient[] = this.clients,
+    excludeClients?: ServerClient[],
     isWrapped?: boolean,
   ) {
     _console.log("broadcasting", arrayBuffer);
+    if (excludeClients) {
+      clients = clients.filter((client) => !excludeClients.includes(client));
+    }
     clients
       .filter((client) => this.clients.includes(client))
       .forEach((client) => {
@@ -798,7 +802,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               );
             }
             if (broadcastDeviceMessages.length > 0) {
-              localBroadcastMessages.push(
+              broadcastMessages.push(
                 this.#createDeviceServerMessage(
                   device,
                   ...broadcastDeviceMessages,
@@ -1054,7 +1058,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   protected sendClientContext(
-    clientContext: BaseServerClientContext<BaseServerClient>,
+    clientContext: BaseServerClientContext<ServerClient>,
   ) {
     _console.log("sendClientContext", clientContext);
 
@@ -1069,7 +1073,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       clientContext.responseMessages,
     );
     _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
-    // @ts-expect-error
     this.sendToClient(clientContext.client, responseMessage, true);
 
     const localBroadcastMessage = concatenateArrayBuffers(
@@ -1081,7 +1084,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     );
     this.broadcast(
       localBroadcastMessage,
-      this.clients.filter((client) => client != clientContext.client),
+      undefined,
+      [clientContext.client],
       true,
     );
 
@@ -1090,7 +1094,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     );
     _console.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
     // @ts-expect-error
-    ServerManager.broadcast(broadcastMessage, undefined, true);
+    ServerManager.broadcast(
+      broadcastMessage,
+      undefined,
+      // @ts-expect-error
+      [clientContext.client],
+      true,
+    );
   }
 }
 
