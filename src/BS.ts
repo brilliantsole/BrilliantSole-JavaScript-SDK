@@ -60,8 +60,8 @@ export {
 import { default as ServerManager } from "./server/ServerManager.ts";
 export { ServerManager };
 
-// import { default as ClientManager } from "./server/ClientManager.ts";
-// export { ClientManager };
+import { default as ClientManager } from "./server/ClientManager.ts";
+export { ClientManager };
 
 /** BROWSER_START */
 

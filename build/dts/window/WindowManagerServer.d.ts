@@ -1,5 +1,6 @@
 import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
 import { WindowManagerMessage } from "./WindowManagerUtils.ts";
+import { BaseServerClientContext } from "../server/BaseServer.ts";
 export interface WindowManagerServerClient {
     type: "window";
     iframe: HTMLIFrameElement;
@@ -8,9 +9,7 @@ export interface WindowManagerServerClient {
     didLoad?: boolean;
     allowRedirects?: boolean;
 }
-export interface WindowManagerServerClientContext {
-    client: WindowManagerServerClient;
-    responseMessages: (ArrayBuffer | undefined)[];
+export interface WindowManagerServerClientContext extends BaseServerClientContext<WindowManagerServerClient> {
     transfer: Transferable[];
 }
 export declare const WindowManagerServerEventTypes: readonly ["clientConnected", "clientDisconnected"];

@@ -21,7 +21,7 @@ import {
   createWebSocketMessage,
 } from "./WebSocketUtils.ts";
 
-const _console = createConsole("WebSocketServer", { log: false });
+const _console = createConsole("WebSocketServer", { log: true });
 
 /** NODE_START */
 import type * as ws from "ws";
@@ -136,23 +136,54 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
     client: WebSocketServerClient,
     dataView: DataView<ArrayBuffer>,
   ) {
-    let responseMessages: ArrayBuffer[] = [];
+    _console.log("parseWebSocketClientMessage", client, dataView);
 
-    const context: WebSocketServerClientContext = { responseMessages, client };
+    const clientContext: WebSocketServerClientContext = {
+      responseMessages: [],
+      client,
+      localBroadcastMessages: [],
+      broadcastMessages: [],
+    };
 
     parseMessage(
       dataView,
       WebSocketMessageTypes,
       this.#onClientMessage.bind(this),
-      context,
+      clientContext,
       true,
     );
 
-    responseMessages = responseMessages.filter(Boolean);
+    clientContext.responseMessages =
+      clientContext.responseMessages.filter(Boolean);
+    clientContext.broadcastMessages =
+      clientContext.broadcastMessages.filter(Boolean);
+    clientContext.localBroadcastMessages =
+      clientContext.localBroadcastMessages.filter(Boolean);
 
-    const responseMessage = concatenateArrayBuffers(responseMessages);
+    const responseMessage = concatenateArrayBuffers(
+      clientContext.responseMessages,
+    );
     _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
     this.#sendToClient(client, responseMessage);
+
+    const localBroadcastMessage = concatenateArrayBuffers(
+      clientContext.localBroadcastMessages,
+    );
+
+    _console.log(
+      `locally broadcasting ${localBroadcastMessage.byteLength} bytes...`,
+    );
+    this.#broadcast(
+      localBroadcastMessage,
+      this.clients.filter((_client) => _client != client),
+    );
+
+    const broadcastMessage = concatenateArrayBuffers(
+      clientContext.broadcastMessages,
+    );
+    _console.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
+    // @ts-expect-error
+    ServerManager.broadcast(broadcastMessage);
   }
 
   #onClientMessage(
@@ -160,7 +191,12 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
     dataView: DataView<ArrayBuffer>,
     context: WebSocketServerClientContext,
   ) {
-    const { responseMessages, client } = context;
+    const {
+      responseMessages,
+      client,
+      broadcastMessages,
+      localBroadcastMessages,
+    } = context;
 
     _console.log("onClientMessage", { messageType });
 
@@ -171,14 +207,34 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
       case "pong":
         break;
       case "serverMessage":
-        const responseMessage = this.parseClientMessage(client, dataView);
-        if (responseMessage) {
-          responseMessages.push(
-            createWebSocketMessage({
-              type: "serverMessage",
-              data: responseMessage,
-            }),
-          );
+        const _clientContext = this.parseClientMessage(client, dataView);
+        if (_clientContext) {
+          if (_clientContext.responseMessages.length > 0) {
+            responseMessages.push(
+              createWebSocketMessage({
+                type: "serverMessage",
+                data: concatenateArrayBuffers(_clientContext.responseMessages),
+              }),
+            );
+          }
+          if (_clientContext.broadcastMessages.length > 0) {
+            broadcastMessages.push(
+              createWebSocketMessage({
+                type: "serverMessage",
+                data: concatenateArrayBuffers(_clientContext.broadcastMessages),
+              }),
+            );
+          }
+          if (_clientContext.localBroadcastMessages.length > 0) {
+            localBroadcastMessages.push(
+              createWebSocketMessage({
+                type: "serverMessage",
+                data: concatenateArrayBuffers(
+                  _clientContext.localBroadcastMessages,
+                ),
+              }),
+            );
+          }
         }
         break;
       default:
@@ -188,6 +244,17 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
   }
 
   // CLIENT MESSAGING
+  #broadcast(
+    message: ArrayBuffer,
+    clients: WebSocketServerClient[] = this.clients,
+  ) {
+    if (message.byteLength == 0) {
+      return;
+    }
+    clients.forEach((client) => {
+      this.#sendToClient(client, message);
+    });
+  }
   #sendToClient(client: WebSocketServerClient, message: ArrayBuffer) {
     if (message.byteLength == 0) {
       _console.log("nothing to send back");
@@ -221,3 +288,5 @@ class WebSocketServer extends BaseServer<WebSocketServerClient> {
 }
 
 export default WebSocketServer;
+
+import { default as ServerManager } from "../ServerManager.ts";

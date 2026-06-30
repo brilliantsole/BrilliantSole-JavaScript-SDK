@@ -205,8 +205,10 @@ class ServerManager {
   // }
 
   // MESSAGING
-  // FILL - more "message" stuff
-  #broadcastMessage(message: ArrayBuffer, clients?: ServerClient[]) {
+  private broadcast(message: ArrayBuffer, clients?: ServerClient[]) {
+    if (message.byteLength == 0) {
+      return;
+    }
     this.servers.forEach((server) => {
       // @ts-expect-error
       server.broadcastMessage(message, clients);

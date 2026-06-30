@@ -6,6 +6,7 @@ BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
 BS.setConsoleLevelFlagsForType("BaseServer", { log: true });
+BS.setConsoleLevelFlagsForType("WindowManagerServer", { log: true });
 
 // ADD DEVICE
 

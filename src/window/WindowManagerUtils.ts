@@ -7,7 +7,6 @@ export const WindowManagerMessageTypes = [
   "ping",
   "pong",
   "serverMessage",
-  // FILL - app stuff, etc
 ] as const;
 export type WindowManagerMessageType =
   (typeof WindowManagerMessageTypes)[number];

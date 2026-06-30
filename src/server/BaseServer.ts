@@ -126,6 +126,8 @@ export interface BaseServerClientContext<
 > {
   client: ServerClient;
   responseMessages: (ArrayBuffer | undefined)[];
+  localBroadcastMessages: (ArrayBuffer | undefined)[];
+  broadcastMessages: (ArrayBuffer | undefined)[];
 }
 
 export interface BaseServerClientDeviceContext<
@@ -133,6 +135,7 @@ export interface BaseServerClientDeviceContext<
 > {
   client: ServerClient;
   deviceMessages: DeviceMessage[];
+  broadcastDeviceMessages: DeviceMessage[];
   device: Device;
 }
 
@@ -203,7 +206,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   ) {
     const client = event.message.client;
     if (!this.clients.includes(client)) {
-      this.#recentClientDisplayContextCommandDataArrayBuffers.set(client, []);
       this.clients.push(client);
     }
     _console.log("onClientConnected");
@@ -215,7 +217,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     const client = event.message.client;
     if (this.clients.includes(client)) {
       this.clients.splice(this.clients.indexOf(client), 1);
-      this.#recentClientDisplayContextCommandDataArrayBuffers.delete(client);
     }
 
     _console.log("onClientDisconnected");
@@ -351,7 +352,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   // DEVICE LISTENERS
   #boundDeviceListeners: BoundDeviceEventListeners = {
     connectionMessage: this.#onDeviceConnectionMessage.bind(this),
-    displayContextCommands: this.#onDeviceDisplayContextCommands.bind(this),
   };
 
   #createDeviceMessage(
@@ -415,7 +415,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             new Map();
 
           const timestampArrayBuffer = dataView.buffer.slice(0, 2);
-          const context = parseSensorData(
+          const sensorDataContext = parseSensorData(
             dataView,
             (sensorType, sensorDataView, context, isLast) => {
               this.clients.forEach((client) => {
@@ -472,91 +472,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       this.#createDeviceServerMessage(device, deviceMessage),
       this.#allowDeviceToClients(device, deviceMessage),
     );
-  }
-  #recentClientDisplayContextCommandDataArrayBuffers: Map<
-    ServerClient,
-    ArrayBuffer[]
-  > = new Map();
-  #onDeviceDisplayContextCommands(
-    deviceEvent: DeviceEventMap["displayContextCommands"],
-  ) {
-    const {
-      target: device,
-      message: deviceConnectionMessage,
-      type,
-    } = deviceEvent;
-    _console.log("onDeviceDisplayContextCommands", deviceConnectionMessage);
-
-    if (!device.isConnected) {
-      return;
-    }
-
-    const { displayContextCommands } = deviceConnectionMessage;
-
-    const displayContextCommandsData = serializeDisplayContextCommands(
-      device.displayManager,
-      displayContextCommands,
-    );
-
-    this.clients.forEach((client) => {
-      const recentClientDisplayContextCommandDataArrayBuffers =
-        this.#recentClientDisplayContextCommandDataArrayBuffers.get(client);
-      if (
-        recentClientDisplayContextCommandDataArrayBuffers &&
-        recentClientDisplayContextCommandDataArrayBuffers?.length > 0
-      ) {
-        const arrayBufferIndex =
-          recentClientDisplayContextCommandDataArrayBuffers.findIndex(
-            (arrayBuffer) =>
-              areArrayBuffersEqual(arrayBuffer, displayContextCommandsData),
-          );
-        if (arrayBufferIndex != -1) {
-          _console.log("skipping displayContextCommands from client", client, {
-            arrayBufferIndex,
-          });
-          recentClientDisplayContextCommandDataArrayBuffers.splice(
-            arrayBufferIndex,
-            1,
-          );
-          return;
-        }
-      }
-      const filteredDisplayContextCommands = displayContextCommands.filter(
-        (displayContextCommand) => {
-          return this.#allowDeviceDisplayContextCommandToClient(
-            device,
-            client,
-            displayContextCommand,
-          );
-        },
-      );
-      _console.log(
-        "filteredDisplayContextCommands",
-        filteredDisplayContextCommands,
-      );
-
-      const filteredDisplayContextCommandsData =
-        serializeDisplayContextCommands(
-          device.displayManager,
-          filteredDisplayContextCommands,
-        );
-      if (filteredDisplayContextCommandsData.byteLength == 0) {
-        _console.log("no filteredDisplayContextCommandsData");
-        return;
-      }
-
-      const deviceMessage: DeviceMessage = {
-        type,
-        data: filteredDisplayContextCommandsData,
-      };
-
-      if (this.#allowDeviceToClient(device, client, deviceMessage)) {
-        this.#sendToClient(
-          client,
-          this.#createDeviceServerMessage(device, deviceMessage),
-        );
-      }
-    });
   }
 
   // STATIC DEVICE LISTENERS
@@ -723,63 +638,55 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       },
     );
   }
-  #allowDeviceDisplayContextCommandToClient(
-    device: Device,
-    client: ServerClient,
-    displayContextCommand: DisplayContextCommand,
-  ) {
-    return ServerManager.deviceDisplayContextCommandToClientGuardManager.evaluate(
-      {
-        device,
-        // @ts-expect-error
-        client,
-        displayContextCommand,
-        // @ts-expect-error
-        server: this,
-      },
-    );
-  }
 
   protected parseClientMessage(
     client: ServerClient,
     dataView: DataView<ArrayBuffer>,
   ) {
-    let responseMessages: ArrayBuffer[] = [];
-
-    const context: BaseServerClientContext<BaseServerClient> = {
-      responseMessages,
-      client,
-    };
-
     if (!this.#allowClientToServer(client)) {
       return;
     }
+
+    const clientContext: BaseServerClientContext<BaseServerClient> = {
+      responseMessages: [],
+      broadcastMessages: [],
+      localBroadcastMessages: [],
+      client,
+    };
 
     parseMessage(
       dataView,
       ServerMessageTypes,
       this.#onClientMessage.bind(this),
-      context,
+      clientContext,
       true,
     );
 
-    responseMessages = responseMessages.filter(Boolean);
+    clientContext.responseMessages =
+      clientContext.responseMessages.filter(Boolean);
+    clientContext.broadcastMessages =
+      clientContext.broadcastMessages.filter(Boolean);
+    clientContext.localBroadcastMessages =
+      clientContext.localBroadcastMessages.filter(Boolean);
 
-    if (responseMessages.length > 0) {
-      return concatenateArrayBuffers(responseMessages);
-    }
+    return clientContext;
   }
 
   #onClientMessage(
     messageType: ServerMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: BaseServerClientContext<ServerClient>,
+    clientContext: BaseServerClientContext<ServerClient>,
   ) {
     _console.log(
       `onClientMessage "${messageType}" (${dataView.byteLength} bytes)`,
     );
 
-    const { client, responseMessages } = context;
+    const {
+      client,
+      responseMessages,
+      localBroadcastMessages,
+      broadcastMessages,
+    } = clientContext;
 
     const message: ServerMessage = { type: messageType, data: dataView };
 
@@ -882,13 +789,27 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             dataView.buffer,
             dataView.byteOffset + byteOffset,
           );
-          const responseMessage = this.parseClientDeviceMessage(
+          const clientDeviceContext = this.#parseClientDeviceMessage(
             client,
             device,
             _dataView,
           );
-          if (responseMessage) {
-            responseMessages.push(responseMessage);
+          if (clientDeviceContext) {
+            const { deviceMessages, broadcastDeviceMessages } =
+              clientDeviceContext;
+            if (deviceMessages.length > 0) {
+              responseMessages.push(
+                this.#createDeviceServerMessage(device, ...deviceMessages),
+              );
+            }
+            if (broadcastDeviceMessages.length > 0) {
+              localBroadcastMessages.push(
+                this.#createDeviceServerMessage(
+                  device,
+                  ...broadcastDeviceMessages,
+                ),
+              );
+            }
           }
         }
         break;
@@ -953,21 +874,20 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     _console.log("responseMessages", responseMessages);
   }
 
-  protected parseClientDeviceMessage(
+  #parseClientDeviceMessage(
     client: ServerClient,
     device: Device,
     dataView: DataView<ArrayBuffer>,
   ) {
     _console.log("onDeviceMessage", device.bluetoothId, dataView);
 
-    let deviceMessages: DeviceMessage[] = [];
-
     if (!this.#allowClientToDevice(client, device)) {
       return;
     }
 
-    const context: BaseServerClientDeviceContext<ServerClient> = {
-      deviceMessages,
+    const clientDeviceContext: BaseServerClientDeviceContext<ServerClient> = {
+      deviceMessages: [],
+      broadcastDeviceMessages: [],
       device,
       client,
     };
@@ -976,13 +896,16 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       dataView,
       ConnectionMessageTypes,
       this.#parseClientDeviceMessageCallback.bind(this),
-      context,
+      clientDeviceContext,
       true,
     );
 
-    if (deviceMessages.length > 0) {
-      return this.#createDeviceServerMessage(device, ...deviceMessages);
-    }
+    clientDeviceContext.deviceMessages =
+      clientDeviceContext.deviceMessages.filter(Boolean);
+    clientDeviceContext.broadcastDeviceMessages =
+      clientDeviceContext.broadcastDeviceMessages.filter(Boolean);
+
+    return clientDeviceContext;
   }
 
   #filterClientToDeviceTxMessage(
@@ -990,6 +913,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     device: Device,
     dataView: DataView<ArrayBuffer>,
     deviceMessages: DeviceMessage[],
+    broadcastDeviceMessages: DeviceMessage[],
   ) {
     const filteredTxMessages: ArrayBuffer[] = [];
     parseMessage(
@@ -1076,9 +1000,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 _console.log("no filteredDisplayContextCommandsData");
                 return;
               }
-              this.#recentClientDisplayContextCommandDataArrayBuffers
-                .get(client)!
-                .push(filteredDisplayContextCommandsData);
+              broadcastDeviceMessages.push({
+                type: "displayContextCommands",
+                data: filteredDisplayContextCommandsData,
+              });
               message.data = filteredDisplayContextCommandsData;
             }
             break;
@@ -1099,13 +1024,14 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   #parseClientDeviceMessageCallback(
     messageType: ConnectionMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: BaseServerClientDeviceContext<ServerClient>,
+    clientDeviceContext: BaseServerClientDeviceContext<ServerClient>,
   ) {
     _console.log(
       `clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`,
     );
 
-    const { client, device, deviceMessages } = context;
+    const { client, device, deviceMessages, broadcastDeviceMessages } =
+      clientDeviceContext;
 
     const message: DeviceMessage = { type: messageType, data: dataView };
     if (!this.#allowClientToDevice(client, device, message)) {
@@ -1122,6 +1048,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           device,
           dataView,
           deviceMessages,
+          broadcastDeviceMessages,
         );
         device.connectionManager!.sendTxData(dataView.buffer);
         break;
@@ -1135,4 +1062,3 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 export default BaseServer;
 
 import { default as ServerManager } from "./ServerManager.ts";
-import { ServerClient as _ServerClient } from "./Server.ts";

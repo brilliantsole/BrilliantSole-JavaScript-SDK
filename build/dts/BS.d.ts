@@ -12,6 +12,8 @@ import { default as DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, De
 export { DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners, };
 import { default as ServerManager } from "./server/ServerManager.ts";
 export { ServerManager };
+import { default as ClientManager } from "./server/ClientManager.ts";
+export { ClientManager };
 /** BROWSER_START */
 import { default as WindowManagerServer } from "./window/WindowManagerServer.ts";
 export { WindowManagerServer };

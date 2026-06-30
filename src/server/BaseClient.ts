@@ -30,7 +30,7 @@ import {
 } from "../connection/BaseConnectionManager.ts";
 import { ServerTypes } from "./BaseServer.ts";
 
-const _console = createConsole("BaseClient", { log: false });
+const _console = createConsole("BaseClient", { log: true });
 
 export const ClientTypes = ServerTypes;
 export type ClientType = (typeof ClientTypes)[number];
@@ -89,6 +89,10 @@ abstract class BaseClient {
 
   // DISPLAY CANVAS HELPER MANAGER
   private static OnClient: (client: BaseClient) => void;
+
+  constructor() {
+    BaseClient.OnClient(this);
+  }
 
   #reset() {
     this.#isScanningAvailable = false;

@@ -25,10 +25,13 @@ export type BoundBaseServerEventListeners<ServerClient extends BaseServerClient>
 export interface BaseServerClientContext<ServerClient extends BaseServerClient> {
     client: ServerClient;
     responseMessages: (ArrayBuffer | undefined)[];
+    localBroadcastMessages: (ArrayBuffer | undefined)[];
+    broadcastMessages: (ArrayBuffer | undefined)[];
 }
 export interface BaseServerClientDeviceContext<ServerClient extends BaseServerClient> {
     client: ServerClient;
     deviceMessages: DeviceMessage[];
+    broadcastDeviceMessages: DeviceMessage[];
     device: Device;
 }
 declare abstract class BaseServer<ServerClient extends BaseServerClient> {
@@ -50,7 +53,6 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
     protected abstract sendToClient(client: ServerClient, message: ArrayBuffer): void;
     private broadcastMessage;
-    protected parseClientMessage(client: ServerClient, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
-    protected parseClientDeviceMessage(client: ServerClient, device: Device, dataView: DataView<ArrayBuffer>): ArrayBuffer | undefined;
+    protected parseClientMessage(client: ServerClient, dataView: DataView<ArrayBuffer>): BaseServerClientContext<BaseServerClient> | undefined;
 }
 export default BaseServer;

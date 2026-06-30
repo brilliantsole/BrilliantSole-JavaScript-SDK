@@ -32,7 +32,7 @@ class WindowServer extends BaseServer<WindowServerClient> {
   constructor() {
     super();
 
-    this.clearSensorConfigurationsWhenNoClients = false; // may set to true if it's a headless "app" hub
+    this.clearSensorConfigurationsWhenNoClients = false; // may set to true if purely a headless hub
   }
 
   // CLIENTS

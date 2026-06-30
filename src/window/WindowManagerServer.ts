@@ -19,8 +19,9 @@ import {
 
 import { default as WindowServer } from "../server/window/WindowServer.ts";
 import { Singleton } from "../utils/TypeScriptUtils.ts";
+import { BaseServerClientContext } from "../server/BaseServer.ts";
 
-const _console = createConsole("WindowManager", { log: false });
+const _console = createConsole("WindowManagerServer", { log: false });
 
 export interface WindowManagerServerClient {
   type: "window";
@@ -30,9 +31,7 @@ export interface WindowManagerServerClient {
   didLoad?: boolean;
   allowRedirects?: boolean;
 }
-export interface WindowManagerServerClientContext {
-  client: WindowManagerServerClient;
-  responseMessages: (ArrayBuffer | undefined)[];
+export interface WindowManagerServerClientContext extends BaseServerClientContext<WindowManagerServerClient> {
   transfer: Transferable[];
 }
 
@@ -142,6 +141,17 @@ class WindowManagerServer {
     return this.clients.find((client) => client.messageChannel?.port1 == port);
   }
 
+  #broadcast(
+    message: ArrayBuffer,
+    clients: WindowManagerServerClient[] = this.clients,
+  ) {
+    if (message.byteLength == 0) {
+      return;
+    }
+    clients.forEach((client) => {
+      this.#sendToClient(client, message);
+    });
+  }
   #sendToClient(
     client: WindowManagerServerClient,
     message: ArrayBuffer,
@@ -348,36 +358,69 @@ class WindowManagerServer {
   ) {
     _console.log("parseWindowManagerClientMessage", client, dataView);
 
-    let responseMessages: ArrayBuffer[] = [];
     let transfer: Transferable[] = [];
-    const context: WindowManagerServerClientContext = {
-      responseMessages,
+    const clientContext: WindowManagerServerClientContext = {
+      responseMessages: [],
       client,
       transfer,
+      localBroadcastMessages: [],
+      broadcastMessages: [],
     };
 
     parseMessage(
       dataView,
       WindowManagerMessageTypes,
       this.#onClientMessage.bind(this),
-      context,
+      clientContext,
       true,
     );
 
-    responseMessages = responseMessages.filter(Boolean);
+    clientContext.responseMessages =
+      clientContext.responseMessages.filter(Boolean);
+    clientContext.broadcastMessages =
+      clientContext.broadcastMessages.filter(Boolean);
+    clientContext.localBroadcastMessages =
+      clientContext.localBroadcastMessages.filter(Boolean);
 
-    const responseMessage = concatenateArrayBuffers(responseMessages);
+    const responseMessage = concatenateArrayBuffers(
+      clientContext.responseMessages,
+    );
     _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
     this.#sendToClient(client, responseMessage, transfer);
+
+    const localBroadcastMessage = concatenateArrayBuffers(
+      clientContext.localBroadcastMessages,
+    );
+
+    _console.log(
+      `locally broadcasting ${localBroadcastMessage.byteLength} bytes...`,
+    );
+    this.#broadcast(
+      localBroadcastMessage,
+      this.clients.filter((_client) => _client != client),
+    );
+
+    const broadcastMessage = concatenateArrayBuffers(
+      clientContext.broadcastMessages,
+    );
+    _console.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
+    // @ts-expect-error
+    ServerManager.broadcast(broadcastMessage);
   }
 
   #onClientMessage(
     messageType: WindowManagerMessageType,
     dataView: DataView<ArrayBuffer>,
-    context: WindowManagerServerClientContext,
+    clientContext: WindowManagerServerClientContext,
   ) {
-    const { responseMessages, transfer, client } = context;
-    _console.log("onClientMessage", { messageType }, context);
+    const {
+      responseMessages,
+      transfer,
+      client,
+      localBroadcastMessages,
+      broadcastMessages,
+    } = clientContext;
+    _console.log("onClientMessage", { messageType }, clientContext);
 
     switch (messageType) {
       case "ping":
@@ -389,17 +432,37 @@ class WindowManagerServer {
         break;
       case "serverMessage":
         // @ts-expect-error
-        const responseMessage = WindowServer.parseClientMessage(
+        const _clientContext = WindowServer.parseClientMessage(
           client,
           dataView,
         );
-        if (responseMessage) {
-          responseMessages.push(
-            createWindowManagerMessage({
-              type: "serverMessage",
-              data: responseMessage,
-            }),
-          );
+        if (_clientContext) {
+          if (_clientContext.responseMessages.length > 0) {
+            responseMessages.push(
+              createWindowManagerMessage({
+                type: "serverMessage",
+                data: concatenateArrayBuffers(_clientContext.responseMessages),
+              }),
+            );
+          }
+          if (_clientContext.broadcastMessages.length > 0) {
+            broadcastMessages.push(
+              createWindowManagerMessage({
+                type: "serverMessage",
+                data: concatenateArrayBuffers(_clientContext.broadcastMessages),
+              }),
+            );
+          }
+          if (_clientContext.localBroadcastMessages.length > 0) {
+            localBroadcastMessages.push(
+              createWindowManagerMessage({
+                type: "serverMessage",
+                data: concatenateArrayBuffers(
+                  _clientContext.localBroadcastMessages,
+                ),
+              }),
+            );
+          }
         }
         break;
       default:
@@ -412,3 +475,5 @@ class WindowManagerServer {
 export default WindowManagerServer.shared;
 // @ts-expect-error
 WindowServer.init();
+
+import { default as ServerManager } from "../server/ServerManager.ts";

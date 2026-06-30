@@ -14,7 +14,6 @@ import BaseServer, {
 } from "../BaseServer.ts";
 import {
   createUDPServerMessage,
-  pongUDPClientTimeout,
   removeUDPClientTimeout,
   udpPongMessage,
   UDPServerMessageType,
@@ -139,40 +138,73 @@ class UDPServer extends BaseServer<UDPServerClient> {
     const dataView = new DataView(
       dataToArrayBuffer(message),
     ) as DataView<ArrayBuffer>;
-    this.#onClientData(client, dataView);
+    this.#parseUDPClientMessage(client, dataView);
   }
 
   // PARSING
-  #onClientData(client: UDPServerClient, dataView: DataView<ArrayBuffer>) {
-    _console.log(
-      `parsing ${dataView.byteLength} bytes from ${this.#clientToString(
-        client,
-      )}`,
-      dataView.buffer,
-    );
-    let responseMessages: ArrayBuffer[] = [];
-    const context: UDPServerClientContext = { responseMessages, client };
+  #parseUDPClientMessage(
+    client: UDPServerClient,
+    dataView: DataView<ArrayBuffer>,
+  ) {
+    _console.log("parseWebSocketClientMessage", client, dataView);
+
+    const clientContext: UDPServerClientContext = {
+      responseMessages: [],
+      client,
+      localBroadcastMessages: [],
+      broadcastMessages: [],
+    };
 
     parseMessage(
       dataView,
       UDPServerMessageTypes,
       this.#onClientMessage.bind(this),
-      context,
+      clientContext,
       true,
     );
+    clientContext.responseMessages =
+      clientContext.responseMessages.filter(Boolean);
+    clientContext.broadcastMessages =
+      clientContext.broadcastMessages.filter(Boolean);
+    clientContext.localBroadcastMessages =
+      clientContext.localBroadcastMessages.filter(Boolean);
 
-    responseMessages = responseMessages.filter(Boolean);
+    const responseMessage = concatenateArrayBuffers(
+      clientContext.responseMessages,
+    );
+    _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
+    this.#sendToClient(client, responseMessage);
 
-    const response = concatenateArrayBuffers(responseMessages);
-    _console.log(`responding with ${response.byteLength} bytes...`, response);
-    this.#sendToClient(client, response);
+    const localBroadcastMessage = concatenateArrayBuffers(
+      clientContext.localBroadcastMessages,
+    );
+
+    _console.log(
+      `locally broadcasting ${localBroadcastMessage.byteLength} bytes...`,
+    );
+    this.#broadcast(
+      localBroadcastMessage,
+      this.clients.filter((_client) => _client != client),
+    );
+
+    const broadcastMessage = concatenateArrayBuffers(
+      clientContext.broadcastMessages,
+    );
+    _console.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
+    // @ts-expect-error
+    ServerManager.broadcast(broadcastMessage);
   }
   #onClientMessage(
     messageType: UDPServerMessageType,
     dataView: DataView<ArrayBuffer>,
     context: UDPServerClientContext,
   ) {
-    const { client, responseMessages } = context;
+    const {
+      client,
+      responseMessages,
+      broadcastMessages,
+      localBroadcastMessages,
+    } = context;
 
     _console.log(
       `received "${messageType}" message from ${client.address}:${client.port}`,
@@ -188,14 +220,34 @@ class UDPServer extends BaseServer<UDPServerClient> {
         responseMessages.push(this.#parseRemoteReceivePort(dataView, client));
         break;
       case "serverMessage":
-        const responseMessage = this.parseClientMessage(client, dataView);
-        if (responseMessage) {
-          responseMessages.push(
-            createUDPServerMessage({
-              type: "serverMessage",
-              data: responseMessage,
-            }),
-          );
+        const _clientContext = this.parseClientMessage(client, dataView);
+        if (_clientContext) {
+          if (_clientContext.responseMessages.length > 0) {
+            responseMessages.push(
+              createUDPServerMessage({
+                type: "serverMessage",
+                data: concatenateArrayBuffers(_clientContext.responseMessages),
+              }),
+            );
+          }
+          if (_clientContext.broadcastMessages.length > 0) {
+            broadcastMessages.push(
+              createUDPServerMessage({
+                type: "serverMessage",
+                data: concatenateArrayBuffers(_clientContext.broadcastMessages),
+              }),
+            );
+          }
+          if (_clientContext.localBroadcastMessages.length > 0) {
+            localBroadcastMessages.push(
+              createUDPServerMessage({
+                type: "serverMessage",
+                data: concatenateArrayBuffers(
+                  _clientContext.localBroadcastMessages,
+                ),
+              }),
+            );
+          }
         }
         break;
 
@@ -229,6 +281,14 @@ class UDPServer extends BaseServer<UDPServerClient> {
   }
 
   // CLIENT MESSAGING
+  #broadcast(message: ArrayBuffer, clients: UDPServerClient[] = this.clients) {
+    if (message.byteLength == 0) {
+      return;
+    }
+    clients.forEach((client) => {
+      this.#sendToClient(client, message);
+    });
+  }
   #sendToClient(client: UDPServerClient, message: ArrayBuffer) {
     if (message.byteLength == 0) {
       _console.log("no response to send");
@@ -279,3 +339,5 @@ class UDPServer extends BaseServer<UDPServerClient> {
 }
 
 export default UDPServer;
+
+import { default as ServerManager } from "../ServerManager.ts";
