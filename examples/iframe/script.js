@@ -8,6 +8,83 @@ BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
 BS.setConsoleLevelFlagsForType("BaseServer", { log: true });
 BS.setConsoleLevelFlagsForType("WindowManagerServer", { log: true });
 
+// WEBSOCKET CLIENT
+const client = new BS.WebSocketClient();
+console.log({ client });
+
+window.client = client;
+
+// WEBSOCKET URL SEARCH PARAMS
+
+const url = new URL(location);
+function setUrlParam(key, value) {
+  if (history.pushState) {
+    let searchParams = new URLSearchParams(window.location.search);
+    if (value) {
+      searchParams.set(key, value);
+    } else {
+      searchParams.delete(key);
+    }
+    let newUrl =
+      window.location.protocol +
+      "//" +
+      window.location.host +
+      window.location.pathname +
+      "?" +
+      searchParams.toString();
+    window.history.pushState({ path: newUrl }, "", newUrl);
+  }
+}
+client.addEventListener("isConnected", () => {
+  if (client.isConnected) {
+    setUrlParam("webSocketUrl", client.webSocket.url);
+    webSocketUrlInput.value = client.webSocket.url;
+    webSocketUrlInput.dispatchEvent(new Event("input"));
+  } else {
+    setUrlParam("webSocketUrl");
+  }
+});
+
+// WEBSOCKET SERVER URL
+
+/** @type {HTMLInputElement} */
+const webSocketUrlInput = document.getElementById("webSocketUrl");
+webSocketUrlInput.value = url.searchParams.get("webSocketUrl") || "";
+webSocketUrlInput.dispatchEvent(new Event("input"));
+
+// WEBSOCKET CONNECTION
+
+/** @type {HTMLButtonElement} */
+const toggleConnectionButton = document.getElementById("toggleConnection");
+toggleConnectionButton.addEventListener("click", () => {
+  if (client.isConnected) {
+    client.disconnect();
+  } else {
+    /** @type {string?} */
+    let webSocketUrl;
+    if (webSocketUrlInput.value.length > 0) {
+      webSocketUrl = webSocketUrlInput.value;
+    }
+    client.connect(webSocketUrl);
+  }
+});
+client.addEventListener("connectionStatus", () => {
+  switch (client.connectionStatus) {
+    case "connected":
+    case "notConnected":
+      toggleConnectionButton.disabled = false;
+      toggleConnectionButton.innerText = client.isConnected
+        ? "disconnect"
+        : "connect";
+      break;
+    case "connecting":
+    case "disconnecting":
+      toggleConnectionButton.innerText = client.connectionStatus;
+      toggleConnectionButton.disabled = true;
+      break;
+  }
+});
+
 // ADD DEVICE
 
 const addDeviceButton = document.getElementById("addDevice");
