@@ -28,7 +28,6 @@ export interface WindowManagerServerClient {
   messageChannel?: MessageChannel;
   didSendMessagePort?: boolean;
   didLoad?: boolean;
-  allowRedirects?: boolean;
   transfer?: Transferable[];
 }
 export interface WindowManagerServerClientContext extends BaseServerClientContext<WindowManagerServerClient> {
@@ -192,7 +191,7 @@ class WindowManagerServer {
     if (event.source == window.parent) {
       return;
     }
-    // _console.log("onWindowMessage", event);
+    _console.log("onWindowMessage", event);
 
     const data: ArrayBuffer | undefined = event.data[windowManagerMessageKey];
     if (!data) {
@@ -208,10 +207,7 @@ class WindowManagerServer {
         _console.error("no iframe found for event", event);
         return;
       }
-      addEventListeners(iframe, this.#boundIframeEventListeners);
-      client = { iframe, allowRedirects: true, type: "window" };
-      this.#clients.push(client);
-      this.#dispatchEvent("clientConnected", { client });
+      client = this.#createClient(iframe);
     }
     _console.log("onWindowMessage", client, data);
     const dataView = new DataView(data) as DataView<ArrayBuffer>;
@@ -220,6 +216,32 @@ class WindowManagerServer {
       dataView.buffer,
     );
     this.#parseWindowManagerClientMessage(client, dataView);
+  }
+
+  #createClient(iframe: HTMLIFrameElement) {
+    addEventListeners(iframe, this.#boundIframeEventListeners);
+    const client: WindowManagerServerClient = {
+      iframe,
+      type: "window",
+    };
+    this.#clients.push(client);
+    this.#dispatchEvent("clientConnected", { client });
+    return client;
+  }
+  #destroyClient(client: WindowManagerServerClient) {
+    _console.log("onClientDisconnected", client);
+    const { messageChannel } = client;
+    if (messageChannel) {
+      messageChannel.port1.close();
+      removeEventListeners(
+        messageChannel.port1,
+        this.#boundMessageChannelPortEventListeners,
+      );
+    }
+
+    this.#clients.splice(this.#clients.indexOf(client), 1);
+    this.#dispatchEvent("clientDisconnected", { client });
+    return client;
   }
 
   // IFRAME
@@ -259,18 +281,9 @@ class WindowManagerServer {
       return;
     }
 
-    const { messageChannel } = client;
-    if (messageChannel) {
-      messageChannel.port1.close();
-      removeEventListeners(
-        messageChannel.port1,
-        this.#boundMessageChannelPortEventListeners,
-      );
-    }
-
-    this.#clients.splice(this.#clients.indexOf(client, 1));
-    this.#dispatchEvent("clientDisconnected", { client });
+    this.#destroyClient(client);
   }
+
   #boundIframeEventListeners: {
     [K in keyof HTMLElementEventMap]?: (event: HTMLElementEventMap[K]) => void;
   } = {
@@ -285,17 +298,7 @@ class WindowManagerServer {
       return;
     }
     _console.log("onIframeLoad", client);
-    if (client.didLoad) {
-      _console.log("client loaded twice");
-      if (!client.allowRedirects) {
-        _console.log("force reloading...");
-        client.didLoad = false;
-        iframe.src = iframe.src;
-      }
-    } else {
-      _console.log("client first load");
-      client.didLoad = true;
-    }
+    this.#destroyClient(client);
   }
 
   // MESSAGE PORT

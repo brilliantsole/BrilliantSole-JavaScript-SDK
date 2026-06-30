@@ -40010,6 +40010,7 @@ let WindowManagerServer = (() => {
             if (event.source == window.parent) {
                 return;
             }
+            _console$8.log("onWindowMessage", event);
             const data = event.data[windowManagerMessageKey];
             if (!data) {
                 return;
@@ -40021,15 +40022,33 @@ let WindowManagerServer = (() => {
                     _console$8.error("no iframe found for event", event);
                     return;
                 }
-                addEventListeners(iframe, this.#boundIframeEventListeners);
-                client = { iframe, allowRedirects: true, type: "window" };
-                this.#clients.push(client);
-                this.#dispatchEvent("clientConnected", { client });
+                client = this.#createClient(iframe);
             }
             _console$8.log("onWindowMessage", client, data);
             const dataView = new DataView(data);
             _console$8.log(`received ${dataView.byteLength} bytes via window`, dataView.buffer);
             this.#parseWindowManagerClientMessage(client, dataView);
+        }
+        #createClient(iframe) {
+            addEventListeners(iframe, this.#boundIframeEventListeners);
+            const client = {
+                iframe,
+                type: "window",
+            };
+            this.#clients.push(client);
+            this.#dispatchEvent("clientConnected", { client });
+            return client;
+        }
+        #destroyClient(client) {
+            _console$8.log("onClientDisconnected", client);
+            const { messageChannel } = client;
+            if (messageChannel) {
+                messageChannel.port1.close();
+                removeEventListeners(messageChannel.port1, this.#boundMessageChannelPortEventListeners);
+            }
+            this.#clients.splice(this.#clients.indexOf(client), 1);
+            this.#dispatchEvent("clientDisconnected", { client });
+            return client;
         }
         #iframeObserver;
         #collectIframes(node) {
@@ -40061,13 +40080,7 @@ let WindowManagerServer = (() => {
                 _console$8.error("no client found for iframe", iframe);
                 return;
             }
-            const { messageChannel } = client;
-            if (messageChannel) {
-                messageChannel.port1.close();
-                removeEventListeners(messageChannel.port1, this.#boundMessageChannelPortEventListeners);
-            }
-            this.#clients.splice(this.#clients.indexOf(client, 1));
-            this.#dispatchEvent("clientDisconnected", { client });
+            this.#destroyClient(client);
         }
         #boundIframeEventListeners = {
             load: this.#onIframeLoad.bind(this),
@@ -40079,18 +40092,7 @@ let WindowManagerServer = (() => {
                 return;
             }
             _console$8.log("onIframeLoad", client);
-            if (client.didLoad) {
-                _console$8.log("client loaded twice");
-                if (!client.allowRedirects) {
-                    _console$8.log("force reloading...");
-                    client.didLoad = false;
-                    iframe.src = iframe.src;
-                }
-            }
-            else {
-                _console$8.log("client first load");
-                client.didLoad = true;
-            }
+            this.#destroyClient(client);
         }
         #createMessageChannel(client) {
             _console$8.log("createMessageChannel", client);

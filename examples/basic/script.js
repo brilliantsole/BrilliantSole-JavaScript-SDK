@@ -3368,7 +3368,7 @@ onCurrentDevice(() => {
 });
 const drawShape = (updatedParams) => {
   if (currentDevice.isConnected && currentDevice.isDisplayAvailable) {
-    // console.log(currentDevice.isDisplayReady);
+    console.log(currentDevice.isDisplayReady);
     if (!currentDevice.isDisplayReady) {
       drawWhenReady = true;
       pendingParams = updatedParams;
