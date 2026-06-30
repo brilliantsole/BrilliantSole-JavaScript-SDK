@@ -1,4 +1,3 @@
-import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayContextState, PartialDisplayContextState } from "./DisplayContextState.ts";
 declare class DisplayContextStateHelper {
     #private;
@@ -7,6 +6,6 @@ declare class DisplayContextStateHelper {
     diff(other?: PartialDisplayContextState): (keyof DisplayContextState)[];
     update(newState: PartialDisplayContextState): (keyof DisplayContextState)[];
     reset(numberOfColors: number, keepColorIndices?: boolean, keepSpriteColorIndices?: boolean): void;
-    serialize(numberOfColors: number, other?: PartialDisplayContextState): DisplayContextCommand[];
+    serialize(numberOfColors: number, other?: PartialDisplayContextState): import("./DisplayContextCommand.ts").DisplayContextCommand[];
 }
 export default DisplayContextStateHelper;

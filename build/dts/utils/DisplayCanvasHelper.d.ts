@@ -1,6 +1,6 @@
 import Device from "../Device.ts";
 import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap, DisplayBezierCurve, DisplayBezierCurveType, DisplayWireframe } from "../DisplayManager.ts";
-import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap, PartialDisplayContextState } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection, DisplayColorRGBOrString } from "./DisplayUtils.ts";
 import { EventDispatcherTypes } from "./EventDispatcher.ts";
@@ -84,16 +84,17 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     #private;
     private static OnDisplayCanvasHelper;
     constructor();
-    get addEventListener(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void, options?: import("./EventDispatcher.ts").EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void) => void;
-    get waitForEvent(): <T extends "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, options?: {
+    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated" | "*">(type: T, listener: (event: import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void, options?: import("./EventDispatcher.ts").EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated" | "*">(type: T, listener: (event: import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void) => void;
+    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>>;
-    get removeEventListeners(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "brightness" | "numberOfColors" | "color" | "contextState" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => void;
+    }) => Promise<import("./EventDispatcher.ts").ListenerEvent<DisplayCanvasHelper, "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>>;
+    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated" | "*">(type: T) => void;
     removeAllEventListeners(): void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
     get context(): CanvasRenderingContext2D;
+    setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
     get width(): number;
     get height(): number;
     get aspectRatio(): number;
@@ -109,17 +110,17 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get colors(): string[];
     get opacities(): number[];
     get contextState(): DisplayContextState;
-    serializeContextState(): DisplayContextCommand[];
+    serializeContextState(other?: PartialDisplayContextState): DisplayContextCommand[];
     show(sendImmediately?: boolean, waitUntilReady?: boolean, isSending?: boolean): Promise<void>;
     get interval(): number;
     set interval(newInterval: number);
     get isReady(): boolean;
     clear(sendImmediately?: boolean, waitUntilReady?: boolean, isSending?: boolean): Promise<void>;
     setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    serializeColors(): DisplayContextCommand[];
+    serializeColors(other?: string[]): DisplayContextCommand[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    serializeOpacities(): DisplayContextCommand[];
+    serializeOpacities(other?: number[]): DisplayContextCommand[];
     saveContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     restoreContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     clearContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;

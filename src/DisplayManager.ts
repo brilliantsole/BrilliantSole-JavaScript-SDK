@@ -68,6 +68,7 @@ import {
   DisplayContextCommandType,
   DisplayContextCommandTypes,
   parseDisplayContextCommands,
+  serializeContextState,
   serializeDisplayContextCommand,
   serializeDisplayContextCommandData,
 } from "./utils/DisplayContextCommand.ts";
@@ -406,8 +407,8 @@ class DisplayManager implements DisplayManagerInterface {
       differences,
     });
   }
-  serializeContextState() {
-    return this.#contextStateHelper.serialize(this.numberOfColors);
+  serializeContextState(other?: PartialDisplayContextState) {
+    return this.#contextStateHelper.serialize(this.numberOfColors, other);
   }
   @ForwardToHelper
   async setContextState(
@@ -415,13 +416,11 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
-    const contextCommands = this.#contextStateHelper.serialize(
-      this.numberOfColors,
+    const contextCommands = serializeContextState(
       newState,
+      this.numberOfColors,
+      this.contextState,
     );
-    if (contextCommands.length == 0) {
-      return;
-    }
     await this.runContextCommands(contextCommands, sendImmediately);
   }
 
@@ -822,15 +821,15 @@ class DisplayManager implements DisplayManagerInterface {
       colorHex,
     });
   }
-  serializeColors(): DisplayContextCommand[] {
-    return serializeColors(this);
+  serializeColors(other?: string[]): DisplayContextCommand[] {
+    return serializeColors(this, other);
   }
   #opacities: number[] = [];
   get opacities() {
     return this.#opacities;
   }
-  serializeOpacities(): DisplayContextCommand[] {
-    return serializeOpacities(this);
+  serializeOpacities(other?: number[]): DisplayContextCommand[] {
+    return serializeOpacities(this, other);
   }
   @ForwardToHelper
   async setColorOpacity(

@@ -1,5 +1,5 @@
 import { DisplayBezierCurve, DisplayBitmap, DisplayBitmapColorPair, DisplaySpriteColorPair, DisplayWireframe } from "../DisplayManager.ts";
-import { DisplayAlignment, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayAlignment, DisplayDirection, DisplaySegmentCap, PartialDisplayContextState } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import { DisplaySpriteSerializedLines } from "./DisplaySpriteSheetUtils.ts";
 import { DisplayColorRGBOrString } from "./DisplayUtils.ts";
@@ -312,4 +312,5 @@ export type PathStateDisplayContextCommandType = (typeof PathStateDisplayContext
 declare const BitmapDisplayContextCommandTypes: readonly ["selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale"];
 export type BitmapDisplayContextCommandType = (typeof BitmapDisplayContextCommandTypes)[number];
 export declare function trimContextCommands(commands: DisplayContextCommand[]): DisplayContextCommand[];
+export declare function serializeContextState(state: PartialDisplayContextState, numberOfColors: number, other?: PartialDisplayContextState): DisplayContextCommand[];
 export {};

@@ -101,6 +101,7 @@ import { wait } from "./Timer.ts";
 import {
   DisplayContextCommand,
   parseDisplayContextCommands,
+  serializeContextState,
 } from "./DisplayContextCommand.ts";
 import {
   assertValidSpriteLines,
@@ -302,6 +303,17 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   get context() {
     return this.#context;
   }
+  async setContextState(
+    newState: PartialDisplayContextState,
+    sendImmediately?: boolean,
+  ) {
+    const contextCommands = serializeContextState(
+      newState,
+      this.numberOfColors,
+      this.contextState,
+    );
+    await this.runContextCommands(contextCommands, sendImmediately);
+  }
 
   get width() {
     return this.canvas?.width || 0;
@@ -457,7 +469,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#isSettingDevice = true;
       this.numberOfColors = this.device.numberOfDisplayColors!;
       await this.#updateCanvas(true, false);
-      await this.#updateDevice(true);
+      await this.#updateDevice(true, true);
       this.#dispatchEvent("deviceIsConnected", {
         device: this.device,
         isConnected: this.device!.isConnected,
@@ -579,13 +591,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
 
-  async #updateDevice(sendImmediately?: boolean) {
-    await this.#updateDeviceColors(false);
-    await this.#updateDeviceOpacity(false);
-    await this.#updateDeviceContextState(false);
-    await this.#updateDeviceBrightness(false);
-    await this.#updateDeviceSpriteSheets();
-    await this.#updateDeviceSelectedSpriteSheet(false);
+  async #updateDevice(sendImmediately?: boolean, updateSelf?: boolean) {
+    await this.#updateDeviceColors(false, updateSelf);
+    await this.#updateDeviceOpacity(false, updateSelf);
+    await this.#updateDeviceContextState(false, updateSelf);
+    await this.#updateDeviceBrightness(false, updateSelf);
+    await this.#updateDeviceSpriteSheets(updateSelf);
+    await this.#updateDeviceSelectedSpriteSheet(false, false, updateSelf);
     _console.log("deviceUpdated");
     if (sendImmediately) {
       await this.flushContextCommands();
@@ -654,20 +666,29 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#colors.length = 0;
     this.#pendingColors.length = 0;
   }
-  async #updateDeviceColors(sendImmediately?: boolean) {
+  async #updateDeviceColors(sendImmediately?: boolean, updateSelf?: boolean) {
     if (!this.device?.isConnected) {
       return;
     }
-    for (const [index, color] of this.colors.entries()) {
-      _console.log("updating color", { index, color });
+    for (const [colorIndex, color] of this.colors.entries()) {
+      _console.log("updating color", { colorIndex, color });
 
-      await this.deviceDisplayManager?.setColor(
-        index,
-        color,
-        false,
-        false,
-        this,
-      );
+      if (updateSelf) {
+        await this.setColor(
+          colorIndex,
+          this.deviceDisplayManager!.colors[colorIndex],
+          false,
+          false,
+        );
+      } else {
+        await this.deviceDisplayManager!.setColor(
+          colorIndex,
+          color,
+          false,
+          false,
+          this,
+        );
+      }
     }
     if (sendImmediately) {
       await this.flushContextCommands();
@@ -700,18 +721,27 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#pendingOpacities.length = 0;
   }
 
-  async #updateDeviceOpacity(sendImmediately?: boolean) {
+  async #updateDeviceOpacity(sendImmediately?: boolean, updateSelf?: boolean) {
     if (!this.device?.isConnected) {
       return;
     }
-    for (const [index, opacity] of this.#opacities.entries()) {
-      await this.deviceDisplayManager?.setColorOpacity(
-        index,
-        opacity,
-        false,
-        false,
-        this,
-      );
+    for (const [colorIndex, opacity] of this.#opacities.entries()) {
+      if (updateSelf) {
+        await this.setColorOpacity(
+          colorIndex,
+          this.deviceDisplayManager!.opacities[colorIndex],
+          false,
+          false,
+        );
+      } else {
+        await this.deviceDisplayManager!.setColorOpacity(
+          colorIndex,
+          opacity,
+          false,
+          false,
+          this,
+        );
+      }
     }
     if (sendImmediately) {
       await this.flushContextCommands();
@@ -723,8 +753,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   get contextState() {
     return this.#contextStateHelper.state;
   }
-  serializeContextState() {
-    return this.#contextStateHelper.serialize(this.numberOfColors);
+  serializeContextState(other?: PartialDisplayContextState) {
+    return this.#contextStateHelper.serialize(this.numberOfColors, other);
   }
   #onContextStateUpdate(differences: DisplayContextStateKey[]) {
     this.#dispatchEvent("contextState", {
@@ -746,17 +776,27 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       keepSpriteColorIndices,
     );
   }
-  async #updateDeviceContextState(sendImmediately?: boolean) {
+  async #updateDeviceContextState(
+    sendImmediately?: boolean,
+    updateSelf?: boolean,
+  ) {
     if (!this.device?.isConnected) {
       return;
     }
     // _console.log("updateDeviceContextState");
 
-    await this.deviceDisplayManager?.setContextState(
-      this.contextState,
-      sendImmediately,
-      this,
-    );
+    if (updateSelf) {
+      await this.setContextState(
+        this.deviceDisplayManager!.contextState,
+        sendImmediately,
+      );
+    } else {
+      await this.deviceDisplayManager?.setContextState(
+        this.contextState,
+        sendImmediately,
+        this,
+      );
+    }
   }
 
   async show(
@@ -889,8 +929,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       }
     }
   }
-  serializeColors(): DisplayContextCommand[] {
-    return serializeColors(this);
+  serializeColors(other?: string[]): DisplayContextCommand[] {
+    return serializeColors(this, other);
   }
 
   async setColorOpacity(
@@ -940,8 +980,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#setColorOpacity(colorIndex, opacity);
     });
   }
-  serializeOpacities(): DisplayContextCommand[] {
-    return serializeOpacities(this);
+  serializeOpacities(other?: number[]): DisplayContextCommand[] {
+    return serializeOpacities(this, other);
   }
 
   // CONTEXT COMMANDS
@@ -4679,21 +4719,32 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   async #resetBrightness() {
     await this.setBrightness("medium");
   }
-  async #updateDeviceBrightness(sendImmediately?: boolean) {
+  async #updateDeviceBrightness(
+    sendImmediately?: boolean,
+    updateSelf?: boolean,
+  ) {
     if (!this.device?.isConnected) {
       return;
     }
     // _console.log("updateDeviceBrightness");
-    await this.deviceDisplayManager?.setBrightness(
-      this.brightness,
-      sendImmediately,
-      this,
-    );
+    if (updateSelf) {
+      await this.setBrightness(
+        this.deviceDisplayManager!.brightness,
+        sendImmediately,
+      );
+    } else {
+      await this.deviceDisplayManager!.setBrightness(
+        this.brightness,
+        sendImmediately,
+        this,
+      );
+    }
   }
-  async #updateDeviceSpriteSheets() {
+  async #updateDeviceSpriteSheets(updateSelf?: boolean) {
     if (!this.device?.isConnected) {
       return;
     }
+    // FILL
     const sortedSpriteSheets = Object.values(this.spriteSheets).sort(
       (a, b) =>
         this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name],
@@ -4703,6 +4754,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   async #updateDeviceSelectedSpriteSheet(
     sendImmediately?: boolean,
     isSending?: boolean,
+    updateSelf?: boolean,
   ) {
     if (!this.device?.isConnected) {
       return;

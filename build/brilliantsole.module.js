@@ -214,7 +214,7 @@ function autoBind(self, {include, exclude} = {}) {
 	return self;
 }
 
-const _console$Z = createConsole("EventDispatcher", { log: false });
+const _console$_ = createConsole("EventDispatcher", { log: false });
 const wildcardEventType = "*";
 let EventDispatcher$1 = class EventDispatcher {
     #listeners = {};
@@ -225,7 +225,7 @@ let EventDispatcher$1 = class EventDispatcher {
         autoBind(this);
         this.#target = target;
         this.#validEventTypes = validEventTypes;
-        _console$Z.assertWithError(
+        _console$_.assertWithError(
         !validEventTypes.includes(wildcardEventType), `eventTypes cannot include the wildcardSymbol "${wildcardEventType}"`);
     }
     #isValidEventType(type) {
@@ -246,7 +246,7 @@ let EventDispatcher$1 = class EventDispatcher {
         }
         if (!this.#listeners[type]) {
             this.#listeners[type] = [];
-            _console$Z.log(`creating "${type}" listeners array`, this.#listeners[type]);
+            _console$_.log(`creating "${type}" listeners array`, this.#listeners[type]);
         }
         const alreadyAdded = this.#listeners[type].find((listenerObject) => {
             return (listenerObject.listener === listener &&
@@ -254,7 +254,7 @@ let EventDispatcher$1 = class EventDispatcher {
                 listenerObject.immediate === options.immediate);
         });
         if (alreadyAdded) {
-            _console$Z.log("already added listener");
+            _console$_.log("already added listener");
             return;
         }
         const listenerObj = {
@@ -262,9 +262,9 @@ let EventDispatcher$1 = class EventDispatcher {
             once: options.once,
             immediate: options.immediate,
         };
-        _console$Z.log(`adding "${type}" listener`, listenerObj);
+        _console$_.log(`adding "${type}" listener`, listenerObj);
         this.#listeners[type].push(listenerObj);
-        _console$Z.log(`currently have ${this.#listeners[type].length} "${type}" listeners`);
+        _console$_.log(`currently have ${this.#listeners[type].length} "${type}" listeners`);
         if (options.immediate && type != wildcardEventType) {
             const latestEvent = this.#latestEvents[type];
             if (latestEvent) {
@@ -279,11 +279,11 @@ let EventDispatcher$1 = class EventDispatcher {
         }
         if (!this.#listeners[type])
             return;
-        _console$Z.log(`removing "${type}" listener...`, listener);
+        _console$_.log(`removing "${type}" listener...`, listener);
         this.#listeners[type].forEach((listenerObj) => {
             const isListenerToRemove = listenerObj.listener === listener;
             if (isListenerToRemove) {
-                _console$Z.log(`flagging "${type}" listener`, listener);
+                _console$_.log(`flagging "${type}" listener`, listener);
                 listenerObj.shouldRemove = true;
             }
         });
@@ -295,11 +295,11 @@ let EventDispatcher$1 = class EventDispatcher {
         }
         if (!this.#listeners[type])
             return;
-        _console$Z.log(`removing "${type}" listeners...`);
+        _console$_.log(`removing "${type}" listeners...`);
         this.#listeners[type] = [];
     }
     removeAllEventListeners() {
-        _console$Z.log(`removing listeners...`);
+        _console$_.log(`removing listeners...`);
         this.#listeners = {};
     }
     dispatchEvent(type, message) {
@@ -315,7 +315,7 @@ let EventDispatcher$1 = class EventDispatcher {
         this.#dispatchEvent(type, message, true);
     }
     #invokeListener(listenerObj, type, message) {
-        _console$Z.log(`dispatching "${type}" listener`, listenerObj);
+        _console$_.log(`dispatching "${type}" listener`, listenerObj);
         try {
             listenerObj.listener({ type, target: this.#target, message });
         }
@@ -323,7 +323,7 @@ let EventDispatcher$1 = class EventDispatcher {
             console.error(error);
         }
         if (listenerObj.once) {
-            _console$Z.log(`flagging "${type}" listener`, listenerObj);
+            _console$_.log(`flagging "${type}" listener`, listenerObj);
             listenerObj.shouldRemove = true;
         }
     }
@@ -353,9 +353,9 @@ let EventDispatcher$1 = class EventDispatcher {
     }
 };
 
-const _console$Y = createConsole("Timer", { log: false });
+const _console$Z = createConsole("Timer", { log: false });
 async function wait(delay) {
-    _console$Y.log(`waiting for ${delay}ms`);
+    _console$Z.log(`waiting for ${delay}ms`);
     return new Promise((resolve) => {
         setTimeout(() => resolve(), delay);
     });
@@ -366,8 +366,8 @@ class Timer {
         return this.#callback;
     }
     set callback(newCallback) {
-        _console$Y.assertTypeWithError(newCallback, "function");
-        _console$Y.log({ newCallback });
+        _console$Z.assertTypeWithError(newCallback, "function");
+        _console$Z.log({ newCallback });
         this.#callback = newCallback;
         if (this.isRunning) {
             this.restart();
@@ -378,9 +378,9 @@ class Timer {
         return this.#interval;
     }
     set interval(newInterval) {
-        _console$Y.assertTypeWithError(newInterval, "number");
-        _console$Y.assertWithError(newInterval > 0, "interval must be above 0");
-        _console$Y.log({ newInterval });
+        _console$Z.assertTypeWithError(newInterval, "number");
+        _console$Z.assertWithError(newInterval > 0, "interval must be above 0");
+        _console$Z.log({ newInterval });
         this.#interval = newInterval;
         if (this.isRunning) {
             this.restart();
@@ -396,10 +396,10 @@ class Timer {
     }
     start(immediately = false) {
         if (this.isRunning) {
-            _console$Y.log("interval already running");
+            _console$Z.log("interval already running");
             return;
         }
-        _console$Y.log(`starting interval every ${this.#interval}ms`);
+        _console$Z.log(`starting interval every ${this.#interval}ms`);
         this.#intervalId = setInterval(this.#callback, this.#interval);
         if (immediately) {
             this.#callback();
@@ -407,10 +407,10 @@ class Timer {
     }
     stop() {
         if (!this.isRunning) {
-            _console$Y.log("interval already not running");
+            _console$Z.log("interval already not running");
             return;
         }
-        _console$Y.log("stopping interval");
+        _console$Z.log("stopping interval");
         clearInterval(this.#intervalId);
         this.#intervalId = undefined;
     }
@@ -475,7 +475,7 @@ else {
 const textEncoder = new _TextEncoder();
 const textDecoder = new _TextDecoder();
 
-const _console$X = createConsole("ArrayBufferUtils", { log: false });
+const _console$Y = createConsole("ArrayBufferUtils", { log: false });
 function concatenateArrayBuffers(...arrayBuffers) {
     arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
     arrayBuffers = arrayBuffers.map((arrayBuffer) => {
@@ -537,7 +537,7 @@ function sliceDataView(dataView, begin, length) {
     if (length != undefined) {
         end = dataView.byteOffset + begin + length;
     }
-    _console$X.log({ dataView, begin, end, length });
+    _console$Y.log({ dataView, begin, end, length });
     return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
 }
 async function getFileBuffer(file) {
@@ -571,7 +571,7 @@ function UInt8ByteBuffer(value) {
 }
 
 var _a$8;
-const _console$W = createConsole("FileTransferManager", { log: false });
+const _console$X = createConsole("FileTransferManager", { log: false });
 const FileTransferMessageTypes = [
     "getFileTypes",
     "maxFileLength",
@@ -633,19 +633,19 @@ class FileTransferManager {
         return this.eventDispatcher.waitForEvent;
     }
     #assertValidType(type) {
-        _console$W.assertEnumWithError(type, FileTypes);
+        _console$X.assertEnumWithError(type, FileTypes);
     }
     #isValidType(type) {
         return FileTypes.includes(type);
     }
     #assertValidTypeEnum(typeEnum) {
-        _console$W.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
+        _console$X.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
     }
     #assertValidStatusEnum(statusEnum) {
-        _console$W.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
+        _console$X.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
     }
     #assertValidCommand(command) {
-        _console$W.assertEnumWithError(command, FileTransferCommands);
+        _console$X.assertEnumWithError(command, FileTransferCommands);
     }
     #fileTypes = [];
     get fileTypes() {
@@ -656,7 +656,7 @@ class FileTransferManager {
             .map((index) => FileTypes[index])
             .filter(Boolean);
         this.#fileTypes = fileTypes;
-        _console$W.log("fileTypes", fileTypes);
+        _console$X.log("fileTypes", fileTypes);
         this.#dispatchEvent("getFileTypes", {
             fileTypes: this.#fileTypes,
         });
@@ -670,39 +670,39 @@ class FileTransferManager {
         return this.#maxLength;
     }
     #parseMaxLength(dataView) {
-        _console$W.log("parseFileMaxLength", dataView);
+        _console$X.log("parseFileMaxLength", dataView);
         const maxLength = dataView.getUint32(0, true);
-        _console$W.log(`maxLength: ${maxLength / 1024}kB`);
+        _console$X.log(`maxLength: ${maxLength / 1024}kB`);
         this.#updateMaxLength(maxLength);
     }
     #updateMaxLength(maxLength) {
-        _console$W.log({ maxLength });
+        _console$X.log({ maxLength });
         this.#maxLength = maxLength;
         this.#dispatchEvent("maxFileLength", { maxFileLength: maxLength });
     }
     #assertValidLength(length) {
-        _console$W.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
+        _console$X.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
     }
     #type;
     get type() {
         return this.#type;
     }
     #parseType(dataView) {
-        _console$W.log("parseFileType", dataView);
+        _console$X.log("parseFileType", dataView);
         const typeEnum = dataView.getUint8(0);
         this.#assertValidTypeEnum(typeEnum);
         const type = FileTypes[typeEnum];
         this.#updateType(type);
     }
     #updateType(type) {
-        _console$W.log({ fileTransferType: type });
+        _console$X.log({ fileTransferType: type });
         this.#type = type;
         this.#dispatchEvent("getFileType", { fileType: type });
     }
     async #setType(newType, sendImmediately) {
         this.#assertValidType(newType);
         if (this.type == newType) {
-            _console$W.log(`redundant type assignment ${newType}`);
+            _console$X.log(`redundant type assignment ${newType}`);
             return;
         }
         const promise = this.waitForEvent("getFileType");
@@ -715,20 +715,20 @@ class FileTransferManager {
         return this.#length;
     }
     #parseLength(dataView) {
-        _console$W.log("parseFileLength", dataView);
+        _console$X.log("parseFileLength", dataView);
         const length = dataView.getUint32(0, true);
         this.#updateLength(length);
     }
     #updateLength(length) {
-        _console$W.log(`length: ${length / 1024}kB (${length} bytes)`);
+        _console$X.log(`length: ${length / 1024}kB (${length} bytes)`);
         this.#length = length;
         this.#dispatchEvent("getFileLength", { fileLength: length });
     }
     async #setLength(newLength, sendImmediately) {
-        _console$W.assertTypeWithError(newLength, "number");
+        _console$X.assertTypeWithError(newLength, "number");
         this.#assertValidLength(newLength);
         if (this.length == newLength) {
-            _console$W.log(`redundant length assignment ${newLength}`);
+            _console$X.log(`redundant length assignment ${newLength}`);
             return;
         }
         const promise = this.waitForEvent("getFileLength");
@@ -742,19 +742,19 @@ class FileTransferManager {
         return this.#checksum;
     }
     #parseChecksum(dataView) {
-        _console$W.log("checksum", dataView);
+        _console$X.log("checksum", dataView);
         const checksum = dataView.getUint32(0, true);
         this.#updateChecksum(checksum);
     }
     #updateChecksum(checksum) {
-        _console$W.log({ checksum });
+        _console$X.log({ checksum });
         this.#checksum = checksum;
         this.#dispatchEvent("getFileChecksum", { fileChecksum: checksum });
     }
     async #setChecksum(newChecksum, sendImmediately) {
-        _console$W.assertTypeWithError(newChecksum, "number");
+        _console$X.assertTypeWithError(newChecksum, "number");
         if (this.checksum == newChecksum) {
-            _console$W.log(`redundant checksum assignment ${newChecksum}`);
+            _console$X.log(`redundant checksum assignment ${newChecksum}`);
             return;
         }
         const promise = this.waitForEvent("getFileChecksum");
@@ -766,7 +766,7 @@ class FileTransferManager {
     async #setCommand(command, sendImmediately) {
         this.#assertValidCommand(command);
         const promise = this.waitForEvent("fileTransferStatus");
-        _console$W.log(`setting command ${command}`);
+        _console$X.log(`setting command ${command}`);
         const commandEnum = FileTransferCommands.indexOf(command);
         this.sendMessage([
             {
@@ -781,14 +781,14 @@ class FileTransferManager {
         return this.#status;
     }
     #parseStatus(dataView) {
-        _console$W.log("parseFileStatus", dataView);
+        _console$X.log("parseFileStatus", dataView);
         const statusEnum = dataView.getUint8(0);
         this.#assertValidStatusEnum(statusEnum);
         const status = FileTransferStatuses[statusEnum];
         this.#updateStatus(status);
     }
     #updateStatus(status) {
-        _console$W.log({ status });
+        _console$X.log({ status });
         this.#status = status;
         this.#receivedBlocks.length = 0;
         this.#isCancelling = false;
@@ -800,18 +800,18 @@ class FileTransferManager {
         });
     }
     #assertIsIdle() {
-        _console$W.assertWithError(this.#status == "idle", "status is not idle");
+        _console$X.assertWithError(this.#status == "idle", "status is not idle");
     }
     #assertIsNotIdle() {
-        _console$W.assertWithError(this.#status != "idle", "status is idle");
+        _console$X.assertWithError(this.#status != "idle", "status is idle");
     }
     #receivedBlocks = [];
     async #parseBlock(dataView) {
-        _console$W.log("parseFileBlock", dataView);
+        _console$X.log("parseFileBlock", dataView);
         this.#receivedBlocks.push(dataView.buffer);
         const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
         const progress = bytesReceived / this.#length;
-        _console$W.log(`received ${bytesReceived}/${this.#length} bytes (${progress * 100}%) - ${this.#length - bytesReceived} bytes remaining`);
+        _console$X.log(`received ${bytesReceived}/${this.#length} bytes (${progress * 100}%) - ${this.#length - bytesReceived} bytes remaining`);
         this.#dispatchEvent("fileTransferProgress", {
             progress,
             fileType: this.type,
@@ -820,7 +820,7 @@ class FileTransferManager {
             const dataView = new DataView(new ArrayBuffer(4));
             dataView.setUint32(0, bytesReceived, true);
             if (!this.#buffer) {
-                _console$W.log("no buffer defined");
+                _console$X.log("no buffer defined");
                 return;
             }
             await this.sendMessage([
@@ -828,7 +828,7 @@ class FileTransferManager {
             ]);
             return;
         }
-        _console$W.log("file transfer complete");
+        _console$X.log("file transfer complete");
         let fileName = new Date().toLocaleString();
         switch (this.type) {
             case "tflite":
@@ -850,12 +850,12 @@ class FileTransferManager {
         }
         const arrayBuffer = await file.arrayBuffer();
         const checksum = crc32(arrayBuffer);
-        _console$W.log({ checksum });
+        _console$X.log({ checksum });
         if (checksum != this.#checksum) {
-            _console$W.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
+            _console$X.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
             return;
         }
-        _console$W.log("received file", file);
+        _console$X.log("received file", file);
         this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
         this.#dispatchEvent("fileTransferComplete", {
             direction: "receiving",
@@ -864,7 +864,7 @@ class FileTransferManager {
         this.#dispatchEvent("fileReceived", { file, fileType: this.type });
     }
     parseMessage(messageType, dataView, isSending) {
-        _console$W.log({ messageType, isSending }, dataView);
+        _console$X.log({ messageType, isSending }, dataView);
         switch (messageType) {
             case "getFileTypes":
                 this.#parseFileTypes(dataView);
@@ -908,16 +908,16 @@ class FileTransferManager {
         this.#assertValidLength(fileLength);
         if (!override) {
             if (type != this.type) {
-                _console$W.log("different fileTypes - sending");
+                _console$X.log("different fileTypes - sending");
             }
             else if (fileLength != this.length) {
-                _console$W.log("different fileLengths - sending");
+                _console$X.log("different fileLengths - sending");
             }
             else if (checksum != this.checksum) {
-                _console$W.log("different fileChecksums - sending");
+                _console$X.log("different fileChecksums - sending");
             }
             else {
-                _console$W.log("already sent file");
+                _console$X.log("already sent file");
                 return false;
             }
         }
@@ -952,27 +952,27 @@ class FileTransferManager {
             return;
         }
         if (this.#isCancelling) {
-            _console$W.error("not sending block - busy cancelling");
+            _console$X.error("not sending block - busy cancelling");
             return;
         }
         if (!this.#buffer) {
-            _console$W.log("no buffer defined");
+            _console$X.log("no buffer defined");
             return;
         }
         const buffer = this.#buffer;
         let offset = this.#bytesTransferred;
-        _console$W.log("sending block", { buffer, offset, mtu: this.mtu });
+        _console$X.log("sending block", { buffer, offset, mtu: this.mtu });
         const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
-        _console$W.log("slicedBuffer", slicedBuffer);
+        _console$X.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
-        _console$W.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
+        _console$X.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
         this.#dispatchEvent("fileTransferProgress", {
             progress,
             fileType: this.type,
         });
         if (slicedBuffer.byteLength == 0) {
-            _console$W.log("finished sending buffer");
+            _console$X.log("finished sending buffer");
             this.#dispatchEvent("fileTransferComplete", {
                 direction: "sending",
                 fileType: this.type,
@@ -984,15 +984,15 @@ class FileTransferManager {
         }
     }
     async #parseBytesTransferred(dataView) {
-        _console$W.log("parseBytesTransferred", dataView);
+        _console$X.log("parseBytesTransferred", dataView);
         const bytesTransferred = dataView.getUint32(0, true);
-        _console$W.log({ bytesTransferred });
+        _console$X.log({ bytesTransferred });
         if (this.status != "sending") {
-            _console$W.error(`not currently sending file`);
+            _console$X.error(`not currently sending file`);
             return;
         }
         if (this.#buffer && this.#bytesTransferred != bytesTransferred) {
-            _console$W.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${this.#bytesTransferred}`);
+            _console$X.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${this.#bytesTransferred}`);
             this.cancel();
             return;
         }
@@ -1007,12 +1007,12 @@ class FileTransferManager {
     #isCancelling = false;
     async cancel() {
         this.#assertIsNotIdle();
-        _console$W.log("cancelling file transfer...");
+        _console$X.log("cancelling file transfer...");
         this.#isCancelling = true;
         await this.#setCommand("cancel");
     }
     requestRequiredInformation() {
-        _console$W.log("requesting required fileTransfer information");
+        _console$X.log("requesting required fileTransfer information");
         const messages = RequiredFileTransferMessageTypes.map((messageType) => ({
             type: messageType,
         }));
@@ -1034,7 +1034,7 @@ class FileTransferManager {
 }
 _a$8 = FileTransferManager;
 
-const _console$V = createConsole("MathUtils", { log: false });
+const _console$W = createConsole("MathUtils", { log: false });
 function getInterpolation(value, min, max, span) {
     if (span == undefined) {
         span = max - min;
@@ -1055,10 +1055,10 @@ function parseTimestamp(dataView, byteOffset) {
     let timestamp = nowWithoutLower2Bytes + lower2Bytes;
     const timestampDifference = Math.abs(now - timestamp);
     if (timestampDifference > timestampThreshold) {
-        _console$V.log("correcting timestamp delta");
+        _console$W.log("correcting timestamp delta");
         timestamp += Uint16Max * Math.sign(now - timestamp);
     }
-    _console$V.log({
+    _console$W.log({
         now,
         nowWithoutLower2Bytes,
         lower2Bytes,
@@ -1248,7 +1248,7 @@ async function isTensorFlowModelAvailable(url) {
     return Boolean(model);
 }
 
-const _console$U = createConsole("CenterOfPressureModel", { log: false });
+const _console$V = createConsole("CenterOfPressureModel", { log: false });
 class CenterOfPressureModel {
     constructor() {
         autoBind(this);
@@ -1271,23 +1271,23 @@ class CenterOfPressureModel {
             return;
         }
         this.#numberOfSensors = newNumberOfSensors;
-        _console$U.log({ numberOfSensors: this.numberOfSensors });
+        _console$V.log({ numberOfSensors: this.numberOfSensors });
         this.#createModel();
     }
     async #createModel() {
         if (!isTensorFlowAvailable()) {
-            _console$U.warn("tensorflow is not available");
+            _console$V.warn("tensorflow is not available");
             return;
         }
         if (this.#model) {
-            _console$U.log("disposing model", this.#model);
+            _console$V.log("disposing model", this.#model);
             this.#model.dispose();
             this.#data.inputs.length = this.#data.outputs.length = 0;
             this.#model = undefined;
             this.#isTrained;
         }
         if (this.numberOfSensors == 0) {
-            _console$U.log("zero numberOfSensors - no model needed");
+            _console$V.log("zero numberOfSensors - no model needed");
             return;
         }
         await tf.ready();
@@ -1307,7 +1307,7 @@ class CenterOfPressureModel {
             loss: "meanSquaredError",
         });
         this.#model = model;
-        _console$U.log("created model", this.#model);
+        _console$V.log("created model", this.#model);
     }
     #maxDataLength = 2000;
     #data = { inputs: [], outputs: [] };
@@ -1315,7 +1315,7 @@ class CenterOfPressureModel {
         return this.#data;
     }
     clearData() {
-        _console$U.log("clearData");
+        _console$V.log("clearData");
         this.#data.outputs.length = 0;
         this.#data.inputs.length = 0;
         this.#dispatchRecordingProgress();
@@ -1374,7 +1374,7 @@ class CenterOfPressureModel {
             this.#data.inputs.shift();
             this.#data.outputs.shift();
         }
-        _console$U.log({
+        _console$V.log({
             numberOfSamples: this.numberOfSamples,
         });
         this.#dispatchRecordingProgress();
@@ -1392,20 +1392,20 @@ class CenterOfPressureModel {
             return;
         }
         if (!this.#model) {
-            _console$U.error("no model defined");
+            _console$V.error("no model defined");
             return;
         }
         if (this.isTraining) {
-            _console$U.warn("already training");
+            _console$V.warn("already training");
             return;
         }
         await tf.nextFrame();
         const { inputs, outputs } = this.#data;
         if (inputs.length == 0) {
-            _console$U.log("no data to train on");
+            _console$V.log("no data to train on");
             return;
         }
-        _console$U.log("train");
+        _console$V.log("train");
         const xs = tf.tensor2d(inputs);
         const ys = tf.tidy(() => {
             const ys = tf.tensor2d(outputs);
@@ -1428,16 +1428,16 @@ class CenterOfPressureModel {
                 shuffle: true,
                 callbacks: {
                     onTrainBegin: (logs) => {
-                        _console$U.log("onTrainBegin", logs);
+                        _console$V.log("onTrainBegin", logs);
                     },
                     onTrainEnd: (logs) => {
-                        _console$U.log("onTrainEnd", logs);
+                        _console$V.log("onTrainEnd", logs);
                     },
                     onEpochBegin: (epoch, logs) => {
                     },
                     onEpochEnd: (epoch, logs) => {
                         const { loss } = logs;
-                        _console$U.log("onEpochEnd", { epoch, loss }, logs);
+                        _console$V.log("onEpochEnd", { epoch, loss }, logs);
                         this.dispatchEvent("pressureCalibrationTrainProgress", {
                             pressureCalibrationTrainProgress: (epoch + 1) / epochs,
                             epoch,
@@ -1452,18 +1452,18 @@ class CenterOfPressureModel {
                         const { size, loss } = logs;
                     },
                     onYield: (epoch, batch, logs) => {
-                        _console$U.log("onYield", { epoch, batch }, logs);
+                        _console$V.log("onYield", { epoch, batch }, logs);
                     },
                 },
             });
         }
         catch (error) {
-            _console$U.error("error training", error);
+            _console$V.error("error training", error);
         }
         xs.dispose();
         ys.dispose();
         this.#isTraining = false;
-        _console$U.log("finished training");
+        _console$V.log("finished training");
         this.#onTrainedModel();
     }
     #onTrainedModel(wasLoaded = false) {
@@ -1478,18 +1478,18 @@ class CenterOfPressureModel {
             return;
         }
         if (!this.#model) {
-            _console$U.log("no model defined");
+            _console$V.log("no model defined");
             return;
         }
         if (!this.#isTrained) {
             return;
         }
         const inputs = this.#getInputs(pressureData);
-        _console$U.log("predict", inputs);
+        _console$V.log("predict", inputs);
         const input = tf.tensor2d([inputs]);
         const prediction = this.#model.predict(input);
         const [x, y] = prediction.dataSync().map((value) => clamp$1(value, 0, 1));
-        _console$U.log({ x, y });
+        _console$V.log({ x, y });
         input.dispose();
         prediction.dispose();
         return { x, y };
@@ -1500,18 +1500,18 @@ class CenterOfPressureModel {
         }
         await tf.ready();
         if (!this.model) {
-            _console$U.error("model not found");
+            _console$V.error("model not found");
             return false;
         }
         if (!this.isTrained) {
-            _console$U.error("model not trained");
+            _console$V.error("model not trained");
             return false;
         }
         try {
             await this.model.save(handlerOrURL, config);
         }
         catch (error) {
-            _console$U.error("failed to save model", error);
+            _console$V.error("failed to save model", error);
             return false;
         }
         return true;
@@ -1522,7 +1522,7 @@ class CenterOfPressureModel {
         }
         await tf.ready();
         if (!this.model) {
-            _console$U.error("model not found");
+            _console$V.error("model not found");
             return false;
         }
         let pathOrIOHandler;
@@ -1531,11 +1531,11 @@ class CenterOfPressureModel {
             const jsonFile = fileList.find((f) => f.name.endsWith(".json"));
             const weightsFile = fileList.find((f) => f.name.endsWith(".bin"));
             if (!jsonFile) {
-                _console$U.error("no model.json found");
+                _console$V.error("no model.json found");
                 return false;
             }
             if (!weightsFile) {
-                _console$U.error("no weights.bin found");
+                _console$V.error("no weights.bin found");
                 return false;
             }
             pathOrIOHandler = tf.io.browserFiles([jsonFile, weightsFile]);
@@ -1546,7 +1546,7 @@ class CenterOfPressureModel {
         let loadedModel;
         try {
             loadedModel = await tf.loadLayersModel(pathOrIOHandler, options);
-            _console$U.log("loadedModel", loadedModel);
+            _console$V.log("loadedModel", loadedModel);
             if (this.model.layers.length != loadedModel.layers.length) {
                 throw Error("layer count mismatch");
             }
@@ -1565,11 +1565,11 @@ class CenterOfPressureModel {
                 }
             }
             this.model.setWeights(loadedModel.getWeights());
-            _console$U.log("weights successfully loaded into model");
+            _console$V.log("weights successfully loaded into model");
             this.#onTrainedModel(true);
         }
         catch (error) {
-            _console$U.error("error loading model", error);
+            _console$V.error("error loading model", error);
             loadedModel?.dispose();
             return false;
         }
@@ -1580,7 +1580,7 @@ class CenterOfPressureModel {
     }
 }
 
-const _console$T = createConsole("PressureSensorDataManager", { log: false });
+const _console$U = createConsole("PressureSensorDataManager", { log: false });
 const PressureSensorTypes = ["pressure"];
 const ContinuousPressureSensorTypes = PressureSensorTypes;
 const PressureSensorEventTypes = [
@@ -1613,7 +1613,7 @@ class PressureSensorDataManager {
         if (this.#eventDispatcher == eventDispatcher) {
             return;
         }
-        _console$T.assertWithError(!this.#eventDispatcher, "eventDispatcher already defined");
+        _console$U.assertWithError(!this.#eventDispatcher, "eventDispatcher already defined");
         this.#eventDispatcher = eventDispatcher;
         this.#centerOfPressureModel.eventDispatcher =
             eventDispatcher;
@@ -1636,7 +1636,7 @@ class PressureSensorDataManager {
                 y: dataView.getUint8(byteOffset + 1) / 2 ** 8,
             });
         }
-        _console$T.log({ positions });
+        _console$U.log({ positions });
         this.#positions = positions;
         this.#centerOfPressureModel.numberOfSensors = this.numberOfSensors;
         this.#sensorRangeHelpers = createArray(this.numberOfSensors, () => new RangeHelper());
@@ -1662,7 +1662,7 @@ class PressureSensorDataManager {
             return;
         }
         this.#autoRange = newAutoRange;
-        _console$T.log({ autoRange: this.autoRange });
+        _console$U.log({ autoRange: this.autoRange });
         this.dispatchEvent("pressureAutoRange", {
             pressureAutoRange: this.autoRange,
         });
@@ -1685,7 +1685,7 @@ class PressureSensorDataManager {
             return;
         }
         this.#motionAutoRange = newMotionAutoRange;
-        _console$T.log({ motionAutoRange: this.motionAutoRange });
+        _console$U.log({ motionAutoRange: this.motionAutoRange });
         this.dispatchEvent("pressureMotionAutoRange", {
             pressureMotionAutoRange: this.motionAutoRange,
         });
@@ -1740,7 +1740,7 @@ class PressureSensorDataManager {
             return;
         }
         this.#isRecordingCalibrationData = newIsRecordingCalibrationData;
-        _console$T.log({
+        _console$U.log({
             isRecordingCalibrationData: this.isRecordingCalibrationData,
         });
         this.dispatchEvent("isRecordingPressureCalibrationData", {
@@ -1758,7 +1758,7 @@ class PressureSensorDataManager {
     }
     startRecordingCalibrationData() {
         if (!this.canCalibrate) {
-            _console$T.error("cannot calibrate pressure - tensorflow is not available");
+            _console$U.error("cannot calibrate pressure - tensorflow is not available");
             return;
         }
         this.#setIsRecordingCalibrationData(true);
@@ -9199,7 +9199,7 @@ new Vector3();
 new Vector3();
 new Matrix4();
 
-const _console$S = createConsole("MotionSensorDataManager", { log: false });
+const _console$T = createConsole("MotionSensorDataManager", { log: false });
 const MotionSensorTypes = [
     "acceleration",
     "gravity",
@@ -9248,7 +9248,7 @@ class MotionSensorDataManager {
             dataView.getInt16(4, true),
         ].map((value) => value * scalar);
         const vector = { x, y, z };
-        _console$S.log({ vector });
+        _console$T.log({ vector });
         return vector;
     }
     parseQuaternion(dataView, scalar) {
@@ -9259,7 +9259,7 @@ class MotionSensorDataManager {
             dataView.getInt16(6, true),
         ].map((value) => value * scalar);
         const quaternion = { x, y, z, w };
-        _console$S.log({ quaternion });
+        _console$T.log({ quaternion });
         return quaternion;
     }
     #euler = new Euler(0, 0, 0, "YXZ");
@@ -9287,39 +9287,39 @@ class MotionSensorDataManager {
             heading += 360;
         }
         const euler = { heading, pitch, roll, absolute };
-        _console$S.log({ euler });
+        _console$T.log({ euler });
         return euler;
     }
     parseStepCounter(dataView) {
-        _console$S.log("parseStepCounter", dataView);
+        _console$T.log("parseStepCounter", dataView);
         const stepCount = dataView.getUint32(0, true);
-        _console$S.log({ stepCount });
+        _console$T.log({ stepCount });
         return stepCount;
     }
     parseActivity(dataView) {
-        _console$S.log("parseActivity", dataView);
+        _console$T.log("parseActivity", dataView);
         const activity = {};
         const activityBitfield = dataView.getUint8(0);
-        _console$S.log("activityBitfield", activityBitfield.toString(2));
+        _console$T.log("activityBitfield", activityBitfield.toString(2));
         ActivityTypes.forEach((activityType, index) => {
             activity[activityType] = Boolean(activityBitfield & (1 << index));
         });
-        _console$S.log("activity", activity);
+        _console$T.log("activity", activity);
         return activity;
     }
     parseDeviceOrientation(dataView) {
-        _console$S.log("parseDeviceOrientation", dataView);
+        _console$T.log("parseDeviceOrientation", dataView);
         const index = dataView.getUint8(0);
         const deviceOrientation = DeviceOrientations[index];
-        _console$S.assertWithError(deviceOrientation, "undefined deviceOrientation");
-        _console$S.log({ deviceOrientation });
+        _console$T.assertWithError(deviceOrientation, "undefined deviceOrientation");
+        _console$T.log({ deviceOrientation });
         return deviceOrientation;
     }
 }
 
 const BarometerSensorTypes = ["barometer"];
 const ContinuousBarometerSensorTypes = BarometerSensorTypes;
-const _console$R = createConsole("BarometerSensorDataManager", { log: false });
+const _console$S = createConsole("BarometerSensorDataManager", { log: false });
 class BarometerSensorDataManager {
     #calculcateAltitude(pressure) {
         const P0 = 101325;
@@ -9335,12 +9335,12 @@ class BarometerSensorDataManager {
     parseData(dataView, scalar) {
         const pressure = dataView.getUint32(0, true) * scalar;
         const altitude = this.#calculcateAltitude(pressure);
-        _console$R.log({ pressure, altitude });
+        _console$S.log({ pressure, altitude });
         return { pressure };
     }
 }
 
-const _console$Q = createConsole("ParseUtils", { log: false });
+const _console$R = createConsole("ParseUtils", { log: false });
 function parseStringFromDataView(dataView, byteOffset = 0) {
     const stringLength = dataView.getUint8(byteOffset++);
     const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
@@ -9351,7 +9351,7 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
     let byteOffset = 0;
     while (byteOffset < dataView.byteLength) {
         const messageTypeEnum = dataView.getUint8(byteOffset++);
-        _console$Q.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
+        _console$R.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
         const messageType = messageTypes[messageTypeEnum];
         let messageLength;
         if (parseMessageLengthAsUint16) {
@@ -9361,7 +9361,7 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
         else {
             messageLength = dataView.getUint8(byteOffset++);
         }
-        _console$Q.log({
+        _console$R.log({
             messageTypeEnum,
             messageType,
             messageLength,
@@ -9369,7 +9369,7 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
             byteOffset,
         });
         const _dataView = sliceDataView(dataView, byteOffset, messageLength);
-        _console$Q.log({ _dataView });
+        _console$R.log({ _dataView });
         byteOffset += messageLength;
         const isLast = byteOffset >= dataView.byteLength;
         callback(messageType, _dataView, context, isLast);
@@ -9383,7 +9383,7 @@ const ButtonSensorEventTypes = [
     "buttonDown",
     "buttonUp",
 ];
-const _console$P = createConsole("ButtonSensorDataManager", { log: false });
+const _console$Q = createConsole("ButtonSensorDataManager", { log: false });
 class ButtonSensorDataManager {
     constructor() {
         autoBind(this);
@@ -9396,7 +9396,7 @@ class ButtonSensorDataManager {
         if (this.#eventDispatcher == eventDispatcher) {
             return;
         }
-        _console$P.assertWithError(!this.#eventDispatcher, "eventDispatcher already defined");
+        _console$Q.assertWithError(!this.#eventDispatcher, "eventDispatcher already defined");
         this.#eventDispatcher = eventDispatcher;
     }
     get dispatchEvent() {
@@ -9410,11 +9410,11 @@ class ButtonSensorDataManager {
             const value = dataView.getUint8(offset++);
             const isDown = value > 0;
             const button = { index, isDown, value };
-            _console$P.log("button", button);
+            _console$Q.log("button", button);
             buttons.push(button);
         }
         buttons.forEach((button) => {
-            _console$P.assertRangeWithError("button.index", button.index, 0, this.numberOfButtons - 1);
+            _console$Q.assertRangeWithError("button.index", button.index, 0, this.numberOfButtons - 1);
             this.dispatchEvent("button", { button });
             const internalButton = this.buttons[button.index];
             if (button.isDown) {
@@ -9437,7 +9437,7 @@ class ButtonSensorDataManager {
     }
     set numberOfButtons(newNumberOfButtons) {
         this.#numberOfButtons = newNumberOfButtons;
-        _console$P.log({ numberOfButtons: this.numberOfButtons });
+        _console$Q.log({ numberOfButtons: this.numberOfButtons });
         this.buttons = Array.from({ length: this.numberOfButtons }, (_, index) => ({
             index,
             value: 0,
@@ -9449,7 +9449,7 @@ class ButtonSensorDataManager {
     }
     buttons = [];
     clear() {
-        _console$P.log("clear");
+        _console$Q.log("clear");
     }
 }
 
@@ -9460,7 +9460,7 @@ const TouchSensorEventTypes = [
     "touchDown",
     "touchUp",
 ];
-const _console$O = createConsole("TouchSensorDataManager", { log: false });
+const _console$P = createConsole("TouchSensorDataManager", { log: false });
 class TouchSensorDataManager {
     constructor() {
         autoBind(this);
@@ -9473,7 +9473,7 @@ class TouchSensorDataManager {
         if (this.#eventDispatcher == eventDispatcher) {
             return;
         }
-        _console$O.assertWithError(!this.#eventDispatcher, "eventDispatcher already defined");
+        _console$P.assertWithError(!this.#eventDispatcher, "eventDispatcher already defined");
         this.#eventDispatcher = eventDispatcher;
     }
     get dispatchEvent() {
@@ -9487,11 +9487,11 @@ class TouchSensorDataManager {
             const value = dataView.getUint8(offset++);
             const isDown = value > 0;
             const touch = { index, isDown, value };
-            _console$O.log("touch", touch);
+            _console$P.log("touch", touch);
             touches.push(touch);
         }
         touches.forEach((touch) => {
-            _console$O.assertRangeWithError("touch.index", touch.index, 0, this.numberOfTouches - 1);
+            _console$P.assertRangeWithError("touch.index", touch.index, 0, this.numberOfTouches - 1);
             this.dispatchEvent("touch", { touch });
             const internalTouch = this.touches[touch.index];
             if (touch.isDown) {
@@ -9514,7 +9514,7 @@ class TouchSensorDataManager {
     }
     set numberOfTouches(newNumberOfTouches) {
         this.#numberOfTouches = newNumberOfTouches;
-        _console$O.log({ numberOfTouches: this.numberOfTouches });
+        _console$P.log({ numberOfTouches: this.numberOfTouches });
         this.touches = Array.from({ length: this.numberOfTouches }, (_, index) => ({
             index,
             value: 0,
@@ -9526,12 +9526,12 @@ class TouchSensorDataManager {
     }
     touches = [];
     clear() {
-        _console$O.log("clear");
+        _console$P.log("clear");
     }
 }
 
 var _a$7;
-const _console$N = createConsole("CameraManager", { log: false });
+const _console$O = createConsole("CameraManager", { log: false });
 const CameraSensorTypes = ["camera"];
 const CameraCommands = [
     "focus",
@@ -9606,7 +9606,7 @@ class CameraManager {
         return this.eventDispatcher.waitForEvent;
     }
     requestRequiredInformation(sendImmediately) {
-        _console$N.log("requesting required camera information");
+        _console$O.log("requesting required camera information");
         const messages = RequiredCameraMessageTypes.map((messageType) => ({
             type: messageType,
         }));
@@ -9623,14 +9623,14 @@ class CameraManager {
     }
     #latestTakingPictureTimestamp = 0;
     #updateCameraStatus(newCameraStatus) {
-        _console$N.assertEnumWithError(newCameraStatus, CameraStatuses);
+        _console$O.assertEnumWithError(newCameraStatus, CameraStatuses);
         if (newCameraStatus == this.#cameraStatus) {
-            _console$N.log(`redundant cameraStatus ${newCameraStatus}`);
+            _console$O.log(`redundant cameraStatus ${newCameraStatus}`);
             return;
         }
         const previousCameraStatus = this.#cameraStatus;
         this.#cameraStatus = newCameraStatus;
-        _console$N.log(`updated cameraStatus to "${this.cameraStatus}"`);
+        _console$O.log(`updated cameraStatus to "${this.cameraStatus}"`);
         this.#dispatchEvent("cameraStatus", {
             cameraStatus: this.cameraStatus,
             previousCameraStatus,
@@ -9645,10 +9645,10 @@ class CameraManager {
         }
     }
     async #sendCameraCommand(command, sendImmediately) {
-        _console$N.assertEnumWithError(command, CameraCommands);
-        _console$N.log(`sending camera command "${command}"`);
+        _console$O.assertEnumWithError(command, CameraCommands);
+        _console$O.log(`sending camera command "${command}"`);
         const promise = this.waitForEvent("cameraStatus");
-        _console$N.log(`setting command "${command}"`);
+        _console$O.log(`setting command "${command}"`);
         const commandEnum = CameraCommands.indexOf(command);
         this.sendMessage([
             {
@@ -9659,10 +9659,10 @@ class CameraManager {
         await promise;
     }
     #assertIsAsleep() {
-        _console$N.assertWithError(this.#cameraStatus == "asleep", `camera is not asleep - currently ${this.#cameraStatus}`);
+        _console$O.assertWithError(this.#cameraStatus == "asleep", `camera is not asleep - currently ${this.#cameraStatus}`);
     }
     #assertIsAwake() {
-        _console$N.assertWithError(this.#cameraStatus != "asleep", `camera is not awake - currently ${this.#cameraStatus}`);
+        _console$O.assertWithError(this.#cameraStatus != "asleep", `camera is not awake - currently ${this.#cameraStatus}`);
     }
     async focus() {
         this.#assertIsAwake();
@@ -9693,10 +9693,10 @@ class CameraManager {
             return;
         }
         this.#sensorRate = newSensorRate;
-        _console$N.log({ sensorRate: this.sensorRate });
+        _console$O.log({ sensorRate: this.sensorRate });
     }
     #parseCameraData(dataView) {
-        _console$N.log("parsing camera data", dataView);
+        _console$O.log("parsing camera data", dataView);
         parseMessage(dataView, CameraDataTypes, this.#onCameraData.bind(this), null, true);
     }
     #buildImageTimeout;
@@ -9704,7 +9704,7 @@ class CameraManager {
         if (this.#buildImageTimeout == undefined) {
             return;
         }
-        _console$N.log("clearBuildImageTimeout", this.#buildImageTimeout);
+        _console$O.log("clearBuildImageTimeout", this.#buildImageTimeout);
         clearTimeout(this.#buildImageTimeout);
         this.#buildImageTimeout = undefined;
     }
@@ -9714,13 +9714,13 @@ class CameraManager {
             return;
         }
         const timeoutInterval = Math.max(4 * this.sensorRate, 300);
-        _console$N.log("setBuildImageTimeout", {
+        _console$O.log("setBuildImageTimeout", {
             timeoutInterval,
         });
         const now = Date.now();
         this.#buildImageTimeout = setTimeout(() => {
             const _now = Date.now();
-            _console$N.log("buildImageTimeout triggered", {
+            _console$O.log("buildImageTimeout triggered", {
                 now: _now,
                 span: _now - now,
             });
@@ -9729,46 +9729,46 @@ class CameraManager {
         }, timeoutInterval);
     }
     #onCameraData(cameraDataType, dataView) {
-        _console$N.log({ cameraDataType, dataView });
+        _console$O.log({ cameraDataType, dataView });
         this.#clearBuildImageTimeout();
         switch (cameraDataType) {
             case "headerSize":
                 this.#headerSize = dataView.getUint16(0, true);
-                _console$N.log({ headerSize: this.#headerSize });
+                _console$O.log({ headerSize: this.#headerSize });
                 this.#headerData = undefined;
                 this.#headerProgress == 0;
                 break;
             case "header":
                 this.#headerData = concatenateArrayBuffers(this.#headerData, dataView);
-                _console$N.log({ headerData: this.#headerData });
+                _console$O.log({ headerData: this.#headerData });
                 this.#headerProgress = this.#headerData?.byteLength / this.#headerSize;
-                _console$N.log({ headerProgress: this.#headerProgress });
+                _console$O.log({ headerProgress: this.#headerProgress });
                 this.#dispatchEvent("cameraImageProgress", {
                     progress: this.#headerProgress,
                     type: "header",
                 });
                 if (this.#headerProgress == 1) {
-                    _console$N.log("finished getting header data");
+                    _console$O.log("finished getting header data");
                 }
                 break;
             case "imageSize":
                 this.#imageSize = dataView.getUint32(0, true);
-                _console$N.log({ imageSize: this.#imageSize });
+                _console$O.log({ imageSize: this.#imageSize });
                 this.#imageData = undefined;
                 this.#imageProgress == 0;
                 this.#didBuildImage = false;
                 break;
             case "image":
                 this.#imageData = concatenateArrayBuffers(this.#imageData, dataView);
-                _console$N.log({ imageData: this.#imageData });
+                _console$O.log({ imageData: this.#imageData });
                 this.#imageProgress = this.#imageData?.byteLength / this.#imageSize;
-                _console$N.log({ imageProgress: this.#imageProgress });
+                _console$O.log({ imageProgress: this.#imageProgress });
                 this.#dispatchEvent("cameraImageProgress", {
                     progress: this.#imageProgress,
                     type: "image",
                 });
                 if (this.#imageProgress == 1) {
-                    _console$N.log("finished getting image data");
+                    _console$O.log("finished getting image data");
                     if (this.#headerProgress == 1 && this.#footerProgress == 1) {
                         this.#buildImage();
                     }
@@ -9779,21 +9779,21 @@ class CameraManager {
                 break;
             case "footerSize":
                 this.#footerSize = dataView.getUint16(0, true);
-                _console$N.log({ footerSize: this.#footerSize });
+                _console$O.log({ footerSize: this.#footerSize });
                 this.#footerData = undefined;
                 this.#footerProgress == 0;
                 break;
             case "footer":
                 this.#footerData = concatenateArrayBuffers(this.#footerData, dataView);
-                _console$N.log({ footerData: this.#footerData });
+                _console$O.log({ footerData: this.#footerData });
                 this.#footerProgress = this.#footerData?.byteLength / this.#footerSize;
-                _console$N.log({ footerProgress: this.#footerProgress });
+                _console$O.log({ footerProgress: this.#footerProgress });
                 this.#dispatchEvent("cameraImageProgress", {
                     progress: this.#footerProgress,
                     type: "footer",
                 });
                 if (this.#footerProgress == 1) {
-                    _console$N.log("finished getting footer data");
+                    _console$O.log("finished getting footer data");
                     if (this.#imageProgress == 1) {
                         this.#buildImage();
                     }
@@ -9812,16 +9812,16 @@ class CameraManager {
     #footerProgress = 0;
     #didBuildImage = false;
     #buildImage() {
-        _console$N.log("building image...");
+        _console$O.log("building image...");
         const now = Date.now();
         const timestamp = this.#latestTakingPictureTimestamp;
         const imageData = concatenateArrayBuffers(this.#headerData, this.#imageData, this.#footerData);
-        _console$N.log({ imageData });
+        _console$O.log({ imageData });
         this.#didBuildImage = true;
         let blob = new Blob([imageData], { type: "image/jpg" });
-        _console$N.log("created blob", blob);
+        _console$O.log("created blob", blob);
         const url = URL.createObjectURL(blob);
-        _console$N.log("created url", url);
+        _console$O.log("created url", url);
         const cameraImage = {
             url,
             blob,
@@ -9852,7 +9852,7 @@ class CameraManager {
                     });
                 }
                 else {
-                    _console$N.error("camera recording failed - recording image/canvas/context not found");
+                    _console$O.error("camera recording failed - recording image/canvas/context not found");
                     this.stopRecording();
                 }
             }
@@ -9926,8 +9926,8 @@ class CameraManager {
         while (byteOffset < dataView.byteLength) {
             const cameraConfigurationTypeIndex = dataView.getUint8(byteOffset++);
             const cameraConfigurationType = CameraConfigurationTypes[cameraConfigurationTypeIndex];
-            _console$N.assertWithError(cameraConfigurationType, `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`);
-            _console$N.log({ cameraConfigurationType });
+            _console$O.assertWithError(cameraConfigurationType, `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`);
+            _console$O.log({ cameraConfigurationType });
             let value;
             switch (cameraConfigurationType) {
                 case "autoExposureLevel":
@@ -9941,12 +9941,12 @@ class CameraManager {
                     value = dataView.getUint16(byteOffset, true);
                     break;
             }
-            _console$N.log({ [cameraConfigurationType]: value });
-            _console$N.assertTypeWithError(value, "number");
+            _console$O.log({ [cameraConfigurationType]: value });
+            _console$O.assertTypeWithError(value, "number");
             parsedCameraConfiguration[cameraConfigurationType] = value;
             byteOffset += size;
         }
-        _console$N.log({ parsedCameraConfiguration });
+        _console$O.log({ parsedCameraConfiguration });
         this.#availableCameraConfigurationTypes = Object.keys(parsedCameraConfiguration);
         this.#cameraConfiguration = parsedCameraConfiguration;
         this.#dispatchEvent("getCameraConfiguration", {
@@ -9961,13 +9961,13 @@ class CameraManager {
         });
     }
     async setCameraConfiguration(newCameraConfiguration, sendImmediately) {
-        _console$N.log({ newCameraConfiguration });
+        _console$O.log({ newCameraConfiguration });
         if (this.#isCameraConfigurationRedundant(newCameraConfiguration)) {
-            _console$N.log("redundant camera configuration");
+            _console$O.log("redundant camera configuration");
             return;
         }
         const setCameraConfigurationData = this.#createData(newCameraConfiguration);
-        _console$N.log({ setCameraConfigurationData });
+        _console$O.log({ setCameraConfigurationData });
         const promise = this.waitForEvent("getCameraConfiguration");
         this.sendMessage([
             {
@@ -9978,17 +9978,17 @@ class CameraManager {
         await promise;
     }
     #assertAvailableCameraConfigurationType(cameraConfigurationType) {
-        _console$N.assertWithError(this.#availableCameraConfigurationTypes, "must get initial cameraConfiguration");
+        _console$O.assertWithError(this.#availableCameraConfigurationTypes, "must get initial cameraConfiguration");
         const isCameraConfigurationTypeAvailable = this.#availableCameraConfigurationTypes?.includes(cameraConfigurationType);
-        _console$N.assertWithError(isCameraConfigurationTypeAvailable, `unavailable camera configuration type "${cameraConfigurationType}"`);
+        _console$O.assertWithError(isCameraConfigurationTypeAvailable, `unavailable camera configuration type "${cameraConfigurationType}"`);
         return isCameraConfigurationTypeAvailable;
     }
     static AssertValidCameraConfigurationType(cameraConfigurationType) {
-        _console$N.assertEnumWithError(cameraConfigurationType, CameraConfigurationTypes);
+        _console$O.assertEnumWithError(cameraConfigurationType, CameraConfigurationTypes);
     }
     static AssertValidCameraConfigurationTypeEnum(cameraConfigurationTypeEnum) {
-        _console$N.assertTypeWithError(cameraConfigurationTypeEnum, "number");
-        _console$N.assertWithError(cameraConfigurationTypeEnum in CameraConfigurationTypes, `invalid cameraConfigurationTypeEnum ${cameraConfigurationTypeEnum}`);
+        _console$O.assertTypeWithError(cameraConfigurationTypeEnum, "number");
+        _console$O.assertWithError(cameraConfigurationTypeEnum in CameraConfigurationTypes, `invalid cameraConfigurationTypeEnum ${cameraConfigurationTypeEnum}`);
     }
     #createData(cameraConfiguration) {
         let cameraConfigurationTypes = Object.keys(cameraConfiguration);
@@ -10009,7 +10009,7 @@ class CameraManager {
                     break;
             }
         });
-        _console$N.log({ sensorConfigurationData: dataView });
+        _console$O.log({ sensorConfigurationData: dataView });
         return dataView;
     }
     #isRecording = false;
@@ -10028,11 +10028,11 @@ class CameraManager {
     #recordingChunks;
     startRecording(audioStream) {
         if (!this.isRecordingAvailable) {
-            _console$N.error("camera recording is not available");
+            _console$O.error("camera recording is not available");
             return;
         }
         if (this.isRecording) {
-            _console$N.log("already recording camera");
+            _console$O.log("already recording camera");
             return;
         }
         this.#cameraRecordingData = [];
@@ -10055,7 +10055,7 @@ class CameraManager {
             });
             this.#recordingChunks = [];
             this.#recordingMediaRecorder.ondataavailable = (e) => {
-                _console$N.log("adding chunk", e.data);
+                _console$O.log("adding chunk", e.data);
                 this.#recordingChunks.push(e.data);
             };
             this.#recordingMediaRecorder.start();
@@ -10068,7 +10068,7 @@ class CameraManager {
     }
     async stopRecording() {
         if (!this.isRecording) {
-            _console$N.log("already not recording");
+            _console$O.log("already not recording");
             return;
         }
         if (this.#cameraRecordingData && this.#cameraRecordingData.length > 0) {
@@ -10088,7 +10088,7 @@ class CameraManager {
                 });
                 if (isInBrowser) {
                     this.#recordingMediaRecorder.onstop = () => {
-                        _console$N.log("recordingMediaRecorder onstop");
+                        _console$O.log("recordingMediaRecorder onstop");
                         const blob = new Blob(this.#recordingChunks, {
                             type: this.#recordingMediaRecorder?.mimeType,
                         });
@@ -10193,11 +10193,11 @@ class CameraManager {
             return;
         }
         this.#autoPicture = newAutoPicture;
-        _console$N.log({ autoPicture: this.#autoPicture });
+        _console$O.log({ autoPicture: this.#autoPicture });
         this.#dispatchEvent("autoPicture", { autoPicture: this.autoPicture });
     }
     parseMessage(messageType, dataView, isSending) {
-        _console$N.log({ messageType, isSending }, dataView);
+        _console$O.log({ messageType, isSending }, dataView);
         switch (messageType) {
             case "cameraStatus":
                 this.#parseCameraStatus(dataView);
@@ -10340,7 +10340,7 @@ var _alawmulaw = /*#__PURE__*/Object.freeze({
 var _a$6;
 const alawmulaw = _alawmulaw;
 const { mulaw } = alawmulaw;
-const _console$M = createConsole("MicrophoneManager", { log: false });
+const _console$N = createConsole("MicrophoneManager", { log: false });
 const MicrophoneSensorTypes = ["microphone"];
 const MicrophoneCommands = [
     "start",
@@ -10392,7 +10392,7 @@ class MicrophoneManager {
         return this.eventDispatcher.waitForEvent;
     }
     requestRequiredInformation() {
-        _console$M.log("requesting required microphone information");
+        _console$N.log("requesting required microphone information");
         const messages = RequiredMicrophoneMessageTypes.map((messageType) => ({
             type: messageType,
         }));
@@ -10408,24 +10408,24 @@ class MicrophoneManager {
         this.#updateMicrophoneStatus(newMicrophoneStatus);
     }
     #updateMicrophoneStatus(newMicrophoneStatus) {
-        _console$M.assertEnumWithError(newMicrophoneStatus, MicrophoneStatuses);
+        _console$N.assertEnumWithError(newMicrophoneStatus, MicrophoneStatuses);
         if (newMicrophoneStatus == this.#microphoneStatus) {
-            _console$M.log(`redundant microphoneStatus ${newMicrophoneStatus}`);
+            _console$N.log(`redundant microphoneStatus ${newMicrophoneStatus}`);
             return;
         }
         const previousMicrophoneStatus = this.#microphoneStatus;
         this.#microphoneStatus = newMicrophoneStatus;
-        _console$M.log(`updated microphoneStatus to "${this.microphoneStatus}"`);
+        _console$N.log(`updated microphoneStatus to "${this.microphoneStatus}"`);
         this.#dispatchEvent("microphoneStatus", {
             microphoneStatus: this.microphoneStatus,
             previousMicrophoneStatus,
         });
     }
     async #sendMicrophoneCommand(command, sendImmediately) {
-        _console$M.assertEnumWithError(command, MicrophoneCommands);
-        _console$M.log(`sending microphone command "${command}"`);
+        _console$N.assertEnumWithError(command, MicrophoneCommands);
+        _console$N.log(`sending microphone command "${command}"`);
         const promise = this.waitForEvent("microphoneStatus");
-        _console$M.log(`setting command "${command}"`);
+        _console$N.log(`setting command "${command}"`);
         const commandEnum = MicrophoneCommands.indexOf(command);
         this.sendMessage([
             {
@@ -10436,20 +10436,20 @@ class MicrophoneManager {
         await promise;
     }
     #assertIsIdle() {
-        _console$M.assertWithError(this.#microphoneStatus == "idle", `microphone is not idle - currently ${this.#microphoneStatus}`);
+        _console$N.assertWithError(this.#microphoneStatus == "idle", `microphone is not idle - currently ${this.#microphoneStatus}`);
     }
     #assertIsNotIdle() {
-        _console$M.assertWithError(this.#microphoneStatus != "idle", `microphone is idle`);
+        _console$N.assertWithError(this.#microphoneStatus != "idle", `microphone is idle`);
     }
     #assertIsStreaming() {
-        _console$M.assertWithError(this.#microphoneStatus == "streaming", `microphone is not recording - currently ${this.#microphoneStatus}`);
+        _console$N.assertWithError(this.#microphoneStatus == "streaming", `microphone is not recording - currently ${this.#microphoneStatus}`);
     }
     async start() {
         await this.#sendMicrophoneCommand("start");
     }
     async stop() {
         if (this.microphoneStatus == "idle") {
-            _console$M.log("microphone is already idle");
+            _console$N.log("microphone is already idle");
             return;
         }
         await this.#sendMicrophoneCommand("stop");
@@ -10468,13 +10468,13 @@ class MicrophoneManager {
         }
     }
     #assertValidBitDepth() {
-        _console$M.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
+        _console$N.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
     }
     #fadeDuration = 0.01;
     #playbackTime = 0;
     #parseMicrophoneData(dataView) {
         this.#assertValidBitDepth();
-        _console$M.log("parsing microphone data", dataView);
+        _console$N.log("parsing microphone data", dataView);
         const numberOfSamples = dataView.byteLength / this.#bytesPerSample;
         const samples = new Float32Array(numberOfSamples);
         for (let i = 0; i < numberOfSamples; i++) {
@@ -10494,7 +10494,7 @@ class MicrophoneManager {
                     break;
             }
         }
-        _console$M.log("samples", samples);
+        _console$N.log("samples", samples);
         if (this.#isRecording && this.#microphoneRecordingData) {
             this.#microphoneRecordingData.push(samples);
         }
@@ -10555,15 +10555,15 @@ class MicrophoneManager {
         while (byteOffset < dataView.byteLength) {
             const microphoneConfigurationTypeIndex = dataView.getUint8(byteOffset++);
             const microphoneConfigurationType = MicrophoneConfigurationTypes[microphoneConfigurationTypeIndex];
-            _console$M.assertWithError(microphoneConfigurationType, `invalid microphoneConfigurationTypeIndex ${microphoneConfigurationTypeIndex}`);
+            _console$N.assertWithError(microphoneConfigurationType, `invalid microphoneConfigurationTypeIndex ${microphoneConfigurationTypeIndex}`);
             let rawValue = dataView.getUint8(byteOffset++);
             const values = MicrophoneConfigurationValues[microphoneConfigurationType];
             const value = values[rawValue];
-            _console$M.assertEnumWithError(value, values);
-            _console$M.log({ microphoneConfigurationType, value });
+            _console$N.assertEnumWithError(value, values);
+            _console$N.log({ microphoneConfigurationType, value });
             parsedMicrophoneConfiguration[microphoneConfigurationType] = value;
         }
-        _console$M.log({ parsedMicrophoneConfiguration });
+        _console$N.log({ parsedMicrophoneConfiguration });
         this.#availableMicrophoneConfigurationTypes = Object.keys(parsedMicrophoneConfiguration);
         this.#microphoneConfiguration = parsedMicrophoneConfiguration;
         this.#dispatchEvent("getMicrophoneConfiguration", {
@@ -10578,13 +10578,13 @@ class MicrophoneManager {
         });
     }
     async setMicrophoneConfiguration(newMicrophoneConfiguration) {
-        _console$M.log({ newMicrophoneConfiguration });
+        _console$N.log({ newMicrophoneConfiguration });
         if (this.#isMicrophoneConfigurationRedundant(newMicrophoneConfiguration)) {
-            _console$M.log("redundant microphone configuration");
+            _console$N.log("redundant microphone configuration");
             return;
         }
         const setMicrophoneConfigurationData = this.#createData(newMicrophoneConfiguration);
-        _console$M.log({ setMicrophoneConfigurationData });
+        _console$N.log({ setMicrophoneConfigurationData });
         const promise = this.waitForEvent("getMicrophoneConfiguration");
         this.sendMessage([
             {
@@ -10595,17 +10595,17 @@ class MicrophoneManager {
         await promise;
     }
     #assertAvailableMicrophoneConfigurationType(microphoneConfigurationType) {
-        _console$M.assertWithError(this.#availableMicrophoneConfigurationTypes, "must get initial microphoneConfiguration");
+        _console$N.assertWithError(this.#availableMicrophoneConfigurationTypes, "must get initial microphoneConfiguration");
         const isMicrophoneConfigurationTypeAvailable = this.#availableMicrophoneConfigurationTypes?.includes(microphoneConfigurationType);
-        _console$M.assertWithError(isMicrophoneConfigurationTypeAvailable, `unavailable microphone configuration type "${microphoneConfigurationType}"`);
+        _console$N.assertWithError(isMicrophoneConfigurationTypeAvailable, `unavailable microphone configuration type "${microphoneConfigurationType}"`);
         return isMicrophoneConfigurationTypeAvailable;
     }
     static AssertValidMicrophoneConfigurationType(microphoneConfigurationType) {
-        _console$M.assertEnumWithError(microphoneConfigurationType, MicrophoneConfigurationTypes);
+        _console$N.assertEnumWithError(microphoneConfigurationType, MicrophoneConfigurationTypes);
     }
     static AssertValidMicrophoneConfigurationTypeEnum(microphoneConfigurationTypeEnum) {
-        _console$M.assertTypeWithError(microphoneConfigurationTypeEnum, "number");
-        _console$M.assertWithError(microphoneConfigurationTypeEnum in MicrophoneConfigurationTypes, `invalid microphoneConfigurationTypeEnum ${microphoneConfigurationTypeEnum}`);
+        _console$N.assertTypeWithError(microphoneConfigurationTypeEnum, "number");
+        _console$N.assertWithError(microphoneConfigurationTypeEnum in MicrophoneConfigurationTypes, `invalid microphoneConfigurationTypeEnum ${microphoneConfigurationTypeEnum}`);
     }
     #createData(microphoneConfiguration) {
         let microphoneConfigurationTypes = Object.keys(microphoneConfiguration);
@@ -10620,15 +10620,15 @@ class MicrophoneManager {
                 value = value.toString();
             }
             const values = MicrophoneConfigurationValues[microphoneConfigurationType];
-            _console$M.assertEnumWithError(value, values);
+            _console$N.assertEnumWithError(value, values);
             const rawValue = values.indexOf(value);
             dataView.setUint8(index * 2 + 1, rawValue);
         });
-        _console$M.log({ sensorConfigurationData: dataView });
+        _console$N.log({ sensorConfigurationData: dataView });
         return dataView;
     }
     parseMessage(messageType, dataView, isSending) {
-        _console$M.log({ messageType, isSending }, dataView);
+        _console$N.log({ messageType, isSending }, dataView);
         switch (messageType) {
             case "microphoneStatus":
                 this.#parseMicrophoneStatus(dataView);
@@ -10650,11 +10650,11 @@ class MicrophoneManager {
     }
     set audioContext(newAudioContext) {
         if (this.#audioContext == newAudioContext) {
-            _console$M.log("redundant audioContext assignment", this.#audioContext);
+            _console$N.log("redundant audioContext assignment", this.#audioContext);
             return;
         }
         this.#audioContext = newAudioContext;
-        _console$M.log("assigned new audioContext", this.#audioContext);
+        _console$N.log("assigned new audioContext", this.#audioContext);
         if (this.#audioContext) {
             this.#playbackTime = this.#audioContext.currentTime;
         }
@@ -10671,23 +10671,23 @@ class MicrophoneManager {
     }
     #gainNode;
     get gainNode() {
-        _console$M.assertWithError(this.#audioContext, "audioContext assignment required for gainNode");
+        _console$N.assertWithError(this.#audioContext, "audioContext assignment required for gainNode");
         if (!this.#gainNode) {
-            _console$M.log("creating gainNode...");
+            _console$N.log("creating gainNode...");
             this.#gainNode = this.#audioContext.createGain();
-            _console$M.log("created gainNode", this.#gainNode);
+            _console$N.log("created gainNode", this.#gainNode);
         }
         return this.#gainNode;
     }
     #mediaStreamDestination;
     get mediaStreamDestination() {
-        _console$M.assertWithError(this.#audioContext, "audioContext assignment required for mediaStreamDestination");
+        _console$N.assertWithError(this.#audioContext, "audioContext assignment required for mediaStreamDestination");
         if (!this.#mediaStreamDestination) {
-            _console$M.log("creating mediaStreamDestination...");
+            _console$N.log("creating mediaStreamDestination...");
             this.#mediaStreamDestination =
                 this.#audioContext.createMediaStreamDestination();
             this.gainNode?.connect(this.#mediaStreamDestination);
-            _console$M.log("created mediaStreamDestination", this.#mediaStreamDestination);
+            _console$N.log("created mediaStreamDestination", this.#mediaStreamDestination);
         }
         return this.#mediaStreamDestination;
     }
@@ -10698,7 +10698,7 @@ class MicrophoneManager {
     #microphoneRecordingData;
     startRecording() {
         if (this.isRecording) {
-            _console$M.log("already recording microphone");
+            _console$N.log("already recording microphone");
             return;
         }
         this.#microphoneRecordingData = [];
@@ -10710,13 +10710,13 @@ class MicrophoneManager {
     }
     stopRecording() {
         if (!this.isRecording) {
-            _console$M.log("already not recording");
+            _console$N.log("already not recording");
             return;
         }
         this.#isRecording = false;
         if (this.#microphoneRecordingData &&
             this.#microphoneRecordingData.length > 0) {
-            _console$M.log("parsing microphone data...", this.#microphoneRecordingData.length);
+            _console$N.log("parsing microphone data...", this.#microphoneRecordingData.length);
             const arrayBuffer = concatenateArrayBuffers(...this.#microphoneRecordingData);
             const samples = new Float32Array(arrayBuffer);
             const blob = float32ArrayToWav(samples, Number(this.sampleRate), 1);
@@ -10754,16 +10754,16 @@ _a$6 = MicrophoneManager;
 
 const LightSensorTypes = ["light"];
 const ContinuousLightSensorTypes = LightSensorTypes;
-const _console$L = createConsole("LightSensorDataManager", { log: false });
+const _console$M = createConsole("LightSensorDataManager", { log: false });
 class LightSensorDataManager {
     parseData(dataView, scalar) {
         const light = dataView.getFloat32(0, true) * scalar;
-        _console$L.log({ light });
+        _console$M.log({ light });
         return { light };
     }
 }
 
-const _console$K = createConsole("SensorDataManager", { log: false });
+const _console$L = createConsole("SensorDataManager", { log: false });
 const SensorTypes = [
     ...PressureSensorTypes,
     ...MotionSensorTypes,
@@ -10803,7 +10803,7 @@ const SensorMetaDataEventTypes = [
     ...SensorMetaDataMessageTypes,
 ];
 function parseSensorData(dataView, callback) {
-    _console$K.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+    _console$L.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
     let byteOffset = 0;
     const timestamp = parseTimestamp(dataView, byteOffset);
     byteOffset += 2;
@@ -10828,11 +10828,11 @@ class SensorDataManager {
     #scalars = new Map();
     #counts = new Map();
     static AssertValidSensorType(sensorType) {
-        _console$K.assertEnumWithError(sensorType, SensorTypes);
+        _console$L.assertEnumWithError(sensorType, SensorTypes);
     }
     static AssertValidSensorTypeEnum(sensorTypeEnum) {
-        _console$K.assertTypeWithError(sensorTypeEnum, "number");
-        _console$K.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
+        _console$L.assertTypeWithError(sensorTypeEnum, "number");
+        _console$L.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
     #eventDispatcher;
     get eventDispatcher() {
@@ -10842,7 +10842,7 @@ class SensorDataManager {
         if (this.#eventDispatcher == eventDispatcher) {
             return;
         }
-        _console$K.assertWithError(!this.#eventDispatcher, "eventDispatcher already defined");
+        _console$L.assertWithError(!this.#eventDispatcher, "eventDispatcher already defined");
         this.#eventDispatcher = eventDispatcher;
         this.pressureSensorDataManager.eventDispatcher =
             eventDispatcher;
@@ -10855,7 +10855,7 @@ class SensorDataManager {
         return this.eventDispatcher.dispatchEvent;
     }
     parseMessage(messageType, dataView, isSending) {
-        _console$K.log({ messageType, isSending }, dataView);
+        _console$L.log({ messageType, isSending }, dataView);
         switch (messageType) {
             case "getSensorScalars":
                 this.#parseScalars(dataView);
@@ -10878,11 +10878,11 @@ class SensorDataManager {
             const sensorTypeIndex = dataView.getUint8(byteOffset);
             const sensorType = SensorTypes[sensorTypeIndex];
             if (!sensorType) {
-                _console$K.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                _console$L.warn(`unknown sensorType index ${sensorTypeIndex}`);
                 continue;
             }
             const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
-            _console$K.log({ sensorType, sensorScalar });
+            _console$L.log({ sensorType, sensorScalar });
             this.#scalars.set(sensorType, sensorScalar);
         }
     }
@@ -10891,11 +10891,11 @@ class SensorDataManager {
             const sensorTypeIndex = dataView.getUint8(byteOffset);
             const sensorType = SensorTypes[sensorTypeIndex];
             if (!sensorType) {
-                _console$K.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                _console$L.warn(`unknown sensorType index ${sensorTypeIndex}`);
                 continue;
             }
             const sensorCount = dataView.getUint8(byteOffset + 1);
-            _console$K.log({ sensorType, sensorCount });
+            _console$L.log({ sensorType, sensorCount });
             this.#counts.set(sensorType, sensorCount);
             switch (sensorType) {
                 case "buttons":
@@ -10905,7 +10905,7 @@ class SensorDataManager {
                     this.touchSensorDataManager.numberOfTouches = sensorCount;
                     break;
                 default:
-                    _console$K.warn(`uncaught count for sensorType "${sensorType}"`);
+                    _console$L.warn(`uncaught count for sensorType "${sensorType}"`);
                     break;
             }
         }
@@ -10981,10 +10981,10 @@ class SensorDataManager {
                 sensorData = this.lightSensorDataManager.parseData(dataView, scalar);
                 break;
             default:
-                _console$K.error(`uncaught sensorType "${sensorType}"`);
+                _console$L.error(`uncaught sensorType "${sensorType}"`);
         }
-        _console$K.assertWithError(sensorData != null || sensorType == "pressure", `no sensorData defined for sensorType "${sensorType}"`);
-        _console$K.log({ sensorType, sensorData });
+        _console$L.assertWithError(sensorData != null || sensorType == "pressure", `no sensorData defined for sensorType "${sensorType}"`);
+        _console$L.log({ sensorType, sensorData });
         const message = {
             sensorType,
             [sensorType]: sensorData,
@@ -11005,14 +11005,14 @@ class SensorDataManager {
         });
     }
     clear() {
-        _console$K.log("clear");
+        _console$L.log("clear");
         this.buttonSensorDataManager.clear();
         this.touchSensorDataManager.clear();
     }
 }
 
 var _a$5;
-const _console$J = createConsole("SensorConfigurationManager", { log: false });
+const _console$K = createConsole("SensorConfigurationManager", { log: false });
 const MaxSensorRate = 2 ** 16 - 1;
 const SensorRateStep = 5;
 const SensorConfigurationMessageTypes = [
@@ -11026,9 +11026,9 @@ function parseSensorConfiguration(dataView, callback, context) {
         const sensorTypeIndex = dataView.getUint8(byteOffset);
         const sensorType = SensorTypes[sensorTypeIndex];
         const sensorRate = dataView.getUint16(byteOffset + 1, true);
-        _console$J.log({ sensorType, sensorRate });
+        _console$K.log({ sensorType, sensorRate });
         if (!sensorType) {
-            _console$J.warn(`unknown sensorType index ${sensorTypeIndex}`);
+            _console$K.warn(`unknown sensorType index ${sensorTypeIndex}`);
             continue;
         }
         if (callback && !callback(sensorType, sensorRate, context)) {
@@ -11036,14 +11036,14 @@ function parseSensorConfiguration(dataView, callback, context) {
         }
         parsedSensorConfiguration[sensorType] = sensorRate;
     }
-    _console$J.log({ parsedSensorConfiguration });
+    _console$K.log({ parsedSensorConfiguration });
     return parsedSensorConfiguration;
 }
 function assertValidSensorRate(sensorRate) {
-    _console$J.assertTypeWithError(sensorRate, "number");
-    _console$J.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
-    _console$J.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
-    _console$J.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
+    _console$K.assertTypeWithError(sensorRate, "number");
+    _console$K.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
+    _console$K.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
+    _console$K.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
 }
 function serializeSensorConfiguration(sensorConfiguration, availableSensorTypes) {
     let sensorTypes = Object.keys(sensorConfiguration);
@@ -11059,7 +11059,7 @@ function serializeSensorConfiguration(sensorConfiguration, availableSensorTypes)
         assertValidSensorRate(sensorRate);
         dataView.setUint16(index * 3 + 1, sensorRate, true);
     });
-    _console$J.log({ sensorConfigurationData: dataView });
+    _console$K.log({ sensorConfigurationData: dataView });
     return dataView;
 }
 class SensorConfigurationManager {
@@ -11090,7 +11090,7 @@ class SensorConfigurationManager {
     }
     #updateConfiguration(updatedConfiguration) {
         this.#configuration = updatedConfiguration;
-        _console$J.log({ updatedConfiguration: this.#configuration });
+        _console$K.log({ updatedConfiguration: this.#configuration });
         this.#dispatchEvent("getSensorConfiguration", {
             sensorConfiguration: this.configuration,
         });
@@ -11109,9 +11109,9 @@ class SensorConfigurationManager {
         if (clearRest) {
             newSensorConfiguration = Object.assign(structuredClone(this.zeroSensorConfiguration), newSensorConfiguration);
         }
-        _console$J.log({ newSensorConfiguration });
+        _console$K.log({ newSensorConfiguration });
         if (this.#isRedundant(newSensorConfiguration)) {
-            _console$J.log("redundant sensor configuration");
+            _console$K.log("redundant sensor configuration");
             return;
         }
         const sensorTypes = Object.keys(newSensorConfiguration);
@@ -11122,7 +11122,7 @@ class SensorConfigurationManager {
             }
         });
         const setSensorConfigurationData = serializeSensorConfiguration(newSensorConfiguration, this.availableSensorTypes);
-        _console$J.log({ setSensorConfigurationData });
+        _console$K.log({ setSensorConfigurationData });
         const promise = this.waitForEvent("getSensorConfiguration");
         this.sendMessage([
             {
@@ -11144,16 +11144,16 @@ class SensorConfigurationManager {
     }
     #parse(dataView) {
         const parsedSensorConfiguration = parseSensorConfiguration(dataView);
-        _console$J.log({ parsedSensorConfiguration });
+        _console$K.log({ parsedSensorConfiguration });
         this.#availableSensorTypes = Object.keys(parsedSensorConfiguration);
-        _console$J.log("availableSensorTypes", this.#availableSensorTypes);
+        _console$K.log("availableSensorTypes", this.#availableSensorTypes);
         return parsedSensorConfiguration;
     }
     static #AssertValidSensorRate(sensorRate) {
-        _console$J.assertTypeWithError(sensorRate, "number");
-        _console$J.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
-        _console$J.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
-        _console$J.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
+        _console$K.assertTypeWithError(sensorRate, "number");
+        _console$K.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
+        _console$K.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
+        _console$K.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
     }
     #assertValidSensorRate(sensorRate) {
         _a$5.#AssertValidSensorRate(sensorRate);
@@ -11178,7 +11178,7 @@ class SensorConfigurationManager {
         return this.setConfiguration(this.zeroSensorConfiguration);
     }
     parseMessage(messageType, dataView, isSending) {
-        _console$J.log({ messageType, isSending }, dataView);
+        _console$K.log({ messageType, isSending }, dataView);
         switch (messageType) {
             case "getSensorConfiguration":
             case "setSensorConfiguration":
@@ -11192,7 +11192,7 @@ class SensorConfigurationManager {
 }
 _a$5 = SensorConfigurationManager;
 
-const _console$I = createConsole("TfliteManager", { log: false });
+const _console$J = createConsole("TfliteManager", { log: false });
 const TfliteMessageTypes = [
     "getTfliteName",
     "setTfliteName",
@@ -11237,10 +11237,10 @@ class TfliteManager {
     }
     sendMessage;
     #assertValidTask(task) {
-        _console$I.assertEnumWithError(task, TfliteTasks);
+        _console$J.assertEnumWithError(task, TfliteTasks);
     }
     #assertValidTaskEnum(taskEnum) {
-        _console$I.assertWithError(taskEnum in TfliteTasks, `invalid taskEnum ${taskEnum}`);
+        _console$J.assertWithError(taskEnum in TfliteTasks, `invalid taskEnum ${taskEnum}`);
     }
     eventDispatcher;
     get addEventListenter() {
@@ -11261,26 +11261,26 @@ class TfliteManager {
     }
     setClasses(newClasses) {
         this.#classes = newClasses?.slice();
-        _console$I.log("classes", this.classes);
+        _console$J.log("classes", this.classes);
     }
     #name;
     get name() {
         return this.#name;
     }
     #parseName(dataView) {
-        _console$I.log("parseName", dataView);
+        _console$J.log("parseName", dataView);
         const name = textDecoder.decode(dataView.buffer);
         this.#updateName(name);
     }
     #updateName(name) {
-        _console$I.log({ name });
+        _console$J.log({ name });
         this.#name = name;
         this.#dispatchEvent("getTfliteName", { tfliteName: name });
     }
     async setName(newName, sendImmediately) {
-        _console$I.assertTypeWithError(newName, "string");
+        _console$J.assertTypeWithError(newName, "string");
         if (this.name == newName) {
-            _console$I.log(`redundant name assignment ${newName}`);
+            _console$J.log(`redundant name assignment ${newName}`);
             return;
         }
         const promise = this.waitForEvent("getTfliteName");
@@ -11293,21 +11293,21 @@ class TfliteManager {
         return this.#task;
     }
     #parseTask(dataView) {
-        _console$I.log("parseTask", dataView);
+        _console$J.log("parseTask", dataView);
         const taskEnum = dataView.getUint8(0);
         this.#assertValidTaskEnum(taskEnum);
         const task = TfliteTasks[taskEnum];
         this.#updateTask(task);
     }
     #updateTask(task) {
-        _console$I.log({ task });
+        _console$J.log({ task });
         this.#task = task;
         this.#dispatchEvent("getTfliteTask", { tfliteTask: task });
     }
     async setTask(newTask, sendImmediately) {
         this.#assertValidTask(newTask);
         if (this.task == newTask) {
-            _console$I.log(`redundant task assignment ${newTask}`);
+            _console$J.log(`redundant task assignment ${newTask}`);
             return;
         }
         const promise = this.waitForEvent("getTfliteTask");
@@ -11320,23 +11320,23 @@ class TfliteManager {
         return this.#sampleRate;
     }
     #parseSampleRate(dataView) {
-        _console$I.log("parseSampleRate", dataView);
+        _console$J.log("parseSampleRate", dataView);
         const sampleRate = dataView.getUint16(0, true);
         this.#updateSampleRate(sampleRate);
     }
     #updateSampleRate(sampleRate) {
-        _console$I.log({ sampleRate });
+        _console$J.log({ sampleRate });
         this.#sampleRate = sampleRate;
         this.#dispatchEvent("getTfliteSampleRate", {
             tfliteSampleRate: sampleRate,
         });
     }
     async setSampleRate(newSampleRate, sendImmediately) {
-        _console$I.assertTypeWithError(newSampleRate, "number");
+        _console$J.assertTypeWithError(newSampleRate, "number");
         newSampleRate -= newSampleRate % SensorRateStep;
-        _console$I.assertWithError(newSampleRate >= SensorRateStep, `sampleRate must be multiple of ${SensorRateStep} greater than 0 (got ${newSampleRate})`);
+        _console$J.assertWithError(newSampleRate >= SensorRateStep, `sampleRate must be multiple of ${SensorRateStep} greater than 0 (got ${newSampleRate})`);
         if (this.#sampleRate == newSampleRate) {
-            _console$I.log(`redundant sampleRate assignment ${newSampleRate}`);
+            _console$J.log(`redundant sampleRate assignment ${newSampleRate}`);
             return;
         }
         const promise = this.waitForEvent("getTfliteSampleRate");
@@ -11348,14 +11348,14 @@ class TfliteManager {
     static AssertValidSensorType(sensorType) {
         SensorDataManager.AssertValidSensorType(sensorType);
         const tfliteSensorType = sensorType;
-        _console$I.assertWithError(TfliteSensorTypes.includes(tfliteSensorType), `invalid tflite sensorType "${sensorType}"`);
+        _console$J.assertWithError(TfliteSensorTypes.includes(tfliteSensorType), `invalid tflite sensorType "${sensorType}"`);
     }
     #sensorTypes = [];
     get sensorTypes() {
         return this.#sensorTypes.slice();
     }
     #parseSensorTypes(dataView) {
-        _console$I.log("parseSensorTypes", dataView);
+        _console$J.log("parseSensorTypes", dataView);
         const sensorTypes = [];
         for (let index = 0; index < dataView.byteLength; index++) {
             const sensorTypeEnum = dataView.getUint8(index);
@@ -11365,17 +11365,17 @@ class TfliteManager {
                     sensorTypes.push(sensorType);
                 }
                 else {
-                    _console$I.error(`invalid tfliteSensorType ${sensorType}`);
+                    _console$J.error(`invalid tfliteSensorType ${sensorType}`);
                 }
             }
             else {
-                _console$I.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
+                _console$J.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
             }
         }
         this.#updateSensorTypes(sensorTypes);
     }
     #updateSensorTypes(sensorTypes) {
-        _console$I.log({ sensorTypes });
+        _console$J.log({ sensorTypes });
         this.#sensorTypes = sensorTypes;
         this.#dispatchEvent("getTfliteSensorTypes", {
             tfliteSensorTypes: sensorTypes,
@@ -11388,7 +11388,7 @@ class TfliteManager {
         newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
         if (newSensorTypes.length == this.sensorTypes.length) {
             if (this.sensorTypes.every((value) => newSensorTypes.includes(value))) {
-                _console$I.log(`redundant tflite sensorTypes`, newSensorTypes);
+                _console$J.log(`redundant tflite sensorTypes`, newSensorTypes);
                 return;
             }
         }
@@ -11396,7 +11396,7 @@ class TfliteManager {
         const newSensorTypeEnums = newSensorTypes
             .map((sensorType) => SensorTypes.indexOf(sensorType))
             .sort();
-        _console$I.log(newSensorTypes, newSensorTypeEnums);
+        _console$J.log(newSensorTypes, newSensorTypeEnums);
         this.sendMessage([
             {
                 type: "setTfliteSensorTypes",
@@ -11410,38 +11410,38 @@ class TfliteManager {
         return this.#isReady;
     }
     #parseIsReady(dataView) {
-        _console$I.log("parseIsReady", dataView);
+        _console$J.log("parseIsReady", dataView);
         const isReady = Boolean(dataView.getUint8(0));
         this.#updateIsReady(isReady);
     }
     #updateIsReady(isReady) {
-        _console$I.log({ isReady });
+        _console$J.log({ isReady });
         this.#isReady = isReady;
         this.#dispatchEvent("tfliteIsReady", { tfliteIsReady: isReady });
     }
     #assertIsReady() {
-        _console$I.assertWithError(this.isReady, `tflite is not ready`);
+        _console$J.assertWithError(this.isReady, `tflite is not ready`);
     }
     #captureDelay;
     get captureDelay() {
         return this.#captureDelay;
     }
     #parseCaptureDelay(dataView) {
-        _console$I.log("parseCaptureDelay", dataView);
+        _console$J.log("parseCaptureDelay", dataView);
         const captureDelay = dataView.getUint16(0, true);
         this.#updateCaptueDelay(captureDelay);
     }
     #updateCaptueDelay(captureDelay) {
-        _console$I.log({ captureDelay });
+        _console$J.log({ captureDelay });
         this.#captureDelay = captureDelay;
         this.#dispatchEvent("getTfliteCaptureDelay", {
             tfliteCaptureDelay: captureDelay,
         });
     }
     async setCaptureDelay(newCaptureDelay, sendImmediately) {
-        _console$I.assertTypeWithError(newCaptureDelay, "number");
+        _console$J.assertTypeWithError(newCaptureDelay, "number");
         if (this.#captureDelay == newCaptureDelay) {
-            _console$I.log(`redundant captureDelay assignment ${newCaptureDelay}`);
+            _console$J.log(`redundant captureDelay assignment ${newCaptureDelay}`);
             return;
         }
         const promise = this.waitForEvent("getTfliteCaptureDelay");
@@ -11455,20 +11455,20 @@ class TfliteManager {
         return this.#threshold;
     }
     #parseThreshold(dataView) {
-        _console$I.log("parseThreshold", dataView);
+        _console$J.log("parseThreshold", dataView);
         const threshold = dataView.getFloat32(0, true);
         this.#updateThreshold(threshold);
     }
     #updateThreshold(threshold) {
-        _console$I.log({ threshold });
+        _console$J.log({ threshold });
         this.#threshold = threshold;
         this.#dispatchEvent("getTfliteThreshold", { tfliteThreshold: threshold });
     }
     async setThreshold(newThreshold, sendImmediately) {
-        _console$I.assertTypeWithError(newThreshold, "number");
-        _console$I.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
+        _console$J.assertTypeWithError(newThreshold, "number");
+        _console$J.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
         if (this.#threshold == newThreshold) {
-            _console$I.log(`redundant threshold assignment ${newThreshold}`);
+            _console$J.log(`redundant threshold assignment ${newThreshold}`);
             return;
         }
         const promise = this.waitForEvent("getTfliteThreshold");
@@ -11482,25 +11482,25 @@ class TfliteManager {
         return this.#inferencingEnabled;
     }
     #parseInferencingEnabled(dataView) {
-        _console$I.log("parseInferencingEnabled", dataView);
+        _console$J.log("parseInferencingEnabled", dataView);
         const inferencingEnabled = Boolean(dataView.getUint8(0));
         this.#updateInferencingEnabled(inferencingEnabled);
     }
     #updateInferencingEnabled(inferencingEnabled) {
-        _console$I.log({ inferencingEnabled });
+        _console$J.log({ inferencingEnabled });
         this.#inferencingEnabled = inferencingEnabled;
         this.#dispatchEvent("getTfliteInferencingEnabled", {
             tfliteInferencingEnabled: inferencingEnabled,
         });
     }
     async setInferencingEnabled(newInferencingEnabled, sendImmediately = true) {
-        _console$I.assertTypeWithError(newInferencingEnabled, "boolean");
+        _console$J.assertTypeWithError(newInferencingEnabled, "boolean");
         if (!newInferencingEnabled && !this.isReady) {
             return;
         }
         this.#assertIsReady();
         if (this.#inferencingEnabled == newInferencingEnabled) {
-            _console$I.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
+            _console$J.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
             return;
         }
         const promise = this.waitForEvent("getTfliteInferencingEnabled");
@@ -11528,15 +11528,15 @@ class TfliteManager {
         this.setInferencingEnabled(false);
     }
     #parseInference(dataView) {
-        _console$I.log("parseInference", dataView);
+        _console$J.log("parseInference", dataView);
         const timestamp = parseTimestamp(dataView, 0);
-        _console$I.log({ timestamp });
+        _console$J.log({ timestamp });
         const values = [];
         for (let index = 0, byteOffset = 2; byteOffset < dataView.byteLength; index++, byteOffset += 4) {
             const value = dataView.getFloat32(byteOffset, true);
             values.push(value);
         }
-        _console$I.log("values", values);
+        _console$J.log("values", values);
         const inference = {
             timestamp,
             values,
@@ -11550,7 +11550,7 @@ class TfliteManager {
                     maxIndex = index;
                 }
             });
-            _console$I.log({ maxIndex, maxValue });
+            _console$J.log({ maxIndex, maxValue });
             inference.maxIndex = maxIndex;
             inference.maxValue = maxValue;
             if (this.classes) {
@@ -11566,7 +11566,7 @@ class TfliteManager {
         this.#dispatchEvent("tfliteInference", { tfliteInference: inference });
     }
     parseMessage(messageType, dataView, isSending) {
-        _console$I.log({ messageType, isSending }, dataView);
+        _console$J.log({ messageType, isSending }, dataView);
         switch (messageType) {
             case "getTfliteName":
             case "setTfliteName":
@@ -11612,11 +11612,11 @@ class TfliteManager {
     }
     sendConfiguration(configuration, sendImmediately) {
         if (configuration == this.#configuration) {
-            _console$I.log("redundant tflite configuration assignment");
+            _console$J.log("redundant tflite configuration assignment");
             return;
         }
         this.#configuration = configuration;
-        _console$I.log("assigned new tflite configuration", this.configuration);
+        _console$J.log("assigned new tflite configuration", this.configuration);
         if (!this.configuration) {
             return;
         }
@@ -11650,7 +11650,7 @@ class TfliteManager {
         this.#configuration = undefined;
     }
     requestRequiredInformation() {
-        _console$I.log("requesting required tflite information");
+        _console$J.log("requesting required tflite information");
         const messages = RequiredTfliteMessageTypes.map((messageType) => ({
             type: messageType,
         }));
@@ -11658,7 +11658,7 @@ class TfliteManager {
     }
 }
 
-const _console$H = createConsole("DeviceInformationManager", { log: false });
+const _console$I = createConsole("DeviceInformationManager", { log: false });
 const DeviceInformationTypes = [
     "manufacturerName",
     "modelNumber",
@@ -11688,7 +11688,7 @@ class DeviceInformationManager {
         return DeviceInformationTypes.filter((key) => key != "serialNumber").every((key) => key in this.#information);
     }
     #update(partialDeviceInformation) {
-        _console$H.log({ partialDeviceInformation });
+        _console$I.log({ partialDeviceInformation });
         const deviceInformationNames = Object.keys(partialDeviceInformation);
         deviceInformationNames.forEach((deviceInformationName) => {
             this.#dispatchEvent(deviceInformationName, {
@@ -11696,40 +11696,40 @@ class DeviceInformationManager {
             });
         });
         Object.assign(this.#information, partialDeviceInformation);
-        _console$H.log({ deviceInformation: this.#information });
+        _console$I.log({ deviceInformation: this.#information });
         if (this.#isComplete) {
-            _console$H.log("completed deviceInformation");
+            _console$I.log("completed deviceInformation");
             this.#dispatchEvent("deviceInformation", {
                 deviceInformation: this.information,
             });
         }
     }
     parseMessage(messageType, dataView, isSending) {
-        _console$H.log({ messageType, isSending }, dataView);
+        _console$I.log({ messageType, isSending }, dataView);
         switch (messageType) {
             case "manufacturerName":
                 const manufacturerName = textDecoder.decode(dataView.buffer);
-                _console$H.log({ manufacturerName });
+                _console$I.log({ manufacturerName });
                 this.#update({ manufacturerName });
                 break;
             case "modelNumber":
                 const modelNumber = textDecoder.decode(dataView.buffer);
-                _console$H.log({ modelNumber });
+                _console$I.log({ modelNumber });
                 this.#update({ modelNumber });
                 break;
             case "softwareRevision":
                 const softwareRevision = textDecoder.decode(dataView.buffer);
-                _console$H.log({ softwareRevision });
+                _console$I.log({ softwareRevision });
                 this.#update({ softwareRevision });
                 break;
             case "hardwareRevision":
                 const hardwareRevision = textDecoder.decode(dataView.buffer);
-                _console$H.log({ hardwareRevision });
+                _console$I.log({ hardwareRevision });
                 this.#update({ hardwareRevision });
                 break;
             case "firmwareRevision":
                 const firmwareRevision = textDecoder.decode(dataView.buffer);
-                _console$H.log({ firmwareRevision });
+                _console$I.log({ firmwareRevision });
                 this.#update({ firmwareRevision });
                 break;
             case "pnpId":
@@ -11742,12 +11742,12 @@ class DeviceInformationManager {
                 if (pnpId.source == "Bluetooth") {
                     pnpId.vendorId = dataView.getUint16(1, true);
                 }
-                _console$H.log({ pnpId });
+                _console$I.log({ pnpId });
                 this.#update({ pnpId });
                 break;
             case "serialNumber":
                 const serialNumber = textDecoder.decode(dataView.buffer);
-                _console$H.log({ serialNumber });
+                _console$I.log({ serialNumber });
                 break;
             default:
                 throw Error(`uncaught messageType ${messageType}`);
@@ -11755,7 +11755,7 @@ class DeviceInformationManager {
     }
 }
 
-const _console$G = createConsole("InformationManager", { log: false });
+const _console$H = createConsole("InformationManager", { log: false });
 const DeviceTypes = [
     "leftInsole",
     "rightInsole",
@@ -11797,9 +11797,9 @@ class InformationManager {
         return this.#isCharging;
     }
     #updateIsCharging(updatedIsCharging) {
-        _console$G.assertTypeWithError(updatedIsCharging, "boolean");
+        _console$H.assertTypeWithError(updatedIsCharging, "boolean");
         this.#isCharging = updatedIsCharging;
-        _console$G.log({ isCharging: this.#isCharging });
+        _console$H.log({ isCharging: this.#isCharging });
         this.#dispatchEvent("isCharging", { isCharging: this.#isCharging });
     }
     #batteryCurrent;
@@ -11807,15 +11807,15 @@ class InformationManager {
         return this.#batteryCurrent;
     }
     async getBatteryCurrent() {
-        _console$G.log("getting battery current...");
+        _console$H.log("getting battery current...");
         const promise = this.waitForEvent("getBatteryCurrent");
         this.sendMessage([{ type: "getBatteryCurrent" }]);
         await promise;
     }
     #updateBatteryCurrent(updatedBatteryCurrent) {
-        _console$G.assertTypeWithError(updatedBatteryCurrent, "number");
+        _console$H.assertTypeWithError(updatedBatteryCurrent, "number");
         this.#batteryCurrent = updatedBatteryCurrent;
-        _console$G.log({ batteryCurrent: this.#batteryCurrent });
+        _console$H.log({ batteryCurrent: this.#batteryCurrent });
         this.#dispatchEvent("getBatteryCurrent", {
             batteryCurrent: this.#batteryCurrent,
         });
@@ -11825,9 +11825,9 @@ class InformationManager {
         return this.#id;
     }
     #updateId(updatedId) {
-        _console$G.assertTypeWithError(updatedId, "string");
+        _console$H.assertTypeWithError(updatedId, "string");
         this.#id = updatedId;
-        _console$G.log({ id: this.#id });
+        _console$H.log({ id: this.#id });
         this.#dispatchEvent("getId", { id: this.#id });
     }
     #name = "";
@@ -11835,16 +11835,16 @@ class InformationManager {
         return this.#name;
     }
     updateName(updatedName) {
-        _console$G.assertTypeWithError(updatedName, "string");
+        _console$H.assertTypeWithError(updatedName, "string");
         this.#name = updatedName;
-        _console$G.log({ updatedName: this.#name });
+        _console$H.log({ updatedName: this.#name });
         this.#dispatchEvent("getName", { name: this.#name });
     }
     async setName(newName) {
-        _console$G.assertTypeWithError(newName, "string");
-        _console$G.assertRangeWithError("newName", newName.length, MinNameLength, MaxNameLength);
+        _console$H.assertTypeWithError(newName, "string");
+        _console$H.assertRangeWithError("newName", newName.length, MinNameLength, MaxNameLength);
         const setNameData = textEncoder.encode(newName);
-        _console$G.log({ setNameData });
+        _console$H.log({ setNameData });
         const promise = this.waitForEvent("getName");
         this.sendMessage([{ type: "setName", data: setNameData.buffer }]);
         await promise;
@@ -11857,22 +11857,22 @@ class InformationManager {
         return DeviceTypes.indexOf(this.type);
     }
     #assertValidDeviceType(type) {
-        _console$G.assertEnumWithError(type, DeviceTypes);
+        _console$H.assertEnumWithError(type, DeviceTypes);
     }
     #assertValidDeviceTypeEnum(typeEnum) {
-        _console$G.assertTypeWithError(typeEnum, "number");
-        _console$G.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
+        _console$H.assertTypeWithError(typeEnum, "number");
+        _console$H.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
     }
     updateType(updatedType) {
         this.#assertValidDeviceType(updatedType);
         this.#type = updatedType;
-        _console$G.log({ updatedType: this.#type });
+        _console$H.log({ updatedType: this.#type });
         this.#dispatchEvent("getType", { type: this.#type });
     }
     async #setTypeEnum(newTypeEnum) {
         this.#assertValidDeviceTypeEnum(newTypeEnum);
         const setTypeData = UInt8ByteBuffer(newTypeEnum);
-        _console$G.log({ setTypeData });
+        _console$H.log({ setTypeData });
         const promise = this.waitForEvent("getType");
         this.sendMessage([{ type: "setType", data: setTypeData }]);
         await promise;
@@ -11933,7 +11933,7 @@ class InformationManager {
         return this.#mtu;
     }
     #updateMtu(newMtu) {
-        _console$G.assertTypeWithError(newMtu, "number");
+        _console$H.assertTypeWithError(newMtu, "number");
         this.#mtu = newMtu;
         this.#dispatchEvent("getMtu", { mtu: this.#mtu });
     }
@@ -11943,19 +11943,19 @@ class InformationManager {
     }
     #currentTimeThreshold = 10_000;
     #onCurrentTime(currentTime) {
-        _console$G.log({ currentTime });
+        _console$H.log({ currentTime });
         const timeDifference = Date.now() - currentTime;
         const absTimeDifference = Math.abs(timeDifference);
-        _console$G.log({ timeDifference, absTimeDifference });
+        _console$H.log({ timeDifference, absTimeDifference });
         this.#isCurrentTimeSet = currentTime != 0;
-        _console$G.log("isCurrentTimeSet", this.#isCurrentTimeSet);
+        _console$H.log("isCurrentTimeSet", this.#isCurrentTimeSet);
         if (!this.#isCurrentTimeSet) {
             this.#setCurrentTime(false);
         }
     }
     async #setCurrentTime(sendImmediately) {
         const now = Date.now();
-        _console$G.log("setting current time...", { now });
+        _console$H.log("setting current time...", { now });
         const dataView = new DataView(new ArrayBuffer(8));
         dataView.setBigUint64(0, BigInt(now), true);
         const promise = this.waitForEvent("getCurrentTime");
@@ -11963,34 +11963,34 @@ class InformationManager {
         await promise;
     }
     parseMessage(messageType, dataView, isSending) {
-        _console$G.log({ messageType, isSending }, dataView);
+        _console$H.log({ messageType, isSending }, dataView);
         switch (messageType) {
             case "isCharging":
                 const isCharging = Boolean(dataView.getUint8(0));
-                _console$G.log({ isCharging });
+                _console$H.log({ isCharging });
                 this.#updateIsCharging(isCharging);
                 break;
             case "getBatteryCurrent":
                 const batteryCurrent = dataView.getFloat32(0, true);
-                _console$G.log({ batteryCurrent });
+                _console$H.log({ batteryCurrent });
                 this.#updateBatteryCurrent(batteryCurrent);
                 break;
             case "getId":
                 const id = textDecoder.decode(dataView.buffer);
-                _console$G.log({ id });
+                _console$H.log({ id });
                 this.#updateId(id);
                 break;
             case "getName":
             case "setName":
                 const name = textDecoder.decode(dataView.buffer);
-                _console$G.log({ name });
+                _console$H.log({ name });
                 this.updateName(name);
                 break;
             case "getType":
             case "setType":
                 const typeEnum = dataView.getUint8(0);
                 const type = DeviceTypes[typeEnum];
-                _console$G.log({ typeEnum, type });
+                _console$H.log({ typeEnum, type });
                 this.updateType(type);
                 break;
             case "getMtu":
@@ -11999,7 +11999,7 @@ class InformationManager {
                     this.connectionType != "udp") {
                     mtu = Math.min(mtu, 512);
                 }
-                _console$G.log({ mtu });
+                _console$H.log({ mtu });
                 this.#updateMtu(mtu);
                 break;
             case "getCurrentTime":
@@ -12145,7 +12145,7 @@ const VibrationWaveformEffects = [
     "smoothHum10",
 ];
 
-const _console$F = createConsole("VibrationManager", { log: false });
+const _console$G = createConsole("VibrationManager", { log: false });
 const VibrationLocations = ["front", "rear", "left", "right"];
 const VibrationTypes = ["waveformEffect", "waveform"];
 const VibrationMessageTypes = [
@@ -12174,7 +12174,7 @@ class VibrationManager {
     #verifyLocations(locations) {
         this.#assertNonEmptyArray(locations);
         locations.forEach((location) => {
-            _console$F.assertEnumWithError(location, VibrationLocations);
+            _console$G.assertEnumWithError(location, VibrationLocations);
         });
     }
     #createLocationsBitmask(locations) {
@@ -12184,16 +12184,16 @@ class VibrationManager {
             const locationIndex = VibrationLocations.indexOf(location);
             locationsBitmask |= 1 << locationIndex;
         });
-        _console$F.log({ locationsBitmask });
-        _console$F.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
+        _console$G.log({ locationsBitmask });
+        _console$G.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
         return locationsBitmask;
     }
     #assertNonEmptyArray(array) {
-        _console$F.assertWithError(Array.isArray(array), "passed non-array");
-        _console$F.assertWithError(array.length > 0, "passed empty array");
+        _console$G.assertWithError(Array.isArray(array), "passed non-array");
+        _console$G.assertWithError(array.length > 0, "passed empty array");
     }
     #verifyWaveformEffect(waveformEffect) {
-        _console$F.assertEnumWithError(waveformEffect, VibrationWaveformEffects);
+        _console$G.assertEnumWithError(waveformEffect, VibrationWaveformEffects);
     }
     #verifyWaveformEffectSegment(waveformEffectSegment) {
         if (waveformEffectSegment.effect != undefined) {
@@ -12202,8 +12202,8 @@ class VibrationManager {
         }
         else if (waveformEffectSegment.delay != undefined) {
             const { delay } = waveformEffectSegment;
-            _console$F.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
-            _console$F.assertWithError(delay <= MaxVibrationWaveformEffectSegmentDelay, `delay must be ${MaxVibrationWaveformEffectSegmentDelay}ms or less (got ${delay})`);
+            _console$G.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
+            _console$G.assertWithError(delay <= MaxVibrationWaveformEffectSegmentDelay, `delay must be ${MaxVibrationWaveformEffectSegmentDelay}ms or less (got ${delay})`);
         }
         else {
             throw Error("no effect or delay found in waveformEffectSegment");
@@ -12214,23 +12214,23 @@ class VibrationManager {
         }
     }
     #verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
-        _console$F.assertRangeWithError("waveformEffectSegmentLoopCount", waveformEffectSegmentLoopCount, 0, MaxVibrationWaveformEffectSegmentLoopCount);
+        _console$G.assertRangeWithError("waveformEffectSegmentLoopCount", waveformEffectSegmentLoopCount, 0, MaxVibrationWaveformEffectSegmentLoopCount);
     }
     #verifyWaveformEffectSegments(waveformEffectSegments) {
-        _console$F.assertRangeWithError("waveformEffectSegments.length", waveformEffectSegments.length, 0, MaxNumberOfVibrationWaveformEffectSegments);
+        _console$G.assertRangeWithError("waveformEffectSegments.length", waveformEffectSegments.length, 0, MaxNumberOfVibrationWaveformEffectSegments);
         waveformEffectSegments.forEach((waveformEffectSegment) => {
             this.#verifyWaveformEffectSegment(waveformEffectSegment);
         });
     }
     #verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
-        _console$F.assertRangeWithError("waveformEffectSequenceLoopCount", waveformEffectSequenceLoopCount, 0, MaxVibrationWaveformEffectSequenceLoopCount);
+        _console$G.assertRangeWithError("waveformEffectSequenceLoopCount", waveformEffectSequenceLoopCount, 0, MaxVibrationWaveformEffectSequenceLoopCount);
     }
     #verifyWaveformSegment(waveformSegment) {
-        _console$F.assertRangeWithError("waveformSegment.amplitude", waveformSegment.amplitude, 0, 1);
-        _console$F.assertRangeWithError("waveformSegment.duration", waveformSegment.duration, 0, MaxVibrationWaveformSegmentDuration);
+        _console$G.assertRangeWithError("waveformSegment.amplitude", waveformSegment.amplitude, 0, 1);
+        _console$G.assertRangeWithError("waveformSegment.duration", waveformSegment.duration, 0, MaxVibrationWaveformSegmentDuration);
     }
     #verifyWaveformSegments(waveformSegments) {
-        _console$F.assertRangeWithError("waveformSegments.length", waveformSegments.length, 0, MaxNumberOfVibrationWaveformSegments);
+        _console$G.assertRangeWithError("waveformSegments.length", waveformSegments.length, 0, MaxNumberOfVibrationWaveformSegments);
         waveformSegments.forEach((waveformSegment) => {
             this.#verifyWaveformSegment(waveformSegment);
         });
@@ -12283,7 +12283,7 @@ class VibrationManager {
             dataArray[byteOffset++] = waveformEffectSequenceLoopCount;
         }
         const dataView = new DataView(Uint8Array.from(dataArray).buffer);
-        _console$F.log({ dataArray, dataView });
+        _console$G.log({ dataArray, dataView });
         return this.#createData(locations, "waveformEffect", dataView);
     }
     #createWaveformData(locations, waveformSegments) {
@@ -12293,17 +12293,17 @@ class VibrationManager {
             dataView.setUint8(index * 2, Math.floor(waveformSegment.amplitude * 127));
             dataView.setUint8(index * 2 + 1, Math.floor(waveformSegment.duration / 10));
         });
-        _console$F.log({ dataView });
+        _console$G.log({ dataView });
         return this.#createData(locations, "waveform", dataView);
     }
     #createData(locations, vibrationType, dataView) {
-        _console$F.assertWithError(dataView?.byteLength > 0, "no data received");
+        _console$G.assertWithError(dataView?.byteLength > 0, "no data received");
         const locationsBitmask = this.#createLocationsBitmask(locations);
-        _console$F.assertEnumWithError(vibrationType, VibrationTypes);
+        _console$G.assertEnumWithError(vibrationType, VibrationTypes);
         const vibrationTypeIndex = VibrationTypes.indexOf(vibrationType);
-        _console$F.log({ locationsBitmask, vibrationTypeIndex, dataView });
+        _console$G.log({ locationsBitmask, vibrationTypeIndex, dataView });
         const data = concatenateArrayBuffers(locationsBitmask, vibrationTypeIndex, dataView.byteLength, dataView);
-        _console$F.log({ data });
+        _console$G.log({ data });
         return data;
     }
     async triggerVibration(vibrationConfigurations, sendImmediately = true) {
@@ -12311,7 +12311,7 @@ class VibrationManager {
             vibrationConfigurations = [vibrationConfigurations];
         }
         if (vibrationConfigurations.length == 0) {
-            _console$F.log("empty vibrationConfigurations");
+            _console$G.log("empty vibrationConfigurations");
             return;
         }
         let triggerVibrationData;
@@ -12326,7 +12326,7 @@ class VibrationManager {
                     {
                         const { segments, loopCount } = vibrationConfiguration;
                         if (segments.length == 0) {
-                            _console$F.log("no segments");
+                            _console$G.log("no segments");
                             return;
                         }
                         arrayBuffer = this.#createWaveformEffectsData(locations, segments, loopCount);
@@ -12336,7 +12336,7 @@ class VibrationManager {
                     {
                         const { segments } = vibrationConfiguration;
                         if (segments.length == 0) {
-                            _console$F.log("no segments");
+                            _console$G.log("no segments");
                             return;
                         }
                         arrayBuffer = this.#createWaveformData(locations, segments);
@@ -12345,19 +12345,19 @@ class VibrationManager {
                 default:
                     throw Error(`invalid vibration type "${type}"`);
             }
-            _console$F.log({ type, arrayBuffer });
+            _console$G.log({ type, arrayBuffer });
             if (arrayBuffer.byteLength == 0) {
-                _console$F.log("empty arrayBuffer");
+                _console$G.log("empty arrayBuffer");
                 return;
             }
             triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, arrayBuffer);
         });
         if (!triggerVibrationData) {
-            _console$F.log("no triggerVibrationData");
+            _console$G.log("no triggerVibrationData");
             return;
         }
         if (triggerVibrationData.byteLength == 0) {
-            _console$F.log("empty triggerVibrationData");
+            _console$G.log("empty triggerVibrationData");
             return;
         }
         await this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
@@ -12368,20 +12368,20 @@ class VibrationManager {
     }
     #onVibrationLocations(vibrationLocations) {
         this.#vibrationLocations = vibrationLocations;
-        _console$F.log("vibrationLocations", vibrationLocations);
+        _console$G.log("vibrationLocations", vibrationLocations);
         this.#dispatchEvent("getVibrationLocations", {
             vibrationLocations: this.#vibrationLocations,
         });
     }
     #parseVibrationLocations(dataView) {
-        _console$F.log("parseVibrationLocations", dataView);
+        _console$G.log("parseVibrationLocations", dataView);
         const vibrationLocations = Array.from(new Uint8Array(dataView.buffer))
             .map((index) => VibrationLocations[index])
             .filter(Boolean);
         this.#onVibrationLocations(vibrationLocations);
     }
     parseMessage(messageType, dataView, isSending) {
-        _console$F.log({ messageType, isSending }, dataView);
+        _console$G.log({ messageType, isSending }, dataView);
         switch (messageType) {
             case "getVibrationLocations":
                 this.#parseVibrationLocations(dataView);
@@ -12392,7 +12392,7 @@ class VibrationManager {
     }
 }
 
-const _console$E = createConsole("WifiManager", { log: false });
+const _console$F = createConsole("WifiManager", { log: false });
 const MinWifiSSIDLength = 1;
 const MaxWifiSSIDLength = 32;
 const MinWifiPasswordLength = 8;
@@ -12431,7 +12431,7 @@ class WifiManager {
         return this.eventDispatcher.waitForEvent;
     }
     requestRequiredInformation() {
-        _console$E.log("requesting required wifi information");
+        _console$F.log("requesting required wifi information");
         const messages = RequiredWifiMessageTypes.map((messageType) => ({
             type: messageType,
         }));
@@ -12442,38 +12442,38 @@ class WifiManager {
         return this.#isWifiAvailable;
     }
     #updateIsWifiAvailable(updatedIsWifiAvailable) {
-        _console$E.assertTypeWithError(updatedIsWifiAvailable, "boolean");
+        _console$F.assertTypeWithError(updatedIsWifiAvailable, "boolean");
         this.#isWifiAvailable = updatedIsWifiAvailable;
-        _console$E.log({ isWifiAvailable: this.#isWifiAvailable });
+        _console$F.log({ isWifiAvailable: this.#isWifiAvailable });
         this.#dispatchEvent("isWifiAvailable", {
             isWifiAvailable: this.#isWifiAvailable,
         });
     }
     #assertWifiIsAvailable() {
-        _console$E.assertWithError(this.#isWifiAvailable, "wifi is not available");
+        _console$F.assertWithError(this.#isWifiAvailable, "wifi is not available");
     }
     #wifiSSID = "";
     get wifiSSID() {
         return this.#wifiSSID;
     }
     #updateWifiSSID(updatedWifiSSID) {
-        _console$E.assertTypeWithError(updatedWifiSSID, "string");
+        _console$F.assertTypeWithError(updatedWifiSSID, "string");
         this.#wifiSSID = updatedWifiSSID;
-        _console$E.log({ wifiSSID: this.#wifiSSID });
+        _console$F.log({ wifiSSID: this.#wifiSSID });
         this.#dispatchEvent("getWifiSSID", { wifiSSID: this.#wifiSSID });
     }
     async setWifiSSID(newWifiSSID) {
         this.#assertWifiIsAvailable();
         if (this.#wifiConnectionEnabled) {
-            _console$E.error("cannot change ssid while wifi connection is enabled");
+            _console$F.error("cannot change ssid while wifi connection is enabled");
             return;
         }
-        _console$E.assertTypeWithError(newWifiSSID, "string");
+        _console$F.assertTypeWithError(newWifiSSID, "string");
         if (newWifiSSID.length > 0) {
-            _console$E.assertRangeWithError("wifiSSID", newWifiSSID.length, MinWifiSSIDLength, MaxWifiSSIDLength);
+            _console$F.assertRangeWithError("wifiSSID", newWifiSSID.length, MinWifiSSIDLength, MaxWifiSSIDLength);
         }
         const setWifiSSIDData = textEncoder.encode(newWifiSSID);
-        _console$E.log({ setWifiSSIDData });
+        _console$F.log({ setWifiSSIDData });
         const promise = this.waitForEvent("getWifiSSID");
         this.sendMessage([{ type: "setWifiSSID", data: setWifiSSIDData.buffer }]);
         await promise;
@@ -12483,9 +12483,9 @@ class WifiManager {
         return this.#wifiPassword;
     }
     #updateWifiPassword(updatedWifiPassword) {
-        _console$E.assertTypeWithError(updatedWifiPassword, "string");
+        _console$F.assertTypeWithError(updatedWifiPassword, "string");
         this.#wifiPassword = updatedWifiPassword;
-        _console$E.log({ wifiPassword: this.#wifiPassword });
+        _console$F.log({ wifiPassword: this.#wifiPassword });
         this.#dispatchEvent("getWifiPassword", {
             wifiPassword: this.#wifiPassword,
         });
@@ -12493,15 +12493,15 @@ class WifiManager {
     async setWifiPassword(newWifiPassword) {
         this.#assertWifiIsAvailable();
         if (this.#wifiConnectionEnabled) {
-            _console$E.error("cannot change password while wifi connection is enabled");
+            _console$F.error("cannot change password while wifi connection is enabled");
             return;
         }
-        _console$E.assertTypeWithError(newWifiPassword, "string");
+        _console$F.assertTypeWithError(newWifiPassword, "string");
         if (newWifiPassword.length > 0) {
-            _console$E.assertRangeWithError("wifiPassword", newWifiPassword.length, MinWifiPasswordLength, MaxWifiPasswordLength);
+            _console$F.assertRangeWithError("wifiPassword", newWifiPassword.length, MinWifiPasswordLength, MaxWifiPasswordLength);
         }
         const setWifiPasswordData = textEncoder.encode(newWifiPassword);
-        _console$E.log({ setWifiPasswordData });
+        _console$F.log({ setWifiPasswordData });
         const promise = this.waitForEvent("getWifiPassword");
         this.sendMessage([
             { type: "setWifiPassword", data: setWifiPasswordData.buffer },
@@ -12513,7 +12513,7 @@ class WifiManager {
         return this.#wifiConnectionEnabled;
     }
     #updateWifiConnectionEnabled(wifiConnectionEnabled) {
-        _console$E.log({ wifiConnectionEnabled });
+        _console$F.log({ wifiConnectionEnabled });
         this.#wifiConnectionEnabled = wifiConnectionEnabled;
         this.#dispatchEvent("getWifiConnectionEnabled", {
             wifiConnectionEnabled: wifiConnectionEnabled,
@@ -12521,9 +12521,9 @@ class WifiManager {
     }
     async setWifiConnectionEnabled(newWifiConnectionEnabled, sendImmediately = true) {
         this.#assertWifiIsAvailable();
-        _console$E.assertTypeWithError(newWifiConnectionEnabled, "boolean");
+        _console$F.assertTypeWithError(newWifiConnectionEnabled, "boolean");
         if (this.#wifiConnectionEnabled == newWifiConnectionEnabled) {
-            _console$E.log(`redundant wifiConnectionEnabled assignment ${newWifiConnectionEnabled}`);
+            _console$F.log(`redundant wifiConnectionEnabled assignment ${newWifiConnectionEnabled}`);
             return;
         }
         const promise = this.waitForEvent("getWifiConnectionEnabled");
@@ -12549,9 +12549,9 @@ class WifiManager {
         return this.#isWifiConnected;
     }
     #updateIsWifiConnected(updatedIsWifiConnected) {
-        _console$E.assertTypeWithError(updatedIsWifiConnected, "boolean");
+        _console$F.assertTypeWithError(updatedIsWifiConnected, "boolean");
         this.#isWifiConnected = updatedIsWifiConnected;
-        _console$E.log({ isWifiConnected: this.#isWifiConnected });
+        _console$F.log({ isWifiConnected: this.#isWifiConnected });
         this.#dispatchEvent("isWifiConnected", {
             isWifiConnected: this.#isWifiConnected,
         });
@@ -12562,7 +12562,7 @@ class WifiManager {
     }
     #updateIpAddress(updatedIpAddress) {
         this.#ipAddress = updatedIpAddress;
-        _console$E.log({ ipAddress: this.#ipAddress });
+        _console$F.log({ ipAddress: this.#ipAddress });
         this.#dispatchEvent("ipAddress", {
             ipAddress: this.#ipAddress,
         });
@@ -12572,42 +12572,42 @@ class WifiManager {
         return this.#isWifiSecure;
     }
     #updateIsWifiSecure(updatedIsWifiSecure) {
-        _console$E.assertTypeWithError(updatedIsWifiSecure, "boolean");
+        _console$F.assertTypeWithError(updatedIsWifiSecure, "boolean");
         this.#isWifiSecure = updatedIsWifiSecure;
-        _console$E.log({ isWifiSecure: this.#isWifiSecure });
+        _console$F.log({ isWifiSecure: this.#isWifiSecure });
         this.#dispatchEvent("isWifiSecure", {
             isWifiSecure: this.#isWifiSecure,
         });
     }
     parseMessage(messageType, dataView, isSending) {
-        _console$E.log({ messageType, isSending }, dataView);
+        _console$F.log({ messageType, isSending }, dataView);
         switch (messageType) {
             case "isWifiAvailable":
                 const isWifiAvailable = Boolean(dataView.getUint8(0));
-                _console$E.log({ isWifiAvailable });
+                _console$F.log({ isWifiAvailable });
                 this.#updateIsWifiAvailable(isWifiAvailable);
                 break;
             case "getWifiSSID":
             case "setWifiSSID":
                 const ssid = textDecoder.decode(dataView.buffer);
-                _console$E.log({ ssid });
+                _console$F.log({ ssid });
                 this.#updateWifiSSID(ssid);
                 break;
             case "getWifiPassword":
             case "setWifiPassword":
                 const password = textDecoder.decode(dataView.buffer);
-                _console$E.log({ password });
+                _console$F.log({ password });
                 this.#updateWifiPassword(password);
                 break;
             case "getWifiConnectionEnabled":
             case "setWifiConnectionEnabled":
                 const enableWifiConnection = Boolean(dataView.getUint8(0));
-                _console$E.log({ enableWifiConnection });
+                _console$F.log({ enableWifiConnection });
                 this.#updateWifiConnectionEnabled(enableWifiConnection);
                 break;
             case "isWifiConnected":
                 const isWifiConnected = Boolean(dataView.getUint8(0));
-                _console$E.log({ isWifiConnected });
+                _console$F.log({ isWifiConnected });
                 this.#updateIsWifiConnected(isWifiConnected);
                 break;
             case "ipAddress":
@@ -12615,12 +12615,12 @@ class WifiManager {
                 if (dataView.byteLength == 4) {
                     ipAddress = new Uint8Array(dataView.buffer.slice(0, 4)).join(".");
                 }
-                _console$E.log({ ipAddress });
+                _console$F.log({ ipAddress });
                 this.#updateIpAddress(ipAddress);
                 break;
             case "isWifiSecure":
                 const isWifiSecure = Boolean(dataView.getUint8(0));
-                _console$E.log({ isWifiSecure });
+                _console$F.log({ isWifiSecure });
                 this.#updateIsWifiSecure(isWifiSecure);
                 break;
             default:
@@ -12673,7 +12673,7 @@ function __esDecorate(ctor, descriptorIn, decorators, contextIn, initializers, e
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const _console$D = createConsole("ColorUtils", { log: false });
+const _console$E = createConsole("ColorUtils", { log: false });
 function hexToRGB(hex) {
     hex = hex.replace(/^#/, "");
     if (hex.length == 3) {
@@ -12682,7 +12682,7 @@ function hexToRGB(hex) {
             .map((char) => char + char)
             .join("");
     }
-    _console$D.assertWithError(hex.length == 6, `hex length must be 6 (got ${hex.length})`);
+    _console$E.assertWithError(hex.length == 6, `hex length must be 6 (got ${hex.length})`);
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
@@ -12745,7 +12745,7 @@ function stringToRGB(string) {
 }
 function rgbToHex({ r, g, b }) {
     const toHex = (value) => value.toString(16).padStart(2, "0").toLowerCase();
-    _console$D.assertWithError([r, g, b].every((v) => v >= 0 && v <= 255), `RGB values must be between 0 and 255 (got r=${r}, g=${g}, b=${b})`);
+    _console$E.assertWithError([r, g, b].every((v) => v >= 0 && v <= 255), `RGB values must be between 0 and 255 (got r=${r}, g=${g}, b=${b})`);
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 function colorDistanceSq(a, b) {
@@ -12756,8 +12756,8 @@ const defaultKMeansOptions = {
     maxIterations: 20,
 };
 function kMeansColors(colors, k, options) {
-    _console$D.assertTypeWithError(k, "number");
-    _console$D.assertWithError(k > 0, `invalid k ${k}`);
+    _console$E.assertTypeWithError(k, "number");
+    _console$E.assertWithError(k > 0, `invalid k ${k}`);
     options = { ...defaultKMeansOptions, ...options };
     const maxIter = options.maxIterations;
     const useInputColors = options.useInputColors;
@@ -12854,848 +12854,6 @@ function mapToClosestPaletteIndex(colors, palette) {
         mapping[color] = bestIdx;
     }
     return mapping;
-}
-
-const DisplaySegmentCaps = ["flat", "round"];
-const DisplayAlignments = ["start", "center", "end"];
-const DisplayAlignmentDirections = ["horizontal", "vertical"];
-const DisplayDirections = ["right", "left", "up", "down"];
-const DefaultDisplayContextState = {
-    backgroundColorIndex: 0,
-    fillColorIndex: 1,
-    lineColorIndex: 1,
-    ignoreFill: false,
-    ignoreLine: false,
-    fillBackground: false,
-    lineWidth: 0,
-    rotation: 0,
-    horizontalAlignment: "center",
-    verticalAlignment: "center",
-    segmentStartCap: "flat",
-    segmentEndCap: "flat",
-    segmentStartRadius: 1,
-    segmentEndRadius: 1,
-    cropTop: 0,
-    cropRight: 0,
-    cropBottom: 0,
-    cropLeft: 0,
-    rotationCropTop: 0,
-    rotationCropRight: 0,
-    rotationCropBottom: 0,
-    rotationCropLeft: 0,
-    bitmapColorIndices: new Array(0).fill(0),
-    bitmapScaleX: 1,
-    bitmapScaleY: 1,
-    spriteColorIndices: new Array(0).fill(0),
-    spriteScaleX: 1,
-    spriteScaleY: 1,
-    spriteSheetName: undefined,
-    spritesLineHeight: 0,
-    spritesDirection: "right",
-    spritesLineDirection: "down",
-    spritesSpacing: 0,
-    spritesLineSpacing: 0,
-    spritesAlignment: "end",
-    spritesLineAlignment: "start",
-};
-function isDirectionPositive(direction) {
-    switch (direction) {
-        case "right":
-        case "down":
-            return true;
-        case "left":
-        case "up":
-            return false;
-    }
-}
-function isDirectionHorizontal(direction) {
-    switch (direction) {
-        case "right":
-        case "left":
-            return true;
-        case "down":
-        case "up":
-            return false;
-    }
-}
-
-function deepEqual(obj1, obj2) {
-    if (obj1 === obj2) {
-        return true;
-    }
-    if (typeof obj1 !== "object" ||
-        obj1 === null ||
-        typeof obj2 !== "object" ||
-        obj2 === null) {
-        return false;
-    }
-    const keys1 = Object.keys(obj1);
-    const keys2 = Object.keys(obj2);
-    if (keys1.length !== keys2.length)
-        return false;
-    for (let key of keys1) {
-        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
-            return false;
-        }
-    }
-    return true;
-}
-function removeRedundancies(array) {
-    return Array.from(new Set(array));
-}
-
-const _console$C = createConsole("DisplayContextStateHelper", { log: false });
-class DisplayContextStateHelper {
-    #state = Object.assign({}, DefaultDisplayContextState);
-    get state() {
-        return this.#state;
-    }
-    get isSegmentUniform() {
-        return (this.state.segmentStartRadius == this.state.segmentEndRadius &&
-            this.state.segmentStartCap == this.state.segmentEndCap);
-    }
-    diff(other = DefaultDisplayContextState) {
-        let differences = [];
-        const keys = Object.keys(other);
-        keys.forEach((key) => {
-            const value = other[key];
-            if (!deepEqual(this.#state[key], value)) {
-                differences.push(key);
-            }
-        });
-        _console$C.log("diff displayContextState", other, differences);
-        return differences;
-    }
-    update(newState) {
-        let differences = this.diff(newState);
-        if (differences.length == 0) {
-            _console$C.log("redundant contextState", newState);
-        }
-        else {
-            _console$C.log("found contextState differences", newState);
-        }
-        differences.forEach((key) => {
-            const value = newState[key];
-            this.#state[key] = value;
-        });
-        return differences;
-    }
-    reset(numberOfColors, keepColorIndices, keepSpriteColorIndices) {
-        const spriteColorIndices = this.#state.spriteColorIndices.slice();
-        const { fillColorIndex, lineColorIndex, backgroundColorIndex } = this.#state;
-        Object.assign(this.#state, DefaultDisplayContextState);
-        if (keepColorIndices) {
-            this.#state.fillColorIndex = fillColorIndex;
-            this.#state.lineColorIndex = lineColorIndex;
-            this.#state.backgroundColorIndex = backgroundColorIndex;
-        }
-        if (keepSpriteColorIndices) {
-            this.#state.spriteColorIndices = spriteColorIndices;
-        }
-        else {
-            this.#state.spriteColorIndices = new Array(numberOfColors).fill(0);
-        }
-        this.#state.bitmapColorIndices = new Array(numberOfColors).fill(0);
-    }
-    serialize(numberOfColors, other) {
-        if (!other) {
-            other = structuredClone(DefaultDisplayContextState);
-            other.spriteColorIndices = new Array(numberOfColors).fill(0);
-            other.bitmapColorIndices = new Array(numberOfColors).fill(0);
-        }
-        const contextCommands = [];
-        const differences = this.diff(other);
-        const state = other;
-        _console$C.log("serialize displayContextState", other, differences);
-        differences.forEach((difference) => {
-            if (state[difference] == undefined) {
-                return;
-            }
-            switch (difference) {
-                case "backgroundColorIndex":
-                    contextCommands.push({
-                        type: "selectBackgroundColor",
-                        backgroundColorIndex: state[difference],
-                    });
-                    break;
-                case "fillBackground":
-                    contextCommands.push({
-                        type: "setFillBackground",
-                        fillBackground: state[difference],
-                    });
-                    break;
-                case "ignoreFill":
-                    contextCommands.push({
-                        type: "setIgnoreFill",
-                        ignoreFill: state[difference],
-                    });
-                    break;
-                case "ignoreLine":
-                    contextCommands.push({
-                        type: "setIgnoreLine",
-                        ignoreLine: state[difference],
-                    });
-                    break;
-                case "fillColorIndex":
-                    contextCommands.push({
-                        type: "selectFillColor",
-                        fillColorIndex: state[difference],
-                    });
-                    break;
-                case "lineColorIndex":
-                    contextCommands.push({
-                        type: "selectLineColor",
-                        lineColorIndex: state[difference],
-                    });
-                    break;
-                case "lineWidth":
-                    contextCommands.push({
-                        type: "setLineWidth",
-                        lineWidth: state[difference],
-                    });
-                    break;
-                case "horizontalAlignment":
-                    contextCommands.push({
-                        type: "setHorizontalAlignment",
-                        horizontalAlignment: state[difference],
-                    });
-                    break;
-                case "verticalAlignment":
-                    contextCommands.push({
-                        type: "setVerticalAlignment",
-                        verticalAlignment: state[difference],
-                    });
-                    break;
-                case "rotation":
-                    contextCommands.push({
-                        type: "setRotation",
-                        rotation: state[difference],
-                    });
-                    break;
-                case "segmentStartCap":
-                    if (differences.includes("segmentEndCap") &&
-                        state.segmentStartCap == state.segmentEndCap) {
-                        contextCommands.push({
-                            type: "setSegmentCap",
-                            segmentCap: state[difference],
-                        });
-                    }
-                    else {
-                        contextCommands.push({
-                            type: "setSegmentStartCap",
-                            segmentStartCap: state[difference],
-                        });
-                    }
-                    break;
-                case "segmentEndCap":
-                    if (!differences.includes("segmentStartCap") ||
-                        state.segmentStartCap != state.segmentEndCap) {
-                        contextCommands.push({
-                            type: "setSegmentEndCap",
-                            segmentEndCap: state[difference],
-                        });
-                    }
-                    break;
-                case "segmentStartRadius":
-                    if (differences.includes("segmentEndRadius") &&
-                        state.segmentStartRadius == state.segmentEndRadius) {
-                        contextCommands.push({
-                            type: "setSegmentRadius",
-                            segmentRadius: state[difference],
-                        });
-                    }
-                    else {
-                        contextCommands.push({
-                            type: "setSegmentStartRadius",
-                            segmentStartRadius: state[difference],
-                        });
-                    }
-                    break;
-                case "segmentEndRadius":
-                    if (!differences.includes("segmentStartRadius") ||
-                        state.segmentStartRadius != state.segmentEndRadius) {
-                        contextCommands.push({
-                            type: "setSegmentEndRadius",
-                            segmentEndRadius: state[difference],
-                        });
-                    }
-                    break;
-                case "cropTop":
-                    contextCommands.push({
-                        type: "setCropTop",
-                        cropTop: state[difference],
-                    });
-                    break;
-                case "cropRight":
-                    contextCommands.push({
-                        type: "setCropRight",
-                        cropRight: state[difference],
-                    });
-                    break;
-                case "cropBottom":
-                    contextCommands.push({
-                        type: "setCropBottom",
-                        cropBottom: state[difference],
-                    });
-                    break;
-                case "cropLeft":
-                    contextCommands.push({
-                        type: "setCropLeft",
-                        cropLeft: state[difference],
-                    });
-                    break;
-                case "rotationCropTop":
-                    contextCommands.push({
-                        type: "setRotationCropTop",
-                        rotationCropTop: state[difference],
-                    });
-                    break;
-                case "rotationCropRight":
-                    contextCommands.push({
-                        type: "setRotationCropRight",
-                        rotationCropRight: state[difference],
-                    });
-                    break;
-                case "rotationCropBottom":
-                    contextCommands.push({
-                        type: "setRotationCropBottom",
-                        rotationCropBottom: state[difference],
-                    });
-                    break;
-                case "rotationCropLeft":
-                    contextCommands.push({
-                        type: "setRotationCropLeft",
-                        rotationCropLeft: state[difference],
-                    });
-                    break;
-                case "bitmapColorIndices":
-                    const bitmapColorPairs = [];
-                    state.bitmapColorIndices.forEach((colorIndex, bitmapColorIndex) => {
-                        bitmapColorPairs.push({ bitmapColorIndex, colorIndex });
-                    });
-                    contextCommands.push({
-                        type: "selectBitmapColors",
-                        bitmapColorPairs,
-                    });
-                    break;
-                case "bitmapScaleX":
-                    if (differences.includes("bitmapScaleY") &&
-                        state.bitmapScaleX == state.bitmapScaleY) {
-                        contextCommands.push({
-                            type: "setBitmapScale",
-                            bitmapScale: state[difference],
-                        });
-                    }
-                    else {
-                        contextCommands.push({
-                            type: "setBitmapScaleX",
-                            bitmapScaleX: state[difference],
-                        });
-                    }
-                    break;
-                case "bitmapScaleY":
-                    if (!differences.includes("bitmapScaleX") ||
-                        state.bitmapScaleX != state.bitmapScaleY) {
-                        contextCommands.push({
-                            type: "setBitmapScaleY",
-                            bitmapScaleY: state[difference],
-                        });
-                    }
-                    break;
-                case "spriteColorIndices":
-                    const spriteColorPairs = [];
-                    state.spriteColorIndices.forEach((colorIndex, spriteColorIndex) => {
-                        spriteColorPairs.push({ spriteColorIndex, colorIndex });
-                    });
-                    contextCommands.push({
-                        type: "selectSpriteColors",
-                        spriteColorPairs,
-                    });
-                    break;
-                case "spriteScaleX":
-                    if (differences.includes("spriteScaleY") &&
-                        state.spriteScaleX == state.spriteScaleY) {
-                        contextCommands.push({
-                            type: "setSpriteScale",
-                            spriteScale: state[difference],
-                        });
-                    }
-                    else {
-                        contextCommands.push({
-                            type: "setSpriteScaleX",
-                            spriteScaleX: state[difference],
-                        });
-                    }
-                    break;
-                case "spriteScaleY":
-                    if (!differences.includes("spriteScaleX") ||
-                        state.spriteScaleX != state.spriteScaleY) {
-                        contextCommands.push({
-                            type: "setSpriteScaleY",
-                            spriteScaleY: state[difference],
-                        });
-                    }
-                    break;
-                case "spritesLineHeight":
-                    contextCommands.push({
-                        type: "setSpritesLineHeight",
-                        spritesLineHeight: state[difference],
-                    });
-                    break;
-                case "spritesDirection":
-                    contextCommands.push({
-                        type: "setSpritesDirection",
-                        spritesDirection: state[difference],
-                    });
-                    break;
-                case "spritesLineDirection":
-                    contextCommands.push({
-                        type: "setSpritesLineDirection",
-                        spritesLineDirection: state[difference],
-                    });
-                    break;
-                case "spritesSpacing":
-                    contextCommands.push({
-                        type: "setSpritesSpacing",
-                        spritesSpacing: state[difference],
-                    });
-                    break;
-                case "spritesLineSpacing":
-                    contextCommands.push({
-                        type: "setSpritesLineSpacing",
-                        spritesLineSpacing: state[difference],
-                    });
-                    break;
-                case "spritesAlignment":
-                    contextCommands.push({
-                        type: "setSpritesAlignment",
-                        spritesAlignment: state[difference],
-                    });
-                    break;
-                case "spritesLineAlignment":
-                    contextCommands.push({
-                        type: "setSpritesLineAlignment",
-                        spritesLineAlignment: state[difference],
-                    });
-                    break;
-            }
-        });
-        _console$C.log("serialized displayContextState", contextCommands);
-        return contextCommands;
-    }
-}
-
-const _console$B = createConsole("DisplayUtils", { log: false });
-function formatRotation(rotation, isRadians, isSigned) {
-    if (isRadians) {
-        const rotationRad = rotation;
-        _console$B.log({ rotationRad });
-        if (isSigned) {
-            rotation = clamp$1(rotation, -twoPi, twoPi);
-        }
-        else {
-            rotation %= twoPi;
-        }
-        rotation /= twoPi;
-    }
-    else {
-        const rotationDeg = rotation;
-        _console$B.log({ rotationDeg });
-        if (isSigned) {
-            rotation = clamp$1(rotation, -360, 360);
-        }
-        else {
-            rotation %= 360;
-        }
-        rotation /= 360;
-    }
-    if (isSigned) {
-        rotation *= (rotation > 0 ? Int16Max - 1 : 32769) - 1;
-    }
-    else {
-        rotation *= Uint16Max;
-    }
-    rotation = Math.floor(rotation);
-    _console$B.log({ formattedRotation: rotation });
-    return rotation;
-}
-function parseRotation(formattedRotation, isRadians, isSigned) {
-    let rotation = formattedRotation;
-    if (isSigned) {
-        rotation /= Int16Max;
-    }
-    else {
-        rotation /= Uint16Max;
-    }
-    {
-        rotation *= 2 * Math.PI;
-    }
-    _console$B.log({ parsedRotation: rotation });
-    return rotation;
-}
-function roundToStep(value, step) {
-    const roundedValue = Math.round(value / step) * step;
-    return roundedValue;
-}
-const minDisplayScale = -50;
-const maxDisplayScale = 50;
-const displayScaleStep = 0.002;
-function formatScale(scale) {
-    scale /= displayScaleStep;
-    return scale;
-}
-function parseScale(scale) {
-    scale *= displayScaleStep;
-    return scale;
-}
-function roundScale(scale) {
-    return roundToStep(scale, displayScaleStep);
-}
-function assertValidSegmentCap(segmentCap) {
-    _console$B.assertEnumWithError(segmentCap, DisplaySegmentCaps);
-}
-function assertValidDisplayBrightness(displayBrightness) {
-    _console$B.assertEnumWithError(displayBrightness, DisplayBrightnesses);
-}
-function assertValidColorValue(name, value) {
-    _console$B.assertRangeWithError(name, value, 0, 255);
-}
-function assertValidColor(color) {
-    assertValidColorValue("red", color.r);
-    assertValidColorValue("green", color.g);
-    assertValidColorValue("blue", color.b);
-}
-function assertValidOpacity(value) {
-    _console$B.assertRangeWithError("opacity", value, 0, 1);
-}
-const DisplayCropDirections = [
-    "top",
-    "right",
-    "bottom",
-    "left",
-];
-const DisplayCropDirectionToStateKey = {
-    top: "cropTop",
-    right: "cropRight",
-    bottom: "cropBottom",
-    left: "cropLeft",
-};
-const DisplayCropDirectionToCommandType = {
-    top: "setCropTop",
-    right: "setCropRight",
-    bottom: "setCropBottom",
-    left: "setCropLeft",
-};
-const DisplayRotationCropDirectionToStateKey = {
-    top: "rotationCropTop",
-    right: "rotationCropRight",
-    bottom: "rotationCropBottom",
-    left: "rotationCropLeft",
-};
-const DisplayRotationCropDirectionToCommandType = {
-    top: "setRotationCropTop",
-    right: "setRotationCropRight",
-    bottom: "setRotationCropBottom",
-    left: "setRotationCropLeft",
-};
-const DisplayAlignmentDirectionToCommandType = {
-    horizontal: "setHorizontalAlignment",
-    vertical: "setVerticalAlignment",
-};
-const DisplayAlignmentDirectionToStateKey = {
-    horizontal: "horizontalAlignment",
-    vertical: "verticalAlignment",
-};
-function pixelDepthToNumberOfColors(pixelDepth) {
-    return 2 ** Number(pixelDepth);
-}
-function pixelDepthToPixelsPerByte(pixelDepth) {
-    return 8 / Number(pixelDepth);
-}
-function pixelDepthToPixelBitWidth(pixelDepth) {
-    return Number(pixelDepth);
-}
-function numberOfColorsToPixelDepth(numberOfColors) {
-    return DisplayPixelDepths.find((pixelDepth) => numberOfColors <= pixelDepthToNumberOfColors(pixelDepth));
-}
-const DisplayBitmapScaleDirectionToCommandType = {
-    x: "setBitmapScaleX",
-    y: "setBitmapScaleY",
-    all: "setBitmapScale",
-};
-function assertValidAlignment(alignment) {
-    _console$B.assertEnumWithError(alignment, DisplayAlignments);
-}
-function assertValidDirection(direction) {
-    _console$B.assertEnumWithError(direction, DisplayDirections);
-}
-function assertValidAlignmentDirection(direction) {
-    _console$B.assertEnumWithError(direction, DisplayAlignmentDirections);
-}
-const displayCurveTypeToNumberOfControlPoints = {
-    segment: 2,
-    quadratic: 3,
-    cubic: 4,
-};
-const displayCurveTolerance = 2.0;
-const displayCurveToleranceSquared = displayCurveTolerance ** 2;
-const maxNumberOfDisplayCurvePoints = 200;
-function assertValidNumberOfControlPoints(curveType, controlPoints, isPath = false) {
-    const numberOfControlPoints = getNumberOfConrolPoints(curveType, isPath);
-    _console$B.assertWithError(controlPoints.length == numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`);
-}
-function getNumberOfConrolPoints(curveType, isPath = false) {
-    let numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
-    if (isPath) {
-        numberOfControlPoints -= 1;
-    }
-    return numberOfControlPoints;
-}
-function assertValidPathNumberOfControlPoints(curveType, controlPoints) {
-    const numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
-    _console$B.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, `invalid number of path control points ${controlPoints.length} for path "${curveType}"`);
-}
-function assertValidPath(curves) {
-    curves.forEach((curve, index) => {
-        const { type, controlPoints } = curve;
-        assertValidNumberOfControlPoints(type, controlPoints, index > 0);
-    });
-}
-function assertValidWireframe({ points, edges }) {
-    _console$B.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-    _console$B.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
-    edges.forEach((edge, index) => {
-        _console$B.assertRangeWithError(`edgeStartIndex.${index}`, edge.startIndex, 0, points.length);
-        _console$B.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
-    });
-}
-function isWireframePolygon({ points, edges, }) {
-    _console$B.log("isWireframePolygon?", points, edges);
-    if (points.length != edges.length) {
-        return;
-    }
-    const _edges = edges.slice();
-    let pointIndices = [];
-    for (let i = 0; i < points.length; i++) {
-        if (i == 0) {
-            const { startIndex, endIndex } = _edges.shift();
-            pointIndices.push(startIndex);
-            pointIndices.push(endIndex);
-        }
-        else {
-            const startIndex = pointIndices.at(-1);
-            const edge = _edges.find((edge) => edge.startIndex == startIndex || edge.endIndex == startIndex);
-            _console$B.log(i, "edge", edge);
-            if (edge) {
-                _edges.splice(_edges.indexOf(edge), 1);
-                const endIndex = edge.startIndex == startIndex ? edge.endIndex : edge.startIndex;
-                if (i == points.length - 1) {
-                    if (endIndex != pointIndices[0]) {
-                        return;
-                    }
-                }
-                else if (pointIndices.includes(endIndex)) {
-                    _console$B.log("duplicate endIndex", endIndex);
-                    return;
-                }
-                pointIndices.push(endIndex);
-            }
-            else {
-                _console$B.log("no edge found");
-                return;
-            }
-        }
-        _console$B.log("remaining edges", _edges);
-    }
-    _console$B.log("pointIndices", pointIndices);
-    const polygon = pointIndices
-        .map((pointIndex) => points[pointIndex])
-        .filter((point, index, polygon) => polygon.indexOf(point) == index);
-    if (polygon.length == points.length) {
-        polygon.push(polygon[0]);
-        _console$B.log("polygon", polygon);
-        return polygon;
-    }
-}
-function mergeWireframes(a, b) {
-    const wireframe = structuredClone(a);
-    const pointIndexOffset = a.points.length;
-    b.points.forEach((point) => {
-        wireframe.points.push(point);
-    });
-    b.edges.forEach(({ startIndex, endIndex }) => {
-        wireframe.edges.push({
-            startIndex: startIndex + pointIndexOffset,
-            endIndex: endIndex + pointIndexOffset,
-        });
-    });
-    return trimWireframe(wireframe);
-}
-function intersectWireframes(a, b, ignoreDirection = true) {
-    a = trimWireframe(a);
-    b = trimWireframe(b);
-    const wireframe = { points: [], edges: [] };
-    const aPointIndices = [];
-    const bPointIndices = [];
-    a.points.forEach((point, aPointIndex) => {
-        const bPointIndex = b.points.findIndex((_point) => {
-            const distance = getVector2Distance(point, _point);
-            return distance == 0;
-        });
-        if (bPointIndex != -1) {
-            aPointIndices.push(aPointIndex);
-            bPointIndices.push(bPointIndex);
-            wireframe.points.push(structuredClone(point));
-        }
-    });
-    a.edges.forEach((aEdge) => {
-        if (!aPointIndices.includes(aEdge.startIndex) ||
-            !aPointIndices.includes(aEdge.endIndex)) {
-            return;
-        }
-        const startIndex = aPointIndices.indexOf(aEdge.startIndex);
-        const endIndex = aPointIndices.indexOf(aEdge.endIndex);
-        const bEdge = b.edges.find((bEdge) => {
-            if (!bPointIndices.includes(bEdge.startIndex) ||
-                !bPointIndices.includes(bEdge.endIndex)) {
-                return false;
-            }
-            const bStartIndex = bPointIndices.indexOf(bEdge.startIndex);
-            const bEndIndex = bPointIndices.indexOf(bEdge.endIndex);
-            if (ignoreDirection) {
-                return ((startIndex == bStartIndex && endIndex == bEndIndex) ||
-                    (startIndex == bEndIndex && endIndex == bStartIndex));
-            }
-            else {
-                return startIndex == bStartIndex && endIndex == bEndIndex;
-            }
-        });
-        if (!bEdge) {
-            return;
-        }
-        wireframe.edges.push({
-            startIndex,
-            endIndex,
-        });
-    });
-    return wireframe;
-}
-function trimWireframe(wireframe) {
-    _console$B.log("trimming wireframe", wireframe);
-    const { points, edges } = wireframe;
-    const trimmedPoints = [];
-    const trimmedEdges = [];
-    edges.forEach((edge) => {
-        const { startIndex, endIndex } = edge;
-        let startPoint = points[startIndex];
-        let endPoint = points[endIndex];
-        let trimmedStartIndex = trimmedPoints.findIndex(({ x, y }) => startPoint.x == x && startPoint.y == y);
-        if (trimmedStartIndex == -1) {
-            trimmedPoints.push(startPoint);
-            trimmedStartIndex = trimmedPoints.length - 1;
-        }
-        let trimmedEndIndex = trimmedPoints.findIndex(({ x, y }) => endPoint.x == x && endPoint.y == y);
-        if (trimmedEndIndex == -1) {
-            trimmedPoints.push(endPoint);
-            trimmedEndIndex = trimmedPoints.length - 1;
-        }
-        const trimmedEdge = {
-            startIndex: trimmedStartIndex,
-            endIndex: trimmedEndIndex,
-        };
-        let trimmedEdgeIndex = trimmedEdges.findIndex(({ startIndex, endIndex }) => startIndex == trimmedEdge.startIndex &&
-            endIndex == trimmedEdge.endIndex);
-        if (trimmedEdgeIndex == -1) {
-            trimmedEdges.push(trimmedEdge);
-            trimmedEdgeIndex = trimmedEdges.length - 1;
-        }
-    });
-    _console$B.log("trimmedWireframe", trimmedPoints, trimmedEdges);
-    return { points: trimmedPoints, edges: trimmedEdges };
-}
-function getPointDataType(points) {
-    const range = new RangeHelper();
-    points.forEach(({ x, y }) => {
-        range.update(x);
-        range.update(y);
-    });
-    const pointDataType = DisplayPointDataTypes.find((pointDataType) => {
-        const { min, max } = displayPointDataTypeToRange[pointDataType];
-        return range.min >= min && range.max <= max;
-    });
-    _console$B.log("pointDataType", pointDataType, points);
-    return pointDataType;
-}
-function serializePoints(points, pointDataType, isPath = false) {
-    pointDataType = pointDataType || getPointDataType(points);
-    _console$B.assertEnumWithError(pointDataType, DisplayPointDataTypes);
-    const pointDataSize = displayPointDataTypeToSize[pointDataType];
-    let dataViewLength = points.length * pointDataSize;
-    if (!isPath) {
-        dataViewLength += 2;
-    }
-    const dataView = new DataView(new ArrayBuffer(dataViewLength));
-    _console$B.log(`serializing ${points.length} ${pointDataType} points (${dataView.byteLength} bytes)...`);
-    let offset = 0;
-    if (!isPath) {
-        dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
-        dataView.setUint8(offset++, points.length);
-    }
-    points.forEach(({ x, y }) => {
-        switch (pointDataType) {
-            case "int8":
-                dataView.setInt8(offset, x);
-                offset += 1;
-                dataView.setInt8(offset, y);
-                offset += 1;
-                break;
-            case "int16":
-                dataView.setInt16(offset, x, true);
-                offset += 2;
-                dataView.setInt16(offset, y, true);
-                offset += 2;
-                break;
-            case "float":
-                dataView.setFloat32(offset, x, true);
-                offset += 4;
-                dataView.setFloat32(offset, y, true);
-                offset += 4;
-                break;
-        }
-    });
-    return dataView;
-}
-function parsePoints(dataView, offset) {
-    const points = [];
-    const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
-    _console$B.assertEnumWithError(pointDataType, DisplayPointDataTypes);
-    const numberOfPoints = dataView.getUint8(offset++);
-    _console$B.assertWithError(numberOfPoints >= 3, `numberOfPoints ${numberOfPoints} must be at least 3`);
-    for (let i = 0; i < numberOfPoints; i++) {
-        let x, y;
-        switch (pointDataType) {
-            case "int8":
-                x = dataView.getInt8(offset++);
-                y = dataView.getInt8(offset++);
-                break;
-            case "int16":
-                x = dataView.getInt16(offset, true);
-                offset += 2;
-                y = dataView.getInt16(offset, true);
-                offset += 2;
-                break;
-            case "float":
-                x = dataView.getFloat32(offset, true);
-                offset += 4;
-                y = dataView.getFloat32(offset, true);
-                offset += 4;
-                break;
-            default:
-                throw Error(`uncaught pointDataType "${pointDataType}"`);
-        }
-        points.push({ x, y });
-    }
-    return { points, offset };
 }
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -14396,1700 +13554,549 @@ var rgbquant = {exports: {}};
 var rgbquantExports = rgbquant.exports;
 var RGBQuant = getDefaultExportFromCjs(rgbquantExports);
 
-const _console$A = createConsole("DisplayContextCommand", { log: false });
-const DisplayContextCommandTypes = [
-    "show",
-    "clear",
-    "setColor",
-    "setColorOpacity",
-    "setOpacity",
-    "saveContext",
-    "restoreContext",
-    "selectBackgroundColor",
-    "selectFillColor",
-    "selectLineColor",
-    "setIgnoreFill",
-    "setIgnoreLine",
-    "setFillBackground",
-    "setLineWidth",
-    "setRotation",
-    "clearRotation",
-    "setHorizontalAlignment",
-    "setVerticalAlignment",
-    "resetAlignment",
-    "setSegmentStartCap",
-    "setSegmentEndCap",
-    "setSegmentCap",
-    "setSegmentStartRadius",
-    "setSegmentEndRadius",
-    "setSegmentRadius",
-    "setCropTop",
-    "setCropRight",
-    "setCropBottom",
-    "setCropLeft",
-    "clearCrop",
-    "setRotationCropTop",
-    "setRotationCropRight",
-    "setRotationCropBottom",
-    "setRotationCropLeft",
-    "clearRotationCrop",
-    "selectBitmapColor",
-    "selectBitmapColors",
-    "setBitmapScaleX",
-    "setBitmapScaleY",
-    "setBitmapScale",
-    "resetBitmapScale",
-    "selectSpriteColor",
-    "selectSpriteColors",
-    "resetSpriteColors",
-    "setSpriteScaleX",
-    "setSpriteScaleY",
-    "setSpriteScale",
-    "resetSpriteScale",
-    "setSpritesLineHeight",
-    "setSpritesDirection",
-    "setSpritesLineDirection",
-    "setSpritesSpacing",
-    "setSpritesLineSpacing",
-    "setSpritesAlignment",
-    "setSpritesLineAlignment",
-    "clearRect",
-    "drawRect",
-    "drawRoundRect",
-    "drawCircle",
-    "drawArc",
-    "drawEllipse",
-    "drawArcEllipse",
-    "drawSegment",
-    "drawSegments",
-    "drawRegularPolygon",
-    "drawPolygon",
-    "drawWireframe",
-    "drawQuadraticBezierCurve",
-    "drawQuadraticBezierCurves",
-    "drawCubicBezierCurve",
-    "drawCubicBezierCurves",
-    "drawPath",
-    "drawClosedPath",
-    "drawBitmap",
-    "selectSpriteSheet",
-    "drawSprite",
-    "drawSprites",
-    "startSprite",
-    "endSprite",
-    "clearContext",
-];
-const DisplaySpriteContextCommandTypes = [
-    "selectFillColor",
-    "selectLineColor",
-    "setIgnoreFill",
-    "setIgnoreLine",
-    "setLineWidth",
-    "setRotation",
-    "clearRotation",
-    "setVerticalAlignment",
-    "setHorizontalAlignment",
-    "resetAlignment",
-    "setSegmentStartCap",
-    "setSegmentEndCap",
-    "setSegmentCap",
-    "setSegmentStartRadius",
-    "setSegmentEndRadius",
-    "setSegmentRadius",
-    "setCropTop",
-    "setCropRight",
-    "setCropBottom",
-    "setCropLeft",
-    "clearCrop",
-    "setRotationCropTop",
-    "setRotationCropRight",
-    "setRotationCropBottom",
-    "setRotationCropLeft",
-    "clearRotationCrop",
-    "selectBitmapColor",
-    "selectBitmapColors",
-    "setBitmapScaleX",
-    "setBitmapScaleY",
-    "setBitmapScale",
-    "resetBitmapScale",
-    "selectSpriteColor",
-    "selectSpriteColors",
-    "resetSpriteColors",
-    "setSpriteScaleX",
-    "setSpriteScaleY",
-    "setSpriteScale",
-    "resetSpriteScale",
-    "clearRect",
-    "drawRect",
-    "drawRoundRect",
-    "drawCircle",
-    "drawEllipse",
-    "drawRegularPolygon",
-    "drawPolygon",
-    "drawWireframe",
-    "drawQuadraticBezierCurve",
-    "drawQuadraticBezierCurves",
-    "drawCubicBezierCurve",
-    "drawCubicBezierCurves",
-    "drawPath",
-    "drawClosedPath",
-    "drawSegment",
-    "drawSegments",
-    "drawArc",
-    "drawArcEllipse",
-    "drawBitmap",
-    "drawSprite",
-];
-function serializeDisplayContextCommandData(displayManager, command) {
-    let dataView;
-    switch (command.type) {
-        case "show":
-        case "clear":
-        case "saveContext":
-        case "restoreContext":
-        case "clearRotation":
-        case "clearCrop":
-        case "clearRotationCrop":
-        case "resetBitmapScale":
-        case "resetSpriteColors":
-        case "resetSpriteScale":
-        case "resetAlignment":
-        case "endSprite":
-        case "clearContext":
-            break;
-        case "setColor":
-            {
-                let { color, colorIndex } = command;
-                displayManager.assertValidColorIndex(colorIndex);
-                if (typeof color == "string") {
-                    color = stringToRGB(color);
-                }
-                displayManager.assertValidColorIndex(colorIndex);
-                assertValidColor(color);
-                dataView = new DataView(new ArrayBuffer(4));
-                dataView.setUint8(0, colorIndex);
-                dataView.setUint8(1, color.r);
-                dataView.setUint8(2, color.g);
-                dataView.setUint8(3, color.b);
-            }
-            break;
-        case "setColorOpacity":
-            {
-                const { colorIndex, opacity } = command;
-                displayManager.assertValidColorIndex(colorIndex);
-                assertValidOpacity(opacity);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint8(0, colorIndex);
-                dataView.setUint8(1, Math.round(opacity * 255));
-            }
-            break;
-        case "setOpacity":
-            {
-                const { opacity } = command;
-                assertValidOpacity(opacity);
-                dataView = new DataView(new ArrayBuffer(1));
-                dataView.setUint8(0, Math.round(opacity * 255));
-            }
-            break;
-        case "selectFillColor":
-            {
-                const { fillColorIndex } = command;
-                displayManager.assertValidColorIndex(fillColorIndex);
-                dataView = new DataView(new ArrayBuffer(1));
-                dataView.setUint8(0, fillColorIndex);
-            }
-            break;
-        case "selectBackgroundColor":
-            {
-                const { backgroundColorIndex } = command;
-                displayManager.assertValidColorIndex(backgroundColorIndex);
-                dataView = new DataView(new ArrayBuffer(1));
-                dataView.setUint8(0, backgroundColorIndex);
-            }
-            break;
-        case "selectLineColor":
-            {
-                const { lineColorIndex } = command;
-                displayManager.assertValidColorIndex(lineColorIndex);
-                dataView = new DataView(new ArrayBuffer(1));
-                dataView.setUint8(0, lineColorIndex);
-            }
-            break;
-        case "setIgnoreFill":
-            {
-                const { ignoreFill } = command;
-                dataView = new DataView(new ArrayBuffer(1));
-                dataView.setUint8(0, ignoreFill ? 1 : 0);
-            }
-            break;
-        case "setIgnoreLine":
-            {
-                const { ignoreLine } = command;
-                dataView = new DataView(new ArrayBuffer(1));
-                dataView.setUint8(0, ignoreLine ? 1 : 0);
-            }
-            break;
-        case "setFillBackground":
-            {
-                const { fillBackground } = command;
-                dataView = new DataView(new ArrayBuffer(1));
-                dataView.setUint8(0, fillBackground ? 1 : 0);
-            }
-            break;
-        case "setLineWidth":
-            {
-                const { lineWidth } = command;
-                displayManager.assertValidLineWidth(lineWidth);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, lineWidth, true);
-            }
-            break;
-        case "setHorizontalAlignment":
-            {
-                const { horizontalAlignment } = command;
-                assertValidAlignment(horizontalAlignment);
-                dataView = new DataView(new ArrayBuffer(1));
-                const alignmentEnum = DisplayAlignments.indexOf(horizontalAlignment);
-                dataView.setUint8(0, alignmentEnum);
-            }
-            break;
-        case "setVerticalAlignment":
-            {
-                const { verticalAlignment } = command;
-                assertValidAlignment(verticalAlignment);
-                dataView = new DataView(new ArrayBuffer(1));
-                const alignmentEnum = DisplayAlignments.indexOf(verticalAlignment);
-                dataView.setUint8(0, alignmentEnum);
-            }
-            break;
-        case "setRotation":
-            {
-                let { rotation, isRadians } = command;
-                rotation = isRadians ? rotation : degToRad(rotation);
-                rotation = normalizeRadians(rotation);
-                isRadians = true;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, formatRotation(rotation, isRadians), true);
-            }
-            break;
-        case "setSegmentStartCap":
-            {
-                const { segmentStartCap } = command;
-                assertValidSegmentCap(segmentStartCap);
-                dataView = new DataView(new ArrayBuffer(1));
-                const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
-                dataView.setUint8(0, segmentCapEnum);
-            }
-            break;
-        case "setSegmentEndCap":
-            {
-                const { segmentEndCap } = command;
-                assertValidSegmentCap(segmentEndCap);
-                dataView = new DataView(new ArrayBuffer(1));
-                const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
-                dataView.setUint8(0, segmentCapEnum);
-            }
-            break;
-        case "setSegmentCap":
-            {
-                const { segmentCap } = command;
-                assertValidSegmentCap(segmentCap);
-                dataView = new DataView(new ArrayBuffer(1));
-                const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentCap);
-                dataView.setUint8(0, segmentCapEnum);
-            }
-            break;
-        case "setSegmentStartRadius":
-            {
-                const { segmentStartRadius } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, segmentStartRadius, true);
-            }
-            break;
-        case "setSegmentEndRadius":
-            {
-                const { segmentEndRadius } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, segmentEndRadius, true);
-            }
-            break;
-        case "setSegmentRadius":
-            {
-                const { segmentRadius } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, segmentRadius, true);
-            }
-            break;
-        case "setCropTop":
-            {
-                const { cropTop } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, cropTop, true);
-            }
-            break;
-        case "setCropRight":
-            {
-                const { cropRight } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, cropRight, true);
-            }
-            break;
-        case "setCropBottom":
-            {
-                const { cropBottom } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, cropBottom, true);
-            }
-            break;
-        case "setCropLeft":
-            {
-                const { cropLeft } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, cropLeft, true);
-            }
-            break;
-        case "setRotationCropTop":
-            {
-                const { rotationCropTop } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, rotationCropTop, true);
-            }
-            break;
-        case "setRotationCropRight":
-            {
-                const { rotationCropRight } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, rotationCropRight, true);
-            }
-            break;
-        case "setRotationCropBottom":
-            {
-                const { rotationCropBottom } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, rotationCropBottom, true);
-            }
-            break;
-        case "setRotationCropLeft":
-            {
-                const { rotationCropLeft } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, rotationCropLeft, true);
-            }
-            break;
-        case "selectBitmapColor":
-            {
-                const { bitmapColorIndex, colorIndex } = command;
-                displayManager.assertValidColorIndex(bitmapColorIndex);
-                displayManager.assertValidColorIndex(colorIndex);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint8(0, bitmapColorIndex);
-                dataView.setUint8(1, colorIndex);
-            }
-            break;
-        case "selectBitmapColors":
-            {
-                const { bitmapColorPairs } = command;
-                _console$A.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, displayManager.numberOfColors);
-                const bitmapColorIndices = displayManager.contextState.bitmapColorIndices.slice();
-                bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
-                    displayManager.assertValidColorIndex(bitmapColorIndex);
-                    displayManager.assertValidColorIndex(colorIndex);
-                    bitmapColorIndices[bitmapColorIndex] = colorIndex;
-                });
-                dataView = new DataView(new ArrayBuffer(bitmapColorPairs.length * 2 + 1));
-                let offset = 0;
-                dataView.setUint8(offset++, bitmapColorPairs.length);
-                bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
-                    dataView.setUint8(offset, bitmapColorIndex);
-                    dataView.setUint8(offset + 1, colorIndex);
-                    offset += 2;
-                });
-            }
-            break;
-        case "setBitmapScaleX":
-            {
-                let { bitmapScaleX } = command;
-                bitmapScaleX = clamp$1(bitmapScaleX, minDisplayScale, maxDisplayScale);
-                bitmapScaleX = roundScale(bitmapScaleX);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setInt16(0, formatScale(bitmapScaleX), true);
-            }
-            break;
-        case "setBitmapScaleY":
-            {
-                let { bitmapScaleY } = command;
-                bitmapScaleY = clamp$1(bitmapScaleY, minDisplayScale, maxDisplayScale);
-                bitmapScaleY = roundScale(bitmapScaleY);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setInt16(0, formatScale(bitmapScaleY), true);
-            }
-            break;
-        case "setBitmapScale":
-            {
-                let { bitmapScale } = command;
-                bitmapScale = clamp$1(bitmapScale, minDisplayScale, maxDisplayScale);
-                bitmapScale = roundScale(bitmapScale);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setInt16(0, formatScale(bitmapScale), true);
-            }
-            break;
-        case "selectSpriteColor":
-            {
-                const { spriteColorIndex, colorIndex } = command;
-                displayManager.assertValidColorIndex(spriteColorIndex);
-                displayManager.assertValidColorIndex(colorIndex);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint8(0, spriteColorIndex);
-                dataView.setUint8(1, colorIndex);
-            }
-            break;
-        case "selectSpriteColors":
-            {
-                const { spriteColorPairs } = command;
-                _console$A.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, displayManager.numberOfColors);
-                const spriteColorIndices = displayManager.contextState.spriteColorIndices.slice();
-                spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
-                    displayManager.assertValidColorIndex(spriteColorIndex);
-                    displayManager.assertValidColorIndex(colorIndex);
-                    spriteColorIndices[spriteColorIndex] = colorIndex;
-                });
-                dataView = new DataView(new ArrayBuffer(spriteColorPairs.length * 2 + 1));
-                let offset = 0;
-                dataView.setUint8(offset++, spriteColorPairs.length);
-                spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
-                    dataView.setUint8(offset, spriteColorIndex);
-                    dataView.setUint8(offset + 1, colorIndex);
-                    offset += 2;
-                });
-            }
-            break;
-        case "setSpriteScaleX":
-            {
-                let { spriteScaleX } = command;
-                spriteScaleX = clamp$1(spriteScaleX, minDisplayScale, maxDisplayScale);
-                spriteScaleX = roundScale(spriteScaleX);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setInt16(0, formatScale(spriteScaleX), true);
-            }
-            break;
-        case "setSpriteScaleY":
-            {
-                let { spriteScaleY } = command;
-                spriteScaleY = clamp$1(spriteScaleY, minDisplayScale, maxDisplayScale);
-                spriteScaleY = roundScale(spriteScaleY);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setInt16(0, formatScale(spriteScaleY), true);
-            }
-            break;
-        case "setSpriteScale":
-            {
-                let { spriteScale } = command;
-                spriteScale = clamp$1(spriteScale, minDisplayScale, maxDisplayScale);
-                spriteScale = roundScale(spriteScale);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setInt16(0, formatScale(spriteScale), true);
-            }
-            break;
-        case "setSpritesLineHeight":
-            {
-                const { spritesLineHeight } = command;
-                displayManager.assertValidLineWidth(spritesLineHeight);
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, spritesLineHeight, true);
-            }
-            break;
-        case "setSpritesDirection":
-            {
-                const { spritesDirection } = command;
-                assertValidDirection(spritesDirection);
-                _console$A.log({ spritesDirection });
-                dataView = new DataView(new ArrayBuffer(1));
-                const alignmentEnum = DisplayDirections.indexOf(spritesDirection);
-                dataView.setUint8(0, alignmentEnum);
-            }
-            break;
-        case "setSpritesLineDirection":
-            {
-                const { spritesLineDirection } = command;
-                assertValidDirection(spritesLineDirection);
-                _console$A.log({ spritesLineDirection });
-                dataView = new DataView(new ArrayBuffer(1));
-                const alignmentEnum = DisplayDirections.indexOf(spritesLineDirection);
-                dataView.setUint8(0, alignmentEnum);
-            }
-            break;
-        case "setSpritesSpacing":
-            {
-                const { spritesSpacing } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setInt16(0, spritesSpacing, true);
-            }
-            break;
-        case "setSpritesLineSpacing":
-            {
-                const { spritesLineSpacing } = command;
-                dataView = new DataView(new ArrayBuffer(2));
-                dataView.setInt16(0, spritesLineSpacing, true);
-            }
-            break;
-        case "setSpritesAlignment":
-            {
-                const { spritesAlignment } = command;
-                assertValidAlignment(spritesAlignment);
-                _console$A.log({ spritesAlignment });
-                dataView = new DataView(new ArrayBuffer(1));
-                const alignmentEnum = DisplayAlignments.indexOf(spritesAlignment);
-                dataView.setUint8(0, alignmentEnum);
-            }
-            break;
-        case "setSpritesLineAlignment":
-            {
-                const { spritesLineAlignment } = command;
-                assertValidAlignment(spritesLineAlignment);
-                _console$A.log({ spritesLineAlignment });
-                dataView = new DataView(new ArrayBuffer(1));
-                const alignmentEnum = DisplayAlignments.indexOf(spritesLineAlignment);
-                dataView.setUint8(0, alignmentEnum);
-            }
-            break;
-        case "clearRect":
-            {
-                const { x, y, width, height } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setInt16(0, x, true);
-                dataView.setInt16(2, y, true);
-                dataView.setUint16(4, width, true);
-                dataView.setUint16(6, height, true);
-            }
-            break;
-        case "drawRect":
-            {
-                const { offsetX, offsetY, width, height } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setInt16(0, offsetX, true);
-                dataView.setInt16(2, offsetY, true);
-                dataView.setUint16(4, width, true);
-                dataView.setUint16(6, height, true);
-            }
-            break;
-        case "drawRoundRect":
-            {
-                const { offsetX, offsetY, width, height, borderRadius } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 4 + 1));
-                dataView.setInt16(0, offsetX, true);
-                dataView.setInt16(2, offsetY, true);
-                dataView.setUint16(4, width, true);
-                dataView.setUint16(6, height, true);
-                dataView.setUint8(8, borderRadius);
-            }
-            break;
-        case "drawCircle":
-            {
-                const { offsetX, offsetY, radius } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 3));
-                dataView.setInt16(0, offsetX, true);
-                dataView.setInt16(2, offsetY, true);
-                dataView.setUint16(4, radius, true);
-            }
-            break;
-        case "drawEllipse":
-            {
-                const { offsetX, offsetY, radiusX, radiusY } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setInt16(0, offsetX, true);
-                dataView.setInt16(2, offsetY, true);
-                dataView.setUint16(4, radiusX, true);
-                dataView.setUint16(6, radiusY, true);
-            }
-            break;
-        case "drawRegularPolygon":
-            {
-                const { offsetX, offsetY, radius, numberOfSides } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 3 + 1));
-                dataView.setInt16(0, offsetX, true);
-                dataView.setInt16(2, offsetY, true);
-                dataView.setUint16(4, radius, true);
-                dataView.setUint8(6, numberOfSides);
-            }
-            break;
-        case "drawPolygon":
-            {
-                const { points } = command;
-                _console$A.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-                dataView = serializePoints(points);
-            }
-            break;
-        case "drawWireframe":
-            {
-                const { wireframe } = command;
-                const { points, edges } = wireframe;
-                if (wireframe.points.length == 0) {
-                    return;
-                }
-                assertValidWireframe(wireframe);
-                const pointsDataView = serializePoints(points);
-                const edgesDataView = new DataView(new ArrayBuffer(1 + 2 * edges.length));
-                let edgesDataOffset = 0;
-                edgesDataView.setUint8(edgesDataOffset++, edges.length);
-                edges.forEach((edge) => {
-                    edgesDataView.setUint8(edgesDataOffset++, edge.startIndex);
-                    edgesDataView.setUint8(edgesDataOffset++, edge.endIndex);
-                });
-                dataView = new DataView(concatenateArrayBuffers(pointsDataView, edgesDataView));
-            }
-            break;
-        case "drawQuadraticBezierCurve":
-        case "drawCubicBezierCurve":
-            {
-                const { controlPoints } = command;
-                const curveType = command.type == "drawCubicBezierCurve" ? "cubic" : "quadratic";
-                assertValidNumberOfControlPoints(curveType, controlPoints);
-                dataView = new DataView(new ArrayBuffer(4 * controlPoints.length));
-                let offset = 0;
-                controlPoints.forEach((controlPoint) => {
-                    dataView.setInt16(offset, controlPoint.x, true);
-                    offset += 2;
-                    dataView.setInt16(offset, controlPoint.y, true);
-                    offset += 2;
-                });
-            }
-            break;
-        case "drawQuadraticBezierCurves":
-        case "drawCubicBezierCurves":
-            {
-                const { controlPoints } = command;
-                const curveType = command.type == "drawCubicBezierCurves" ? "cubic" : "quadratic";
-                assertValidPathNumberOfControlPoints(curveType, controlPoints);
-                dataView = serializePoints(controlPoints);
-            }
-            break;
-        case "drawPath":
-        case "drawClosedPath":
-            {
-                const { curves } = command;
-                assertValidPath(curves);
-                const typesDataView = new DataView(new ArrayBuffer(Math.ceil(curves.length / displayCurveTypesPerByte)));
-                const controlPointsDataViews = [];
-                const allControlPoints = [];
-                curves.forEach((curve) => {
-                    allControlPoints.push(...curve.controlPoints);
-                });
-                const pointDataType = getPointDataType(allControlPoints);
-                const numberOfControlPoints = allControlPoints.length;
-                curves.forEach((curve, index) => {
-                    const { type, controlPoints } = curve;
-                    const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
-                    const typeBitShift = (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
-                    let typeValue = typesDataView.getUint8(typeByteIndex) || 0;
-                    typeValue |= DisplayBezierCurveTypes.indexOf(type) << typeBitShift;
-                    typesDataView.setUint8(typeByteIndex, typeValue);
-                    const controlPointsDataView = serializePoints(controlPoints, pointDataType, true);
-                    controlPointsDataViews.push(controlPointsDataView);
-                });
-                const controlPointsBuffer = concatenateArrayBuffers(...controlPointsDataViews);
-                const headerDataView = new DataView(new ArrayBuffer(3));
-                headerDataView.setUint8(0, DisplayPointDataTypes.indexOf(pointDataType));
-                headerDataView.setUint8(1, curves.length);
-                headerDataView.setUint8(2, numberOfControlPoints);
-                dataView = new DataView(concatenateArrayBuffers(headerDataView, typesDataView, controlPointsBuffer));
-            }
-            break;
-        case "drawSegment":
-            {
-                const { startX, startY, endX, endY } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setInt16(0, startX, true);
-                dataView.setInt16(2, startY, true);
-                dataView.setInt16(4, endX, true);
-                dataView.setInt16(6, endY, true);
-            }
-            break;
-        case "drawSegments":
-            {
-                const { points } = command;
-                _console$A.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-                dataView = serializePoints(points);
-            }
-            break;
-        case "drawArc":
-            {
-                let { offsetX, offsetY, radius, isRadians, startAngle, angleOffset } = command;
-                startAngle = isRadians ? startAngle : degToRad(startAngle);
-                startAngle = normalizeRadians(startAngle);
-                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                angleOffset = clamp$1(angleOffset, -twoPi, twoPi);
-                isRadians = true;
-                dataView = new DataView(new ArrayBuffer(2 * 5));
-                dataView.setInt16(0, offsetX, true);
-                dataView.setInt16(2, offsetY, true);
-                dataView.setUint16(4, radius, true);
-                dataView.setUint16(6, formatRotation(startAngle, isRadians), true);
-                dataView.setInt16(8, formatRotation(angleOffset, isRadians, true), true);
-            }
-            break;
-        case "drawArcEllipse":
-            {
-                let { offsetX, offsetY, radiusX, radiusY, isRadians, startAngle, angleOffset, } = command;
-                startAngle = isRadians ? startAngle : degToRad(startAngle);
-                startAngle = normalizeRadians(startAngle);
-                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                angleOffset = clamp$1(angleOffset, -twoPi, twoPi);
-                isRadians = true;
-                dataView = new DataView(new ArrayBuffer(2 * 6));
-                dataView.setInt16(0, offsetX, true);
-                dataView.setInt16(2, offsetY, true);
-                dataView.setUint16(4, radiusX, true);
-                dataView.setUint16(6, radiusY, true);
-                dataView.setUint16(8, formatRotation(startAngle, isRadians), true);
-                dataView.setUint16(10, formatRotation(angleOffset, isRadians, true), true);
-            }
-            break;
-        case "drawBitmap":
-            {
-                const { bitmap, offsetX, offsetY } = command;
-                displayManager.assertValidBitmap(bitmap, false);
-                dataView = new DataView(new ArrayBuffer(drawBitmapHeaderLength));
-                dataView.setInt16(0, offsetX, true);
-                dataView.setInt16(2, offsetY, true);
-                dataView.setUint16(4, bitmap.width, true);
-                dataView.setUint32(6, bitmap.pixels.length, true);
-                dataView.setUint8(10, bitmap.numberOfColors);
-                const bitmapData = getBitmapData(bitmap);
-                dataView.setUint16(11, bitmapData.byteLength, true);
-                const buffer = concatenateArrayBuffers(dataView, bitmapData);
-                dataView = new DataView(buffer);
-            }
-            break;
-        case "selectSpriteSheet":
-            {
-                const { spriteSheetIndex } = command;
-                dataView = new DataView(new ArrayBuffer(1));
-                dataView.setUint8(0, spriteSheetIndex);
-            }
-            break;
-        case "drawSprite":
-            {
-                const { offsetX, offsetY, spriteIndex, use2Bytes } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 2 + (use2Bytes ? 2 : 1)));
-                let offset = 0;
-                dataView.setInt16(offset, offsetX, true);
-                offset += 2;
-                dataView.setInt16(offset, offsetY, true);
-                offset += 2;
-                if (use2Bytes) {
-                    dataView.setUint16(offset, spriteIndex, true);
-                    offset += 2;
-                }
-                else {
-                    dataView.setUint8(offset++, spriteIndex);
-                }
-            }
-            break;
-        case "drawSprites":
-            {
-                const { offsetX, offsetY, spriteSerializedLines } = command;
-                const lineArrayBuffers = [];
-                spriteSerializedLines.forEach((spriteLines) => {
-                    const subLineArrayBuffers = [];
-                    spriteLines.forEach((subSpriteLine) => {
-                        const { spriteSheetIndex, spriteIndices, use2Bytes } = subSpriteLine;
-                        const subLineSpriteIndicesDataView = new DataView(new ArrayBuffer(spriteIndices.length * (use2Bytes ? 2 : 1)));
-                        spriteIndices.forEach((spriteIndex, i) => {
-                            if (use2Bytes) {
-                                subLineSpriteIndicesDataView.setUint16(i * 2, spriteIndex, true);
-                            }
-                            else {
-                                subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
-                            }
-                        });
-                        const subLineHeaderDataView = new DataView(new ArrayBuffer(2));
-                        subLineHeaderDataView.setUint8(0, spriteSheetIndex);
-                        subLineHeaderDataView.setUint8(1, spriteIndices.length);
-                        subLineArrayBuffers.push(concatenateArrayBuffers(subLineHeaderDataView, subLineSpriteIndicesDataView));
-                    });
-                    const lineArrayHeaderDataView = new DataView(new ArrayBuffer(2));
-                    const concatenatedSubLineArrayBuffers = concatenateArrayBuffers(...subLineArrayBuffers);
-                    lineArrayHeaderDataView.setUint16(0, concatenatedSubLineArrayBuffers.byteLength, true);
-                    lineArrayBuffers.push(concatenateArrayBuffers(lineArrayHeaderDataView, concatenatedSubLineArrayBuffers));
-                });
-                const concatenatedLineArrayBuffers = concatenateArrayBuffers(...lineArrayBuffers);
-                dataView = new DataView(new ArrayBuffer(2 * 3));
-                let offset = 0;
-                dataView.setInt16(offset, offsetX, true);
-                offset += 2;
-                dataView.setInt16(offset, offsetY, true);
-                offset += 2;
-                dataView.setUint16(offset, concatenatedLineArrayBuffers.byteLength, true);
-                offset += 2;
-                const buffer = concatenateArrayBuffers(dataView, concatenatedLineArrayBuffers);
-                dataView = new DataView(buffer);
-            }
-            break;
-        case "startSprite":
-            {
-                const { offsetX, offsetY, width, height } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setInt16(0, offsetX, true);
-                dataView.setInt16(2, offsetY, true);
-                dataView.setUint16(4, width, true);
-                dataView.setUint16(6, height, true);
-            }
-            break;
-        default:
-            throw Error(`uncaught command.type ${command.type}`);
+function deepEqual(obj1, obj2) {
+    if (obj1 === obj2) {
+        return true;
     }
-    return dataView;
-}
-function serializeDisplayContextCommand(displayManager, command) {
-    if (command.hide) {
-        return;
+    if (typeof obj1 !== "object" ||
+        obj1 === null ||
+        typeof obj2 !== "object" ||
+        obj2 === null) {
+        return false;
     }
-    _console$A.assertEnumWithError(command.type, DisplayContextCommandTypes);
-    const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(command.type);
-    const serializedContextCommand = serializeDisplayContextCommandData(displayManager, command);
-    return concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), serializedContextCommand);
-}
-function serializeDisplayContextCommands(displayManager, commands) {
-    const serializedContextCommandArray = commands.map((command) => serializeDisplayContextCommand(displayManager, command));
-    const serializedContextCommands = concatenateArrayBuffers(serializedContextCommandArray);
-    _console$A.log("serializedContextCommands", commands, serializedContextCommandArray, serializedContextCommands);
-    return serializedContextCommands;
-}
-function parseDisplayContextCommands(displayManager, dataView) {
-    _console$A.log("parseContextCommands", displayManager, dataView);
-    const contextCommands = [];
-    let offset = 0;
-    while (offset < dataView.byteLength) {
-        const commandTypeIndex = dataView.getUint8(offset++);
-        const type = DisplayContextCommandTypes[commandTypeIndex];
-        _console$A.assertWithError(type, `invalid commandTypeIndex ${commandTypeIndex}`);
-        let command;
-        _console$A.log(`parsing "${type}" (${offset}/${dataView.byteLength})`);
-        switch (type) {
-            case "show":
-            case "clear":
-            case "saveContext":
-            case "restoreContext":
-            case "clearRotation":
-            case "clearCrop":
-            case "clearRotationCrop":
-            case "resetBitmapScale":
-            case "resetSpriteColors":
-            case "resetSpriteScale":
-            case "resetAlignment":
-            case "endSprite":
-            case "clearContext":
-                command = { type };
-                break;
-            case "setColor":
-                {
-                    const colorIndex = dataView.getUint8(offset++);
-                    const r = dataView.getUint8(offset++);
-                    const g = dataView.getUint8(offset++);
-                    const b = dataView.getUint8(offset++);
-                    command = { type, colorIndex, color: { r, g, b } };
-                }
-                break;
-            case "setColorOpacity":
-                {
-                    const colorIndex = dataView.getUint8(offset++);
-                    const opacity = dataView.getUint8(offset++) / 255;
-                    command = { type, colorIndex, opacity };
-                }
-                break;
-            case "setOpacity":
-                {
-                    const opacity = dataView.getUint8(offset++) / 255;
-                    command = { type, opacity };
-                }
-                break;
-            case "selectFillColor":
-                {
-                    const fillColorIndex = dataView.getUint8(offset++);
-                    command = { type, fillColorIndex };
-                }
-                break;
-            case "selectBackgroundColor":
-                {
-                    const backgroundColorIndex = dataView.getUint8(offset++);
-                    command = { type, backgroundColorIndex };
-                }
-                break;
-            case "selectLineColor":
-                {
-                    const lineColorIndex = dataView.getUint8(offset++);
-                    command = { type, lineColorIndex };
-                }
-                break;
-            case "setIgnoreFill":
-                {
-                    const ignoreFill = Boolean(dataView.getUint8(offset++));
-                    command = { type, ignoreFill };
-                }
-                break;
-            case "setIgnoreLine":
-                {
-                    const ignoreLine = Boolean(dataView.getUint8(offset++));
-                    command = { type, ignoreLine };
-                }
-                break;
-            case "setFillBackground":
-                {
-                    const fillBackground = Boolean(dataView.getUint8(offset++));
-                    command = { type, fillBackground };
-                }
-                break;
-            case "setLineWidth":
-                {
-                    const lineWidth = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, lineWidth };
-                }
-                break;
-            case "setHorizontalAlignment":
-                {
-                    const horizontalAlignment = DisplayAlignments[dataView.getUint8(offset++)];
-                    _console$A.assertEnumWithError(horizontalAlignment, DisplayAlignments);
-                    command = { type, horizontalAlignment };
-                }
-                break;
-            case "setVerticalAlignment":
-                {
-                    const verticalAlignment = DisplayAlignments[dataView.getUint8(offset++)];
-                    _console$A.assertEnumWithError(verticalAlignment, DisplayAlignments);
-                    command = { type, verticalAlignment };
-                }
-                break;
-            case "setRotation":
-                {
-                    const isRadians = true;
-                    const rotation = parseRotation(dataView.getUint16(offset, true));
-                    offset += 2;
-                    command = { type, rotation, isRadians };
-                }
-                break;
-            case "setSegmentStartCap":
-                {
-                    const segmentStartCap = DisplaySegmentCaps[dataView.getUint8(offset++)];
-                    _console$A.assertEnumWithError(segmentStartCap, DisplaySegmentCaps);
-                    command = { type, segmentStartCap };
-                }
-                break;
-            case "setSegmentEndCap":
-                {
-                    const segmentEndCap = DisplaySegmentCaps[dataView.getUint8(offset++)];
-                    _console$A.assertEnumWithError(segmentEndCap, DisplaySegmentCaps);
-                    command = { type, segmentEndCap };
-                }
-                break;
-            case "setSegmentCap":
-                {
-                    const segmentCap = DisplaySegmentCaps[dataView.getUint8(offset++)];
-                    _console$A.assertEnumWithError(segmentCap, DisplaySegmentCaps);
-                    command = { type, segmentCap };
-                }
-                break;
-            case "setSegmentStartRadius":
-                {
-                    const segmentStartRadius = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, segmentStartRadius };
-                }
-                break;
-            case "setSegmentEndRadius":
-                {
-                    const segmentEndRadius = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, segmentEndRadius };
-                }
-                break;
-            case "setSegmentRadius":
-                {
-                    const segmentRadius = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, segmentRadius };
-                }
-                break;
-            case "setCropTop":
-                {
-                    const cropTop = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, cropTop };
-                }
-                break;
-            case "setCropRight":
-                {
-                    const cropRight = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, cropRight };
-                }
-                break;
-            case "setCropBottom":
-                {
-                    const cropBottom = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, cropBottom };
-                }
-                break;
-            case "setCropLeft":
-                {
-                    const cropLeft = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, cropLeft };
-                }
-                break;
-            case "setRotationCropTop":
-                {
-                    const rotationCropTop = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, rotationCropTop };
-                }
-                break;
-            case "setRotationCropRight":
-                {
-                    const rotationCropRight = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, rotationCropRight };
-                }
-                break;
-            case "setRotationCropBottom":
-                {
-                    const rotationCropBottom = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, rotationCropBottom };
-                }
-                break;
-            case "setRotationCropLeft":
-                {
-                    const rotationCropLeft = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, rotationCropLeft };
-                }
-                break;
-            case "selectBitmapColor":
-                {
-                    const bitmapColorIndex = dataView.getUint8(offset++);
-                    const colorIndex = dataView.getUint8(offset++);
-                    command = { type, bitmapColorIndex, colorIndex };
-                }
-                break;
-            case "selectBitmapColors":
-                {
-                    const numberOfBitmapColorPairs = dataView.getUint8(offset++);
-                    const bitmapColorPairs = [];
-                    for (let i = 0; i < numberOfBitmapColorPairs; i++) {
-                        const bitmapColorIndex = dataView.getUint8(offset++);
-                        const colorIndex = dataView.getUint8(offset++);
-                        bitmapColorPairs.push({ bitmapColorIndex, colorIndex });
-                    }
-                    command = { type, bitmapColorPairs };
-                }
-                break;
-            case "setBitmapScaleX":
-                {
-                    const bitmapScaleX = parseScale(dataView.getInt16(offset, true));
-                    offset += 2;
-                    command = { type, bitmapScaleX };
-                }
-                break;
-            case "setBitmapScaleY":
-                {
-                    const bitmapScaleY = parseScale(dataView.getInt16(offset, true));
-                    offset += 2;
-                    command = { type, bitmapScaleY };
-                }
-                break;
-            case "setBitmapScale":
-                {
-                    const bitmapScale = parseScale(dataView.getInt16(offset, true));
-                    offset += 2;
-                    command = { type, bitmapScale };
-                }
-                break;
-            case "selectSpriteColor":
-                {
-                    const spriteColorIndex = dataView.getUint8(offset++);
-                    const colorIndex = dataView.getUint8(offset++);
-                    command = { type, spriteColorIndex, colorIndex };
-                }
-                break;
-            case "selectSpriteColors":
-                {
-                    const numberOfSpriteColorPairs = dataView.getUint8(offset++);
-                    const spriteColorPairs = [];
-                    for (let i = 0; i < numberOfSpriteColorPairs; i++) {
-                        const spriteColorIndex = dataView.getUint8(offset++);
-                        const colorIndex = dataView.getUint8(offset++);
-                        spriteColorPairs.push({ spriteColorIndex, colorIndex });
-                    }
-                    command = { type, spriteColorPairs };
-                }
-                break;
-            case "setSpriteScaleX":
-                {
-                    const spriteScaleX = parseScale(dataView.getInt16(offset, true));
-                    offset += 2;
-                    command = { type, spriteScaleX };
-                }
-                break;
-            case "setSpriteScaleY":
-                {
-                    const spriteScaleY = parseScale(dataView.getInt16(offset, true));
-                    offset += 2;
-                    command = { type, spriteScaleY };
-                }
-                break;
-            case "setSpriteScale":
-                {
-                    const spriteScale = parseScale(dataView.getInt16(offset, true));
-                    offset += 2;
-                    command = { type, spriteScale };
-                }
-                break;
-            case "setSpritesLineHeight":
-                {
-                    const spritesLineHeight = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, spritesLineHeight };
-                }
-                break;
-            case "setSpritesDirection":
-                {
-                    const spritesDirection = DisplayDirections[dataView.getUint8(offset++)];
-                    _console$A.assertEnumWithError(spritesDirection, DisplayDirections);
-                    command = { type, spritesDirection };
-                }
-                break;
-            case "setSpritesLineDirection":
-                {
-                    const spritesLineDirection = DisplayDirections[dataView.getUint8(offset++)];
-                    _console$A.assertEnumWithError(spritesLineDirection, DisplayDirections);
-                    command = { type, spritesLineDirection };
-                }
-                break;
-            case "setSpritesSpacing":
-                {
-                    const spritesSpacing = dataView.getInt16(offset, true);
-                    offset += 2;
-                    command = { type, spritesSpacing };
-                }
-                break;
-            case "setSpritesLineSpacing":
-                {
-                    const spritesLineSpacing = dataView.getInt16(offset, true);
-                    offset += 2;
-                    command = { type, spritesLineSpacing };
-                }
-                break;
-            case "setSpritesAlignment":
-                {
-                    const spritesAlignment = DisplayAlignments[dataView.getUint8(offset++)];
-                    _console$A.assertEnumWithError(spritesAlignment, DisplayAlignments);
-                    command = { type, spritesAlignment };
-                }
-                break;
-            case "setSpritesLineAlignment":
-                {
-                    const spritesLineAlignment = DisplayAlignments[dataView.getUint8(offset++)];
-                    _console$A.assertEnumWithError(spritesLineAlignment, DisplayAlignments);
-                    command = { type, spritesLineAlignment };
-                }
-                break;
-            case "clearRect":
-                {
-                    const x = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const y = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const width = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const height = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, x, y, width, height };
-                }
-                break;
-            case "drawRect":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const width = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const height = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, offsetX, offsetY, width, height };
-                }
-                break;
-            case "drawRoundRect":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const width = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const height = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const borderRadius = dataView.getUint8(offset++);
-                    command = { type, offsetX, offsetY, width, height, borderRadius };
-                }
-                break;
-            case "drawCircle":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const radius = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, offsetX, offsetY, radius };
-                }
-                break;
-            case "drawEllipse":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const radiusX = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const radiusY = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, offsetX, offsetY, radiusX, radiusY };
-                }
-                break;
-            case "drawRegularPolygon":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const radius = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const numberOfSides = dataView.getUint8(offset++);
-                    command = { type, offsetX, offsetY, radius, numberOfSides };
-                }
-                break;
-            case "drawPolygon":
-                {
-                    const { points, offset: newOffset } = parsePoints(dataView, offset);
-                    offset = newOffset;
-                    command = { type, points };
-                }
-                break;
-            case "drawWireframe":
-                {
-                    const { points, offset: newOffset } = parsePoints(dataView, offset);
-                    offset = newOffset;
-                    const numberOfEdges = dataView.getUint8(offset++);
-                    _console$A.assertWithError(numberOfEdges >= 2, `numberOfEdges ${numberOfEdges} must be at least 2`);
-                    const edges = [];
-                    for (let i = 0; i < numberOfEdges; i++) {
-                        const startIndex = dataView.getUint8(offset++);
-                        const endIndex = dataView.getUint8(offset++);
-                        edges.push({ startIndex, endIndex });
-                    }
-                    const wireframe = { points, edges };
-                    command = { type, wireframe };
-                }
-                break;
-            case "drawQuadraticBezierCurve":
-            case "drawCubicBezierCurve":
-                {
-                    const controlPoints = [];
-                    const curveType = type == "drawCubicBezierCurve" ? "cubic" : "quadratic";
-                    const numberOfConrolPoints = getNumberOfConrolPoints(curveType);
-                    for (let i = 0; i < numberOfConrolPoints; i++) {
-                        const x = dataView.getInt16(offset, true);
-                        offset += 2;
-                        const y = dataView.getInt16(offset, true);
-                        offset += 2;
-                        controlPoints.push({ x, y });
-                    }
-                    command = { type, controlPoints };
-                }
-                break;
-            case "drawQuadraticBezierCurves":
-            case "drawCubicBezierCurves":
-                {
-                    const { points: controlPoints, offset: newOffset } = parsePoints(dataView, offset);
-                    offset = newOffset;
-                    command = { type, controlPoints };
-                }
-                break;
-            case "drawPath":
-            case "drawClosedPath":
-                {
-                    const curves = [];
-                    const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
-                    _console$A.assertEnumWithError(pointDataType, DisplayPointDataTypes);
-                    const numberOfCurves = dataView.getUint8(offset++);
-                    const curveTypeDataLength = Math.ceil(numberOfCurves / displayCurveTypesPerByte);
-                    const totalNumberOfControlPoints = dataView.getUint8(offset++);
-                    const pathDataLength = curveTypeDataLength +
-                        totalNumberOfControlPoints *
-                            displayPointDataTypeToSize[pointDataType];
-                    _console$A.assertWithError(offset + pathDataLength > dataView.byteLength, `offset + pathDataLength ${offset + pathDataLength} exceeds dataView.byteLength ${dataView.byteLength}`);
-                    const curveTypeDataOffset = offset;
-                    offset += curveTypeDataLength;
-                    for (let index = 0; index < numberOfCurves; index++) {
-                        const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
-                        const typeBitShift = (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
-                        const typeValue = dataView.getUint8(curveTypeDataOffset + typeByteIndex);
-                        const typeIndex = (typeValue >> typeBitShift) &
-                            ((1 << displayCurveTypeBitWidth) - 1);
-                        const type = DisplayBezierCurveTypes[typeIndex];
-                        const { points: controlPoints, offset: newOffset } = parsePoints(dataView, offset);
-                        offset = newOffset;
-                        curves.push({ type, controlPoints });
-                    }
-                    command = { type, curves };
-                }
-                break;
-            case "drawSegment":
-                {
-                    const startX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const startY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const endX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const endY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    command = { type, startX, startY, endX, endY };
-                }
-                break;
-            case "drawSegments":
-                {
-                    const { points, offset: newOffset } = parsePoints(dataView, offset);
-                    offset = newOffset;
-                    command = { type, points };
-                }
-                break;
-            case "drawArc":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const isRadians = true;
-                    const radius = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const startAngle = parseRotation(dataView.getUint16(offset, true));
-                    offset += 2;
-                    const angleOffset = parseRotation(dataView.getInt16(offset, true), isRadians, true);
-                    offset += 2;
-                    command = {
-                        type,
-                        offsetX,
-                        offsetY,
-                        radius,
-                        isRadians,
-                        startAngle,
-                        angleOffset,
-                    };
-                }
-                break;
-            case "drawArcEllipse":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const isRadians = true;
-                    const radiusX = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const radiusY = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const startAngle = parseRotation(dataView.getUint16(offset, true));
-                    offset += 2;
-                    const angleOffset = parseRotation(dataView.getInt16(offset, true), isRadians, true);
-                    offset += 2;
-                    command = {
-                        type,
-                        offsetX,
-                        offsetY,
-                        radiusX,
-                        radiusY,
-                        isRadians,
-                        startAngle,
-                        angleOffset,
-                    };
-                }
-                break;
-            case "drawBitmap":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const { bitmap, offset: newOffset } = parseBitmap(dataView, offset);
-                    offset = newOffset;
-                    command = { type, offsetX, offsetY, bitmap };
-                }
-                break;
-            case "selectSpriteSheet":
-                {
-                    const spriteSheetIndex = dataView.getUint8(offset++);
-                    command = { type, spriteSheetIndex };
-                }
-                break;
-            case "drawSprite":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    _console$A.assertWithError(displayManager.selectedSpriteSheet, "displayManager doesn't have a selected spriteSheet");
-                    const use2Bytes = displayManager.selectedSpriteSheet.sprites.length > 255;
-                    let spriteIndex;
-                    if (use2Bytes) {
-                        spriteIndex = dataView.getUint16(offset, true);
-                        offset += 2;
-                    }
-                    else {
-                        spriteIndex = dataView.getUint8(offset++);
-                    }
-                    command = { type, offsetX, offsetY, spriteIndex, use2Bytes };
-                }
-                break;
-            case "drawSprites":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const linesDataLength = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const linesDataEnd = offset + linesDataLength;
-                    const spriteSerializedLines = [];
-                    while (offset < linesDataEnd) {
-                        const lineDataLength = dataView.getUint16(offset, true);
-                        offset += 2;
-                        const lineDataEnd = offset + lineDataLength;
-                        const spriteLine = [];
-                        while (offset < lineDataEnd) {
-                            const spriteSheetIndex = dataView.getUint8(offset++);
-                            const spriteCount = dataView.getUint8(offset++);
-                            const spriteSheet = displayManager.getSpriteSheetByIndex(spriteSheetIndex);
-                            _console$A.assertWithError(spriteSheet, `no spriteSheet found for spriteSheetIndex ${spriteSheetIndex}`);
-                            const use2Bytes = spriteSheet.sprites.length > 255;
-                            const spriteIndices = [];
-                            for (let i = 0; i < spriteCount; i++) {
-                                spriteIndices.push(use2Bytes
-                                    ? dataView.getUint16(offset, true)
-                                    : dataView.getUint8(offset));
-                                offset += use2Bytes ? 2 : 1;
-                            }
-                            spriteLine.push({
-                                spriteSheetIndex,
-                                spriteIndices,
-                                use2Bytes,
-                            });
-                        }
-                        spriteSerializedLines.push(spriteLine);
-                    }
-                    command = { type, offsetX, offsetY, spriteSerializedLines };
-                }
-                break;
-            case "startSprite":
-                {
-                    const offsetX = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const offsetY = dataView.getInt16(offset, true);
-                    offset += 2;
-                    const width = dataView.getUint16(offset, true);
-                    offset += 2;
-                    const height = dataView.getUint16(offset, true);
-                    offset += 2;
-                    command = { type, offsetX, offsetY, width, height };
-                }
-                break;
-            default:
-                _console$A.error(`uncaught commandType "${type}"`);
-                break;
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length)
+        return false;
+    for (let key of keys1) {
+        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+            return false;
         }
-        _console$A.log("command", command);
-        _console$A.assertWithError(command, `no command found for commandType "${type}"`);
-        contextCommands.push(command);
     }
-    _console$A.log("parsed contextCommands", contextCommands);
-    return contextCommands;
+    return true;
 }
-const DrawDisplayContextCommandTypes = [
-    "drawRect",
-    "drawRoundRect",
-    "drawCircle",
-    "drawArc",
-    "drawEllipse",
-    "drawArcEllipse",
-    "drawSegment",
-    "drawSegments",
-    "drawRegularPolygon",
-    "drawPolygon",
-    "drawWireframe",
-    "drawQuadraticBezierCurve",
-    "drawQuadraticBezierCurves",
-    "drawCubicBezierCurve",
-    "drawCubicBezierCurves",
-    "drawPath",
-    "drawClosedPath",
-    "drawBitmap",
-    "drawSprite",
-    "drawSprites",
-];
-const StateDisplayContextCommandTypes = [
-    "setColor",
-    "setColorOpacity",
-    "setOpacity",
-    "saveContext",
-    "restoreContext",
-    "selectBackgroundColor",
-    "selectFillColor",
-    "selectLineColor",
-    "setIgnoreFill",
-    "setIgnoreLine",
-    "setFillBackground",
-    "setLineWidth",
-    "setRotation",
-    "clearRotation",
-    "setHorizontalAlignment",
-    "setVerticalAlignment",
-    "resetAlignment",
-    "setSegmentStartCap",
-    "setSegmentEndCap",
-    "setSegmentCap",
-    "setSegmentStartRadius",
-    "setSegmentEndRadius",
-    "setSegmentRadius",
-    "setCropTop",
-    "setCropRight",
-    "setCropBottom",
-    "setCropLeft",
-    "clearCrop",
-    "setRotationCropTop",
-    "setRotationCropRight",
-    "setRotationCropBottom",
-    "setRotationCropLeft",
-    "clearRotationCrop",
-    "selectBitmapColor",
-    "selectBitmapColors",
-    "setBitmapScaleX",
-    "setBitmapScaleY",
-    "setBitmapScale",
-    "resetBitmapScale",
-    "selectSpriteColor",
-    "selectSpriteColors",
-    "resetSpriteColors",
-    "setSpriteScaleX",
-    "setSpriteScaleY",
-    "setSpriteScale",
-    "resetSpriteScale",
-    "setSpritesLineHeight",
-    "setSpritesDirection",
-    "setSpritesLineDirection",
-    "setSpritesSpacing",
-    "setSpritesLineSpacing",
-    "setSpritesAlignment",
-    "setSpritesLineAlignment",
-    "selectSpriteSheet",
-];
-const SpritesDisplayContextCommandTypes = [
-    "selectSpriteColor",
-    "selectSpriteColors",
-    "resetSpriteColors",
-    "setSpriteScaleX",
-    "setSpriteScaleY",
-    "setSpriteScale",
-    "resetSpriteScale",
-    "setSpritesLineHeight",
-    "setSpritesDirection",
-    "setSpritesLineDirection",
-    "setSpritesSpacing",
-    "setSpritesLineSpacing",
-    "setSpritesAlignment",
-    "setSpritesLineAlignment",
-    "selectSpriteSheet",
-];
-const PathDrawDisplayContextCommandTypes = [
-    "drawSegment",
-    "drawSegments",
-    "drawQuadraticBezierCurve",
-    "drawQuadraticBezierCurves",
-    "drawCubicBezierCurve",
-    "drawCubicBezierCurves",
-    "drawPath",
-    "drawWireframe",
-];
-const PathStateDisplayContextCommandTypes = [
-    "setSegmentRadius",
-    "setSegmentEndRadius",
-    "setSegmentStartRadius",
-    "setSegmentCap",
-    "setSegmentStartCap",
-    "setSegmentEndCap",
-];
-const BitmapDisplayContextCommandTypes = [
-    "selectBitmapColor",
-    "selectBitmapColors",
-    "setBitmapScaleX",
-    "setBitmapScaleY",
-    "setBitmapScale",
-    "resetBitmapScale",
-];
-const contextCommandDependencies = new Map();
-function appendContextCommandDependencyPair(key, value) {
-    contextCommandDependencies.set(new Set(key), new Set(value));
+function removeRedundancies(array) {
+    return Array.from(new Set(array));
 }
-appendContextCommandDependencyPair([...PathStateDisplayContextCommandTypes], [...PathDrawDisplayContextCommandTypes]);
-appendContextCommandDependencyPair([...StateDisplayContextCommandTypes], [...DrawDisplayContextCommandTypes]);
-appendContextCommandDependencyPair([...SpritesDisplayContextCommandTypes], ["drawSprite", "drawSprites"]);
-appendContextCommandDependencyPair([...BitmapDisplayContextCommandTypes], ["drawBitmap"]);
-function trimContextCommands(commands) {
-    _console$A.log("trimming commands", commands);
-    const trimmedCommands = [];
-    commands
-        .slice()
-        .reverse()
-        .forEach((command) => {
-        let include = true;
-        let dependencies;
-        for (const [keys, values] of contextCommandDependencies) {
-            if (keys.has(command.type)) {
-                dependencies = values;
-                break;
-            }
-        }
-        _console$A.log("command", command, "dependencies", dependencies);
-        let similarCommandIndex = -1;
-        let dependentCommandIndex = -1;
-        if (dependencies) {
-            similarCommandIndex = trimmedCommands.findIndex((trimmedCommand) => {
-                return trimmedCommand.type == command.type;
-            });
-            dependentCommandIndex = trimmedCommands.findIndex((trimmedCommand) => dependencies.has(trimmedCommand.type));
-            _console$A.log({ similarCommandIndex, dependentCommandIndex });
-            if (dependentCommandIndex == -1) {
-                include = false;
-            }
-            else if (similarCommandIndex != -1) {
-                include = similarCommandIndex > dependentCommandIndex;
-            }
-        }
-        if (include) {
-            if (similarCommandIndex != -1 &&
-                deepEqual(command, trimmedCommands[similarCommandIndex])) {
-                trimmedCommands.splice(similarCommandIndex, 1);
-            }
-            trimmedCommands.unshift(command);
-        }
-        else {
-            _console$A.log("skipping command", command);
+
+const _console$x = createConsole("DisplayContextState", { log: false });
+const DisplaySegmentCaps = ["flat", "round"];
+const DisplayAlignments = ["start", "center", "end"];
+const DisplayAlignmentDirections = ["horizontal", "vertical"];
+const DisplayDirections = ["right", "left", "up", "down"];
+const DefaultDisplayContextState = {
+    backgroundColorIndex: 0,
+    fillColorIndex: 1,
+    lineColorIndex: 1,
+    ignoreFill: false,
+    ignoreLine: false,
+    fillBackground: false,
+    lineWidth: 0,
+    rotation: 0,
+    horizontalAlignment: "center",
+    verticalAlignment: "center",
+    segmentStartCap: "flat",
+    segmentEndCap: "flat",
+    segmentStartRadius: 1,
+    segmentEndRadius: 1,
+    cropTop: 0,
+    cropRight: 0,
+    cropBottom: 0,
+    cropLeft: 0,
+    rotationCropTop: 0,
+    rotationCropRight: 0,
+    rotationCropBottom: 0,
+    rotationCropLeft: 0,
+    bitmapColorIndices: new Array(0).fill(0),
+    bitmapScaleX: 1,
+    bitmapScaleY: 1,
+    spriteColorIndices: new Array(0).fill(0),
+    spriteScaleX: 1,
+    spriteScaleY: 1,
+    spriteSheetName: undefined,
+    spritesLineHeight: 0,
+    spritesDirection: "right",
+    spritesLineDirection: "down",
+    spritesSpacing: 0,
+    spritesLineSpacing: 0,
+    spritesAlignment: "end",
+    spritesLineAlignment: "start",
+};
+function isDirectionPositive(direction) {
+    switch (direction) {
+        case "right":
+        case "down":
+            return true;
+        case "left":
+        case "up":
+            return false;
+    }
+}
+function isDirectionHorizontal(direction) {
+    switch (direction) {
+        case "right":
+        case "left":
+            return true;
+        case "down":
+        case "up":
+            return false;
+    }
+}
+function diffContextState(state, other = DefaultDisplayContextState) {
+    let differences = [];
+    const keys = Object.keys(other);
+    keys.forEach((key) => {
+        const value = other[key];
+        if (!deepEqual(state[key], value)) {
+            differences.push(key);
         }
     });
-    _console$A.log("trimmedCommands", trimmedCommands);
-    return trimmedCommands;
+    _console$x.log("diff displayContextState", other, differences);
+    return differences;
+}
+function updateContextState(state, newState) {
+    let differences = diffContextState(state, newState);
+    if (differences.length == 0) {
+        _console$x.log("redundant contextState", newState);
+    }
+    else {
+        _console$x.log("found contextState differences", newState);
+    }
+    differences.forEach((key) => {
+        const value = newState[key];
+        state[key] = value;
+    });
+    return differences;
+}
+function resetContextState(state, numberOfColors, keepColorIndices, keepSpriteColorIndices) {
+    const spriteColorIndices = state.spriteColorIndices.slice();
+    const { fillColorIndex, lineColorIndex, backgroundColorIndex } = state;
+    Object.assign(state, DefaultDisplayContextState);
+    if (keepColorIndices) {
+        state.fillColorIndex = fillColorIndex;
+        state.lineColorIndex = lineColorIndex;
+        state.backgroundColorIndex = backgroundColorIndex;
+    }
+    if (keepSpriteColorIndices) {
+        state.spriteColorIndices = spriteColorIndices;
+    }
+    else {
+        state.spriteColorIndices = new Array(numberOfColors).fill(0);
+    }
+    state.bitmapColorIndices = new Array(numberOfColors).fill(0);
+}
+
+const _console$C = createConsole("DisplayUtils", { log: false });
+function formatRotation(rotation, isRadians, isSigned) {
+    if (isRadians) {
+        const rotationRad = rotation;
+        _console$C.log({ rotationRad });
+        if (isSigned) {
+            rotation = clamp$1(rotation, -twoPi, twoPi);
+        }
+        else {
+            rotation %= twoPi;
+        }
+        rotation /= twoPi;
+    }
+    else {
+        const rotationDeg = rotation;
+        _console$C.log({ rotationDeg });
+        if (isSigned) {
+            rotation = clamp$1(rotation, -360, 360);
+        }
+        else {
+            rotation %= 360;
+        }
+        rotation /= 360;
+    }
+    if (isSigned) {
+        rotation *= (rotation > 0 ? Int16Max - 1 : 32769) - 1;
+    }
+    else {
+        rotation *= Uint16Max;
+    }
+    rotation = Math.floor(rotation);
+    _console$C.log({ formattedRotation: rotation });
+    return rotation;
+}
+function parseRotation(formattedRotation, isRadians, isSigned) {
+    let rotation = formattedRotation;
+    if (isSigned) {
+        rotation /= Int16Max;
+    }
+    else {
+        rotation /= Uint16Max;
+    }
+    {
+        rotation *= 2 * Math.PI;
+    }
+    _console$C.log({ parsedRotation: rotation });
+    return rotation;
+}
+function roundToStep(value, step) {
+    const roundedValue = Math.round(value / step) * step;
+    return roundedValue;
+}
+const minDisplayScale = -50;
+const maxDisplayScale = 50;
+const displayScaleStep = 0.002;
+function formatScale(scale) {
+    scale /= displayScaleStep;
+    return scale;
+}
+function parseScale(scale) {
+    scale *= displayScaleStep;
+    return scale;
+}
+function roundScale(scale) {
+    return roundToStep(scale, displayScaleStep);
+}
+function assertValidSegmentCap(segmentCap) {
+    _console$C.assertEnumWithError(segmentCap, DisplaySegmentCaps);
+}
+function assertValidDisplayBrightness(displayBrightness) {
+    _console$C.assertEnumWithError(displayBrightness, DisplayBrightnesses);
+}
+function assertValidColorValue(name, value) {
+    _console$C.assertRangeWithError(name, value, 0, 255);
+}
+function assertValidColor(color) {
+    assertValidColorValue("red", color.r);
+    assertValidColorValue("green", color.g);
+    assertValidColorValue("blue", color.b);
+}
+function assertValidOpacity(value) {
+    _console$C.assertRangeWithError("opacity", value, 0, 1);
+}
+const DisplayCropDirections = [
+    "top",
+    "right",
+    "bottom",
+    "left",
+];
+const DisplayCropDirectionToStateKey = {
+    top: "cropTop",
+    right: "cropRight",
+    bottom: "cropBottom",
+    left: "cropLeft",
+};
+const DisplayCropDirectionToCommandType = {
+    top: "setCropTop",
+    right: "setCropRight",
+    bottom: "setCropBottom",
+    left: "setCropLeft",
+};
+const DisplayRotationCropDirectionToStateKey = {
+    top: "rotationCropTop",
+    right: "rotationCropRight",
+    bottom: "rotationCropBottom",
+    left: "rotationCropLeft",
+};
+const DisplayRotationCropDirectionToCommandType = {
+    top: "setRotationCropTop",
+    right: "setRotationCropRight",
+    bottom: "setRotationCropBottom",
+    left: "setRotationCropLeft",
+};
+const DisplayAlignmentDirectionToCommandType = {
+    horizontal: "setHorizontalAlignment",
+    vertical: "setVerticalAlignment",
+};
+const DisplayAlignmentDirectionToStateKey = {
+    horizontal: "horizontalAlignment",
+    vertical: "verticalAlignment",
+};
+function pixelDepthToNumberOfColors(pixelDepth) {
+    return 2 ** Number(pixelDepth);
+}
+function pixelDepthToPixelsPerByte(pixelDepth) {
+    return 8 / Number(pixelDepth);
+}
+function pixelDepthToPixelBitWidth(pixelDepth) {
+    return Number(pixelDepth);
+}
+function numberOfColorsToPixelDepth(numberOfColors) {
+    return DisplayPixelDepths.find((pixelDepth) => numberOfColors <= pixelDepthToNumberOfColors(pixelDepth));
+}
+const DisplayBitmapScaleDirectionToCommandType = {
+    x: "setBitmapScaleX",
+    y: "setBitmapScaleY",
+    all: "setBitmapScale",
+};
+function assertValidAlignment(alignment) {
+    _console$C.assertEnumWithError(alignment, DisplayAlignments);
+}
+function assertValidDirection(direction) {
+    _console$C.assertEnumWithError(direction, DisplayDirections);
+}
+function assertValidAlignmentDirection(direction) {
+    _console$C.assertEnumWithError(direction, DisplayAlignmentDirections);
+}
+const displayCurveTypeToNumberOfControlPoints = {
+    segment: 2,
+    quadratic: 3,
+    cubic: 4,
+};
+const displayCurveTolerance = 2.0;
+const displayCurveToleranceSquared = displayCurveTolerance ** 2;
+const maxNumberOfDisplayCurvePoints = 200;
+function assertValidNumberOfControlPoints(curveType, controlPoints, isPath = false) {
+    const numberOfControlPoints = getNumberOfConrolPoints(curveType, isPath);
+    _console$C.assertWithError(controlPoints.length == numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`);
+}
+function getNumberOfConrolPoints(curveType, isPath = false) {
+    let numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
+    if (isPath) {
+        numberOfControlPoints -= 1;
+    }
+    return numberOfControlPoints;
+}
+function assertValidPathNumberOfControlPoints(curveType, controlPoints) {
+    const numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
+    _console$C.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, `invalid number of path control points ${controlPoints.length} for path "${curveType}"`);
+}
+function assertValidPath(curves) {
+    curves.forEach((curve, index) => {
+        const { type, controlPoints } = curve;
+        assertValidNumberOfControlPoints(type, controlPoints, index > 0);
+    });
+}
+function assertValidWireframe({ points, edges }) {
+    _console$C.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+    _console$C.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
+    edges.forEach((edge, index) => {
+        _console$C.assertRangeWithError(`edgeStartIndex.${index}`, edge.startIndex, 0, points.length);
+        _console$C.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
+    });
+}
+function isWireframePolygon({ points, edges, }) {
+    _console$C.log("isWireframePolygon?", points, edges);
+    if (points.length != edges.length) {
+        return;
+    }
+    const _edges = edges.slice();
+    let pointIndices = [];
+    for (let i = 0; i < points.length; i++) {
+        if (i == 0) {
+            const { startIndex, endIndex } = _edges.shift();
+            pointIndices.push(startIndex);
+            pointIndices.push(endIndex);
+        }
+        else {
+            const startIndex = pointIndices.at(-1);
+            const edge = _edges.find((edge) => edge.startIndex == startIndex || edge.endIndex == startIndex);
+            _console$C.log(i, "edge", edge);
+            if (edge) {
+                _edges.splice(_edges.indexOf(edge), 1);
+                const endIndex = edge.startIndex == startIndex ? edge.endIndex : edge.startIndex;
+                if (i == points.length - 1) {
+                    if (endIndex != pointIndices[0]) {
+                        return;
+                    }
+                }
+                else if (pointIndices.includes(endIndex)) {
+                    _console$C.log("duplicate endIndex", endIndex);
+                    return;
+                }
+                pointIndices.push(endIndex);
+            }
+            else {
+                _console$C.log("no edge found");
+                return;
+            }
+        }
+        _console$C.log("remaining edges", _edges);
+    }
+    _console$C.log("pointIndices", pointIndices);
+    const polygon = pointIndices
+        .map((pointIndex) => points[pointIndex])
+        .filter((point, index, polygon) => polygon.indexOf(point) == index);
+    if (polygon.length == points.length) {
+        polygon.push(polygon[0]);
+        _console$C.log("polygon", polygon);
+        return polygon;
+    }
+}
+function mergeWireframes(a, b) {
+    const wireframe = structuredClone(a);
+    const pointIndexOffset = a.points.length;
+    b.points.forEach((point) => {
+        wireframe.points.push(point);
+    });
+    b.edges.forEach(({ startIndex, endIndex }) => {
+        wireframe.edges.push({
+            startIndex: startIndex + pointIndexOffset,
+            endIndex: endIndex + pointIndexOffset,
+        });
+    });
+    return trimWireframe(wireframe);
+}
+function intersectWireframes(a, b, ignoreDirection = true) {
+    a = trimWireframe(a);
+    b = trimWireframe(b);
+    const wireframe = { points: [], edges: [] };
+    const aPointIndices = [];
+    const bPointIndices = [];
+    a.points.forEach((point, aPointIndex) => {
+        const bPointIndex = b.points.findIndex((_point) => {
+            const distance = getVector2Distance(point, _point);
+            return distance == 0;
+        });
+        if (bPointIndex != -1) {
+            aPointIndices.push(aPointIndex);
+            bPointIndices.push(bPointIndex);
+            wireframe.points.push(structuredClone(point));
+        }
+    });
+    a.edges.forEach((aEdge) => {
+        if (!aPointIndices.includes(aEdge.startIndex) ||
+            !aPointIndices.includes(aEdge.endIndex)) {
+            return;
+        }
+        const startIndex = aPointIndices.indexOf(aEdge.startIndex);
+        const endIndex = aPointIndices.indexOf(aEdge.endIndex);
+        const bEdge = b.edges.find((bEdge) => {
+            if (!bPointIndices.includes(bEdge.startIndex) ||
+                !bPointIndices.includes(bEdge.endIndex)) {
+                return false;
+            }
+            const bStartIndex = bPointIndices.indexOf(bEdge.startIndex);
+            const bEndIndex = bPointIndices.indexOf(bEdge.endIndex);
+            if (ignoreDirection) {
+                return ((startIndex == bStartIndex && endIndex == bEndIndex) ||
+                    (startIndex == bEndIndex && endIndex == bStartIndex));
+            }
+            else {
+                return startIndex == bStartIndex && endIndex == bEndIndex;
+            }
+        });
+        if (!bEdge) {
+            return;
+        }
+        wireframe.edges.push({
+            startIndex,
+            endIndex,
+        });
+    });
+    return wireframe;
+}
+function trimWireframe(wireframe) {
+    _console$C.log("trimming wireframe", wireframe);
+    const { points, edges } = wireframe;
+    const trimmedPoints = [];
+    const trimmedEdges = [];
+    edges.forEach((edge) => {
+        const { startIndex, endIndex } = edge;
+        let startPoint = points[startIndex];
+        let endPoint = points[endIndex];
+        let trimmedStartIndex = trimmedPoints.findIndex(({ x, y }) => startPoint.x == x && startPoint.y == y);
+        if (trimmedStartIndex == -1) {
+            trimmedPoints.push(startPoint);
+            trimmedStartIndex = trimmedPoints.length - 1;
+        }
+        let trimmedEndIndex = trimmedPoints.findIndex(({ x, y }) => endPoint.x == x && endPoint.y == y);
+        if (trimmedEndIndex == -1) {
+            trimmedPoints.push(endPoint);
+            trimmedEndIndex = trimmedPoints.length - 1;
+        }
+        const trimmedEdge = {
+            startIndex: trimmedStartIndex,
+            endIndex: trimmedEndIndex,
+        };
+        let trimmedEdgeIndex = trimmedEdges.findIndex(({ startIndex, endIndex }) => startIndex == trimmedEdge.startIndex &&
+            endIndex == trimmedEdge.endIndex);
+        if (trimmedEdgeIndex == -1) {
+            trimmedEdges.push(trimmedEdge);
+            trimmedEdgeIndex = trimmedEdges.length - 1;
+        }
+    });
+    _console$C.log("trimmedWireframe", trimmedPoints, trimmedEdges);
+    return { points: trimmedPoints, edges: trimmedEdges };
+}
+function getPointDataType(points) {
+    const range = new RangeHelper();
+    points.forEach(({ x, y }) => {
+        range.update(x);
+        range.update(y);
+    });
+    const pointDataType = DisplayPointDataTypes.find((pointDataType) => {
+        const { min, max } = displayPointDataTypeToRange[pointDataType];
+        return range.min >= min && range.max <= max;
+    });
+    _console$C.log("pointDataType", pointDataType, points);
+    return pointDataType;
+}
+function serializePoints(points, pointDataType, isPath = false) {
+    pointDataType = pointDataType || getPointDataType(points);
+    _console$C.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+    const pointDataSize = displayPointDataTypeToSize[pointDataType];
+    let dataViewLength = points.length * pointDataSize;
+    if (!isPath) {
+        dataViewLength += 2;
+    }
+    const dataView = new DataView(new ArrayBuffer(dataViewLength));
+    _console$C.log(`serializing ${points.length} ${pointDataType} points (${dataView.byteLength} bytes)...`);
+    let offset = 0;
+    if (!isPath) {
+        dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
+        dataView.setUint8(offset++, points.length);
+    }
+    points.forEach(({ x, y }) => {
+        switch (pointDataType) {
+            case "int8":
+                dataView.setInt8(offset, x);
+                offset += 1;
+                dataView.setInt8(offset, y);
+                offset += 1;
+                break;
+            case "int16":
+                dataView.setInt16(offset, x, true);
+                offset += 2;
+                dataView.setInt16(offset, y, true);
+                offset += 2;
+                break;
+            case "float":
+                dataView.setFloat32(offset, x, true);
+                offset += 4;
+                dataView.setFloat32(offset, y, true);
+                offset += 4;
+                break;
+        }
+    });
+    return dataView;
+}
+function parsePoints(dataView, offset) {
+    const points = [];
+    const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
+    _console$C.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+    const numberOfPoints = dataView.getUint8(offset++);
+    _console$C.assertWithError(numberOfPoints >= 3, `numberOfPoints ${numberOfPoints} must be at least 3`);
+    for (let i = 0; i < numberOfPoints; i++) {
+        let x, y;
+        switch (pointDataType) {
+            case "int8":
+                x = dataView.getInt8(offset++);
+                y = dataView.getInt8(offset++);
+                break;
+            case "int16":
+                x = dataView.getInt16(offset, true);
+                offset += 2;
+                y = dataView.getInt16(offset, true);
+                offset += 2;
+                break;
+            case "float":
+                x = dataView.getFloat32(offset, true);
+                offset += 4;
+                y = dataView.getFloat32(offset, true);
+                offset += 4;
+                break;
+            default:
+                throw Error(`uncaught pointDataType "${pointDataType}"`);
+        }
+        points.push({ x, y });
+    }
+    return { points, offset };
 }
 
 if (!String.prototype.codePointAt) {
@@ -28688,7 +26695,7 @@ const COMMAND_ARG_COUNTS = {
     [SVGPathData.ARC]: 7,
 };
 
-const _console$z = createConsole("SvgUtils", { log: false });
+const _console$B = createConsole("SvgUtils", { log: false });
 function decomposeTransform(t, tolerance = 1e-6) {
     const tx = t.e;
     const ty = t.f;
@@ -28879,7 +26886,7 @@ function svgJsonToCanvasCommands(svgJson) {
                             commands.push({ type: "closePath" });
                             break;
                         default:
-                            _console$z.warn("uncaught command", cmd);
+                            _console$B.warn("uncaught command", cmd);
                             break;
                     }
                 }
@@ -29238,7 +27245,7 @@ function svgJsonToCanvasCommands(svgJson) {
                 });
                 break;
             default:
-                _console$z.log("uncaught node", node);
+                _console$B.log("uncaught node", node);
                 break;
         }
         if (node.children && node.name != "text") {
@@ -29551,17 +27558,17 @@ function ensureSvgXmlnsFromElement(svg) {
 }
 async function svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, colors, options) {
     svgString = await getSvgString(svgString);
-    _console$z.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
+    _console$B.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
     options = { ...defaultParseSvgOptions, ...options };
-    _console$z.log("options", options);
+    _console$B.log("options", options);
     const svgJson = svgson_umdExports.parseSync(svgString);
     let canvasCommands = svgJsonToCanvasCommands(svgJson);
-    _console$z.log("canvasCommands", canvasCommands);
+    _console$B.log("canvasCommands", canvasCommands);
     const boundingBox = getSvgJsonBoundingBox(svgJson);
-    _console$z.log("boundingBox", boundingBox);
+    _console$B.log("boundingBox", boundingBox);
     let intrinsicWidth = boundingBox.width;
     let intrinsicHeight = boundingBox.height;
-    _console$z.log({ intrinsicWidth, intrinsicHeight });
+    _console$B.log({ intrinsicWidth, intrinsicHeight });
     let scaleX = 1, scaleY = 1;
     if (options.width && options.height) {
         scaleX = options.width / intrinsicWidth;
@@ -29577,10 +27584,10 @@ async function svgToDisplayContextCommands(svgString, numberOfColors, paletteOff
         if (options.aspectRatio)
             scaleX = scaleY * options.aspectRatio;
     }
-    _console$z.log({ scaleX, scaleY });
+    _console$B.log({ scaleX, scaleY });
     let width = Math.ceil(intrinsicWidth * scaleX);
     let height = Math.ceil(intrinsicHeight * scaleY);
-    _console$z.log({ width, height });
+    _console$B.log({ width, height });
     if (scaleX !== 1 || scaleY !== 1) {
         canvasCommands = scaleCanvasCommands(canvasCommands, scaleX, scaleY);
     }
@@ -29632,27 +27639,27 @@ async function svgToDisplayContextCommands(svgString, numberOfColors, paletteOff
     if (svgColors.length == 1) {
         svgColors.push("white");
     }
-    _console$z.log("colors", svgColors);
+    _console$B.log("colors", svgColors);
     const colorToIndex = {};
     if (colors) {
         colors = colors.slice(0, numberOfColors);
         const mapping = mapToClosestPaletteIndex(svgColors, colors.slice(1));
-        _console$z.log("mapping", mapping, colors);
+        _console$B.log("mapping", mapping, colors);
         svgColors.forEach((color) => {
             colorToIndex[color] = mapping[color] + 1;
         });
     }
     else {
         const { palette, mapping } = kMeansColors(svgColors, numberOfColors);
-        _console$z.log("mapping", mapping);
-        _console$z.log("palette", palette);
+        _console$B.log("mapping", mapping);
+        _console$B.log("palette", palette);
         svgColors.forEach((color) => {
             colorToIndex[color] = mapping[color];
         });
         colors = palette;
     }
-    _console$z.log("colorToIndex", colorToIndex);
-    _console$z.log("transformed canvasCommands", canvasCommands);
+    _console$B.log("colorToIndex", colorToIndex);
+    _console$B.log("transformed canvasCommands", canvasCommands);
     let curves = [];
     let startPoint = { x: 0, y: 0 };
     let fillRule = "nonzero";
@@ -29870,7 +27877,7 @@ async function svgToDisplayContextCommands(svgString, numberOfColors, paletteOff
                         if (fillStyle != canvasCommand.fillStyle) {
                             fillStyle = canvasCommand.fillStyle;
                             if (fillColorIndex != colorToIndex[fillStyle]) {
-                                _console$z.log({ fillColorIndex });
+                                _console$B.log({ fillColorIndex });
                                 fillColorIndex = colorToIndex[fillStyle];
                                 displayCommands.push({
                                     type: "selectFillColor",
@@ -30061,18 +28068,18 @@ async function svgToDisplayContextCommands(svgString, numberOfColors, paletteOff
                 }
                 break;
             default:
-                _console$z.warn("uncaught canvasCommand", canvasCommand);
+                _console$B.warn("uncaught canvasCommand", canvasCommand);
                 break;
         }
     });
     displayCommands = trimContextCommands(displayCommands);
-    _console$z.log("displayCommands", displayCommands);
-    _console$z.log("colors", colors);
+    _console$B.log("displayCommands", displayCommands);
+    _console$B.log("colors", colors);
     return { commands: displayCommands, colors, width, height };
 }
 async function svgToSprite(svgString, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0, options) {
     options = { ...defaultParseSvgOptions, ...options };
-    _console$z.log("options", options, { overridePalette });
+    _console$B.log("options", options, { overridePalette });
     let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
     if (!palette) {
         palette = {
@@ -30084,7 +28091,7 @@ async function svgToSprite(svgString, spriteName, numberOfColors, paletteName, o
         spriteSheet.palettes = spriteSheet.palettes || [];
         spriteSheet.palettes?.push(palette);
     }
-    _console$z.log("pallete", palette);
+    _console$B.log("pallete", palette);
     const { commands, colors, width, height } = await svgToDisplayContextCommands(svgString, numberOfColors, paletteOffset, !overridePalette ? palette.colors : undefined, options);
     const sprite = {
         name: spriteName,
@@ -30094,7 +28101,7 @@ async function svgToSprite(svgString, spriteName, numberOfColors, paletteName, o
         commands,
     };
     if (overridePalette) {
-        _console$z.log("overriding palette", colors);
+        _console$B.log("overriding palette", colors);
         colors.forEach((color, index) => {
             palette.colors[index + paletteOffset] = color;
         });
@@ -30104,7 +28111,7 @@ async function svgToSprite(svgString, spriteName, numberOfColors, paletteName, o
         spriteSheet.sprites.push(sprite);
     }
     else {
-        _console$z.log(`overwriting spriteInde ${spriteIndex}`);
+        _console$B.log(`overwriting spriteInde ${spriteIndex}`);
         spriteSheet.sprites[spriteIndex] = sprite;
     }
     return sprite;
@@ -30157,7 +28164,7 @@ function removeSubstrings(string, substrings) {
     return result;
 }
 
-const _console$y = createConsole("DisplaySpriteSheetUtils", { log: false });
+const _console$z = createConsole("DisplaySpriteSheetUtils", { log: false });
 const spriteHeaderLength = 3 * 2;
 function calculateSpriteSheetHeaderLength(numberOfSprites) {
     return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
@@ -30174,7 +28181,7 @@ function getCurvesPoints(curves) {
 }
 function serializeSpriteSheet(displayManager, spriteSheet) {
     const { name, sprites } = spriteSheet;
-    _console$y.log(`serializing ${name} spriteSheet`, spriteSheet);
+    _console$z.log(`serializing ${name} spriteSheet`, spriteSheet);
     const numberOfSprites = sprites.length;
     const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
     numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
@@ -30185,7 +28192,7 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
         dataView.setUint16(2, sprite.height, true);
         dataView.setUint16(4, commandsData.byteLength, true);
         const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
-        _console$y.log("serializedSprite", sprite, serializedSprite);
+        _console$z.log("serializedSprite", sprite, serializedSprite);
         return serializedSprite;
     });
     const spriteOffsetsDataView = new DataView(new ArrayBuffer(sprites.length * 2));
@@ -30195,7 +28202,7 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
         offset += spritePayload.byteLength;
     });
     const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
-    _console$y.log("serializedSpriteSheet", serializedSpriteSheet);
+    _console$z.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
 }
 const defaultFontToSpriteSheetOptions = {
@@ -30248,7 +28255,7 @@ function contourArea(points) {
     return area;
 }
 function getFontMetrics(font, fontSize, options) {
-    _console$y.assertTypeWithError(fontSize, "number");
+    _console$z.assertTypeWithError(fontSize, "number");
     options = options
         ? { ...defaultFontToSpriteSheetOptions, ...options }
         : defaultFontToSpriteSheetOptions;
@@ -30259,7 +28266,7 @@ function getFontMetrics(font, fontSize, options) {
     let string = options.string;
     if (string) {
         string = removeRedundantCharacters(string);
-        _console$y.log("filtered string", string);
+        _console$z.log("filtered string", string);
     }
     for (let font of fonts) {
         const fontScale = (1 / font.unitsPerEm) * fontSize;
@@ -30272,7 +28279,7 @@ function getFontMetrics(font, fontSize, options) {
                 string = removeSubstrings(string, filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode)));
             }
             catch (error) {
-                _console$y.error(error);
+                _console$z.error(error);
             }
         }
         for (let index = 0; index < font.glyphs.length; index++) {
@@ -30303,7 +28310,7 @@ function getFontMetrics(font, fontSize, options) {
             minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
             maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
         }
-        _console$y.log({
+        _console$z.log({
             fontName: font.getEnglishName("fullName"),
             minSpriteY,
             maxSpriteY,
@@ -30326,11 +28333,11 @@ function getFontMetrics(font, fontSize, options) {
             maxSpriteHeight = Math.max(options.maxSpriteHeight, maxSpriteHeight);
         }
     }
-    _console$y.log({ maxSpriteHeight, minSpriteY, maxSpriteY }, options);
+    _console$z.log({ maxSpriteHeight, minSpriteY, maxSpriteY }, options);
     return { maxSpriteHeight, maxSpriteY, minSpriteY };
 }
 async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
-    _console$y.assertTypeWithError(fontSize, "number");
+    _console$z.assertTypeWithError(fontSize, "number");
     options = options
         ? { ...defaultFontToSpriteSheetOptions, ...options }
         : defaultFontToSpriteSheetOptions;
@@ -30348,7 +28355,7 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
     let string = options.string;
     if (string) {
         string = removeRedundantCharacters(string);
-        _console$y.log("filtered string", string);
+        _console$z.log("filtered string", string);
     }
     for (let font of fonts) {
         const fontScale = (1 / font.unitsPerEm) * fontSize;
@@ -30420,7 +28427,7 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                     x: -bitmapWidth / 2 + bitmapX,
                     y: -bitmapHeight / 2 + bitmapY,
                 };
-                _console$y.log(`${name} path.commands`, path.commands);
+                _console$z.log(`${name} path.commands`, path.commands);
                 let curves = [];
                 let startPoint = { x: 0, y: 0 };
                 const allCurves = [];
@@ -30486,13 +28493,13 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                             break;
                     }
                 });
-                _console$y.log("allCurves", allCurves);
+                _console$z.log("allCurves", allCurves);
                 allCurves.sort((a, b) => {
                     const aPoints = getCurvesPoints(a);
                     const bPoints = getCurvesPoints(b);
                     return contourArea(bPoints) - contourArea(aPoints);
                 });
-                _console$y.log("sorted allCurves", allCurves);
+                _console$z.log("sorted allCurves", allCurves);
                 allCurves.forEach((curves) => {
                     let controlPoints = curves.flatMap((c) => c.controlPoints);
                     const isHole = classifySubpath(controlPoints, parsedPaths, "nonzero");
@@ -30592,7 +28599,7 @@ function stringToSprites(string, spriteSheet, requireAll = false) {
             }
         });
         if (requireAll) {
-            _console$y.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${substring}"`);
+            _console$z.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${substring}"`);
         }
         if (longestSprite) {
             sprites.push(longestSprite);
@@ -30616,7 +28623,7 @@ function getReferencedSprites(sprite, spriteSheet) {
             sprites.push(...getReferencedSprites(_sprite, spriteSheet));
         }
     });
-    _console$y.log("referencedSprites", sprite, sprites);
+    _console$z.log("referencedSprites", sprite, sprites);
     return sprites;
 }
 function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
@@ -30624,7 +28631,7 @@ function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
     if (!(spriteNames instanceof Array)) {
         spriteNames = stringToSprites(spriteNames, spriteSheet, requireAll).map((sprite) => sprite.name);
     }
-    _console$y.log("reducingSpriteSheet", spriteSheet, spriteNames);
+    _console$z.log("reducingSpriteSheet", spriteSheet, spriteNames);
     reducedSpriteSheet.sprites = [];
     spriteSheet.sprites.forEach((sprite) => {
         if (spriteNames.includes(sprite.name)) {
@@ -30632,11 +28639,11 @@ function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
             reducedSpriteSheet.sprites.push(...getReferencedSprites(sprite, spriteSheet));
         }
     });
-    _console$y.log("reducedSpriteSheet", reducedSpriteSheet);
+    _console$z.log("reducedSpriteSheet", reducedSpriteSheet);
     return reducedSpriteSheet;
 }
 function stringToSpriteLines(string, spriteSheets, contextState, requireAll = false, maxLineBreadth = Infinity, separators = [" "]) {
-    _console$y.log("stringToSpriteLines", string);
+    _console$z.log("stringToSpriteLines", string);
     const isSpritesDirectionHorizontal = isDirectionHorizontal(contextState.spritesDirection);
     const isSpritesLineDirectionHorizontal = isDirectionHorizontal(contextState.spritesLineDirection);
     const areSpritesDirectionsOrthogonal = isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
@@ -30681,7 +28688,7 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
                 });
             }
             if (requireAll) {
-                _console$y.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${lineSubstring}"`);
+                _console$z.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${lineSubstring}"`);
             }
             if (longestSprite && longestSpriteSheet) {
                 const isSeparator = separators.length > 0
@@ -30759,13 +28766,13 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
             spriteSubLine.spriteNames.push(sprite.name);
         });
     });
-    _console$y.log(`spriteLines for "${string}"`, spriteLines);
+    _console$z.log(`spriteLines for "${string}"`, spriteLines);
     return spriteLines;
 }
 function getFontMaxHeight(font, fontSize) {
     const scale = (1 / font.unitsPerEm) * fontSize;
     const maxHeight = (font.ascender - font.descender) * scale;
-    _console$y.log({ font: font.getEnglishName("fullName"), maxHeight, fontSize });
+    _console$z.log({ font: font.getEnglishName("fullName"), maxHeight, fontSize });
     return maxHeight;
 }
 function getMaxSpriteSheetSize(spriteSheet) {
@@ -30784,7 +28791,7 @@ function assertValidSpriteLines(displayManager, spriteLines) {
             const spriteSheet = displayManager.spriteSheets[spriteSheetName];
             spriteNames.forEach((spriteName) => {
                 const sprite = spriteSheet.sprites.find((sprite) => sprite.name == spriteName);
-                _console$y.assertWithError(sprite, `no sprite with name "${spriteName}" found in spriteSheet "${spriteSheetName}"`);
+                _console$z.assertWithError(sprite, `no sprite with name "${spriteName}" found in spriteSheet "${spriteSheetName}"`);
             });
         });
     });
@@ -30795,10 +28802,10 @@ function getExpandedSpriteLines(spriteLines, spriteSheets) {
         const _spritesLine = [];
         spriteLine.forEach(({ spriteSheetName, spriteNames }) => {
             const spriteSheet = spriteSheets[spriteSheetName];
-            _console$y.assertWithError(spriteSheet, `no spriteSheet found with name "${spriteSheetName}"`);
+            _console$z.assertWithError(spriteSheet, `no spriteSheet found with name "${spriteSheetName}"`);
             spriteNames.forEach((spriteName) => {
                 const sprite = spriteSheet.sprites.find((sprite) => sprite.name == spriteName);
-                _console$y.assertWithError(sprite, `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`);
+                _console$z.assertWithError(sprite, `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`);
                 _spritesLine.push(sprite);
             });
         });
@@ -30876,7 +28883,7 @@ function spriteLinesToSerializedLines(displayManager, spriteLines) {
             };
             spriteSubLine.spriteNames.forEach((spriteName) => {
                 let spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
-                _console$y.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
+                _console$z.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
                 spriteIndex = spriteIndex;
                 serializedSubLine.spriteIndices.push(spriteIndex);
             });
@@ -30884,11 +28891,11 @@ function spriteLinesToSerializedLines(displayManager, spriteLines) {
         });
         spriteSerializedLines.push(serializedLine);
     });
-    _console$y.log("spriteSerializedLines", spriteSerializedLines);
+    _console$z.log("spriteSerializedLines", spriteSerializedLines);
     return spriteSerializedLines;
 }
 
-const _console$x = createConsole("DisplayBitmapUtils", { log: false });
+const _console$y = createConsole("DisplayBitmapUtils", { log: false });
 const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
 function getBitmapData(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -30905,7 +28912,7 @@ function getBitmapData(bitmap) {
         value |= bitmapColorIndex << shift;
         dataView.setUint8(byteIndex, value);
     });
-    _console$x.log("getBitmapData", bitmap, dataView);
+    _console$y.log("getBitmapData", bitmap, dataView);
     return dataView;
 }
 function parseBitmap(dataView, offset) {
@@ -30940,7 +28947,7 @@ function parseBitmap(dataView, offset) {
     return { bitmap, offset };
 }
 async function quantizeCanvas(canvas, numberOfColors, colors) {
-    _console$x.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
+    _console$y.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     removeAlphaFromCanvas(canvas);
     const isSmall = canvas.width * canvas.height < 4;
@@ -30960,7 +28967,7 @@ async function quantizeCanvas(canvas, numberOfColors, colors) {
                 return [r, g, b];
             }
             else {
-                _console$x.error(`invalid rgb hex "${color}"`);
+                _console$y.error(`invalid rgb hex "${color}"`);
             }
         });
     }
@@ -31035,7 +29042,7 @@ async function quantizeImage(image, width, height, numberOfColors, colors, canva
     canvas = canvas || document.createElement("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
-    _console$x.log({ imageWidth, imageHeight });
+    _console$y.log({ imageWidth, imageHeight });
     canvas.width = width;
     canvas.height = height;
     ctx.imageSmoothingEnabled = false;
@@ -31105,10 +29112,10 @@ async function canvasToBitmaps(canvas, numberOfColors, mtu) {
     const { width, height } = canvas;
     const numberOfPixels = width * height;
     const pixelDepth = DisplayPixelDepths.find((pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors);
-    _console$x.assertWithError(pixelDepth, `no pixelDepth found that covers ${numberOfColors} colors`);
+    _console$y.assertWithError(pixelDepth, `no pixelDepth found that covers ${numberOfColors} colors`);
     const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
     const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
-    _console$x.log({
+    _console$y.log({
         width,
         height,
         numberOfPixels,
@@ -31125,14 +29132,14 @@ async function canvasToBitmaps(canvas, numberOfColors, mtu) {
         const bitmapRowPixelDataLength = Math.ceil(width / pixelsPerByte);
         maxBitmapHeight = Math.floor(maxPixelDataLength / bitmapRowPixelDataLength);
     }
-    _console$x.log({
+    _console$y.log({
         maxPixelDataLength,
         maxPixels,
         maxBitmapHeight,
         maxBitmapWidth,
     });
     if (maxBitmapHeight >= height) {
-        _console$x.log("image is small enough for a single bitmap");
+        _console$y.log("image is small enough for a single bitmap");
         const bitmap = {
             numberOfColors,
             pixels: colorIndices,
@@ -31174,7 +29181,7 @@ function getBitmapNumberOfBytes(bitmap) {
     const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
     const numberOfPixels = bitmap.pixels.length;
     const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
-    _console$x.log({
+    _console$y.log({
         pixelDepth,
         pixelsPerByte,
         numberOfPixels,
@@ -31183,9 +29190,9 @@ function getBitmapNumberOfBytes(bitmap) {
     return pixelDataLength;
 }
 function assertValidBitmapPixels(bitmap) {
-    _console$x.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, bitmap.width * (bitmap.height - 1) + 1, bitmap.width * bitmap.height);
+    _console$y.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, bitmap.width * (bitmap.height - 1) + 1, bitmap.width * bitmap.height);
     bitmap.pixels.forEach((pixel, index) => {
-        _console$x.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
+        _console$y.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
     });
 }
 async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0) {
@@ -31200,7 +29207,7 @@ async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, o
         spriteSheet.palettes = spriteSheet.palettes || [];
         spriteSheet.palettes?.push(palette);
     }
-    _console$x.log("pallete", palette);
+    _console$y.log("pallete", palette);
     const sprite = {
         name: spriteName,
         width,
@@ -31235,7 +29242,7 @@ async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, o
         spriteSheet.sprites.push(sprite);
     }
     else {
-        _console$x.log(`overwriting spriteIndex ${spriteIndex}`);
+        _console$y.log(`overwriting spriteIndex ${spriteIndex}`);
         spriteSheet.sprites[spriteIndex] = sprite;
     }
     return { sprite, blob };
@@ -31262,10 +29269,10 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, spriteName, numberOf
         const { width, height } = canvas;
         const numberOfPixels = width * height;
         const pixelDepth = DisplayPixelDepths.find((pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors);
-        _console$x.assertWithError(pixelDepth, `no pixelDepth found that covers ${numberOfColors} colors`);
+        _console$y.assertWithError(pixelDepth, `no pixelDepth found that covers ${numberOfColors} colors`);
         const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
         const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
-        _console$x.log({
+        _console$y.log({
             width,
             height,
             numberOfPixels,
@@ -31280,7 +29287,7 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, spriteName, numberOf
         const imageRowPixelDataLength = Math.ceil(width / pixelsPerByte);
         const maxSpriteHeight = Math.floor(maxPixelDataLength / imageRowPixelDataLength);
         if (maxSpriteHeight >= height) {
-            _console$x.log("image is small enough for a single sprite");
+            _console$y.log("image is small enough for a single sprite");
             await canvasToSprite(canvas, spriteName, numberOfColors, paletteName, true, spriteSheet);
         }
         else {
@@ -31293,7 +29300,7 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, spriteName, numberOf
                 const spriteHeight = Math.min(maxSpriteHeight, height - offsetY);
                 cropCanvas(canvas, 0, offsetY, width, spriteHeight, spriteCanvas);
                 offsetY += spriteHeight;
-                _console$x.log(`cropping sprite ${imageIndex}`, {
+                _console$y.log(`cropping sprite ${imageIndex}`, {
                     offsetY,
                     width,
                     spriteHeight,
@@ -31308,6 +29315,2012 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, spriteName, numberOf
 async function imageToSpriteSheet(image, spriteSheetName, spriteName, width, height, numberOfColors, paletteName, maxFileLength) {
     const canvas = resizeImage(image, width, height);
     return canvasToSpriteSheet(canvas, spriteSheetName, spriteName, numberOfColors, paletteName, maxFileLength);
+}
+
+const _console$A = createConsole("DisplayContextCommand", { log: false });
+const DisplayContextCommandTypes = [
+    "show",
+    "clear",
+    "setColor",
+    "setColorOpacity",
+    "setOpacity",
+    "saveContext",
+    "restoreContext",
+    "selectBackgroundColor",
+    "selectFillColor",
+    "selectLineColor",
+    "setIgnoreFill",
+    "setIgnoreLine",
+    "setFillBackground",
+    "setLineWidth",
+    "setRotation",
+    "clearRotation",
+    "setHorizontalAlignment",
+    "setVerticalAlignment",
+    "resetAlignment",
+    "setSegmentStartCap",
+    "setSegmentEndCap",
+    "setSegmentCap",
+    "setSegmentStartRadius",
+    "setSegmentEndRadius",
+    "setSegmentRadius",
+    "setCropTop",
+    "setCropRight",
+    "setCropBottom",
+    "setCropLeft",
+    "clearCrop",
+    "setRotationCropTop",
+    "setRotationCropRight",
+    "setRotationCropBottom",
+    "setRotationCropLeft",
+    "clearRotationCrop",
+    "selectBitmapColor",
+    "selectBitmapColors",
+    "setBitmapScaleX",
+    "setBitmapScaleY",
+    "setBitmapScale",
+    "resetBitmapScale",
+    "selectSpriteColor",
+    "selectSpriteColors",
+    "resetSpriteColors",
+    "setSpriteScaleX",
+    "setSpriteScaleY",
+    "setSpriteScale",
+    "resetSpriteScale",
+    "setSpritesLineHeight",
+    "setSpritesDirection",
+    "setSpritesLineDirection",
+    "setSpritesSpacing",
+    "setSpritesLineSpacing",
+    "setSpritesAlignment",
+    "setSpritesLineAlignment",
+    "clearRect",
+    "drawRect",
+    "drawRoundRect",
+    "drawCircle",
+    "drawArc",
+    "drawEllipse",
+    "drawArcEllipse",
+    "drawSegment",
+    "drawSegments",
+    "drawRegularPolygon",
+    "drawPolygon",
+    "drawWireframe",
+    "drawQuadraticBezierCurve",
+    "drawQuadraticBezierCurves",
+    "drawCubicBezierCurve",
+    "drawCubicBezierCurves",
+    "drawPath",
+    "drawClosedPath",
+    "drawBitmap",
+    "selectSpriteSheet",
+    "drawSprite",
+    "drawSprites",
+    "startSprite",
+    "endSprite",
+    "clearContext",
+];
+const DisplaySpriteContextCommandTypes = [
+    "selectFillColor",
+    "selectLineColor",
+    "setIgnoreFill",
+    "setIgnoreLine",
+    "setLineWidth",
+    "setRotation",
+    "clearRotation",
+    "setVerticalAlignment",
+    "setHorizontalAlignment",
+    "resetAlignment",
+    "setSegmentStartCap",
+    "setSegmentEndCap",
+    "setSegmentCap",
+    "setSegmentStartRadius",
+    "setSegmentEndRadius",
+    "setSegmentRadius",
+    "setCropTop",
+    "setCropRight",
+    "setCropBottom",
+    "setCropLeft",
+    "clearCrop",
+    "setRotationCropTop",
+    "setRotationCropRight",
+    "setRotationCropBottom",
+    "setRotationCropLeft",
+    "clearRotationCrop",
+    "selectBitmapColor",
+    "selectBitmapColors",
+    "setBitmapScaleX",
+    "setBitmapScaleY",
+    "setBitmapScale",
+    "resetBitmapScale",
+    "selectSpriteColor",
+    "selectSpriteColors",
+    "resetSpriteColors",
+    "setSpriteScaleX",
+    "setSpriteScaleY",
+    "setSpriteScale",
+    "resetSpriteScale",
+    "clearRect",
+    "drawRect",
+    "drawRoundRect",
+    "drawCircle",
+    "drawEllipse",
+    "drawRegularPolygon",
+    "drawPolygon",
+    "drawWireframe",
+    "drawQuadraticBezierCurve",
+    "drawQuadraticBezierCurves",
+    "drawCubicBezierCurve",
+    "drawCubicBezierCurves",
+    "drawPath",
+    "drawClosedPath",
+    "drawSegment",
+    "drawSegments",
+    "drawArc",
+    "drawArcEllipse",
+    "drawBitmap",
+    "drawSprite",
+];
+function serializeDisplayContextCommandData(displayManager, command) {
+    let dataView;
+    switch (command.type) {
+        case "show":
+        case "clear":
+        case "saveContext":
+        case "restoreContext":
+        case "clearRotation":
+        case "clearCrop":
+        case "clearRotationCrop":
+        case "resetBitmapScale":
+        case "resetSpriteColors":
+        case "resetSpriteScale":
+        case "resetAlignment":
+        case "endSprite":
+        case "clearContext":
+            break;
+        case "setColor":
+            {
+                let { color, colorIndex } = command;
+                displayManager.assertValidColorIndex(colorIndex);
+                if (typeof color == "string") {
+                    color = stringToRGB(color);
+                }
+                displayManager.assertValidColorIndex(colorIndex);
+                assertValidColor(color);
+                dataView = new DataView(new ArrayBuffer(4));
+                dataView.setUint8(0, colorIndex);
+                dataView.setUint8(1, color.r);
+                dataView.setUint8(2, color.g);
+                dataView.setUint8(3, color.b);
+            }
+            break;
+        case "setColorOpacity":
+            {
+                const { colorIndex, opacity } = command;
+                displayManager.assertValidColorIndex(colorIndex);
+                assertValidOpacity(opacity);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint8(0, colorIndex);
+                dataView.setUint8(1, Math.round(opacity * 255));
+            }
+            break;
+        case "setOpacity":
+            {
+                const { opacity } = command;
+                assertValidOpacity(opacity);
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, Math.round(opacity * 255));
+            }
+            break;
+        case "selectFillColor":
+            {
+                const { fillColorIndex } = command;
+                displayManager.assertValidColorIndex(fillColorIndex);
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, fillColorIndex);
+            }
+            break;
+        case "selectBackgroundColor":
+            {
+                const { backgroundColorIndex } = command;
+                displayManager.assertValidColorIndex(backgroundColorIndex);
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, backgroundColorIndex);
+            }
+            break;
+        case "selectLineColor":
+            {
+                const { lineColorIndex } = command;
+                displayManager.assertValidColorIndex(lineColorIndex);
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, lineColorIndex);
+            }
+            break;
+        case "setIgnoreFill":
+            {
+                const { ignoreFill } = command;
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, ignoreFill ? 1 : 0);
+            }
+            break;
+        case "setIgnoreLine":
+            {
+                const { ignoreLine } = command;
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, ignoreLine ? 1 : 0);
+            }
+            break;
+        case "setFillBackground":
+            {
+                const { fillBackground } = command;
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, fillBackground ? 1 : 0);
+            }
+            break;
+        case "setLineWidth":
+            {
+                const { lineWidth } = command;
+                displayManager.assertValidLineWidth(lineWidth);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, lineWidth, true);
+            }
+            break;
+        case "setHorizontalAlignment":
+            {
+                const { horizontalAlignment } = command;
+                assertValidAlignment(horizontalAlignment);
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayAlignments.indexOf(horizontalAlignment);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
+        case "setVerticalAlignment":
+            {
+                const { verticalAlignment } = command;
+                assertValidAlignment(verticalAlignment);
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayAlignments.indexOf(verticalAlignment);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
+        case "setRotation":
+            {
+                let { rotation, isRadians } = command;
+                rotation = isRadians ? rotation : degToRad(rotation);
+                rotation = normalizeRadians(rotation);
+                isRadians = true;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, formatRotation(rotation, isRadians), true);
+            }
+            break;
+        case "setSegmentStartCap":
+            {
+                const { segmentStartCap } = command;
+                assertValidSegmentCap(segmentStartCap);
+                dataView = new DataView(new ArrayBuffer(1));
+                const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
+                dataView.setUint8(0, segmentCapEnum);
+            }
+            break;
+        case "setSegmentEndCap":
+            {
+                const { segmentEndCap } = command;
+                assertValidSegmentCap(segmentEndCap);
+                dataView = new DataView(new ArrayBuffer(1));
+                const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
+                dataView.setUint8(0, segmentCapEnum);
+            }
+            break;
+        case "setSegmentCap":
+            {
+                const { segmentCap } = command;
+                assertValidSegmentCap(segmentCap);
+                dataView = new DataView(new ArrayBuffer(1));
+                const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentCap);
+                dataView.setUint8(0, segmentCapEnum);
+            }
+            break;
+        case "setSegmentStartRadius":
+            {
+                const { segmentStartRadius } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, segmentStartRadius, true);
+            }
+            break;
+        case "setSegmentEndRadius":
+            {
+                const { segmentEndRadius } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, segmentEndRadius, true);
+            }
+            break;
+        case "setSegmentRadius":
+            {
+                const { segmentRadius } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, segmentRadius, true);
+            }
+            break;
+        case "setCropTop":
+            {
+                const { cropTop } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, cropTop, true);
+            }
+            break;
+        case "setCropRight":
+            {
+                const { cropRight } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, cropRight, true);
+            }
+            break;
+        case "setCropBottom":
+            {
+                const { cropBottom } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, cropBottom, true);
+            }
+            break;
+        case "setCropLeft":
+            {
+                const { cropLeft } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, cropLeft, true);
+            }
+            break;
+        case "setRotationCropTop":
+            {
+                const { rotationCropTop } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, rotationCropTop, true);
+            }
+            break;
+        case "setRotationCropRight":
+            {
+                const { rotationCropRight } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, rotationCropRight, true);
+            }
+            break;
+        case "setRotationCropBottom":
+            {
+                const { rotationCropBottom } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, rotationCropBottom, true);
+            }
+            break;
+        case "setRotationCropLeft":
+            {
+                const { rotationCropLeft } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, rotationCropLeft, true);
+            }
+            break;
+        case "selectBitmapColor":
+            {
+                const { bitmapColorIndex, colorIndex } = command;
+                displayManager.assertValidColorIndex(bitmapColorIndex);
+                displayManager.assertValidColorIndex(colorIndex);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint8(0, bitmapColorIndex);
+                dataView.setUint8(1, colorIndex);
+            }
+            break;
+        case "selectBitmapColors":
+            {
+                const { bitmapColorPairs } = command;
+                _console$A.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, displayManager.numberOfColors);
+                const bitmapColorIndices = displayManager.contextState.bitmapColorIndices.slice();
+                bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
+                    displayManager.assertValidColorIndex(bitmapColorIndex);
+                    displayManager.assertValidColorIndex(colorIndex);
+                    bitmapColorIndices[bitmapColorIndex] = colorIndex;
+                });
+                dataView = new DataView(new ArrayBuffer(bitmapColorPairs.length * 2 + 1));
+                let offset = 0;
+                dataView.setUint8(offset++, bitmapColorPairs.length);
+                bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
+                    dataView.setUint8(offset, bitmapColorIndex);
+                    dataView.setUint8(offset + 1, colorIndex);
+                    offset += 2;
+                });
+            }
+            break;
+        case "setBitmapScaleX":
+            {
+                let { bitmapScaleX } = command;
+                bitmapScaleX = clamp$1(bitmapScaleX, minDisplayScale, maxDisplayScale);
+                bitmapScaleX = roundScale(bitmapScaleX);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setInt16(0, formatScale(bitmapScaleX), true);
+            }
+            break;
+        case "setBitmapScaleY":
+            {
+                let { bitmapScaleY } = command;
+                bitmapScaleY = clamp$1(bitmapScaleY, minDisplayScale, maxDisplayScale);
+                bitmapScaleY = roundScale(bitmapScaleY);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setInt16(0, formatScale(bitmapScaleY), true);
+            }
+            break;
+        case "setBitmapScale":
+            {
+                let { bitmapScale } = command;
+                bitmapScale = clamp$1(bitmapScale, minDisplayScale, maxDisplayScale);
+                bitmapScale = roundScale(bitmapScale);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setInt16(0, formatScale(bitmapScale), true);
+            }
+            break;
+        case "selectSpriteColor":
+            {
+                const { spriteColorIndex, colorIndex } = command;
+                displayManager.assertValidColorIndex(spriteColorIndex);
+                displayManager.assertValidColorIndex(colorIndex);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint8(0, spriteColorIndex);
+                dataView.setUint8(1, colorIndex);
+            }
+            break;
+        case "selectSpriteColors":
+            {
+                const { spriteColorPairs } = command;
+                _console$A.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, displayManager.numberOfColors);
+                const spriteColorIndices = displayManager.contextState.spriteColorIndices.slice();
+                spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
+                    displayManager.assertValidColorIndex(spriteColorIndex);
+                    displayManager.assertValidColorIndex(colorIndex);
+                    spriteColorIndices[spriteColorIndex] = colorIndex;
+                });
+                dataView = new DataView(new ArrayBuffer(spriteColorPairs.length * 2 + 1));
+                let offset = 0;
+                dataView.setUint8(offset++, spriteColorPairs.length);
+                spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
+                    dataView.setUint8(offset, spriteColorIndex);
+                    dataView.setUint8(offset + 1, colorIndex);
+                    offset += 2;
+                });
+            }
+            break;
+        case "setSpriteScaleX":
+            {
+                let { spriteScaleX } = command;
+                spriteScaleX = clamp$1(spriteScaleX, minDisplayScale, maxDisplayScale);
+                spriteScaleX = roundScale(spriteScaleX);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setInt16(0, formatScale(spriteScaleX), true);
+            }
+            break;
+        case "setSpriteScaleY":
+            {
+                let { spriteScaleY } = command;
+                spriteScaleY = clamp$1(spriteScaleY, minDisplayScale, maxDisplayScale);
+                spriteScaleY = roundScale(spriteScaleY);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setInt16(0, formatScale(spriteScaleY), true);
+            }
+            break;
+        case "setSpriteScale":
+            {
+                let { spriteScale } = command;
+                spriteScale = clamp$1(spriteScale, minDisplayScale, maxDisplayScale);
+                spriteScale = roundScale(spriteScale);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setInt16(0, formatScale(spriteScale), true);
+            }
+            break;
+        case "setSpritesLineHeight":
+            {
+                const { spritesLineHeight } = command;
+                displayManager.assertValidLineWidth(spritesLineHeight);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, spritesLineHeight, true);
+            }
+            break;
+        case "setSpritesDirection":
+            {
+                const { spritesDirection } = command;
+                assertValidDirection(spritesDirection);
+                _console$A.log({ spritesDirection });
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayDirections.indexOf(spritesDirection);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
+        case "setSpritesLineDirection":
+            {
+                const { spritesLineDirection } = command;
+                assertValidDirection(spritesLineDirection);
+                _console$A.log({ spritesLineDirection });
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayDirections.indexOf(spritesLineDirection);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
+        case "setSpritesSpacing":
+            {
+                const { spritesSpacing } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setInt16(0, spritesSpacing, true);
+            }
+            break;
+        case "setSpritesLineSpacing":
+            {
+                const { spritesLineSpacing } = command;
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setInt16(0, spritesLineSpacing, true);
+            }
+            break;
+        case "setSpritesAlignment":
+            {
+                const { spritesAlignment } = command;
+                assertValidAlignment(spritesAlignment);
+                _console$A.log({ spritesAlignment });
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayAlignments.indexOf(spritesAlignment);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
+        case "setSpritesLineAlignment":
+            {
+                const { spritesLineAlignment } = command;
+                assertValidAlignment(spritesLineAlignment);
+                _console$A.log({ spritesLineAlignment });
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayAlignments.indexOf(spritesLineAlignment);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
+        case "clearRect":
+            {
+                const { x, y, width, height } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 4));
+                dataView.setInt16(0, x, true);
+                dataView.setInt16(2, y, true);
+                dataView.setUint16(4, width, true);
+                dataView.setUint16(6, height, true);
+            }
+            break;
+        case "drawRect":
+            {
+                const { offsetX, offsetY, width, height } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 4));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, width, true);
+                dataView.setUint16(6, height, true);
+            }
+            break;
+        case "drawRoundRect":
+            {
+                const { offsetX, offsetY, width, height, borderRadius } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 4 + 1));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, width, true);
+                dataView.setUint16(6, height, true);
+                dataView.setUint8(8, borderRadius);
+            }
+            break;
+        case "drawCircle":
+            {
+                const { offsetX, offsetY, radius } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 3));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, radius, true);
+            }
+            break;
+        case "drawEllipse":
+            {
+                const { offsetX, offsetY, radiusX, radiusY } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 4));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, radiusX, true);
+                dataView.setUint16(6, radiusY, true);
+            }
+            break;
+        case "drawRegularPolygon":
+            {
+                const { offsetX, offsetY, radius, numberOfSides } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 3 + 1));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, radius, true);
+                dataView.setUint8(6, numberOfSides);
+            }
+            break;
+        case "drawPolygon":
+            {
+                const { points } = command;
+                _console$A.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+                dataView = serializePoints(points);
+            }
+            break;
+        case "drawWireframe":
+            {
+                const { wireframe } = command;
+                const { points, edges } = wireframe;
+                if (wireframe.points.length == 0) {
+                    return;
+                }
+                assertValidWireframe(wireframe);
+                const pointsDataView = serializePoints(points);
+                const edgesDataView = new DataView(new ArrayBuffer(1 + 2 * edges.length));
+                let edgesDataOffset = 0;
+                edgesDataView.setUint8(edgesDataOffset++, edges.length);
+                edges.forEach((edge) => {
+                    edgesDataView.setUint8(edgesDataOffset++, edge.startIndex);
+                    edgesDataView.setUint8(edgesDataOffset++, edge.endIndex);
+                });
+                dataView = new DataView(concatenateArrayBuffers(pointsDataView, edgesDataView));
+            }
+            break;
+        case "drawQuadraticBezierCurve":
+        case "drawCubicBezierCurve":
+            {
+                const { controlPoints } = command;
+                const curveType = command.type == "drawCubicBezierCurve" ? "cubic" : "quadratic";
+                assertValidNumberOfControlPoints(curveType, controlPoints);
+                dataView = new DataView(new ArrayBuffer(4 * controlPoints.length));
+                let offset = 0;
+                controlPoints.forEach((controlPoint) => {
+                    dataView.setInt16(offset, controlPoint.x, true);
+                    offset += 2;
+                    dataView.setInt16(offset, controlPoint.y, true);
+                    offset += 2;
+                });
+            }
+            break;
+        case "drawQuadraticBezierCurves":
+        case "drawCubicBezierCurves":
+            {
+                const { controlPoints } = command;
+                const curveType = command.type == "drawCubicBezierCurves" ? "cubic" : "quadratic";
+                assertValidPathNumberOfControlPoints(curveType, controlPoints);
+                dataView = serializePoints(controlPoints);
+            }
+            break;
+        case "drawPath":
+        case "drawClosedPath":
+            {
+                const { curves } = command;
+                assertValidPath(curves);
+                const typesDataView = new DataView(new ArrayBuffer(Math.ceil(curves.length / displayCurveTypesPerByte)));
+                const controlPointsDataViews = [];
+                const allControlPoints = [];
+                curves.forEach((curve) => {
+                    allControlPoints.push(...curve.controlPoints);
+                });
+                const pointDataType = getPointDataType(allControlPoints);
+                const numberOfControlPoints = allControlPoints.length;
+                curves.forEach((curve, index) => {
+                    const { type, controlPoints } = curve;
+                    const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
+                    const typeBitShift = (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
+                    let typeValue = typesDataView.getUint8(typeByteIndex) || 0;
+                    typeValue |= DisplayBezierCurveTypes.indexOf(type) << typeBitShift;
+                    typesDataView.setUint8(typeByteIndex, typeValue);
+                    const controlPointsDataView = serializePoints(controlPoints, pointDataType, true);
+                    controlPointsDataViews.push(controlPointsDataView);
+                });
+                const controlPointsBuffer = concatenateArrayBuffers(...controlPointsDataViews);
+                const headerDataView = new DataView(new ArrayBuffer(3));
+                headerDataView.setUint8(0, DisplayPointDataTypes.indexOf(pointDataType));
+                headerDataView.setUint8(1, curves.length);
+                headerDataView.setUint8(2, numberOfControlPoints);
+                dataView = new DataView(concatenateArrayBuffers(headerDataView, typesDataView, controlPointsBuffer));
+            }
+            break;
+        case "drawSegment":
+            {
+                const { startX, startY, endX, endY } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 4));
+                dataView.setInt16(0, startX, true);
+                dataView.setInt16(2, startY, true);
+                dataView.setInt16(4, endX, true);
+                dataView.setInt16(6, endY, true);
+            }
+            break;
+        case "drawSegments":
+            {
+                const { points } = command;
+                _console$A.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+                dataView = serializePoints(points);
+            }
+            break;
+        case "drawArc":
+            {
+                let { offsetX, offsetY, radius, isRadians, startAngle, angleOffset } = command;
+                startAngle = isRadians ? startAngle : degToRad(startAngle);
+                startAngle = normalizeRadians(startAngle);
+                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+                angleOffset = clamp$1(angleOffset, -twoPi, twoPi);
+                isRadians = true;
+                dataView = new DataView(new ArrayBuffer(2 * 5));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, radius, true);
+                dataView.setUint16(6, formatRotation(startAngle, isRadians), true);
+                dataView.setInt16(8, formatRotation(angleOffset, isRadians, true), true);
+            }
+            break;
+        case "drawArcEllipse":
+            {
+                let { offsetX, offsetY, radiusX, radiusY, isRadians, startAngle, angleOffset, } = command;
+                startAngle = isRadians ? startAngle : degToRad(startAngle);
+                startAngle = normalizeRadians(startAngle);
+                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+                angleOffset = clamp$1(angleOffset, -twoPi, twoPi);
+                isRadians = true;
+                dataView = new DataView(new ArrayBuffer(2 * 6));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, radiusX, true);
+                dataView.setUint16(6, radiusY, true);
+                dataView.setUint16(8, formatRotation(startAngle, isRadians), true);
+                dataView.setUint16(10, formatRotation(angleOffset, isRadians, true), true);
+            }
+            break;
+        case "drawBitmap":
+            {
+                const { bitmap, offsetX, offsetY } = command;
+                displayManager.assertValidBitmap(bitmap, false);
+                dataView = new DataView(new ArrayBuffer(drawBitmapHeaderLength));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, bitmap.width, true);
+                dataView.setUint32(6, bitmap.pixels.length, true);
+                dataView.setUint8(10, bitmap.numberOfColors);
+                const bitmapData = getBitmapData(bitmap);
+                dataView.setUint16(11, bitmapData.byteLength, true);
+                const buffer = concatenateArrayBuffers(dataView, bitmapData);
+                dataView = new DataView(buffer);
+            }
+            break;
+        case "selectSpriteSheet":
+            {
+                const { spriteSheetIndex } = command;
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, spriteSheetIndex);
+            }
+            break;
+        case "drawSprite":
+            {
+                const { offsetX, offsetY, spriteIndex, use2Bytes } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 2 + (use2Bytes ? 2 : 1)));
+                let offset = 0;
+                dataView.setInt16(offset, offsetX, true);
+                offset += 2;
+                dataView.setInt16(offset, offsetY, true);
+                offset += 2;
+                if (use2Bytes) {
+                    dataView.setUint16(offset, spriteIndex, true);
+                    offset += 2;
+                }
+                else {
+                    dataView.setUint8(offset++, spriteIndex);
+                }
+            }
+            break;
+        case "drawSprites":
+            {
+                const { offsetX, offsetY, spriteSerializedLines } = command;
+                const lineArrayBuffers = [];
+                spriteSerializedLines.forEach((spriteLines) => {
+                    const subLineArrayBuffers = [];
+                    spriteLines.forEach((subSpriteLine) => {
+                        const { spriteSheetIndex, spriteIndices, use2Bytes } = subSpriteLine;
+                        const subLineSpriteIndicesDataView = new DataView(new ArrayBuffer(spriteIndices.length * (use2Bytes ? 2 : 1)));
+                        spriteIndices.forEach((spriteIndex, i) => {
+                            if (use2Bytes) {
+                                subLineSpriteIndicesDataView.setUint16(i * 2, spriteIndex, true);
+                            }
+                            else {
+                                subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
+                            }
+                        });
+                        const subLineHeaderDataView = new DataView(new ArrayBuffer(2));
+                        subLineHeaderDataView.setUint8(0, spriteSheetIndex);
+                        subLineHeaderDataView.setUint8(1, spriteIndices.length);
+                        subLineArrayBuffers.push(concatenateArrayBuffers(subLineHeaderDataView, subLineSpriteIndicesDataView));
+                    });
+                    const lineArrayHeaderDataView = new DataView(new ArrayBuffer(2));
+                    const concatenatedSubLineArrayBuffers = concatenateArrayBuffers(...subLineArrayBuffers);
+                    lineArrayHeaderDataView.setUint16(0, concatenatedSubLineArrayBuffers.byteLength, true);
+                    lineArrayBuffers.push(concatenateArrayBuffers(lineArrayHeaderDataView, concatenatedSubLineArrayBuffers));
+                });
+                const concatenatedLineArrayBuffers = concatenateArrayBuffers(...lineArrayBuffers);
+                dataView = new DataView(new ArrayBuffer(2 * 3));
+                let offset = 0;
+                dataView.setInt16(offset, offsetX, true);
+                offset += 2;
+                dataView.setInt16(offset, offsetY, true);
+                offset += 2;
+                dataView.setUint16(offset, concatenatedLineArrayBuffers.byteLength, true);
+                offset += 2;
+                const buffer = concatenateArrayBuffers(dataView, concatenatedLineArrayBuffers);
+                dataView = new DataView(buffer);
+            }
+            break;
+        case "startSprite":
+            {
+                const { offsetX, offsetY, width, height } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 4));
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
+                dataView.setUint16(4, width, true);
+                dataView.setUint16(6, height, true);
+            }
+            break;
+        default:
+            throw Error(`uncaught command.type ${command.type}`);
+    }
+    return dataView;
+}
+function serializeDisplayContextCommand(displayManager, command) {
+    if (command.hide) {
+        return;
+    }
+    _console$A.assertEnumWithError(command.type, DisplayContextCommandTypes);
+    const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(command.type);
+    const serializedContextCommand = serializeDisplayContextCommandData(displayManager, command);
+    return concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), serializedContextCommand);
+}
+function serializeDisplayContextCommands(displayManager, commands) {
+    const serializedContextCommandArray = commands.map((command) => serializeDisplayContextCommand(displayManager, command));
+    const serializedContextCommands = concatenateArrayBuffers(serializedContextCommandArray);
+    _console$A.log("serializedContextCommands", commands, serializedContextCommandArray, serializedContextCommands);
+    return serializedContextCommands;
+}
+function parseDisplayContextCommands(displayManager, dataView) {
+    _console$A.log("parseContextCommands", displayManager, dataView);
+    const contextCommands = [];
+    let offset = 0;
+    while (offset < dataView.byteLength) {
+        const commandTypeIndex = dataView.getUint8(offset++);
+        const type = DisplayContextCommandTypes[commandTypeIndex];
+        _console$A.assertWithError(type, `invalid commandTypeIndex ${commandTypeIndex}`);
+        let command;
+        _console$A.log(`parsing "${type}" (${offset}/${dataView.byteLength})`);
+        switch (type) {
+            case "show":
+            case "clear":
+            case "saveContext":
+            case "restoreContext":
+            case "clearRotation":
+            case "clearCrop":
+            case "clearRotationCrop":
+            case "resetBitmapScale":
+            case "resetSpriteColors":
+            case "resetSpriteScale":
+            case "resetAlignment":
+            case "endSprite":
+            case "clearContext":
+                command = { type };
+                break;
+            case "setColor":
+                {
+                    const colorIndex = dataView.getUint8(offset++);
+                    const r = dataView.getUint8(offset++);
+                    const g = dataView.getUint8(offset++);
+                    const b = dataView.getUint8(offset++);
+                    command = { type, colorIndex, color: { r, g, b } };
+                }
+                break;
+            case "setColorOpacity":
+                {
+                    const colorIndex = dataView.getUint8(offset++);
+                    const opacity = dataView.getUint8(offset++) / 255;
+                    command = { type, colorIndex, opacity };
+                }
+                break;
+            case "setOpacity":
+                {
+                    const opacity = dataView.getUint8(offset++) / 255;
+                    command = { type, opacity };
+                }
+                break;
+            case "selectFillColor":
+                {
+                    const fillColorIndex = dataView.getUint8(offset++);
+                    command = { type, fillColorIndex };
+                }
+                break;
+            case "selectBackgroundColor":
+                {
+                    const backgroundColorIndex = dataView.getUint8(offset++);
+                    command = { type, backgroundColorIndex };
+                }
+                break;
+            case "selectLineColor":
+                {
+                    const lineColorIndex = dataView.getUint8(offset++);
+                    command = { type, lineColorIndex };
+                }
+                break;
+            case "setIgnoreFill":
+                {
+                    const ignoreFill = Boolean(dataView.getUint8(offset++));
+                    command = { type, ignoreFill };
+                }
+                break;
+            case "setIgnoreLine":
+                {
+                    const ignoreLine = Boolean(dataView.getUint8(offset++));
+                    command = { type, ignoreLine };
+                }
+                break;
+            case "setFillBackground":
+                {
+                    const fillBackground = Boolean(dataView.getUint8(offset++));
+                    command = { type, fillBackground };
+                }
+                break;
+            case "setLineWidth":
+                {
+                    const lineWidth = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, lineWidth };
+                }
+                break;
+            case "setHorizontalAlignment":
+                {
+                    const horizontalAlignment = DisplayAlignments[dataView.getUint8(offset++)];
+                    _console$A.assertEnumWithError(horizontalAlignment, DisplayAlignments);
+                    command = { type, horizontalAlignment };
+                }
+                break;
+            case "setVerticalAlignment":
+                {
+                    const verticalAlignment = DisplayAlignments[dataView.getUint8(offset++)];
+                    _console$A.assertEnumWithError(verticalAlignment, DisplayAlignments);
+                    command = { type, verticalAlignment };
+                }
+                break;
+            case "setRotation":
+                {
+                    const isRadians = true;
+                    const rotation = parseRotation(dataView.getUint16(offset, true));
+                    offset += 2;
+                    command = { type, rotation, isRadians };
+                }
+                break;
+            case "setSegmentStartCap":
+                {
+                    const segmentStartCap = DisplaySegmentCaps[dataView.getUint8(offset++)];
+                    _console$A.assertEnumWithError(segmentStartCap, DisplaySegmentCaps);
+                    command = { type, segmentStartCap };
+                }
+                break;
+            case "setSegmentEndCap":
+                {
+                    const segmentEndCap = DisplaySegmentCaps[dataView.getUint8(offset++)];
+                    _console$A.assertEnumWithError(segmentEndCap, DisplaySegmentCaps);
+                    command = { type, segmentEndCap };
+                }
+                break;
+            case "setSegmentCap":
+                {
+                    const segmentCap = DisplaySegmentCaps[dataView.getUint8(offset++)];
+                    _console$A.assertEnumWithError(segmentCap, DisplaySegmentCaps);
+                    command = { type, segmentCap };
+                }
+                break;
+            case "setSegmentStartRadius":
+                {
+                    const segmentStartRadius = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, segmentStartRadius };
+                }
+                break;
+            case "setSegmentEndRadius":
+                {
+                    const segmentEndRadius = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, segmentEndRadius };
+                }
+                break;
+            case "setSegmentRadius":
+                {
+                    const segmentRadius = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, segmentRadius };
+                }
+                break;
+            case "setCropTop":
+                {
+                    const cropTop = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, cropTop };
+                }
+                break;
+            case "setCropRight":
+                {
+                    const cropRight = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, cropRight };
+                }
+                break;
+            case "setCropBottom":
+                {
+                    const cropBottom = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, cropBottom };
+                }
+                break;
+            case "setCropLeft":
+                {
+                    const cropLeft = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, cropLeft };
+                }
+                break;
+            case "setRotationCropTop":
+                {
+                    const rotationCropTop = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, rotationCropTop };
+                }
+                break;
+            case "setRotationCropRight":
+                {
+                    const rotationCropRight = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, rotationCropRight };
+                }
+                break;
+            case "setRotationCropBottom":
+                {
+                    const rotationCropBottom = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, rotationCropBottom };
+                }
+                break;
+            case "setRotationCropLeft":
+                {
+                    const rotationCropLeft = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, rotationCropLeft };
+                }
+                break;
+            case "selectBitmapColor":
+                {
+                    const bitmapColorIndex = dataView.getUint8(offset++);
+                    const colorIndex = dataView.getUint8(offset++);
+                    command = { type, bitmapColorIndex, colorIndex };
+                }
+                break;
+            case "selectBitmapColors":
+                {
+                    const numberOfBitmapColorPairs = dataView.getUint8(offset++);
+                    const bitmapColorPairs = [];
+                    for (let i = 0; i < numberOfBitmapColorPairs; i++) {
+                        const bitmapColorIndex = dataView.getUint8(offset++);
+                        const colorIndex = dataView.getUint8(offset++);
+                        bitmapColorPairs.push({ bitmapColorIndex, colorIndex });
+                    }
+                    command = { type, bitmapColorPairs };
+                }
+                break;
+            case "setBitmapScaleX":
+                {
+                    const bitmapScaleX = parseScale(dataView.getInt16(offset, true));
+                    offset += 2;
+                    command = { type, bitmapScaleX };
+                }
+                break;
+            case "setBitmapScaleY":
+                {
+                    const bitmapScaleY = parseScale(dataView.getInt16(offset, true));
+                    offset += 2;
+                    command = { type, bitmapScaleY };
+                }
+                break;
+            case "setBitmapScale":
+                {
+                    const bitmapScale = parseScale(dataView.getInt16(offset, true));
+                    offset += 2;
+                    command = { type, bitmapScale };
+                }
+                break;
+            case "selectSpriteColor":
+                {
+                    const spriteColorIndex = dataView.getUint8(offset++);
+                    const colorIndex = dataView.getUint8(offset++);
+                    command = { type, spriteColorIndex, colorIndex };
+                }
+                break;
+            case "selectSpriteColors":
+                {
+                    const numberOfSpriteColorPairs = dataView.getUint8(offset++);
+                    const spriteColorPairs = [];
+                    for (let i = 0; i < numberOfSpriteColorPairs; i++) {
+                        const spriteColorIndex = dataView.getUint8(offset++);
+                        const colorIndex = dataView.getUint8(offset++);
+                        spriteColorPairs.push({ spriteColorIndex, colorIndex });
+                    }
+                    command = { type, spriteColorPairs };
+                }
+                break;
+            case "setSpriteScaleX":
+                {
+                    const spriteScaleX = parseScale(dataView.getInt16(offset, true));
+                    offset += 2;
+                    command = { type, spriteScaleX };
+                }
+                break;
+            case "setSpriteScaleY":
+                {
+                    const spriteScaleY = parseScale(dataView.getInt16(offset, true));
+                    offset += 2;
+                    command = { type, spriteScaleY };
+                }
+                break;
+            case "setSpriteScale":
+                {
+                    const spriteScale = parseScale(dataView.getInt16(offset, true));
+                    offset += 2;
+                    command = { type, spriteScale };
+                }
+                break;
+            case "setSpritesLineHeight":
+                {
+                    const spritesLineHeight = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, spritesLineHeight };
+                }
+                break;
+            case "setSpritesDirection":
+                {
+                    const spritesDirection = DisplayDirections[dataView.getUint8(offset++)];
+                    _console$A.assertEnumWithError(spritesDirection, DisplayDirections);
+                    command = { type, spritesDirection };
+                }
+                break;
+            case "setSpritesLineDirection":
+                {
+                    const spritesLineDirection = DisplayDirections[dataView.getUint8(offset++)];
+                    _console$A.assertEnumWithError(spritesLineDirection, DisplayDirections);
+                    command = { type, spritesLineDirection };
+                }
+                break;
+            case "setSpritesSpacing":
+                {
+                    const spritesSpacing = dataView.getInt16(offset, true);
+                    offset += 2;
+                    command = { type, spritesSpacing };
+                }
+                break;
+            case "setSpritesLineSpacing":
+                {
+                    const spritesLineSpacing = dataView.getInt16(offset, true);
+                    offset += 2;
+                    command = { type, spritesLineSpacing };
+                }
+                break;
+            case "setSpritesAlignment":
+                {
+                    const spritesAlignment = DisplayAlignments[dataView.getUint8(offset++)];
+                    _console$A.assertEnumWithError(spritesAlignment, DisplayAlignments);
+                    command = { type, spritesAlignment };
+                }
+                break;
+            case "setSpritesLineAlignment":
+                {
+                    const spritesLineAlignment = DisplayAlignments[dataView.getUint8(offset++)];
+                    _console$A.assertEnumWithError(spritesLineAlignment, DisplayAlignments);
+                    command = { type, spritesLineAlignment };
+                }
+                break;
+            case "clearRect":
+                {
+                    const x = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const y = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const width = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const height = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, x, y, width, height };
+                }
+                break;
+            case "drawRect":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const width = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const height = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, offsetX, offsetY, width, height };
+                }
+                break;
+            case "drawRoundRect":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const width = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const height = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const borderRadius = dataView.getUint8(offset++);
+                    command = { type, offsetX, offsetY, width, height, borderRadius };
+                }
+                break;
+            case "drawCircle":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const radius = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, offsetX, offsetY, radius };
+                }
+                break;
+            case "drawEllipse":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const radiusX = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const radiusY = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, offsetX, offsetY, radiusX, radiusY };
+                }
+                break;
+            case "drawRegularPolygon":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const radius = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const numberOfSides = dataView.getUint8(offset++);
+                    command = { type, offsetX, offsetY, radius, numberOfSides };
+                }
+                break;
+            case "drawPolygon":
+                {
+                    const { points, offset: newOffset } = parsePoints(dataView, offset);
+                    offset = newOffset;
+                    command = { type, points };
+                }
+                break;
+            case "drawWireframe":
+                {
+                    const { points, offset: newOffset } = parsePoints(dataView, offset);
+                    offset = newOffset;
+                    const numberOfEdges = dataView.getUint8(offset++);
+                    _console$A.assertWithError(numberOfEdges >= 2, `numberOfEdges ${numberOfEdges} must be at least 2`);
+                    const edges = [];
+                    for (let i = 0; i < numberOfEdges; i++) {
+                        const startIndex = dataView.getUint8(offset++);
+                        const endIndex = dataView.getUint8(offset++);
+                        edges.push({ startIndex, endIndex });
+                    }
+                    const wireframe = { points, edges };
+                    command = { type, wireframe };
+                }
+                break;
+            case "drawQuadraticBezierCurve":
+            case "drawCubicBezierCurve":
+                {
+                    const controlPoints = [];
+                    const curveType = type == "drawCubicBezierCurve" ? "cubic" : "quadratic";
+                    const numberOfConrolPoints = getNumberOfConrolPoints(curveType);
+                    for (let i = 0; i < numberOfConrolPoints; i++) {
+                        const x = dataView.getInt16(offset, true);
+                        offset += 2;
+                        const y = dataView.getInt16(offset, true);
+                        offset += 2;
+                        controlPoints.push({ x, y });
+                    }
+                    command = { type, controlPoints };
+                }
+                break;
+            case "drawQuadraticBezierCurves":
+            case "drawCubicBezierCurves":
+                {
+                    const { points: controlPoints, offset: newOffset } = parsePoints(dataView, offset);
+                    offset = newOffset;
+                    command = { type, controlPoints };
+                }
+                break;
+            case "drawPath":
+            case "drawClosedPath":
+                {
+                    const curves = [];
+                    const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
+                    _console$A.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+                    const numberOfCurves = dataView.getUint8(offset++);
+                    const curveTypeDataLength = Math.ceil(numberOfCurves / displayCurveTypesPerByte);
+                    const totalNumberOfControlPoints = dataView.getUint8(offset++);
+                    const pathDataLength = curveTypeDataLength +
+                        totalNumberOfControlPoints *
+                            displayPointDataTypeToSize[pointDataType];
+                    _console$A.assertWithError(offset + pathDataLength > dataView.byteLength, `offset + pathDataLength ${offset + pathDataLength} exceeds dataView.byteLength ${dataView.byteLength}`);
+                    const curveTypeDataOffset = offset;
+                    offset += curveTypeDataLength;
+                    for (let index = 0; index < numberOfCurves; index++) {
+                        const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
+                        const typeBitShift = (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
+                        const typeValue = dataView.getUint8(curveTypeDataOffset + typeByteIndex);
+                        const typeIndex = (typeValue >> typeBitShift) &
+                            ((1 << displayCurveTypeBitWidth) - 1);
+                        const type = DisplayBezierCurveTypes[typeIndex];
+                        const { points: controlPoints, offset: newOffset } = parsePoints(dataView, offset);
+                        offset = newOffset;
+                        curves.push({ type, controlPoints });
+                    }
+                    command = { type, curves };
+                }
+                break;
+            case "drawSegment":
+                {
+                    const startX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const startY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const endX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const endY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    command = { type, startX, startY, endX, endY };
+                }
+                break;
+            case "drawSegments":
+                {
+                    const { points, offset: newOffset } = parsePoints(dataView, offset);
+                    offset = newOffset;
+                    command = { type, points };
+                }
+                break;
+            case "drawArc":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const isRadians = true;
+                    const radius = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const startAngle = parseRotation(dataView.getUint16(offset, true));
+                    offset += 2;
+                    const angleOffset = parseRotation(dataView.getInt16(offset, true), isRadians, true);
+                    offset += 2;
+                    command = {
+                        type,
+                        offsetX,
+                        offsetY,
+                        radius,
+                        isRadians,
+                        startAngle,
+                        angleOffset,
+                    };
+                }
+                break;
+            case "drawArcEllipse":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const isRadians = true;
+                    const radiusX = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const radiusY = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const startAngle = parseRotation(dataView.getUint16(offset, true));
+                    offset += 2;
+                    const angleOffset = parseRotation(dataView.getInt16(offset, true), isRadians, true);
+                    offset += 2;
+                    command = {
+                        type,
+                        offsetX,
+                        offsetY,
+                        radiusX,
+                        radiusY,
+                        isRadians,
+                        startAngle,
+                        angleOffset,
+                    };
+                }
+                break;
+            case "drawBitmap":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const { bitmap, offset: newOffset } = parseBitmap(dataView, offset);
+                    offset = newOffset;
+                    command = { type, offsetX, offsetY, bitmap };
+                }
+                break;
+            case "selectSpriteSheet":
+                {
+                    const spriteSheetIndex = dataView.getUint8(offset++);
+                    command = { type, spriteSheetIndex };
+                }
+                break;
+            case "drawSprite":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    _console$A.assertWithError(displayManager.selectedSpriteSheet, "displayManager doesn't have a selected spriteSheet");
+                    const use2Bytes = displayManager.selectedSpriteSheet.sprites.length > 255;
+                    let spriteIndex;
+                    if (use2Bytes) {
+                        spriteIndex = dataView.getUint16(offset, true);
+                        offset += 2;
+                    }
+                    else {
+                        spriteIndex = dataView.getUint8(offset++);
+                    }
+                    command = { type, offsetX, offsetY, spriteIndex, use2Bytes };
+                }
+                break;
+            case "drawSprites":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const linesDataLength = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const linesDataEnd = offset + linesDataLength;
+                    const spriteSerializedLines = [];
+                    while (offset < linesDataEnd) {
+                        const lineDataLength = dataView.getUint16(offset, true);
+                        offset += 2;
+                        const lineDataEnd = offset + lineDataLength;
+                        const spriteLine = [];
+                        while (offset < lineDataEnd) {
+                            const spriteSheetIndex = dataView.getUint8(offset++);
+                            const spriteCount = dataView.getUint8(offset++);
+                            const spriteSheet = displayManager.getSpriteSheetByIndex(spriteSheetIndex);
+                            _console$A.assertWithError(spriteSheet, `no spriteSheet found for spriteSheetIndex ${spriteSheetIndex}`);
+                            const use2Bytes = spriteSheet.sprites.length > 255;
+                            const spriteIndices = [];
+                            for (let i = 0; i < spriteCount; i++) {
+                                spriteIndices.push(use2Bytes
+                                    ? dataView.getUint16(offset, true)
+                                    : dataView.getUint8(offset));
+                                offset += use2Bytes ? 2 : 1;
+                            }
+                            spriteLine.push({
+                                spriteSheetIndex,
+                                spriteIndices,
+                                use2Bytes,
+                            });
+                        }
+                        spriteSerializedLines.push(spriteLine);
+                    }
+                    command = { type, offsetX, offsetY, spriteSerializedLines };
+                }
+                break;
+            case "startSprite":
+                {
+                    const offsetX = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const offsetY = dataView.getInt16(offset, true);
+                    offset += 2;
+                    const width = dataView.getUint16(offset, true);
+                    offset += 2;
+                    const height = dataView.getUint16(offset, true);
+                    offset += 2;
+                    command = { type, offsetX, offsetY, width, height };
+                }
+                break;
+            default:
+                _console$A.error(`uncaught commandType "${type}"`);
+                break;
+        }
+        _console$A.log("command", command);
+        _console$A.assertWithError(command, `no command found for commandType "${type}"`);
+        contextCommands.push(command);
+    }
+    _console$A.log("parsed contextCommands", contextCommands);
+    return contextCommands;
+}
+const DrawDisplayContextCommandTypes = [
+    "drawRect",
+    "drawRoundRect",
+    "drawCircle",
+    "drawArc",
+    "drawEllipse",
+    "drawArcEllipse",
+    "drawSegment",
+    "drawSegments",
+    "drawRegularPolygon",
+    "drawPolygon",
+    "drawWireframe",
+    "drawQuadraticBezierCurve",
+    "drawQuadraticBezierCurves",
+    "drawCubicBezierCurve",
+    "drawCubicBezierCurves",
+    "drawPath",
+    "drawClosedPath",
+    "drawBitmap",
+    "drawSprite",
+    "drawSprites",
+];
+const StateDisplayContextCommandTypes = [
+    "setColor",
+    "setColorOpacity",
+    "setOpacity",
+    "saveContext",
+    "restoreContext",
+    "selectBackgroundColor",
+    "selectFillColor",
+    "selectLineColor",
+    "setIgnoreFill",
+    "setIgnoreLine",
+    "setFillBackground",
+    "setLineWidth",
+    "setRotation",
+    "clearRotation",
+    "setHorizontalAlignment",
+    "setVerticalAlignment",
+    "resetAlignment",
+    "setSegmentStartCap",
+    "setSegmentEndCap",
+    "setSegmentCap",
+    "setSegmentStartRadius",
+    "setSegmentEndRadius",
+    "setSegmentRadius",
+    "setCropTop",
+    "setCropRight",
+    "setCropBottom",
+    "setCropLeft",
+    "clearCrop",
+    "setRotationCropTop",
+    "setRotationCropRight",
+    "setRotationCropBottom",
+    "setRotationCropLeft",
+    "clearRotationCrop",
+    "selectBitmapColor",
+    "selectBitmapColors",
+    "setBitmapScaleX",
+    "setBitmapScaleY",
+    "setBitmapScale",
+    "resetBitmapScale",
+    "selectSpriteColor",
+    "selectSpriteColors",
+    "resetSpriteColors",
+    "setSpriteScaleX",
+    "setSpriteScaleY",
+    "setSpriteScale",
+    "resetSpriteScale",
+    "setSpritesLineHeight",
+    "setSpritesDirection",
+    "setSpritesLineDirection",
+    "setSpritesSpacing",
+    "setSpritesLineSpacing",
+    "setSpritesAlignment",
+    "setSpritesLineAlignment",
+    "selectSpriteSheet",
+];
+const SpritesDisplayContextCommandTypes = [
+    "selectSpriteColor",
+    "selectSpriteColors",
+    "resetSpriteColors",
+    "setSpriteScaleX",
+    "setSpriteScaleY",
+    "setSpriteScale",
+    "resetSpriteScale",
+    "setSpritesLineHeight",
+    "setSpritesDirection",
+    "setSpritesLineDirection",
+    "setSpritesSpacing",
+    "setSpritesLineSpacing",
+    "setSpritesAlignment",
+    "setSpritesLineAlignment",
+    "selectSpriteSheet",
+];
+const PathDrawDisplayContextCommandTypes = [
+    "drawSegment",
+    "drawSegments",
+    "drawQuadraticBezierCurve",
+    "drawQuadraticBezierCurves",
+    "drawCubicBezierCurve",
+    "drawCubicBezierCurves",
+    "drawPath",
+    "drawWireframe",
+];
+const PathStateDisplayContextCommandTypes = [
+    "setSegmentRadius",
+    "setSegmentEndRadius",
+    "setSegmentStartRadius",
+    "setSegmentCap",
+    "setSegmentStartCap",
+    "setSegmentEndCap",
+];
+const BitmapDisplayContextCommandTypes = [
+    "selectBitmapColor",
+    "selectBitmapColors",
+    "setBitmapScaleX",
+    "setBitmapScaleY",
+    "setBitmapScale",
+    "resetBitmapScale",
+];
+const contextCommandDependencies = new Map();
+function appendContextCommandDependencyPair(key, value) {
+    contextCommandDependencies.set(new Set(key), new Set(value));
+}
+appendContextCommandDependencyPair([...PathStateDisplayContextCommandTypes], [...PathDrawDisplayContextCommandTypes]);
+appendContextCommandDependencyPair([...StateDisplayContextCommandTypes], [...DrawDisplayContextCommandTypes]);
+appendContextCommandDependencyPair([...SpritesDisplayContextCommandTypes], ["drawSprite", "drawSprites"]);
+appendContextCommandDependencyPair([...BitmapDisplayContextCommandTypes], ["drawBitmap"]);
+function trimContextCommands(commands) {
+    _console$A.log("trimming commands", commands);
+    const trimmedCommands = [];
+    commands
+        .slice()
+        .reverse()
+        .forEach((command) => {
+        let include = true;
+        let dependencies;
+        for (const [keys, values] of contextCommandDependencies) {
+            if (keys.has(command.type)) {
+                dependencies = values;
+                break;
+            }
+        }
+        _console$A.log("command", command, "dependencies", dependencies);
+        let similarCommandIndex = -1;
+        let dependentCommandIndex = -1;
+        if (dependencies) {
+            similarCommandIndex = trimmedCommands.findIndex((trimmedCommand) => {
+                return trimmedCommand.type == command.type;
+            });
+            dependentCommandIndex = trimmedCommands.findIndex((trimmedCommand) => dependencies.has(trimmedCommand.type));
+            _console$A.log({ similarCommandIndex, dependentCommandIndex });
+            if (dependentCommandIndex == -1) {
+                include = false;
+            }
+            else if (similarCommandIndex != -1) {
+                include = similarCommandIndex > dependentCommandIndex;
+            }
+        }
+        if (include) {
+            if (similarCommandIndex != -1 &&
+                deepEqual(command, trimmedCommands[similarCommandIndex])) {
+                trimmedCommands.splice(similarCommandIndex, 1);
+            }
+            trimmedCommands.unshift(command);
+        }
+        else {
+            _console$A.log("skipping command", command);
+        }
+    });
+    _console$A.log("trimmedCommands", trimmedCommands);
+    return trimmedCommands;
+}
+function serializeContextState(state, numberOfColors, other) {
+    if (!other) {
+        other = structuredClone(DefaultDisplayContextState);
+        other.spriteColorIndices = new Array(numberOfColors).fill(0);
+        other.bitmapColorIndices = new Array(numberOfColors).fill(0);
+    }
+    const contextCommands = [];
+    const differences = diffContextState(state, other);
+    const _state = other;
+    _console$A.log("serialize displayContextState", other, differences);
+    differences.forEach((difference) => {
+        if (_state[difference] == undefined) {
+            return;
+        }
+        switch (difference) {
+            case "backgroundColorIndex":
+                contextCommands.push({
+                    type: "selectBackgroundColor",
+                    backgroundColorIndex: _state[difference],
+                });
+                break;
+            case "fillBackground":
+                contextCommands.push({
+                    type: "setFillBackground",
+                    fillBackground: _state[difference],
+                });
+                break;
+            case "ignoreFill":
+                contextCommands.push({
+                    type: "setIgnoreFill",
+                    ignoreFill: _state[difference],
+                });
+                break;
+            case "ignoreLine":
+                contextCommands.push({
+                    type: "setIgnoreLine",
+                    ignoreLine: _state[difference],
+                });
+                break;
+            case "fillColorIndex":
+                contextCommands.push({
+                    type: "selectFillColor",
+                    fillColorIndex: _state[difference],
+                });
+                break;
+            case "lineColorIndex":
+                contextCommands.push({
+                    type: "selectLineColor",
+                    lineColorIndex: _state[difference],
+                });
+                break;
+            case "lineWidth":
+                contextCommands.push({
+                    type: "setLineWidth",
+                    lineWidth: _state[difference],
+                });
+                break;
+            case "horizontalAlignment":
+                contextCommands.push({
+                    type: "setHorizontalAlignment",
+                    horizontalAlignment: _state[difference],
+                });
+                break;
+            case "verticalAlignment":
+                contextCommands.push({
+                    type: "setVerticalAlignment",
+                    verticalAlignment: _state[difference],
+                });
+                break;
+            case "rotation":
+                contextCommands.push({
+                    type: "setRotation",
+                    rotation: _state[difference],
+                });
+                break;
+            case "segmentStartCap":
+                if (differences.includes("segmentEndCap") &&
+                    _state.segmentStartCap == _state.segmentEndCap) {
+                    contextCommands.push({
+                        type: "setSegmentCap",
+                        segmentCap: _state[difference],
+                    });
+                }
+                else {
+                    contextCommands.push({
+                        type: "setSegmentStartCap",
+                        segmentStartCap: _state[difference],
+                    });
+                }
+                break;
+            case "segmentEndCap":
+                if (!differences.includes("segmentStartCap") ||
+                    _state.segmentStartCap != _state.segmentEndCap) {
+                    contextCommands.push({
+                        type: "setSegmentEndCap",
+                        segmentEndCap: _state[difference],
+                    });
+                }
+                break;
+            case "segmentStartRadius":
+                if (differences.includes("segmentEndRadius") &&
+                    _state.segmentStartRadius == _state.segmentEndRadius) {
+                    contextCommands.push({
+                        type: "setSegmentRadius",
+                        segmentRadius: _state[difference],
+                    });
+                }
+                else {
+                    contextCommands.push({
+                        type: "setSegmentStartRadius",
+                        segmentStartRadius: _state[difference],
+                    });
+                }
+                break;
+            case "segmentEndRadius":
+                if (!differences.includes("segmentStartRadius") ||
+                    _state.segmentStartRadius != _state.segmentEndRadius) {
+                    contextCommands.push({
+                        type: "setSegmentEndRadius",
+                        segmentEndRadius: _state[difference],
+                    });
+                }
+                break;
+            case "cropTop":
+                contextCommands.push({
+                    type: "setCropTop",
+                    cropTop: _state[difference],
+                });
+                break;
+            case "cropRight":
+                contextCommands.push({
+                    type: "setCropRight",
+                    cropRight: _state[difference],
+                });
+                break;
+            case "cropBottom":
+                contextCommands.push({
+                    type: "setCropBottom",
+                    cropBottom: _state[difference],
+                });
+                break;
+            case "cropLeft":
+                contextCommands.push({
+                    type: "setCropLeft",
+                    cropLeft: _state[difference],
+                });
+                break;
+            case "rotationCropTop":
+                contextCommands.push({
+                    type: "setRotationCropTop",
+                    rotationCropTop: _state[difference],
+                });
+                break;
+            case "rotationCropRight":
+                contextCommands.push({
+                    type: "setRotationCropRight",
+                    rotationCropRight: _state[difference],
+                });
+                break;
+            case "rotationCropBottom":
+                contextCommands.push({
+                    type: "setRotationCropBottom",
+                    rotationCropBottom: _state[difference],
+                });
+                break;
+            case "rotationCropLeft":
+                contextCommands.push({
+                    type: "setRotationCropLeft",
+                    rotationCropLeft: _state[difference],
+                });
+                break;
+            case "bitmapColorIndices":
+                const bitmapColorPairs = [];
+                _state.bitmapColorIndices.forEach((colorIndex, bitmapColorIndex) => {
+                    bitmapColorPairs.push({ bitmapColorIndex, colorIndex });
+                });
+                contextCommands.push({
+                    type: "selectBitmapColors",
+                    bitmapColorPairs,
+                });
+                break;
+            case "bitmapScaleX":
+                if (differences.includes("bitmapScaleY") &&
+                    _state.bitmapScaleX == _state.bitmapScaleY) {
+                    contextCommands.push({
+                        type: "setBitmapScale",
+                        bitmapScale: _state[difference],
+                    });
+                }
+                else {
+                    contextCommands.push({
+                        type: "setBitmapScaleX",
+                        bitmapScaleX: _state[difference],
+                    });
+                }
+                break;
+            case "bitmapScaleY":
+                if (!differences.includes("bitmapScaleX") ||
+                    _state.bitmapScaleX != _state.bitmapScaleY) {
+                    contextCommands.push({
+                        type: "setBitmapScaleY",
+                        bitmapScaleY: _state[difference],
+                    });
+                }
+                break;
+            case "spriteColorIndices":
+                const spriteColorPairs = [];
+                _state.spriteColorIndices.forEach((colorIndex, spriteColorIndex) => {
+                    spriteColorPairs.push({ spriteColorIndex, colorIndex });
+                });
+                contextCommands.push({
+                    type: "selectSpriteColors",
+                    spriteColorPairs,
+                });
+                break;
+            case "spriteScaleX":
+                if (differences.includes("spriteScaleY") &&
+                    _state.spriteScaleX == _state.spriteScaleY) {
+                    contextCommands.push({
+                        type: "setSpriteScale",
+                        spriteScale: _state[difference],
+                    });
+                }
+                else {
+                    contextCommands.push({
+                        type: "setSpriteScaleX",
+                        spriteScaleX: _state[difference],
+                    });
+                }
+                break;
+            case "spriteScaleY":
+                if (!differences.includes("spriteScaleX") ||
+                    _state.spriteScaleX != _state.spriteScaleY) {
+                    contextCommands.push({
+                        type: "setSpriteScaleY",
+                        spriteScaleY: _state[difference],
+                    });
+                }
+                break;
+            case "spritesLineHeight":
+                contextCommands.push({
+                    type: "setSpritesLineHeight",
+                    spritesLineHeight: _state[difference],
+                });
+                break;
+            case "spritesDirection":
+                contextCommands.push({
+                    type: "setSpritesDirection",
+                    spritesDirection: _state[difference],
+                });
+                break;
+            case "spritesLineDirection":
+                contextCommands.push({
+                    type: "setSpritesLineDirection",
+                    spritesLineDirection: _state[difference],
+                });
+                break;
+            case "spritesSpacing":
+                contextCommands.push({
+                    type: "setSpritesSpacing",
+                    spritesSpacing: _state[difference],
+                });
+                break;
+            case "spritesLineSpacing":
+                contextCommands.push({
+                    type: "setSpritesLineSpacing",
+                    spritesLineSpacing: _state[difference],
+                });
+                break;
+            case "spritesAlignment":
+                contextCommands.push({
+                    type: "setSpritesAlignment",
+                    spritesAlignment: _state[difference],
+                });
+                break;
+            case "spritesLineAlignment":
+                contextCommands.push({
+                    type: "setSpritesLineAlignment",
+                    spritesLineAlignment: _state[difference],
+                });
+                break;
+        }
+    });
+    _console$A.log("serialized displayContextState", contextCommands);
+    return contextCommands;
+}
+
+createConsole("DisplayContextStateHelper", { log: false });
+class DisplayContextStateHelper {
+    #state = Object.assign({}, DefaultDisplayContextState);
+    get state() {
+        return this.#state;
+    }
+    get isSegmentUniform() {
+        return (this.state.segmentStartRadius == this.state.segmentEndRadius &&
+            this.state.segmentStartCap == this.state.segmentEndCap);
+    }
+    diff(other = DefaultDisplayContextState) {
+        return diffContextState(this.#state, other);
+    }
+    update(newState) {
+        return updateContextState(this.#state, newState);
+    }
+    reset(numberOfColors, keepColorIndices, keepSpriteColorIndices) {
+        return resetContextState(this.#state, numberOfColors, keepColorIndices, keepSpriteColorIndices);
+    }
+    serialize(numberOfColors, other) {
+        return serializeContextState(this.#state, numberOfColors, other);
+    }
 }
 
 const _console$w = createConsole("DisplayManagerInterface", { log: false });
@@ -32387,14 +32400,11 @@ let DisplayManager = (() => {
                 differences,
             });
         }
-        serializeContextState() {
-            return this.#contextStateHelper.serialize(this.numberOfColors);
+        serializeContextState(other) {
+            return this.#contextStateHelper.serialize(this.numberOfColors, other);
         }
         async setContextState(newState, sendImmediately, displayCanvasHelper) {
-            const contextCommands = this.#contextStateHelper.serialize(this.numberOfColors, newState);
-            if (contextCommands.length == 0) {
-                return;
-            }
+            const contextCommands = serializeContextState(newState, this.numberOfColors, this.contextState);
             await this.runContextCommands(contextCommands, sendImmediately);
         }
         #displayStatus;
@@ -32667,15 +32677,15 @@ let DisplayManager = (() => {
                 colorHex,
             });
         }
-        serializeColors() {
-            return serializeColors(this);
+        serializeColors(other) {
+            return serializeColors(this, other);
         }
         #opacities = [];
         get opacities() {
             return this.#opacities;
         }
-        serializeOpacities() {
-            return serializeOpacities(this);
+        serializeOpacities(other) {
+            return serializeOpacities(this, other);
         }
         async setColorOpacity(colorIndex, opacity, sendImmediately, isSending, displayCanvasHelper) {
             if (Math.floor(255 * this.#opacities[colorIndex]) == Math.floor(255 * opacity)) {
@@ -40531,6 +40541,10 @@ class DisplayCanvasHelper {
     get context() {
         return this.#context;
     }
+    async setContextState(newState, sendImmediately) {
+        const contextCommands = serializeContextState(newState, this.numberOfColors, this.contextState);
+        await this.runContextCommands(contextCommands, sendImmediately);
+    }
     get width() {
         return this.canvas?.width || 0;
     }
@@ -40646,7 +40660,7 @@ class DisplayCanvasHelper {
             this.#isSettingDevice = true;
             this.numberOfColors = this.device.numberOfDisplayColors;
             await this.#updateCanvas(true, false);
-            await this.#updateDevice(true);
+            await this.#updateDevice(true, true);
             this.#dispatchEvent("deviceIsConnected", {
                 device: this.device,
                 isConnected: this.device.isConnected,
@@ -40744,13 +40758,13 @@ class DisplayCanvasHelper {
             this.#drawFrontDrawStack();
         }
     }
-    async #updateDevice(sendImmediately) {
-        await this.#updateDeviceColors(false);
-        await this.#updateDeviceOpacity(false);
-        await this.#updateDeviceContextState(false);
-        await this.#updateDeviceBrightness(false);
-        await this.#updateDeviceSpriteSheets();
-        await this.#updateDeviceSelectedSpriteSheet(false);
+    async #updateDevice(sendImmediately, updateSelf) {
+        await this.#updateDeviceColors(false, updateSelf);
+        await this.#updateDeviceOpacity(false, updateSelf);
+        await this.#updateDeviceContextState(false, updateSelf);
+        await this.#updateDeviceBrightness(false, updateSelf);
+        await this.#updateDeviceSpriteSheets(updateSelf);
+        await this.#updateDeviceSelectedSpriteSheet(false, false, updateSelf);
         _console$5.log("deviceUpdated");
         if (sendImmediately) {
             await this.flushContextCommands();
@@ -40802,13 +40816,18 @@ class DisplayCanvasHelper {
         this.#colors.length = 0;
         this.#pendingColors.length = 0;
     }
-    async #updateDeviceColors(sendImmediately) {
+    async #updateDeviceColors(sendImmediately, updateSelf) {
         if (!this.device?.isConnected) {
             return;
         }
-        for (const [index, color] of this.colors.entries()) {
-            _console$5.log("updating color", { index, color });
-            await this.deviceDisplayManager?.setColor(index, color, false, false, this);
+        for (const [colorIndex, color] of this.colors.entries()) {
+            _console$5.log("updating color", { colorIndex, color });
+            if (updateSelf) {
+                await this.setColor(colorIndex, this.deviceDisplayManager.colors[colorIndex], false, false);
+            }
+            else {
+                await this.deviceDisplayManager.setColor(colorIndex, color, false, false, this);
+            }
         }
         if (sendImmediately) {
             await this.flushContextCommands();
@@ -40838,12 +40857,17 @@ class DisplayCanvasHelper {
         this.#opacities.length = 0;
         this.#pendingOpacities.length = 0;
     }
-    async #updateDeviceOpacity(sendImmediately) {
+    async #updateDeviceOpacity(sendImmediately, updateSelf) {
         if (!this.device?.isConnected) {
             return;
         }
-        for (const [index, opacity] of this.#opacities.entries()) {
-            await this.deviceDisplayManager?.setColorOpacity(index, opacity, false, false, this);
+        for (const [colorIndex, opacity] of this.#opacities.entries()) {
+            if (updateSelf) {
+                await this.setColorOpacity(colorIndex, this.deviceDisplayManager.opacities[colorIndex], false, false);
+            }
+            else {
+                await this.deviceDisplayManager.setColorOpacity(colorIndex, opacity, false, false, this);
+            }
         }
         if (sendImmediately) {
             await this.flushContextCommands();
@@ -40853,8 +40877,8 @@ class DisplayCanvasHelper {
     get contextState() {
         return this.#contextStateHelper.state;
     }
-    serializeContextState() {
-        return this.#contextStateHelper.serialize(this.numberOfColors);
+    serializeContextState(other) {
+        return this.#contextStateHelper.serialize(this.numberOfColors, other);
     }
     #onContextStateUpdate(differences) {
         this.#dispatchEvent("contextState", {
@@ -40869,11 +40893,16 @@ class DisplayCanvasHelper {
         });
         this.#contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
     }
-    async #updateDeviceContextState(sendImmediately) {
+    async #updateDeviceContextState(sendImmediately, updateSelf) {
         if (!this.device?.isConnected) {
             return;
         }
-        await this.deviceDisplayManager?.setContextState(this.contextState, sendImmediately, this);
+        if (updateSelf) {
+            await this.setContextState(this.deviceDisplayManager.contextState, sendImmediately);
+        }
+        else {
+            await this.deviceDisplayManager?.setContextState(this.contextState, sendImmediately, this);
+        }
     }
     async show(sendImmediately = true, waitUntilReady = false, isSending) {
         _console$5.log("showDisplay", { sendImmediately, waitUntilReady });
@@ -40963,8 +40992,8 @@ class DisplayCanvasHelper {
             }
         }
     }
-    serializeColors() {
-        return serializeColors(this);
+    serializeColors(other) {
+        return serializeColors(this, other);
     }
     async setColorOpacity(colorIndex, opacity, sendImmediately, isSending) {
         this.assertValidColorIndex(colorIndex);
@@ -40991,8 +41020,8 @@ class DisplayCanvasHelper {
             this.#setColorOpacity(colorIndex, opacity);
         });
     }
-    serializeOpacities() {
-        return serializeOpacities(this);
+    serializeOpacities(other) {
+        return serializeOpacities(this, other);
     }
     #contextStack = [];
     async #saveContext(sendImmediately) {
@@ -43114,20 +43143,25 @@ class DisplayCanvasHelper {
     async #resetBrightness() {
         await this.setBrightness("medium");
     }
-    async #updateDeviceBrightness(sendImmediately) {
+    async #updateDeviceBrightness(sendImmediately, updateSelf) {
         if (!this.device?.isConnected) {
             return;
         }
-        await this.deviceDisplayManager?.setBrightness(this.brightness, sendImmediately, this);
+        if (updateSelf) {
+            await this.setBrightness(this.deviceDisplayManager.brightness, sendImmediately);
+        }
+        else {
+            await this.deviceDisplayManager.setBrightness(this.brightness, sendImmediately, this);
+        }
     }
-    async #updateDeviceSpriteSheets() {
+    async #updateDeviceSpriteSheets(updateSelf) {
         if (!this.device?.isConnected) {
             return;
         }
         const sortedSpriteSheets = Object.values(this.spriteSheets).sort((a, b) => this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name]);
         await this.uploadSpriteSheets(sortedSpriteSheets);
     }
-    async #updateDeviceSelectedSpriteSheet(sendImmediately, isSending) {
+    async #updateDeviceSelectedSpriteSheet(sendImmediately, isSending, updateSelf) {
         if (!this.device?.isConnected) {
             return;
         }

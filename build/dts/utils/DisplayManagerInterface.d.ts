@@ -1,13 +1,14 @@
 import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap, DisplayBezierCurve, DisplayBezierCurveType, DisplayWireframe } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
-import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayDirection, DisplaySegmentCap, PartialDisplayContextState } from "./DisplayContextState.ts";
 import { DisplaySprite, DisplaySpriteLines, DisplaySpriteLinesMetrics, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
 import { DisplayScaleDirection, DisplayCropDirection, DisplayColorRGBOrString } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
 export interface DisplayManagerInterface {
     get isReady(): boolean;
     get contextState(): DisplayContextState;
-    serializeContextState(): DisplayContextCommand[];
+    serializeContextState(other?: PartialDisplayContextState): DisplayContextCommand[];
+    setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
     parseContextCommands(dataView: DataView): Promise<void>;
     flushContextCommands(): Promise<void>;
     get brightness(): DisplayBrightness;
@@ -17,7 +18,7 @@ export interface DisplayManagerInterface {
     get colors(): string[];
     get numberOfColors(): number;
     setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    serializeColors(): DisplayContextCommand[];
+    serializeColors(other?: string[]): DisplayContextCommand[];
     assertValidColorIndex(colorIndex: number): void;
     assertValidLineWidth(lineWidth: number): void;
     assertValidNumberOfColors(numberOfColors: number): void;
@@ -25,7 +26,7 @@ export interface DisplayManagerInterface {
     get opacities(): number[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    serializeOpacities(): DisplayContextCommand[];
+    serializeOpacities(other?: number[]): DisplayContextCommand[];
     saveContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     restoreContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;

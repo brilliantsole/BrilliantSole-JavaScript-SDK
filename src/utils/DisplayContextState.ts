@@ -1,3 +1,8 @@
+import { createConsole } from "./Console.ts";
+import { deepEqual } from "./ObjectUtils.ts";
+
+const _console = createConsole("DisplayContextState", { log: false });
+
 export const DisplaySegmentCaps = ["flat", "round"] as const;
 export type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
 
@@ -135,4 +140,75 @@ export function isDirectionHorizontal(direction: DisplayDirection) {
     case "up":
       return false;
   }
+}
+
+export function diffContextState(
+  state: PartialDisplayContextState,
+  other: PartialDisplayContextState = DefaultDisplayContextState,
+) {
+  let differences: DisplayContextStateKey[] = [];
+  const keys = Object.keys(other) as DisplayContextStateKey[];
+  keys.forEach((key) => {
+    const value = other[key]!;
+
+    // if (Array.isArray(value) && value.length == 0) {
+    //   return;
+    // }
+
+    if (!deepEqual(state[key], value)) {
+      differences.push(key);
+    }
+  });
+  _console.log("diff displayContextState", other, differences);
+  return differences;
+}
+
+export function updateContextState(
+  state: DisplayContextState,
+  newState: PartialDisplayContextState,
+) {
+  let differences = diffContextState(state, newState);
+  if (differences.length == 0) {
+    _console.log("redundant contextState", newState);
+  } else {
+    _console.log("found contextState differences", newState);
+  }
+  differences.forEach((key) => {
+    const value = newState[key]!;
+    // @ts-expect-error
+    state[key] = value;
+  });
+  return differences;
+}
+
+export function resetContextState(
+  state: DisplayContextState,
+  numberOfColors: number,
+  keepColorIndices?: boolean,
+  keepSpriteColorIndices?: boolean,
+) {
+  // _console.log("reset", {
+  //   numberOfColors,
+  //   keepColorIndices,
+  //   keepSpriteColorIndices,
+  // });
+
+  const spriteColorIndices = state.spriteColorIndices.slice();
+  const { fillColorIndex, lineColorIndex, backgroundColorIndex } = state;
+
+  Object.assign(state, DefaultDisplayContextState);
+
+  if (keepColorIndices) {
+    state.fillColorIndex = fillColorIndex;
+    state.lineColorIndex = lineColorIndex;
+    state.backgroundColorIndex = backgroundColorIndex;
+  }
+
+  if (keepSpriteColorIndices) {
+    state.spriteColorIndices = spriteColorIndices;
+  } else {
+    state.spriteColorIndices = new Array(numberOfColors).fill(0);
+  }
+
+  state.bitmapColorIndices = new Array(numberOfColors).fill(0);
 }

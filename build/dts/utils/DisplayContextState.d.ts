@@ -49,3 +49,6 @@ export type PartialDisplayContextState = Partial<DisplayContextState>;
 export declare const DefaultDisplayContextState: DisplayContextState;
 export declare function isDirectionPositive(direction: DisplayDirection): boolean;
 export declare function isDirectionHorizontal(direction: DisplayDirection): boolean;
+export declare function diffContextState(state: PartialDisplayContextState, other?: PartialDisplayContextState): (keyof DisplayContextState)[];
+export declare function updateContextState(state: DisplayContextState, newState: PartialDisplayContextState): (keyof DisplayContextState)[];
+export declare function resetContextState(state: DisplayContextState, numberOfColors: number, keepColorIndices?: boolean, keepSpriteColorIndices?: boolean): void;

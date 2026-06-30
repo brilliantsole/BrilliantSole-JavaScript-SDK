@@ -147,9 +147,9 @@ declare class DisplayManager implements DisplayManagerInterface {
     requestRequiredInformation(): void;
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
-    serializeContextState(): DisplayContextCommand[];
+    serializeContextState(other?: PartialDisplayContextState): DisplayContextCommand[];
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
-    get displayStatus(): "asleep" | "awake";
+    get displayStatus(): "awake" | "asleep";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -163,7 +163,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     flushContextCommands(): Promise<void>;
@@ -172,9 +172,9 @@ declare class DisplayManager implements DisplayManagerInterface {
     assertValidColorIndex(colorIndex: number): void;
     get colors(): string[];
     setColor(colorIndex: number, color: DisplayColorRGBOrString, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
-    serializeColors(): DisplayContextCommand[];
+    serializeColors(other?: string[]): DisplayContextCommand[];
     get opacities(): number[];
-    serializeOpacities(): DisplayContextCommand[];
+    serializeOpacities(other?: number[]): DisplayContextCommand[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     saveContext(sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;

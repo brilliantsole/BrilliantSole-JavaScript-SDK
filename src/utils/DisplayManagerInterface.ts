@@ -7,7 +7,6 @@ import {
   DisplayBezierCurveType,
   DisplayWireframe,
 } from "../DisplayManager.ts";
-import { colorDistanceSq } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
@@ -16,6 +15,7 @@ import {
   DisplayContextState,
   DisplayDirection,
   DisplaySegmentCap,
+  PartialDisplayContextState,
 } from "./DisplayContextState.ts";
 import {
   DisplaySprite,
@@ -42,7 +42,14 @@ export interface DisplayManagerInterface {
   get isReady(): boolean;
 
   get contextState(): DisplayContextState;
-  serializeContextState(): DisplayContextCommand[];
+  serializeContextState(
+    other?: PartialDisplayContextState,
+  ): DisplayContextCommand[];
+
+  setContextState(
+    newState: PartialDisplayContextState,
+    sendImmediately?: boolean,
+  ): Promise<void>;
 
   parseContextCommands(dataView: DataView): Promise<void>;
 
@@ -73,7 +80,7 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ): Promise<void>;
-  serializeColors(): DisplayContextCommand[];
+  serializeColors(other?: string[]): DisplayContextCommand[];
 
   assertValidColorIndex(colorIndex: number): void;
   assertValidLineWidth(lineWidth: number): void;
@@ -92,7 +99,7 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ): Promise<void>;
-  serializeOpacities(): DisplayContextCommand[];
+  serializeOpacities(other?: number[]): DisplayContextCommand[];
 
   saveContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
   restoreContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
