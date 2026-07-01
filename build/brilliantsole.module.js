@@ -40942,6 +40942,8 @@ class DisplayCanvasHelper {
     }
     async show(sendImmediately = true, waitUntilReady = false, isSending) {
         _console$5.log("showDisplay", { sendImmediately, waitUntilReady });
+        this.#frontDrawStack = this.#rearDrawStack.slice();
+        this.#rearDrawStack.length = 0;
         this.#setIsReady(false);
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.show(sendImmediately, waitUntilReady, isSending, this);
@@ -40972,8 +40974,6 @@ class DisplayCanvasHelper {
         this.#isReady = isReady;
         console.log({ isReady: this.#isReady });
         if (this.#isReady) {
-            this.#frontDrawStack = this.#rearDrawStack.slice();
-            this.#rearDrawStack.length = 0;
             this.#onSentContextCommands();
             this.#drawFrontDrawStack();
             this.#dispatchEvent("ready", {});

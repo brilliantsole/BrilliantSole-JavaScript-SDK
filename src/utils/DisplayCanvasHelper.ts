@@ -810,6 +810,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     _console.log("showDisplay", { sendImmediately, waitUntilReady });
 
+    this.#frontDrawStack = this.#rearDrawStack.slice();
+    this.#rearDrawStack.length = 0;
+
     this.#setIsReady(false);
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
@@ -847,9 +850,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#isReady = isReady;
     console.log({ isReady: this.#isReady });
     if (this.#isReady) {
-      this.#frontDrawStack = this.#rearDrawStack.slice();
-      this.#rearDrawStack.length = 0;
-
       this.#onSentContextCommands();
       this.#drawFrontDrawStack();
       this.#dispatchEvent("ready", {});
