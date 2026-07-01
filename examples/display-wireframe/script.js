@@ -1,5 +1,10 @@
 import * as BS from "../../build/brilliantsole.module.js";
 
+BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayContextState", { log: true });
+window.BS = BS
+
 /** @typedef {import("../utils/three/three.module.min").Vector3} TVector3 */
 /** @typedef {import("../utils/three/three.module.min").Vector2} TVector2 */
 /** @typedef {import("../utils/three/three.module.min").Quaternion} TQuaternion */
