@@ -2584,178 +2584,177 @@ export function serializeContextState(
   }
   const contextCommands: DisplayContextCommand[] = [];
   const differences = diffContextState(state, other);
-  const _state = other;
   _console.log("serialize displayContextState", other, differences);
   differences.forEach((difference) => {
-    if (_state[difference] == undefined) {
+    if (state[difference] == undefined) {
       return;
     }
     switch (difference) {
       case "backgroundColorIndex":
         contextCommands.push({
           type: "selectBackgroundColor",
-          backgroundColorIndex: _state[difference],
+          backgroundColorIndex: state[difference],
         });
         break;
       case "fillBackground":
         contextCommands.push({
           type: "setFillBackground",
-          fillBackground: _state[difference],
+          fillBackground: state[difference],
         });
         break;
       case "ignoreFill":
         contextCommands.push({
           type: "setIgnoreFill",
-          ignoreFill: _state[difference],
+          ignoreFill: state[difference],
         });
         break;
       case "ignoreLine":
         contextCommands.push({
           type: "setIgnoreLine",
-          ignoreLine: _state[difference],
+          ignoreLine: state[difference],
         });
         break;
       case "fillColorIndex":
         contextCommands.push({
           type: "selectFillColor",
-          fillColorIndex: _state[difference],
+          fillColorIndex: state[difference],
         });
         break;
       case "lineColorIndex":
         contextCommands.push({
           type: "selectLineColor",
-          lineColorIndex: _state[difference],
+          lineColorIndex: state[difference],
         });
         break;
       case "lineWidth":
         contextCommands.push({
           type: "setLineWidth",
-          lineWidth: _state[difference],
+          lineWidth: state[difference],
         });
         break;
       case "horizontalAlignment":
         contextCommands.push({
           type: "setHorizontalAlignment",
-          horizontalAlignment: _state[difference],
+          horizontalAlignment: state[difference],
         });
         break;
       case "verticalAlignment":
         contextCommands.push({
           type: "setVerticalAlignment",
-          verticalAlignment: _state[difference],
+          verticalAlignment: state[difference],
         });
         break;
       case "rotation":
         contextCommands.push({
           type: "setRotation",
-          rotation: _state[difference],
+          rotation: state[difference],
         });
         break;
       case "segmentStartCap":
         if (
           differences.includes("segmentEndCap") &&
-          _state.segmentStartCap == _state.segmentEndCap
+          state.segmentStartCap == state.segmentEndCap
         ) {
           contextCommands.push({
             type: "setSegmentCap",
-            segmentCap: _state[difference],
+            segmentCap: state[difference],
           });
         } else {
           contextCommands.push({
             type: "setSegmentStartCap",
-            segmentStartCap: _state[difference],
+            segmentStartCap: state[difference],
           });
         }
         break;
       case "segmentEndCap":
         if (
           !differences.includes("segmentStartCap") ||
-          _state.segmentStartCap != _state.segmentEndCap
+          state.segmentStartCap != state.segmentEndCap
         ) {
           contextCommands.push({
             type: "setSegmentEndCap",
-            segmentEndCap: _state[difference],
+            segmentEndCap: state[difference],
           });
         }
         break;
       case "segmentStartRadius":
         if (
           differences.includes("segmentEndRadius") &&
-          _state.segmentStartRadius == _state.segmentEndRadius
+          state.segmentStartRadius == state.segmentEndRadius
         ) {
           contextCommands.push({
             type: "setSegmentRadius",
-            segmentRadius: _state[difference],
+            segmentRadius: state[difference],
           });
         } else {
           contextCommands.push({
             type: "setSegmentStartRadius",
-            segmentStartRadius: _state[difference],
+            segmentStartRadius: state[difference],
           });
         }
         break;
       case "segmentEndRadius":
         if (
           !differences.includes("segmentStartRadius") ||
-          _state.segmentStartRadius != _state.segmentEndRadius
+          state.segmentStartRadius != state.segmentEndRadius
         ) {
           contextCommands.push({
             type: "setSegmentEndRadius",
-            segmentEndRadius: _state[difference],
+            segmentEndRadius: state[difference],
           });
         }
         break;
       case "cropTop":
         contextCommands.push({
           type: "setCropTop",
-          cropTop: _state[difference],
+          cropTop: state[difference],
         });
         break;
       case "cropRight":
         contextCommands.push({
           type: "setCropRight",
-          cropRight: _state[difference],
+          cropRight: state[difference],
         });
         break;
       case "cropBottom":
         contextCommands.push({
           type: "setCropBottom",
-          cropBottom: _state[difference],
+          cropBottom: state[difference],
         });
         break;
       case "cropLeft":
         contextCommands.push({
           type: "setCropLeft",
-          cropLeft: _state[difference],
+          cropLeft: state[difference],
         });
         break;
       case "rotationCropTop":
         contextCommands.push({
           type: "setRotationCropTop",
-          rotationCropTop: _state[difference],
+          rotationCropTop: state[difference],
         });
         break;
       case "rotationCropRight":
         contextCommands.push({
           type: "setRotationCropRight",
-          rotationCropRight: _state[difference],
+          rotationCropRight: state[difference],
         });
         break;
       case "rotationCropBottom":
         contextCommands.push({
           type: "setRotationCropBottom",
-          rotationCropBottom: _state[difference],
+          rotationCropBottom: state[difference],
         });
         break;
       case "rotationCropLeft":
         contextCommands.push({
           type: "setRotationCropLeft",
-          rotationCropLeft: _state[difference],
+          rotationCropLeft: state[difference],
         });
         break;
       case "bitmapColorIndices":
         const bitmapColorPairs: DisplayBitmapColorPair[] = [];
-        _state.bitmapColorIndices!.forEach((colorIndex, bitmapColorIndex) => {
+        state.bitmapColorIndices!.forEach((colorIndex, bitmapColorIndex) => {
           bitmapColorPairs.push({ bitmapColorIndex, colorIndex });
         });
         contextCommands.push({
@@ -2766,33 +2765,33 @@ export function serializeContextState(
       case "bitmapScaleX":
         if (
           differences.includes("bitmapScaleY") &&
-          _state.bitmapScaleX == _state.bitmapScaleY
+          state.bitmapScaleX == state.bitmapScaleY
         ) {
           contextCommands.push({
             type: "setBitmapScale",
-            bitmapScale: _state[difference],
+            bitmapScale: state[difference],
           });
         } else {
           contextCommands.push({
             type: "setBitmapScaleX",
-            bitmapScaleX: _state[difference],
+            bitmapScaleX: state[difference],
           });
         }
         break;
       case "bitmapScaleY":
         if (
           !differences.includes("bitmapScaleX") ||
-          _state.bitmapScaleX != _state.bitmapScaleY
+          state.bitmapScaleX != state.bitmapScaleY
         ) {
           contextCommands.push({
             type: "setBitmapScaleY",
-            bitmapScaleY: _state[difference],
+            bitmapScaleY: state[difference],
           });
         }
         break;
       case "spriteColorIndices":
         const spriteColorPairs: DisplaySpriteColorPair[] = [];
-        _state.spriteColorIndices!.forEach((colorIndex, spriteColorIndex) => {
+        state.spriteColorIndices!.forEach((colorIndex, spriteColorIndex) => {
           spriteColorPairs.push({ spriteColorIndex, colorIndex });
         });
         contextCommands.push({
@@ -2803,70 +2802,70 @@ export function serializeContextState(
       case "spriteScaleX":
         if (
           differences.includes("spriteScaleY") &&
-          _state.spriteScaleX == _state.spriteScaleY
+          state.spriteScaleX == state.spriteScaleY
         ) {
           contextCommands.push({
             type: "setSpriteScale",
-            spriteScale: _state[difference],
+            spriteScale: state[difference],
           });
         } else {
           contextCommands.push({
             type: "setSpriteScaleX",
-            spriteScaleX: _state[difference],
+            spriteScaleX: state[difference],
           });
         }
         break;
       case "spriteScaleY":
         if (
           !differences.includes("spriteScaleX") ||
-          _state.spriteScaleX != _state.spriteScaleY
+          state.spriteScaleX != state.spriteScaleY
         ) {
           contextCommands.push({
             type: "setSpriteScaleY",
-            spriteScaleY: _state[difference],
+            spriteScaleY: state[difference],
           });
         }
         break;
       case "spritesLineHeight":
         contextCommands.push({
           type: "setSpritesLineHeight",
-          spritesLineHeight: _state[difference],
+          spritesLineHeight: state[difference],
         });
         break;
       case "spritesDirection":
         contextCommands.push({
           type: "setSpritesDirection",
-          spritesDirection: _state[difference],
+          spritesDirection: state[difference],
         });
         break;
       case "spritesLineDirection":
         contextCommands.push({
           type: "setSpritesLineDirection",
-          spritesLineDirection: _state[difference],
+          spritesLineDirection: state[difference],
         });
         break;
       case "spritesSpacing":
         contextCommands.push({
           type: "setSpritesSpacing",
-          spritesSpacing: _state[difference],
+          spritesSpacing: state[difference],
         });
         break;
       case "spritesLineSpacing":
         contextCommands.push({
           type: "setSpritesLineSpacing",
-          spritesLineSpacing: _state[difference],
+          spritesLineSpacing: state[difference],
         });
         break;
       case "spritesAlignment":
         contextCommands.push({
           type: "setSpritesAlignment",
-          spritesAlignment: _state[difference],
+          spritesAlignment: state[difference],
         });
         break;
       case "spritesLineAlignment":
         contextCommands.push({
           type: "setSpritesLineAlignment",
-          spritesLineAlignment: _state[difference],
+          spritesLineAlignment: state[difference],
         });
         break;
     }

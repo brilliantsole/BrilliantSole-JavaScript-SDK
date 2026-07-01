@@ -20,7 +20,7 @@ import { default as WindowServer } from "../server/window/WindowServer.ts";
 import { Singleton } from "../utils/TypeScriptUtils.ts";
 import { BaseServerClientContext } from "../server/BaseServer.ts";
 
-const _console = createConsole("WindowManagerServer", { log: true });
+const _console = createConsole("WindowManagerServer", { log: false });
 
 export interface WindowManagerServerClient {
   type: "window";

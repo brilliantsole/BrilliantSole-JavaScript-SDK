@@ -421,6 +421,7 @@ class DisplayManager implements DisplayManagerInterface {
       this.numberOfColors,
       this.contextState,
     );
+    _console.log("setContextState", newState, contextCommands);
     await this.runContextCommands(contextCommands, sendImmediately);
   }
 
@@ -690,7 +691,7 @@ class DisplayManager implements DisplayManagerInterface {
   }
   async #sendContextCommands() {
     const displayContextCommands = this.#contextCommands.slice();
-    _console.log("sendContextCommands", { displayContextCommands });
+    _console.log("sendContextCommands", displayContextCommands);
     if (displayContextCommands.length == 0) {
       return;
     }

@@ -143,9 +143,6 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 // displayCanvasHelper.setBrightness("veryLow");
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
-displayCanvasHelper.setFillBackground(true, true);
-displayCanvasHelper.selectBackgroundColor(2, true);
-displayCanvasHelper.selectSpriteColor(0, 2, true);
 
 deviceStores.glasses.addListener((device) => {
   displayCanvasHelper.device = device;
@@ -276,6 +273,11 @@ const draw = async () => {
     return;
   }
   isDrawing = true;
+
+  await displayCanvasHelper.setColor(1, "white");
+  await displayCanvasHelper.setFillBackground(true);
+  await displayCanvasHelper.selectBackgroundColor(2);
+  await displayCanvasHelper.selectSpriteColor(0, 2);
 
   const text = textarea.value;
   console.log(`drawing "${text}"`);

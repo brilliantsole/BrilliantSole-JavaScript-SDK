@@ -27,7 +27,7 @@ import { DeviceMessage, ServerMessage } from "./ServerUtils.ts";
 import Device from "../Device.ts";
 import { DisplayContextCommand } from "../utils/DisplayContextCommand.ts";
 
-const _console = createConsole("ServerManager", { log: true });
+const _console = createConsole("ServerManager", { log: false });
 
 interface BaseServerManagerServerEventMessage {
   server: Server;

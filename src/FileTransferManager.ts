@@ -6,7 +6,7 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("FileTransferManager", { log: false });
+const _console = createConsole("FileTransferManager", { log: true });
 
 export const FileTransferMessageTypes = [
   "getFileTypes",
@@ -601,7 +601,11 @@ class FileTransferManager {
       _console.error(`not currently sending file`);
       return;
     }
-    if (this.#buffer && this.#bytesTransferred != bytesTransferred) {
+    if (!this.#buffer) {
+      _console.log("no buffer defined");
+      return;
+    }
+    if (this.#bytesTransferred != bytesTransferred) {
       _console.error(
         `bytesTransferred are not equal - got ${bytesTransferred}, expected ${
           this.#bytesTransferred

@@ -24,7 +24,7 @@ import DisplayCanvasHelper, {
 import Device from "../Device.ts";
 import DisplayManager from "../DisplayManager.ts";
 
-const _console = createConsole("DisplayCanvasHelperManager", { log: true });
+const _console = createConsole("DisplayCanvasHelperManager", { log: false });
 
 interface BaseDisplayCanvasHelperManagerDisplayCanvasHelperEventMessage {
   displayCanvasHelper: DisplayCanvasHelper;

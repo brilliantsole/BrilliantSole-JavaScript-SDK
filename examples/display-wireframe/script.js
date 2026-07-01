@@ -1,5 +1,9 @@
 import * as BS from "../../build/brilliantsole.module.js";
 
+BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayContextState", { log: true });
+
 /** @typedef {import("../utils/three/three.module.min").Vector3} TVector3 */
 /** @typedef {import("../utils/three/three.module.min").Vector2} TVector2 */
 /** @typedef {import("../utils/three/three.module.min").Quaternion} TQuaternion */
@@ -150,7 +154,6 @@ const displayCanvas = document.getElementById("display");
 
 // DISPLAY CANVAS HELPER
 const displayCanvasHelper = new BS.DisplayCanvasHelper();
-displayCanvasHelper.setSegmentRadius(2, true);
 // displayCanvasHelper.setBrightness("veryLow");
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
@@ -219,11 +222,6 @@ setupColors();
 const intersectingColorIndex = 2;
 const draggingColorIndex = 3;
 const boxColorIndex = 4;
-displayCanvasHelper.setColor(1, "white");
-displayCanvasHelper.setColor(intersectingColorIndex, "lightgreen");
-displayCanvasHelper.setColor(draggingColorIndex, "green");
-displayCanvasHelper.setColor(boxColorIndex, "#00BFFF");
-displayCanvasHelper.flushContextCommands();
 // DRAW
 let isDrawing = false;
 let isWaitingToRedraw = false;
@@ -256,6 +254,12 @@ const draw = async () => {
   }
   isDrawing = true;
 
+  await displayCanvasHelper.setColor(1, "white");
+  await displayCanvasHelper.setColor(intersectingColorIndex, "lightgreen");
+  await displayCanvasHelper.setColor(draggingColorIndex, "green");
+  await displayCanvasHelper.setColor(boxColorIndex, "#00BFFF");
+  await displayCanvasHelper.setSegmentRadius(2);
+
   switch (mode) {
     case "scene":
       await drawScene(scene);
@@ -264,7 +268,8 @@ const draw = async () => {
       await drawScene(punchScene);
       break;
     case "glove":
-      await displayCanvasHelper.selectFillColor(1, false);
+      await displayCanvasHelper.selectFillColor(1);
+      // await displayCanvasHelper.setSegmentRadius(2);
       await drawScene(gloveScene, (entity) => entity.nodeName == "A-PLANE");
       await displayCanvasHelper.selectFillColor(
         draggingEntity
@@ -272,7 +277,6 @@ const draw = async () => {
           : intersecting
             ? intersectingColorIndex
             : boxColorIndex,
-        false,
       );
       await drawScene(gloveScene, (entity) => entity.nodeName == "A-BOX");
       await drawGloveCursor();
@@ -367,10 +371,10 @@ const drawScene = async (scene, filterCallback) => {
     };
     await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
     await displayCanvasHelper.selectSpriteSheet("scene");
-    await displayCanvasHelper.selectSpriteColor(1, 1, false);
-    await displayCanvasHelper.drawSprite(640 / 2, 400 / 2, "wireframe", false);
+    await displayCanvasHelper.selectSpriteColor(1, 1);
+    await displayCanvasHelper.drawSprite(640 / 2, 400 / 2, "wireframe");
   } else {
-    await displayCanvasHelper.drawWireframe(wireframe, false);
+    await displayCanvasHelper.drawWireframe(wireframe);
   }
 };
 window.drawScene = drawScene;
@@ -612,11 +616,11 @@ const drawGloveCursor = async () => {
   } else if (intersecting) {
     lineColorIndex = intersectingColorIndex;
   }
-  await displayCanvasHelper.selectLineColor(lineColorIndex, false);
-  await displayCanvasHelper.selectFillColor(1, false);
+  await displayCanvasHelper.selectLineColor(lineColorIndex);
+  await displayCanvasHelper.selectFillColor(1);
   if (fillCircle) {
   } else {
-    await displayCanvasHelper.setIgnoreFill(true, false);
+    await displayCanvasHelper.setIgnoreFill(true);
   }
 
   interpolatedGloveCursorPosition.lerpVectors(
@@ -692,15 +696,15 @@ const drawGloveCursor = async () => {
     radiusY *= bounceScalarY;
   }
 
-  await displayCanvasHelper.setLineWidth(4, false);
+  await displayCanvasHelper.setLineWidth(4);
   if (!isBouncing) {
     radiusX *= scaleX;
     radiusY *= scaleY;
-    await displayCanvasHelper.setRotation(rotation, true, false);
+    await displayCanvasHelper.setRotation(rotation, true);
   }
-  await displayCanvasHelper.drawEllipse(x, y, radiusX, radiusY, false);
+  await displayCanvasHelper.drawEllipse(x, y, radiusX, radiusY);
 
-  await displayCanvasHelper.restoreContext(false);
+  await displayCanvasHelper.restoreContext();
 };
 
 // CAMERA
@@ -1015,7 +1019,7 @@ const drawHand = async () => {
     HAND_CONNECTIONS.forEach(([startIndex, endIndex]) => {
       wireframe.edges.push({ startIndex, endIndex });
     });
-    await displayCanvasHelper.drawWireframe(wireframe, false);
+    await displayCanvasHelper.drawWireframe(wireframe);
   }
 };
 
@@ -1207,7 +1211,7 @@ const drawFace = async () => {
     wireframe.edges.pop();
 
     console.log("face wireframe", wireframe);
-    await displayCanvasHelper.drawWireframe(wireframe, false);
+    await displayCanvasHelper.drawWireframe(wireframe);
   }
 };
 
@@ -1258,7 +1262,7 @@ const drawPose = async () => {
     PoseLandmarker.POSE_CONNECTIONS.forEach(({ start, end }) => {
       wireframe.edges.push({ startIndex: start, endIndex: end });
     });
-    await displayCanvasHelper.drawWireframe(wireframe, false);
+    await displayCanvasHelper.drawWireframe(wireframe);
   }
 };
 
@@ -1341,7 +1345,7 @@ const setAutoDraw = (newAutoDraw) => {
 };
 
 displayCanvasHelper.addEventListener("deviceConnected", () => {
-  setAutoDraw(true);
+  //setAutoDraw(true);
 });
 
 displayCanvasHelper.addEventListener("ready", () => {

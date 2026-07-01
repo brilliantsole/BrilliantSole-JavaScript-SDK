@@ -22,7 +22,7 @@ import BaseClient, {
 import { Client } from "./Client.ts";
 import { capitalizeFirstCharacter } from "../utils/stringUtils.ts";
 
-const _console = createConsole("ClientManager", { log: true });
+const _console = createConsole("ClientManager", { log: false });
 
 interface BaseClientManagerClientEventMessage {
   client: Client;

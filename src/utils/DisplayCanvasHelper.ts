@@ -312,6 +312,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.numberOfColors,
       this.contextState,
     );
+    _console.log("setContextState", newState, contextCommands);
     await this.runContextCommands(contextCommands, sendImmediately);
   }
 
@@ -355,7 +356,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (!this.context) {
       return;
     }
-    //_console.log("drawFrontDrawStack");
+    _console.log("drawFrontDrawStack", this.#frontDrawStack);
     this.#context.imageSmoothingEnabled = false;
 
     this.#save();
@@ -757,6 +758,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return this.#contextStateHelper.serialize(this.numberOfColors, other);
   }
   #onContextStateUpdate(differences: DisplayContextStateKey[]) {
+    if (differences.length == 0) {
+      return;
+    }
     this.#dispatchEvent("contextState", {
       contextState: structuredClone(this.contextState),
       differences,
@@ -783,7 +787,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (!this.device?.isConnected) {
       return;
     }
-    // _console.log("updateDeviceContextState");
+    _console.log("updateDeviceContextState");
 
     if (updateSelf) {
       await this.setContextState(
@@ -805,9 +809,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     isSending?: boolean,
   ) {
     _console.log("showDisplay", { sendImmediately, waitUntilReady });
-
-    this.#frontDrawStack = this.#rearDrawStack.slice();
-    this.#rearDrawStack.length = 0;
 
     this.#setIsReady(false);
 
@@ -846,6 +847,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#isReady = isReady;
     console.log({ isReady: this.#isReady });
     if (this.#isReady) {
+      this.#frontDrawStack = this.#rearDrawStack.slice();
+      this.#rearDrawStack.length = 0;
+
       this.#onSentContextCommands();
       this.#drawFrontDrawStack();
       this.#dispatchEvent("ready", {});
@@ -908,11 +912,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     const colorHex = rgbToHex(color);
     if (this.colors[colorIndex] == colorHex) {
-      // _console.log(`redundant color #${colorIndex} ${colorHex}`);
+      _console.log(`redundant color #${colorIndex} ${colorHex}`);
       return;
     }
 
-    // _console.log(`setting color #${colorIndex}`, color);
+    _console.log(`setting color #${colorIndex}`, color);
     this.#setColor(colorIndex, colorHex);
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
@@ -1063,6 +1067,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       backgroundColorIndex,
     });
+
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.selectBackgroundColor(
         backgroundColorIndex,
@@ -1135,6 +1140,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
+    _console.log("setIgnoreFill", { ignoreFill, sendImmediately, isSending });
     const differences = this.#contextStateHelper.update({
       ignoreFill,
     });
@@ -1161,6 +1167,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       ignoreLine,
     });
+
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.setIgnoreLine(
         ignoreLine,
@@ -1183,6 +1190,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       fillBackground,
     });
+
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.setFillBackground(
         fillBackground,
@@ -1247,6 +1255,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       [alignmentKey]: alignment,
     });
+
     // _console.log({
     //   alignmentKey,
     //   alignment,
@@ -1347,6 +1356,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       rotation: 0,
     });
+
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.clearRotation(
         sendImmediately,
@@ -3939,6 +3949,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     isRadians: boolean,
     contextState: DisplayContextState,
   ) {
+    _console.log("drawArcEllipseToCanvas");
+
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
     isRadians = true;
@@ -4233,7 +4245,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   get selectedSpriteSheetName() {
     return this.selectedSpriteSheet?.name;
   }
-  async selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean) {
+  async selectSpriteSheet(
+    spriteSheetName: string,
+    sendImmediately?: boolean,
+    isSending?: boolean,
+  ) {
     this.assertLoadedSpriteSheet(spriteSheetName);
     const differences = this.#contextStateHelper.update({
       spriteSheetName,
@@ -4243,6 +4259,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.deviceDisplayManager!.selectSpriteSheet(
         spriteSheetName,
         sendImmediately,
+        isSending,
+        this,
       );
     } else {
       if (sendImmediately) {
