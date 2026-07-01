@@ -182,6 +182,14 @@ class MicrophoneManager {
 
     await promise;
   }
+  #parseMicrophoneCommand(dataView: DataView<ArrayBuffer>) {
+    _console.log("parseMicrophoneCommand", dataView);
+    const commandEnum = dataView.getUint8(0);
+    const command = MicrophoneCommands[commandEnum];
+    _console.assertEnumWithError(command, MicrophoneCommands);
+    _console.log({ command });
+    // TODO
+  }
   #assertIsIdle() {
     _console.assertWithError(
       this.#microphoneStatus == "idle",
@@ -499,6 +507,9 @@ class MicrophoneManager {
         break;
       case "microphoneData":
         this.#parseMicrophoneData(dataView);
+        break;
+      case "microphoneCommand":
+        this.#parseMicrophoneCommand(dataView);
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);

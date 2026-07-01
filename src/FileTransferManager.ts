@@ -308,6 +308,14 @@ class FileTransferManager {
 
     await promise;
   }
+  #parseFileTransferCommand(dataView: DataView<ArrayBuffer>) {
+    _console.log("parseFileTransferCommand", dataView);
+    const commandEnum = dataView.getUint8(0);
+    const command = FileTransferCommands[commandEnum];
+    _console.assertEnumWithError(command, FileTransferCommands);
+    _console.log({ command });
+    // FILL
+  }
 
   #status: FileTransferStatus = "idle";
   get status() {
@@ -456,6 +464,12 @@ class FileTransferManager {
       case "fileBytesTransferred":
         this.#parseBytesTransferred(dataView);
         break;
+      case "setFileBlock":
+        this.#parseFileBlock(dataView);
+        break;
+      case "setFileTransferCommand":
+        this.#parseFileTransferCommand(dataView);
+        break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }
@@ -573,6 +587,10 @@ class FileTransferManager {
       await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
       //return this.#sendBlock(buffer, offset + slicedBuffer.byteLength);
     }
+  }
+  #parseFileBlock(dataView: DataView<ArrayBuffer>) {
+    _console.log("parseFileBlock", dataView);
+    // FILL
   }
 
   async #parseBytesTransferred(dataView: DataView<ArrayBuffer>) {
