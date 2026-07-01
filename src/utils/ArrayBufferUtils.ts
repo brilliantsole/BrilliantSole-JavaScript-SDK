@@ -87,7 +87,8 @@ export type FileLike =
   | URL
   | string
   | File
-  | Buffer;
+  | Buffer
+  | Blob;
 
 export async function getFileBuffer(file: FileLike) {
   let fileBuffer;
@@ -98,7 +99,7 @@ export async function getFileBuffer(file: FileLike) {
   } else if (typeof file == "string" || file instanceof URL) {
     const response = await fetch(file);
     fileBuffer = await response.arrayBuffer();
-  } else if (file instanceof File) {
+  } else if (file instanceof File || file instanceof Blob) {
     fileBuffer = await file.arrayBuffer();
   } else if (file instanceof ArrayBuffer) {
     fileBuffer = file;

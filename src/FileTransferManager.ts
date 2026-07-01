@@ -52,6 +52,7 @@ export const FileTransferEventTypes = [
   "fileTransferProgress",
   "fileTransferComplete",
   "fileReceived",
+  "fileSent",
 ] as const;
 export type FileTransferEventType = (typeof FileTransferEventTypes)[number];
 
@@ -83,8 +84,10 @@ export interface FileTransferEventMessages {
   fileTransferComplete: {
     fileType: FileType;
     direction: FileTransferDirection;
+    file: FileLike;
   };
-  fileReceived: { fileType: FileType; file: File | Blob };
+  fileReceived: { fileType: FileType; file: FileLike };
+  fileSent: { fileType: FileType; file: FileLike };
 }
 
 export type FileTransferEventDispatcher = EventDispatcher<
@@ -314,7 +317,6 @@ class FileTransferManager {
     const command = FileTransferCommands[commandEnum];
     _console.assertEnumWithError(command, FileTransferCommands);
     _console.log({ command });
-    // FILL
   }
 
   #status: FileTransferStatus = "idle";
@@ -339,6 +341,7 @@ class FileTransferManager {
       fileTransferStatus: status,
       fileType: this.type!,
     });
+    this.#parseIsSendingBlocks();
   }
   #assertIsIdle() {
     _console.assertWithError(this.#status == "idle", "status is not idle");
@@ -371,15 +374,12 @@ class FileTransferManager {
       progress,
       fileType: this.type!,
     });
+    this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
 
     if (bytesReceived != this.#length) {
       const dataView = new DataView(new ArrayBuffer(4));
       dataView.setUint32(0, bytesReceived, true);
 
-      if (!this.#buffer) {
-        _console.log("no buffer defined");
-        return;
-      }
       await this.sendMessage([
         { type: "fileBytesTransferred", data: dataView.buffer },
       ]);
@@ -388,45 +388,19 @@ class FileTransferManager {
 
     _console.log("file transfer complete");
 
-    let fileName = new Date().toLocaleString();
-    switch (this.type) {
-      case "tflite":
-        fileName += ".tflite";
-        break;
-      case "wifiServerCert":
-        fileName += "_server.crt";
-        break;
-      case "wifiServerKey":
-        fileName += "_server.key";
-        break;
-    }
-
-    let file: File | Blob;
-    if (typeof File !== "undefined") {
-      file = new File(this.#receivedBlocks, fileName);
-    } else {
-      file = new Blob(this.#receivedBlocks);
-    }
-
-    const arrayBuffer = await file.arrayBuffer();
-    const checksum = crc32(arrayBuffer);
-    _console.log({ checksum });
-
-    if (checksum != this.#checksum) {
-      _console.error(
-        `wrong checksum - expected ${this.#checksum}, got ${checksum}`,
-      );
+    const file = await this.#createFile(this.#receivedBlocks);
+    if (!file) {
       return;
     }
 
     _console.log("received file", file);
 
-    this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
     this.#dispatchEvent("fileTransferComplete", {
       direction: "receiving",
       fileType: this.type!,
+      file,
     });
-    this.#dispatchEvent("fileReceived", { file, fileType: this.type! });
+    this.#dispatchEvent("fileReceived", { fileType: this.type!, file });
   }
 
   parseMessage(
@@ -475,6 +449,7 @@ class FileTransferManager {
     }
   }
 
+  #file: FileLike | undefined;
   async send(type: FileType, file: FileLike, override?: boolean) {
     if (true) {
       this.#assertIsIdle();
@@ -490,6 +465,7 @@ class FileTransferManager {
       }
     }
 
+    this.#file = file;
     const fileBuffer = await getFileBuffer(file);
     const fileLength = fileBuffer.byteLength;
     // @ts-expect-error
@@ -572,25 +548,89 @@ class FileTransferManager {
         buffer.byteLength
       } bytes (${progress * 100}%)`,
     );
+    const fileType = this.type!;
     this.#dispatchEvent("fileTransferProgress", {
       progress,
-      fileType: this.type!,
+      fileType,
     });
     if (slicedBuffer.byteLength == 0) {
       _console.log("finished sending buffer");
+      const file = this.#file!;
       this.#dispatchEvent("fileTransferComplete", {
         direction: "sending",
-        fileType: this.type!,
+        fileType,
+        file,
+      });
+      this.#dispatchEvent("fileSent", {
+        fileType,
+        file,
       });
     } else {
       this.#bytesTransferred = offset + slicedBuffer.byteLength;
       await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
-      //return this.#sendBlock(buffer, offset + slicedBuffer.byteLength);
     }
   }
+
+  async #createFile(blocks: ArrayBuffer[]) {
+    let fileName = new Date().toLocaleString();
+    switch (this.type) {
+      case "tflite":
+        fileName += ".tflite";
+        break;
+      case "wifiServerCert":
+        fileName += "_server.crt";
+        break;
+      case "wifiServerKey":
+        fileName += "_server.key";
+        break;
+    }
+
+    let file: File | Blob;
+    if (typeof File !== "undefined") {
+      file = new File(blocks, fileName);
+    } else {
+      file = new Blob(blocks);
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const checksum = crc32(arrayBuffer);
+    _console.log({ checksum });
+
+    if (checksum != this.#checksum) {
+      _console.error(
+        `wrong checksum - expected ${this.#checksum}, got ${checksum}`,
+      );
+      return;
+    }
+    _console.log("created file", file);
+    return file;
+  }
+
+  #isSendingBlocks: ArrayBuffer[] = [];
   #parseFileBlock(dataView: DataView<ArrayBuffer>) {
     _console.log("parseFileBlock", dataView);
-    // FILL
+    this.#isSendingBlocks.push(dataView.buffer);
+  }
+  async #parseIsSendingBlocks() {
+    if (this.#isSendingBlocks.length == 0) {
+      return;
+    }
+
+    const file = await this.#createFile(this.#isSendingBlocks);
+    if (!file) {
+      return;
+    }
+
+    _console.log("sent file", file);
+
+    this.#dispatchEvent("fileTransferComplete", {
+      direction: "sending",
+      fileType: this.type!,
+      file,
+    });
+    this.#dispatchEvent("fileSent", { fileType: this.type!, file });
+
+    this.#isSendingBlocks.length = 0;
   }
 
   async #parseBytesTransferred(dataView: DataView<ArrayBuffer>) {
@@ -644,6 +684,7 @@ class FileTransferManager {
 
   clear() {
     this.#receivedBlocks.length = 0;
+    this.#isSendingBlocks.length = 0;
     this.#isCancelling = false;
     this.#buffer = undefined;
     this.#bytesTransferred = 0;
@@ -655,6 +696,7 @@ class FileTransferManager {
     this.#status = "idle";
     // @ts-expect-error
     this.mtu = undefined;
+    this.#file = undefined;
   }
 }
 
