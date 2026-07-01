@@ -93,9 +93,9 @@ export type FileLike =
 export async function getFileBuffer(file: FileLike) {
   let fileBuffer;
   if (file instanceof Array) {
-    fileBuffer = Uint8Array.from(file);
+    fileBuffer = Uint8Array.from(file).buffer;
   } else if (file instanceof DataView) {
-    fileBuffer = file.buffer;
+    fileBuffer = file.buffer as ArrayBuffer;
   } else if (typeof file == "string" || file instanceof URL) {
     const response = await fetch(file);
     fileBuffer = await response.arrayBuffer();

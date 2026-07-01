@@ -543,7 +543,7 @@ function sliceDataView(dataView, begin, length) {
 async function getFileBuffer(file) {
     let fileBuffer;
     if (file instanceof Array) {
-        fileBuffer = Uint8Array.from(file);
+        fileBuffer = Uint8Array.from(file).buffer;
     }
     else if (file instanceof DataView) {
         fileBuffer = file.buffer;
@@ -806,6 +806,9 @@ class FileTransferManager {
             fileTransferStatus: status,
             fileType: this.type,
         });
+        if (this.#isRequesting && this.status != "receiving") {
+            this.#isRequesting = false;
+        }
         this.#parseIsSendingBlocks();
     }
     #assertIsIdle() {
@@ -815,7 +818,7 @@ class FileTransferManager {
         _console$N.assertWithError(this.#status != "idle", "status is idle");
     }
     #receivedBlocks = [];
-    async #parseBlock(dataView) {
+    async #parseFileBlock(dataView) {
         _console$N.log("parseFileBlock", dataView);
         this.#receivedBlocks.push(dataView.buffer);
         const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
@@ -827,8 +830,13 @@ class FileTransferManager {
         });
         this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
         if (bytesReceived != this.#length) {
+            if (!this.#isRequesting) {
+                _console$N.log("not sending fileBytesTransferred (not requesting)");
+                return;
+            }
             const dataView = new DataView(new ArrayBuffer(4));
             dataView.setUint32(0, bytesReceived, true);
+            _console$N.log("sending fileBytesTransferred", { bytesReceived });
             await this.sendMessage([
                 { type: "fileBytesTransferred", data: dataView.buffer },
             ]);
@@ -872,13 +880,13 @@ class FileTransferManager {
                 this.#parseStatus(dataView);
                 break;
             case "getFileBlock":
-                this.#parseBlock(dataView);
+                this.#parseFileBlock(dataView);
                 break;
             case "fileBytesTransferred":
-                this.#parseBytesTransferred(dataView);
+                this.#parseBytesTransferred(dataView, isSending);
                 break;
             case "setFileBlock":
-                this.#parseFileBlock(dataView);
+                this.#parseSentFileBlock(dataView);
                 break;
             case "setFileTransferCommand":
                 this.#parseFileTransferCommand(dataView);
@@ -893,7 +901,6 @@ class FileTransferManager {
             this.#assertIsIdle();
             this.#assertValidType(type);
         }
-        this.#file = file;
         const fileBuffer = await getFileBuffer(file);
         const fileLength = fileBuffer.byteLength;
         const checksum = crc32(fileBuffer);
@@ -929,6 +936,7 @@ class FileTransferManager {
         if (this.#checksum != checksum) {
             return false;
         }
+        this.#file = await this.#createFile([fileBuffer]);
         await this.#send(fileBuffer);
         return true;
     }
@@ -948,7 +956,7 @@ class FileTransferManager {
             return;
         }
         if (!this.#buffer) {
-            _console$N.log("no buffer defined");
+            _console$N.log("can't send block - no buffer defined");
             return;
         }
         const buffer = this.#buffer;
@@ -1013,7 +1021,7 @@ class FileTransferManager {
         return file;
     }
     #isSendingBlocks = [];
-    #parseFileBlock(dataView) {
+    #parseSentFileBlock(dataView) {
         _console$N.log("parseFileBlock", dataView);
         this.#isSendingBlocks.push(dataView.buffer);
     }
@@ -1034,16 +1042,20 @@ class FileTransferManager {
         this.#dispatchEvent("fileSent", { fileType: this.type, file });
         this.#isSendingBlocks.length = 0;
     }
-    async #parseBytesTransferred(dataView) {
+    async #parseBytesTransferred(dataView, isSending) {
         _console$N.log("parseBytesTransferred", dataView);
         const bytesTransferred = dataView.getUint32(0, true);
         _console$N.log({ bytesTransferred });
+        if (isSending) {
+            _console$N.log("skipping parseBytesTransferred (isSending)");
+            return;
+        }
         if (this.status != "sending") {
-            _console$N.error(`not currently sending file`);
+            _console$N.error("skipping parseBytesTransferred (not currently sending file)");
             return;
         }
         if (!this.#buffer) {
-            _console$N.log("no buffer defined");
+            _console$N.log("skipping parseBytesTransferred (no buffer defined)");
             return;
         }
         if (this.#bytesTransferred != bytesTransferred) {
@@ -1053,9 +1065,11 @@ class FileTransferManager {
         }
         this.#sendBlock();
     }
+    #isRequesting = false;
     async receive(type) {
         this.#assertIsIdle();
         this.#assertValidType(type);
+        this.#isRequesting = true;
         await this.#setType(type);
         await this.#setCommand("startReceive");
     }
@@ -1087,6 +1101,7 @@ class FileTransferManager {
         this.#status = "idle";
         this.mtu = undefined;
         this.#file = undefined;
+        this.#isRequesting = false;
     }
 }
 _a$8 = FileTransferManager;

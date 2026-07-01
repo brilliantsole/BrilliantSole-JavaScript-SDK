@@ -5,6 +5,7 @@ export declare const FileTransferMessageTypes: readonly ["getFileTypes", "maxFil
 export type FileTransferMessageType = (typeof FileTransferMessageTypes)[number];
 export declare const FileTypes: readonly ["tflite", "wifiServerCert", "wifiServerKey", "spriteSheet", "cameraImage"];
 export type FileType = (typeof FileTypes)[number];
+export type FileOrBlob = File | Blob;
 export declare const FileTransferStatuses: readonly ["idle", "sending", "receiving"];
 export type FileTransferStatus = (typeof FileTransferStatuses)[number];
 export declare const FileTransferCommands: readonly ["startSend", "startReceive", "cancel"];
@@ -48,15 +49,15 @@ export interface FileTransferEventMessages {
     fileTransferComplete: {
         fileType: FileType;
         direction: FileTransferDirection;
-        file: FileLike;
+        file: FileOrBlob;
     };
     fileReceived: {
         fileType: FileType;
-        file: FileLike;
+        file: FileOrBlob;
     };
     fileSent: {
         fileType: FileType;
-        file: FileLike;
+        file: FileOrBlob;
     };
 }
 export type FileTransferEventDispatcher = EventDispatcher<Device, FileTransferEventType, FileTransferEventMessages>;

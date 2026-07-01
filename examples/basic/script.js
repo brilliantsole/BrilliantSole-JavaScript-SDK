@@ -948,16 +948,17 @@ BS.FileTypes.forEach((fileType) => {
 });
 fileTransferTypesSelect.dispatchEvent(new Event("input"));
 onCurrentDevice(() => {
-  currentDevice.addEventListener("connected", () => {
-    fileTransferTypesSelect.querySelectorAll("option").forEach(
-      (option) => {
+  currentDevice.addEventListener(
+    "connected",
+    () => {
+      fileTransferTypesSelect.querySelectorAll("option").forEach((option) => {
         option.hidden =
           BS.FileTypes.includes(option.value) &&
           !currentDevice.fileTypes.includes(option.value);
-      },
-      { immediate: true },
-    );
-  });
+      });
+    },
+    { immediate: true },
+  );
 });
 
 /** @type {HTMLProgressElement} */
