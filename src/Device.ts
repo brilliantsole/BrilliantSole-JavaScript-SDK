@@ -553,6 +553,7 @@ class Device {
     _console.log("assigned new connectionManager", this.#connectionManager);
 
     this._informationManager.connectionType = this.connectionType;
+    this.#fileTransferManager.connectionType = this.connectionType;
   }
   async #sendTxMessages(messages?: TxMessage[], sendImmediately = true) {
     _console.log("sendTxMessages", messages, { sendImmediately });

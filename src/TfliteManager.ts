@@ -11,7 +11,7 @@ import autoBind from "auto-bind";
 import { FileConfiguration as BaseFileConfiguration } from "./FileTransferManager.ts";
 import { UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
 
-const _console = createConsole("TfliteManager", { log: true });
+const _console = createConsole("TfliteManager", { log: false });
 
 export const TfliteMessageTypes = [
   "getTfliteName",

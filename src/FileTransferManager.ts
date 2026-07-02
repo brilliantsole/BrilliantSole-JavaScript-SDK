@@ -5,6 +5,7 @@ import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
+import { ConnectionType } from "./connection/BaseConnectionManager.ts";
 
 const _console = createConsole("FileTransferManager", { log: true });
 
@@ -458,6 +459,8 @@ class FileTransferManager {
 
   #file: FileOrBlob | undefined;
   async send(type: FileType, file: FileLike, override?: boolean) {
+    override = override || this.connectionType == "client";
+
     if (true) {
       this.#assertIsIdle();
       this.#assertValidType(type);
@@ -486,7 +489,7 @@ class FileTransferManager {
         _console.log("different fileChecksums - sending");
       } else {
         _console.log("already sent file");
-        return false;
+        // return false;
       }
     }
 
@@ -496,18 +499,30 @@ class FileTransferManager {
     promises.push(this.#setLength(fileLength, false));
     promises.push(this.#setChecksum(checksum, false));
     promises.push(this.#setCommand("startSend", false));
+    promises.push(this.waitForEvent("fileTransferStatus"));
 
     this.sendMessage();
 
     await Promise.all(promises);
 
+    if (this.#status != "sending") {
+      _console.log(`status is not "sending" - not gonna send file`);
+      return false;
+    }
+
     if (this.#buffer) {
+      _console.log("existing buffer");
+      await this.cancel();
       return false;
     }
     if (this.#length != fileLength) {
+      _console.log("wrong fileLength");
+      await this.cancel();
       return false;
     }
     if (this.#checksum != checksum) {
+      _console.log("wrong checksum");
+      await this.cancel();
       return false;
     }
 
@@ -612,31 +627,32 @@ class FileTransferManager {
     return file;
   }
 
-  #isSendingBlocks: ArrayBuffer[] = [];
+  #indirectSentBlocks: ArrayBuffer[] = [];
   #parseSentFileBlock(dataView: DataView<ArrayBuffer>) {
     _console.log("parseFileBlock", dataView);
-    this.#isSendingBlocks.push(dataView.buffer);
+    this.#indirectSentBlocks.push(dataView.buffer);
   }
   async #parseIsSendingBlocks() {
-    if (this.#isSendingBlocks.length == 0) {
+    if (this.#indirectSentBlocks.length == 0) {
       return;
     }
 
-    const file = await this.#createFile(this.#isSendingBlocks);
+    const file = await this.#createFile(this.#indirectSentBlocks);
     if (!file) {
       return;
     }
 
     _console.log("sent file", file);
 
+    const fileType = this.type!;
     this.#dispatchEvent("fileTransferComplete", {
       direction: "sending",
-      fileType: this.type!,
+      fileType,
       file,
     });
-    this.#dispatchEvent("fileSent", { fileType: this.type!, file });
+    this.#dispatchEvent("fileSent", { fileType, file });
 
-    this.#isSendingBlocks.length = 0;
+    this.#indirectSentBlocks.length = 0;
   }
 
   async #parseBytesTransferred(
@@ -701,7 +717,7 @@ class FileTransferManager {
 
   clear() {
     this.#receivedBlocks.length = 0;
-    this.#isSendingBlocks.length = 0;
+    this.#indirectSentBlocks.length = 0;
     this.#isCancelling = false;
     this.#buffer = undefined;
     this.#bytesTransferred = 0;
@@ -716,6 +732,8 @@ class FileTransferManager {
     this.#file = undefined;
     this.#isRequesting = false;
   }
+
+  connectionType?: ConnectionType;
 }
 
 export default FileTransferManager;

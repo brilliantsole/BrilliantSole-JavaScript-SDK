@@ -107,10 +107,6 @@ const getCurrentTextBackgroundColorIndex = () =>
   displayCanvasHelper.numberOfColors - 2;
 const getTextBackgroundColorIndex = () =>
   displayCanvasHelper.numberOfColors - 3;
-displayCanvasHelper.setColor(getTextColorIndex(), "white");
-displayCanvasHelper.setColor(getCurrentTextBackgroundColorIndex(), "green");
-displayCanvasHelper.setColor(getTextBackgroundColorIndex(), "#004700");
-displayCanvasHelper.flushContextCommands();
 
 // DRAW
 let isDrawing = false;
@@ -174,6 +170,15 @@ const draw = async () => {
 
   //console.log("drawing...");
 
+  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+
+  await displayCanvasHelper.setColor(getTextColorIndex(), "white");
+  await displayCanvasHelper.setColor(
+    getCurrentTextBackgroundColorIndex(),
+    "green",
+  );
+  await displayCanvasHelper.setColor(getTextBackgroundColorIndex(), "#004700");
+
   if (spotifyState) {
     const { current_track } = spotifyState.track_window;
 
@@ -184,7 +189,7 @@ const draw = async () => {
     // console.log({ artistName, trackName, albumName });
     // console.log({ duration, spotifyPosition, spotifyPaused });
 
-    if (syncedLyrics && !isUpdatingNonEnglishCharacters) {
+    if (true && syncedLyrics && !isUpdatingNonEnglishCharacters) {
       const currentLyric = syncedLyrics[currentSpotifyLyricsLineIndex];
       const nextLyric = syncedLyrics[currentSpotifyLyricsLineIndex + 1];
       const nextNextLyric = syncedLyrics[currentSpotifyLyricsLineIndex + 2];
@@ -383,12 +388,11 @@ const draw = async () => {
           await drawNextNextLyric();
         }
 
-        await displayCanvasHelper.restoreContext();
-
         if (!isSpotifyTimeInputChanging && (!isMouseDown || !didMouseSeek)) {
           await displayCanvasHelper.selectLineColor(getTextColorIndex());
           await displayCanvasHelper.setLineWidth(8);
           await displayCanvasHelper.setIgnoreFill(true);
+          await displayCanvasHelper.setFillBackground(false);
           await displayCanvasHelper.drawArc(
             centerX +
               (false && isAnimatingLyric
@@ -404,10 +408,12 @@ const draw = async () => {
             arcLyricInterpolation * 360,
           );
         }
+
+        await displayCanvasHelper.restoreContext();
       }
     }
 
-    if (!isUpdatingNonEnglishCharacters) {
+    if (true && !isUpdatingNonEnglishCharacters) {
       await displayCanvasHelper.saveContext();
       await displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
       await displayCanvasHelper.selectSpriteColor(0, 0);
@@ -457,7 +463,7 @@ const draw = async () => {
       await displayCanvasHelper.restoreContext();
     }
 
-    {
+    if (true) {
       await displayCanvasHelper.saveContext();
       await displayCanvasHelper.resetSpriteScale();
       await displayCanvasHelper.resetSpriteColors();
@@ -501,7 +507,11 @@ const draw = async () => {
       await displayCanvasHelper.restoreContext();
     }
 
-    if (didUploadSpotifyAlbumArt && displayCanvasHelper.spriteSheets["album"]) {
+    if (
+      true &&
+      didUploadSpotifyAlbumArt &&
+      displayCanvasHelper.spriteSheets["album"]
+    ) {
       //console.log("drawing album art...");
       await displayCanvasHelper.saveContext();
       await displayCanvasHelper.setHorizontalAlignment("start");
@@ -872,8 +882,8 @@ const setSpotifyState = async (newSpotifyState) => {
       trackStringOffsetX = 0;
       lastTrackStringOffsetXUpdate = Date.now() + 1000;
 
-      isUpdatingNonEnglishCharacters = true;
       await getSpotifySongLyrics();
+      isUpdatingNonEnglishCharacters = true;
       let newNonEnglishCharacters = [];
 
       newNonEnglishCharacters.push(artistName, trackName, albumName);
@@ -1683,7 +1693,6 @@ const selectFont = async (newFontName) => {
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
   console.log({ spritesLineHeight }, selectedFont, fontSize);
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await draw();
 };
 

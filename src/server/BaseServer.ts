@@ -77,7 +77,7 @@ const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...RequiredDisplayMessageTypes,
 ];
 
-const _console = createConsole("BaseServer", { log: false });
+const _console = createConsole("BaseServer", { log: true });
 
 export const ServerTypes = ["window", "webSocket", "udp"] as const;
 export type ServerType = (typeof ServerTypes)[number];
@@ -1006,6 +1006,11 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               message.data = filteredDisplayContextCommandsData;
             }
             break;
+          case "setFileTransferCommand":
+            // FILL - check if necessary
+
+            break;
+          // FILL - other fileTransferEvents
         }
 
         if (this.#allowClientToDevice(client, device, message)) {
