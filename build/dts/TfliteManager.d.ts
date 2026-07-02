@@ -53,7 +53,7 @@ export type SendTfliteMessageCallback = SendMessageCallback<TfliteMessageType>;
 export declare const TfliteSensorTypes: readonly ["pressure", "linearAcceleration", "gyroscope", "magnetometer", "microphone", "camera"];
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
 export interface TfliteFileConfiguration extends BaseFileConfiguration {
-    type: "tflite";
+    fileType: "tflite";
     name: string;
     sensorTypes: TfliteSensorType[];
     task: TfliteTask;

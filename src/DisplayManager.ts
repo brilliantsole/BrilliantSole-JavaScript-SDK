@@ -2864,7 +2864,7 @@ class DisplayManager implements DisplayManagerInterface {
     const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet);
     await this.#setSpriteSheetName(this.#pendingSpriteSheet.name);
     const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
-    this.sendFile("spriteSheet", buffer, true);
+    this.sendFile("spriteSheet", buffer);
     await promise;
   }
   async uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {

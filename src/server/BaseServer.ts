@@ -24,7 +24,11 @@ import {
   removeEventListeners,
 } from "../utils/EventUtils.ts";
 import scanner from "../scanner/Scanner.ts";
-import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
+import {
+  enumToDataView,
+  parseMessage,
+  parseStringFromDataView,
+} from "../utils/ParseUtils.ts";
 import {
   ConnectionMessageType,
   ConnectionMessageTypes,
@@ -53,7 +57,11 @@ import {
   SensorType,
   SensorTypes,
 } from "../sensor/SensorDataManager.ts";
-import { RequiredFileTransferMessageTypes } from "../FileTransferManager.ts";
+import {
+  FileTransferCommands,
+  FileTransferStatuses,
+  RequiredFileTransferMessageTypes,
+} from "../FileTransferManager.ts";
 import { RequiredTfliteMessageTypes } from "../TfliteManager.ts";
 import { RequiredCameraMessageTypes } from "../CameraManager.ts";
 import { RequiredMicrophoneMessageTypes } from "../MicrophoneManager.ts";
@@ -215,6 +223,15 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     if (this.clients.includes(client)) {
       this.clients.splice(this.clients.indexOf(client), 1);
     }
+
+    if (client == this.#clientRequestingSend) {
+      this.#clientRequestingSend = undefined;
+    }
+    if (client == this.#clientSending) {
+      this.#clientSending = undefined;
+    }
+
+    // TODO: - deal with any file transfers
 
     _console.log("onClientDisconnected");
     _console.log(`currently have ${this.clients.length} clients`);
@@ -382,8 +399,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         ) {
           const connectionMessageType = messageType as ConnectionMessageType;
           _console.assertWithError(
-            device.latestConnectionMessages.has(connectionMessageType),
-            `device doesn't have messageType "${messageType}"`,
+            dataView ||
+              device.latestConnectionMessages.has(connectionMessageType),
+            `device doesn't have dataView for messageType "${messageType}"`,
           );
           dataView =
             dataView ??
@@ -456,6 +474,77 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             );
           });
           return;
+        }
+        break;
+      case "fileTransferStatus":
+        {
+          const fileTransferStatusEnum = dataView.getUint8(0);
+          const fileTransferStatus =
+            FileTransferStatuses[fileTransferStatusEnum];
+          _console.assertEnumWithError(
+            fileTransferStatus,
+            FileTransferStatuses,
+          );
+          _console.log({
+            fileTransferStatus,
+            clientRequestingSend: this.#clientRequestingSend,
+            clientSending: this.#clientSending,
+          });
+
+          if (this.#clientRequestingSend) {
+            switch (fileTransferStatus) {
+              case "sending":
+                this.#clientRequestingSend = undefined;
+                break;
+              case "idle":
+                {
+                  const clientRequestingSend = this.#clientRequestingSend;
+                  this.#clientRequestingSend = undefined;
+                  if (device.getCurrentSentFileConfiguration()) {
+                    _console.log("already receive file - no need to resend");
+                  } else {
+                    _console.log(
+                      "device doesn't have device locally - requesting remote resend",
+                    );
+                    this.#clientSending = clientRequestingSend;
+                    device._onRemoteConnectionMessageSent(
+                      "fileTransferStatus",
+                      enumToDataView(FileTransferStatuses, "sending"),
+                      false,
+                    );
+
+                    const deviceMessage = this.#createDeviceMessage(
+                      device,
+                      messageType,
+                      dataView,
+                    );
+
+                    // is this necessary?
+                    if (false) {
+                      this.broadcast(
+                        this.#createDeviceServerMessage(device, deviceMessage),
+                        this.#allowDeviceToClients(device, deviceMessage),
+                        [clientRequestingSend],
+                      );
+                    }
+
+                    deviceMessage.data = enumToDataView(
+                      FileTransferStatuses,
+                      "sending",
+                    );
+                    this.sendToClient(
+                      clientRequestingSend,
+                      this.#createDeviceServerMessage(device, deviceMessage),
+                    );
+                    return;
+                  }
+                }
+                break;
+              case "receiving":
+                this.#clientRequestingSend = undefined;
+                break;
+            }
+          }
         }
         break;
       default:
@@ -546,8 +635,15 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       server: this,
     });
   }
-  #filterServerToClients(message: ServerMessageOrMessageType) {
-    return this.clients.filter((client) =>
+  #filterServerToClients(
+    message: ServerMessageOrMessageType,
+    clients: ServerClient[] = this.clients,
+    excludeClients?: ServerClient[],
+  ) {
+    if (excludeClients) {
+      clients = clients.filter((client) => !excludeClients.includes(client));
+    }
+    return clients.filter((client) =>
       this.#allowServerToClient(client, message),
     );
   }
@@ -582,8 +678,16 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       server: this,
     });
   }
-  #allowDeviceToClients(device: Device, message: DeviceMessageOrMessageType) {
-    return this.clients.filter((client) =>
+  #allowDeviceToClients(
+    device: Device,
+    message: DeviceMessageOrMessageType,
+    clients: ServerClient[] = this.clients,
+    excludeClients?: ServerClient[],
+  ) {
+    if (excludeClients) {
+      clients = clients.filter((client) => !excludeClients.includes(client));
+    }
+    return clients.filter((client) =>
       this.#allowDeviceToClient(device, client, message),
     );
   }
@@ -907,6 +1011,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     return clientDeviceContext;
   }
 
+  #clientRequestingSend?: ServerClient;
+  #clientSending?: ServerClient;
+
   #filterClientToDeviceTxMessage(
     client: ServerClient,
     device: Device,
@@ -1007,10 +1114,111 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             }
             break;
           case "setFileTransferCommand":
-            // FILL - check if necessary
+            {
+              const fileTransferCommandEnum = dataView.getUint8(0);
+              const fileTransferCommand =
+                FileTransferCommands[fileTransferCommandEnum];
+              _console.assertEnumWithError(
+                fileTransferCommand,
+                FileTransferCommands,
+              );
+              _console.log({
+                fileTransferCommand,
+                clientSending: client == this.#clientSending,
+              });
+              if (client == this.#clientSending) {
+                if (fileTransferCommand == "cancel") {
+                  this.#clientSending = undefined;
+                  device._onRemoteConnectionMessageSent(
+                    "fileTransferStatus",
+                    enumToDataView(FileTransferStatuses, "idle"),
+                    false,
+                  );
 
+                  const fileTransferStatusMessage = this.#createDeviceMessage(
+                    device,
+                    "fileTransferStatus",
+                  );
+                  deviceMessages.push(fileTransferStatusMessage);
+                }
+              } else if (fileTransferCommand == "startSend") {
+                if (
+                  !this.#clientRequestingSend &&
+                  device.fileTransferStatus == "idle"
+                ) {
+                  this.#clientRequestingSend = client;
+                  _console.log(
+                    "clientRequestingSend",
+                    this.#clientRequestingSend,
+                  );
+                } else {
+                  const fileTransferStatusMessage = this.#createDeviceMessage(
+                    device,
+                    "fileTransferStatus",
+                  );
+                  deviceMessages.push(fileTransferStatusMessage);
+                  return;
+                }
+              }
+            }
             break;
-          // FILL - other fileTransferEvents
+          case "setFileBlock":
+            {
+              if (client == this.#clientSending) {
+                _console.log("parsing client file block locally");
+                device.addEventListener(
+                  "fileTransferProgress",
+                  (event) => {
+                    const { bytesTransferred } = event.message;
+                    _console.log("still sending local file...", {
+                      bytesTransferred,
+                    });
+                    const dataView = new DataView(new ArrayBuffer(4));
+                    dataView.setUint32(0, bytesTransferred, true);
+                    const deviceMessage = this.#createDeviceMessage(
+                      device,
+                      "fileBytesTransferred",
+                      dataView,
+                    );
+                    this.sendToClient(
+                      client,
+                      this.#createDeviceServerMessage(device, deviceMessage),
+                    );
+
+                    if (bytesTransferred == device.fileLength) {
+                      this.#clientSending = undefined;
+                      device._onRemoteConnectionMessageSent(
+                        "fileTransferStatus",
+                        enumToDataView(FileTransferStatuses, "idle"),
+                        false,
+                      );
+
+                      _console.log(
+                        "done sending local file - notifying client...",
+                      );
+                      const deviceMessage = this.#createDeviceMessage(
+                        device,
+                        "fileTransferStatus",
+                      );
+                      this.sendToClient(
+                        client,
+                        this.#createDeviceServerMessage(device, deviceMessage),
+                      );
+                    }
+                  },
+                  {
+                    once: true,
+                  },
+                );
+                device._onRemoteConnectionMessageSent(
+                  messageType,
+                  dataView,
+                  false,
+                );
+                return;
+              }
+            }
+            break;
         }
 
         if (this.#allowClientToDevice(client, device, message)) {

@@ -18,7 +18,11 @@ export type FileTransferEventType = (typeof FileTransferEventTypes)[number];
 export declare const RequiredFileTransferMessageTypes: FileTransferMessageType[];
 export interface FileConfiguration {
     file: FileLike;
-    type: FileType;
+    fileType: FileType;
+}
+export interface FullFileConfiguration extends FileConfiguration {
+    checksum: number;
+    length: number;
 }
 export interface FileTransferEventMessages {
     getFileTypes: {
@@ -46,6 +50,8 @@ export interface FileTransferEventMessages {
     fileTransferProgress: {
         fileType: FileType;
         progress: number;
+        direction: FileTransferDirection;
+        bytesTransferred: number;
     };
     fileTransferComplete: {
         fileType: FileType;
@@ -63,7 +69,7 @@ export interface FileTransferEventMessages {
 }
 export type FileTransferEventDispatcher = EventDispatcher<Device, FileTransferEventType, FileTransferEventMessages>;
 export type SendFileTransferMessageCallback = SendMessageCallback<FileTransferMessageType>;
-export type SendFileCallback = (type: FileType, file: FileLike, override?: boolean) => Promise<boolean>;
+export type SendFileCallback = (fileType: FileType, file: FileLike) => Promise<boolean>;
 declare class FileTransferManager {
     #private;
     constructor();
@@ -83,8 +89,10 @@ declare class FileTransferManager {
     get checksum(): number;
     get status(): "idle" | "sending" | "receiving";
     parseMessage(messageType: FileTransferMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
-    send(type: FileType, file: FileLike, override?: boolean): Promise<boolean>;
+    send(type: FileType, file: FileLike): Promise<boolean>;
     mtu: number;
+    sentFileConfigurations: FullFileConfiguration[];
+    getCurrentSentFileConfiguration(): FullFileConfiguration | undefined;
     receive(type: FileType): Promise<void>;
     cancel(): Promise<void>;
     requestRequiredInformation(): void;

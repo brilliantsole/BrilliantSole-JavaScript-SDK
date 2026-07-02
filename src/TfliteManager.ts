@@ -89,7 +89,7 @@ export const TfliteSensorTypes = [
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
 
 export interface TfliteFileConfiguration extends BaseFileConfiguration {
-  type: "tflite";
+  fileType: "tflite";
   name: string;
   sensorTypes: TfliteSensorType[];
   task: TfliteTask;

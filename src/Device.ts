@@ -60,6 +60,7 @@ import FileTransferManager, {
   FileTypes,
   RequiredFileTransferMessageTypes,
   SendFileCallback,
+  FullFileConfiguration,
 } from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
@@ -1114,9 +1115,10 @@ class Device {
   _onRemoteConnectionMessageSent(
     messageType: ConnectionMessageType,
     dataView: DataView<ArrayBuffer>,
+    isSending = true,
   ) {
     _console.log("_onConnectionMessageSent", { messageType }, dataView);
-    this.#onConnectionMessageReceived(messageType, dataView, true);
+    this.#onConnectionMessageReceived(messageType, dataView, isSending);
   }
 
   #onConnectionMessageSent(message: TxMessage) {
@@ -1389,6 +1391,12 @@ class Device {
 
   // FILE TRANSFER
   #fileTransferManager = new FileTransferManager();
+  get sentFileConfigurations() {
+    return this.#fileTransferManager.sentFileConfigurations;
+  }
+  get getCurrentSentFileConfiguration() {
+    return this.#fileTransferManager.getCurrentSentFileConfiguration;
+  }
 
   get fileTypes() {
     return this.#fileTransferManager.fileTypes;
@@ -1403,6 +1411,12 @@ class Device {
       }
       return true;
     });
+  }
+  get fileLength() {
+    return this.#fileTransferManager.length;
+  }
+  get fileChecksum() {
+    return this.#fileTransferManager.checksum;
   }
 
   async sendFile(fileType: FileType, file: FileLike) {
@@ -1442,10 +1456,10 @@ class Device {
   }
 
   async sendTfliteConfiguration(configuration: TfliteFileConfiguration) {
-    configuration.type = "tflite";
+    configuration.fileType = "tflite";
     this.#tfliteManager.sendConfiguration(configuration, false);
     const didSendFile = await this.#fileTransferManager.send(
-      configuration.type,
+      configuration.fileType,
       configuration.file,
     );
     _console.log({ didSendFile });

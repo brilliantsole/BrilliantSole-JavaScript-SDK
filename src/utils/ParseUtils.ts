@@ -1,4 +1,4 @@
-import { sliceDataView } from "./ArrayBufferUtils.ts";
+import { sliceDataView, UInt8ByteBuffer } from "./ArrayBufferUtils.ts";
 import { createConsole } from "./Console.ts";
 import { textDecoder } from "./Text.ts";
 
@@ -63,4 +63,19 @@ export function parseMessage<MessageType extends string>(
     const isLast = byteOffset >= dataView.byteLength;
     callback(messageType, _dataView, context, isLast);
   }
+}
+
+export function enumToArrayBuffer<T extends string | number>(
+  enumeration: readonly T[],
+  value: T,
+) {
+  _console.assertEnumWithError(value, enumeration);
+  const valueEnum = enumeration.indexOf(value);
+  return Uint8Array.from([valueEnum]).buffer;
+}
+export function enumToDataView<T extends string | number>(
+  enumeration: readonly T[],
+  value: T,
+) {
+  return new DataView(enumToArrayBuffer(enumeration, value));
 }
