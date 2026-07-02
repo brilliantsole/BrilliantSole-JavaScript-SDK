@@ -797,6 +797,7 @@ class DisplayManager implements DisplayManagerInterface {
     isSending?: boolean,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
+    _console.log("setColor", { color, colorIndex, sendImmediately, isSending });
     if (typeof color == "string") {
       color = stringToRGB(color);
     } else {
@@ -805,7 +806,7 @@ class DisplayManager implements DisplayManagerInterface {
 
     const colorHex = rgbToHex(color);
     if (this.colors[colorIndex] == colorHex) {
-      // _console.log(`redundant color #${colorIndex} ${colorHex}`);
+      _console.log(`redundant color #${colorIndex} ${colorHex}`);
       return;
     }
 

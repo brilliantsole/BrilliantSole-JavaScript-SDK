@@ -3038,9 +3038,9 @@ const displayColorTemplate = document.getElementById("displayColorTemplate");
 const displayColorsContainer = document.getElementById("displayColors");
 /** @type {string[]} */
 const setDisplayColor = BS.ThrottleUtils.throttle(
-  (colorIndex, colorString) => {
-    // console.log({ colorIndex, colorString });
-    currentDevice.setDisplayColor(colorIndex, colorString, true);
+  async (colorIndex, colorString) => {
+    console.log({ colorIndex, colorString });
+    await currentDevice.setDisplayColor(colorIndex, colorString, true);
     updateBitmapCanvas();
   },
   100,

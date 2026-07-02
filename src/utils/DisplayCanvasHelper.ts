@@ -578,7 +578,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     const { displayContextCommands } = event.message;
     _console.log("onDeviceDisplayContextCommands", displayContextCommands);
-    //this.#onSentContextCommands();
+    this.#onSentContextCommands();
   }
 
   #onSentContextCommands() {
