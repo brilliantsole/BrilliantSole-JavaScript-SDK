@@ -1530,7 +1530,7 @@ export function serializeDisplayContextCommand(
     return;
   }
 
-  _console.assertEnumWithError(command.type, DisplayContextCommandTypes);
+  _console.assertEnumWithError(DisplayContextCommandTypes, command.type);
 
   const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
     command.type,
@@ -1665,7 +1665,7 @@ export function parseDisplayContextCommands(
         {
           const horizontalAlignment =
             DisplayAlignments[dataView.getUint8(offset++)];
-          _console.assertEnumWithError(horizontalAlignment, DisplayAlignments);
+          _console.assertEnumWithError(DisplayAlignments, horizontalAlignment);
           command = { type, horizontalAlignment };
         }
         break;
@@ -1673,7 +1673,7 @@ export function parseDisplayContextCommands(
         {
           const verticalAlignment =
             DisplayAlignments[dataView.getUint8(offset++)];
-          _console.assertEnumWithError(verticalAlignment, DisplayAlignments);
+          _console.assertEnumWithError(DisplayAlignments, verticalAlignment);
           command = { type, verticalAlignment };
         }
         break;
@@ -1692,21 +1692,21 @@ export function parseDisplayContextCommands(
         {
           const segmentStartCap =
             DisplaySegmentCaps[dataView.getUint8(offset++)];
-          _console.assertEnumWithError(segmentStartCap, DisplaySegmentCaps);
+          _console.assertEnumWithError(DisplaySegmentCaps, segmentStartCap);
           command = { type, segmentStartCap };
         }
         break;
       case "setSegmentEndCap":
         {
           const segmentEndCap = DisplaySegmentCaps[dataView.getUint8(offset++)];
-          _console.assertEnumWithError(segmentEndCap, DisplaySegmentCaps);
+          _console.assertEnumWithError(DisplaySegmentCaps, segmentEndCap);
           command = { type, segmentEndCap };
         }
         break;
       case "setSegmentCap":
         {
           const segmentCap = DisplaySegmentCaps[dataView.getUint8(offset++)];
-          _console.assertEnumWithError(segmentCap, DisplaySegmentCaps);
+          _console.assertEnumWithError(DisplaySegmentCaps, segmentCap);
           command = { type, segmentCap };
         }
         break;
@@ -1878,7 +1878,7 @@ export function parseDisplayContextCommands(
         {
           const spritesDirection =
             DisplayDirections[dataView.getUint8(offset++)];
-          _console.assertEnumWithError(spritesDirection, DisplayDirections);
+          _console.assertEnumWithError(DisplayDirections, spritesDirection);
           command = { type, spritesDirection };
         }
         break;
@@ -1886,7 +1886,7 @@ export function parseDisplayContextCommands(
         {
           const spritesLineDirection =
             DisplayDirections[dataView.getUint8(offset++)];
-          _console.assertEnumWithError(spritesLineDirection, DisplayDirections);
+          _console.assertEnumWithError(DisplayDirections, spritesLineDirection);
           command = { type, spritesLineDirection };
         }
         break;
@@ -1908,7 +1908,7 @@ export function parseDisplayContextCommands(
         {
           const spritesAlignment =
             DisplayAlignments[dataView.getUint8(offset++)];
-          _console.assertEnumWithError(spritesAlignment, DisplayAlignments);
+          _console.assertEnumWithError(DisplayAlignments, spritesAlignment);
           command = { type, spritesAlignment };
         }
         break;
@@ -1916,7 +1916,7 @@ export function parseDisplayContextCommands(
         {
           const spritesLineAlignment =
             DisplayAlignments[dataView.getUint8(offset++)];
-          _console.assertEnumWithError(spritesLineAlignment, DisplayAlignments);
+          _console.assertEnumWithError(DisplayAlignments, spritesLineAlignment);
           command = { type, spritesLineAlignment };
         }
         break;
@@ -2058,7 +2058,7 @@ export function parseDisplayContextCommands(
           const curves: DisplayBezierCurve[] = [];
           const pointDataType =
             DisplayPointDataTypes[dataView.getUint8(offset++)];
-          _console.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+          _console.assertEnumWithError(DisplayPointDataTypes, pointDataType);
           const numberOfCurves = dataView.getUint8(offset++);
           const curveTypeDataLength = Math.ceil(
             numberOfCurves / displayCurveTypesPerByte,

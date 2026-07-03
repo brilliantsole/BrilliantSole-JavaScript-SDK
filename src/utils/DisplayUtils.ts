@@ -119,13 +119,13 @@ export function roundScale(scale: number) {
 }
 
 export function assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
-  _console.assertEnumWithError(segmentCap, DisplaySegmentCaps);
+  _console.assertEnumWithError(DisplaySegmentCaps, segmentCap);
 }
 
 export function assertValidDisplayBrightness(
   displayBrightness: DisplayBrightness,
 ) {
-  _console.assertEnumWithError(displayBrightness, DisplayBrightnesses);
+  _console.assertEnumWithError(DisplayBrightnesses, displayBrightness);
 }
 
 export function assertValidColorValue(name: string, value: number) {
@@ -303,17 +303,17 @@ export type DisplayColorYCbCr = {
 };
 
 export function assertValidAlignment(alignment: DisplayAlignment) {
-  _console.assertEnumWithError(alignment, DisplayAlignments);
+  _console.assertEnumWithError(DisplayAlignments, alignment);
 }
 
 export function assertValidDirection(direction: DisplayDirection) {
-  _console.assertEnumWithError(direction, DisplayDirections);
+  _console.assertEnumWithError(DisplayDirections, direction);
 }
 
 export function assertValidAlignmentDirection(
   direction: DisplayAlignmentDirection,
 ) {
-  _console.assertEnumWithError(direction, DisplayAlignmentDirections);
+  _console.assertEnumWithError(DisplayAlignmentDirections, direction);
 }
 
 export const displayCurveTypeToNumberOfControlPoints: Record<
@@ -588,7 +588,7 @@ export function serializePoints(
   isPath = false,
 ) {
   pointDataType = pointDataType || getPointDataType(points);
-  _console.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+  _console.assertEnumWithError(DisplayPointDataTypes, pointDataType);
   const pointDataSize = displayPointDataTypeToSize[pointDataType];
   let dataViewLength = points.length * pointDataSize;
   if (!isPath) {
@@ -631,7 +631,7 @@ export function serializePoints(
 export function parsePoints(dataView: DataView, offset: number) {
   const points: Vector2[] = [];
   const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
-  _console.assertEnumWithError(pointDataType, DisplayPointDataTypes);
+  _console.assertEnumWithError(DisplayPointDataTypes, pointDataType);
   const numberOfPoints = dataView.getUint8(offset++);
   _console.assertWithError(
     numberOfPoints >= 3,

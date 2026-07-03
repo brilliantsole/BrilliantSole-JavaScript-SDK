@@ -1245,8 +1245,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     isSending?: boolean,
   ) {
     _console.assertEnumWithError(
-      alignmentDirection,
       DisplayAlignmentDirections,
+      alignmentDirection,
     );
     const alignmentCommand =
       DisplayAlignmentDirectionToCommandType[alignmentDirection];
@@ -1526,7 +1526,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
-    _console.assertEnumWithError(cropDirection, DisplayCropDirections);
+    _console.assertEnumWithError(DisplayCropDirections, cropDirection);
     crop = Math.max(0, crop);
     const cropKey = DisplayCropDirectionToStateKey[cropDirection];
     const differences = this.#contextStateHelper.update({
@@ -1604,7 +1604,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
-    _console.assertEnumWithError(cropDirection, DisplayCropDirections);
+    _console.assertEnumWithError(DisplayCropDirections, cropDirection);
     const cropCommand =
       DisplayRotationCropDirectionToCommandType[cropDirection];
     const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];

@@ -136,7 +136,7 @@ class FileTransferManager {
   }
 
   #assertValidType(type: FileType) {
-    _console.assertEnumWithError(type, FileTypes);
+    _console.assertEnumWithError(FileTypes, type);
   }
   #isValidType(type: FileType) {
     return FileTypes.includes(type);
@@ -155,7 +155,7 @@ class FileTransferManager {
     );
   }
   #assertValidCommand(command: FileTransferCommand) {
-    _console.assertEnumWithError(command, FileTransferCommands);
+    _console.assertEnumWithError(FileTransferCommands, command);
   }
 
   #fileTypes: FileType[] = [];
@@ -326,7 +326,7 @@ class FileTransferManager {
     _console.log("parseFileTransferCommand", dataView);
     const commandEnum = dataView.getUint8(0);
     const command = FileTransferCommands[commandEnum];
-    _console.assertEnumWithError(command, FileTransferCommands);
+    _console.assertEnumWithError(FileTransferCommands, command);
     _console.log({ command });
   }
 

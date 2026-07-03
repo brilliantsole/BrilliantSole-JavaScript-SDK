@@ -144,7 +144,7 @@ class MicrophoneManager {
     this.#updateMicrophoneStatus(newMicrophoneStatus);
   }
   #updateMicrophoneStatus(newMicrophoneStatus: MicrophoneStatus) {
-    _console.assertEnumWithError(newMicrophoneStatus, MicrophoneStatuses);
+    _console.assertEnumWithError(MicrophoneStatuses, newMicrophoneStatus);
     if (newMicrophoneStatus == this.#microphoneStatus) {
       _console.log(`redundant microphoneStatus ${newMicrophoneStatus}`);
       return;
@@ -163,7 +163,7 @@ class MicrophoneManager {
     command: MicrophoneCommand,
     sendImmediately?: boolean,
   ) {
-    _console.assertEnumWithError(command, MicrophoneCommands);
+    _console.assertEnumWithError(MicrophoneCommands, command);
     _console.log(`sending microphone command "${command}"`);
 
     const promise = this.waitForEvent("microphoneStatus");
@@ -186,7 +186,7 @@ class MicrophoneManager {
     _console.log("parseMicrophoneCommand", dataView);
     const commandEnum = dataView.getUint8(0);
     const command = MicrophoneCommands[commandEnum];
-    _console.assertEnumWithError(command, MicrophoneCommands);
+    _console.assertEnumWithError(MicrophoneCommands, command);
     _console.log({ command });
     // TODO
   }
@@ -236,7 +236,7 @@ class MicrophoneManager {
 
   // MICROPHONE DATA
   #assertValidBitDepth() {
-    _console.assertEnumWithError(this.bitDepth!, MicrophoneBitDepths);
+    _console.assertEnumWithError(MicrophoneBitDepths, this.bitDepth!);
   }
   #fadeDuration = 0.01;
   #playbackTime = 0;
@@ -361,7 +361,7 @@ class MicrophoneManager {
       let rawValue = dataView.getUint8(byteOffset++);
       const values = MicrophoneConfigurationValues[microphoneConfigurationType];
       const value = values[rawValue];
-      _console.assertEnumWithError(value, values);
+      _console.assertEnumWithError(values, value);
       _console.log({ microphoneConfigurationType, value });
       // @ts-expect-error
       parsedMicrophoneConfiguration[microphoneConfigurationType] = value;
@@ -435,8 +435,8 @@ class MicrophoneManager {
     microphoneConfigurationType: MicrophoneConfigurationType,
   ) {
     _console.assertEnumWithError(
-      microphoneConfigurationType,
       MicrophoneConfigurationTypes,
+      microphoneConfigurationType,
     );
   }
   static AssertValidMicrophoneConfigurationTypeEnum(
@@ -479,7 +479,7 @@ class MicrophoneManager {
         }
         const values =
           MicrophoneConfigurationValues[microphoneConfigurationType];
-        _console.assertEnumWithError(value, values);
+        _console.assertEnumWithError(values, value);
         // @ts-expect-error
         const rawValue = values.indexOf(value);
         dataView.setUint8(index * 2 + 1, rawValue);

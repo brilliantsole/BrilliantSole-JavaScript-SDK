@@ -171,8 +171,8 @@ class Console {
 
   /** @throws {Error} if value's type doesn't match */
   assertEnumWithError<T extends string | number>(
-    value: T,
     enumeration: readonly T[],
+    value: T,
   ) {
     this.assertWithError(
       enumeration.includes(value),

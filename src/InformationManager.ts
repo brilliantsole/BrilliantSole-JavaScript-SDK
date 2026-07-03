@@ -153,7 +153,7 @@ class InformationManager {
     return DeviceTypes.indexOf(this.type);
   }
   #assertValidDeviceType(type: DeviceType) {
-    _console.assertEnumWithError(type, DeviceTypes);
+    _console.assertEnumWithError(DeviceTypes, type);
   }
   #assertValidDeviceTypeEnum(typeEnum: number) {
     _console.assertTypeWithError(typeEnum, "number");

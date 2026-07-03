@@ -180,7 +180,7 @@ class CameraManager {
   }
   #latestTakingPictureTimestamp = 0;
   #updateCameraStatus(newCameraStatus: CameraStatus) {
-    _console.assertEnumWithError(newCameraStatus, CameraStatuses);
+    _console.assertEnumWithError(CameraStatuses, newCameraStatus);
     if (newCameraStatus == this.#cameraStatus) {
       _console.log(`redundant cameraStatus ${newCameraStatus}`);
       return;
@@ -208,7 +208,7 @@ class CameraManager {
 
   // CAMERA COMMAND
   async #sendCameraCommand(command: CameraCommand, sendImmediately?: boolean) {
-    _console.assertEnumWithError(command, CameraCommands);
+    _console.assertEnumWithError(CameraCommands, command);
     _console.log(`sending camera command "${command}"`);
 
     const promise = this.waitForEvent("cameraStatus");
@@ -643,8 +643,8 @@ class CameraManager {
     cameraConfigurationType: CameraConfigurationType,
   ) {
     _console.assertEnumWithError(
-      cameraConfigurationType,
       CameraConfigurationTypes,
+      cameraConfigurationType,
     );
   }
   static AssertValidCameraConfigurationTypeEnum(

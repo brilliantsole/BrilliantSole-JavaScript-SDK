@@ -120,7 +120,7 @@ class FirmwareManager {
     return this.#status;
   }
   #updateStatus(newStatus: FirmwareStatus) {
-    _console.assertEnumWithError(newStatus, FirmwareStatuses);
+    _console.assertEnumWithError(FirmwareStatuses, newStatus);
     if (this.#status == newStatus) {
       _console.log(`redundant firmwareStatus assignment "${newStatus}"`);
       return;

@@ -143,7 +143,7 @@ export type MessagesSentCallback = (messages: TxMessage[]) => void;
 
 abstract class BaseConnectionManager {
   static #AssertValidTxRxMessageType(messageType: TxRxMessageType) {
-    _console.assertEnumWithError(messageType, TxRxMessageTypes);
+    _console.assertEnumWithError(TxRxMessageTypes, messageType);
   }
 
   abstract get bluetoothId(): string;
@@ -186,7 +186,7 @@ abstract class BaseConnectionManager {
     return this.#status;
   }
   protected set status(newConnectionStatus) {
-    _console.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
+    _console.assertEnumWithError(ConnectionStatuses, newConnectionStatus);
     if (this.#status == newConnectionStatus) {
       _console.log(
         `tried to assign same connection status "${newConnectionStatus}"`,

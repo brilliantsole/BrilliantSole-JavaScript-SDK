@@ -76,7 +76,7 @@ export function createMessage<MessageType extends string>(
     const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
     const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
 
-    _console.assertEnumWithError(message.type, enumeration);
+    _console.assertEnumWithError(enumeration, message.type);
     const messageTypeEnum = enumeration.indexOf(message.type);
 
     let messageDataLengthDataView: DataView;

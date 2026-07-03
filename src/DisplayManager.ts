@@ -439,7 +439,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.#updateDisplayStatus(newDisplayStatus);
   }
   #updateDisplayStatus(newDisplayStatus: DisplayStatus) {
-    _console.assertEnumWithError(newDisplayStatus, DisplayStatuses);
+    _console.assertEnumWithError(DisplayStatuses, newDisplayStatus);
     if (newDisplayStatus == this.#displayStatus) {
       _console.log(`redundant displayStatus ${newDisplayStatus}`);
       return;
@@ -458,7 +458,7 @@ class DisplayManager implements DisplayManagerInterface {
     command: DisplayCommand,
     sendImmediately?: boolean,
   ) {
-    _console.assertEnumWithError(command, DisplayCommands);
+    _console.assertEnumWithError(DisplayCommands, command);
     _console.log(`sending display command "${command}"`);
 
     const promise = this.waitForEvent("displayStatus");
@@ -568,7 +568,7 @@ class DisplayManager implements DisplayManagerInterface {
             const values = DisplayInformationValues[displayInformationType];
             let rawValue = dataView.getUint8(byteOffset++);
             const value = values[rawValue];
-            _console.assertEnumWithError(value, values);
+            _console.assertEnumWithError(values, value);
             // @ts-expect-error
             parsedDisplayInformation[displayInformationType] = value;
           }
@@ -1350,7 +1350,7 @@ class DisplayManager implements DisplayManagerInterface {
     isSending?: boolean,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
-    _console.assertEnumWithError(cropDirection, DisplayCropDirections);
+    _console.assertEnumWithError(DisplayCropDirections, cropDirection);
     crop = Math.max(0, crop);
     const cropCommand = DisplayCropDirectionToCommandType[cropDirection];
     const cropKey = DisplayCropDirectionToStateKey[cropDirection];
@@ -1434,7 +1434,7 @@ class DisplayManager implements DisplayManagerInterface {
     isSending?: boolean,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
-    _console.assertEnumWithError(cropDirection, DisplayCropDirections);
+    _console.assertEnumWithError(DisplayCropDirections, cropDirection);
     const cropCommand =
       DisplayRotationCropDirectionToCommandType[cropDirection];
     const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];

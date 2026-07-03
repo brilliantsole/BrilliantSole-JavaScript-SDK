@@ -482,8 +482,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           const fileTransferStatus =
             FileTransferStatuses[fileTransferStatusEnum];
           _console.assertEnumWithError(
-            fileTransferStatus,
             FileTransferStatuses,
+            fileTransferStatus,
           );
           _console.log({
             fileTransferStatus,
@@ -1119,8 +1119,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               const fileTransferCommand =
                 FileTransferCommands[fileTransferCommandEnum];
               _console.assertEnumWithError(
-                fileTransferCommand,
                 FileTransferCommands,
+                fileTransferCommand,
               );
               _console.log({
                 fileTransferCommand,

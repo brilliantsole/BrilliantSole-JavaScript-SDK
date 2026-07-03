@@ -205,7 +205,7 @@ class SensorDataManager {
   #counts: Map<SensorType, number> = new Map();
 
   static AssertValidSensorType(sensorType: SensorType) {
-    _console.assertEnumWithError(sensorType, SensorTypes);
+    _console.assertEnumWithError(SensorTypes, sensorType);
   }
   static AssertValidSensorTypeEnum(sensorTypeEnum: number) {
     _console.assertTypeWithError(sensorTypeEnum, "number");

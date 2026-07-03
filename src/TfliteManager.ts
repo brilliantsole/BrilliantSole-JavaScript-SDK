@@ -107,7 +107,7 @@ class TfliteManager {
   sendMessage!: SendTfliteMessageCallback;
 
   #assertValidTask(task: TfliteTask) {
-    _console.assertEnumWithError(task, TfliteTasks);
+    _console.assertEnumWithError(TfliteTasks, task);
   }
   #assertValidTaskEnum(taskEnum: number) {
     _console.assertWithError(

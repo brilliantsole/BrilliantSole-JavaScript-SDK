@@ -95,7 +95,7 @@ class VibrationManager {
   #verifyLocations(locations: VibrationLocation[]) {
     this.#assertNonEmptyArray(locations);
     locations.forEach((location) => {
-      _console.assertEnumWithError(location, VibrationLocations);
+      _console.assertEnumWithError(VibrationLocations, location);
     });
   }
   #createLocationsBitmask(locations: VibrationLocation[]) {
@@ -120,7 +120,7 @@ class VibrationManager {
   }
 
   #verifyWaveformEffect(waveformEffect: VibrationWaveformEffect) {
-    _console.assertEnumWithError(waveformEffect, VibrationWaveformEffects);
+    _console.assertEnumWithError(VibrationWaveformEffects, waveformEffect);
   }
 
   #verifyWaveformEffectSegment(
@@ -310,7 +310,7 @@ class VibrationManager {
   ) {
     _console.assertWithError(dataView?.byteLength > 0, "no data received");
     const locationsBitmask = this.#createLocationsBitmask(locations);
-    _console.assertEnumWithError(vibrationType, VibrationTypes);
+    _console.assertEnumWithError(VibrationTypes, vibrationType);
     const vibrationTypeIndex = VibrationTypes.indexOf(vibrationType);
     _console.log({ locationsBitmask, vibrationTypeIndex, dataView });
     const data = concatenateArrayBuffers(

@@ -69,7 +69,7 @@ export function enumToArrayBuffer<T extends string | number>(
   enumeration: readonly T[],
   value: T,
 ) {
-  _console.assertEnumWithError(value, enumeration);
+  _console.assertEnumWithError(enumeration, value);
   const valueEnum = enumeration.indexOf(value);
   return Uint8Array.from([valueEnum]).buffer;
 }
