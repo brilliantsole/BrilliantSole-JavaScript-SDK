@@ -60,7 +60,7 @@ import FileTransferManager, {
   FileTypes,
   RequiredFileTransferMessageTypes,
   SendFileCallback,
-  FullFileConfiguration,
+  SentFileConfiguration,
 } from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
@@ -515,6 +515,19 @@ class Device {
           }
           break;
         default:
+          break;
+      }
+    });
+    this.addEventListener("fileSent", (event) => {
+      if (!event.message.indirectly) {
+        return;
+      }
+      const { file, fileType } = event.message;
+      _console.log("indirectly sent file", { fileType });
+      switch (fileType) {
+        case "tflite":
+          break;
+        case "spriteSheet":
           break;
       }
     });
@@ -1417,6 +1430,9 @@ class Device {
   }
   get fileChecksum() {
     return this.#fileTransferManager.checksum;
+  }
+  get fileType() {
+    return this.#fileTransferManager.type;
   }
 
   async sendFile(fileType: FileType, file: FileLike) {

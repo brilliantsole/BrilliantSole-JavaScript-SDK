@@ -157,7 +157,7 @@ BS.DeviceManager.addEventListener("availableDevice", (event) => {
   availableDevicesContainer.appendChild(availableDeviceContainer);
 });
 
-const autoConnectToAvailableDevices = true;
+const autoConnectToAvailableDevices = false;
 BS.DeviceManager.addEventListener("availableDevice", (event) => {
   const { availableDevice } = event.message;
   console.log("availableDevice", availableDevice);
@@ -274,13 +274,14 @@ const selectUrls = [
   { name: "display workout", url: "../display-workout" },
   { name: "display face", url: "../display-face" },
 ];
-const createIframeContainer = () => {
+const createIframeContainer = (src) => {
   const iframeContainer = iframeContainerTemplate.content
     .cloneNode(true)
     .querySelector(".iframeContainer");
 
   /** @type {HTMLIFrameElement} */
   const iframe = iframeContainer.querySelector(".iframe");
+  iframe.src = src ?? iframe.src;
   iframe.addEventListener("load", (event) => {
     console.log(`iframe loaded "${iframe.src}"`);
     urlInput.value = iframe.src;
@@ -354,8 +355,9 @@ const createIframeContainer = () => {
 
   iframeContainers.appendChild(iframeContainer);
 };
-createIframeContainer();
-createIframeContainer();
+createIframeContainer("../display-text");
+// createIframeContainer("../basic");
+// createIframeContainer();
 window.createIframeContainer = createIframeContainer;
 
 BS.ServerManager.clientSensorConfigurationToDeviceGuardManager.add(

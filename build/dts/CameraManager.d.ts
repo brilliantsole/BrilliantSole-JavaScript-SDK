@@ -70,11 +70,11 @@ declare class CameraManager {
     constructor();
     sendMessage: SendCameraMessageCallback;
     eventDispatcher: CameraEventDispatcher;
-    get waitForEvent(): <T extends "cameraStatus" | "getCameraConfiguration" | "cameraImageProgress" | "cameraImage" | "isRecordingCamera" | "cameraRecording" | "autoPicture" | "startRecordingCamera" | "stopRecordingCamera" | "cameraCommand" | "setCameraConfiguration" | "cameraData">(type: T, options?: {
+    get waitForEvent(): <T extends "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "isRecordingCamera" | "startRecordingCamera" | "stopRecordingCamera" | "cameraRecording" | "autoPicture">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "cameraStatus" | "getCameraConfiguration" | "cameraImageProgress" | "cameraImage" | "isRecordingCamera" | "cameraRecording" | "autoPicture" | "startRecordingCamera" | "stopRecordingCamera" | "cameraCommand" | "setCameraConfiguration" | "cameraData", CameraEventMessages, T>>;
+    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "isRecordingCamera" | "startRecordingCamera" | "stopRecordingCamera" | "cameraRecording" | "autoPicture", CameraEventMessages, T>>;
     requestRequiredInformation(sendImmediately?: boolean): void;
-    get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
+    get cameraStatus(): "idle" | "asleep" | "focusing" | "takingPicture";
     focus(): Promise<void>;
     takePicture(): Promise<void>;
     stop(): Promise<void>;
@@ -84,7 +84,7 @@ declare class CameraManager {
     set sensorRate(newSensorRate: number);
     buildCameraData(): ArrayBuffer;
     get cameraConfiguration(): CameraConfiguration;
-    get availableCameraConfigurationTypes(): ("resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "brightness" | "saturation" | "contrast" | "sharpness")[];
+    get availableCameraConfigurationTypes(): ("brightness" | "resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "saturation" | "contrast" | "sharpness")[];
     get cameraConfigurationRanges(): CameraConfigurationRanges;
     setCameraConfiguration(newCameraConfiguration: CameraConfiguration, sendImmediately?: boolean): Promise<void>;
     static AssertValidCameraConfigurationType(cameraConfigurationType: CameraConfigurationType): void;
