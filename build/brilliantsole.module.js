@@ -28354,6 +28354,43 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
     _console$z.log(`serializing ${name} spriteSheet`, spriteSheet, {
         includeHeader,
     });
+    let headerDataView;
+    if (includeHeader) {
+        const encodedName = textEncoder.encode(name);
+        _console$z.log("encodedName", encodedName, { name });
+        const encodedSpriteNames = sprites.map((sprite) => textEncoder.encode(sprite.name));
+        _console$z.log("encodedSpriteNames", encodedSpriteNames);
+        let headerDataViewLength = 0;
+        headerDataViewLength += 2;
+        headerDataViewLength += 2;
+        headerDataViewLength += encodedName.byteLength;
+        headerDataViewLength += 2;
+        headerDataViewLength += 2 * sprites.length;
+        headerDataViewLength += 2 * sprites.length;
+        headerDataViewLength += encodedSpriteNames.reduce((encodedSpriteNamesLength, encodedSpriteName) => encodedSpriteNamesLength + encodedSpriteName.byteLength, 0);
+        _console$z.log({ headerDataViewLength });
+        headerDataView = new DataView(new ArrayBuffer(headerDataViewLength));
+        _console$z.log("created headerDataView", headerDataView);
+        let offset = 0;
+        headerDataView.setUint16(offset, headerDataViewLength, true);
+        offset += 2;
+        headerDataView.setUint16(offset, encodedName.byteLength, true);
+        offset += 2;
+        for (const value of encodedName) {
+            headerDataView.setUint8(offset++, value);
+        }
+        headerDataView.setUint16(offset, sprites.length, true);
+        offset += 2;
+        let spriteNamesOffset = offset + 2 * sprites.length;
+        for (const encodedSpriteName of encodedSpriteNames) {
+            headerDataView.setUint16(offset, encodedName.byteLength, true);
+            offset += 2;
+            for (const value of encodedSpriteName) {
+                headerDataView.setUint8(spriteNamesOffset++, value);
+            }
+        }
+        _console$z.log("serialized headerDataView", headerDataView);
+    }
     const numberOfSprites = sprites.length;
     const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
     numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
@@ -28374,7 +28411,7 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
         spriteOffsetsDataView.setUint16(spriteIndex * 2, spriteOffset, true);
         spriteOffset += spritePayload.byteLength;
     });
-    const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
+    const serializedSpriteSheet = concatenateArrayBuffers(headerDataView, numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
     _console$z.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
 }
@@ -28393,7 +28430,7 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader) {
         const nameLength = dataView.getUint16(offset, true);
         offset += 2;
         _console$z.log({ nameLength });
-        const name = textDecoder.decode(dataView.buffer.slice(offset, offset + nameLength));
+        name = textDecoder.decode(dataView.buffer.slice(offset, offset + nameLength));
         _console$z.log({ name });
         offset += nameLength;
         const numberOfSpriteNames = dataView.getUint16(offset, true);
@@ -28439,6 +28476,8 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader) {
         };
         sprites.push(sprite);
     }
+    _console$z.assertTypeWithError(name, "string");
+    name = name;
     const spriteSheet = {
         name,
         sprites,
@@ -29558,7 +29597,7 @@ async function imageToSpriteSheet(image, spriteSheetName, spriteName, width, hei
     return canvasToSpriteSheet(canvas, spriteSheetName, spriteName, numberOfColors, paletteName, maxFileLength);
 }
 
-const _console$x = createConsole("DisplayContextCommand", { log: true });
+const _console$x = createConsole("DisplayContextCommand", { log: false });
 const DisplayContextCommandTypes = [
     "show",
     "clear",

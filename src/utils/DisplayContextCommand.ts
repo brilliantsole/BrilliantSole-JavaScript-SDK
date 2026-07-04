@@ -74,7 +74,7 @@ import {
 } from "./MathUtils.ts";
 import { deepEqual } from "./ObjectUtils.ts";
 
-const _console = createConsole("DisplayContextCommand", { log: true });
+const _console = createConsole("DisplayContextCommand", { log: false });
 
 export const DisplayContextCommandTypes = [
   "show",

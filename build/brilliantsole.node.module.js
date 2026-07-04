@@ -6227,6 +6227,42 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
     _console$x.log(`serializing ${name} spriteSheet`, spriteSheet, {
         includeHeader,
     });
+    let headerDataView;
+    if (includeHeader) {
+        const encodedName = textEncoder.encode(name);
+        _console$x.log("encodedName", encodedName, { name });
+        const encodedSpriteNames = sprites.map((sprite) => textEncoder.encode(sprite.name));
+        _console$x.log("encodedSpriteNames", encodedSpriteNames);
+        let headerDataViewLength = 0;
+        headerDataViewLength += 2;
+        headerDataViewLength += 2;
+        headerDataViewLength += encodedName.byteLength;
+        headerDataViewLength += 2;
+        headerDataViewLength += 2 * sprites.length;
+        headerDataViewLength += 2 * sprites.length;
+        headerDataViewLength += encodedSpriteNames.reduce((encodedSpriteNamesLength, encodedSpriteName) => encodedSpriteNamesLength + encodedSpriteName.byteLength, 0);
+        _console$x.log({ headerDataViewLength });
+        headerDataView = new DataView(new ArrayBuffer(headerDataViewLength));
+        _console$x.log("headerDataView", headerDataView);
+        let offset = 0;
+        headerDataView.setUint16(offset, headerDataViewLength, true);
+        offset += 2;
+        headerDataView.setUint16(offset, encodedName.byteLength, true);
+        offset += 2;
+        for (const value of encodedName) {
+            headerDataView.setUint8(offset++, value);
+        }
+        headerDataView.setUint16(offset, sprites.length, true);
+        offset += 2;
+        let spriteNamesOffset = offset + 2 * sprites.length;
+        for (const encodedSpriteName of encodedSpriteNames) {
+            headerDataView.setUint16(offset, encodedName.byteLength, true);
+            offset += 2;
+            for (const value of encodedSpriteName) {
+                headerDataView.setUint8(spriteNamesOffset++, value);
+            }
+        }
+    }
     const numberOfSprites = sprites.length;
     const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
     numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
@@ -6247,7 +6283,7 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
         spriteOffsetsDataView.setUint16(spriteIndex * 2, spriteOffset, true);
         spriteOffset += spritePayload.byteLength;
     });
-    const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
+    const serializedSpriteSheet = concatenateArrayBuffers(headerDataView, numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
     _console$x.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
 }
@@ -6266,7 +6302,7 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader) {
         const nameLength = dataView.getUint16(offset, true);
         offset += 2;
         _console$x.log({ nameLength });
-        const name = textDecoder.decode(dataView.buffer.slice(offset, offset + nameLength));
+        name = textDecoder.decode(dataView.buffer.slice(offset, offset + nameLength));
         _console$x.log({ name });
         offset += nameLength;
         const numberOfSpriteNames = dataView.getUint16(offset, true);
@@ -6312,6 +6348,8 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader) {
         };
         sprites.push(sprite);
     }
+    _console$x.assertTypeWithError(name, "string");
+    name = name;
     const spriteSheet = {
         name,
         sprites,
@@ -7217,7 +7255,7 @@ function assertValidBitmapPixels(bitmap) {
     });
 }
 
-const _console$w = createConsole("DisplayContextCommand", { log: true });
+const _console$w = createConsole("DisplayContextCommand", { log: false });
 const DisplayContextCommandTypes = [
     "show",
     "clear",

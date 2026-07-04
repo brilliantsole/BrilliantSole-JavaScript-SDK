@@ -23,7 +23,7 @@ import {
 } from "./DisplayContextState.ts";
 import { classifySubpath } from "./SvgUtils.ts";
 import { removeRedundantCharacters, removeSubstrings } from "./stringUtils.ts";
-import { textDecoder } from "./Text.ts";
+import { textDecoder, textEncoder } from "./Text.ts";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
 
@@ -97,9 +97,56 @@ export function serializeSpriteSheet(
     includeHeader,
   });
 
+  let headerDataView: DataView | undefined;
   if (includeHeader) {
-    // FILL - Header
-    // [headerLength, name, numberOfSpriteNames, nameOffsets, ...names]
+    // [headerLength, nameLength, name, numberOfSpriteNames, nameOffsets, ...[nameLength, name]]
+
+    const encodedName = textEncoder.encode(name);
+    _console.log("encodedName", encodedName, { name });
+    const encodedSpriteNames = sprites.map((sprite) =>
+      textEncoder.encode(sprite.name),
+    );
+    _console.log("encodedSpriteNames", encodedSpriteNames);
+
+    let headerDataViewLength = 0;
+    headerDataViewLength += 2; // headerLength
+    headerDataViewLength += 2; // nameLength
+    headerDataViewLength += encodedName.byteLength; // name
+    headerDataViewLength += 2; // numberOfSprites (FIX when only 1 byte)
+    headerDataViewLength += 2 * sprites.length; // nameOffsets
+    headerDataViewLength += 2 * sprites.length; // nameLengths (FIX/remove when deduced from offsets)
+    headerDataViewLength += encodedSpriteNames.reduce(
+      (encodedSpriteNamesLength, encodedSpriteName) =>
+        encodedSpriteNamesLength + encodedSpriteName.byteLength,
+      0,
+    ); // nameLengths
+    _console.log({ headerDataViewLength });
+    headerDataView = new DataView(new ArrayBuffer(headerDataViewLength));
+    _console.log("created headerDataView", headerDataView);
+
+    let offset = 0;
+    headerDataView.setUint16(offset, headerDataViewLength, true);
+    offset += 2;
+    headerDataView.setUint16(offset, encodedName.byteLength, true);
+    offset += 2;
+    for (const value of encodedName) {
+      headerDataView.setUint8(offset++, value);
+    }
+
+    headerDataView.setUint16(offset, sprites.length, true);
+    offset += 2;
+
+    let spriteNamesOffset = offset + 2 * sprites.length;
+    for (const encodedSpriteName of encodedSpriteNames) {
+      headerDataView.setUint16(offset, encodedName.byteLength, true);
+      offset += 2;
+
+      for (const value of encodedSpriteName) {
+        headerDataView.setUint8(spriteNamesOffset++, value);
+      }
+    }
+
+    _console.log("serialized headerDataView", headerDataView);
   }
 
   const numberOfSprites = sprites.length;
@@ -132,6 +179,7 @@ export function serializeSpriteSheet(
 
   // [numberOfSprites, ...spriteOffsets, ...[width, height, commandsByteLength, commands]]
   const serializedSpriteSheet = concatenateArrayBuffers(
+    headerDataView,
     numberOfSpritesDataView,
     spriteOffsetsDataView,
     spritePayloads,
@@ -171,7 +219,7 @@ export function parseSpriteSheet(
     const nameLength = dataView.getUint16(offset, true);
     offset += 2;
     _console.log({ nameLength });
-    const name = textDecoder.decode(
+    name = textDecoder.decode(
       dataView.buffer.slice(offset, offset + nameLength),
     );
     _console.log({ name });
@@ -256,6 +304,9 @@ export function parseSpriteSheet(
     };
     sprites.push(sprite);
   }
+
+  _console.assertTypeWithError(name, "string");
+  name = name!;
 
   const spriteSheet: DisplaySpriteSheet = {
     name,
