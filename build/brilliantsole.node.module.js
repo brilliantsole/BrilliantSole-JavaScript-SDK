@@ -6243,7 +6243,7 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
         headerDataViewLength += encodedSpriteNames.reduce((encodedSpriteNamesLength, encodedSpriteName) => encodedSpriteNamesLength + encodedSpriteName.byteLength, 0);
         _console$x.log({ headerDataViewLength });
         headerDataView = new DataView(new ArrayBuffer(headerDataViewLength));
-        _console$x.log("headerDataView", headerDataView);
+        _console$x.log("created headerDataView", headerDataView);
         let offset = 0;
         headerDataView.setUint16(offset, headerDataViewLength, true);
         offset += 2;
@@ -6262,6 +6262,7 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
                 headerDataView.setUint8(spriteNamesOffset++, value);
             }
         }
+        _console$x.log("serialized headerDataView", headerDataView);
     }
     const numberOfSprites = sprites.length;
     const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
@@ -9854,7 +9855,7 @@ function serializeOpacities(displayManager, other) {
     return commands;
 }
 
-const _console$u = createConsole("DisplayManager", { log: false });
+const _console$u = createConsole("DisplayManager", { log: true });
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
 const DisplayInformationTypes = [
@@ -11558,6 +11559,10 @@ let DisplayManager = (() => {
         get pendingSpriteSheetName() {
             return this.#pendingSpriteSheetName;
         }
+        #pendingSpriteSheetIndex;
+        get pendingSpriteSheetIndex() {
+            return this.#pendingSpriteSheetIndex;
+        }
         #updateSpriteSheetName(updatedSpriteSheetName) {
             _console$u.assertTypeWithError(updatedSpriteSheetName, "string");
             this.#pendingSpriteSheetName = updatedSpriteSheetName;
@@ -11574,12 +11579,24 @@ let DisplayManager = (() => {
             return parseSpriteSheet(this, dataView, name, includesHeader);
         }
         async uploadSpriteSheet(spriteSheet, displayCanvasHelper) {
+            _console$u.log("uploadSpriteSheet", spriteSheet);
             if (spriteSheet.sprites.length == 0) {
                 _console$u.log("no sprites in spriteSheet");
                 return;
             }
-            _console$u.log("uploadSpriteSheet", spriteSheet);
+            if (this.spriteSheets[spriteSheet.name] == spriteSheet) {
+                _console$u.log("already uploaded spriteSheet");
+                return;
+            }
+            if (spriteSheet.name == this.#pendingSpriteSheetName &&
+                this.#pendingSpriteSheetIndex != undefined) {
+                _console$u.log(`already uploaded spriteSheet under pendingSpriteSheetIndex #${this.#pendingSpriteSheetIndex}`);
+                this.#pendingSpriteSheet = spriteSheet;
+                this.#onSpriteSheetIndex(this.#pendingSpriteSheetIndex);
+                return;
+            }
             if (this.#pendingSpriteSheet) {
+                _console$u.log("existing pendingSpriteSheet - waiting for that to finish");
                 await this.waitForEvent("displaySpriteSheetUploadComplete");
                 await this.uploadSpriteSheet(spriteSheet);
                 return;
@@ -11756,6 +11773,9 @@ let DisplayManager = (() => {
         }
         #parseSpriteSheetIndex(dataView) {
             const spriteSheetIndex = dataView.getUint8(0);
+            this.#onSpriteSheetIndex(spriteSheetIndex);
+        }
+        #onSpriteSheetIndex(spriteSheetIndex) {
             _console$u.log({
                 pendingSpriteSheet: this.#pendingSpriteSheet,
                 spriteSheetName: this.#pendingSpriteSheetName,
@@ -11771,8 +11791,10 @@ let DisplayManager = (() => {
             }
             if (this.#pendingSpriteSheet == undefined) {
                 _console$u.log("expected pendingSpriteSheet when receiving spriteSheetIndex - skipping");
+                this.#pendingSpriteSheetIndex = spriteSheetIndex;
                 return;
             }
+            this.#pendingSpriteSheetIndex = undefined;
             this.#spriteSheets[this.#pendingSpriteSheetName] =
                 this.#pendingSpriteSheet;
             this.#spriteSheetIndices[this.#pendingSpriteSheetName] = spriteSheetIndex;
@@ -11872,6 +11894,7 @@ let DisplayManager = (() => {
             this.#isReady = true;
             this.#pendingSpriteSheet = undefined;
             this.#pendingSpriteSheetName = undefined;
+            this.#pendingSpriteSheetIndex = undefined;
             this.#isDrawingBlankSprite = false;
             Object.keys(this.#spriteSheetIndices).forEach((spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]);
             Object.keys(this.#spriteSheets).forEach((spriteSheetName) => delete this.#spriteSheets[spriteSheetName]);
@@ -14675,7 +14698,8 @@ class Device {
                         _console$h.log(`no spriteSheet found for "${this.pendingDisplaySpriteSheetName}"`);
                         const arrayBuffer = await file.arrayBuffer();
                         const dataView = new DataView(arrayBuffer);
-                        this.parseDisplaySpriteSheet(dataView, this.pendingDisplaySpriteSheetName, false);
+                        const parsedSpriteSheet = this.parseDisplaySpriteSheet(dataView, this.pendingDisplaySpriteSheetName, false);
+                        await this.uploadDisplaySpriteSheet(parsedSpriteSheet);
                     }
                     break;
             }

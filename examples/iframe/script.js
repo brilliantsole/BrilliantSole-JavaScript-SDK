@@ -174,13 +174,6 @@ if (connectOnLoad) {
   devices.forEach((device) => device.reconnect());
 }
 
-BS.DeviceManager.addEventListener("deviceConnected", (event) => {
-  const { device } = event.message;
-  if (device.isDisplayAvailable) {
-    displayCanvasHelper.device = device;
-  }
-});
-
 // CANVAS
 /** @type {HTMLCanvasElement} */
 const displayCanvas = document.getElementById("display");

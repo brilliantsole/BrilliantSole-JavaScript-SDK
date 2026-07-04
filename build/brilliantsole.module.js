@@ -32241,7 +32241,7 @@ function serializeOpacities(displayManager, other) {
     return commands;
 }
 
-const _console$v = createConsole("DisplayManager", { log: false });
+const _console$v = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -33946,6 +33946,10 @@ let DisplayManager = (() => {
         get pendingSpriteSheetName() {
             return this.#pendingSpriteSheetName;
         }
+        #pendingSpriteSheetIndex;
+        get pendingSpriteSheetIndex() {
+            return this.#pendingSpriteSheetIndex;
+        }
         #updateSpriteSheetName(updatedSpriteSheetName) {
             _console$v.assertTypeWithError(updatedSpriteSheetName, "string");
             this.#pendingSpriteSheetName = updatedSpriteSheetName;
@@ -33962,12 +33966,24 @@ let DisplayManager = (() => {
             return parseSpriteSheet(this, dataView, name, includesHeader);
         }
         async uploadSpriteSheet(spriteSheet, displayCanvasHelper) {
+            _console$v.log("uploadSpriteSheet", spriteSheet);
             if (spriteSheet.sprites.length == 0) {
                 _console$v.log("no sprites in spriteSheet");
                 return;
             }
-            _console$v.log("uploadSpriteSheet", spriteSheet);
+            if (this.spriteSheets[spriteSheet.name] == spriteSheet) {
+                _console$v.log("already uploaded spriteSheet");
+                return;
+            }
+            if (spriteSheet.name == this.#pendingSpriteSheetName &&
+                this.#pendingSpriteSheetIndex != undefined) {
+                _console$v.log(`already uploaded spriteSheet under pendingSpriteSheetIndex #${this.#pendingSpriteSheetIndex}`);
+                this.#pendingSpriteSheet = spriteSheet;
+                this.#onSpriteSheetIndex(this.#pendingSpriteSheetIndex);
+                return;
+            }
             if (this.#pendingSpriteSheet) {
+                _console$v.log("existing pendingSpriteSheet - waiting for that to finish");
                 await this.waitForEvent("displaySpriteSheetUploadComplete");
                 await this.uploadSpriteSheet(spriteSheet);
                 return;
@@ -34144,6 +34160,9 @@ let DisplayManager = (() => {
         }
         #parseSpriteSheetIndex(dataView) {
             const spriteSheetIndex = dataView.getUint8(0);
+            this.#onSpriteSheetIndex(spriteSheetIndex);
+        }
+        #onSpriteSheetIndex(spriteSheetIndex) {
             _console$v.log({
                 pendingSpriteSheet: this.#pendingSpriteSheet,
                 spriteSheetName: this.#pendingSpriteSheetName,
@@ -34159,8 +34178,10 @@ let DisplayManager = (() => {
             }
             if (this.#pendingSpriteSheet == undefined) {
                 _console$v.log("expected pendingSpriteSheet when receiving spriteSheetIndex - skipping");
+                this.#pendingSpriteSheetIndex = spriteSheetIndex;
                 return;
             }
+            this.#pendingSpriteSheetIndex = undefined;
             this.#spriteSheets[this.#pendingSpriteSheetName] =
                 this.#pendingSpriteSheet;
             this.#spriteSheetIndices[this.#pendingSpriteSheetName] = spriteSheetIndex;
@@ -34260,6 +34281,7 @@ let DisplayManager = (() => {
             this.#isReady = true;
             this.#pendingSpriteSheet = undefined;
             this.#pendingSpriteSheetName = undefined;
+            this.#pendingSpriteSheetIndex = undefined;
             this.#isDrawingBlankSprite = false;
             Object.keys(this.#spriteSheetIndices).forEach((spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]);
             Object.keys(this.#spriteSheets).forEach((spriteSheetName) => delete this.#spriteSheets[spriteSheetName]);
@@ -36775,7 +36797,8 @@ class Device {
                         _console$j.log(`no spriteSheet found for "${this.pendingDisplaySpriteSheetName}"`);
                         const arrayBuffer = await file.arrayBuffer();
                         const dataView = new DataView(arrayBuffer);
-                        this.parseDisplaySpriteSheet(dataView, this.pendingDisplaySpriteSheetName, false);
+                        const parsedSpriteSheet = this.parseDisplaySpriteSheet(dataView, this.pendingDisplaySpriteSheetName, false);
+                        await this.uploadDisplaySpriteSheet(parsedSpriteSheet);
                     }
                     break;
             }
@@ -40962,7 +40985,7 @@ let WindowClient = (() => {
 var WindowClient_default = WindowClient.shared;
 
 var _a;
-const _console$5 = createConsole("DisplayCanvasHelper", { log: false });
+const _console$5 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
     "numberOfColors",
@@ -41142,7 +41165,7 @@ class DisplayCanvasHelper {
             _console$5.assertWithError(newDevice.isConnected, "device must be connected");
             _console$5.assertWithError(newDevice.isDisplayAvailable, "display must have a display");
         }
-        _console$5.log("setting device", newDevice);
+        _console$5.log("setDevice", newDevice);
         this.#setIsReady(false);
         if (this.#device) {
             this.#device.displayManager.displayCanvasHelper = undefined;
@@ -43289,6 +43312,7 @@ class DisplayCanvasHelper {
         return getSpriteSheetByIndex(this, index);
     }
     async uploadSpriteSheet(spriteSheet) {
+        _console$5.log("uploadSpriteSheet", spriteSheet);
         spriteSheet = structuredClone(spriteSheet);
         if (!this.#spriteSheets[spriteSheet.name]) {
             this.#spriteSheetIndices[spriteSheet.name] = Object.keys(this.#spriteSheets).length;
@@ -43299,6 +43323,7 @@ class DisplayCanvasHelper {
         }
     }
     async uploadSpriteSheets(spriteSheets) {
+        _console$5.log("uploadSpriteSheets", spriteSheets);
         for (const spriteSheet of spriteSheets) {
             _console$5.log(`uploading spriteSheet "${spriteSheet.name}"...`);
             await this.uploadSpriteSheet(spriteSheet);
@@ -43663,7 +43688,9 @@ class DisplayCanvasHelper {
         if (!this.device?.isConnected) {
             return;
         }
+        _console$5.log("updateDeviceSpriteSheets", { updateSelf });
         const sortedSpriteSheets = Object.values(this.spriteSheets).sort((a, b) => this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name]);
+        _console$5.log("sortedSpriteSheets", sortedSpriteSheets);
         await this.uploadSpriteSheets(sortedSpriteSheets);
     }
     async #updateDeviceSelectedSpriteSheet(sendImmediately, isSending, updateSelf) {

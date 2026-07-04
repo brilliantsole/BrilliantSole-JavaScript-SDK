@@ -541,11 +541,12 @@ class Device {
             );
             const arrayBuffer = await file.arrayBuffer();
             const dataView = new DataView(arrayBuffer);
-            this.parseDisplaySpriteSheet(
+            const parsedSpriteSheet = this.parseDisplaySpriteSheet(
               dataView,
               this.pendingDisplaySpriteSheetName,
               false, // fix
             );
+            await this.uploadDisplaySpriteSheet(parsedSpriteSheet);
           }
           break;
       }

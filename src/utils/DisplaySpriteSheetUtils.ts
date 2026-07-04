@@ -313,7 +313,6 @@ export function parseSpriteSheet(
     sprites,
   };
   _console.log("parsedSpriteSheet", spriteSheet);
-  // FILL - upload to self
   return spriteSheet;
 }
 

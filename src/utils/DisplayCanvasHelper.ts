@@ -119,7 +119,7 @@ import {
 } from "./DisplaySpriteSheetUtils.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("DisplayCanvasHelper", { log: false });
+const _console = createConsole("DisplayCanvasHelper", { log: true });
 
 export const DisplayCanvasHelperEventTypes = [
   "contextState",
@@ -456,7 +456,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
 
-    _console.log("setting device", newDevice);
+    _console.log("setDevice", newDevice);
 
     this.#setIsReady(false);
     if (this.#device) {
@@ -4190,6 +4190,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return getSpriteSheetByIndex(this, index);
   }
   async uploadSpriteSheet(spriteSheet: DisplaySpriteSheet) {
+    _console.log("uploadSpriteSheet", spriteSheet);
     spriteSheet = structuredClone(spriteSheet);
     if (!this.#spriteSheets[spriteSheet.name]) {
       this.#spriteSheetIndices[spriteSheet.name] = Object.keys(
@@ -4202,6 +4203,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   async uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
+    _console.log("uploadSpriteSheets", spriteSheets);
     for (const spriteSheet of spriteSheets) {
       _console.log(`uploading spriteSheet "${spriteSheet.name}"...`);
       await this.uploadSpriteSheet(spriteSheet);
@@ -4763,11 +4765,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (!this.device?.isConnected) {
       return;
     }
-    // FILL
+    _console.log("updateDeviceSpriteSheets", { updateSelf });
+    // TODO: - is updateSelf needed?
     const sortedSpriteSheets = Object.values(this.spriteSheets).sort(
       (a, b) =>
         this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name],
     );
+    _console.log("sortedSpriteSheets", sortedSpriteSheets);
     await this.uploadSpriteSheets(sortedSpriteSheets);
   }
   async #updateDeviceSelectedSpriteSheet(

@@ -114,7 +114,7 @@ import {
 import { wait } from "./utils/Timer.ts";
 import { default as DisplayCanvasHelper } from "./utils/DisplayCanvasHelper.ts";
 
-const _console = createConsole("DisplayManager", { log: false });
+const _console = createConsole("DisplayManager", { log: true });
 
 export const DefaultNumberOfDisplayColors = 16;
 
@@ -2842,6 +2842,10 @@ class DisplayManager implements DisplayManagerInterface {
   get pendingSpriteSheetName() {
     return this.#pendingSpriteSheetName;
   }
+  #pendingSpriteSheetIndex?: number;
+  get pendingSpriteSheetIndex() {
+    return this.#pendingSpriteSheetIndex;
+  }
   #updateSpriteSheetName(updatedSpriteSheetName: string) {
     _console.assertTypeWithError(updatedSpriteSheetName, "string");
     this.#pendingSpriteSheetName = updatedSpriteSheetName;
@@ -2873,12 +2877,28 @@ class DisplayManager implements DisplayManagerInterface {
     spriteSheet: DisplaySpriteSheet,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
+    _console.log("uploadSpriteSheet", spriteSheet);
     if (spriteSheet.sprites.length == 0) {
       _console.log("no sprites in spriteSheet");
       return;
     }
-    _console.log("uploadSpriteSheet", spriteSheet);
+    if (this.spriteSheets[spriteSheet.name] == spriteSheet) {
+      _console.log("already uploaded spriteSheet");
+      return;
+    }
+    if (
+      spriteSheet.name == this.#pendingSpriteSheetName &&
+      this.#pendingSpriteSheetIndex != undefined
+    ) {
+      _console.log(
+        `already uploaded spriteSheet under pendingSpriteSheetIndex #${this.#pendingSpriteSheetIndex}`,
+      );
+      this.#pendingSpriteSheet = spriteSheet;
+      this.#onSpriteSheetIndex(this.#pendingSpriteSheetIndex);
+      return;
+    }
     if (this.#pendingSpriteSheet) {
+      _console.log("existing pendingSpriteSheet - waiting for that to finish");
       await this.waitForEvent("displaySpriteSheetUploadComplete");
       await this.uploadSpriteSheet(spriteSheet);
       return;
@@ -3233,6 +3253,9 @@ class DisplayManager implements DisplayManagerInterface {
 
   #parseSpriteSheetIndex(dataView: DataView<ArrayBuffer>) {
     const spriteSheetIndex = dataView.getUint8(0);
+    this.#onSpriteSheetIndex(spriteSheetIndex);
+  }
+  #onSpriteSheetIndex(spriteSheetIndex: number) {
     _console.log({
       pendingSpriteSheet: this.#pendingSpriteSheet,
       spriteSheetName: this.#pendingSpriteSheetName,
@@ -3252,8 +3275,10 @@ class DisplayManager implements DisplayManagerInterface {
       _console.log(
         "expected pendingSpriteSheet when receiving spriteSheetIndex - skipping",
       );
+      this.#pendingSpriteSheetIndex = spriteSheetIndex;
       return;
     }
+    this.#pendingSpriteSheetIndex = undefined;
 
     this.#spriteSheets[this.#pendingSpriteSheetName!] =
       this.#pendingSpriteSheet!;
@@ -3452,6 +3477,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.#isReady = true;
     this.#pendingSpriteSheet = undefined;
     this.#pendingSpriteSheetName = undefined;
+    this.#pendingSpriteSheetIndex = undefined;
 
     this.#isDrawingBlankSprite = false;
 

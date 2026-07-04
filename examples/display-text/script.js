@@ -343,8 +343,10 @@ const draw = async () => {
   await displayCanvasHelper.setRotation(rotation);
   await displayCanvasHelper.setSpritesSpacing(spritesSpacing);
   await displayCanvasHelper.setSpritesLineSpacing(spritesLineSpacing);
+  console.log("spritesLineHeight", spritesLineHeight);
   await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await displayCanvasHelper.selectSpriteColor(1, selectedColorIndex);
+
   if (true) {
     await displayCanvasHelper.drawSpritesString(
       x,
