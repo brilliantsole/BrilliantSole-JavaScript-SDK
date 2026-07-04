@@ -8,6 +8,7 @@ import { createConsole } from "./Console.ts";
 import { quantizeCanvas } from "./DisplayBitmapUtils.ts";
 import {
   DisplayContextCommand,
+  parseDisplayContextCommands,
   serializeDisplayContextCommands,
 } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
@@ -22,8 +23,9 @@ import {
 } from "./DisplayContextState.ts";
 import { classifySubpath } from "./SvgUtils.ts";
 import { removeRedundantCharacters, removeSubstrings } from "./stringUtils.ts";
+import { textDecoder } from "./Text.ts";
 
-const _console = createConsole("DisplaySpriteSheetUtils", { log: false });
+const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
 
 export type DisplaySpriteSubLine = {
   spriteSheetName: string;
@@ -88,15 +90,23 @@ export function getCurvesPoints(curves: DisplayBezierCurve[]) {
 export function serializeSpriteSheet(
   displayManager: DisplayManagerInterface,
   spriteSheet: DisplaySpriteSheet,
+  includeHeader?: boolean,
 ) {
   const { name, sprites } = spriteSheet;
-  _console.log(`serializing ${name} spriteSheet`, spriteSheet);
+  _console.log(`serializing ${name} spriteSheet`, spriteSheet, {
+    includeHeader,
+  });
+
+  if (includeHeader) {
+    // FILL - Header
+    // [headerLength, name, numberOfSpriteNames, nameOffsets, ...names]
+  }
 
   const numberOfSprites = sprites.length;
   const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
   numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
 
-  const spritePayloads = sprites.map((sprite, index) => {
+  const spritePayloads = sprites.map((sprite, spriteIndex) => {
     const commandsData = serializeDisplayContextCommands(
       displayManager,
       sprite.commands,
@@ -106,21 +116,21 @@ export function serializeSpriteSheet(
     dataView.setUint16(2, sprite.height, true);
     dataView.setUint16(4, commandsData.byteLength, true);
     const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
-    _console.log("serializedSprite", sprite, serializedSprite);
+    _console.log("serializedSprite", sprite, serializedSprite, { spriteIndex });
     return serializedSprite;
   });
   const spriteOffsetsDataView = new DataView(
     new ArrayBuffer(sprites.length * 2),
   );
-  let offset =
+  let spriteOffset =
     numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
-  spritePayloads.forEach((spritePayload, index) => {
-    //_console.log("spritePayloads", index, offset, spritePayload);
-    spriteOffsetsDataView.setUint16(index * 2, offset, true);
-    offset += spritePayload.byteLength;
+  spritePayloads.forEach((spritePayload, spriteIndex) => {
+    _console.log("spriteOffsets", { spriteIndex, spriteOffset }, spritePayload);
+    spriteOffsetsDataView.setUint16(spriteIndex * 2, spriteOffset, true);
+    spriteOffset += spritePayload.byteLength;
   });
 
-  // [numberOfSprites, ...spriteOffsets, ...[width, height, commands]]
+  // [numberOfSprites, ...spriteOffsets, ...[width, height, commandsByteLength, commands]]
   const serializedSpriteSheet = concatenateArrayBuffers(
     numberOfSpritesDataView,
     spriteOffsetsDataView,
@@ -131,8 +141,129 @@ export function serializeSpriteSheet(
   return serializedSpriteSheet;
 }
 
-export function parseSpriteSheet(dataView: DataView<ArrayBuffer>) {
-  // FILL
+export function parseSpriteSheet(
+  displayManager: DisplayManagerInterface,
+  dataView: DataView<ArrayBuffer>,
+  name?: string,
+  includesHeader?: boolean,
+): DisplaySpriteSheet {
+  _console.assertWithError(
+    includesHeader || name != undefined,
+    "name not defined and header is not included",
+  );
+
+  _console.log("parseSpriteSheet", dataView, { name, includesHeader });
+
+  const spriteNames: string[] = [];
+  const sprites: DisplaySprite[] = [];
+
+  let offset = 0;
+  if (includesHeader) {
+    // [headerLength, name, numberOfSpriteNames, nameOffsets, ...[nameLength, name]]
+
+    const headerLength = dataView.getUint16(offset, true);
+    offset += 2;
+    _console.log({ headerLength });
+
+    const headerEndOffset = offset + headerLength;
+    _console.log({ headerEndOffset });
+
+    const nameLength = dataView.getUint16(offset, true);
+    offset += 2;
+    _console.log({ nameLength });
+    const name = textDecoder.decode(
+      dataView.buffer.slice(offset, offset + nameLength),
+    );
+    _console.log({ name });
+    offset += nameLength;
+
+    const numberOfSpriteNames = dataView.getUint16(offset, true);
+    offset += 2;
+
+    for (
+      let spriteNameIndex = 0;
+      spriteNameIndex < numberOfSpriteNames;
+      spriteNameIndex++
+    ) {
+      _console.log("parsing", { spriteNameIndex });
+
+      const spriteNameOffset = dataView.getUint16(offset, true);
+      _console.log({ spriteNameOffset });
+      offset += 2;
+
+      const spriteNameLength = dataView.getUint16(spriteNameOffset, true);
+      _console.log({ spriteNameLength });
+
+      const spriteName = textDecoder.decode(
+        dataView.buffer.slice(
+          spriteNameOffset + 2,
+          spriteNameOffset + 2 + spriteNameLength,
+        ),
+      );
+      _console.log({ spriteName });
+
+      spriteNames.push(spriteName);
+    }
+    _console.log("spriteNames", spriteNames);
+  }
+
+  // [numberOfSprites, ...spriteOffsets, ...[width, height, commands]]
+  const numberOfSprites = dataView.getUint16(offset, true);
+  offset += 2;
+  _console.log({ numberOfSprites });
+
+  for (let spriteIndex = 0; spriteIndex < numberOfSprites; spriteIndex++) {
+    _console.log("parsing", { spriteIndex });
+    const spriteOffset = dataView.getUint16(offset, true);
+    _console.log({ spriteOffset });
+    offset += 2;
+
+    let spriteDataViewOffset = 0;
+    const width = dataView.getUint16(spriteOffset + spriteDataViewOffset, true);
+    spriteDataViewOffset += 2;
+    const height = dataView.getUint16(
+      spriteOffset + spriteDataViewOffset,
+      true,
+    );
+    spriteDataViewOffset += 2;
+    const commandsDataByteLength = dataView.getUint16(
+      spriteOffset + spriteDataViewOffset,
+      true,
+    );
+    spriteDataViewOffset += 2;
+
+    _console.log({ width, height, commandsDataByteLength });
+
+    const commandsDataView = new DataView(
+      dataView.buffer.slice(
+        spriteOffset + spriteDataViewOffset,
+        spriteOffset + spriteDataViewOffset + commandsDataByteLength,
+      ),
+    );
+    _console.log("commandsDataView", commandsDataView);
+
+    const commands = parseDisplayContextCommands(
+      displayManager,
+      commandsDataView,
+    );
+    console.log("commands", commands);
+
+    const sprite: DisplaySprite = {
+      name: spriteNames[spriteIndex] ?? spriteIndex.toString(),
+      width,
+      height,
+      commands,
+    };
+    sprites.push(sprite);
+  }
+
+  const spriteSheet: DisplaySpriteSheet = {
+    name,
+    sprites,
+  };
+  _console.log("parsedSpriteSheet", spriteSheet);
+  // FILL - upload to self
+  return spriteSheet;
 }
 
 export type FontToSpriteSheetOptions = {

@@ -167,7 +167,7 @@ BS.DeviceManager.addEventListener("availableDevice", (event) => {
 });
 
 // GET DEVICES
-const connectOnLoad = true;
+const connectOnLoad = false;
 if (connectOnLoad) {
   const devices = await BS.DeviceManager.getDevices();
   console.log("getDevices", devices);

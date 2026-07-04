@@ -112,6 +112,7 @@ import {
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
   getSpriteLinesMetrics,
+  parseSpriteSheet,
   serializeSpriteSheet,
   stringToSpriteLines,
   stringToSpriteLinesMetrics,
@@ -5113,8 +5114,18 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return resizeAndQuantizeImage(image, width, height, numberOfColors, colors);
   }
 
-  serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer {
-    return serializeSpriteSheet(this, spriteSheet);
+  serializeSpriteSheet(
+    spriteSheet: DisplaySpriteSheet,
+    includeHeader?: boolean,
+  ): ArrayBuffer {
+    return serializeSpriteSheet(this, spriteSheet, includeHeader);
+  }
+  parseSpriteSheet(
+    dataView: DataView<ArrayBuffer>,
+    name?: string,
+    includesHeader?: boolean,
+  ) {
+    return parseSpriteSheet(this, dataView, name, includesHeader);
   }
 
   #startSprite(

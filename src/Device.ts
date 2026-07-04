@@ -518,7 +518,7 @@ class Device {
           break;
       }
     });
-    this.addEventListener("fileSent", (event) => {
+    this.addEventListener("fileSent", async (event) => {
       if (!event.message.indirectly) {
         return;
       }
@@ -528,6 +528,25 @@ class Device {
         case "tflite":
           break;
         case "spriteSheet":
+          _console.assertWithError(
+            this.pendingDisplaySpriteSheetName,
+            "pendingDisplaySpriteSheetName not defined",
+          );
+          _console.log(
+            `indirectly sent spriteSheet "${this.pendingDisplaySpriteSheetName}"`,
+          );
+          if (!this.displaySpriteSheets[this.pendingDisplaySpriteSheetName!]) {
+            _console.log(
+              `no spriteSheet found for "${this.pendingDisplaySpriteSheetName}"`,
+            );
+            const arrayBuffer = await file.arrayBuffer();
+            const dataView = new DataView(arrayBuffer);
+            this.parseDisplaySpriteSheet(
+              dataView,
+              this.pendingDisplaySpriteSheetName,
+              false, // fix
+            );
+          }
           break;
       }
     });
@@ -1899,6 +1918,12 @@ class Device {
   get setDisplayBrightness() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setBrightness;
+  }
+  get pendingDisplaySpriteSheetName() {
+    return this.#displayManager.pendingSpriteSheetName;
+  }
+  get parseDisplaySpriteSheet() {
+    return this.#displayManager.parseSpriteSheet;
   }
 
   get displayInformation() {

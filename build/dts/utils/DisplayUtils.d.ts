@@ -73,7 +73,7 @@ export declare function intersectWireframes(a: DisplayWireframe, b: DisplayWiref
 export declare function trimWireframe(wireframe: DisplayWireframe): DisplayWireframe;
 export declare function getPointDataType(points: Vector2[]): DisplayPointDataType;
 export declare function serializePoints(points: Vector2[], pointDataType?: DisplayPointDataType, isPath?: boolean): DataView<ArrayBuffer>;
-export declare function parsePoints(dataView: DataView, offset: number): {
+export declare function parsePoints(dataView: DataView, offset: number, isPath?: boolean, pointDataType?: DisplayPointDataType, numberOfPoints?: number): {
     points: Vector2[];
     offset: number;
 };

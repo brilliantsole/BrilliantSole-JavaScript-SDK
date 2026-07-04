@@ -559,7 +559,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         }
         break;
       case "tfliteIsReady":
-      case "spriteSheetIndex":
+      case "displaySpriteSheetIndex":
         if (!device.getCurrentSentFileConfiguration()) {
           _console.log(
             `delaying messageType "${messageType}" until after sending local file`,
@@ -1235,7 +1235,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                         case "spriteSheet":
                           followUpDeviceMessage = this.#createDeviceMessage(
                             device,
-                            "spriteSheetIndex",
+                            "displaySpriteSheetIndex",
                           );
                           break;
                       }

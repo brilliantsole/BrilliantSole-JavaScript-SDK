@@ -588,6 +588,7 @@ export function serializePoints(
   isPath = false,
 ) {
   pointDataType = pointDataType || getPointDataType(points);
+  _console.log("serializePoints", points, { pointDataType, isPath });
   _console.assertEnumWithError(DisplayPointDataTypes, pointDataType);
   const pointDataSize = displayPointDataTypeToSize[pointDataType];
   let dataViewLength = points.length * pointDataSize;
@@ -628,15 +629,29 @@ export function serializePoints(
   return dataView;
 }
 
-export function parsePoints(dataView: DataView, offset: number) {
+export function parsePoints(
+  dataView: DataView,
+  offset: number,
+  isPath?: boolean,
+  pointDataType?: DisplayPointDataType,
+  numberOfPoints?: number,
+) {
+  _console.log("parsePoints", dataView, {
+    offset,
+    isPath,
+    pointDataType,
+    numberOfPoints,
+  });
   const points: Vector2[] = [];
-  const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
+  if (pointDataType == undefined) {
+    pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
+  }
+  _console.log({ pointDataType });
   _console.assertEnumWithError(DisplayPointDataTypes, pointDataType);
-  const numberOfPoints = dataView.getUint8(offset++);
-  _console.assertWithError(
-    numberOfPoints >= 3,
-    `numberOfPoints ${numberOfPoints} must be at least 3`,
-  );
+  if (numberOfPoints == undefined) {
+    numberOfPoints = dataView.getUint8(offset++);
+  }
+  _console.log({ numberOfPoints });
 
   for (let i = 0; i < numberOfPoints; i++) {
     let x, y: number;
@@ -663,5 +678,6 @@ export function parsePoints(dataView: DataView, offset: number) {
     points.push({ x, y });
   }
 
+  _console.log("parsedPoints", points, { offset });
   return { points, offset };
 }

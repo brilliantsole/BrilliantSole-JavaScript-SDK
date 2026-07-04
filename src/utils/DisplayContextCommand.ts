@@ -74,7 +74,7 @@ import {
 } from "./MathUtils.ts";
 import { deepEqual } from "./ObjectUtils.ts";
 
-const _console = createConsole("DisplayContextCommand", { log: false });
+const _console = createConsole("DisplayContextCommand", { log: true });
 
 export const DisplayContextCommandTypes = [
   "show",
@@ -1264,7 +1264,7 @@ export function serializeDisplayContextCommandData(
         const typesDataView = new DataView(
           new ArrayBuffer(Math.ceil(curves.length / displayCurveTypesPerByte)),
         );
-        // _console.log({ "curves.length": curves.length, typesDataView });
+        _console.log({ numberOfCurves: curves.length, typesDataView });
         const controlPointsDataViews: DataView[] = [];
 
         // [pointDataType, numberOfCurves, numberOfPoints, ...curveTypes, ...points]
@@ -1274,8 +1274,8 @@ export function serializeDisplayContextCommandData(
           allControlPoints.push(...curve.controlPoints);
         });
         const pointDataType = getPointDataType(allControlPoints);
-        const numberOfControlPoints = allControlPoints.length;
-        //_console.log({ numberOfControlPoints });
+        const allControlPointsLength = allControlPoints.length;
+        _console.log({ pointDataType, allControlPointsLength });
 
         curves.forEach((curve, index) => {
           const { type, controlPoints } = curve;
@@ -1304,7 +1304,8 @@ export function serializeDisplayContextCommandData(
           DisplayPointDataTypes.indexOf(pointDataType),
         );
         headerDataView.setUint8(1, curves.length);
-        headerDataView.setUint8(2, numberOfControlPoints);
+        headerDataView.setUint8(2, allControlPointsLength);
+
         dataView = new DataView(
           concatenateArrayBuffers(
             headerDataView,
@@ -2058,28 +2059,37 @@ export function parseDisplayContextCommands(
           const curves: DisplayBezierCurve[] = [];
           const pointDataType =
             DisplayPointDataTypes[dataView.getUint8(offset++)];
+          _console.log({ pointDataType });
           _console.assertEnumWithError(DisplayPointDataTypes, pointDataType);
           const numberOfCurves = dataView.getUint8(offset++);
-          const curveTypeDataLength = Math.ceil(
+          _console.log({ numberOfCurves });
+          const typesDataViewByteLength = Math.ceil(
             numberOfCurves / displayCurveTypesPerByte,
           );
-          const totalNumberOfControlPoints = dataView.getUint8(offset++);
+          _console.log({ typesDataViewByteLength });
+          const allControlPointsLength = dataView.getUint8(offset++);
+          _console.log({ allControlPointsLength });
+
           const pathDataLength =
-            curveTypeDataLength +
-            totalNumberOfControlPoints *
-              displayPointDataTypeToSize[pointDataType];
+            typesDataViewByteLength +
+            allControlPointsLength * displayPointDataTypeToSize[pointDataType];
           _console.assertWithError(
-            offset + pathDataLength > dataView.byteLength,
+            offset + pathDataLength <= dataView.byteLength,
             `offset + pathDataLength ${offset + pathDataLength} exceeds dataView.byteLength ${dataView.byteLength}`,
           );
+          _console.log({ pathDataLength });
 
           const curveTypeDataOffset = offset;
-          offset += curveTypeDataLength;
+          offset += typesDataViewByteLength;
 
-          for (let index = 0; index < numberOfCurves; index++) {
-            const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
+          for (let curveIndex = 0; curveIndex < numberOfCurves; curveIndex++) {
+            _console.log({ curveIndex });
+            const typeByteIndex = Math.floor(
+              curveIndex / displayCurveTypesPerByte,
+            );
             const typeBitShift =
-              (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
+              (curveIndex % displayCurveTypesPerByte) *
+              displayCurveTypeBitWidth;
             const typeValue = dataView.getUint8(
               curveTypeDataOffset + typeByteIndex,
             );
@@ -2087,12 +2097,21 @@ export function parseDisplayContextCommands(
               (typeValue >> typeBitShift) &
               ((1 << displayCurveTypeBitWidth) - 1);
             const type = DisplayBezierCurveTypes[typeIndex];
+            let numberOfPoints = getNumberOfConrolPoints(type);
+            if (curveIndex > 0) {
+              numberOfPoints--;
+            }
+            _console.log({ type, numberOfPoints });
 
             const { points: controlPoints, offset: newOffset } = parsePoints(
               dataView,
               offset,
+              true,
+              pointDataType,
+              numberOfPoints,
             );
             offset = newOffset;
+            _console.log({ type, curveIndex }, controlPoints);
             curves.push({ type, controlPoints });
           }
 

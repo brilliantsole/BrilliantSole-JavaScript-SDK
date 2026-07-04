@@ -159,7 +159,8 @@ export interface DisplayManagerInterface {
     selectSpriteSheetPalette(paletteName: string, offset?: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
-    serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
+    serializeSpriteSheet(spriteSheet: DisplaySpriteSheet, includeHeader?: boolean): ArrayBuffer;
+    parseSpriteSheet(dataView: DataView<ArrayBuffer>, name?: string, includesHeader?: boolean): DisplaySpriteSheet;
     startSprite(offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     endSprite(sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     clearContext(sendImmediately?: boolean, isSending?: boolean): Promise<void>;

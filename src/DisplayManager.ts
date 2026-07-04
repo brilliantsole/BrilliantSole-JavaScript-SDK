@@ -109,6 +109,7 @@ import {
   stringToSpriteLinesMetrics,
   spriteLinesToSerializedLines,
   getSpriteLinesMetrics,
+  parseSpriteSheet,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { wait } from "./utils/Timer.ts";
 import { default as DisplayCanvasHelper } from "./utils/DisplayCanvasHelper.ts";
@@ -161,9 +162,9 @@ export const DisplayMessageTypes = [
   "setDisplayBrightness",
   "displayContextCommands",
   "displayReady",
-  "getSpriteSheetName",
-  "setSpriteSheetName",
-  "spriteSheetIndex",
+  "getDisplaySpriteSheetName",
+  "setDisplaySpriteSheetName",
+  "displaySpriteSheetIndex",
 ] as const;
 export type DisplayMessageType = (typeof DisplayMessageTypes)[number];
 
@@ -285,7 +286,7 @@ export interface DisplayEventMessages {
     opacity: number;
   };
   displayReady: {};
-  getSpriteSheetName: {
+  getDisplaySpriteSheetName: {
     spriteSheetName: string;
   };
 
@@ -2803,7 +2804,10 @@ class DisplayManager implements DisplayManagerInterface {
     spriteSheetName: string,
     sendImmediately?: boolean,
   ) {
-    _console.log("setSpriteSheetName", { spriteSheetName, sendImmediately });
+    _console.log("setDisplaySpriteSheetName", {
+      spriteSheetName,
+      sendImmediately,
+    });
     if (typeof spriteSheetName == "number") {
       // @ts-expect-error
       spriteSheetName = spriteSheetName.toString();
@@ -2818,9 +2822,14 @@ class DisplayManager implements DisplayManagerInterface {
     const setSpriteSheetNameData = textEncoder.encode(spriteSheetName);
     _console.log({ setSpriteSheetNameData });
 
-    const promise = this.waitForEvent("getSpriteSheetName");
+    const promise = this.waitForEvent("getDisplaySpriteSheetName");
     this.sendMessage(
-      [{ type: "setSpriteSheetName", data: setSpriteSheetNameData.buffer }],
+      [
+        {
+          type: "setDisplaySpriteSheetName",
+          data: setSpriteSheetNameData.buffer,
+        },
+      ],
       sendImmediately,
     );
     await promise;
@@ -2837,14 +2846,28 @@ class DisplayManager implements DisplayManagerInterface {
     _console.assertTypeWithError(updatedSpriteSheetName, "string");
     this.#pendingSpriteSheetName = updatedSpriteSheetName;
     _console.log({ updatedSpriteSheetName: this.#pendingSpriteSheetName });
-    this.#dispatchEvent("getSpriteSheetName", {
+    this.#dispatchEvent("getDisplaySpriteSheetName", {
       spriteSheetName: this.#pendingSpriteSheetName,
     });
   }
   sendFile!: SendFileCallback;
-  serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer {
-    return serializeSpriteSheet(this, spriteSheet);
+  @ForwardToHelper
+  serializeSpriteSheet(
+    spriteSheet: DisplaySpriteSheet,
+    includeHeader?: boolean,
+    displayCanvasHelper?: DisplayCanvasHelper,
+  ): ArrayBuffer {
+    return serializeSpriteSheet(this, spriteSheet, includeHeader);
   }
+  parseSpriteSheet(
+    dataView: DataView<ArrayBuffer>,
+    name?: string,
+    includesHeader?: boolean,
+    displayCanvasHelper?: DisplayCanvasHelper,
+  ) {
+    return parseSpriteSheet(this, dataView, name, includesHeader);
+  }
+
   @ForwardToHelper
   async uploadSpriteSheet(
     spriteSheet: DisplaySpriteSheet,
@@ -3270,15 +3293,15 @@ class DisplayManager implements DisplayManagerInterface {
       case "displayReady":
         this.#parseDisplayReady(dataView);
         break;
-      case "getSpriteSheetName":
-      case "setSpriteSheetName":
+      case "getDisplaySpriteSheetName":
+      case "setDisplaySpriteSheetName":
         const spriteSheetName = textDecoder.decode(
           dataView.buffer as ArrayBuffer,
         );
         _console.log({ spriteSheetName });
         this.#updateSpriteSheetName(spriteSheetName);
         break;
-      case "spriteSheetIndex":
+      case "displaySpriteSheetIndex":
         this.#parseSpriteSheetIndex(dataView);
         break;
       case "displayCommand":

@@ -4611,3 +4611,32 @@ onCurrentDevice(() => {
     { immediate: true },
   );
 });
+
+// LITERT.js
+// import {
+//   loadLiteRt,
+//   loadAndCompile,
+// } from "https://cdn.jsdelivr.net/npm/@litertjs/core/+esm";
+
+// fileInput.addEventListener("input", async () => {
+//   const file = fileInput.files[0];
+//   console.log("file", file);
+
+//   if (file.name.endsWith(".tflite")) {
+//     // Ensure JSPI is passed true to bridge asynchronous WebNN drivers
+//     const result = await loadLiteRt(
+//       "https://cdn.jsdelivr.net/npm/@litertjs/core/wasm/",
+//       {
+//         jspi: true,
+//       },
+//     );
+//     // console.log("result", result);
+//     const model = await loadAndCompile(URL.createObjectURL(file), {
+//       accelerator: "webgpu",
+//     });
+//     // console.log("model", model);
+//     const { inputDetails, outputDetails } = model.defaultSignature;
+//     console.log("inputDetails", inputDetails[0]);
+//     console.log("outputDetails", outputDetails[0]);
+//   }
+// });

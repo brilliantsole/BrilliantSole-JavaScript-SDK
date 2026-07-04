@@ -49,8 +49,8 @@ export type DisplaySpriteSheet = {
 export declare const spriteHeaderLength: number;
 export declare function calculateSpriteSheetHeaderLength(numberOfSprites: number): number;
 export declare function getCurvesPoints(curves: DisplayBezierCurve[]): Vector2[];
-export declare function serializeSpriteSheet(displayManager: DisplayManagerInterface, spriteSheet: DisplaySpriteSheet): ArrayBuffer;
-export declare function parseSpriteSheet(dataView: DataView<ArrayBuffer>): void;
+export declare function serializeSpriteSheet(displayManager: DisplayManagerInterface, spriteSheet: DisplaySpriteSheet, includeHeader?: boolean): ArrayBuffer;
+export declare function parseSpriteSheet(displayManager: DisplayManagerInterface, dataView: DataView<ArrayBuffer>, name?: string, includesHeader?: boolean): DisplaySpriteSheet;
 export type FontToSpriteSheetOptions = {
     stroke?: boolean;
     strokeWidth?: number;

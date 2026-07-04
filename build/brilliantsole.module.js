@@ -14186,6 +14186,7 @@ function getPointDataType(points) {
 }
 function serializePoints(points, pointDataType, isPath = false) {
     pointDataType = pointDataType || getPointDataType(points);
+    _console$A.log("serializePoints", points, { pointDataType, isPath });
     _console$A.assertEnumWithError(DisplayPointDataTypes, pointDataType);
     const pointDataSize = displayPointDataTypeToSize[pointDataType];
     let dataViewLength = points.length * pointDataSize;
@@ -14223,12 +14224,23 @@ function serializePoints(points, pointDataType, isPath = false) {
     });
     return dataView;
 }
-function parsePoints(dataView, offset) {
+function parsePoints(dataView, offset, isPath, pointDataType, numberOfPoints) {
+    _console$A.log("parsePoints", dataView, {
+        offset,
+        isPath,
+        pointDataType,
+        numberOfPoints,
+    });
     const points = [];
-    const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
+    if (pointDataType == undefined) {
+        pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
+    }
+    _console$A.log({ pointDataType });
     _console$A.assertEnumWithError(DisplayPointDataTypes, pointDataType);
-    const numberOfPoints = dataView.getUint8(offset++);
-    _console$A.assertWithError(numberOfPoints >= 3, `numberOfPoints ${numberOfPoints} must be at least 3`);
+    if (numberOfPoints == undefined) {
+        numberOfPoints = dataView.getUint8(offset++);
+    }
+    _console$A.log({ numberOfPoints });
     for (let i = 0; i < numberOfPoints; i++) {
         let x, y;
         switch (pointDataType) {
@@ -14253,6 +14265,7 @@ function parsePoints(dataView, offset) {
         }
         points.push({ x, y });
     }
+    _console$A.log("parsedPoints", points, { offset });
     return { points, offset };
 }
 
@@ -28321,7 +28334,7 @@ function removeSubstrings(string, substrings) {
     return result;
 }
 
-const _console$z = createConsole("DisplaySpriteSheetUtils", { log: false });
+const _console$z = createConsole("DisplaySpriteSheetUtils", { log: true });
 const spriteHeaderLength = 3 * 2;
 function calculateSpriteSheetHeaderLength(numberOfSprites) {
     return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
@@ -28336,31 +28349,102 @@ function getCurvesPoints(curves) {
     });
     return curvePoints;
 }
-function serializeSpriteSheet(displayManager, spriteSheet) {
+function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
     const { name, sprites } = spriteSheet;
-    _console$z.log(`serializing ${name} spriteSheet`, spriteSheet);
+    _console$z.log(`serializing ${name} spriteSheet`, spriteSheet, {
+        includeHeader,
+    });
     const numberOfSprites = sprites.length;
     const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
     numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
-    const spritePayloads = sprites.map((sprite, index) => {
+    const spritePayloads = sprites.map((sprite, spriteIndex) => {
         const commandsData = serializeDisplayContextCommands(displayManager, sprite.commands);
         const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
         dataView.setUint16(0, sprite.width, true);
         dataView.setUint16(2, sprite.height, true);
         dataView.setUint16(4, commandsData.byteLength, true);
         const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
-        _console$z.log("serializedSprite", sprite, serializedSprite);
+        _console$z.log("serializedSprite", sprite, serializedSprite, { spriteIndex });
         return serializedSprite;
     });
     const spriteOffsetsDataView = new DataView(new ArrayBuffer(sprites.length * 2));
-    let offset = numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
-    spritePayloads.forEach((spritePayload, index) => {
-        spriteOffsetsDataView.setUint16(index * 2, offset, true);
-        offset += spritePayload.byteLength;
+    let spriteOffset = numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
+    spritePayloads.forEach((spritePayload, spriteIndex) => {
+        _console$z.log("spriteOffsets", { spriteIndex, spriteOffset }, spritePayload);
+        spriteOffsetsDataView.setUint16(spriteIndex * 2, spriteOffset, true);
+        spriteOffset += spritePayload.byteLength;
     });
     const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
     _console$z.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
+}
+function parseSpriteSheet(displayManager, dataView, name, includesHeader) {
+    _console$z.assertWithError(includesHeader || name != undefined, "name not defined and header is not included");
+    _console$z.log("parseSpriteSheet", dataView, { name, includesHeader });
+    const spriteNames = [];
+    const sprites = [];
+    let offset = 0;
+    if (includesHeader) {
+        const headerLength = dataView.getUint16(offset, true);
+        offset += 2;
+        _console$z.log({ headerLength });
+        const headerEndOffset = offset + headerLength;
+        _console$z.log({ headerEndOffset });
+        const nameLength = dataView.getUint16(offset, true);
+        offset += 2;
+        _console$z.log({ nameLength });
+        const name = textDecoder.decode(dataView.buffer.slice(offset, offset + nameLength));
+        _console$z.log({ name });
+        offset += nameLength;
+        const numberOfSpriteNames = dataView.getUint16(offset, true);
+        offset += 2;
+        for (let spriteNameIndex = 0; spriteNameIndex < numberOfSpriteNames; spriteNameIndex++) {
+            _console$z.log("parsing", { spriteNameIndex });
+            const spriteNameOffset = dataView.getUint16(offset, true);
+            _console$z.log({ spriteNameOffset });
+            offset += 2;
+            const spriteNameLength = dataView.getUint16(spriteNameOffset, true);
+            _console$z.log({ spriteNameLength });
+            const spriteName = textDecoder.decode(dataView.buffer.slice(spriteNameOffset + 2, spriteNameOffset + 2 + spriteNameLength));
+            _console$z.log({ spriteName });
+            spriteNames.push(spriteName);
+        }
+        _console$z.log("spriteNames", spriteNames);
+    }
+    const numberOfSprites = dataView.getUint16(offset, true);
+    offset += 2;
+    _console$z.log({ numberOfSprites });
+    for (let spriteIndex = 0; spriteIndex < numberOfSprites; spriteIndex++) {
+        _console$z.log("parsing", { spriteIndex });
+        const spriteOffset = dataView.getUint16(offset, true);
+        _console$z.log({ spriteOffset });
+        offset += 2;
+        let spriteDataViewOffset = 0;
+        const width = dataView.getUint16(spriteOffset + spriteDataViewOffset, true);
+        spriteDataViewOffset += 2;
+        const height = dataView.getUint16(spriteOffset + spriteDataViewOffset, true);
+        spriteDataViewOffset += 2;
+        const commandsDataByteLength = dataView.getUint16(spriteOffset + spriteDataViewOffset, true);
+        spriteDataViewOffset += 2;
+        _console$z.log({ width, height, commandsDataByteLength });
+        const commandsDataView = new DataView(dataView.buffer.slice(spriteOffset + spriteDataViewOffset, spriteOffset + spriteDataViewOffset + commandsDataByteLength));
+        _console$z.log("commandsDataView", commandsDataView);
+        const commands = parseDisplayContextCommands(displayManager, commandsDataView);
+        console.log("commands", commands);
+        const sprite = {
+            name: spriteNames[spriteIndex] ?? spriteIndex.toString(),
+            width,
+            height,
+            commands,
+        };
+        sprites.push(sprite);
+    }
+    const spriteSheet = {
+        name,
+        sprites,
+    };
+    _console$z.log("parsedSpriteSheet", spriteSheet);
+    return spriteSheet;
 }
 const defaultFontToSpriteSheetOptions = {
     stroke: false,
@@ -29474,7 +29558,7 @@ async function imageToSpriteSheet(image, spriteSheetName, spriteName, width, hei
     return canvasToSpriteSheet(canvas, spriteSheetName, spriteName, numberOfColors, paletteName, maxFileLength);
 }
 
-const _console$x = createConsole("DisplayContextCommand", { log: false });
+const _console$x = createConsole("DisplayContextCommand", { log: true });
 const DisplayContextCommandTypes = [
     "show",
     "clear",
@@ -30147,13 +30231,15 @@ function serializeDisplayContextCommandData(displayManager, command) {
                 const { curves } = command;
                 assertValidPath(curves);
                 const typesDataView = new DataView(new ArrayBuffer(Math.ceil(curves.length / displayCurveTypesPerByte)));
+                _console$x.log({ numberOfCurves: curves.length, typesDataView });
                 const controlPointsDataViews = [];
                 const allControlPoints = [];
                 curves.forEach((curve) => {
                     allControlPoints.push(...curve.controlPoints);
                 });
                 const pointDataType = getPointDataType(allControlPoints);
-                const numberOfControlPoints = allControlPoints.length;
+                const allControlPointsLength = allControlPoints.length;
+                _console$x.log({ pointDataType, allControlPointsLength });
                 curves.forEach((curve, index) => {
                     const { type, controlPoints } = curve;
                     const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
@@ -30168,7 +30254,7 @@ function serializeDisplayContextCommandData(displayManager, command) {
                 const headerDataView = new DataView(new ArrayBuffer(3));
                 headerDataView.setUint8(0, DisplayPointDataTypes.indexOf(pointDataType));
                 headerDataView.setUint8(1, curves.length);
-                headerDataView.setUint8(2, numberOfControlPoints);
+                headerDataView.setUint8(2, allControlPointsLength);
                 dataView = new DataView(concatenateArrayBuffers(headerDataView, typesDataView, controlPointsBuffer));
             }
             break;
@@ -30801,25 +30887,37 @@ function parseDisplayContextCommands(displayManager, dataView) {
                 {
                     const curves = [];
                     const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
+                    _console$x.log({ pointDataType });
                     _console$x.assertEnumWithError(DisplayPointDataTypes, pointDataType);
                     const numberOfCurves = dataView.getUint8(offset++);
-                    const curveTypeDataLength = Math.ceil(numberOfCurves / displayCurveTypesPerByte);
-                    const totalNumberOfControlPoints = dataView.getUint8(offset++);
-                    const pathDataLength = curveTypeDataLength +
-                        totalNumberOfControlPoints *
-                            displayPointDataTypeToSize[pointDataType];
-                    _console$x.assertWithError(offset + pathDataLength > dataView.byteLength, `offset + pathDataLength ${offset + pathDataLength} exceeds dataView.byteLength ${dataView.byteLength}`);
+                    _console$x.log({ numberOfCurves });
+                    const typesDataViewByteLength = Math.ceil(numberOfCurves / displayCurveTypesPerByte);
+                    _console$x.log({ typesDataViewByteLength });
+                    const allControlPointsLength = dataView.getUint8(offset++);
+                    _console$x.log({ allControlPointsLength });
+                    const pathDataLength = typesDataViewByteLength +
+                        allControlPointsLength * displayPointDataTypeToSize[pointDataType];
+                    _console$x.assertWithError(offset + pathDataLength <= dataView.byteLength, `offset + pathDataLength ${offset + pathDataLength} exceeds dataView.byteLength ${dataView.byteLength}`);
+                    _console$x.log({ pathDataLength });
                     const curveTypeDataOffset = offset;
-                    offset += curveTypeDataLength;
-                    for (let index = 0; index < numberOfCurves; index++) {
-                        const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
-                        const typeBitShift = (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
+                    offset += typesDataViewByteLength;
+                    for (let curveIndex = 0; curveIndex < numberOfCurves; curveIndex++) {
+                        _console$x.log({ curveIndex });
+                        const typeByteIndex = Math.floor(curveIndex / displayCurveTypesPerByte);
+                        const typeBitShift = (curveIndex % displayCurveTypesPerByte) *
+                            displayCurveTypeBitWidth;
                         const typeValue = dataView.getUint8(curveTypeDataOffset + typeByteIndex);
                         const typeIndex = (typeValue >> typeBitShift) &
                             ((1 << displayCurveTypeBitWidth) - 1);
                         const type = DisplayBezierCurveTypes[typeIndex];
-                        const { points: controlPoints, offset: newOffset } = parsePoints(dataView, offset);
+                        let numberOfPoints = getNumberOfConrolPoints(type);
+                        if (curveIndex > 0) {
+                            numberOfPoints--;
+                        }
+                        _console$x.log({ type, numberOfPoints });
+                        const { points: controlPoints, offset: newOffset } = parsePoints(dataView, offset, true, pointDataType, numberOfPoints);
                         offset = newOffset;
+                        _console$x.log({ type, curveIndex }, controlPoints);
                         curves.push({ type, controlPoints });
                     }
                     command = { type, curves };
@@ -32138,9 +32236,9 @@ const DisplayMessageTypes = [
     "setDisplayBrightness",
     "displayContextCommands",
     "displayReady",
-    "getSpriteSheetName",
-    "setSpriteSheetName",
-    "spriteSheetIndex",
+    "getDisplaySpriteSheetName",
+    "setDisplaySpriteSheetName",
+    "displaySpriteSheetIndex",
 ];
 const DisplayBezierCurveTypes = [
     "segment",
@@ -32284,6 +32382,7 @@ let DisplayManager = (() => {
     let _drawArc_decorators;
     let _drawArcEllipse_decorators;
     let _drawBitmap_decorators;
+    let _serializeSpriteSheet_decorators;
     let _uploadSpriteSheet_decorators;
     let _selectSpriteSheet_decorators;
     let _drawSprite_decorators;
@@ -32390,6 +32489,7 @@ let DisplayManager = (() => {
             _drawArc_decorators = [ForwardToHelper];
             _drawArcEllipse_decorators = [ForwardToHelper];
             _drawBitmap_decorators = [ForwardToHelper];
+            _serializeSpriteSheet_decorators = [ForwardToHelper];
             _uploadSpriteSheet_decorators = [ForwardToHelper];
             _selectSpriteSheet_decorators = [ForwardToHelper];
             _drawSprite_decorators = [ForwardToHelper];
@@ -32493,6 +32593,7 @@ let DisplayManager = (() => {
             __esDecorate(this, null, _drawArc_decorators, { kind: "method", name: "drawArc", static: false, private: false, access: { has: obj => "drawArc" in obj, get: obj => obj.drawArc }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _drawArcEllipse_decorators, { kind: "method", name: "drawArcEllipse", static: false, private: false, access: { has: obj => "drawArcEllipse" in obj, get: obj => obj.drawArcEllipse }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _drawBitmap_decorators, { kind: "method", name: "drawBitmap", static: false, private: false, access: { has: obj => "drawBitmap" in obj, get: obj => obj.drawBitmap }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(this, null, _serializeSpriteSheet_decorators, { kind: "method", name: "serializeSpriteSheet", static: false, private: false, access: { has: obj => "serializeSpriteSheet" in obj, get: obj => obj.serializeSpriteSheet }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _uploadSpriteSheet_decorators, { kind: "method", name: "uploadSpriteSheet", static: false, private: false, access: { has: obj => "uploadSpriteSheet" in obj, get: obj => obj.uploadSpriteSheet }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _selectSpriteSheet_decorators, { kind: "method", name: "selectSpriteSheet", static: false, private: false, access: { has: obj => "selectSpriteSheet" in obj, get: obj => obj.selectSpriteSheet }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _drawSprite_decorators, { kind: "method", name: "drawSprite", static: false, private: false, access: { has: obj => "drawSprite" in obj, get: obj => obj.drawSprite }, metadata: _metadata }, null, _instanceExtraInitializers);
@@ -33778,7 +33879,10 @@ let DisplayManager = (() => {
             return getSpriteSheetByIndex(this, index);
         }
         async #setSpriteSheetName(spriteSheetName, sendImmediately) {
-            _console$v.log("setSpriteSheetName", { spriteSheetName, sendImmediately });
+            _console$v.log("setDisplaySpriteSheetName", {
+                spriteSheetName,
+                sendImmediately,
+            });
             if (typeof spriteSheetName == "number") {
                 spriteSheetName = spriteSheetName.toString();
             }
@@ -33786,8 +33890,13 @@ let DisplayManager = (() => {
             _console$v.assertRangeWithError("newName", spriteSheetName.length, MinSpriteSheetNameLength, MaxSpriteSheetNameLength);
             const setSpriteSheetNameData = textEncoder.encode(spriteSheetName);
             _console$v.log({ setSpriteSheetNameData });
-            const promise = this.waitForEvent("getSpriteSheetName");
-            this.sendMessage([{ type: "setSpriteSheetName", data: setSpriteSheetNameData.buffer }], sendImmediately);
+            const promise = this.waitForEvent("getDisplaySpriteSheetName");
+            this.sendMessage([
+                {
+                    type: "setDisplaySpriteSheetName",
+                    data: setSpriteSheetNameData.buffer,
+                },
+            ], sendImmediately);
             await promise;
         }
         #pendingSpriteSheet;
@@ -33802,13 +33911,16 @@ let DisplayManager = (() => {
             _console$v.assertTypeWithError(updatedSpriteSheetName, "string");
             this.#pendingSpriteSheetName = updatedSpriteSheetName;
             _console$v.log({ updatedSpriteSheetName: this.#pendingSpriteSheetName });
-            this.#dispatchEvent("getSpriteSheetName", {
+            this.#dispatchEvent("getDisplaySpriteSheetName", {
                 spriteSheetName: this.#pendingSpriteSheetName,
             });
         }
         sendFile;
-        serializeSpriteSheet(spriteSheet) {
-            return serializeSpriteSheet(this, spriteSheet);
+        serializeSpriteSheet(spriteSheet, includeHeader, displayCanvasHelper) {
+            return serializeSpriteSheet(this, spriteSheet, includeHeader);
+        }
+        parseSpriteSheet(dataView, name, includesHeader, displayCanvasHelper) {
+            return parseSpriteSheet(this, dataView, name, includesHeader);
         }
         async uploadSpriteSheet(spriteSheet, displayCanvasHelper) {
             if (spriteSheet.sprites.length == 0) {
@@ -34039,13 +34151,13 @@ let DisplayManager = (() => {
                 case "displayReady":
                     this.#parseDisplayReady(dataView);
                     break;
-                case "getSpriteSheetName":
-                case "setSpriteSheetName":
+                case "getDisplaySpriteSheetName":
+                case "setDisplaySpriteSheetName":
                     const spriteSheetName = textDecoder.decode(dataView.buffer);
                     _console$v.log({ spriteSheetName });
                     this.#updateSpriteSheetName(spriteSheetName);
                     break;
-                case "spriteSheetIndex":
+                case "displaySpriteSheetIndex":
                     this.#parseSpriteSheetIndex(dataView);
                     break;
                 case "displayCommand":
@@ -36608,12 +36720,26 @@ class Device {
                     break;
             }
         });
-        this.addEventListener("fileSent", (event) => {
+        this.addEventListener("fileSent", async (event) => {
             if (!event.message.indirectly) {
                 return;
             }
             const { file, fileType } = event.message;
             _console$j.log("indirectly sent file", { fileType });
+            switch (fileType) {
+                case "tflite":
+                    break;
+                case "spriteSheet":
+                    _console$j.assertWithError(this.pendingDisplaySpriteSheetName, "pendingDisplaySpriteSheetName not defined");
+                    _console$j.log(`indirectly sent spriteSheet "${this.pendingDisplaySpriteSheetName}"`);
+                    if (!this.displaySpriteSheets[this.pendingDisplaySpriteSheetName]) {
+                        _console$j.log(`no spriteSheet found for "${this.pendingDisplaySpriteSheetName}"`);
+                        const arrayBuffer = await file.arrayBuffer();
+                        const dataView = new DataView(arrayBuffer);
+                        this.parseDisplaySpriteSheet(dataView, this.pendingDisplaySpriteSheetName, false);
+                    }
+                    break;
+            }
         });
         _a$4.OnDevice(this);
     }
@@ -37711,6 +37837,12 @@ class Device {
     get setDisplayBrightness() {
         this.#assertDisplayIsAvailable();
         return this.#displayManager.setBrightness;
+    }
+    get pendingDisplaySpriteSheetName() {
+        return this.#displayManager.pendingSpriteSheetName;
+    }
+    get parseDisplaySpriteSheet() {
+        return this.#displayManager.parseSpriteSheet;
     }
     get displayInformation() {
         this.#assertDisplayIsAvailable();
@@ -38953,7 +39085,7 @@ class BaseServer {
                 }
                 break;
             case "tfliteIsReady":
-            case "spriteSheetIndex":
+            case "displaySpriteSheetIndex":
                 if (!device.getCurrentSentFileConfiguration()) {
                     _console$f.log(`delaying messageType "${messageType}" until after sending local file`);
                     return;
@@ -39354,7 +39486,7 @@ class BaseServer {
                                             followUpDeviceMessage = this.#createDeviceMessage(device, "tfliteIsReady");
                                             break;
                                         case "spriteSheet":
-                                            followUpDeviceMessage = this.#createDeviceMessage(device, "spriteSheetIndex");
+                                            followUpDeviceMessage = this.#createDeviceMessage(device, "displaySpriteSheetIndex");
                                             break;
                                     }
                                     if (followUpDeviceMessage) {
@@ -43676,8 +43808,11 @@ class DisplayCanvasHelper {
     async resizeAndQuantizeImage(image, width, height, numberOfColors, colors) {
         return resizeAndQuantizeImage(image, width, height, numberOfColors, colors);
     }
-    serializeSpriteSheet(spriteSheet) {
-        return serializeSpriteSheet(this, spriteSheet);
+    serializeSpriteSheet(spriteSheet, includeHeader) {
+        return serializeSpriteSheet(this, spriteSheet, includeHeader);
+    }
+    parseSpriteSheet(dataView, name, includesHeader) {
+        return parseSpriteSheet(this, dataView, name, includesHeader);
     }
     #startSprite(offsetX, offsetY, width, height, contextState) {
         this.#saveContextForSprite(offsetX, offsetY, { width, height }, contextState);

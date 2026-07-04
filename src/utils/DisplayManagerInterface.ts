@@ -729,7 +729,15 @@ export interface DisplayManagerInterface {
     isSending?: boolean,
   ): Promise<void>;
 
-  serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
+  serializeSpriteSheet(
+    spriteSheet: DisplaySpriteSheet,
+    includeHeader?: boolean,
+  ): ArrayBuffer;
+  parseSpriteSheet(
+    dataView: DataView<ArrayBuffer>,
+    name?: string,
+    includesHeader?: boolean,
+  ): DisplaySpriteSheet;
 
   startSprite(
     offsetX: number,

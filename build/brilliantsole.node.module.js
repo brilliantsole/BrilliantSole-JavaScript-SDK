@@ -5633,11 +5633,11 @@ function resetContextState(state, numberOfColors, keepColorIndices, keepSpriteCo
     state.bitmapColorIndices = new Array(numberOfColors).fill(0);
 }
 
-const _console$x = createConsole("DisplayUtils", { log: false });
+const _console$z = createConsole("DisplayUtils", { log: false });
 function formatRotation(rotation, isRadians, isSigned) {
     if (isRadians) {
         const rotationRad = rotation;
-        _console$x.log({ rotationRad });
+        _console$z.log({ rotationRad });
         if (isSigned) {
             rotation = clamp(rotation, -twoPi, twoPi);
         }
@@ -5648,7 +5648,7 @@ function formatRotation(rotation, isRadians, isSigned) {
     }
     else {
         const rotationDeg = rotation;
-        _console$x.log({ rotationDeg });
+        _console$z.log({ rotationDeg });
         if (isSigned) {
             rotation = clamp(rotation, -360, 360);
         }
@@ -5664,7 +5664,7 @@ function formatRotation(rotation, isRadians, isSigned) {
         rotation *= Uint16Max;
     }
     rotation = Math.floor(rotation);
-    _console$x.log({ formattedRotation: rotation });
+    _console$z.log({ formattedRotation: rotation });
     return rotation;
 }
 function parseRotation(formattedRotation, isRadians, isSigned) {
@@ -5678,7 +5678,7 @@ function parseRotation(formattedRotation, isRadians, isSigned) {
     {
         rotation *= 2 * Math.PI;
     }
-    _console$x.log({ parsedRotation: rotation });
+    _console$z.log({ parsedRotation: rotation });
     return rotation;
 }
 function roundToStep(value, step) {
@@ -5700,13 +5700,13 @@ function roundScale(scale) {
     return roundToStep(scale, displayScaleStep);
 }
 function assertValidSegmentCap(segmentCap) {
-    _console$x.assertEnumWithError(DisplaySegmentCaps, segmentCap);
+    _console$z.assertEnumWithError(DisplaySegmentCaps, segmentCap);
 }
 function assertValidDisplayBrightness(displayBrightness) {
-    _console$x.assertEnumWithError(DisplayBrightnesses, displayBrightness);
+    _console$z.assertEnumWithError(DisplayBrightnesses, displayBrightness);
 }
 function assertValidColorValue(name, value) {
-    _console$x.assertRangeWithError(name, value, 0, 255);
+    _console$z.assertRangeWithError(name, value, 0, 255);
 }
 function assertValidColor(color) {
     assertValidColorValue("red", color.r);
@@ -5714,7 +5714,7 @@ function assertValidColor(color) {
     assertValidColorValue("blue", color.b);
 }
 function assertValidOpacity(value) {
-    _console$x.assertRangeWithError("opacity", value, 0, 1);
+    _console$z.assertRangeWithError("opacity", value, 0, 1);
 }
 const DisplayCropDirections = [
     "top",
@@ -5772,13 +5772,13 @@ const DisplayBitmapScaleDirectionToCommandType = {
     all: "setBitmapScale",
 };
 function assertValidAlignment(alignment) {
-    _console$x.assertEnumWithError(DisplayAlignments, alignment);
+    _console$z.assertEnumWithError(DisplayAlignments, alignment);
 }
 function assertValidDirection(direction) {
-    _console$x.assertEnumWithError(DisplayDirections, direction);
+    _console$z.assertEnumWithError(DisplayDirections, direction);
 }
 function assertValidAlignmentDirection(direction) {
-    _console$x.assertEnumWithError(DisplayAlignmentDirections, direction);
+    _console$z.assertEnumWithError(DisplayAlignmentDirections, direction);
 }
 const displayCurveTypeToNumberOfControlPoints = {
     segment: 2,
@@ -5787,7 +5787,7 @@ const displayCurveTypeToNumberOfControlPoints = {
 };
 function assertValidNumberOfControlPoints(curveType, controlPoints, isPath = false) {
     const numberOfControlPoints = getNumberOfConrolPoints(curveType, isPath);
-    _console$x.assertWithError(controlPoints.length == numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`);
+    _console$z.assertWithError(controlPoints.length == numberOfControlPoints, `invalid number of control points ${controlPoints.length}, expected ${numberOfControlPoints}`);
 }
 function getNumberOfConrolPoints(curveType, isPath = false) {
     let numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
@@ -5798,7 +5798,7 @@ function getNumberOfConrolPoints(curveType, isPath = false) {
 }
 function assertValidPathNumberOfControlPoints(curveType, controlPoints) {
     const numberOfControlPoints = displayCurveTypeToNumberOfControlPoints[curveType];
-    _console$x.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, `invalid number of path control points ${controlPoints.length} for path "${curveType}"`);
+    _console$z.assertWithError((controlPoints.length - 1) % (numberOfControlPoints - 1) == 0, `invalid number of path control points ${controlPoints.length} for path "${curveType}"`);
 }
 function assertValidPath(curves) {
     curves.forEach((curve, index) => {
@@ -5807,15 +5807,15 @@ function assertValidPath(curves) {
     });
 }
 function assertValidWireframe({ points, edges }) {
-    _console$x.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-    _console$x.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
+    _console$z.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+    _console$z.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
     edges.forEach((edge, index) => {
-        _console$x.assertRangeWithError(`edgeStartIndex.${index}`, edge.startIndex, 0, points.length);
-        _console$x.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
+        _console$z.assertRangeWithError(`edgeStartIndex.${index}`, edge.startIndex, 0, points.length);
+        _console$z.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
     });
 }
 function isWireframePolygon({ points, edges, }) {
-    _console$x.log("isWireframePolygon?", points, edges);
+    _console$z.log("isWireframePolygon?", points, edges);
     if (points.length != edges.length) {
         return;
     }
@@ -5830,7 +5830,7 @@ function isWireframePolygon({ points, edges, }) {
         else {
             const startIndex = pointIndices.at(-1);
             const edge = _edges.find((edge) => edge.startIndex == startIndex || edge.endIndex == startIndex);
-            _console$x.log(i, "edge", edge);
+            _console$z.log(i, "edge", edge);
             if (edge) {
                 _edges.splice(_edges.indexOf(edge), 1);
                 const endIndex = edge.startIndex == startIndex ? edge.endIndex : edge.startIndex;
@@ -5840,30 +5840,30 @@ function isWireframePolygon({ points, edges, }) {
                     }
                 }
                 else if (pointIndices.includes(endIndex)) {
-                    _console$x.log("duplicate endIndex", endIndex);
+                    _console$z.log("duplicate endIndex", endIndex);
                     return;
                 }
                 pointIndices.push(endIndex);
             }
             else {
-                _console$x.log("no edge found");
+                _console$z.log("no edge found");
                 return;
             }
         }
-        _console$x.log("remaining edges", _edges);
+        _console$z.log("remaining edges", _edges);
     }
-    _console$x.log("pointIndices", pointIndices);
+    _console$z.log("pointIndices", pointIndices);
     const polygon = pointIndices
         .map((pointIndex) => points[pointIndex])
         .filter((point, index, polygon) => polygon.indexOf(point) == index);
     if (polygon.length == points.length) {
         polygon.push(polygon[0]);
-        _console$x.log("polygon", polygon);
+        _console$z.log("polygon", polygon);
         return polygon;
     }
 }
 function trimWireframe(wireframe) {
-    _console$x.log("trimming wireframe", wireframe);
+    _console$z.log("trimming wireframe", wireframe);
     const { points, edges } = wireframe;
     const trimmedPoints = [];
     const trimmedEdges = [];
@@ -5892,7 +5892,7 @@ function trimWireframe(wireframe) {
             trimmedEdgeIndex = trimmedEdges.length - 1;
         }
     });
-    _console$x.log("trimmedWireframe", trimmedPoints, trimmedEdges);
+    _console$z.log("trimmedWireframe", trimmedPoints, trimmedEdges);
     return { points: trimmedPoints, edges: trimmedEdges };
 }
 function getPointDataType(points) {
@@ -5905,19 +5905,20 @@ function getPointDataType(points) {
         const { min, max } = displayPointDataTypeToRange[pointDataType];
         return range.min >= min && range.max <= max;
     });
-    _console$x.log("pointDataType", pointDataType, points);
+    _console$z.log("pointDataType", pointDataType, points);
     return pointDataType;
 }
 function serializePoints(points, pointDataType, isPath = false) {
     pointDataType = pointDataType || getPointDataType(points);
-    _console$x.assertEnumWithError(DisplayPointDataTypes, pointDataType);
+    _console$z.log("serializePoints", points, { pointDataType, isPath });
+    _console$z.assertEnumWithError(DisplayPointDataTypes, pointDataType);
     const pointDataSize = displayPointDataTypeToSize[pointDataType];
     let dataViewLength = points.length * pointDataSize;
     if (!isPath) {
         dataViewLength += 2;
     }
     const dataView = new DataView(new ArrayBuffer(dataViewLength));
-    _console$x.log(`serializing ${points.length} ${pointDataType} points (${dataView.byteLength} bytes)...`);
+    _console$z.log(`serializing ${points.length} ${pointDataType} points (${dataView.byteLength} bytes)...`);
     let offset = 0;
     if (!isPath) {
         dataView.setUint8(offset++, DisplayPointDataTypes.indexOf(pointDataType));
@@ -5947,12 +5948,23 @@ function serializePoints(points, pointDataType, isPath = false) {
     });
     return dataView;
 }
-function parsePoints(dataView, offset) {
+function parsePoints(dataView, offset, isPath, pointDataType, numberOfPoints) {
+    _console$z.log("parsePoints", dataView, {
+        offset,
+        isPath,
+        pointDataType,
+        numberOfPoints,
+    });
     const points = [];
-    const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
-    _console$x.assertEnumWithError(DisplayPointDataTypes, pointDataType);
-    const numberOfPoints = dataView.getUint8(offset++);
-    _console$x.assertWithError(numberOfPoints >= 3, `numberOfPoints ${numberOfPoints} must be at least 3`);
+    if (pointDataType == undefined) {
+        pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
+    }
+    _console$z.log({ pointDataType });
+    _console$z.assertEnumWithError(DisplayPointDataTypes, pointDataType);
+    if (numberOfPoints == undefined) {
+        numberOfPoints = dataView.getUint8(offset++);
+    }
+    _console$z.log({ numberOfPoints });
     for (let i = 0; i < numberOfPoints; i++) {
         let x, y;
         switch (pointDataType) {
@@ -5977,6 +5989,7 @@ function parsePoints(dataView, offset) {
         }
         points.push({ x, y });
     }
+    _console$z.log("parsedPoints", points, { offset });
     return { points, offset };
 }
 
@@ -6197,7 +6210,7 @@ function removeSubstrings(string, substrings) {
     return result;
 }
 
-const _console$z = createConsole("DisplaySpriteSheetUtils", { log: false });
+const _console$x = createConsole("DisplaySpriteSheetUtils", { log: true });
 const spriteHeaderLength = 3 * 2;
 function getCurvesPoints(curves) {
     const curvePoints = [];
@@ -6209,31 +6222,102 @@ function getCurvesPoints(curves) {
     });
     return curvePoints;
 }
-function serializeSpriteSheet(displayManager, spriteSheet) {
+function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
     const { name, sprites } = spriteSheet;
-    _console$z.log(`serializing ${name} spriteSheet`, spriteSheet);
+    _console$x.log(`serializing ${name} spriteSheet`, spriteSheet, {
+        includeHeader,
+    });
     const numberOfSprites = sprites.length;
     const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
     numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
-    const spritePayloads = sprites.map((sprite, index) => {
+    const spritePayloads = sprites.map((sprite, spriteIndex) => {
         const commandsData = serializeDisplayContextCommands(displayManager, sprite.commands);
         const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
         dataView.setUint16(0, sprite.width, true);
         dataView.setUint16(2, sprite.height, true);
         dataView.setUint16(4, commandsData.byteLength, true);
         const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
-        _console$z.log("serializedSprite", sprite, serializedSprite);
+        _console$x.log("serializedSprite", sprite, serializedSprite, { spriteIndex });
         return serializedSprite;
     });
     const spriteOffsetsDataView = new DataView(new ArrayBuffer(sprites.length * 2));
-    let offset = numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
-    spritePayloads.forEach((spritePayload, index) => {
-        spriteOffsetsDataView.setUint16(index * 2, offset, true);
-        offset += spritePayload.byteLength;
+    let spriteOffset = numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
+    spritePayloads.forEach((spritePayload, spriteIndex) => {
+        _console$x.log("spriteOffsets", { spriteIndex, spriteOffset }, spritePayload);
+        spriteOffsetsDataView.setUint16(spriteIndex * 2, spriteOffset, true);
+        spriteOffset += spritePayload.byteLength;
     });
     const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
-    _console$z.log("serializedSpriteSheet", serializedSpriteSheet);
+    _console$x.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
+}
+function parseSpriteSheet(displayManager, dataView, name, includesHeader) {
+    _console$x.assertWithError(includesHeader || name != undefined, "name not defined and header is not included");
+    _console$x.log("parseSpriteSheet", dataView, { name, includesHeader });
+    const spriteNames = [];
+    const sprites = [];
+    let offset = 0;
+    if (includesHeader) {
+        const headerLength = dataView.getUint16(offset, true);
+        offset += 2;
+        _console$x.log({ headerLength });
+        const headerEndOffset = offset + headerLength;
+        _console$x.log({ headerEndOffset });
+        const nameLength = dataView.getUint16(offset, true);
+        offset += 2;
+        _console$x.log({ nameLength });
+        const name = textDecoder.decode(dataView.buffer.slice(offset, offset + nameLength));
+        _console$x.log({ name });
+        offset += nameLength;
+        const numberOfSpriteNames = dataView.getUint16(offset, true);
+        offset += 2;
+        for (let spriteNameIndex = 0; spriteNameIndex < numberOfSpriteNames; spriteNameIndex++) {
+            _console$x.log("parsing", { spriteNameIndex });
+            const spriteNameOffset = dataView.getUint16(offset, true);
+            _console$x.log({ spriteNameOffset });
+            offset += 2;
+            const spriteNameLength = dataView.getUint16(spriteNameOffset, true);
+            _console$x.log({ spriteNameLength });
+            const spriteName = textDecoder.decode(dataView.buffer.slice(spriteNameOffset + 2, spriteNameOffset + 2 + spriteNameLength));
+            _console$x.log({ spriteName });
+            spriteNames.push(spriteName);
+        }
+        _console$x.log("spriteNames", spriteNames);
+    }
+    const numberOfSprites = dataView.getUint16(offset, true);
+    offset += 2;
+    _console$x.log({ numberOfSprites });
+    for (let spriteIndex = 0; spriteIndex < numberOfSprites; spriteIndex++) {
+        _console$x.log("parsing", { spriteIndex });
+        const spriteOffset = dataView.getUint16(offset, true);
+        _console$x.log({ spriteOffset });
+        offset += 2;
+        let spriteDataViewOffset = 0;
+        const width = dataView.getUint16(spriteOffset + spriteDataViewOffset, true);
+        spriteDataViewOffset += 2;
+        const height = dataView.getUint16(spriteOffset + spriteDataViewOffset, true);
+        spriteDataViewOffset += 2;
+        const commandsDataByteLength = dataView.getUint16(spriteOffset + spriteDataViewOffset, true);
+        spriteDataViewOffset += 2;
+        _console$x.log({ width, height, commandsDataByteLength });
+        const commandsDataView = new DataView(dataView.buffer.slice(spriteOffset + spriteDataViewOffset, spriteOffset + spriteDataViewOffset + commandsDataByteLength));
+        _console$x.log("commandsDataView", commandsDataView);
+        const commands = parseDisplayContextCommands(displayManager, commandsDataView);
+        console.log("commands", commands);
+        const sprite = {
+            name: spriteNames[spriteIndex] ?? spriteIndex.toString(),
+            width,
+            height,
+            commands,
+        };
+        sprites.push(sprite);
+    }
+    const spriteSheet = {
+        name,
+        sprites,
+    };
+    _console$x.log("parsedSpriteSheet", spriteSheet);
+    return spriteSheet;
 }
 const defaultFontToSpriteSheetOptions = {
     stroke: false,
@@ -6285,7 +6369,7 @@ function contourArea(points) {
     return area;
 }
 function getFontMetrics(font, fontSize, options) {
-    _console$z.assertTypeWithError(fontSize, "number");
+    _console$x.assertTypeWithError(fontSize, "number");
     options = options
         ? { ...defaultFontToSpriteSheetOptions, ...options }
         : defaultFontToSpriteSheetOptions;
@@ -6296,7 +6380,7 @@ function getFontMetrics(font, fontSize, options) {
     let string = options.string;
     if (string) {
         string = removeRedundantCharacters(string);
-        _console$z.log("filtered string", string);
+        _console$x.log("filtered string", string);
     }
     for (let font of fonts) {
         const fontScale = (1 / font.unitsPerEm) * fontSize;
@@ -6309,7 +6393,7 @@ function getFontMetrics(font, fontSize, options) {
                 string = removeSubstrings(string, filteredGlyphs.map((glyph) => String.fromCharCode(glyph.unicode)));
             }
             catch (error) {
-                _console$z.error(error);
+                _console$x.error(error);
             }
         }
         for (let index = 0; index < font.glyphs.length; index++) {
@@ -6340,7 +6424,7 @@ function getFontMetrics(font, fontSize, options) {
             minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
             maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
         }
-        _console$z.log({
+        _console$x.log({
             fontName: font.getEnglishName("fullName"),
             minSpriteY,
             maxSpriteY,
@@ -6363,11 +6447,11 @@ function getFontMetrics(font, fontSize, options) {
             maxSpriteHeight = Math.max(options.maxSpriteHeight, maxSpriteHeight);
         }
     }
-    _console$z.log({ maxSpriteHeight, minSpriteY, maxSpriteY }, options);
+    _console$x.log({ maxSpriteHeight, minSpriteY, maxSpriteY }, options);
     return { maxSpriteHeight, maxSpriteY, minSpriteY };
 }
 async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
-    _console$z.assertTypeWithError(fontSize, "number");
+    _console$x.assertTypeWithError(fontSize, "number");
     options = options
         ? { ...defaultFontToSpriteSheetOptions, ...options }
         : defaultFontToSpriteSheetOptions;
@@ -6385,7 +6469,7 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
     let string = options.string;
     if (string) {
         string = removeRedundantCharacters(string);
-        _console$z.log("filtered string", string);
+        _console$x.log("filtered string", string);
     }
     for (let font of fonts) {
         const fontScale = (1 / font.unitsPerEm) * fontSize;
@@ -6457,7 +6541,7 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                     x: -bitmapWidth / 2 + bitmapX,
                     y: -bitmapHeight / 2 + bitmapY,
                 };
-                _console$z.log(`${name} path.commands`, path.commands);
+                _console$x.log(`${name} path.commands`, path.commands);
                 let curves = [];
                 let startPoint = { x: 0, y: 0 };
                 const allCurves = [];
@@ -6523,13 +6607,13 @@ async function fontToSpriteSheet(font, fontSize, spriteSheetName, options) {
                             break;
                     }
                 });
-                _console$z.log("allCurves", allCurves);
+                _console$x.log("allCurves", allCurves);
                 allCurves.sort((a, b) => {
                     const aPoints = getCurvesPoints(a);
                     const bPoints = getCurvesPoints(b);
                     return contourArea(bPoints) - contourArea(aPoints);
                 });
-                _console$z.log("sorted allCurves", allCurves);
+                _console$x.log("sorted allCurves", allCurves);
                 allCurves.forEach((curves) => {
                     let controlPoints = curves.flatMap((c) => c.controlPoints);
                     const isHole = classifySubpath(controlPoints, parsedPaths);
@@ -6629,7 +6713,7 @@ function stringToSprites(string, spriteSheet, requireAll = false) {
             }
         });
         if (requireAll) {
-            _console$z.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${substring}"`);
+            _console$x.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${substring}"`);
         }
         if (longestSprite) {
             sprites.push(longestSprite);
@@ -6653,7 +6737,7 @@ function getReferencedSprites(sprite, spriteSheet) {
             sprites.push(...getReferencedSprites(_sprite, spriteSheet));
         }
     });
-    _console$z.log("referencedSprites", sprite, sprites);
+    _console$x.log("referencedSprites", sprite, sprites);
     return sprites;
 }
 function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
@@ -6661,7 +6745,7 @@ function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
     if (!(spriteNames instanceof Array)) {
         spriteNames = stringToSprites(spriteNames, spriteSheet, requireAll).map((sprite) => sprite.name);
     }
-    _console$z.log("reducingSpriteSheet", spriteSheet, spriteNames);
+    _console$x.log("reducingSpriteSheet", spriteSheet, spriteNames);
     reducedSpriteSheet.sprites = [];
     spriteSheet.sprites.forEach((sprite) => {
         if (spriteNames.includes(sprite.name)) {
@@ -6669,11 +6753,11 @@ function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
             reducedSpriteSheet.sprites.push(...getReferencedSprites(sprite, spriteSheet));
         }
     });
-    _console$z.log("reducedSpriteSheet", reducedSpriteSheet);
+    _console$x.log("reducedSpriteSheet", reducedSpriteSheet);
     return reducedSpriteSheet;
 }
 function stringToSpriteLines(string, spriteSheets, contextState, requireAll = false, maxLineBreadth = Infinity, separators = [" "]) {
-    _console$z.log("stringToSpriteLines", string);
+    _console$x.log("stringToSpriteLines", string);
     const isSpritesDirectionHorizontal = isDirectionHorizontal(contextState.spritesDirection);
     const isSpritesLineDirectionHorizontal = isDirectionHorizontal(contextState.spritesLineDirection);
     const areSpritesDirectionsOrthogonal = isSpritesDirectionHorizontal != isSpritesLineDirectionHorizontal;
@@ -6718,7 +6802,7 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
                 });
             }
             if (requireAll) {
-                _console$z.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${lineSubstring}"`);
+                _console$x.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${lineSubstring}"`);
             }
             if (longestSprite && longestSpriteSheet) {
                 const isSeparator = separators.length > 0
@@ -6796,13 +6880,13 @@ function stringToSpriteLines(string, spriteSheets, contextState, requireAll = fa
             spriteSubLine.spriteNames.push(sprite.name);
         });
     });
-    _console$z.log(`spriteLines for "${string}"`, spriteLines);
+    _console$x.log(`spriteLines for "${string}"`, spriteLines);
     return spriteLines;
 }
 function getFontMaxHeight(font, fontSize) {
     const scale = (1 / font.unitsPerEm) * fontSize;
     const maxHeight = (font.ascender - font.descender) * scale;
-    _console$z.log({ font: font.getEnglishName("fullName"), maxHeight, fontSize });
+    _console$x.log({ font: font.getEnglishName("fullName"), maxHeight, fontSize });
     return maxHeight;
 }
 function getMaxSpriteSheetSize(spriteSheet) {
@@ -6819,10 +6903,10 @@ function getExpandedSpriteLines(spriteLines, spriteSheets) {
         const _spritesLine = [];
         spriteLine.forEach(({ spriteSheetName, spriteNames }) => {
             const spriteSheet = spriteSheets[spriteSheetName];
-            _console$z.assertWithError(spriteSheet, `no spriteSheet found with name "${spriteSheetName}"`);
+            _console$x.assertWithError(spriteSheet, `no spriteSheet found with name "${spriteSheetName}"`);
             spriteNames.forEach((spriteName) => {
                 const sprite = spriteSheet.sprites.find((sprite) => sprite.name == spriteName);
-                _console$z.assertWithError(sprite, `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`);
+                _console$x.assertWithError(sprite, `no sprite found with name "${spriteName} in "${spriteSheetName}" spriteSheet`);
                 _spritesLine.push(sprite);
             });
         });
@@ -6900,7 +6984,7 @@ function spriteLinesToSerializedLines(displayManager, spriteLines) {
             };
             spriteSubLine.spriteNames.forEach((spriteName) => {
                 let spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
-                _console$z.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
+                _console$x.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
                 spriteIndex = spriteIndex;
                 serializedSubLine.spriteIndices.push(spriteIndex);
             });
@@ -6908,7 +6992,7 @@ function spriteLinesToSerializedLines(displayManager, spriteLines) {
         });
         spriteSerializedLines.push(serializedLine);
     });
-    _console$z.log("spriteSerializedLines", spriteSerializedLines);
+    _console$x.log("spriteSerializedLines", spriteSerializedLines);
     return spriteSerializedLines;
 }
 
@@ -7133,7 +7217,7 @@ function assertValidBitmapPixels(bitmap) {
     });
 }
 
-const _console$w = createConsole("DisplayContextCommand", { log: false });
+const _console$w = createConsole("DisplayContextCommand", { log: true });
 const DisplayContextCommandTypes = [
     "show",
     "clear",
@@ -7806,13 +7890,15 @@ function serializeDisplayContextCommandData(displayManager, command) {
                 const { curves } = command;
                 assertValidPath(curves);
                 const typesDataView = new DataView(new ArrayBuffer(Math.ceil(curves.length / displayCurveTypesPerByte)));
+                _console$w.log({ numberOfCurves: curves.length, typesDataView });
                 const controlPointsDataViews = [];
                 const allControlPoints = [];
                 curves.forEach((curve) => {
                     allControlPoints.push(...curve.controlPoints);
                 });
                 const pointDataType = getPointDataType(allControlPoints);
-                const numberOfControlPoints = allControlPoints.length;
+                const allControlPointsLength = allControlPoints.length;
+                _console$w.log({ pointDataType, allControlPointsLength });
                 curves.forEach((curve, index) => {
                     const { type, controlPoints } = curve;
                     const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
@@ -7827,7 +7913,7 @@ function serializeDisplayContextCommandData(displayManager, command) {
                 const headerDataView = new DataView(new ArrayBuffer(3));
                 headerDataView.setUint8(0, DisplayPointDataTypes.indexOf(pointDataType));
                 headerDataView.setUint8(1, curves.length);
-                headerDataView.setUint8(2, numberOfControlPoints);
+                headerDataView.setUint8(2, allControlPointsLength);
                 dataView = new DataView(concatenateArrayBuffers(headerDataView, typesDataView, controlPointsBuffer));
             }
             break;
@@ -8460,25 +8546,37 @@ function parseDisplayContextCommands(displayManager, dataView) {
                 {
                     const curves = [];
                     const pointDataType = DisplayPointDataTypes[dataView.getUint8(offset++)];
+                    _console$w.log({ pointDataType });
                     _console$w.assertEnumWithError(DisplayPointDataTypes, pointDataType);
                     const numberOfCurves = dataView.getUint8(offset++);
-                    const curveTypeDataLength = Math.ceil(numberOfCurves / displayCurveTypesPerByte);
-                    const totalNumberOfControlPoints = dataView.getUint8(offset++);
-                    const pathDataLength = curveTypeDataLength +
-                        totalNumberOfControlPoints *
-                            displayPointDataTypeToSize[pointDataType];
-                    _console$w.assertWithError(offset + pathDataLength > dataView.byteLength, `offset + pathDataLength ${offset + pathDataLength} exceeds dataView.byteLength ${dataView.byteLength}`);
+                    _console$w.log({ numberOfCurves });
+                    const typesDataViewByteLength = Math.ceil(numberOfCurves / displayCurveTypesPerByte);
+                    _console$w.log({ typesDataViewByteLength });
+                    const allControlPointsLength = dataView.getUint8(offset++);
+                    _console$w.log({ allControlPointsLength });
+                    const pathDataLength = typesDataViewByteLength +
+                        allControlPointsLength * displayPointDataTypeToSize[pointDataType];
+                    _console$w.assertWithError(offset + pathDataLength <= dataView.byteLength, `offset + pathDataLength ${offset + pathDataLength} exceeds dataView.byteLength ${dataView.byteLength}`);
+                    _console$w.log({ pathDataLength });
                     const curveTypeDataOffset = offset;
-                    offset += curveTypeDataLength;
-                    for (let index = 0; index < numberOfCurves; index++) {
-                        const typeByteIndex = Math.floor(index / displayCurveTypesPerByte);
-                        const typeBitShift = (index % displayCurveTypesPerByte) * displayCurveTypeBitWidth;
+                    offset += typesDataViewByteLength;
+                    for (let curveIndex = 0; curveIndex < numberOfCurves; curveIndex++) {
+                        _console$w.log({ curveIndex });
+                        const typeByteIndex = Math.floor(curveIndex / displayCurveTypesPerByte);
+                        const typeBitShift = (curveIndex % displayCurveTypesPerByte) *
+                            displayCurveTypeBitWidth;
                         const typeValue = dataView.getUint8(curveTypeDataOffset + typeByteIndex);
                         const typeIndex = (typeValue >> typeBitShift) &
                             ((1 << displayCurveTypeBitWidth) - 1);
                         const type = DisplayBezierCurveTypes[typeIndex];
-                        const { points: controlPoints, offset: newOffset } = parsePoints(dataView, offset);
+                        let numberOfPoints = getNumberOfConrolPoints(type);
+                        if (curveIndex > 0) {
+                            numberOfPoints--;
+                        }
+                        _console$w.log({ type, numberOfPoints });
+                        const { points: controlPoints, offset: newOffset } = parsePoints(dataView, offset, true, pointDataType, numberOfPoints);
                         offset = newOffset;
+                        _console$w.log({ type, curveIndex }, controlPoints);
                         curves.push({ type, controlPoints });
                     }
                     command = { type, curves };
@@ -9751,9 +9849,9 @@ const DisplayMessageTypes = [
     "setDisplayBrightness",
     "displayContextCommands",
     "displayReady",
-    "getSpriteSheetName",
-    "setSpriteSheetName",
-    "spriteSheetIndex",
+    "getDisplaySpriteSheetName",
+    "setDisplaySpriteSheetName",
+    "displaySpriteSheetIndex",
 ];
 const DisplayBezierCurveTypes = [
     "segment",
@@ -9897,6 +9995,7 @@ let DisplayManager = (() => {
     let _drawArc_decorators;
     let _drawArcEllipse_decorators;
     let _drawBitmap_decorators;
+    let _serializeSpriteSheet_decorators;
     let _uploadSpriteSheet_decorators;
     let _selectSpriteSheet_decorators;
     let _drawSprite_decorators;
@@ -10003,6 +10102,7 @@ let DisplayManager = (() => {
             _drawArc_decorators = [ForwardToHelper];
             _drawArcEllipse_decorators = [ForwardToHelper];
             _drawBitmap_decorators = [ForwardToHelper];
+            _serializeSpriteSheet_decorators = [ForwardToHelper];
             _uploadSpriteSheet_decorators = [ForwardToHelper];
             _selectSpriteSheet_decorators = [ForwardToHelper];
             _drawSprite_decorators = [ForwardToHelper];
@@ -10106,6 +10206,7 @@ let DisplayManager = (() => {
             __esDecorate(this, null, _drawArc_decorators, { kind: "method", name: "drawArc", static: false, private: false, access: { has: obj => "drawArc" in obj, get: obj => obj.drawArc }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _drawArcEllipse_decorators, { kind: "method", name: "drawArcEllipse", static: false, private: false, access: { has: obj => "drawArcEllipse" in obj, get: obj => obj.drawArcEllipse }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _drawBitmap_decorators, { kind: "method", name: "drawBitmap", static: false, private: false, access: { has: obj => "drawBitmap" in obj, get: obj => obj.drawBitmap }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(this, null, _serializeSpriteSheet_decorators, { kind: "method", name: "serializeSpriteSheet", static: false, private: false, access: { has: obj => "serializeSpriteSheet" in obj, get: obj => obj.serializeSpriteSheet }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _uploadSpriteSheet_decorators, { kind: "method", name: "uploadSpriteSheet", static: false, private: false, access: { has: obj => "uploadSpriteSheet" in obj, get: obj => obj.uploadSpriteSheet }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _selectSpriteSheet_decorators, { kind: "method", name: "selectSpriteSheet", static: false, private: false, access: { has: obj => "selectSpriteSheet" in obj, get: obj => obj.selectSpriteSheet }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _drawSprite_decorators, { kind: "method", name: "drawSprite", static: false, private: false, access: { has: obj => "drawSprite" in obj, get: obj => obj.drawSprite }, metadata: _metadata }, null, _instanceExtraInitializers);
@@ -11391,7 +11492,10 @@ let DisplayManager = (() => {
             return getSpriteSheetByIndex(this, index);
         }
         async #setSpriteSheetName(spriteSheetName, sendImmediately) {
-            _console$u.log("setSpriteSheetName", { spriteSheetName, sendImmediately });
+            _console$u.log("setDisplaySpriteSheetName", {
+                spriteSheetName,
+                sendImmediately,
+            });
             if (typeof spriteSheetName == "number") {
                 spriteSheetName = spriteSheetName.toString();
             }
@@ -11399,8 +11503,13 @@ let DisplayManager = (() => {
             _console$u.assertRangeWithError("newName", spriteSheetName.length, MinSpriteSheetNameLength, MaxSpriteSheetNameLength);
             const setSpriteSheetNameData = textEncoder.encode(spriteSheetName);
             _console$u.log({ setSpriteSheetNameData });
-            const promise = this.waitForEvent("getSpriteSheetName");
-            this.sendMessage([{ type: "setSpriteSheetName", data: setSpriteSheetNameData.buffer }], sendImmediately);
+            const promise = this.waitForEvent("getDisplaySpriteSheetName");
+            this.sendMessage([
+                {
+                    type: "setDisplaySpriteSheetName",
+                    data: setSpriteSheetNameData.buffer,
+                },
+            ], sendImmediately);
             await promise;
         }
         #pendingSpriteSheet;
@@ -11415,13 +11524,16 @@ let DisplayManager = (() => {
             _console$u.assertTypeWithError(updatedSpriteSheetName, "string");
             this.#pendingSpriteSheetName = updatedSpriteSheetName;
             _console$u.log({ updatedSpriteSheetName: this.#pendingSpriteSheetName });
-            this.#dispatchEvent("getSpriteSheetName", {
+            this.#dispatchEvent("getDisplaySpriteSheetName", {
                 spriteSheetName: this.#pendingSpriteSheetName,
             });
         }
         sendFile;
-        serializeSpriteSheet(spriteSheet) {
-            return serializeSpriteSheet(this, spriteSheet);
+        serializeSpriteSheet(spriteSheet, includeHeader, displayCanvasHelper) {
+            return serializeSpriteSheet(this, spriteSheet, includeHeader);
+        }
+        parseSpriteSheet(dataView, name, includesHeader, displayCanvasHelper) {
+            return parseSpriteSheet(this, dataView, name, includesHeader);
         }
         async uploadSpriteSheet(spriteSheet, displayCanvasHelper) {
             if (spriteSheet.sprites.length == 0) {
@@ -11652,13 +11764,13 @@ let DisplayManager = (() => {
                 case "displayReady":
                     this.#parseDisplayReady(dataView);
                     break;
-                case "getSpriteSheetName":
-                case "setSpriteSheetName":
+                case "getDisplaySpriteSheetName":
+                case "setDisplaySpriteSheetName":
                     const spriteSheetName = textDecoder.decode(dataView.buffer);
                     _console$u.log({ spriteSheetName });
                     this.#updateSpriteSheetName(spriteSheetName);
                     break;
-                case "spriteSheetIndex":
+                case "displaySpriteSheetIndex":
                     this.#parseSpriteSheetIndex(dataView);
                     break;
                 case "displayCommand":
@@ -14509,12 +14621,26 @@ class Device {
                     break;
             }
         });
-        this.addEventListener("fileSent", (event) => {
+        this.addEventListener("fileSent", async (event) => {
             if (!event.message.indirectly) {
                 return;
             }
             const { file, fileType } = event.message;
             _console$h.log("indirectly sent file", { fileType });
+            switch (fileType) {
+                case "tflite":
+                    break;
+                case "spriteSheet":
+                    _console$h.assertWithError(this.pendingDisplaySpriteSheetName, "pendingDisplaySpriteSheetName not defined");
+                    _console$h.log(`indirectly sent spriteSheet "${this.pendingDisplaySpriteSheetName}"`);
+                    if (!this.displaySpriteSheets[this.pendingDisplaySpriteSheetName]) {
+                        _console$h.log(`no spriteSheet found for "${this.pendingDisplaySpriteSheetName}"`);
+                        const arrayBuffer = await file.arrayBuffer();
+                        const dataView = new DataView(arrayBuffer);
+                        this.parseDisplaySpriteSheet(dataView, this.pendingDisplaySpriteSheetName, false);
+                    }
+                    break;
+            }
         });
         _a$3.OnDevice(this);
     }
@@ -15613,6 +15739,12 @@ class Device {
         this.#assertDisplayIsAvailable();
         return this.#displayManager.setBrightness;
     }
+    get pendingDisplaySpriteSheetName() {
+        return this.#displayManager.pendingSpriteSheetName;
+    }
+    get parseDisplaySpriteSheet() {
+        return this.#displayManager.parseSpriteSheet;
+    }
     get displayInformation() {
         this.#assertDisplayIsAvailable();
         return this.#displayManager.displayInformation;
@@ -16051,7 +16183,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager = (() => {
+let DeviceManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -16368,7 +16500,7 @@ let DeviceManager = (() => {
     });
     return _classThis;
 })();
-var DeviceManager$1 = DeviceManager.shared;
+var DeviceManager = DeviceManager$1.shared;
 
 var _a$2;
 const _console$f = createConsole("BaseScanner", { log: false });
@@ -16999,7 +17131,7 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$d.log("connecting to discoveredDevice...", deviceId);
-        let device = DeviceManager$1.availableDevices
+        let device = DeviceManager.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -17031,7 +17163,7 @@ class NobleScanner extends BaseScanner {
     async disconnectFromDevice(deviceId) {
         super.disconnectFromDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
-        let device = DeviceManager$1.availableDevices
+        let device = DeviceManager.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -17069,16 +17201,16 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$c = createConsole("Scanner", { log: false });
-let scanner;
+let scanner$1;
 if (NobleScanner.isSupported) {
     _console$c.log("using NobleScanner");
-    scanner = new NobleScanner();
+    scanner$1 = new NobleScanner();
 }
 else {
     _console$c.log("Scanner not available");
-    scanner = new NullScanner();
+    scanner$1 = new NullScanner();
 }
-var scanner$1 = scanner;
+var scanner = scanner$1;
 
 var _a$1;
 const RequiredDeviceInformationMessageTypes = [
@@ -17115,9 +17247,9 @@ class BaseServer {
     }
     static OnServer;
     constructor() {
-        _console$b.assertWithError(scanner$1, "no scanner defined");
-        addEventListeners(scanner$1, this.#boundScannerListeners);
-        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
+        _console$b.assertWithError(scanner, "no scanner defined");
+        addEventListeners(scanner, this.#boundScannerListeners);
+        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
         _a$1.OnServer(this);
     }
@@ -17169,7 +17301,7 @@ class BaseServer {
         _console$b.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager$1.connectedDevices.forEach((device) => {
+            DeviceManager.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -17201,7 +17333,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner$1.isScanningAvailable,
+            data: scanner.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -17210,7 +17342,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner$1.isScanning,
+            data: scanner.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -17236,9 +17368,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner$1.discoveredDevicesArray
+        const serverMessages = scanner.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -17250,7 +17382,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -17361,7 +17493,7 @@ class BaseServer {
                 }
                 break;
             case "tfliteIsReady":
-            case "spriteSheetIndex":
+            case "displaySpriteSheetIndex":
                 if (!device.getCurrentSentFileConfiguration()) {
                     _console$b.log(`delaying messageType "${messageType}" until after sending local file`);
                     return;
@@ -17516,10 +17648,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner$1.startScan();
+                scanner.startScan();
                 break;
             case "stopScan":
-                scanner$1.stopScan();
+                scanner.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -17537,12 +17669,12 @@ class BaseServer {
                     else {
                         _console$b.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
-                        scanner$1.connectToDevice(deviceId, connectionType);
+                        scanner.connectToDevice(deviceId, connectionType);
                     }
                 }
                 break;
@@ -17552,8 +17684,8 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner$1.devices[deviceId];
+                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner.devices[deviceId];
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17576,7 +17708,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17600,7 +17732,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17762,7 +17894,7 @@ class BaseServer {
                                             followUpDeviceMessage = this.#createDeviceMessage(device, "tfliteIsReady");
                                             break;
                                         case "spriteSheet":
-                                            followUpDeviceMessage = this.#createDeviceMessage(device, "spriteSheetIndex");
+                                            followUpDeviceMessage = this.#createDeviceMessage(device, "displaySpriteSheetIndex");
                                             break;
                                     }
                                     if (followUpDeviceMessage) {
@@ -18443,7 +18575,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager$1._checkDeviceAvailability(device);
+            DeviceManager._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -18922,7 +19054,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager$1.addEventListener("deviceConnected", (event) => {
+        DeviceManager.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -19499,5 +19631,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner$1 as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantsole.node.module.js.map
