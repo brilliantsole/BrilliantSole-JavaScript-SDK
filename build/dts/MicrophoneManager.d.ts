@@ -61,7 +61,7 @@ declare class MicrophoneManager {
         immediate?: boolean;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "startRecordingMicrophone" | "stopRecordingMicrophone" | "microphoneRecording", MicrophoneEventMessages, T>>;
     requestRequiredInformation(): void;
-    get microphoneStatus(): "idle" | "vad" | "inferencing" | "streaming";
+    get microphoneStatus(): "idle" | "streaming" | "vad" | "inferencing";
     start(): Promise<void>;
     stop(): Promise<void>;
     vad(): Promise<void>;
