@@ -163,7 +163,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     flushContextCommands(): Promise<void>;
