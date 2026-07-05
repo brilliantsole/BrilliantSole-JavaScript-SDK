@@ -2838,6 +2838,9 @@ class DisplayManager implements DisplayManagerInterface {
   get pendingSpriteSheet() {
     return this.#pendingSpriteSheet;
   }
+  set pendingSpriteSheet(newPendingSpriteSheet) {
+    this.#pendingSpriteSheet = newPendingSpriteSheet;
+  }
   #pendingSpriteSheetName?: string;
   get pendingSpriteSheetName() {
     return this.#pendingSpriteSheetName;
@@ -2886,12 +2889,24 @@ class DisplayManager implements DisplayManagerInterface {
       _console.log("already uploaded spriteSheet");
       return;
     }
+    if (this.#pendingSpriteSheet == spriteSheet) {
+      _console.log("spriteSheet already pending");
+      return;
+    }
+    // if (
+    //   spriteSheet.name == this.#pendingSpriteSheetName &&
+    //   this.#pendingSpriteSheetIndex == undefined
+    // ) {
+    //   _console.log("set pending spriteSheet, but didn't set spriteSheet yet");
+    //   this.#pendingSpriteSheet = spriteSheet;
+    //   return;
+    // }
     if (
       spriteSheet.name == this.#pendingSpriteSheetName &&
       this.#pendingSpriteSheetIndex != undefined
     ) {
       _console.log(
-        `already uploaded spriteSheet under pendingSpriteSheetIndex #${this.#pendingSpriteSheetIndex}`,
+        `already uploaded spriteSheet "${this.#pendingSpriteSheetName}" under pendingSpriteSheetIndex #${this.#pendingSpriteSheetIndex}`,
       );
       this.#pendingSpriteSheet = spriteSheet;
       this.#onSpriteSheetIndex(this.#pendingSpriteSheetIndex);

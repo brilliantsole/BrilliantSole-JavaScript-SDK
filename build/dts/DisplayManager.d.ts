@@ -149,7 +149,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get contextState(): DisplayContextState;
     serializeContextState(other?: PartialDisplayContextState): DisplayContextCommand[];
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -163,7 +163,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     flushContextCommands(): Promise<void>;
@@ -291,6 +291,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get spriteSheetIndices(): Record<string, number>;
     getSpriteSheetByIndex(index: number): DisplaySpriteSheet | undefined;
     get pendingSpriteSheet(): DisplaySpriteSheet | undefined;
+    set pendingSpriteSheet(newPendingSpriteSheet: DisplaySpriteSheet | undefined);
     get pendingSpriteSheetName(): string | undefined;
     get pendingSpriteSheetIndex(): number | undefined;
     sendFile: SendFileCallback;

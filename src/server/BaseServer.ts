@@ -58,6 +58,7 @@ import {
   SensorTypes,
 } from "../sensor/SensorDataManager.ts";
 import {
+  FileOrBlob,
   FileTransferCommands,
   FileTransferStatuses,
   RequiredFileTransferMessageTypes,
@@ -1081,11 +1082,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                   device,
                   "getSensorConfiguration",
                 );
-                if (!true) {
-                  message = getSensorConfigurationMessage;
-                } else {
+                if (true) {
+                  // responds directly back to the client without a device roundtrip
                   deviceMessages.push(getSensorConfigurationMessage);
                   return;
+                } else {
+                  // does a roundtrip with the device
+                  message = getSensorConfigurationMessage;
                 }
               }
             }
@@ -1115,7 +1118,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 "filteredDisplayContextCommands",
                 filteredDisplayContextCommands,
               );
-              // FILL - if commands that block changing contextState, send back "corrected" commands
+              // FILL - if commands that block changing contextState, send back "corrected" commands and add to "responseMessages"
 
               const filteredDisplayContextCommandsData =
                 serializeDisplayContextCommands(
@@ -1126,6 +1129,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 _console.log("no filteredDisplayContextCommandsData");
                 return;
               }
+              // FIX - trim filteredDisplayContextCommandsData for just contextState commands
               broadcastDeviceMessages.push({
                 type: "displayContextCommands",
                 data: filteredDisplayContextCommandsData,
@@ -1187,28 +1191,67 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             break;
           case "setFileBlock":
             {
-              if (client == this.#clientsSending.get(device)) {
-                _console.log("parsing client file block locally");
-                device.addEventListener(
-                  "fileTransferProgress",
-                  (event) => {
-                    const { bytesTransferred } = event.message;
-                    _console.log("still sending local file...", {
-                      bytesTransferred,
-                    });
+              const isClientSending =
+                client == this.#clientsSending.get(device);
+
+              device.addEventListener(
+                "fileTransferProgress",
+                async (event) => {
+                  const {
+                    bytesTransferred,
+                    progress,
+                    file,
+                    isComplete,
+                    fileType,
+                  } = event.message;
+
+                  _console.log(
+                    "intercepted fileTransferProgress",
+                    event.message,
+                  );
+
+                  if (isComplete) {
+                    switch (fileType) {
+                      case "tflite":
+                        // FILL
+                        break;
+                      case "spriteSheet":
+                        {
+                          const arrayBuffer = await file!.arrayBuffer();
+                          const dataView = new DataView(arrayBuffer);
+                          const parsedSpriteSheet =
+                            device.parseDisplaySpriteSheet(
+                              dataView,
+                              device.pendingDisplaySpriteSheetName,
+                              false,
+                            );
+                          if (!isClientSending) {
+                            device.displayManager.pendingSpriteSheet =
+                              parsedSpriteSheet;
+                          }
+                          await device.uploadDisplaySpriteSheet(
+                            parsedSpriteSheet,
+                          );
+                        }
+                        break;
+                    }
+                  }
+
+                  if (isClientSending) {
+                    _console.log("still sending local file...", event.message);
                     const dataView = new DataView(new ArrayBuffer(4));
                     dataView.setUint32(0, bytesTransferred, true);
-                    const deviceMessage = this.#createDeviceMessage(
-                      device,
-                      "fileBytesTransferred",
-                      dataView,
-                    );
-                    this.sendToClient(
-                      client,
-                      this.#createDeviceServerMessage(device, deviceMessage),
-                    );
+                    const fileBytesTransferredDeviceMessage =
+                      this.#createDeviceMessage(
+                        device,
+                        "fileBytesTransferred",
+                        dataView,
+                      );
 
-                    if (bytesTransferred == device.fileLength) {
+                    const deviceMessages: DeviceMessage[] = [];
+                    deviceMessages.push(fileBytesTransferredDeviceMessage);
+
+                    if (isComplete) {
                       this.#clientsSending.delete(device);
                       device._onRemoteConnectionMessageSent(
                         "fileTransferStatus",
@@ -1219,13 +1262,12 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                       _console.log(
                         "done sending local file - notifying client...",
                       );
-                      const deviceMessages: DeviceMessage[] = [];
                       const fileTransferStatusDeviceMessage =
                         this.#createDeviceMessage(device, "fileTransferStatus");
                       deviceMessages.push(fileTransferStatusDeviceMessage);
 
                       let followUpDeviceMessage: DeviceMessage | undefined;
-                      switch (device.fileType) {
+                      switch (fileType) {
                         case "tflite":
                           followUpDeviceMessage = this.#createDeviceMessage(
                             device,
@@ -1246,20 +1288,24 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                         );
                         deviceMessages.push(followUpDeviceMessage);
                       }
-
-                      this.sendToClient(
-                        client,
-                        this.#createDeviceServerMessage(
-                          device,
-                          ...deviceMessages,
-                        ),
-                      );
                     }
-                  },
-                  {
-                    once: true,
-                  },
-                );
+
+                    this.sendToClient(
+                      client,
+                      this.#createDeviceServerMessage(
+                        device,
+                        ...deviceMessages,
+                      ),
+                    );
+                  }
+                },
+                {
+                  once: true,
+                },
+              );
+
+              if (isClientSending) {
+                _console.log("parsing client file block locally");
                 device._onRemoteConnectionMessageSent(messageType, dataView);
                 return;
               }

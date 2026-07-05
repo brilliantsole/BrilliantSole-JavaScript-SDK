@@ -519,6 +519,7 @@ class Device {
       }
     });
     this.addEventListener("fileSent", async (event) => {
+      return;
       if (!event.message.indirectly) {
         return;
       }

@@ -92,6 +92,9 @@ export interface FileTransferEventMessages {
     progress: number;
     direction: FileTransferDirection;
     bytesTransferred: number;
+    file?: FileOrBlob;
+    indirectly?: boolean;
+    isComplete: boolean;
   };
   fileTransferComplete: {
     fileType: FileType;
@@ -383,49 +386,54 @@ class FileTransferManager {
       } bytes remaining`,
     );
 
+    const indirectly = !this.#isRequesting;
+    const fileType = this.type!;
+    let file: FileOrBlob | undefined;
+    const isComplete = progress == 1;
+    _console.log({ isComplete });
+    if (isComplete) {
+      file = await this.#createFile(this.#receivedBlocks);
+      _console.assertWithError(file, "file not created");
+      _console.log("received file", file);
+    } else {
+      if (this.#isRequesting) {
+        const dataView = new DataView(new ArrayBuffer(4));
+        dataView.setUint32(0, bytesReceived, true);
+        _console.log("sending fileBytesTransferred", { bytesReceived });
+        await this.sendMessage([
+          { type: "fileBytesTransferred", data: dataView.buffer },
+        ]);
+      } else {
+        _console.log("not sending fileBytesTransferred (not requesting)");
+      }
+    }
+
     this.#dispatchEvent("fileTransferProgress", {
       progress,
-      fileType: this.type!,
+      fileType,
       direction: "receiving",
       bytesTransferred: bytesReceived,
+      isComplete,
+      file,
+      indirectly,
     });
     this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
 
-    if (bytesReceived != this.#length) {
-      if (!this.#isRequesting) {
-        _console.log("not sending fileBytesTransferred (not requesting)");
-        return;
-      }
-      const dataView = new DataView(new ArrayBuffer(4));
-      dataView.setUint32(0, bytesReceived, true);
-      _console.log("sending fileBytesTransferred", { bytesReceived });
-      await this.sendMessage([
-        { type: "fileBytesTransferred", data: dataView.buffer },
-      ]);
-      return;
+    if (isComplete) {
+      file = file!;
+
+      this.#dispatchEvent("fileTransferComplete", {
+        direction: "receiving",
+        fileType,
+        file,
+        indirectly,
+      });
+      this.#dispatchEvent("fileReceived", {
+        fileType,
+        file,
+        indirectly,
+      });
     }
-
-    _console.log("file transfer complete");
-
-    const file = await this.#createFile(this.#receivedBlocks);
-    if (!file) {
-      return;
-    }
-
-    _console.log("received file", file);
-
-    const indirectly = !this.#isRequesting;
-    this.#dispatchEvent("fileTransferComplete", {
-      direction: "receiving",
-      fileType: this.type!,
-      file,
-      indirectly,
-    });
-    this.#dispatchEvent("fileReceived", {
-      fileType: this.type!,
-      file,
-      indirectly,
-    });
   }
 
   parseMessage(
@@ -582,16 +590,23 @@ class FileTransferManager {
         buffer.byteLength
       } bytes (${progress * 100}%)`,
     );
+    const isComplete = progress == 1;
     const fileType = this.type!;
+
+    const file = this.#file!;
+
     this.#dispatchEvent("fileTransferProgress", {
       progress,
       fileType,
       direction: "sending",
       bytesTransferred: this.#bytesTransferred,
+      isComplete,
+      file: isComplete ? file : undefined,
     });
-    if (slicedBuffer.byteLength == 0) {
+
+    if (isComplete) {
       _console.log("finished sending buffer");
-      const file = this.#file!;
+
       const sentFileConfiguration: SentFileConfiguration = {
         file,
         fileType,
@@ -681,6 +696,7 @@ class FileTransferManager {
       0,
     );
     const progress = bytesReceived / this.#length;
+    const isComplete = progress == 1;
 
     _console.log(
       `sent ${bytesReceived}/${this.#length} bytes indirectly (${progress * 100}%) - ${
@@ -688,62 +704,60 @@ class FileTransferManager {
       } bytes remaining`,
     );
 
+    let file: FileOrBlob | undefined;
+    const fileType = this.type!;
+    const indirectly = true;
+
+    if (isComplete) {
+      file = await this.#createFile(this.#indirectSentBlocks);
+      _console.assertWithError(file, "file not created");
+      _console.log("file transfer complete", file);
+    }
+
     this.#dispatchEvent("fileTransferProgress", {
+      isComplete,
       progress,
-      fileType: this.type!,
+      fileType,
       direction: "sending",
       bytesTransferred: bytesReceived,
+      indirectly,
+      file,
     });
     this.#dispatchEvent("setFileBlock", { fileTransferBlock: dataView });
 
-    if (bytesReceived != this.#length) {
-      const dataView = new DataView(new ArrayBuffer(4));
-      dataView.setUint32(0, bytesReceived, true);
-      _console.log("sending fileBytesTransferred", { bytesReceived });
-      // await this.sendMessage([
-      //   { type: "fileBytesTransferred", data: dataView.buffer },
-      // ]);
-      return;
+    if (isComplete) {
+      this.#indirectSentBlocks.length = 0;
+      file = file!;
+
+      const sentFileConfiguration: SentFileConfiguration = {
+        file,
+        fileType,
+        length: this.#length,
+        checksum: this.#checksum,
+      };
+      const currentSentFileConfiguration =
+        this.getCurrentSentFileConfiguration();
+      if (currentSentFileConfiguration) {
+        _console.log(
+          "replacing currentSentFileConfiguration...",
+          currentSentFileConfiguration,
+        );
+        this.sentFileConfigurations.splice(
+          this.sentFileConfigurations.indexOf(currentSentFileConfiguration),
+          1,
+        );
+      }
+      this.sentFileConfigurations.push(sentFileConfiguration);
+      _console.log("sent file indirectly", sentFileConfiguration);
+
+      this.#dispatchEvent("fileTransferComplete", {
+        direction: "sending",
+        fileType,
+        file,
+        indirectly,
+      });
+      this.#dispatchEvent("fileSent", { fileType, file, indirectly });
     }
-
-    _console.log("file transfer complete");
-
-    const file = await this.#createFile(this.#indirectSentBlocks);
-    if (!file) {
-      return;
-    }
-
-    this.#indirectSentBlocks.length = 0;
-
-    const fileType = this.type!;
-    const sentFileConfiguration: SentFileConfiguration = {
-      file,
-      fileType,
-      length: this.#length,
-      checksum: this.#checksum,
-    };
-    const currentSentFileConfiguration = this.getCurrentSentFileConfiguration();
-    if (currentSentFileConfiguration) {
-      _console.log(
-        "replacing currentSentFileConfiguration...",
-        currentSentFileConfiguration,
-      );
-      this.sentFileConfigurations.splice(
-        this.sentFileConfigurations.indexOf(currentSentFileConfiguration),
-        1,
-      );
-    }
-    this.sentFileConfigurations.push(sentFileConfiguration);
-    _console.log("sent file indirectly", sentFileConfiguration);
-
-    const indirectly = true;
-    this.#dispatchEvent("fileTransferComplete", {
-      direction: "sending",
-      fileType,
-      file,
-      indirectly,
-    });
-    this.#dispatchEvent("fileSent", { fileType, file, indirectly });
   }
 
   async #parseBytesTransferred(

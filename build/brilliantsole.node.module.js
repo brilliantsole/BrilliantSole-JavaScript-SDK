@@ -813,44 +813,53 @@ class FileTransferManager {
         const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
         const progress = bytesReceived / this.#length;
         _console$P.log(`received ${bytesReceived}/${this.#length} bytes (${progress * 100}%) - ${this.#length - bytesReceived} bytes remaining`);
+        const indirectly = !this.#isRequesting;
+        const fileType = this.type;
+        let file;
+        const isComplete = progress == 1;
+        _console$P.log({ isComplete });
+        if (isComplete) {
+            file = await this.#createFile(this.#receivedBlocks);
+            _console$P.assertWithError(file, "file not created");
+            _console$P.log("received file", file);
+        }
+        else {
+            if (this.#isRequesting) {
+                const dataView = new DataView(new ArrayBuffer(4));
+                dataView.setUint32(0, bytesReceived, true);
+                _console$P.log("sending fileBytesTransferred", { bytesReceived });
+                await this.sendMessage([
+                    { type: "fileBytesTransferred", data: dataView.buffer },
+                ]);
+            }
+            else {
+                _console$P.log("not sending fileBytesTransferred (not requesting)");
+            }
+        }
         this.#dispatchEvent("fileTransferProgress", {
             progress,
-            fileType: this.type,
+            fileType,
             direction: "receiving",
             bytesTransferred: bytesReceived,
+            isComplete,
+            file,
+            indirectly,
         });
         this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
-        if (bytesReceived != this.#length) {
-            if (!this.#isRequesting) {
-                _console$P.log("not sending fileBytesTransferred (not requesting)");
-                return;
-            }
-            const dataView = new DataView(new ArrayBuffer(4));
-            dataView.setUint32(0, bytesReceived, true);
-            _console$P.log("sending fileBytesTransferred", { bytesReceived });
-            await this.sendMessage([
-                { type: "fileBytesTransferred", data: dataView.buffer },
-            ]);
-            return;
+        if (isComplete) {
+            file = file;
+            this.#dispatchEvent("fileTransferComplete", {
+                direction: "receiving",
+                fileType,
+                file,
+                indirectly,
+            });
+            this.#dispatchEvent("fileReceived", {
+                fileType,
+                file,
+                indirectly,
+            });
         }
-        _console$P.log("file transfer complete");
-        const file = await this.#createFile(this.#receivedBlocks);
-        if (!file) {
-            return;
-        }
-        _console$P.log("received file", file);
-        const indirectly = !this.#isRequesting;
-        this.#dispatchEvent("fileTransferComplete", {
-            direction: "receiving",
-            fileType: this.type,
-            file,
-            indirectly,
-        });
-        this.#dispatchEvent("fileReceived", {
-            fileType: this.type,
-            file,
-            indirectly,
-        });
     }
     parseMessage(messageType, dataView, isSending) {
         _console$P.log({ messageType, isSending }, dataView);
@@ -972,16 +981,19 @@ class FileTransferManager {
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
         _console$P.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
+        const isComplete = progress == 1;
         const fileType = this.type;
+        const file = this.#file;
         this.#dispatchEvent("fileTransferProgress", {
             progress,
             fileType,
             direction: "sending",
             bytesTransferred: this.#bytesTransferred,
+            isComplete,
+            file: isComplete ? file : undefined,
         });
-        if (slicedBuffer.byteLength == 0) {
+        if (isComplete) {
             _console$P.log("finished sending buffer");
-            const file = this.#file;
             const sentFileConfiguration = {
                 file,
                 fileType,
@@ -1054,48 +1066,50 @@ class FileTransferManager {
         this.#indirectSentBlocks.push(dataView.buffer);
         const bytesReceived = this.#indirectSentBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
         const progress = bytesReceived / this.#length;
+        const isComplete = progress == 1;
         _console$P.log(`sent ${bytesReceived}/${this.#length} bytes indirectly (${progress * 100}%) - ${this.#length - bytesReceived} bytes remaining`);
+        let file;
+        const fileType = this.type;
+        const indirectly = true;
+        if (isComplete) {
+            file = await this.#createFile(this.#indirectSentBlocks);
+            _console$P.assertWithError(file, "file not created");
+            _console$P.log("file transfer complete", file);
+        }
         this.#dispatchEvent("fileTransferProgress", {
+            isComplete,
             progress,
-            fileType: this.type,
+            fileType,
             direction: "sending",
             bytesTransferred: bytesReceived,
+            indirectly,
+            file,
         });
         this.#dispatchEvent("setFileBlock", { fileTransferBlock: dataView });
-        if (bytesReceived != this.#length) {
-            const dataView = new DataView(new ArrayBuffer(4));
-            dataView.setUint32(0, bytesReceived, true);
-            _console$P.log("sending fileBytesTransferred", { bytesReceived });
-            return;
+        if (isComplete) {
+            this.#indirectSentBlocks.length = 0;
+            file = file;
+            const sentFileConfiguration = {
+                file,
+                fileType,
+                length: this.#length,
+                checksum: this.#checksum,
+            };
+            const currentSentFileConfiguration = this.getCurrentSentFileConfiguration();
+            if (currentSentFileConfiguration) {
+                _console$P.log("replacing currentSentFileConfiguration...", currentSentFileConfiguration);
+                this.sentFileConfigurations.splice(this.sentFileConfigurations.indexOf(currentSentFileConfiguration), 1);
+            }
+            this.sentFileConfigurations.push(sentFileConfiguration);
+            _console$P.log("sent file indirectly", sentFileConfiguration);
+            this.#dispatchEvent("fileTransferComplete", {
+                direction: "sending",
+                fileType,
+                file,
+                indirectly,
+            });
+            this.#dispatchEvent("fileSent", { fileType, file, indirectly });
         }
-        _console$P.log("file transfer complete");
-        const file = await this.#createFile(this.#indirectSentBlocks);
-        if (!file) {
-            return;
-        }
-        this.#indirectSentBlocks.length = 0;
-        const fileType = this.type;
-        const sentFileConfiguration = {
-            file,
-            fileType,
-            length: this.#length,
-            checksum: this.#checksum,
-        };
-        const currentSentFileConfiguration = this.getCurrentSentFileConfiguration();
-        if (currentSentFileConfiguration) {
-            _console$P.log("replacing currentSentFileConfiguration...", currentSentFileConfiguration);
-            this.sentFileConfigurations.splice(this.sentFileConfigurations.indexOf(currentSentFileConfiguration), 1);
-        }
-        this.sentFileConfigurations.push(sentFileConfiguration);
-        _console$P.log("sent file indirectly", sentFileConfiguration);
-        const indirectly = true;
-        this.#dispatchEvent("fileTransferComplete", {
-            direction: "sending",
-            fileType,
-            file,
-            indirectly,
-        });
-        this.#dispatchEvent("fileSent", { fileType, file, indirectly });
     }
     async #parseBytesTransferred(dataView, isSending) {
         _console$P.log("parseBytesTransferred", dataView);
@@ -11555,6 +11569,9 @@ let DisplayManager = (() => {
         get pendingSpriteSheet() {
             return this.#pendingSpriteSheet;
         }
+        set pendingSpriteSheet(newPendingSpriteSheet) {
+            this.#pendingSpriteSheet = newPendingSpriteSheet;
+        }
         #pendingSpriteSheetName;
         get pendingSpriteSheetName() {
             return this.#pendingSpriteSheetName;
@@ -11588,9 +11605,13 @@ let DisplayManager = (() => {
                 _console$u.log("already uploaded spriteSheet");
                 return;
             }
+            if (this.#pendingSpriteSheet == spriteSheet) {
+                _console$u.log("spriteSheet already pending");
+                return;
+            }
             if (spriteSheet.name == this.#pendingSpriteSheetName &&
                 this.#pendingSpriteSheetIndex != undefined) {
-                _console$u.log(`already uploaded spriteSheet under pendingSpriteSheetIndex #${this.#pendingSpriteSheetIndex}`);
+                _console$u.log(`already uploaded spriteSheet "${this.#pendingSpriteSheetName}" under pendingSpriteSheetIndex #${this.#pendingSpriteSheetIndex}`);
                 this.#pendingSpriteSheet = spriteSheet;
                 this.#onSpriteSheetIndex(this.#pendingSpriteSheetIndex);
                 return;
@@ -14683,26 +14704,7 @@ class Device {
             }
         });
         this.addEventListener("fileSent", async (event) => {
-            if (!event.message.indirectly) {
-                return;
-            }
-            const { file, fileType } = event.message;
-            _console$h.log("indirectly sent file", { fileType });
-            switch (fileType) {
-                case "tflite":
-                    break;
-                case "spriteSheet":
-                    _console$h.assertWithError(this.pendingDisplaySpriteSheetName, "pendingDisplaySpriteSheetName not defined");
-                    _console$h.log(`indirectly sent spriteSheet "${this.pendingDisplaySpriteSheetName}"`);
-                    if (!this.displaySpriteSheets[this.pendingDisplaySpriteSheetName]) {
-                        _console$h.log(`no spriteSheet found for "${this.pendingDisplaySpriteSheetName}"`);
-                        const arrayBuffer = await file.arrayBuffer();
-                        const dataView = new DataView(arrayBuffer);
-                        const parsedSpriteSheet = this.parseDisplaySpriteSheet(dataView, this.pendingDisplaySpriteSheetName, false);
-                        await this.uploadDisplaySpriteSheet(parsedSpriteSheet);
-                    }
-                    break;
-            }
+            return;
         });
         _a$3.OnDevice(this);
     }
@@ -16245,7 +16247,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager$1 = (() => {
+let DeviceManager = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -16562,7 +16564,7 @@ let DeviceManager$1 = (() => {
     });
     return _classThis;
 })();
-var DeviceManager = DeviceManager$1.shared;
+var DeviceManager$1 = DeviceManager.shared;
 
 var _a$2;
 const _console$f = createConsole("BaseScanner", { log: false });
@@ -17193,7 +17195,7 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$d.log("connecting to discoveredDevice...", deviceId);
-        let device = DeviceManager.availableDevices
+        let device = DeviceManager$1.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -17225,7 +17227,7 @@ class NobleScanner extends BaseScanner {
     async disconnectFromDevice(deviceId) {
         super.disconnectFromDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
-        let device = DeviceManager.availableDevices
+        let device = DeviceManager$1.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -17263,16 +17265,16 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$c = createConsole("Scanner", { log: false });
-let scanner$1;
+let scanner;
 if (NobleScanner.isSupported) {
     _console$c.log("using NobleScanner");
-    scanner$1 = new NobleScanner();
+    scanner = new NobleScanner();
 }
 else {
     _console$c.log("Scanner not available");
-    scanner$1 = new NullScanner();
+    scanner = new NullScanner();
 }
-var scanner = scanner$1;
+var scanner$1 = scanner;
 
 var _a$1;
 const RequiredDeviceInformationMessageTypes = [
@@ -17309,9 +17311,9 @@ class BaseServer {
     }
     static OnServer;
     constructor() {
-        _console$b.assertWithError(scanner, "no scanner defined");
-        addEventListeners(scanner, this.#boundScannerListeners);
-        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        _console$b.assertWithError(scanner$1, "no scanner defined");
+        addEventListeners(scanner$1, this.#boundScannerListeners);
+        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
         _a$1.OnServer(this);
     }
@@ -17363,7 +17365,7 @@ class BaseServer {
         _console$b.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager.connectedDevices.forEach((device) => {
+            DeviceManager$1.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -17395,7 +17397,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner.isScanningAvailable,
+            data: scanner$1.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -17404,7 +17406,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner.isScanning,
+            data: scanner$1.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -17430,9 +17432,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner.discoveredDevicesArray
+        const serverMessages = scanner$1.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -17444,7 +17446,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -17710,10 +17712,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner.startScan();
+                scanner$1.startScan();
                 break;
             case "stopScan":
-                scanner.stopScan();
+                scanner$1.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -17731,12 +17733,12 @@ class BaseServer {
                     else {
                         _console$b.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
-                        scanner.connectToDevice(deviceId, connectionType);
+                        scanner$1.connectToDevice(deviceId, connectionType);
                     }
                 }
                 break;
@@ -17746,8 +17748,8 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner.devices[deviceId];
+                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner$1.devices[deviceId];
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17770,7 +17772,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17794,7 +17796,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17932,26 +17934,43 @@ class BaseServer {
                     break;
                 case "setFileBlock":
                     {
-                        if (client == this.#clientsSending.get(device)) {
-                            _console$b.log("parsing client file block locally");
-                            device.addEventListener("fileTransferProgress", (event) => {
-                                const { bytesTransferred } = event.message;
-                                _console$b.log("still sending local file...", {
-                                    bytesTransferred,
-                                });
+                        const isClientSending = client == this.#clientsSending.get(device);
+                        device.addEventListener("fileTransferProgress", async (event) => {
+                            const { bytesTransferred, progress, file, isComplete, fileType, } = event.message;
+                            _console$b.log("intercepted fileTransferProgress", event.message);
+                            if (isComplete) {
+                                switch (fileType) {
+                                    case "tflite":
+                                        break;
+                                    case "spriteSheet":
+                                        {
+                                            const arrayBuffer = await file.arrayBuffer();
+                                            const dataView = new DataView(arrayBuffer);
+                                            const parsedSpriteSheet = device.parseDisplaySpriteSheet(dataView, device.pendingDisplaySpriteSheetName, false);
+                                            if (!isClientSending) {
+                                                device.displayManager.pendingSpriteSheet =
+                                                    parsedSpriteSheet;
+                                            }
+                                            await device.uploadDisplaySpriteSheet(parsedSpriteSheet);
+                                        }
+                                        break;
+                                }
+                            }
+                            if (isClientSending) {
+                                _console$b.log("still sending local file...", event.message);
                                 const dataView = new DataView(new ArrayBuffer(4));
                                 dataView.setUint32(0, bytesTransferred, true);
-                                const deviceMessage = this.#createDeviceMessage(device, "fileBytesTransferred", dataView);
-                                this.sendToClient(client, this.#createDeviceServerMessage(device, deviceMessage));
-                                if (bytesTransferred == device.fileLength) {
+                                const fileBytesTransferredDeviceMessage = this.#createDeviceMessage(device, "fileBytesTransferred", dataView);
+                                const deviceMessages = [];
+                                deviceMessages.push(fileBytesTransferredDeviceMessage);
+                                if (isComplete) {
                                     this.#clientsSending.delete(device);
                                     device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "idle"), false);
                                     _console$b.log("done sending local file - notifying client...");
-                                    const deviceMessages = [];
                                     const fileTransferStatusDeviceMessage = this.#createDeviceMessage(device, "fileTransferStatus");
                                     deviceMessages.push(fileTransferStatusDeviceMessage);
                                     let followUpDeviceMessage;
-                                    switch (device.fileType) {
+                                    switch (fileType) {
                                         case "tflite":
                                             followUpDeviceMessage = this.#createDeviceMessage(device, "tfliteIsReady");
                                             break;
@@ -17963,11 +17982,14 @@ class BaseServer {
                                         _console$b.log("followUpDeviceMessage", followUpDeviceMessage);
                                         deviceMessages.push(followUpDeviceMessage);
                                     }
-                                    this.sendToClient(client, this.#createDeviceServerMessage(device, ...deviceMessages));
                                 }
-                            }, {
-                                once: true,
-                            });
+                                this.sendToClient(client, this.#createDeviceServerMessage(device, ...deviceMessages));
+                            }
+                        }, {
+                            once: true,
+                        });
+                        if (isClientSending) {
+                            _console$b.log("parsing client file block locally");
                             device._onRemoteConnectionMessageSent(messageType, dataView);
                             return;
                         }
@@ -18637,7 +18659,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager._checkDeviceAvailability(device);
+            DeviceManager$1._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -19116,7 +19138,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager.addEventListener("deviceConnected", (event) => {
+        DeviceManager$1.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -19693,5 +19715,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner$1 as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantsole.node.module.js.map
