@@ -518,40 +518,6 @@ class Device {
           break;
       }
     });
-    this.addEventListener("fileSent", async (event) => {
-      return;
-      if (!event.message.indirectly) {
-        return;
-      }
-      const { file, fileType } = event.message;
-      _console.log("indirectly sent file", { fileType });
-      switch (fileType) {
-        case "tflite":
-          break;
-        case "spriteSheet":
-          _console.assertWithError(
-            this.pendingDisplaySpriteSheetName,
-            "pendingDisplaySpriteSheetName not defined",
-          );
-          _console.log(
-            `indirectly sent spriteSheet "${this.pendingDisplaySpriteSheetName}"`,
-          );
-          if (!this.displaySpriteSheets[this.pendingDisplaySpriteSheetName!]) {
-            _console.log(
-              `no spriteSheet found for "${this.pendingDisplaySpriteSheetName}"`,
-            );
-            const arrayBuffer = await file.arrayBuffer();
-            const dataView = new DataView(arrayBuffer);
-            const parsedSpriteSheet = this.parseDisplaySpriteSheet(
-              dataView,
-              this.pendingDisplaySpriteSheetName,
-              false, // fix
-            );
-            await this.uploadDisplaySpriteSheet(parsedSpriteSheet);
-          }
-          break;
-      }
-    });
 
     Device.OnDevice(this);
   }
