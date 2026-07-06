@@ -1168,6 +1168,7 @@ class FileTransferManager {
     async #parseBytesTransferred(dataView, isSending) {
         _console$W.log("parseBytesTransferred", dataView);
         const bytesTransferred = dataView.getUint32(0, true);
+        this.#dispatchEvent("fileBytesTransferred", { bytesTransferred });
         _console$W.log({ bytesTransferred });
         if (isSending) {
             _console$W.log("skipping parseBytesTransferred (isSending)");
@@ -39623,9 +39624,10 @@ class BaseServer {
                                         break;
                                 }
                             }
-                            {
+                            if (!sentToDevice) {
                                 const dataView = new DataView(new ArrayBuffer(4));
                                 dataView.setUint32(0, bytesTransferred, true);
+                                _console$f.log("relaying fileBytesTransferred locally directly");
                                 const fileBytesTransferredDeviceMessage = this.#createDeviceMessage(device, "fileBytesTransferred", dataView);
                                 deviceMessages.push(fileBytesTransferredDeviceMessage);
                             }
@@ -39673,18 +39675,25 @@ class BaseServer {
                                     didSendHeader,
                                 });
                                 const data = message.data;
-                                if (!didSendHeader) {
-                                    const nonHeaderData = data.buffer.slice(headerBytesRemaining);
-                                    _console$f.log("nonHeaderData", nonHeaderData);
-                                    if (nonHeaderData.byteLength > 0) {
-                                        _console$f.log("relaying nonHeaderData", nonHeaderData);
-                                        message.data = nonHeaderData;
-                                    }
-                                    else {
-                                        _console$f.log("nonHeaderData is empty - parsing client file block locally");
-                                        device._onRemoteConnectionMessageSent(messageType, dataView);
-                                        return;
-                                    }
+                                const nonHeaderData = data.buffer.slice(headerBytesRemaining);
+                                _console$f.log("nonHeaderData", nonHeaderData);
+                                if (nonHeaderData.byteLength > 0) {
+                                    _console$f.log("relaying nonHeaderData", nonHeaderData);
+                                    message.data = nonHeaderData;
+                                    device.addEventListener("fileBytesTransferred", (event) => {
+                                        let { bytesTransferred } = event.message;
+                                        bytesTransferred += device.fileHeaderLength;
+                                        _console$f.log(`relaying bytesTransferred ${bytesTransferred} (+${device.fileHeaderLength})`);
+                                        const dataView = new DataView(new ArrayBuffer(4));
+                                        dataView.setUint32(0, bytesTransferred, true);
+                                        const fileBytesTransferredDeviceMessage = this.#createDeviceMessage(device, "fileBytesTransferred", dataView);
+                                        this.sendToClient(client, this.#createDeviceServerMessage(device, fileBytesTransferredDeviceMessage));
+                                    }, { once: true });
+                                }
+                                else {
+                                    _console$f.log("nonHeaderData is empty - parsing client file block locally");
+                                    device._onRemoteConnectionMessageSent(messageType, dataView);
+                                    return;
                                 }
                             }
                         }

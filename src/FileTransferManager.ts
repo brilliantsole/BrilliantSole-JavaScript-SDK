@@ -111,6 +111,7 @@ export interface FileTransferEventMessages {
   };
   fileReceived: { fileType: FileType; file: FileOrBlob; indirectly?: boolean };
   fileSent: { fileType: FileType; file: FileOrBlob; indirectly?: boolean };
+  fileBytesTransferred: { bytesTransferred: number };
 }
 
 export type FileTransferEventDispatcher = EventDispatcher<
@@ -831,6 +832,7 @@ class FileTransferManager {
   ) {
     _console.log("parseBytesTransferred", dataView);
     const bytesTransferred = dataView.getUint32(0, true);
+    this.#dispatchEvent("fileBytesTransferred", { bytesTransferred });
     _console.log({ bytesTransferred });
     if (isSending) {
       _console.log("skipping parseBytesTransferred (isSending)");
