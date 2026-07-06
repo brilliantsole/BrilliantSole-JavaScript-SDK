@@ -72,7 +72,7 @@ export type DisplaySpriteSheet = {
   sprites: DisplaySprite[];
 };
 
-export const spriteHeaderLength = 3 * 2; // width, height, commandsLength
+export const spriteHeaderLength = 2 * 2; // width, height
 export function calculateSpriteSheetHeaderLength(numberOfSprites: number) {
   // numberOfSprites, spriteOffsets, spriteHeader
   return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
@@ -162,7 +162,6 @@ export function serializeSpriteSheet(
     const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
     dataView.setUint16(0, sprite.width, true);
     dataView.setUint16(2, sprite.height, true);
-    dataView.setUint16(4, commandsData.byteLength, true);
     const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
     _console.log("serializedSprite", sprite, serializedSprite, { spriteIndex });
     return serializedSprite;
@@ -178,7 +177,7 @@ export function serializeSpriteSheet(
     spriteOffset += spritePayload.byteLength;
   });
 
-  // [numberOfSprites, ...spriteOffsets, ...[width, height, commandsByteLength, commands]]
+  // [numberOfSprites, ...spriteOffsets, ...[width, height, ...commands]]
   const serializedSpriteSheet = concatenateArrayBuffers(
     headerDataView,
     numberOfSpritesDataView,
@@ -268,7 +267,9 @@ export function parseSpriteSheet(
   _console.log({ numberOfSprites, offset });
 
   for (let spriteIndex = 0; spriteIndex < numberOfSprites; spriteIndex++) {
-    _console.log("parsing", { spriteIndex, offset });
+    const isLast = spriteIndex == numberOfSprites - 1;
+
+    _console.log("parsing", { spriteIndex, offset, isLast });
     const spriteOffset = dataView.getUint16(offset, true) + baseOffset;
     _console.log({ spriteOffset });
     offset += 2;
@@ -281,13 +282,17 @@ export function parseSpriteSheet(
       true,
     );
     spriteDataViewOffset += 2;
-    const commandsDataByteLength = dataView.getUint16(
-      spriteOffset + spriteDataViewOffset,
-      true,
-    );
-    spriteDataViewOffset += 2;
+    _console.log({
+      width,
+      height,
+    });
 
-    _console.log({ width, height, commandsDataByteLength });
+    const nextSpriteOffset = isLast
+      ? dataView.byteLength
+      : dataView.getUint16(offset, true) + baseOffset;
+    const commandsDataByteLength =
+      nextSpriteOffset - spriteOffset - spriteHeaderLength;
+    _console.log({ nextSpriteOffset, commandsDataByteLength });
 
     const commandsDataView = new DataView(
       dataView.buffer.slice(

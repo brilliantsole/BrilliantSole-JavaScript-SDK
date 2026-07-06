@@ -21086,8 +21086,8 @@ function removeSubstrings(string, substrings) {
     return result;
 }
 
-const _console$z = createConsole("DisplaySpriteSheetUtils", { log: false });
-const spriteHeaderLength = 3 * 2;
+const _console$z = createConsole("DisplaySpriteSheetUtils", { log: true });
+const spriteHeaderLength = 2 * 2;
 function calculateSpriteSheetHeaderLength(numberOfSprites) {
     return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
 }
@@ -21153,7 +21153,6 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader = false
         const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
         dataView.setUint16(0, sprite.width, true);
         dataView.setUint16(2, sprite.height, true);
-        dataView.setUint16(4, commandsData.byteLength, true);
         const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
         _console$z.log("serializedSprite", sprite, serializedSprite, { spriteIndex });
         return serializedSprite;
@@ -21211,7 +21210,8 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader = true)
     offset += 2;
     _console$z.log({ numberOfSprites, offset });
     for (let spriteIndex = 0; spriteIndex < numberOfSprites; spriteIndex++) {
-        _console$z.log("parsing", { spriteIndex, offset });
+        const isLast = spriteIndex == numberOfSprites - 1;
+        _console$z.log("parsing", { spriteIndex, offset, isLast });
         const spriteOffset = dataView.getUint16(offset, true) + baseOffset;
         _console$z.log({ spriteOffset });
         offset += 2;
@@ -21220,9 +21220,15 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader = true)
         spriteDataViewOffset += 2;
         const height = dataView.getUint16(spriteOffset + spriteDataViewOffset, true);
         spriteDataViewOffset += 2;
-        const commandsDataByteLength = dataView.getUint16(spriteOffset + spriteDataViewOffset, true);
-        spriteDataViewOffset += 2;
-        _console$z.log({ width, height, commandsDataByteLength });
+        _console$z.log({
+            width,
+            height,
+        });
+        const nextSpriteOffset = isLast
+            ? dataView.byteLength
+            : dataView.getUint16(offset, true) + baseOffset;
+        const commandsDataByteLength = nextSpriteOffset - spriteOffset - spriteHeaderLength;
+        _console$z.log({ nextSpriteOffset, commandsDataByteLength });
         const commandsDataView = new DataView(dataView.buffer.slice(spriteOffset + spriteDataViewOffset, spriteOffset + spriteDataViewOffset + commandsDataByteLength));
         _console$z.log("commandsDataView", commandsDataView);
         const commands = parseDisplayContextCommands(displayManager, commandsDataView);
