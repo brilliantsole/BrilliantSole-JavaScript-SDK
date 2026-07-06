@@ -119,7 +119,7 @@ import {
 } from "./DisplaySpriteSheetUtils.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("DisplayCanvasHelper", { log: false });
+const _console = createConsole("DisplayCanvasHelper", { log: true });
 
 export const DisplayCanvasHelperEventTypes = [
   "contextState",
@@ -4189,9 +4189,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   getSpriteSheetByIndex(index: number) {
     return getSpriteSheetByIndex(this, index);
   }
+
   async uploadSpriteSheet(spriteSheet: DisplaySpriteSheet) {
     _console.log("uploadSpriteSheet", spriteSheet);
-    // spriteSheet = structuredClone(spriteSheet);
+    const isPending =
+      this.deviceDisplayManager?.pendingSpriteSheet == spriteSheet;
+    spriteSheet = structuredClone(spriteSheet);
+    if (isPending) {
+      _console.log("overwrite device pendingSpriteSheet");
+      this.deviceDisplayManager!.pendingSpriteSheet = spriteSheet;
+    }
     if (!this.#spriteSheets[spriteSheet.name]) {
       this.#spriteSheetIndices[spriteSheet.name] = Object.keys(
         this.#spriteSheets,

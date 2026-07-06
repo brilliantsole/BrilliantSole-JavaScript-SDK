@@ -2895,6 +2895,9 @@ class DisplayManager implements DisplayManagerInterface {
       _console.log("spriteSheet already pending");
       return;
     }
+    spriteSheet = this.#displayCanvasHelper
+      ? spriteSheet
+      : structuredClone(spriteSheet);
     // if (
     //   spriteSheet.name == this.#pendingSpriteSheetName &&
     //   this.#pendingSpriteSheetIndex == undefined
@@ -2910,6 +2913,7 @@ class DisplayManager implements DisplayManagerInterface {
       _console.log(
         `already uploaded spriteSheet "${this.#pendingSpriteSheetName}" under pendingSpriteSheetIndex #${this.#pendingSpriteSheetIndex}`,
       );
+
       this.#pendingSpriteSheet = spriteSheet;
       this.#onSpriteSheetIndex(this.#pendingSpriteSheetIndex);
       return;
