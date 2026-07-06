@@ -153,3 +153,37 @@ export function pointInPolygon(pt: Vector2, polygon: Vector2[]): boolean {
   }
   return inside;
 }
+
+// https://github.com/mrdoob/three.js/blob/master/src/math/Euler.js#L270
+export function quaternionToEulerYXZ(q: Quaternion): Euler {
+  const { x, y, z, w } = q;
+
+  const m11 = 1 - 2 * (y * y + z * z);
+  const m13 = 2 * (x * z + y * w);
+
+  const m21 = 2 * (x * y + z * w);
+  const m22 = 1 - 2 * (x * x + z * z);
+  const m23 = 2 * (y * z - x * w);
+
+  const m31 = 2 * (x * z - y * w);
+  const m33 = 1 - 2 * (x * x + y * y);
+
+  const eulerX = Math.asin(-clamp(m23, -1, 1));
+
+  let eulerY: number;
+  let eulerZ: number;
+
+  if (Math.abs(m23) < 0.9999999) {
+    eulerY = Math.atan2(m13, m33);
+    eulerZ = Math.atan2(m21, m22);
+  } else {
+    eulerY = Math.atan2(-m31, m11);
+    eulerZ = 0;
+  }
+
+  return {
+    pitch: eulerX,
+    heading: eulerY,
+    roll: eulerZ,
+  };
+}

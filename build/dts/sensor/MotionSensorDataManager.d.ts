@@ -64,13 +64,12 @@ export interface MotionSensorDataEventMessages {
 }
 export type MotionSensorDataEventMessage = ValueOf<MotionSensorDataEventMessages>;
 declare class MotionSensorDataManager {
-    #private;
     parseVector3(dataView: DataView<ArrayBuffer>, scalar: number): Vector3;
     parseQuaternion(dataView: DataView<ArrayBuffer>, scalar: number): Quaternion;
     quaternionToEuler(quaternion: Quaternion, absolute?: boolean): Euler;
     parseEuler(dataView: DataView<ArrayBuffer>, scalar: number, absolute?: boolean): Euler;
     parseStepCounter(dataView: DataView<ArrayBuffer>): number;
     parseActivity(dataView: DataView<ArrayBuffer>): Activity;
-    parseDeviceOrientation(dataView: DataView<ArrayBuffer>): "unknown" | "portraitUpright" | "landscapeLeft" | "portraitUpsideDown" | "landscapeRight";
+    parseDeviceOrientation(dataView: DataView<ArrayBuffer>): "portraitUpright" | "landscapeLeft" | "portraitUpsideDown" | "landscapeRight" | "unknown";
 }
 export default MotionSensorDataManager;

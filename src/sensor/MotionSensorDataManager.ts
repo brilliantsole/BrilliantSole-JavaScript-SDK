@@ -1,6 +1,5 @@
 import { createConsole } from "../utils/Console.ts";
-import { Quaternion as TQuaternion, Euler as TEuler } from "three";
-import { radToDeg } from "../utils/MathUtils.ts";
+import { quaternionToEulerYXZ, radToDeg } from "../utils/MathUtils.ts";
 
 const _console = createConsole("MotionSensorDataManager", { log: false });
 
@@ -114,16 +113,12 @@ class MotionSensorDataManager {
     _console.log({ quaternion });
     return quaternion;
   }
-  #euler = new TEuler(0, 0, 0, "YXZ");
-  #quaternion = new TQuaternion();
   quaternionToEuler(quaternion: Quaternion, absolute?: boolean): Euler {
-    this.#quaternion.copy(quaternion);
-    this.#euler.setFromQuaternion(this.#quaternion);
-    const { x, y, z } = this.#euler;
+    const { heading, pitch, roll } = quaternionToEulerYXZ(quaternion);
     return {
-      heading: radToDeg(y),
-      pitch: radToDeg(x),
-      roll: radToDeg(z),
+      heading: radToDeg(heading),
+      pitch: radToDeg(pitch),
+      roll: radToDeg(roll),
       absolute,
     };
   }

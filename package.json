@@ -108,7 +108,6 @@
     "simplify-js": "^1.2.4",
     "svg-pathdata": "^8.0.0",
     "svgson": "^5.3.1",
-    "three": "^0.183.2",
     "webbluetooth": "^3.2.1",
     "woff2-encoder": "^2.0.0"
   },

@@ -112,7 +112,6 @@ const nodeExternal = [
   "sharp",
   "fs/promises",
   "child_process",
-  "three",
   "@tensorflow/tfjs",
 ];
 
@@ -166,7 +165,7 @@ const defaultBuild = {
 const builds = [
   {
     input,
-    plugins: [..._browserPlugins, ..._plugins],
+    plugins: [..._browserPlugins, ..._plugins, visualizer()],
     output: [
       {
         ...defaultOutput,

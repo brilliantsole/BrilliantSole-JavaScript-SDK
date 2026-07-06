@@ -37,3 +37,4 @@ export declare function radToDeg(rad: number): number;
 export declare const twoPi: number;
 export declare function normalizeRadians(rad: number): number;
 export declare function pointInPolygon(pt: Vector2, polygon: Vector2[]): boolean;
+export declare function quaternionToEulerYXZ(q: Quaternion): Euler;
