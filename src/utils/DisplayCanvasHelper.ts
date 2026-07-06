@@ -788,7 +788,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (!this.device?.isConnected) {
       return;
     }
-    _console.log("updateDeviceContextState");
+    _console.log("updateDeviceContextState", { sendImmediately, updateSelf });
 
     if (updateSelf) {
       await this.setContextState(
@@ -2147,6 +2147,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.assertValidLineWidth(spritesLineHeight);
     const differences = this.#contextStateHelper.update({
       spritesLineHeight,
+    });
+
+    _console.log("setSpritesLineHeight", {
+      spritesLineHeight,
+      sendImmediately,
+      isSending,
+      differences,
     });
 
     if (this.device?.isConnected && !this.#ignoreDevice) {

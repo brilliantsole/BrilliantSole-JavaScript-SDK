@@ -404,6 +404,7 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
   #onContextStateUpdate(differences: DisplayContextStateKey[]) {
+    _console.log("onContextStateUpdate", differences);
     this.#dispatchEvent("displayContextState", {
       displayContextState: structuredClone(this.contextState),
       differences,
@@ -880,6 +881,7 @@ class DisplayManager implements DisplayManagerInterface {
 
   #contextStack: DisplayContextState[] = [];
   async #saveContext(sendImmediately?: boolean) {
+    _console.log("#saveContext", { sendImmediately });
     this.#contextStack.push(structuredClone(this.contextState));
   }
   @ForwardToHelper
@@ -888,6 +890,7 @@ class DisplayManager implements DisplayManagerInterface {
     isSending?: boolean,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
+    _console.log("saveContext", { sendImmediately, isSending });
     if (true) {
       await this.#saveContext(sendImmediately);
     } else {
@@ -899,12 +902,18 @@ class DisplayManager implements DisplayManagerInterface {
     }
   }
   async #restoreContext(sendImmediately?: boolean) {
+    _console.log("#restoreContext", { sendImmediately });
     const contextState = this.#contextStack.pop();
     if (!contextState) {
       _console.warn("#contextStack empty");
       return;
     }
-    await this.setContextState(contextState, sendImmediately);
+    if (false) {
+      await this.setContextState(contextState, sendImmediately);
+    } else {
+      const differences = this.#contextStateHelper.update(contextState);
+      _console.log("restoreContext differences", differences);
+    }
   }
   @ForwardToHelper
   async restoreContext(
@@ -912,7 +921,8 @@ class DisplayManager implements DisplayManagerInterface {
     isSending?: boolean,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
-    if (false) {
+    _console.log("restoreContext", { sendImmediately, isSending });
+    if (true) {
       await this.#restoreContext(sendImmediately);
     } else {
       await this.#sendContextCommand(
@@ -923,13 +933,18 @@ class DisplayManager implements DisplayManagerInterface {
     }
   }
   async #clearContext(sendImmediately?: boolean) {
+    _console.log("#clearContext", { sendImmediately });
     const contextState = this.#contextStack.pop();
     if (!contextState) {
       _console.warn("#contextStack empty");
       return;
     }
-    // FILL
-    await this.setContextState(contextState, sendImmediately);
+    if (false) {
+      await this.setContextState(contextState, sendImmediately);
+    } else {
+      const differences = this.#contextStateHelper.update(contextState);
+      _console.log("clearContext differences", differences);
+    }
   }
   @ForwardToHelper
   async clearContext(
@@ -937,6 +952,7 @@ class DisplayManager implements DisplayManagerInterface {
     isSending?: boolean,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
+    _console.log("clearContext", { sendImmediately, isSending });
     await this.#clearContext(sendImmediately);
     await this.#sendContextCommand(
       { type: "clearContext" },
@@ -1961,6 +1977,12 @@ class DisplayManager implements DisplayManagerInterface {
     this.assertValidLineWidth(spritesLineHeight);
     const differences = this.#contextStateHelper.update({
       spritesLineHeight,
+    });
+    _console.log("setSpritesLineHeight", {
+      spritesLineHeight,
+      sendImmediately,
+      isSending,
+      differences,
     });
     if (differences.length == 0) {
       return;
@@ -3108,7 +3130,17 @@ class DisplayManager implements DisplayManagerInterface {
           horizontalAlignment,
           verticalAlignment,
         } = this.contextState;
-        _console.log("starting sprites sprite...");
+        _console.log("starting sprites sprite...", {
+          spritesLineHeight,
+          spritesDirection,
+          spritesLineDirection,
+          spritesAlignment,
+          spritesLineAlignment,
+          spritesLineSpacing,
+          spritesSpacing,
+          horizontalAlignment,
+          verticalAlignment,
+        });
         await this.startSprite(
           offsetX,
           offsetY,

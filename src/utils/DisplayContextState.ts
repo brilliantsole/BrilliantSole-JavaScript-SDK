@@ -177,6 +177,7 @@ export function updateContextState(
     const value = newState[key]!;
     // @ts-expect-error
     state[key] = value;
+    _console.log("updated state", { key, value }, state);
   });
   return differences;
 }

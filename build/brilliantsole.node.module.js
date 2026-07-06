@@ -1157,15 +1157,10 @@ class FileTransferManager {
     async #parseBytesTransferred(dataView, isSending) {
         _console$U.log("parseBytesTransferred", dataView);
         const bytesTransferred = dataView.getUint32(0, true);
-        this.#dispatchEvent("fileBytesTransferred", { bytesTransferred });
         _console$U.log({ bytesTransferred });
+        this.#dispatchEvent("fileBytesTransferred", { bytesTransferred });
         if (isSending) {
             _console$U.log("skipping parseBytesTransferred (isSending)");
-            return;
-        }
-        if (bytesTransferred == this.#bytesTransferred) {
-            _console$U.log("finished");
-            this.#sendBlock();
             return;
         }
         if (this.status != "sending") {
@@ -5702,6 +5697,7 @@ function updateContextState(state, newState) {
     differences.forEach((key) => {
         const value = newState[key];
         state[key] = value;
+        _console$A.log("updated state", { key, value }, state);
     });
     return differences;
 }
@@ -10407,6 +10403,7 @@ let DisplayManager = (() => {
             this.#contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
         }
         #onContextStateUpdate(differences) {
+            _console$u.log("onContextStateUpdate", differences);
             this.#dispatchEvent("displayContextState", {
                 displayContextState: structuredClone(this.contextState),
                 differences,
@@ -10720,35 +10717,47 @@ let DisplayManager = (() => {
         }
         #contextStack = [];
         async #saveContext(sendImmediately) {
+            _console$u.log("#saveContext", { sendImmediately });
             this.#contextStack.push(structuredClone(this.contextState));
         }
         async saveContext(sendImmediately, isSending, displayCanvasHelper) {
+            _console$u.log("saveContext", { sendImmediately, isSending });
             {
                 await this.#saveContext(sendImmediately);
             }
         }
         async #restoreContext(sendImmediately) {
+            _console$u.log("#restoreContext", { sendImmediately });
             const contextState = this.#contextStack.pop();
             if (!contextState) {
                 _console$u.warn("#contextStack empty");
                 return;
             }
-            await this.setContextState(contextState, sendImmediately);
+            {
+                const differences = this.#contextStateHelper.update(contextState);
+                _console$u.log("restoreContext differences", differences);
+            }
         }
         async restoreContext(sendImmediately, isSending, displayCanvasHelper) {
+            _console$u.log("restoreContext", { sendImmediately, isSending });
             {
-                await this.#sendContextCommand({ type: "restoreContext" }, sendImmediately, isSending);
+                await this.#restoreContext(sendImmediately);
             }
         }
         async #clearContext(sendImmediately) {
+            _console$u.log("#clearContext", { sendImmediately });
             const contextState = this.#contextStack.pop();
             if (!contextState) {
                 _console$u.warn("#contextStack empty");
                 return;
             }
-            await this.setContextState(contextState, sendImmediately);
+            {
+                const differences = this.#contextStateHelper.update(contextState);
+                _console$u.log("clearContext differences", differences);
+            }
         }
         async clearContext(sendImmediately, isSending, displayCanvasHelper) {
+            _console$u.log("clearContext", { sendImmediately, isSending });
             await this.#clearContext(sendImmediately);
             await this.#sendContextCommand({ type: "clearContext" }, sendImmediately, isSending);
         }
@@ -11235,6 +11244,12 @@ let DisplayManager = (() => {
             this.assertValidLineWidth(spritesLineHeight);
             const differences = this.#contextStateHelper.update({
                 spritesLineHeight,
+            });
+            _console$u.log("setSpritesLineHeight", {
+                spritesLineHeight,
+                sendImmediately,
+                isSending,
+                differences,
             });
             if (differences.length == 0) {
                 return;
@@ -11817,7 +11832,17 @@ let DisplayManager = (() => {
                     didStartSprite = true;
                     const { localSize } = getSpriteLinesMetrics(spriteLines, this.spriteSheets, this.contextState);
                     const { spritesLineHeight, spritesDirection, spritesLineDirection, spritesAlignment, spritesLineAlignment, spritesLineSpacing, spritesSpacing, horizontalAlignment, verticalAlignment, } = this.contextState;
-                    _console$u.log("starting sprites sprite...");
+                    _console$u.log("starting sprites sprite...", {
+                        spritesLineHeight,
+                        spritesDirection,
+                        spritesLineDirection,
+                        spritesAlignment,
+                        spritesLineAlignment,
+                        spritesLineSpacing,
+                        spritesSpacing,
+                        horizontalAlignment,
+                        verticalAlignment,
+                    });
                     await this.startSprite(offsetX, offsetY, localSize.width, localSize.height, false);
                     await this.setSpritesLineHeight(spritesLineHeight, false);
                     await this.setSpritesDirection(spritesDirection, false);

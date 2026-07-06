@@ -120,17 +120,6 @@ const getPitchHighlightedWhiteColorIndex = () => 7;
 const getPitchHighlightedBlackColorIndex = () => 8;
 const getHighlightedWhiteColorIndex = () => 9;
 const getHighlightedBlackColorIndex = () => 10;
-displayCanvasHelper.setColor(getWhiteKeyColorIndex(), "white");
-displayCanvasHelper.setColor(getBlackKeyColorIndex(), "black");
-displayCanvasHelper.setColor(getWhiteKeyDownColorIndex(), "yellow");
-displayCanvasHelper.setColor(getBlackKeyDownColorIndex(), "#A0A018");
-displayCanvasHelper.setColor(getCorrectNoteColorIndex(), "green");
-displayCanvasHelper.setColor(getIncorrectNoteColorIndex(), "red");
-displayCanvasHelper.setColor(getHighlightedWhiteColorIndex(), "00BFFF");
-displayCanvasHelper.setColor(getHighlightedBlackColorIndex(), "blue");
-displayCanvasHelper.setColor(getPitchHighlightedWhiteColorIndex(), "orange");
-displayCanvasHelper.setColor(getPitchHighlightedBlackColorIndex(), "orange");
-displayCanvasHelper.flushContextCommands();
 
 // DRAW
 let isDrawing = false;
@@ -287,6 +276,26 @@ let draw = async () => {
 
   console.log("drawing now", { now: Date.now() });
 
+  console.log({ spritesLineHeight });
+
+  await displayCanvasHelper.setColor(getWhiteKeyColorIndex(), "white");
+  await displayCanvasHelper.setColor(getBlackKeyColorIndex(), "black");
+  await displayCanvasHelper.setColor(getWhiteKeyDownColorIndex(), "yellow");
+  await displayCanvasHelper.setColor(getBlackKeyDownColorIndex(), "#A0A018");
+  await displayCanvasHelper.setColor(getCorrectNoteColorIndex(), "green");
+  await displayCanvasHelper.setColor(getIncorrectNoteColorIndex(), "red");
+  await displayCanvasHelper.setColor(getHighlightedWhiteColorIndex(), "00BFFF");
+  await displayCanvasHelper.setColor(getHighlightedBlackColorIndex(), "blue");
+  await displayCanvasHelper.setColor(
+    getPitchHighlightedWhiteColorIndex(),
+    "orange",
+  );
+  await displayCanvasHelper.setColor(
+    getPitchHighlightedBlackColorIndex(),
+    "orange",
+  );
+  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+
   if (shouldDrawSheet) {
     const spriteSheet = abcSpriteSheets[currentSystemIndex];
     const sprite = spriteSheet.sprites[0];
@@ -429,6 +438,7 @@ let draw = async () => {
       await displayCanvasHelper.setHorizontalAlignment("center");
       await displayCanvasHelper.selectSpriteSheet("english");
       await displayCanvasHelper.selectFillColor(getTextColorIndex());
+      // await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight); // remove
       await displayCanvasHelper.drawSpritesString(
         2 * x - 3,
         sprite.height + 20 + 10,
@@ -897,10 +907,10 @@ const selectFont = async (newFontName) => {
   const spriteSheet = fontSpriteSheets[newFontName];
   fontMetrics = BS.getFontMetrics(selectedFont, fontSize, fontOptions);
   spritesLineHeight = BS.getFontMaxHeight(selectedFont, fontSize);
+  console.log({ spritesLineHeight });
   // await BS.wait(1000);
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await draw();
 };
 

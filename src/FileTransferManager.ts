@@ -832,17 +832,17 @@ class FileTransferManager {
   ) {
     _console.log("parseBytesTransferred", dataView);
     const bytesTransferred = dataView.getUint32(0, true);
-    this.#dispatchEvent("fileBytesTransferred", { bytesTransferred });
     _console.log({ bytesTransferred });
+    this.#dispatchEvent("fileBytesTransferred", { bytesTransferred });
     if (isSending) {
       _console.log("skipping parseBytesTransferred (isSending)");
       return;
     }
-    if (bytesTransferred == this.#bytesTransferred) {
-      _console.log("finished");
-      this.#sendBlock();
-      return;
-    }
+    // if (bytesTransferred == this.#bytesTransferred) {
+    //   _console.log("finished");
+    //   this.#sendBlock();
+    //   return;
+    // }
     if (this.status != "sending") {
       _console.log(
         "skipping parseBytesTransferred (not currently sending file)",

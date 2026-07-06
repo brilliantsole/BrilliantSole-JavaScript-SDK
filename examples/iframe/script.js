@@ -241,6 +241,7 @@ const iframeContainerTemplate = document.getElementById(
 );
 /** @type {{name: string, url: string}[]} */
 const selectUrls = [
+  { name: "basic", url: "../basic" },
   { name: "pressure pair", url: "../pressure" },
   { name: "3d pair", url: "../3d" },
   { name: "3d", url: "../3d-generic" },
@@ -348,7 +349,9 @@ const createIframeContainer = (src) => {
 
   iframeContainers.appendChild(iframeContainer);
 };
-createIframeContainer("../display-text");
+// createIframeContainer("../display-text");
+// createIframeContainer("../display-wireframe");
+createIframeContainer("../display-midi");
 // createIframeContainer();
 // createIframeContainer();
 window.createIframeContainer = createIframeContainer;

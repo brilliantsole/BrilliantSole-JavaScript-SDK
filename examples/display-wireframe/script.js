@@ -1,8 +1,10 @@
 import * as BS from "../../build/brilliantsole.module.js";
+window.BS = BS;
 
 BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayContextState", { log: true });
+BS.setConsoleLevelFlagsForType("Device", { log: true });
 
 /** @typedef {import("../utils/three/three.module.min").Vector3} TVector3 */
 /** @typedef {import("../utils/three/three.module.min").Vector2} TVector2 */
@@ -22,6 +24,7 @@ const createDeviceStore = (deviceFilter) => {
 
   /** @param {BS.Device} device */
   const onDevice = (device, replaceCurrentDevice = false) => {
+    console.log("onDevice", device, { replaceCurrentDevice });
     if (currentDevice?.isConnected) {
       if (!replaceCurrentDevice) {
         return;
@@ -36,6 +39,7 @@ const createDeviceStore = (deviceFilter) => {
 
   BS.DeviceManager.addEventListener("deviceConnected", (event) => {
     const { device } = event.message;
+    console.log("deviceConnected", device);
     if (deviceFilter(device) && !currentDevice?.isConnected) {
       onDevice(device);
     }

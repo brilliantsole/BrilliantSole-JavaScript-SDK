@@ -528,7 +528,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                       "device doesn't have device locally - requesting remote resend",
                     );
                     this.#clientsSending.set(device, clientRequestingSend);
-                    // FIX
                     device._onRemoteConnectionMessageSent(
                       "fileTransferStatus",
                       enumToDataView(FileTransferStatuses, "sending"),
@@ -1187,7 +1186,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                     false,
                   );
                   this.#clientsSending.delete(device);
-                  // FIX
 
                   const resetMtuMessage = this.#createDeviceMessage(
                     device,
@@ -1300,7 +1298,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                       false,
                     );
                     this.#clientsSending.delete(device);
-                    // FIX
 
                     _console.log(
                       "done sending local file - notifying client...",
