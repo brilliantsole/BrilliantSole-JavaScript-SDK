@@ -369,7 +369,7 @@ class Device {
 
   #initThisEventListeners() {
     this.addEventListener("getMtu", () => {
-      _console.log("updating mtu...");
+      _console.log("updating mtu", { mtu: this.mtu });
       this.#firmwareManager.mtu = this.mtu;
       this.#fileTransferManager.mtu = this.mtu;
       this.connectionManager!.mtu = this.mtu;

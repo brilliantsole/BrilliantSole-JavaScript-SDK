@@ -1163,6 +1163,11 @@ class FileTransferManager {
             _console$U.log("skipping parseBytesTransferred (isSending)");
             return;
         }
+        if (bytesTransferred == this.#bytesTransferred) {
+            _console$U.log("finished");
+            this.#sendBlock();
+            return;
+        }
         if (this.status != "sending") {
             _console$U.log("skipping parseBytesTransferred (not currently sending file)");
             return;
@@ -4831,7 +4836,8 @@ class InformationManager {
                 break;
             case "getMtu":
                 let mtu = dataView.getUint16(0, true);
-                if (this.connectionType != "webSocket" &&
+                if (this.connectionType != "client" &&
+                    this.connectionType != "webSocket" &&
                     this.connectionType != "udp") {
                     mtu = Math.min(mtu, 512);
                 }
@@ -14650,7 +14656,7 @@ class Device {
     }
     #initThisEventListeners() {
         this.addEventListener("getMtu", () => {
-            _console$h.log("updating mtu...");
+            _console$h.log("updating mtu", { mtu: this.mtu });
             this.#firmwareManager.mtu = this.mtu;
             this.#fileTransferManager.mtu = this.mtu;
             this.connectionManager.mtu = this.mtu;
@@ -16336,7 +16342,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager$1 = (() => {
+let DeviceManager = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -16653,7 +16659,7 @@ let DeviceManager$1 = (() => {
     });
     return _classThis;
 })();
-var DeviceManager = DeviceManager$1.shared;
+var DeviceManager$1 = DeviceManager.shared;
 
 var _a$2;
 const _console$f = createConsole("BaseScanner", { log: false });
@@ -17284,7 +17290,7 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$d.log("connecting to discoveredDevice...", deviceId);
-        let device = DeviceManager.availableDevices
+        let device = DeviceManager$1.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -17316,7 +17322,7 @@ class NobleScanner extends BaseScanner {
     async disconnectFromDevice(deviceId) {
         super.disconnectFromDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
-        let device = DeviceManager.availableDevices
+        let device = DeviceManager$1.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -17354,16 +17360,16 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$c = createConsole("Scanner", { log: false });
-let scanner$1;
+let scanner;
 if (NobleScanner.isSupported) {
     _console$c.log("using NobleScanner");
-    scanner$1 = new NobleScanner();
+    scanner = new NobleScanner();
 }
 else {
     _console$c.log("Scanner not available");
-    scanner$1 = new NullScanner();
+    scanner = new NullScanner();
 }
-var scanner = scanner$1;
+var scanner$1 = scanner;
 
 var _a$1;
 const RequiredDeviceInformationMessageTypes = [
@@ -17400,9 +17406,9 @@ class BaseServer {
     }
     static OnServer;
     constructor() {
-        _console$b.assertWithError(scanner, "no scanner defined");
-        addEventListeners(scanner, this.#boundScannerListeners);
-        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        _console$b.assertWithError(scanner$1, "no scanner defined");
+        addEventListeners(scanner$1, this.#boundScannerListeners);
+        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
         _a$1.OnServer(this);
     }
@@ -17454,7 +17460,7 @@ class BaseServer {
         _console$b.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager.connectedDevices.forEach((device) => {
+            DeviceManager$1.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -17486,7 +17492,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner.isScanningAvailable,
+            data: scanner$1.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -17495,7 +17501,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner.isScanning,
+            data: scanner$1.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -17521,9 +17527,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner.discoveredDevicesArray
+        const serverMessages = scanner$1.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -17535,7 +17541,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -17573,6 +17579,7 @@ class BaseServer {
                 };
         }
     }
+    localMtu = 1024;
     #onDeviceConnectionMessage(deviceEvent) {
         const { target: device, message: deviceConnectionMessage } = deviceEvent;
         _console$b.log("onDeviceConnectionMessage", deviceConnectionMessage);
@@ -17608,30 +17615,43 @@ class BaseServer {
                 break;
             case "fileTransferStatus":
                 {
+                    const clientRequestingSend = this.#clientsRequestingSend.get(device);
+                    const clientSending = this.#clientsSending.get(device);
                     const fileTransferStatusEnum = dataView.getUint8(0);
                     const fileTransferStatus = FileTransferStatuses[fileTransferStatusEnum];
                     _console$b.assertEnumWithError(FileTransferStatuses, fileTransferStatus);
-                    const clientRequestingSend = this.#clientsRequestingSend.get(device);
-                    const clientSending = this.#clientsSending.get(device);
                     _console$b.log({
                         fileTransferStatus,
                         clientRequestingSend,
                         clientSending,
                     });
                     if (clientRequestingSend) {
+                        this.#clientsRequestingSend.delete(device);
                         switch (fileTransferStatus) {
                             case "sending":
+                                if (clientSending) {
+                                    _console$b.log(`already sending "sending" fileTransferStatus to client`);
+                                    return;
+                                }
                                 break;
                             case "idle":
                                 {
                                     if (device.getCurrentSentFileConfiguration()) {
                                         _console$b.log("already received file - no need to resend");
+                                        if (clientSending) {
+                                            _console$b.log(`already sending "idle" fileTransferStatus to client`);
+                                            return;
+                                        }
                                     }
                                     else {
                                         _console$b.log("device doesn't have device locally - requesting remote resend");
                                         this.#clientsSending.set(device, clientRequestingSend);
                                         device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "sending"), false);
                                         const deviceMessages = [];
+                                        const mtuDataView = new DataView(new ArrayBuffer(2));
+                                        mtuDataView.setUint16(0, this.localMtu, true);
+                                        const mtuDeviceMessage = this.#createDeviceMessage(device, "getMtu", mtuDataView);
+                                        deviceMessages.push(mtuDeviceMessage);
                                         const fileTransferStatusDeviceMessage = this.#createDeviceMessage(device, messageType, dataView);
                                         deviceMessages.push(fileTransferStatusDeviceMessage);
                                         fileTransferStatusDeviceMessage.data = enumToDataView(FileTransferStatuses, "sending");
@@ -17641,7 +17661,6 @@ class BaseServer {
                                 }
                                 break;
                         }
-                        this.#clientsRequestingSend.delete(device);
                     }
                 }
                 break;
@@ -17804,10 +17823,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner.startScan();
+                scanner$1.startScan();
                 break;
             case "stopScan":
-                scanner.stopScan();
+                scanner$1.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -17825,12 +17844,12 @@ class BaseServer {
                     else {
                         _console$b.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
-                        scanner.connectToDevice(deviceId, connectionType);
+                        scanner$1.connectToDevice(deviceId, connectionType);
                     }
                 }
                 break;
@@ -17840,8 +17859,8 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner.devices[deviceId];
+                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner$1.devices[deviceId];
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17864,7 +17883,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17888,7 +17907,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -18003,8 +18022,10 @@ class BaseServer {
                         });
                         if (isClientSending) {
                             if (fileTransferCommand == "cancel") {
-                                this.#clientsSending.delete(device);
                                 device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "idle"), false);
+                                this.#clientsSending.delete(device);
+                                const resetMtuMessage = this.#createDeviceMessage(device, "getMtu");
+                                deviceMessages.push(resetMtuMessage);
                                 const fileTransferStatusMessage = this.#createDeviceMessage(device, "fileTransferStatus");
                                 deviceMessages.push(fileTransferStatusMessage);
                             }
@@ -18064,9 +18085,11 @@ class BaseServer {
                                 deviceMessages.push(fileBytesTransferredDeviceMessage);
                             }
                             if (isClientSending && isComplete) {
-                                this.#clientsSending.delete(device);
                                 device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "idle"), false);
+                                this.#clientsSending.delete(device);
                                 _console$b.log("done sending local file - notifying client...");
+                                const resetMtuMessage = this.#createDeviceMessage(device, "getMtu");
+                                deviceMessages.push(resetMtuMessage);
                                 const fileTransferStatusDeviceMessage = this.#createDeviceMessage(device, "fileTransferStatus");
                                 deviceMessages.push(fileTransferStatusDeviceMessage);
                                 let followUpDeviceMessage;
@@ -18796,7 +18819,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager._checkDeviceAvailability(device);
+            DeviceManager$1._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -19275,7 +19298,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager.addEventListener("deviceConnected", (event) => {
+        DeviceManager$1.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -19852,5 +19875,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner$1 as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantsole.node.module.js.map

@@ -1174,6 +1174,11 @@ class FileTransferManager {
             _console$W.log("skipping parseBytesTransferred (isSending)");
             return;
         }
+        if (bytesTransferred == this.#bytesTransferred) {
+            _console$W.log("finished");
+            this.#sendBlock();
+            return;
+        }
         if (this.status != "sending") {
             _console$W.log("skipping parseBytesTransferred (not currently sending file)");
             return;
@@ -4898,7 +4903,8 @@ class InformationManager {
                 break;
             case "getMtu":
                 let mtu = dataView.getUint16(0, true);
-                if (this.connectionType != "webSocket" &&
+                if (this.connectionType != "client" &&
+                    this.connectionType != "webSocket" &&
                     this.connectionType != "udp") {
                     mtu = Math.min(mtu, 512);
                 }
@@ -29411,7 +29417,7 @@ class Device {
     }
     #initThisEventListeners() {
         this.addEventListener("getMtu", () => {
-            _console$j.log("updating mtu...");
+            _console$j.log("updating mtu", { mtu: this.mtu });
             this.#firmwareManager.mtu = this.mtu;
             this.#fileTransferManager.mtu = this.mtu;
             this.connectionManager.mtu = this.mtu;
@@ -31827,6 +31833,7 @@ class BaseServer {
                 };
         }
     }
+    localMtu = 1024;
     #onDeviceConnectionMessage(deviceEvent) {
         const { target: device, message: deviceConnectionMessage } = deviceEvent;
         _console$f.log("onDeviceConnectionMessage", deviceConnectionMessage);
@@ -31862,30 +31869,43 @@ class BaseServer {
                 break;
             case "fileTransferStatus":
                 {
+                    const clientRequestingSend = this.#clientsRequestingSend.get(device);
+                    const clientSending = this.#clientsSending.get(device);
                     const fileTransferStatusEnum = dataView.getUint8(0);
                     const fileTransferStatus = FileTransferStatuses[fileTransferStatusEnum];
                     _console$f.assertEnumWithError(FileTransferStatuses, fileTransferStatus);
-                    const clientRequestingSend = this.#clientsRequestingSend.get(device);
-                    const clientSending = this.#clientsSending.get(device);
                     _console$f.log({
                         fileTransferStatus,
                         clientRequestingSend,
                         clientSending,
                     });
                     if (clientRequestingSend) {
+                        this.#clientsRequestingSend.delete(device);
                         switch (fileTransferStatus) {
                             case "sending":
+                                if (clientSending) {
+                                    _console$f.log(`already sending "sending" fileTransferStatus to client`);
+                                    return;
+                                }
                                 break;
                             case "idle":
                                 {
                                     if (device.getCurrentSentFileConfiguration()) {
                                         _console$f.log("already received file - no need to resend");
+                                        if (clientSending) {
+                                            _console$f.log(`already sending "idle" fileTransferStatus to client`);
+                                            return;
+                                        }
                                     }
                                     else {
                                         _console$f.log("device doesn't have device locally - requesting remote resend");
                                         this.#clientsSending.set(device, clientRequestingSend);
                                         device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "sending"), false);
                                         const deviceMessages = [];
+                                        const mtuDataView = new DataView(new ArrayBuffer(2));
+                                        mtuDataView.setUint16(0, this.localMtu, true);
+                                        const mtuDeviceMessage = this.#createDeviceMessage(device, "getMtu", mtuDataView);
+                                        deviceMessages.push(mtuDeviceMessage);
                                         const fileTransferStatusDeviceMessage = this.#createDeviceMessage(device, messageType, dataView);
                                         deviceMessages.push(fileTransferStatusDeviceMessage);
                                         fileTransferStatusDeviceMessage.data = enumToDataView(FileTransferStatuses, "sending");
@@ -31895,7 +31915,6 @@ class BaseServer {
                                 }
                                 break;
                         }
-                        this.#clientsRequestingSend.delete(device);
                     }
                 }
                 break;
@@ -32257,8 +32276,10 @@ class BaseServer {
                         });
                         if (isClientSending) {
                             if (fileTransferCommand == "cancel") {
-                                this.#clientsSending.delete(device);
                                 device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "idle"), false);
+                                this.#clientsSending.delete(device);
+                                const resetMtuMessage = this.#createDeviceMessage(device, "getMtu");
+                                deviceMessages.push(resetMtuMessage);
                                 const fileTransferStatusMessage = this.#createDeviceMessage(device, "fileTransferStatus");
                                 deviceMessages.push(fileTransferStatusMessage);
                             }
@@ -32318,9 +32339,11 @@ class BaseServer {
                                 deviceMessages.push(fileBytesTransferredDeviceMessage);
                             }
                             if (isClientSending && isComplete) {
-                                this.#clientsSending.delete(device);
                                 device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "idle"), false);
+                                this.#clientsSending.delete(device);
                                 _console$f.log("done sending local file - notifying client...");
+                                const resetMtuMessage = this.#createDeviceMessage(device, "getMtu");
+                                deviceMessages.push(resetMtuMessage);
                                 const fileTransferStatusDeviceMessage = this.#createDeviceMessage(device, "fileTransferStatus");
                                 deviceMessages.push(fileTransferStatusDeviceMessage);
                                 let followUpDeviceMessage;

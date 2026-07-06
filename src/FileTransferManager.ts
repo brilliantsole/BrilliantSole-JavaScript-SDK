@@ -838,6 +838,11 @@ class FileTransferManager {
       _console.log("skipping parseBytesTransferred (isSending)");
       return;
     }
+    if (bytesTransferred == this.#bytesTransferred) {
+      _console.log("finished");
+      this.#sendBlock();
+      return;
+    }
     if (this.status != "sending") {
       _console.log(
         "skipping parseBytesTransferred (not currently sending file)",

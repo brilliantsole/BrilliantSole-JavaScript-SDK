@@ -327,6 +327,7 @@ class InformationManager {
       case "getMtu":
         let mtu = dataView.getUint16(0, true);
         if (
+          this.connectionType != "client" &&
           this.connectionType != "webSocket" &&
           this.connectionType != "udp"
         ) {
