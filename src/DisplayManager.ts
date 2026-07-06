@@ -909,6 +909,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     if (false) {
+      // @ts-expect-error
       await this.setContextState(contextState, sendImmediately);
     } else {
       const differences = this.#contextStateHelper.update(contextState);
@@ -940,6 +941,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     if (false) {
+      // @ts-expect-error
       await this.setContextState(contextState, sendImmediately);
     } else {
       const differences = this.#contextStateHelper.update(contextState);

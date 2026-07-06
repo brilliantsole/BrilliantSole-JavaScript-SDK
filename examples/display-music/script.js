@@ -102,9 +102,7 @@ displayCanvasHelper.addEventListener("color", (event) => {
 });
 setupColors();
 const getTextColorIndex = () => 1;
-displayCanvasHelper.setColor(getTextColorIndex(), "white");
 const cursorColor = "#009900";
-displayCanvasHelper.flushContextCommands();
 
 // DRAW
 let isDrawing = false;
@@ -134,6 +132,8 @@ const draw = async () => {
     return;
   }
   isDrawing = true;
+
+  displayCanvasHelper.setColor(getTextColorIndex(), "white");
 
   await displayCanvasHelper.setVerticalAlignment("start");
   await displayCanvasHelper.setHorizontalAlignment("start");
