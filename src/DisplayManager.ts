@@ -2841,6 +2841,7 @@ class DisplayManager implements DisplayManagerInterface {
   }
   set pendingSpriteSheet(newPendingSpriteSheet) {
     this.#pendingSpriteSheet = newPendingSpriteSheet;
+    _console.log("pendingSpriteSheet", this.#pendingSpriteSheet);
   }
   #pendingSpriteSheetName?: string;
   get pendingSpriteSheetName() {
@@ -2914,12 +2915,14 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     if (this.#pendingSpriteSheet) {
-      _console.log("existing pendingSpriteSheet - waiting for that to finish");
+      _console.log(
+        "existing pendingSpriteSheet - waiting for that to finish",
+        this.#pendingSpriteSheet,
+      );
       await this.waitForEvent("displaySpriteSheetUploadComplete");
       await this.uploadSpriteSheet(spriteSheet);
       return;
     }
-    spriteSheet = structuredClone(spriteSheet);
     this.#pendingSpriteSheet = spriteSheet;
     const includeHeader = this.isClientConnectionType;
     const buffer = this.serializeSpriteSheet(

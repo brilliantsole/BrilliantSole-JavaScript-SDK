@@ -1165,7 +1165,7 @@ class FileTransferManager {
             return;
         }
         if (this.status != "sending") {
-            _console$U.error("skipping parseBytesTransferred (not currently sending file)");
+            _console$U.log("skipping parseBytesTransferred (not currently sending file)");
             return;
         }
         if (!this.#buffer) {
@@ -6273,7 +6273,7 @@ function removeSubstrings(string, substrings) {
     return result;
 }
 
-const _console$y = createConsole("DisplaySpriteSheetUtils", { log: true });
+const _console$y = createConsole("DisplaySpriteSheetUtils", { log: false });
 const spriteHeaderLength = 3 * 2;
 function getCurvesPoints(curves) {
     const curvePoints = [];
@@ -6410,7 +6410,7 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader = true)
         const commandsDataView = new DataView(dataView.buffer.slice(spriteOffset + spriteDataViewOffset, spriteOffset + spriteDataViewOffset + commandsDataByteLength));
         _console$y.log("commandsDataView", commandsDataView);
         const commands = parseDisplayContextCommands(displayManager, commandsDataView);
-        console.log("commands", commands);
+        _console$y.log("commands", commands);
         const sprite = {
             name: spriteNames[spriteIndex] ?? spriteIndex.toString(),
             width,
@@ -11627,6 +11627,7 @@ let DisplayManager = (() => {
         }
         set pendingSpriteSheet(newPendingSpriteSheet) {
             this.#pendingSpriteSheet = newPendingSpriteSheet;
+            _console$u.log("pendingSpriteSheet", this.#pendingSpriteSheet);
         }
         #pendingSpriteSheetName;
         get pendingSpriteSheetName() {
@@ -11673,12 +11674,11 @@ let DisplayManager = (() => {
                 return;
             }
             if (this.#pendingSpriteSheet) {
-                _console$u.log("existing pendingSpriteSheet - waiting for that to finish");
+                _console$u.log("existing pendingSpriteSheet - waiting for that to finish", this.#pendingSpriteSheet);
                 await this.waitForEvent("displaySpriteSheetUploadComplete");
                 await this.uploadSpriteSheet(spriteSheet);
                 return;
             }
-            spriteSheet = structuredClone(spriteSheet);
             this.#pendingSpriteSheet = spriteSheet;
             const includeHeader = this.isClientConnectionType;
             const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet, includeHeader);

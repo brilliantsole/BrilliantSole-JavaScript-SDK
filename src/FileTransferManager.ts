@@ -839,7 +839,7 @@ class FileTransferManager {
       return;
     }
     if (this.status != "sending") {
-      _console.error(
+      _console.log(
         "skipping parseBytesTransferred (not currently sending file)",
       );
       return;

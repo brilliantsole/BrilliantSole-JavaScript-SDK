@@ -25,7 +25,7 @@ import { classifySubpath } from "./SvgUtils.ts";
 import { removeRedundantCharacters, removeSubstrings } from "./stringUtils.ts";
 import { textDecoder, textEncoder } from "./Text.ts";
 
-const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
+const _console = createConsole("DisplaySpriteSheetUtils", { log: false });
 
 export type DisplaySpriteSubLine = {
   spriteSheetName: string;
@@ -301,7 +301,7 @@ export function parseSpriteSheet(
       displayManager,
       commandsDataView,
     );
-    console.log("commands", commands);
+    _console.log("commands", commands);
 
     const sprite: DisplaySprite = {
       name: spriteNames[spriteIndex] ?? spriteIndex.toString(),
