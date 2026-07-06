@@ -291,11 +291,7 @@ centerOfPressureInput.addEventListener("input", () => {
 // GLASSES START
 const glassesDisplayTargetColors = ["yellow", "limegreen"];
 const glassesDisplayCanvasHelper = new BS.DisplayCanvasHelper();
-glassesDisplayCanvasHelper.setColor(1, "white");
-glassesDisplayCanvasHelper.setColor(2, "red");
-glassesDisplayCanvasHelper.setColor(3, glassesDisplayTargetColors[0]);
-glassesDisplayCanvasHelper.setColor(4, "blue");
-glassesDisplayCanvasHelper.flushContextCommands();
+
 const glassesDisplayCanvas = document.getElementById("glassesDisplay");
 glassesDisplayCanvasHelper.canvas = glassesDisplayCanvas;
 window.glassesDisplayCanvasHelper = glassesDisplayCanvasHelper;
@@ -391,6 +387,11 @@ let drawGlassesDisplay = async () => {
 
   // console.log("drawGlassesDisplay");
   const displayCanvasHelper = glassesDisplayCanvasHelper;
+
+  await displayCanvasHelper.setColor(1, "white");
+  await displayCanvasHelper.setColor(2, "red");
+  await displayCanvasHelper.setColor(3, glassesDisplayTargetColors[0]);
+  await displayCanvasHelper.setColor(4, "blue");
 
   const { offset, size, padding } = drawGlassesParams;
 
