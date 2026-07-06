@@ -102,7 +102,7 @@ const nodeExternal = [
   "dgram",
   "rgbquant",
   "opentype.js",
-  "woff2-encoder",
+  "woff2-encoder/decompress",
   "svgson",
   "svg-pathdata",
   "simplify-js",
@@ -165,7 +165,11 @@ const defaultBuild = {
 const builds = [
   {
     input,
-    plugins: [..._browserPlugins, ..._plugins, visualizer()],
+    plugins: [
+      ..._browserPlugins,
+      ..._plugins,
+      //  visualizer()
+    ],
     output: [
       {
         ...defaultOutput,

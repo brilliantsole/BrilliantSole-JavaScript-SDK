@@ -13,7 +13,7 @@ import {
 } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import opentype, { type Glyph, type Font } from "opentype.js";
-import { decompress } from "woff2-encoder";
+import decompress from "woff2-encoder/decompress";
 import RangeHelper from "./RangeHelper.ts";
 import { Vector2 } from "./MathUtils.ts";
 import { simplifyCurves } from "./PathUtils.ts";

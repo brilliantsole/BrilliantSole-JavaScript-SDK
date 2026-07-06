@@ -2,29 +2,52 @@
  * @copyright Zack Qattan 2024
  * @license MIT
  */
-import autoBind$1 from 'auto-bind';
-import * as tf from '@tensorflow/tfjs';
-import * as webbluetooth from 'webbluetooth';
-import * as noble from '@stoprocent/noble';
-import noble__default from '@stoprocent/noble';
-import os from 'os';
-import sharp from 'sharp';
-import { spawn } from 'child_process';
-import fs from 'fs/promises';
-import * as _alawmulaw from 'alawmulaw';
-import RGBQuant from 'rgbquant';
-import opentype from 'opentype.js';
-import decompress from 'woff2-encoder/decompress';
-import simplify from 'simplify-js';
-import fitCurve from 'fit-curve';
-import 'svgson';
-import 'svg-pathdata';
-import * as dgram from 'dgram';
+'use strict';
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+var autoBind$1 = require('auto-bind');
+var tf = require('@tensorflow/tfjs');
+var webbluetooth = require('webbluetooth');
+var noble = require('@stoprocent/noble');
+var os = require('os');
+var sharp = require('sharp');
+var child_process = require('child_process');
+var fs = require('fs/promises');
+var _alawmulaw = require('alawmulaw');
+var RGBQuant = require('rgbquant');
+var opentype = require('opentype.js');
+var decompress = require('woff2-encoder/decompress');
+var simplify = require('simplify-js');
+var fitCurve = require('fit-curve');
+require('svgson');
+require('svg-pathdata');
+var dgram = require('dgram');
+
+function _interopNamespaceDefault(e) {
+    var n = Object.create(null);
+    if (e) {
+        Object.keys(e).forEach(function (k) {
+            if (k !== 'default') {
+                var d = Object.getOwnPropertyDescriptor(e, k);
+                Object.defineProperty(n, k, d.get ? d : {
+                    enumerable: true,
+                    get: function () { return e[k]; }
+                });
+            }
+        });
+    }
+    n.default = e;
+    return Object.freeze(n);
+}
+
+var tf__namespace = /*#__PURE__*/_interopNamespaceDefault(tf);
+var webbluetooth__namespace = /*#__PURE__*/_interopNamespaceDefault(webbluetooth);
+var noble__namespace = /*#__PURE__*/_interopNamespaceDefault(noble);
+var _alawmulaw__namespace = /*#__PURE__*/_interopNamespaceDefault(_alawmulaw);
+var dgram__namespace = /*#__PURE__*/_interopNamespaceDefault(dgram);
+
 const isInProduction =
-__BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+"__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 let isInIframe = false;
 try {
@@ -157,9 +180,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -1432,13 +1452,13 @@ function isTensorFlowAvailable() {
     if (isInBrowser) {
         return Boolean(window.tf);
     }
-    return Boolean(tf);
+    return Boolean(tf__namespace);
 }
 async function listTensorflowModels() {
     if (!isTensorFlowAvailable()) {
         return {};
     }
-    const models = await tf.io.listModels();
+    const models = await tf__namespace.io.listModels();
     return models;
 }
 async function getTensorFlowModel(url) {
@@ -1495,20 +1515,20 @@ class CenterOfPressureModel {
             _console$S.log("zero numberOfSensors - no model needed");
             return;
         }
-        await tf.ready();
-        const model = tf.sequential();
+        await tf__namespace.ready();
+        const model = tf__namespace.sequential();
         model.name = "centerOfPressure";
         this.#hiddenUnitScalars.forEach((hiddenUnitScalar, index) => {
             const isFirst = index == 0;
-            model.add(tf.layers.dense({
+            model.add(tf__namespace.layers.dense({
                 units: Math.round(this.numberOfSensors * hiddenUnitScalar),
                 activation: "relu",
                 inputShape: isFirst ? [this.numberOfSensors] : undefined,
             }));
         });
-        model.add(tf.layers.dense({ units: 2 }));
+        model.add(tf__namespace.layers.dense({ units: 2 }));
         model.compile({
-            optimizer: tf.train.adam(0.001),
+            optimizer: tf__namespace.train.adam(0.001),
             loss: "meanSquaredError",
         });
         this.#model = model;
@@ -1604,16 +1624,16 @@ class CenterOfPressureModel {
             _console$S.warn("already training");
             return;
         }
-        await tf.nextFrame();
+        await tf__namespace.nextFrame();
         const { inputs, outputs } = this.#data;
         if (inputs.length == 0) {
             _console$S.log("no data to train on");
             return;
         }
         _console$S.log("train");
-        const xs = tf.tensor2d(inputs);
-        const ys = tf.tidy(() => {
-            const ys = tf.tensor2d(outputs);
+        const xs = tf__namespace.tensor2d(inputs);
+        const ys = tf__namespace.tidy(() => {
+            const ys = tf__namespace.tensor2d(outputs);
             const minYs = ys.min();
             const maxYs = ys.max();
             return ys.sub(minYs).div(maxYs.sub(minYs));
@@ -1691,7 +1711,7 @@ class CenterOfPressureModel {
         }
         const inputs = this.#getInputs(pressureData);
         _console$S.log("predict", inputs);
-        const input = tf.tensor2d([inputs]);
+        const input = tf__namespace.tensor2d([inputs]);
         const prediction = this.#model.predict(input);
         const [x, y] = prediction.dataSync().map((value) => clamp(value, 0, 1));
         _console$S.log({ x, y });
@@ -1703,7 +1723,7 @@ class CenterOfPressureModel {
         if (!isTensorFlowAvailable()) {
             return false;
         }
-        await tf.ready();
+        await tf__namespace.ready();
         if (!this.model) {
             _console$S.error("model not found");
             return false;
@@ -1725,7 +1745,7 @@ class CenterOfPressureModel {
         if (!isTensorFlowAvailable()) {
             return false;
         }
-        await tf.ready();
+        await tf__namespace.ready();
         if (!this.model) {
             _console$S.error("model not found");
             return false;
@@ -1743,14 +1763,14 @@ class CenterOfPressureModel {
                 _console$S.error("no weights.bin found");
                 return false;
             }
-            pathOrIOHandler = tf.io.browserFiles([jsonFile, weightsFile]);
+            pathOrIOHandler = tf__namespace.io.browserFiles([jsonFile, weightsFile]);
         }
         else {
             pathOrIOHandler = pathOrIOHandlerOrFileList;
         }
         let loadedModel;
         try {
-            loadedModel = await tf.loadLayersModel(pathOrIOHandler, options);
+            loadedModel = await tf__namespace.loadLayersModel(pathOrIOHandler, options);
             _console$S.log("loadedModel", loadedModel);
             if (this.model.layers.length != loadedModel.layers.length) {
                 throw Error("layer count mismatch");
@@ -2981,7 +3001,7 @@ class CameraManager {
                     const filename = `${new Date()
                         .toLocaleString()
                         .replaceAll("/", "-")}.mp4`;
-                    const ffmpeg = spawn("ffmpeg", [
+                    const ffmpeg = child_process.spawn("ffmpeg", [
                         "-f",
                         "rawvideo",
                         "-pix_fmt",
@@ -3132,7 +3152,7 @@ function writeString(view, offset, string) {
 }
 
 var _a$5;
-const alawmulaw = _alawmulaw.default ?? _alawmulaw;
+const alawmulaw = _alawmulaw__namespace.default ?? _alawmulaw__namespace;
 const { mulaw } = alawmulaw;
 const _console$K = createConsole("MicrophoneManager", { log: false });
 const MicrophoneSensorTypes = ["microphone"];
@@ -12595,7 +12615,7 @@ function removeEventListeners(target, boundEventListeners) {
 
 const _console$p = createConsole("bluetoothUUIDs", { log: false });
 var BluetoothUUID;
-BluetoothUUID = webbluetooth.BluetoothUUID;
+BluetoothUUID = webbluetooth__namespace.BluetoothUUID;
 if (typeof BluetoothUUID == undefined) {
     BluetoothUUID = {
         getService: (uuid) => toUUID(uuid),
@@ -12808,7 +12828,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
 const _console$n = createConsole("WebBluetoothConnectionManager", { log: false });
 var bluetooth;
 if (isInNode) {
-    bluetooth = webbluetooth.bluetooth;
+    bluetooth = webbluetooth__namespace.bluetooth;
 }
 class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     get bluetoothId() {
@@ -14388,7 +14408,7 @@ class UDPConnectionManager extends BaseConnectionManager {
     }
     #setupSocket() {
         this.#didSetRemoteReceivePort = false;
-        this.socket = dgram.createSocket({
+        this.socket = dgram__namespace.createSocket({
             type: "udp4",
         });
         try {
@@ -16336,7 +16356,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager$1 = (() => {
+let DeviceManager = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -16653,7 +16673,7 @@ let DeviceManager$1 = (() => {
     });
     return _classThis;
 })();
-var DeviceManager = DeviceManager$1.shared;
+var DeviceManager$1 = DeviceManager.shared;
 
 var _a$2;
 const _console$f = createConsole("BaseScanner", { log: false });
@@ -16829,7 +16849,7 @@ const _console$e = createConsole("NobleConnectionManager", { log: false });
 let filterUUIDs = true;
 const isLinux$1 = os.platform() == "linux";
 filterUUIDs = !isLinux$1;
-noble.withBindings("default", {
+noble__namespace.withBindings("default", {
     extended: true,
     userChannel: true,
 });
@@ -17231,7 +17251,7 @@ class NobleScanner extends BaseScanner {
     }
     constructor() {
         super();
-        addEventListeners(noble__default, this.#boundNobleListeners);
+        addEventListeners(noble, this.#boundNobleListeners);
         addEventListeners(this, this.#boundBaseScannerListeners);
     }
     get isScanningAvailable() {
@@ -17242,7 +17262,7 @@ class NobleScanner extends BaseScanner {
             return false;
         }
         _console$d.log("noble.startScan");
-        noble__default.startScanningAsync(filterManually ? [] : serviceUUIDs, true);
+        noble.startScanningAsync(filterManually ? [] : serviceUUIDs, true);
         return true;
     }
     stopScan() {
@@ -17250,7 +17270,7 @@ class NobleScanner extends BaseScanner {
             return false;
         }
         _console$d.log("noble.stopScan");
-        noble__default.stopScanningAsync();
+        noble.stopScanningAsync();
         return true;
     }
     get canReset() {
@@ -17258,7 +17278,7 @@ class NobleScanner extends BaseScanner {
     }
     reset() {
         super.reset();
-        noble__default.reset();
+        noble.reset();
     }
     #boundBaseScannerListeners = {
         expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
@@ -17284,7 +17304,7 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$d.log("connecting to discoveredDevice...", deviceId);
-        let device = DeviceManager.availableDevices
+        let device = DeviceManager$1.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -17316,7 +17336,7 @@ class NobleScanner extends BaseScanner {
     async disconnectFromDevice(deviceId) {
         super.disconnectFromDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
-        let device = DeviceManager.availableDevices
+        let device = DeviceManager$1.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -17354,16 +17374,16 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$c = createConsole("Scanner", { log: false });
-let scanner$1;
+let scanner;
 if (NobleScanner.isSupported) {
     _console$c.log("using NobleScanner");
-    scanner$1 = new NobleScanner();
+    scanner = new NobleScanner();
 }
 else {
     _console$c.log("Scanner not available");
-    scanner$1 = new NullScanner();
+    scanner = new NullScanner();
 }
-var scanner = scanner$1;
+var scanner$1 = scanner;
 
 var _a$1;
 const RequiredDeviceInformationMessageTypes = [
@@ -17400,9 +17420,9 @@ class BaseServer {
     }
     static OnServer;
     constructor() {
-        _console$b.assertWithError(scanner, "no scanner defined");
-        addEventListeners(scanner, this.#boundScannerListeners);
-        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        _console$b.assertWithError(scanner$1, "no scanner defined");
+        addEventListeners(scanner$1, this.#boundScannerListeners);
+        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
         _a$1.OnServer(this);
     }
@@ -17454,7 +17474,7 @@ class BaseServer {
         _console$b.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager.connectedDevices.forEach((device) => {
+            DeviceManager$1.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -17486,7 +17506,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner.isScanningAvailable,
+            data: scanner$1.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -17495,7 +17515,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner.isScanning,
+            data: scanner$1.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -17521,9 +17541,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner.discoveredDevicesArray
+        const serverMessages = scanner$1.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -17535,7 +17555,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -17804,10 +17824,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner.startScan();
+                scanner$1.startScan();
                 break;
             case "stopScan":
-                scanner.stopScan();
+                scanner$1.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -17825,12 +17845,12 @@ class BaseServer {
                     else {
                         _console$b.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
-                        scanner.connectToDevice(deviceId, connectionType);
+                        scanner$1.connectToDevice(deviceId, connectionType);
                     }
                 }
                 break;
@@ -17840,8 +17860,8 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner.devices[deviceId];
+                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner$1.devices[deviceId];
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17864,7 +17884,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17888,7 +17908,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -18796,7 +18816,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager._checkDeviceAvailability(device);
+            DeviceManager$1._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -19275,7 +19295,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager.addEventListener("deviceConnected", (event) => {
+        DeviceManager$1.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -19852,5 +19872,50 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
-//# sourceMappingURL=brilliantsole.node.module.js.map
+exports.ClientManager = ClientManager_default;
+exports.Clients = Clients;
+exports.ConnectionEventTypes = ConnectionEventTypes;
+exports.ConnectionManagers = ConnectionManagers;
+exports.ConnectionMessageTypes = ConnectionMessageTypes;
+exports.Device = Device;
+exports.DeviceEventTypes = DeviceEventTypes;
+exports.DeviceManager = DeviceManager$1;
+exports.DevicePair = DevicePair;
+exports.DevicePairTypes = DevicePairTypes;
+exports.DisplayContextCommandTypes = DisplayContextCommandTypes;
+exports.DisplaySpriteContextCommandTypes = DisplaySpriteContextCommandTypes;
+exports.Environment = environment;
+exports.EventUtils = EventUtils;
+exports.LedTypes = LedTypes;
+exports.LedValueTypes = LedValueTypes;
+exports.RangeHelper = RangeHelper;
+exports.RangeHelper2 = RangeHelper2;
+exports.Scanner = scanner$1;
+exports.ServerManager = ServerManager_default;
+exports.Servers = Servers;
+exports.ThrottleUtils = ThrottleUtils;
+exports.TxRxMessageTypes = TxRxMessageTypes;
+exports.UDPServer = UDPServer;
+exports.WebSocketServer = WebSocketServer;
+exports.englishRegex = englishRegex;
+exports.fontToSpriteSheet = fontToSpriteSheet;
+exports.getFontMaxHeight = getFontMaxHeight;
+exports.getFontMetrics = getFontMetrics;
+exports.getFontUnicodeRange = getFontUnicodeRange;
+exports.getMaxSpriteSheetSize = getMaxSpriteSheetSize;
+exports.getTensorFlowModel = getTensorFlowModel;
+exports.hexToRGB = hexToRGB;
+exports.isTensorFlowAvailable = isTensorFlowAvailable;
+exports.isTensorFlowModelAvailable = isTensorFlowModelAvailable;
+exports.listTensorflowModels = listTensorflowModels;
+exports.parseFont = parseFont;
+exports.projectColor = projectColor;
+exports.rgbToHex = rgbToHex;
+exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
+exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
+exports.simplifyCurves = simplifyCurves;
+exports.simplifyPoints = simplifyPoints;
+exports.simplifyPointsAsCubicCurveControlPoints = simplifyPointsAsCubicCurveControlPoints;
+exports.stringToSprites = stringToSprites;
+exports.wildcardEventType = wildcardEventType;
+//# sourceMappingURL=brilliantsole.cjs.map
