@@ -572,6 +572,8 @@ function UInt8ByteBuffer(value) {
 
 var _a$8;
 const _console$W = createConsole("FileTransferManager", { log: true });
+const emptyHeaderDataView = new DataView(new ArrayBuffer(2));
+emptyHeaderDataView.setUint16(0, 0, true);
 const FileTransferMessageTypes = [
     "getFileTypes",
     "maxFileLength",
@@ -806,8 +808,8 @@ class FileTransferManager {
             fileTransferStatus: status,
             fileType: this.type,
         });
-        if (this.#isRequesting && this.status != "receiving") {
-            this.#isRequesting = false;
+        if (this.#isRequestingReceive && this.status != "receiving") {
+            this.#isRequestingReceive = false;
         }
     }
     #assertIsIdle() {
@@ -821,9 +823,10 @@ class FileTransferManager {
         _console$W.log("parseFileBlock", dataView);
         this.#receivedBlocks.push(dataView.buffer);
         const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
+        this.#bytesTransferred = bytesReceived;
         const progress = bytesReceived / this.#length;
         _console$W.log(`received ${bytesReceived}/${this.#length} bytes (${progress * 100}%) - ${this.#length - bytesReceived} bytes remaining`);
-        const indirectly = !this.#isRequesting;
+        const indirectly = !this.#isRequestingReceive;
         const fileType = this.type;
         let file;
         const isComplete = progress == 1;
@@ -834,7 +837,7 @@ class FileTransferManager {
             _console$W.log("received file", file);
         }
         else {
-            if (this.#isRequesting) {
+            if (this.#isRequestingReceive) {
                 const dataView = new DataView(new ArrayBuffer(4));
                 dataView.setUint32(0, bytesReceived, true);
                 _console$W.log("sending fileBytesTransferred", { bytesReceived });
@@ -846,11 +849,12 @@ class FileTransferManager {
                 _console$W.log("not sending fileBytesTransferred (not requesting)");
             }
         }
+        const direction = "receiving";
         this.#dispatchEvent("fileTransferProgress", {
             progress,
             fileType,
-            direction: "receiving",
-            bytesTransferred: bytesReceived,
+            direction,
+            bytesTransferred: this.#bytesTransferred,
             isComplete,
             file,
             indirectly,
@@ -859,7 +863,7 @@ class FileTransferManager {
         if (isComplete) {
             file = file;
             this.#dispatchEvent("fileTransferComplete", {
-                direction: "receiving",
+                direction,
                 fileType,
                 file,
                 indirectly,
@@ -912,14 +916,32 @@ class FileTransferManager {
         }
     }
     #file;
-    async send(type, file) {
+    async send(type, file, includesHeader) {
+        _console$W.log("send", { type, includesHeader }, file);
         {
             this.#assertIsIdle();
             this.#assertValidType(type);
         }
-        const fileBuffer = await getFileBuffer(file);
-        const fileLength = fileBuffer.byteLength;
-        const checksum = crc32(fileBuffer);
+        let fileBuffer = await getFileBuffer(file);
+        let fileBufferWithoutHeader;
+        if (includesHeader) {
+            const fileDataView = new DataView(fileBuffer);
+            let offset = 0;
+            const headerLength = fileDataView.getUint16(offset, true);
+            _console$W.log({ headerLength });
+            this.#headerLength = headerLength;
+            offset += headerLength;
+            fileBufferWithoutHeader = fileBuffer.slice(offset);
+        }
+        else {
+            this.#headerLength = 2;
+            fileBufferWithoutHeader = fileBuffer;
+            fileBuffer = concatenateArrayBuffers(emptyHeaderDataView.buffer, fileBufferWithoutHeader);
+        }
+        _console$W.log({ fileBuffer, fileBufferWithoutHeader });
+        const fileLength = fileBufferWithoutHeader.byteLength;
+        const checksum = crc32(fileBufferWithoutHeader);
+        _console$W.log({ checksum, fileLength });
         this.#assertValidLength(fileLength);
         if (type != this.type) {
             _console$W.log("different fileTypes - sending");
@@ -931,7 +953,7 @@ class FileTransferManager {
             _console$W.log("different fileChecksums - sending");
         }
         else {
-            _console$W.log("already sent file");
+            _console$W.log("already attempted to send file");
         }
         const promises = [];
         promises.push(this.#setType(type, false));
@@ -961,11 +983,14 @@ class FileTransferManager {
             return false;
         }
         this.#file = await this.#createFile([fileBuffer]);
-        await this.#send(fileBuffer);
+        await this.#send(this.isClientConnectionType ? fileBuffer : fileBufferWithoutHeader);
         return true;
     }
     #buffer;
     #bytesTransferred = 0;
+    get bytesTransferred() {
+        return this.#bytesTransferred;
+    }
     async #send(buffer) {
         this.#buffer = buffer;
         return this.#sendBlock();
@@ -994,10 +1019,11 @@ class FileTransferManager {
         const isComplete = progress == 1;
         const fileType = this.type;
         const file = this.#file;
+        const direction = "sending";
         this.#dispatchEvent("fileTransferProgress", {
             progress,
             fileType,
-            direction: "sending",
+            direction,
             bytesTransferred: this.#bytesTransferred,
             isComplete,
             file: isComplete ? file : undefined,
@@ -1013,7 +1039,7 @@ class FileTransferManager {
             _console$W.log("sent file directly", sentFileConfiguration);
             this.sentFileConfigurations.push(sentFileConfiguration);
             this.#dispatchEvent("fileTransferComplete", {
-                direction: "sending",
+                direction,
                 fileType,
                 file,
             });
@@ -1048,8 +1074,14 @@ class FileTransferManager {
             file = new Blob(blocks);
         }
         const arrayBuffer = await file.arrayBuffer();
-        const checksum = crc32(arrayBuffer);
-        _console$W.log({ checksum });
+        const arrayBufferWithoutHeader = arrayBuffer.slice(this.#headerLength);
+        const checksum = crc32(arrayBufferWithoutHeader);
+        _console$W.log({
+            arrayBuffer,
+            arrayBufferWithoutHeader,
+            checksum,
+            headerLength: this.#headerLength,
+        });
         if (checksum != this.#checksum) {
             _console$W.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
             return;
@@ -1068,16 +1100,27 @@ class FileTransferManager {
         _console$W.log("sentFileConfiguration", sentFileConfiguration);
         return sentFileConfiguration;
     }
+    #headerLength;
+    get headerLength() {
+        return this.#headerLength;
+    }
     async #parseSentFileBlock(dataView, isSending) {
         _console$W.log("parseFileBlock", dataView, { isSending });
         if (!isSending) {
             return;
         }
+        if (this.#indirectSentBlocks.length == 0) {
+            const headerLength = dataView.getUint16(0, true);
+            _console$W.log({ headerLength });
+            this.#headerLength = headerLength;
+        }
         this.#indirectSentBlocks.push(dataView.buffer);
         const bytesReceived = this.#indirectSentBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
-        const progress = bytesReceived / this.#length;
+        this.#bytesTransferred = bytesReceived;
+        const lengthPlusHeader = this.#length + (this.headerLength ?? 0);
+        const progress = bytesReceived / lengthPlusHeader;
         const isComplete = progress == 1;
-        _console$W.log(`sent ${bytesReceived}/${this.#length} bytes indirectly (${progress * 100}%) - ${this.#length - bytesReceived} bytes remaining`);
+        _console$W.log(`sent ${bytesReceived}/${lengthPlusHeader} bytes indirectly (${progress * 100}%) - ${lengthPlusHeader - bytesReceived} bytes remaining`);
         let file;
         const fileType = this.type;
         const indirectly = true;
@@ -1086,12 +1129,13 @@ class FileTransferManager {
             _console$W.assertWithError(file, "file not created");
             _console$W.log("file transfer complete", file);
         }
+        const direction = "sending";
         this.#dispatchEvent("fileTransferProgress", {
             isComplete,
             progress,
             fileType,
-            direction: "sending",
-            bytesTransferred: bytesReceived,
+            direction,
+            bytesTransferred: this.#bytesTransferred,
             indirectly,
             file,
         });
@@ -1113,7 +1157,7 @@ class FileTransferManager {
             this.sentFileConfigurations.push(sentFileConfiguration);
             _console$W.log("sent file indirectly", sentFileConfiguration);
             this.#dispatchEvent("fileTransferComplete", {
-                direction: "sending",
+                direction,
                 fileType,
                 file,
                 indirectly,
@@ -1144,11 +1188,11 @@ class FileTransferManager {
         }
         this.#sendBlock();
     }
-    #isRequesting = false;
+    #isRequestingReceive = false;
     async receive(type) {
         this.#assertIsIdle();
         this.#assertValidType(type);
-        this.#isRequesting = true;
+        this.#isRequestingReceive = true;
         await this.#setType(type);
         await this.#setCommand("startReceive");
     }
@@ -1181,9 +1225,13 @@ class FileTransferManager {
         this.#status = "idle";
         this.mtu = undefined;
         this.#file = undefined;
-        this.#isRequesting = false;
+        this.#isRequestingReceive = false;
+        this.#headerLength = undefined;
     }
     connectionType;
+    get isClientConnectionType() {
+        return this.connectionType == "client";
+    }
 }
 _a$8 = FileTransferManager;
 
@@ -28363,7 +28411,7 @@ function getCurvesPoints(curves) {
     });
     return curvePoints;
 }
-function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
+function serializeSpriteSheet(displayManager, spriteSheet, includeHeader = false) {
     const { name, sprites } = spriteSheet;
     _console$z.log(`serializing ${name} spriteSheet`, spriteSheet, {
         includeHeader,
@@ -28374,19 +28422,18 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
         _console$z.log("encodedName", encodedName, { name });
         const encodedSpriteNames = sprites.map((sprite) => textEncoder.encode(sprite.name));
         _console$z.log("encodedSpriteNames", encodedSpriteNames);
-        let headerDataViewLength = 0;
-        headerDataViewLength += 2;
-        headerDataViewLength += 2;
-        headerDataViewLength += encodedName.byteLength;
-        headerDataViewLength += 2;
-        headerDataViewLength += 2 * sprites.length;
-        headerDataViewLength += 2 * sprites.length;
-        headerDataViewLength += encodedSpriteNames.reduce((encodedSpriteNamesLength, encodedSpriteName) => encodedSpriteNamesLength + encodedSpriteName.byteLength, 0);
-        _console$z.log({ headerDataViewLength });
-        headerDataView = new DataView(new ArrayBuffer(headerDataViewLength));
+        let headerLength = 0;
+        headerLength += 2;
+        headerLength += 2;
+        headerLength += encodedName.byteLength;
+        headerLength += 2;
+        headerLength += 2 * sprites.length;
+        headerLength += encodedSpriteNames.reduce((encodedSpriteNamesLength, encodedSpriteName) => encodedSpriteNamesLength + encodedSpriteName.byteLength, 0);
+        _console$z.log({ headerLength });
+        headerDataView = new DataView(new ArrayBuffer(headerLength));
         _console$z.log("created headerDataView", headerDataView);
         let offset = 0;
-        headerDataView.setUint16(offset, headerDataViewLength, true);
+        headerDataView.setUint16(offset, headerLength, true);
         offset += 2;
         headerDataView.setUint16(offset, encodedName.byteLength, true);
         offset += 2;
@@ -28397,11 +28444,14 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
         offset += 2;
         let spriteNamesOffset = offset + 2 * sprites.length;
         for (const encodedSpriteName of encodedSpriteNames) {
-            headerDataView.setUint16(offset, encodedName.byteLength, true);
+            _console$z.log("encodedSpriteName", encodedSpriteName);
+            headerDataView.setUint16(offset, spriteNamesOffset, true);
             offset += 2;
+            _console$z.log("before", { spriteNamesOffset });
             for (const value of encodedSpriteName) {
                 headerDataView.setUint8(spriteNamesOffset++, value);
             }
+            _console$z.log("after", { spriteNamesOffset });
         }
         _console$z.log("serialized headerDataView", headerDataView);
     }
@@ -28429,7 +28479,7 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader) {
     _console$z.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
 }
-function parseSpriteSheet(displayManager, dataView, name, includesHeader) {
+function parseSpriteSheet(displayManager, dataView, name, includesHeader = true) {
     _console$z.assertWithError(includesHeader || name != undefined, "name not defined and header is not included");
     _console$z.log("parseSpriteSheet", dataView, { name, includesHeader });
     const spriteNames = [];
@@ -28439,8 +28489,6 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader) {
         const headerLength = dataView.getUint16(offset, true);
         offset += 2;
         _console$z.log({ headerLength });
-        const headerEndOffset = offset + headerLength;
-        _console$z.log({ headerEndOffset });
         const nameLength = dataView.getUint16(offset, true);
         offset += 2;
         _console$z.log({ nameLength });
@@ -28449,25 +28497,32 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader) {
         offset += nameLength;
         const numberOfSpriteNames = dataView.getUint16(offset, true);
         offset += 2;
+        _console$z.log({ numberOfSpriteNames });
         for (let spriteNameIndex = 0; spriteNameIndex < numberOfSpriteNames; spriteNameIndex++) {
-            _console$z.log("parsing", { spriteNameIndex });
+            const isLast = spriteNameIndex == numberOfSpriteNames - 1;
+            _console$z.log("parsing", { spriteNameIndex, isLast });
             const spriteNameOffset = dataView.getUint16(offset, true);
             _console$z.log({ spriteNameOffset });
             offset += 2;
-            const spriteNameLength = dataView.getUint16(spriteNameOffset, true);
-            _console$z.log({ spriteNameLength });
-            const spriteName = textDecoder.decode(dataView.buffer.slice(spriteNameOffset + 2, spriteNameOffset + 2 + spriteNameLength));
+            const nextSpriteNameOffset = isLast
+                ? headerLength
+                : dataView.getUint16(offset, true);
+            const spriteNameLength = nextSpriteNameOffset - spriteNameOffset;
+            _console$z.log({ nextSpriteNameOffset, spriteNameLength });
+            const spriteName = textDecoder.decode(dataView.buffer.slice(spriteNameOffset, spriteNameOffset + spriteNameLength));
             _console$z.log({ spriteName });
             spriteNames.push(spriteName);
         }
         _console$z.log("spriteNames", spriteNames);
+        offset = headerLength;
     }
+    const baseOffset = offset;
     const numberOfSprites = dataView.getUint16(offset, true);
     offset += 2;
-    _console$z.log({ numberOfSprites });
+    _console$z.log({ numberOfSprites, offset });
     for (let spriteIndex = 0; spriteIndex < numberOfSprites; spriteIndex++) {
-        _console$z.log("parsing", { spriteIndex });
-        const spriteOffset = dataView.getUint16(offset, true);
+        _console$z.log("parsing", { spriteIndex, offset });
+        const spriteOffset = dataView.getUint16(offset, true) + baseOffset;
         _console$z.log({ spriteOffset });
         offset += 2;
         let spriteDataViewOffset = 0;
@@ -34011,11 +34066,16 @@ let DisplayManager = (() => {
             }
             spriteSheet = structuredClone(spriteSheet);
             this.#pendingSpriteSheet = spriteSheet;
-            const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet);
+            const includeHeader = this.isClientConnectionType;
+            const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet, includeHeader);
             await this.#setSpriteSheetName(this.#pendingSpriteSheet.name);
             const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
-            this.sendFile("spriteSheet", buffer);
+            this.sendFile("spriteSheet", buffer, includeHeader);
             await promise;
+        }
+        connectionType;
+        get isClientConnectionType() {
+            return this.connectionType == "client";
         }
         async uploadSpriteSheets(spriteSheets) {
             for (const spriteSheet of spriteSheets) {
@@ -36802,9 +36862,6 @@ class Device {
                     break;
             }
         });
-        this.addEventListener("fileSent", async (event) => {
-            return;
-        });
         _a$4.OnDevice(this);
     }
     #connectionManager;
@@ -36835,6 +36892,7 @@ class Device {
         _console$j.log("assigned new connectionManager", this.#connectionManager);
         this._informationManager.connectionType = this.connectionType;
         this.#fileTransferManager.connectionType = this.connectionType;
+        this.#displayManager.connectionType = this.connectionType;
     }
     async #sendTxMessages(messages, sendImmediately = true) {
         _console$j.log("sendTxMessages", messages, { sendImmediately });
@@ -37502,6 +37560,12 @@ class Device {
     }
     get fileType() {
         return this.#fileTransferManager.type;
+    }
+    get fileBytesTransferred() {
+        return this.#fileTransferManager.bytesTransferred;
+    }
+    get fileHeaderLength() {
+        return this.#fileTransferManager.headerLength;
     }
     async sendFile(fileType, file) {
         _console$j.assertWithError(this.validFileTypes.includes(fileType), `invalid fileType ${fileType}`);
@@ -39155,6 +39219,9 @@ class BaseServer {
                     return;
                 }
                 break;
+            case "fileBytesTransferred":
+                _console$f.log("skipping fileBytesTransferred");
+                return;
         }
         const deviceMessage = this.#createDeviceMessage(device, messageType, dataView);
         this.broadcast(this.#createDeviceServerMessage(device, deviceMessage), this.#allowDeviceToClients(device, deviceMessage));
@@ -39527,9 +39594,17 @@ class BaseServer {
                 case "setFileBlock":
                     {
                         const isClientSending = client == this.#clientsSending.get(device);
+                        const isDeviceConnectedDirectly = device.connectionType != "client";
+                        _console$f.log({
+                            isClientSending,
+                            isDeviceConnectedDirectly,
+                        });
+                        let sentToDevice = false;
                         device.addEventListener("fileTransferProgress", async (event) => {
-                            const { bytesTransferred, progress, file, isComplete, fileType, } = event.message;
-                            _console$f.log("intercepted fileTransferProgress", event.message);
+                            const { progress, file, isComplete, fileType } = event.message;
+                            let { bytesTransferred } = event.message;
+                            _console$f.log("intercepted fileTransferProgress", event.message, { sentToDevice });
+                            const deviceMessages = [];
                             if (isComplete) {
                                 switch (fileType) {
                                     case "tflite":
@@ -39538,7 +39613,7 @@ class BaseServer {
                                         {
                                             const arrayBuffer = await file.arrayBuffer();
                                             const dataView = new DataView(arrayBuffer);
-                                            const parsedSpriteSheet = device.parseDisplaySpriteSheet(dataView, device.pendingDisplaySpriteSheetName, false);
+                                            const parsedSpriteSheet = device.parseDisplaySpriteSheet(dataView, device.pendingDisplaySpriteSheetName);
                                             if (!isClientSending) {
                                                 device.displayManager.pendingSpriteSheet =
                                                     parsedSpriteSheet;
@@ -39548,33 +39623,33 @@ class BaseServer {
                                         break;
                                 }
                             }
-                            if (isClientSending) {
-                                _console$f.log("still sending local file...", event.message);
+                            {
                                 const dataView = new DataView(new ArrayBuffer(4));
                                 dataView.setUint32(0, bytesTransferred, true);
                                 const fileBytesTransferredDeviceMessage = this.#createDeviceMessage(device, "fileBytesTransferred", dataView);
-                                const deviceMessages = [];
                                 deviceMessages.push(fileBytesTransferredDeviceMessage);
-                                if (isComplete) {
-                                    this.#clientsSending.delete(device);
-                                    device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "idle"), false);
-                                    _console$f.log("done sending local file - notifying client...");
-                                    const fileTransferStatusDeviceMessage = this.#createDeviceMessage(device, "fileTransferStatus");
-                                    deviceMessages.push(fileTransferStatusDeviceMessage);
-                                    let followUpDeviceMessage;
-                                    switch (fileType) {
-                                        case "tflite":
-                                            followUpDeviceMessage = this.#createDeviceMessage(device, "tfliteIsReady");
-                                            break;
-                                        case "spriteSheet":
-                                            followUpDeviceMessage = this.#createDeviceMessage(device, "displaySpriteSheetIndex");
-                                            break;
-                                    }
-                                    if (followUpDeviceMessage) {
-                                        _console$f.log("followUpDeviceMessage", followUpDeviceMessage);
-                                        deviceMessages.push(followUpDeviceMessage);
-                                    }
+                            }
+                            if (isClientSending && isComplete) {
+                                this.#clientsSending.delete(device);
+                                device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "idle"), false);
+                                _console$f.log("done sending local file - notifying client...");
+                                const fileTransferStatusDeviceMessage = this.#createDeviceMessage(device, "fileTransferStatus");
+                                deviceMessages.push(fileTransferStatusDeviceMessage);
+                                let followUpDeviceMessage;
+                                switch (fileType) {
+                                    case "tflite":
+                                        followUpDeviceMessage = this.#createDeviceMessage(device, "tfliteIsReady");
+                                        break;
+                                    case "spriteSheet":
+                                        followUpDeviceMessage = this.#createDeviceMessage(device, "displaySpriteSheetIndex");
+                                        break;
                                 }
+                                if (followUpDeviceMessage) {
+                                    _console$f.log("followUpDeviceMessage", followUpDeviceMessage);
+                                    deviceMessages.push(followUpDeviceMessage);
+                                }
+                            }
+                            if (deviceMessages.length > 0) {
                                 this.sendToClient(client, this.#createDeviceServerMessage(device, ...deviceMessages));
                             }
                         }, {
@@ -39585,6 +39660,35 @@ class BaseServer {
                             device._onRemoteConnectionMessageSent(messageType, dataView);
                             return;
                         }
+                        else {
+                            if (isDeviceConnectedDirectly) {
+                                const { fileBytesTransferred } = device;
+                                const fileHeaderLength = device.fileHeaderLength ?? message.data.getUint16(0, true);
+                                const headerBytesRemaining = Math.max(0, fileHeaderLength - fileBytesTransferred);
+                                const didSendHeader = headerBytesRemaining == 0;
+                                _console$f.log({
+                                    fileBytesTransferred,
+                                    fileHeaderLength,
+                                    headerBytesRemaining,
+                                    didSendHeader,
+                                });
+                                const data = message.data;
+                                if (!didSendHeader) {
+                                    const nonHeaderData = data.buffer.slice(headerBytesRemaining);
+                                    _console$f.log("nonHeaderData", nonHeaderData);
+                                    if (nonHeaderData.byteLength > 0) {
+                                        _console$f.log("relaying nonHeaderData", nonHeaderData);
+                                        message.data = nonHeaderData;
+                                    }
+                                    else {
+                                        _console$f.log("nonHeaderData is empty - parsing client file block locally");
+                                        device._onRemoteConnectionMessageSent(messageType, dataView);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                        sentToDevice = true;
                     }
                     break;
             }

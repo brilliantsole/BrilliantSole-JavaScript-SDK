@@ -131,7 +131,7 @@ class MotionSensorDataManager {
   parseEuler(
     dataView: DataView<ArrayBuffer>,
     scalar: number,
-    absolute?: boolean
+    absolute?: boolean,
   ): Euler {
     let [heading, pitch, roll] = [
       dataView.getInt16(0, true),

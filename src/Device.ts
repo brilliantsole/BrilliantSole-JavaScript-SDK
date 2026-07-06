@@ -60,7 +60,6 @@ import FileTransferManager, {
   FileTypes,
   RequiredFileTransferMessageTypes,
   SendFileCallback,
-  SentFileConfiguration,
 } from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
@@ -555,6 +554,7 @@ class Device {
 
     this._informationManager.connectionType = this.connectionType;
     this.#fileTransferManager.connectionType = this.connectionType;
+    this.#displayManager.connectionType = this.connectionType;
   }
   async #sendTxMessages(messages?: TxMessage[], sendImmediately = true) {
     _console.log("sendTxMessages", messages, { sendImmediately });
@@ -1420,6 +1420,12 @@ class Device {
   }
   get fileType() {
     return this.#fileTransferManager.type;
+  }
+  get fileBytesTransferred() {
+    return this.#fileTransferManager.bytesTransferred;
+  }
+  get fileHeaderLength() {
+    return this.#fileTransferManager.headerLength;
   }
 
   async sendFile(fileType: FileType, file: FileLike) {

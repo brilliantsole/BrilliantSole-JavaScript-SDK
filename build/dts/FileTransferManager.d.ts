@@ -75,7 +75,7 @@ export interface FileTransferEventMessages {
 }
 export type FileTransferEventDispatcher = EventDispatcher<Device, FileTransferEventType, FileTransferEventMessages>;
 export type SendFileTransferMessageCallback = SendMessageCallback<FileTransferMessageType>;
-export type SendFileCallback = (fileType: FileType, file: FileLike) => Promise<boolean>;
+export type SendFileCallback = (fileType: FileType, file: FileLike, includesHeader?: boolean) => Promise<boolean>;
 declare class FileTransferManager {
     #private;
     constructor();
@@ -86,23 +86,26 @@ declare class FileTransferManager {
     get waitForEvent(): <T extends "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "fileSent">(type: T, options?: {
         immediate?: boolean;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "fileSent", FileTransferEventMessages, T>>;
-    get fileTypes(): ("cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet")[];
+    get fileTypes(): ("tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | "cameraImage")[];
     static get MaxLength(): number;
     /** kB */
     get maxLength(): number;
-    get type(): "cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | undefined;
+    get type(): "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | "cameraImage" | undefined;
     get length(): number;
     get checksum(): number;
     get status(): "idle" | "sending" | "receiving";
     parseMessage(messageType: FileTransferMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
-    send(type: FileType, file: FileLike): Promise<boolean>;
+    send(type: FileType, file: FileLike, includesHeader?: boolean): Promise<boolean>;
+    get bytesTransferred(): number;
     mtu: number;
     sentFileConfigurations: SentFileConfiguration[];
     getCurrentSentFileConfiguration(): SentFileConfiguration | undefined;
+    get headerLength(): number | undefined;
     receive(type: FileType): Promise<void>;
     cancel(): Promise<void>;
     requestRequiredInformation(): void;
     clear(): void;
     connectionType?: ConnectionType;
+    get isClientConnectionType(): boolean;
 }
 export default FileTransferManager;

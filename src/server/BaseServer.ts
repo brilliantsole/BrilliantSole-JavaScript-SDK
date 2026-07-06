@@ -568,6 +568,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           return;
         }
         break;
+      case "fileBytesTransferred":
+        _console.log("skipping fileBytesTransferred");
+        return;
+        break;
       default:
         break;
     }
@@ -1129,7 +1133,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 _console.log("no filteredDisplayContextCommandsData");
                 return;
               }
-              // FIX - trim filteredDisplayContextCommandsData for just contextState commands
               broadcastDeviceMessages.push({
                 type: "displayContextCommands",
                 data: filteredDisplayContextCommandsData,
@@ -1193,22 +1196,30 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             {
               const isClientSending =
                 client == this.#clientsSending.get(device);
+              const isDeviceConnectedDirectly =
+                device.connectionType != "client";
+
+              _console.log({
+                isClientSending,
+                isDeviceConnectedDirectly,
+              });
+
+              let sentToDevice = false;
 
               device.addEventListener(
                 "fileTransferProgress",
                 async (event) => {
-                  const {
-                    bytesTransferred,
-                    progress,
-                    file,
-                    isComplete,
-                    fileType,
-                  } = event.message;
+                  const { progress, file, isComplete, fileType } =
+                    event.message;
+                  let { bytesTransferred } = event.message;
 
                   _console.log(
                     "intercepted fileTransferProgress",
                     event.message,
+                    { sentToDevice },
                   );
+
+                  const deviceMessages: DeviceMessage[] = [];
 
                   if (isComplete) {
                     switch (fileType) {
@@ -1223,7 +1234,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                             device.parseDisplaySpriteSheet(
                               dataView,
                               device.pendingDisplaySpriteSheetName,
-                              false,
                             );
                           if (!isClientSending) {
                             device.displayManager.pendingSpriteSheet =
@@ -1237,9 +1247,14 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                     }
                   }
 
-                  if (isClientSending) {
-                    _console.log("still sending local file...", event.message);
+                  {
                     const dataView = new DataView(new ArrayBuffer(4));
+                    if (sentToDevice) {
+                      // bytesTransferred += device.fileHeaderLength!;
+                      // _console.log(
+                      //   `modified bytesTransferred to ${bytesTransferred} (+${device.fileHeaderLength})`,
+                      // );
+                    }
                     dataView.setUint32(0, bytesTransferred, true);
                     const fileBytesTransferredDeviceMessage =
                       this.#createDeviceMessage(
@@ -1248,48 +1263,49 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                         dataView,
                       );
 
-                    const deviceMessages: DeviceMessage[] = [];
                     deviceMessages.push(fileBytesTransferredDeviceMessage);
+                  }
 
-                    if (isComplete) {
-                      this.#clientsSending.delete(device);
-                      device._onRemoteConnectionMessageSent(
-                        "fileTransferStatus",
-                        enumToDataView(FileTransferStatuses, "idle"),
-                        false,
-                      );
+                  if (isClientSending && isComplete) {
+                    this.#clientsSending.delete(device);
+                    device._onRemoteConnectionMessageSent(
+                      "fileTransferStatus",
+                      enumToDataView(FileTransferStatuses, "idle"),
+                      false,
+                    );
 
-                      _console.log(
-                        "done sending local file - notifying client...",
-                      );
-                      const fileTransferStatusDeviceMessage =
-                        this.#createDeviceMessage(device, "fileTransferStatus");
-                      deviceMessages.push(fileTransferStatusDeviceMessage);
+                    _console.log(
+                      "done sending local file - notifying client...",
+                    );
+                    const fileTransferStatusDeviceMessage =
+                      this.#createDeviceMessage(device, "fileTransferStatus");
+                    deviceMessages.push(fileTransferStatusDeviceMessage);
 
-                      let followUpDeviceMessage: DeviceMessage | undefined;
-                      switch (fileType) {
-                        case "tflite":
-                          followUpDeviceMessage = this.#createDeviceMessage(
-                            device,
-                            "tfliteIsReady",
-                          );
-                          break;
-                        case "spriteSheet":
-                          followUpDeviceMessage = this.#createDeviceMessage(
-                            device,
-                            "displaySpriteSheetIndex",
-                          );
-                          break;
-                      }
-                      if (followUpDeviceMessage) {
-                        _console.log(
-                          "followUpDeviceMessage",
-                          followUpDeviceMessage,
+                    let followUpDeviceMessage: DeviceMessage | undefined;
+                    switch (fileType) {
+                      case "tflite":
+                        followUpDeviceMessage = this.#createDeviceMessage(
+                          device,
+                          "tfliteIsReady",
                         );
-                        deviceMessages.push(followUpDeviceMessage);
-                      }
+                        break;
+                      case "spriteSheet":
+                        followUpDeviceMessage = this.#createDeviceMessage(
+                          device,
+                          "displaySpriteSheetIndex",
+                        );
+                        break;
                     }
+                    if (followUpDeviceMessage) {
+                      _console.log(
+                        "followUpDeviceMessage",
+                        followUpDeviceMessage,
+                      );
+                      deviceMessages.push(followUpDeviceMessage);
+                    }
+                  }
 
+                  if (deviceMessages.length > 0) {
                     this.sendToClient(
                       client,
                       this.#createDeviceServerMessage(
@@ -1308,7 +1324,49 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 _console.log("parsing client file block locally");
                 device._onRemoteConnectionMessageSent(messageType, dataView);
                 return;
+              } else {
+                if (isDeviceConnectedDirectly) {
+                  const { fileBytesTransferred } = device;
+                  const fileHeaderLength =
+                    device.fileHeaderLength ?? message.data.getUint16(0, true);
+
+                  const headerBytesRemaining = Math.max(
+                    0,
+                    fileHeaderLength - fileBytesTransferred,
+                  );
+                  const didSendHeader = headerBytesRemaining == 0;
+                  _console.log({
+                    fileBytesTransferred,
+                    fileHeaderLength,
+                    headerBytesRemaining,
+                    didSendHeader,
+                  });
+
+                  const data = message.data as DataView;
+
+                  if (!didSendHeader) {
+                    const nonHeaderData =
+                      data.buffer.slice(headerBytesRemaining);
+
+                    _console.log("nonHeaderData", nonHeaderData);
+
+                    if (nonHeaderData.byteLength > 0) {
+                      _console.log("relaying nonHeaderData", nonHeaderData);
+                      message.data = nonHeaderData;
+                    } else {
+                      _console.log(
+                        "nonHeaderData is empty - parsing client file block locally",
+                      );
+                      device._onRemoteConnectionMessageSent(
+                        messageType,
+                        dataView,
+                      );
+                      return;
+                    }
+                  }
+                }
               }
+              sentToDevice = true;
             }
             break;
         }

@@ -8,6 +8,7 @@ import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
 import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, DisplaySpriteSheet, DisplaySpriteLines } from "./utils/DisplaySpriteSheetUtils.ts";
 import { default as DisplayCanvasHelper } from "./utils/DisplayCanvasHelper.ts";
+import { ConnectionType } from "./connection/BaseConnectionManager.ts";
 export declare const DefaultNumberOfDisplayColors = 16;
 export declare const DisplayCommands: readonly ["sleep", "wake"];
 export type DisplayCommand = (typeof DisplayCommands)[number];
@@ -298,6 +299,8 @@ declare class DisplayManager implements DisplayManagerInterface {
     serializeSpriteSheet(spriteSheet: DisplaySpriteSheet, includeHeader?: boolean, displayCanvasHelper?: DisplayCanvasHelper): ArrayBuffer;
     parseSpriteSheet(dataView: DataView<ArrayBuffer>, name?: string, includesHeader?: boolean, displayCanvasHelper?: DisplayCanvasHelper): DisplaySpriteSheet;
     uploadSpriteSheet(spriteSheet: DisplaySpriteSheet, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
+    connectionType?: ConnectionType;
+    get isClientConnectionType(): boolean;
     uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
     assertSelectedSpriteSheet(spriteSheetName: string): void;

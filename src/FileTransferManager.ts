@@ -1,6 +1,10 @@
 import { createConsole } from "./utils/Console.ts";
 import { crc32 } from "./utils/checksum.ts";
-import { getFileBuffer, UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
+import {
+  concatenateArrayBuffers,
+  getFileBuffer,
+  UInt8ByteBuffer,
+} from "./utils/ArrayBufferUtils.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
@@ -8,6 +12,9 @@ import autoBind from "auto-bind";
 import { ConnectionType } from "./connection/BaseConnectionManager.ts";
 
 const _console = createConsole("FileTransferManager", { log: true });
+
+const emptyHeaderDataView = new DataView(new ArrayBuffer(2));
+emptyHeaderDataView.setUint16(0, 0, true);
 
 export const FileTransferMessageTypes = [
   "getFileTypes",
@@ -117,6 +124,7 @@ export type SendFileTransferMessageCallback =
 export type SendFileCallback = (
   fileType: FileType,
   file: FileLike,
+  includesHeader?: boolean,
 ) => Promise<boolean>;
 
 class FileTransferManager {
@@ -356,9 +364,12 @@ class FileTransferManager {
       fileTransferStatus: status,
       fileType: this.type!,
     });
-    if (this.#isRequesting && this.status != "receiving") {
-      this.#isRequesting = false;
+    if (this.#isRequestingReceive && this.status != "receiving") {
+      this.#isRequestingReceive = false;
     }
+    // if (this.status == "sending" && !this.#file) {
+    //   this.#headerLength = undefined;
+    // }
   }
   #assertIsIdle() {
     _console.assertWithError(this.#status == "idle", "status is not idle");
@@ -378,6 +389,7 @@ class FileTransferManager {
       (sum, arrayBuffer) => (sum += arrayBuffer.byteLength),
       0,
     );
+    this.#bytesTransferred = bytesReceived;
     const progress = bytesReceived / this.#length;
 
     _console.log(
@@ -386,7 +398,7 @@ class FileTransferManager {
       } bytes remaining`,
     );
 
-    const indirectly = !this.#isRequesting;
+    const indirectly = !this.#isRequestingReceive;
     const fileType = this.type!;
     let file: FileOrBlob | undefined;
     const isComplete = progress == 1;
@@ -396,7 +408,7 @@ class FileTransferManager {
       _console.assertWithError(file, "file not created");
       _console.log("received file", file);
     } else {
-      if (this.#isRequesting) {
+      if (this.#isRequestingReceive) {
         const dataView = new DataView(new ArrayBuffer(4));
         dataView.setUint32(0, bytesReceived, true);
         _console.log("sending fileBytesTransferred", { bytesReceived });
@@ -408,11 +420,12 @@ class FileTransferManager {
       }
     }
 
+    const direction: FileTransferDirection = "receiving";
     this.#dispatchEvent("fileTransferProgress", {
       progress,
       fileType,
-      direction: "receiving",
-      bytesTransferred: bytesReceived,
+      direction,
+      bytesTransferred: this.#bytesTransferred,
       isComplete,
       file,
       indirectly,
@@ -423,7 +436,7 @@ class FileTransferManager {
       file = file!;
 
       this.#dispatchEvent("fileTransferComplete", {
-        direction: "receiving",
+        direction,
         fileType,
         file,
         indirectly,
@@ -483,7 +496,8 @@ class FileTransferManager {
   }
 
   #file: FileOrBlob | undefined;
-  async send(type: FileType, file: FileLike) {
+  async send(type: FileType, file: FileLike, includesHeader?: boolean) {
+    _console.log("send", { type, includesHeader }, file);
     if (true) {
       this.#assertIsIdle();
       this.#assertValidType(type);
@@ -498,9 +512,33 @@ class FileTransferManager {
       }
     }
 
-    const fileBuffer = await getFileBuffer(file);
-    const fileLength = fileBuffer.byteLength;
-    const checksum = crc32(fileBuffer);
+    let fileBuffer = await getFileBuffer(file);
+    let fileBufferWithoutHeader: ArrayBuffer;
+    if (includesHeader) {
+      const fileDataView = new DataView(fileBuffer);
+
+      let offset = 0;
+      const headerLength = fileDataView.getUint16(offset, true);
+      _console.log({ headerLength });
+      this.#headerLength = headerLength;
+      // offset += 2; // headerLength includes "headerLength" itself
+
+      offset += headerLength;
+      fileBufferWithoutHeader = fileBuffer.slice(offset);
+    } else {
+      this.#headerLength = 2;
+      fileBufferWithoutHeader = fileBuffer;
+      fileBuffer = concatenateArrayBuffers(
+        emptyHeaderDataView.buffer,
+        fileBufferWithoutHeader,
+      );
+    }
+
+    _console.log({ fileBuffer, fileBufferWithoutHeader });
+
+    const fileLength = fileBufferWithoutHeader.byteLength;
+    const checksum = crc32(fileBufferWithoutHeader);
+    _console.log({ checksum, fileLength });
     this.#assertValidLength(fileLength);
 
     if (type != this.type) {
@@ -510,7 +548,7 @@ class FileTransferManager {
     } else if (checksum != this.checksum) {
       _console.log("different fileChecksums - sending");
     } else {
-      _console.log("already sent file");
+      _console.log("already attempted to send file");
       // return false;
     }
 
@@ -547,15 +585,21 @@ class FileTransferManager {
       return false;
     }
 
+    // if the file was attempted to be transferred twice, can we reuse this.#file?
     this.#file = await this.#createFile([fileBuffer]);
 
-    await this.#send(fileBuffer);
+    await this.#send(
+      this.isClientConnectionType ? fileBuffer : fileBufferWithoutHeader,
+    );
 
     return true;
   }
 
   #buffer?: ArrayBuffer;
   #bytesTransferred = 0;
+  get bytesTransferred() {
+    return this.#bytesTransferred;
+  }
   async #send(buffer: ArrayBuffer) {
     this.#buffer = buffer;
     return this.#sendBlock();
@@ -594,11 +638,12 @@ class FileTransferManager {
     const fileType = this.type!;
 
     const file = this.#file!;
+    const direction: FileTransferDirection = "sending";
 
     this.#dispatchEvent("fileTransferProgress", {
       progress,
       fileType,
-      direction: "sending",
+      direction,
       bytesTransferred: this.#bytesTransferred,
       isComplete,
       file: isComplete ? file : undefined,
@@ -616,7 +661,7 @@ class FileTransferManager {
       _console.log("sent file directly", sentFileConfiguration);
       this.sentFileConfigurations.push(sentFileConfiguration);
       this.#dispatchEvent("fileTransferComplete", {
-        direction: "sending",
+        direction,
         fileType,
         file,
       });
@@ -652,8 +697,14 @@ class FileTransferManager {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const checksum = crc32(arrayBuffer);
-    _console.log({ checksum });
+    const arrayBufferWithoutHeader = arrayBuffer.slice(this.#headerLength);
+    const checksum = crc32(arrayBufferWithoutHeader);
+    _console.log({
+      arrayBuffer,
+      arrayBufferWithoutHeader,
+      checksum,
+      headerLength: this.#headerLength,
+    });
 
     if (checksum != this.#checksum) {
       _console.error(
@@ -680,6 +731,10 @@ class FileTransferManager {
     _console.log("sentFileConfiguration", sentFileConfiguration);
     return sentFileConfiguration;
   }
+  #headerLength?: number;
+  get headerLength() {
+    return this.#headerLength;
+  }
   async #parseSentFileBlock(
     dataView: DataView<ArrayBuffer>,
     isSending?: boolean,
@@ -689,18 +744,26 @@ class FileTransferManager {
       return;
     }
 
+    if (this.#indirectSentBlocks.length == 0) {
+      const headerLength = dataView.getUint16(0, true);
+      _console.log({ headerLength });
+      this.#headerLength = headerLength;
+    }
+
     this.#indirectSentBlocks.push(dataView.buffer);
 
     const bytesReceived = this.#indirectSentBlocks.reduce(
       (sum, arrayBuffer) => (sum += arrayBuffer.byteLength),
       0,
     );
-    const progress = bytesReceived / this.#length;
+    this.#bytesTransferred = bytesReceived;
+    const lengthPlusHeader = this.#length + (this.headerLength ?? 0);
+    const progress = bytesReceived / lengthPlusHeader;
     const isComplete = progress == 1;
 
     _console.log(
-      `sent ${bytesReceived}/${this.#length} bytes indirectly (${progress * 100}%) - ${
-        this.#length - bytesReceived
+      `sent ${bytesReceived}/${lengthPlusHeader} bytes indirectly (${progress * 100}%) - ${
+        lengthPlusHeader - bytesReceived
       } bytes remaining`,
     );
 
@@ -714,12 +777,14 @@ class FileTransferManager {
       _console.log("file transfer complete", file);
     }
 
+    const direction: FileTransferDirection = "sending";
+
     this.#dispatchEvent("fileTransferProgress", {
       isComplete,
       progress,
       fileType,
-      direction: "sending",
-      bytesTransferred: bytesReceived,
+      direction,
+      bytesTransferred: this.#bytesTransferred,
       indirectly,
       file,
     });
@@ -751,7 +816,7 @@ class FileTransferManager {
       _console.log("sent file indirectly", sentFileConfiguration);
 
       this.#dispatchEvent("fileTransferComplete", {
-        direction: "sending",
+        direction,
         fileType,
         file,
         indirectly,
@@ -793,13 +858,13 @@ class FileTransferManager {
     this.#sendBlock();
   }
 
-  #isRequesting = false;
+  #isRequestingReceive = false;
   async receive(type: FileType) {
     this.#assertIsIdle();
 
     this.#assertValidType(type);
 
-    this.#isRequesting = true;
+    this.#isRequestingReceive = true;
     await this.#setType(type);
     await this.#setCommand("startReceive");
   }
@@ -836,10 +901,14 @@ class FileTransferManager {
     // @ts-expect-error
     this.mtu = undefined;
     this.#file = undefined;
-    this.#isRequesting = false;
+    this.#isRequestingReceive = false;
+    this.#headerLength = undefined;
   }
 
   connectionType?: ConnectionType;
+  get isClientConnectionType() {
+    return this.connectionType == "client";
+  }
 }
 
 export default FileTransferManager;

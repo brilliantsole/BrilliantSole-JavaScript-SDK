@@ -8,6 +8,7 @@ import typescript from "@rollup/plugin-typescript";
 import { dts } from "rollup-plugin-dts";
 import copy from "rollup-plugin-copy";
 import cleanup from "rollup-plugin-cleanup";
+import { visualizer } from "rollup-plugin-visualizer";
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -138,6 +139,7 @@ const onwarn = (warning) => {
 
 /** @type {RollupOptions} */
 const defaultBuild = {
+  treeshake: true,
   watch: {
     clearScreen: false,
   },

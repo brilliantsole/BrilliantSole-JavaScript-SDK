@@ -113,6 +113,7 @@ import {
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { wait } from "./utils/Timer.ts";
 import { default as DisplayCanvasHelper } from "./utils/DisplayCanvasHelper.ts";
+import { ConnectionType } from "./connection/BaseConnectionManager.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -2920,11 +2921,19 @@ class DisplayManager implements DisplayManagerInterface {
     }
     spriteSheet = structuredClone(spriteSheet);
     this.#pendingSpriteSheet = spriteSheet;
-    const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet);
+    const includeHeader = this.isClientConnectionType;
+    const buffer = this.serializeSpriteSheet(
+      this.#pendingSpriteSheet,
+      includeHeader,
+    );
     await this.#setSpriteSheetName(this.#pendingSpriteSheet.name);
     const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
-    this.sendFile("spriteSheet", buffer);
+    this.sendFile("spriteSheet", buffer, includeHeader);
     await promise;
+  }
+  connectionType?: ConnectionType;
+  get isClientConnectionType() {
+    return this.connectionType == "client";
   }
   async uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
     for (const spriteSheet of spriteSheets) {
