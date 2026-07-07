@@ -113,10 +113,6 @@ displayCanvasHelper.addEventListener("color", (event) => {
   displayColorInputs[colorIndex].value = colorHex;
 });
 setupColors();
-displayCanvasHelper.setColor(1, "white");
-displayCanvasHelper.setColor(2, "turquoise");
-displayCanvasHelper.setColor(3, "red");
-displayCanvasHelper.flushContextCommands();
 
 // DRAW
 let isDrawing = false;
@@ -180,6 +176,8 @@ const draw = async () => {
   await displayCanvasHelper.setColor(1, "white");
   await displayCanvasHelper.setColor(2, "turquoise");
   await displayCanvasHelper.setColor(3, "red");
+  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  await displayCanvasHelper.selectSpriteSheet(fontSpriteSheet.name);
 
   if (mapData) {
     await displayCanvasHelper.saveContext();
@@ -1372,6 +1370,8 @@ selectFontSelect.addEventListener("input", async () => {
 /** @type {BS.Font?} */
 let selectedFont;
 let spritesLineHeight = 0;
+/** @type {BS.DisplaySpriteSheet} */
+let fontSpriteSheet;
 const selectFont = async (newFontName) => {
   const newFont = fonts[newFontName][0];
   selectedFont = newFont;
@@ -1384,9 +1384,9 @@ const selectFont = async (newFontName) => {
   const spriteSheet = fontSpriteSheets[newFontName];
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+  fontSpriteSheet = spriteSheet;
   spritesLineHeight = BS.getFontMaxHeight(selectedFont, fontSize);
   //console.log({ spritesLineHeight }, selectedFont, fontSize);
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
 };
 
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");

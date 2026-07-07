@@ -2413,7 +2413,7 @@ declare class Device {
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    get connectionType(): "webSocket" | "udp" | "client" | "noble" | "webBluetooth" | undefined;
+    get connectionType(): "webSocket" | "udp" | "client" | "webBluetooth" | "noble" | undefined;
     disconnect(): Promise<boolean | undefined>;
     toggleConnection(options: ConnectOptions): Promise<void>;
     toggleConnection(reconnect?: boolean): Promise<void>;
@@ -2832,7 +2832,6 @@ interface WindowManagerServerClient {
     didSendMessagePort?: boolean;
     didLoad?: boolean;
     transfer?: Transferable[];
-    origin: string;
 }
 interface WindowManagerServerEventMessages {
     clientConnected: {
@@ -2960,9 +2959,9 @@ declare class ServerManager {
     static readonly shared: ServerManager;
     constructor();
     get servers(): Server[];
-    get addEventListener(): <T extends "*" | "server" | "server*" | "serverClientConnected" | "serverClientDisconnected" | "servers">(type: T, listener: (event: ListenerEvent<ServerManager, "server" | "server*" | "serverClientConnected" | "serverClientDisconnected" | "servers", ServerManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "*" | "server" | "server*" | "serverClientConnected" | "serverClientDisconnected" | "servers">(type: T, listener: (event: ListenerEvent<ServerManager, "server" | "server*" | "serverClientConnected" | "serverClientDisconnected" | "servers", ServerManagerEventMessages, T>) => void) => void;
-    get removeEventListeners(): <T extends "*" | "server" | "server*" | "serverClientConnected" | "serverClientDisconnected" | "servers">(type: T) => void;
+    get addEventListener(): <T extends "*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "server*" | "servers">(type: T, listener: (event: ListenerEvent<ServerManager, "server" | "serverClientConnected" | "serverClientDisconnected" | "server*" | "servers", ServerManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "server*" | "servers">(type: T, listener: (event: ListenerEvent<ServerManager, "server" | "serverClientConnected" | "serverClientDisconnected" | "server*" | "servers", ServerManagerEventMessages, T>) => void) => void;
+    get removeEventListeners(): <T extends "*" | "server" | "serverClientConnected" | "serverClientDisconnected" | "server*" | "servers">(type: T) => void;
     private broadcast;
     clientToServerGuardManager: GuardManager<[BaseServerClientGuardManagerArg]>;
     serverToClientGuardManager: GuardManager<[BaseServerClientGuardManagerArg]>;
@@ -3027,9 +3026,9 @@ declare class ClientManager {
     static readonly shared: ClientManager;
     constructor();
     get clients(): Client[];
-    get addEventListener(): <T extends "clientConnected" | "*" | "client" | "clients" | "client*" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning">(type: T, listener: (event: ListenerEvent<ClientManager, "clientConnected" | "client" | "clients" | "client*" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning", ClientManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "clientConnected" | "*" | "client" | "clients" | "client*" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning">(type: T, listener: (event: ListenerEvent<ClientManager, "clientConnected" | "client" | "clients" | "client*" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning", ClientManagerEventMessages, T>) => void) => void;
-    get removeEventListeners(): <T extends "clientConnected" | "*" | "client" | "clients" | "client*" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning">(type: T) => void;
+    get addEventListener(): <T extends "clientConnected" | "*" | "client" | "clients" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning" | "client*">(type: T, listener: (event: ListenerEvent<ClientManager, "clientConnected" | "client" | "clients" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning" | "client*", ClientManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "clientConnected" | "*" | "client" | "clients" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning" | "client*">(type: T, listener: (event: ListenerEvent<ClientManager, "clientConnected" | "client" | "clients" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning" | "client*", ClientManagerEventMessages, T>) => void) => void;
+    get removeEventListeners(): <T extends "clientConnected" | "*" | "client" | "clients" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning" | "client*">(type: T) => void;
 }
 declare const _default$2: ClientManager;
 

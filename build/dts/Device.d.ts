@@ -64,7 +64,7 @@ declare class Device {
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    get connectionType(): "webSocket" | "udp" | "client" | "noble" | "webBluetooth" | undefined;
+    get connectionType(): "webSocket" | "udp" | "client" | "webBluetooth" | "noble" | undefined;
     disconnect(): Promise<boolean | undefined>;
     toggleConnection(options: ConnectOptions): Promise<void>;
     toggleConnection(reconnect?: boolean): Promise<void>;

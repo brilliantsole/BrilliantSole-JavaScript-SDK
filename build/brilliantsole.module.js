@@ -33302,7 +33302,7 @@ let WindowServer$1 = (() => {
 })();
 var WindowServer = WindowServer$1.shared;
 
-const _console$8 = createConsole("WindowManagerServer", { log: false });
+const _console$8 = createConsole("WindowManagerServer", { log: true });
 const WindowManagerServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -33410,7 +33410,7 @@ let WindowManagerServer = (() => {
         #boundWindowEventListeners = {
             message: this.#onWindowMessage.bind(this),
         };
-        #onWindowMessage(event) {
+        async #onWindowMessage(event) {
             if (event.source == window) {
                 return;
             }
@@ -33432,6 +33432,7 @@ let WindowManagerServer = (() => {
                     _console$8.error("no iframe found for event", event);
                     return;
                 }
+                await this.#waitForIFrameToLoad(iframe);
                 client = this.#createClient(iframe);
                 if (!client) {
                     return;
@@ -33442,23 +33443,28 @@ let WindowManagerServer = (() => {
             _console$8.log(`received ${dataView.byteLength} bytes via window`, dataView.buffer);
             this.#parseWindowManagerClientMessage(client, dataView);
         }
+        async #waitForIFrameToLoad(iframe) {
+            _console$8.log("waitForIFrameToLoad", iframe);
+            await new Promise((resolve) => {
+                if (iframe.contentDocument?.readyState === "complete") {
+                    _console$8.log("iframe complete");
+                    resolve();
+                }
+                else {
+                    _console$8.log("waiting for iframe to load...");
+                    iframe.addEventListener("load", () => resolve(), { once: true });
+                }
+            });
+        }
         #createClient(iframe) {
-            try {
-                const { origin } = new URL(iframe.src);
-                addEventListeners(iframe, this.#boundIframeEventListeners);
-                const client = {
-                    iframe,
-                    type: "window",
-                    origin,
-                };
-                this.#clients.push(client);
-                this.#dispatchEvent("clientConnected", { client });
-                return client;
-            }
-            catch (error) {
-                _console$8.error(`failed to create origin for client ${iframe.src}`);
-                return;
-            }
+            addEventListeners(iframe, this.#boundIframeEventListeners);
+            const client = {
+                iframe,
+                type: "window",
+            };
+            this.#clients.push(client);
+            this.#dispatchEvent("clientConnected", { client });
+            return client;
         }
         #destroyClient(client) {
             _console$8.log("onClientDisconnected", client);

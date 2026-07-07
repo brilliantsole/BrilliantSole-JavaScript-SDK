@@ -20,7 +20,7 @@ import { default as WindowServer } from "../server/window/WindowServer.ts";
 import { Singleton } from "../utils/TypeScriptUtils.ts";
 import { BaseServerClientContext } from "../server/BaseServer.ts";
 
-const _console = createConsole("WindowManagerServer", { log: false });
+const _console = createConsole("WindowManagerServer", { log: true });
 
 export interface WindowManagerServerClient {
   type: "window";
@@ -29,7 +29,6 @@ export interface WindowManagerServerClient {
   didSendMessagePort?: boolean;
   didLoad?: boolean;
   transfer?: Transferable[];
-  origin: string;
 }
 export interface WindowManagerServerClientContext extends BaseServerClientContext<WindowManagerServerClient> {
   transfer: Transferable[];
@@ -182,7 +181,7 @@ class WindowManagerServer {
   } = {
     message: this.#onWindowMessage.bind(this),
   };
-  #onWindowMessage(event: WindowEventMap["message"]) {
+  async #onWindowMessage(event: WindowEventMap["message"]) {
     if (event.source == window) {
       return;
     }
@@ -208,6 +207,7 @@ class WindowManagerServer {
         _console.error("no iframe found for event", event);
         return;
       }
+      // await this.#waitForIFrameToLoad(iframe);
       client = this.#createClient(iframe);
       if (!client) {
         return;
@@ -221,23 +221,28 @@ class WindowManagerServer {
     );
     this.#parseWindowManagerClientMessage(client, dataView);
   }
+  async #waitForIFrameToLoad(iframe: HTMLIFrameElement) {
+    _console.log("waitForIFrameToLoad", iframe);
+    await new Promise<void>((resolve) => {
+      if (iframe.contentDocument?.readyState === "complete") {
+        _console.log("iframe complete");
+        resolve();
+      } else {
+        _console.log("waiting for iframe to load...");
+        iframe.addEventListener("load", () => resolve(), { once: true });
+      }
+    });
+  }
 
   #createClient(iframe: HTMLIFrameElement) {
-    try {
-      const { origin } = new URL(iframe.src);
-      addEventListeners(iframe, this.#boundIframeEventListeners);
-      const client: WindowManagerServerClient = {
-        iframe,
-        type: "window",
-        origin,
-      };
-      this.#clients.push(client);
-      this.#dispatchEvent("clientConnected", { client });
-      return client;
-    } catch (error) {
-      _console.error(`failed to create origin for client ${iframe.src}`);
-      return;
-    }
+    addEventListeners(iframe, this.#boundIframeEventListeners);
+    const client: WindowManagerServerClient = {
+      iframe,
+      type: "window",
+    };
+    this.#clients.push(client);
+    this.#dispatchEvent("clientConnected", { client });
+    return client;
   }
   #destroyClient(client: WindowManagerServerClient) {
     _console.log("onClientDisconnected", client);
