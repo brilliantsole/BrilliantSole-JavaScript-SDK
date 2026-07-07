@@ -163,6 +163,11 @@ const draw = async () => {
     isWaitingToRedraw = true;
     return;
   }
+  if (!displayCanvasHelper.spriteSheets["english"]) {
+    console.log("no english yet");
+    isWaitingToRedraw = true;
+    return;
+  }
 
   if (isDrawing) {
     //console.warn("busy drawing");

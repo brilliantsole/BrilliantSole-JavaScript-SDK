@@ -530,6 +530,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #onDeviceNotConnected(event: DeviceEventMap["notConnected"]) {
     _console.log("device not connected");
     this.#dispatchEvent("deviceNotConnected", { device: this.device! });
+    this.#setIsReady(true);
   }
   async #onDeviceDisplayReady(event: DeviceEventMap["displayReady"]) {
     _console.log("device display ready");
@@ -4206,14 +4207,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       _console.log("overwrite device pendingSpriteSheet");
       this.deviceDisplayManager!.pendingSpriteSheet = spriteSheet;
     }
-    if (!this.#spriteSheets[spriteSheet.name]) {
-      this.#spriteSheetIndices[spriteSheet.name] = Object.keys(
-        this.#spriteSheets,
-      ).length;
-    }
     this.#spriteSheets[spriteSheet.name] = spriteSheet;
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.uploadSpriteSheet(spriteSheet, this);
+      this.#spriteSheetIndices[spriteSheet.name] =
+        this.deviceDisplayManager!.spriteSheetIndices[spriteSheet.name];
+    } else {
+      this.#spriteSheetIndices[spriteSheet.name] = Object.keys(
+        this.#spriteSheets,
+      ).length;
     }
   }
   async uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {

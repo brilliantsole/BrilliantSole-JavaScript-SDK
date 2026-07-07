@@ -910,7 +910,6 @@ const selectFont = async (newFontName) => {
   console.log({ spritesLineHeight });
   // await BS.wait(1000);
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
-  await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
   await draw();
 };
 

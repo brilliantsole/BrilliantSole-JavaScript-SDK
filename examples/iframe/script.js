@@ -8,6 +8,8 @@ window.BS = BS;
 // BS.setConsoleLevelFlagsForType("BaseServer", { log: true });
 // BS.setConsoleLevelFlagsForType("WindowManagerServer", { log: true });
 BS.setConsoleLevelFlagsForType("Device", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayManagerInterface", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
 
 // WEBSOCKET CLIENT
 const client = new BS.WebSocketClient();

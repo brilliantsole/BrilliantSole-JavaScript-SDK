@@ -757,6 +757,10 @@ export async function runDisplayContextCommand(
   sendImmediately?: boolean,
   isSending?: boolean,
 ) {
+  _console.log("runDisplayContextCommand", command, {
+    sendImmediately,
+    isSending,
+  });
   if (command.hide) {
     return;
   }

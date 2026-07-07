@@ -9334,6 +9334,10 @@ class DisplayContextStateHelper {
 
 const _console$v = createConsole("DisplayManagerInterface", { log: false });
 async function runDisplayContextCommand(displayManager, command, sendImmediately, isSending) {
+    _console$v.log("runDisplayContextCommand", command, {
+        sendImmediately,
+        isSending,
+    });
     if (command.hide) {
         return;
     }
@@ -11944,7 +11948,7 @@ let DisplayManager = (() => {
             this.#spriteSheets[this.#pendingSpriteSheetName] =
                 this.#pendingSpriteSheet;
             this.#spriteSheetIndices[this.#pendingSpriteSheetName] = spriteSheetIndex;
-            _console$u.log(`finished uploading "${this.#pendingSpriteSheetName}" spriteSheet`);
+            _console$u.log(`finished uploading "${this.#pendingSpriteSheetName}" spriteSheet at spriteSheetIndex ${spriteSheetIndex}`);
             this.#dispatchEvent("displaySpriteSheetUploadComplete", {
                 spriteSheetName: this.#pendingSpriteSheetName,
                 spriteSheet: this.#pendingSpriteSheet,

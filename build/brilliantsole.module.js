@@ -24382,6 +24382,10 @@ class DisplayContextStateHelper {
 
 const _console$w = createConsole("DisplayManagerInterface", { log: false });
 async function runDisplayContextCommand(displayManager, command, sendImmediately, isSending) {
+    _console$w.log("runDisplayContextCommand", command, {
+        sendImmediately,
+        isSending,
+    });
     if (command.hide) {
         return;
     }
@@ -26993,7 +26997,7 @@ let DisplayManager = (() => {
             this.#spriteSheets[this.#pendingSpriteSheetName] =
                 this.#pendingSpriteSheet;
             this.#spriteSheetIndices[this.#pendingSpriteSheetName] = spriteSheetIndex;
-            _console$v.log(`finished uploading "${this.#pendingSpriteSheetName}" spriteSheet`);
+            _console$v.log(`finished uploading "${this.#pendingSpriteSheetName}" spriteSheet at spriteSheetIndex ${spriteSheetIndex}`);
             this.#dispatchEvent("displaySpriteSheetUploadComplete", {
                 spriteSheetName: this.#pendingSpriteSheetName,
                 spriteSheet: this.#pendingSpriteSheet,
@@ -33302,7 +33306,7 @@ let WindowServer = (() => {
 })();
 var WindowServer$1 = WindowServer.shared;
 
-const _console$8 = createConsole("WindowManagerServer", { log: true });
+const _console$8 = createConsole("WindowManagerServer", { log: false });
 const WindowManagerServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -34121,6 +34125,7 @@ class DisplayCanvasHelper {
     #onDeviceNotConnected(event) {
         _console$5.log("device not connected");
         this.#dispatchEvent("deviceNotConnected", { device: this.device });
+        this.#setIsReady(true);
     }
     async #onDeviceDisplayReady(event) {
         _console$5.log("device display ready");
@@ -36218,12 +36223,14 @@ class DisplayCanvasHelper {
             _console$5.log("overwrite device pendingSpriteSheet");
             this.deviceDisplayManager.pendingSpriteSheet = spriteSheet;
         }
-        if (!this.#spriteSheets[spriteSheet.name]) {
-            this.#spriteSheetIndices[spriteSheet.name] = Object.keys(this.#spriteSheets).length;
-        }
         this.#spriteSheets[spriteSheet.name] = spriteSheet;
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.uploadSpriteSheet(spriteSheet, this);
+            this.#spriteSheetIndices[spriteSheet.name] =
+                this.deviceDisplayManager.spriteSheetIndices[spriteSheet.name];
+        }
+        else {
+            this.#spriteSheetIndices[spriteSheet.name] = Object.keys(this.#spriteSheets).length;
         }
     }
     async uploadSpriteSheets(spriteSheets) {

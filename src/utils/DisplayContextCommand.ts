@@ -16,7 +16,7 @@ import {
   concatenateArrayBuffers,
   UInt8ByteBuffer,
 } from "./ArrayBufferUtils.ts";
-import { rgbToHex, stringToRGB } from "./ColorUtils.ts";
+import { stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import {
   drawBitmapHeaderLength,
@@ -28,8 +28,6 @@ import {
   diffContextState,
   DisplayAlignment,
   DisplayAlignments,
-  DisplayContextState,
-  DisplayContextStateKey,
   DisplayDirection,
   DisplayDirections,
   DisplaySegmentCap,
@@ -51,7 +49,6 @@ import {
   assertValidPath,
   assertValidSegmentCap,
   assertValidWireframe,
-  DisplayColorRGB,
   formatRotation,
   formatScale,
   maxDisplayScale,

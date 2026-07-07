@@ -66,7 +66,6 @@ import {
 import {
   DisplayContextCommand,
   DisplayContextCommandType,
-  DisplayContextCommandTypes,
   parseDisplayContextCommands,
   serializeContextState,
   serializeDisplayContextCommand,
@@ -3349,7 +3348,7 @@ class DisplayManager implements DisplayManagerInterface {
       this.#pendingSpriteSheet!;
     this.#spriteSheetIndices[this.#pendingSpriteSheetName!] = spriteSheetIndex;
     _console.log(
-      `finished uploading "${this.#pendingSpriteSheetName!}" spriteSheet`,
+      `finished uploading "${this.#pendingSpriteSheetName!}" spriteSheet at spriteSheetIndex ${spriteSheetIndex}`,
     );
     this.#dispatchEvent("displaySpriteSheetUploadComplete", {
       spriteSheetName: this.#pendingSpriteSheetName!,
