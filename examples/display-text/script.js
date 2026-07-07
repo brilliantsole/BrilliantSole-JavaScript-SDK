@@ -148,6 +148,24 @@ deviceStores.glasses.addListener((device) => {
   displayCanvasHelper.device = device;
 });
 
+let textColor = "white";
+const textColorIndex = 1;
+let backgroundColor = "black";
+const backgroundColorIndex = 2;
+displayCanvasHelper.addEventListener("color", (event) => {
+  const { colorHex, colorIndex } = event.message;
+  switch (colorIndex) {
+    case textColorIndex:
+      textColor = colorHex;
+      _console.log({ textColor });
+      break;
+    case backgroundColorIndex:
+      backgroundColor = colorHex;
+      _console.log({ backgroundColor });
+      break;
+  }
+});
+
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
@@ -178,6 +196,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
   100,
   true,
 );
+
 /** @type {HTMLInputElement[]} */
 const displayColorInputs = [];
 /** @type {HTMLInputElement[]} */
@@ -274,9 +293,12 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  await displayCanvasHelper.setColor(1, "white");
+  await displayCanvasHelper.setColor(textColorIndex, textColor);
+  await displayCanvasHelper.selectFillColor(textColorIndex);
+
+  await displayCanvasHelper.setColor(backgroundColorIndex, backgroundColor);
+  await displayCanvasHelper.selectBackgroundColor(backgroundColorIndex);
   await displayCanvasHelper.setFillBackground(true);
-  await displayCanvasHelper.selectBackgroundColor(2);
   await displayCanvasHelper.selectSpriteColor(0, 2);
 
   const text = textarea.value;

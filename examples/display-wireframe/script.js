@@ -262,6 +262,7 @@ const draw = async () => {
   await displayCanvasHelper.setColor(intersectingColorIndex, "lightgreen");
   await displayCanvasHelper.setColor(draggingColorIndex, "green");
   await displayCanvasHelper.setColor(boxColorIndex, "#00BFFF");
+  await displayCanvasHelper.selectFillColor(1);
   await displayCanvasHelper.setSegmentRadius(2);
 
   switch (mode) {

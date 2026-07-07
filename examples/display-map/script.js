@@ -185,6 +185,7 @@ const draw = async () => {
   await displayCanvasHelper.selectSpriteSheet(fontSpriteSheet.name);
   await displayCanvasHelper.setVerticalAlignment("center");
   await displayCanvasHelper.setHorizontalAlignment("center");
+  await displayCanvasHelper.selectFillColor(1);
 
   if (mapData) {
     // console.log("drawing map...");
