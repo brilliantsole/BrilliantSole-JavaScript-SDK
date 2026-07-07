@@ -993,13 +993,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   // CONTEXT COMMANDS
   #contextStack: DisplayContextState[] = [];
   async #saveContext(sendImmediately?: boolean) {
-    this.#contextStack.push(structuredClone(this.contextState));
+    const savedContext = structuredClone(this.contextState);
+    _console.log("savedContext", savedContext);
+    this.#contextStack.push(savedContext);
     if (!this.#ignoreDevice) {
       await this.#updateDeviceContextState(sendImmediately);
     }
   }
   async saveContext(sendImmediately?: boolean, isSending?: boolean) {
-    //_console.log("saveContext");
+    _console.log("saveContext");
     if (true) {
       await this.#saveContext(sendImmediately);
     } else {
@@ -1013,12 +1015,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   async #restoreContext(sendImmediately?: boolean) {
-    const contextState = this.#contextStack.pop();
-    if (!contextState) {
+    const restoredContextState = this.#contextStack.pop();
+    if (!restoredContextState) {
       _console.warn("#contextStack empty");
       return;
     }
-    this.#contextStateHelper.update(contextState);
+    _console.log("restoredContextState", restoredContextState);
+    this.#contextStateHelper.update(restoredContextState);
     if (!this.#ignoreDevice) {
       await this.#updateDeviceContextState(sendImmediately);
     }
@@ -4204,19 +4207,28 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.deviceDisplayManager?.pendingSpriteSheet == spriteSheet;
     spriteSheet = structuredClone(spriteSheet);
     if (isPending) {
-      _console.log("overwrite device pendingSpriteSheet");
+      _console.log("spriteSheet is already pending under device - won't copy");
       this.deviceDisplayManager!.pendingSpriteSheet = spriteSheet;
     }
     this.#spriteSheets[spriteSheet.name] = spriteSheet;
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.uploadSpriteSheet(spriteSheet, this);
-      this.#spriteSheetIndices[spriteSheet.name] =
+      const spriteSheetIndex =
         this.deviceDisplayManager!.spriteSheetIndices[spriteSheet.name];
+      _console.assertWithError(
+        spriteSheetIndex != undefined,
+        `no spriteSheetIndex found for spriteSheetName ${spriteSheet.name}`,
+      );
+      this.#spriteSheetIndices[spriteSheet.name] = spriteSheetIndex;
     } else {
       this.#spriteSheetIndices[spriteSheet.name] = Object.keys(
         this.#spriteSheets,
       ).length;
     }
+
+    _console.log(
+      `updated spriteSheetIndex #${this.#spriteSheetIndices[spriteSheet.name]} for spriteSheet "${spriteSheet.name}"`,
+    );
   }
   async uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
     _console.log("uploadSpriteSheets", spriteSheets);

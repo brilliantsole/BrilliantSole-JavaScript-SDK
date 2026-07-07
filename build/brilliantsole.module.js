@@ -25773,8 +25773,9 @@ let DisplayManager = (() => {
         }
         #contextStack = [];
         async #saveContext(sendImmediately) {
-            _console$v.log("#saveContext", { sendImmediately });
-            this.#contextStack.push(structuredClone(this.contextState));
+            const savedContext = structuredClone(this.contextState);
+            _console$v.log("#saveContext", { sendImmediately }, savedContext);
+            this.#contextStack.push(savedContext);
         }
         async saveContext(sendImmediately, isSending, displayCanvasHelper) {
             _console$v.log("saveContext", { sendImmediately, isSending });
@@ -25784,13 +25785,14 @@ let DisplayManager = (() => {
         }
         async #restoreContext(sendImmediately) {
             _console$v.log("#restoreContext", { sendImmediately });
-            const contextState = this.#contextStack.pop();
-            if (!contextState) {
+            const restoredContext = this.#contextStack.pop();
+            if (!restoredContext) {
                 _console$v.warn("#contextStack empty");
                 return;
             }
+            _console$v.log("restoredContext", restoredContext);
             {
-                const differences = this.#contextStateHelper.update(contextState);
+                const differences = this.#contextStateHelper.update(restoredContext);
                 _console$v.log("restoreContext differences", differences);
             }
         }
@@ -26768,6 +26770,7 @@ let DisplayManager = (() => {
             }
             if (this.#pendingSpriteSheet == spriteSheet) {
                 _console$v.log("spriteSheet already pending");
+                await this.waitForEvent("displaySpriteSheetUploadComplete");
                 return;
             }
             spriteSheet = this.#displayCanvasHelper
@@ -26997,7 +27000,7 @@ let DisplayManager = (() => {
             this.#spriteSheets[this.#pendingSpriteSheetName] =
                 this.#pendingSpriteSheet;
             this.#spriteSheetIndices[this.#pendingSpriteSheetName] = spriteSheetIndex;
-            _console$v.log(`finished uploading "${this.#pendingSpriteSheetName}" spriteSheet at spriteSheetIndex ${spriteSheetIndex}`);
+            _console$v.log(`finished uploading "${this.#pendingSpriteSheetName}" spriteSheet at spriteSheetIndex #${spriteSheetIndex}`);
             this.#dispatchEvent("displaySpriteSheetUploadComplete", {
                 spriteSheetName: this.#pendingSpriteSheetName,
                 spriteSheet: this.#pendingSpriteSheet,
@@ -34449,23 +34452,27 @@ class DisplayCanvasHelper {
     }
     #contextStack = [];
     async #saveContext(sendImmediately) {
-        this.#contextStack.push(structuredClone(this.contextState));
+        const savedContext = structuredClone(this.contextState);
+        _console$5.log("savedContext", savedContext);
+        this.#contextStack.push(savedContext);
         if (!this.#ignoreDevice) {
             await this.#updateDeviceContextState(sendImmediately);
         }
     }
     async saveContext(sendImmediately, isSending) {
+        _console$5.log("saveContext");
         {
             await this.#saveContext(sendImmediately);
         }
     }
     async #restoreContext(sendImmediately) {
-        const contextState = this.#contextStack.pop();
-        if (!contextState) {
+        const restoredContextState = this.#contextStack.pop();
+        if (!restoredContextState) {
             _console$5.warn("#contextStack empty");
             return;
         }
-        this.#contextStateHelper.update(contextState);
+        _console$5.log("restoredContextState", restoredContextState);
+        this.#contextStateHelper.update(restoredContextState);
         if (!this.#ignoreDevice) {
             await this.#updateDeviceContextState(sendImmediately);
         }
@@ -36220,18 +36227,20 @@ class DisplayCanvasHelper {
         const isPending = this.deviceDisplayManager?.pendingSpriteSheet == spriteSheet;
         spriteSheet = structuredClone(spriteSheet);
         if (isPending) {
-            _console$5.log("overwrite device pendingSpriteSheet");
+            _console$5.log("spriteSheet is already pending under device - won't copy");
             this.deviceDisplayManager.pendingSpriteSheet = spriteSheet;
         }
         this.#spriteSheets[spriteSheet.name] = spriteSheet;
         if (this.device?.isConnected && !this.#ignoreDevice) {
             await this.deviceDisplayManager.uploadSpriteSheet(spriteSheet, this);
-            this.#spriteSheetIndices[spriteSheet.name] =
-                this.deviceDisplayManager.spriteSheetIndices[spriteSheet.name];
+            const spriteSheetIndex = this.deviceDisplayManager.spriteSheetIndices[spriteSheet.name];
+            _console$5.assertWithError(spriteSheetIndex != undefined, `no spriteSheetIndex found for spriteSheetName ${spriteSheet.name}`);
+            this.#spriteSheetIndices[spriteSheet.name] = spriteSheetIndex;
         }
         else {
             this.#spriteSheetIndices[spriteSheet.name] = Object.keys(this.#spriteSheets).length;
         }
+        _console$5.log(`updated spriteSheetIndex #${this.#spriteSheetIndices[spriteSheet.name]} for spriteSheet "${spriteSheet.name}"`);
     }
     async uploadSpriteSheets(spriteSheets) {
         _console$5.log("uploadSpriteSheets", spriteSheets);

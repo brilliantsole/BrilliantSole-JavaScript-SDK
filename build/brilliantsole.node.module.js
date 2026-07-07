@@ -10724,8 +10724,9 @@ let DisplayManager = (() => {
         }
         #contextStack = [];
         async #saveContext(sendImmediately) {
-            _console$u.log("#saveContext", { sendImmediately });
-            this.#contextStack.push(structuredClone(this.contextState));
+            const savedContext = structuredClone(this.contextState);
+            _console$u.log("#saveContext", { sendImmediately }, savedContext);
+            this.#contextStack.push(savedContext);
         }
         async saveContext(sendImmediately, isSending, displayCanvasHelper) {
             _console$u.log("saveContext", { sendImmediately, isSending });
@@ -10735,13 +10736,14 @@ let DisplayManager = (() => {
         }
         async #restoreContext(sendImmediately) {
             _console$u.log("#restoreContext", { sendImmediately });
-            const contextState = this.#contextStack.pop();
-            if (!contextState) {
+            const restoredContext = this.#contextStack.pop();
+            if (!restoredContext) {
                 _console$u.warn("#contextStack empty");
                 return;
             }
+            _console$u.log("restoredContext", restoredContext);
             {
-                const differences = this.#contextStateHelper.update(contextState);
+                const differences = this.#contextStateHelper.update(restoredContext);
                 _console$u.log("restoreContext differences", differences);
             }
         }
@@ -11719,6 +11721,7 @@ let DisplayManager = (() => {
             }
             if (this.#pendingSpriteSheet == spriteSheet) {
                 _console$u.log("spriteSheet already pending");
+                await this.waitForEvent("displaySpriteSheetUploadComplete");
                 return;
             }
             spriteSheet = this.#displayCanvasHelper
@@ -11948,7 +11951,7 @@ let DisplayManager = (() => {
             this.#spriteSheets[this.#pendingSpriteSheetName] =
                 this.#pendingSpriteSheet;
             this.#spriteSheetIndices[this.#pendingSpriteSheetName] = spriteSheetIndex;
-            _console$u.log(`finished uploading "${this.#pendingSpriteSheetName}" spriteSheet at spriteSheetIndex ${spriteSheetIndex}`);
+            _console$u.log(`finished uploading "${this.#pendingSpriteSheetName}" spriteSheet at spriteSheetIndex #${spriteSheetIndex}`);
             this.#dispatchEvent("displaySpriteSheetUploadComplete", {
                 spriteSheetName: this.#pendingSpriteSheetName,
                 spriteSheet: this.#pendingSpriteSheet,

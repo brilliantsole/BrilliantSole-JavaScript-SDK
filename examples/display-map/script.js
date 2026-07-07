@@ -183,10 +183,10 @@ const draw = async () => {
   await displayCanvasHelper.setColor(3, "red");
   await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await displayCanvasHelper.selectSpriteSheet(fontSpriteSheet.name);
+  await displayCanvasHelper.setVerticalAlignment("center");
+  await displayCanvasHelper.setHorizontalAlignment("center");
 
   if (mapData) {
-    await displayCanvasHelper.saveContext();
-
     // console.log("drawing map...");
     const x = mapLocation.isRelative
       ? displayCanvasHelper.width * mapLocation.x
@@ -252,7 +252,6 @@ const draw = async () => {
     if (!drawSpriteAsIs) {
       await displayCanvasHelper.endSprite();
     }
-    await displayCanvasHelper.restoreContext();
     await displayCanvasHelper.resetSpriteColors();
   }
 
@@ -340,8 +339,15 @@ const draw = async () => {
         text,
       );
     }
+
     await displayCanvasHelper.restoreContext();
   }
+
+  console.log(
+    "lolz",
+    displayCanvasHelper.contextState.horizontalAlignment,
+    displayCanvasHelper.contextState.verticalAlignment,
+  );
 
   await displayCanvasHelper.show();
 };
