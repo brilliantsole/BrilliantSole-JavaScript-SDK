@@ -19,6 +19,7 @@ import {
 import { default as WindowServer } from "../server/window/WindowServer.ts";
 import { Singleton } from "../utils/TypeScriptUtils.ts";
 import { BaseServerClientContext } from "../server/BaseServer.ts";
+import { WindowClient } from "../server/window/WindowClient.ts";
 
 const _console = createConsole("WindowManagerServer", { log: true });
 
@@ -198,6 +199,10 @@ class WindowManagerServer {
       return;
     }
     let client = this.#getClientBySource(event.source);
+    if (client) {
+      await this.#waitForClientToLoad(client);
+      client = this.#getClientBySource(event.source);
+    }
     if (!client) {
       const iframe = this.#iframes.find(
         (iframe) => iframe.contentWindow == event.source,
@@ -207,7 +212,6 @@ class WindowManagerServer {
         _console.error("no iframe found for event", event);
         return;
       }
-      // await this.#waitForIFrameToLoad(iframe);
       client = this.#createClient(iframe);
       if (!client) {
         return;
@@ -221,15 +225,15 @@ class WindowManagerServer {
     );
     this.#parseWindowManagerClientMessage(client, dataView);
   }
-  async #waitForIFrameToLoad(iframe: HTMLIFrameElement) {
-    _console.log("waitForIFrameToLoad", iframe);
+  async #waitForClientToLoad(client: WindowManagerServerClient) {
+    _console.log("waitForIFrameToLoad", client);
     await new Promise<void>((resolve) => {
-      if (iframe.contentDocument?.readyState === "complete") {
+      if (client.iframe.contentDocument?.readyState === "complete") {
         _console.log("iframe complete");
         resolve();
       } else {
         _console.log("waiting for iframe to load...");
-        iframe.addEventListener("load", () => resolve(), { once: true });
+        client.iframe.addEventListener("load", () => resolve(), { once: true });
       }
     });
   }
