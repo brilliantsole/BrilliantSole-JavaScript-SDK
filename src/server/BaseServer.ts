@@ -1358,7 +1358,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 if (isDeviceConnectedDirectly) {
                   const { fileBytesTransferred } = device;
                   const fileHeaderLength =
-                    device.fileHeaderLength ?? message.data.getUint16(0, true);
+                    device._fileTransferManager.indirectSentBlocks.length == 0
+                      ? dataView.getUint16(0, true)
+                      : device.fileHeaderLength!;
 
                   const headerBytesRemaining = Math.max(
                     0,

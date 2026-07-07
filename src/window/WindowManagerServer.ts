@@ -302,7 +302,7 @@ class WindowManagerServer {
   };
 
   #onIframeLoad(event: WindowEventMap["load"]) {
-    // _console.log("onIframeLoad", event);
+    _console.log("onIframeLoad", event);
     const iframe = event.currentTarget as HTMLIFrameElement;
     const client = this.#getClientByiFrame(iframe);
     if (!client) {

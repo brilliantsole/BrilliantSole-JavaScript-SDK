@@ -1079,6 +1079,9 @@ class FileTransferManager {
         return file;
     }
     #indirectSentBlocks = [];
+    get indirectSentBlocks() {
+        return this.#indirectSentBlocks;
+    }
     sentFileConfigurations = [];
     getCurrentSentFileConfiguration() {
         const sentFileConfiguration = this.sentFileConfigurations.find(({ fileType, checksum, length }) => {
@@ -1103,8 +1106,8 @@ class FileTransferManager {
             _console$U.log({ headerLength });
             this.#headerLength = headerLength;
         }
-        this.#indirectSentBlocks.push(dataView.buffer);
-        const bytesReceived = this.#indirectSentBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
+        this.#indirectSentBlocks.push(dataView);
+        const bytesReceived = this.#indirectSentBlocks.reduce((sum, dataView) => (sum += dataView.byteLength), 0);
         this.#bytesTransferred = bytesReceived;
         const lengthPlusHeader = this.#length + (this.headerLength ?? 0);
         const progress = bytesReceived / lengthPlusHeader;
@@ -1114,7 +1117,7 @@ class FileTransferManager {
         const fileType = this.type;
         const indirectly = true;
         if (isComplete) {
-            file = await this.#createFile(this.#indirectSentBlocks);
+            file = await this.#createFile(this.#indirectSentBlocks.map((dataView) => dataView.buffer));
             _console$U.assertWithError(file, "file not created");
             _console$U.log("file transfer complete", file);
         }
@@ -15494,6 +15497,9 @@ class Device {
     get triggerVibration() {
         return this.#vibrationManager.triggerVibration;
     }
+    get _fileTransferManager() {
+        return this.#fileTransferManager;
+    }
     #fileTransferManager = new FileTransferManager();
     get sentFileConfigurations() {
         return this.#fileTransferManager.sentFileConfigurations;
@@ -18151,7 +18157,9 @@ class BaseServer {
                         else {
                             if (isDeviceConnectedDirectly) {
                                 const { fileBytesTransferred } = device;
-                                const fileHeaderLength = device.fileHeaderLength ?? message.data.getUint16(0, true);
+                                const fileHeaderLength = device._fileTransferManager.indirectSentBlocks.length == 0
+                                    ? dataView.getUint16(0, true)
+                                    : device.fileHeaderLength;
                                 const headerBytesRemaining = Math.max(0, fileHeaderLength - fileBytesTransferred);
                                 const didSendHeader = headerBytesRemaining == 0;
                                 _console$b.log({

@@ -1390,6 +1390,9 @@ class Device {
   }
 
   // FILE TRANSFER
+  get _fileTransferManager() {
+    return this.#fileTransferManager;
+  }
   #fileTransferManager = new FileTransferManager();
   get sentFileConfigurations() {
     return this.#fileTransferManager.sentFileConfigurations;

@@ -368,9 +368,6 @@ class FileTransferManager {
     if (this.#isRequestingReceive && this.status != "receiving") {
       this.#isRequestingReceive = false;
     }
-    // if (this.status == "sending" && !this.#file) {
-    //   this.#headerLength = undefined;
-    // }
   }
   #assertIsIdle() {
     _console.assertWithError(this.#status == "idle", "status is not idle");
@@ -717,7 +714,10 @@ class FileTransferManager {
     return file;
   }
 
-  #indirectSentBlocks: ArrayBuffer[] = [];
+  #indirectSentBlocks: DataView<ArrayBuffer>[] = [];
+  get indirectSentBlocks() {
+    return this.#indirectSentBlocks;
+  }
   sentFileConfigurations: SentFileConfiguration[] = [];
   getCurrentSentFileConfiguration() {
     const sentFileConfiguration = this.sentFileConfigurations.find(
@@ -751,10 +751,10 @@ class FileTransferManager {
       this.#headerLength = headerLength;
     }
 
-    this.#indirectSentBlocks.push(dataView.buffer);
+    this.#indirectSentBlocks.push(dataView);
 
     const bytesReceived = this.#indirectSentBlocks.reduce(
-      (sum, arrayBuffer) => (sum += arrayBuffer.byteLength),
+      (sum, dataView) => (sum += dataView.byteLength),
       0,
     );
     this.#bytesTransferred = bytesReceived;
@@ -773,7 +773,9 @@ class FileTransferManager {
     const indirectly = true;
 
     if (isComplete) {
-      file = await this.#createFile(this.#indirectSentBlocks);
+      file = await this.#createFile(
+        this.#indirectSentBlocks.map((dataView) => dataView.buffer),
+      );
       _console.assertWithError(file, "file not created");
       _console.log("file transfer complete", file);
     }
