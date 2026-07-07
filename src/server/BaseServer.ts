@@ -373,6 +373,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   // DEVICE LISTENERS
   #boundDeviceListeners: BoundDeviceEventListeners = {
     connectionMessage: this.#onDeviceConnectionMessage.bind(this),
+    displayContextCommands: this.#onDeviceDisplayContextCommands.bind(this),
   };
 
   #createDeviceMessage(
@@ -608,6 +609,17 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       this.#createDeviceServerMessage(device, deviceMessage),
       this.#allowDeviceToClients(device, deviceMessage),
     );
+  }
+  #onDeviceDisplayContextCommands(
+    deviceEvent: DeviceEventMap["displayContextCommands"],
+  ) {
+    const { target: device, message } = deviceEvent;
+    const { displayContextCommands } = message;
+    _console.log("onDeviceDisplayContextCommands", displayContextCommands);
+    if (!device.isConnected) {
+      return;
+    }
+    // FILL - broadcast
   }
 
   // STATIC DEVICE LISTENERS

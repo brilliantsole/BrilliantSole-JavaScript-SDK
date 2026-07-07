@@ -31845,6 +31845,7 @@ class BaseServer {
     }
     #boundDeviceListeners = {
         connectionMessage: this.#onDeviceConnectionMessage.bind(this),
+        displayContextCommands: this.#onDeviceDisplayContextCommands.bind(this),
     };
     #createDeviceMessage(device, messageType, dataView) {
         switch (messageType) {
@@ -31975,6 +31976,14 @@ class BaseServer {
         }
         const deviceMessage = this.#createDeviceMessage(device, messageType, dataView);
         this.broadcast(this.#createDeviceServerMessage(device, deviceMessage), this.#allowDeviceToClients(device, deviceMessage));
+    }
+    #onDeviceDisplayContextCommands(deviceEvent) {
+        const { target: device, message } = deviceEvent;
+        const { displayContextCommands } = message;
+        _console$f.log("onDeviceDisplayContextCommands", displayContextCommands);
+        if (!device.isConnected) {
+            return;
+        }
     }
     #boundDeviceManagerListeners = {
         deviceConnected: this.#onDeviceConnected.bind(this),
