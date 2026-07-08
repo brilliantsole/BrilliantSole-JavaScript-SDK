@@ -777,11 +777,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       keepColorIndices,
       keepSpriteColorIndices,
     });
-    this.#contextStateHelper.reset(
+    const differences = this.#contextStateHelper.reset(
       this.numberOfColors,
       keepColorIndices,
       keepSpriteColorIndices,
     );
+    _console.log("resetContextState differences", differences);
+    return differences;
   }
   async #updateDeviceContextState(
     sendImmediately?: boolean,

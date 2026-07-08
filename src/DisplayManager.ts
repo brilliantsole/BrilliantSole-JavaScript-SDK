@@ -397,7 +397,7 @@ class DisplayManager implements DisplayManagerInterface {
       keepColorIndices,
       keepSpriteColorIndices,
     });
-    this.#contextStateHelper.reset(
+    return this.#contextStateHelper.reset(
       this.numberOfColors,
       keepColorIndices,
       keepSpriteColorIndices,
@@ -960,17 +960,15 @@ class DisplayManager implements DisplayManagerInterface {
   }
   async #clearContext(sendImmediately?: boolean) {
     _console.log("#clearContext", { sendImmediately });
-    const contextState = this.#contextStack.pop();
-    if (!contextState) {
-      _console.warn("#contextStack empty");
-      return;
-    }
+
     if (false) {
       // @ts-expect-error
       await this.setContextState(contextState, sendImmediately);
     } else {
-      const differences = this.#contextStateHelper.update(contextState);
-      _console.log("clearContext differences", differences);
+      this.#resetContextState(
+        true,
+        !this.#isDrawingBlankSprite, // FIX?
+      );
     }
   }
   @ForwardToHelper

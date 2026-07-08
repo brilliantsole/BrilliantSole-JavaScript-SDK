@@ -188,14 +188,17 @@ export function resetContextState(
   keepColorIndices?: boolean,
   keepSpriteColorIndices?: boolean,
 ) {
-  // _console.log("reset", {
-  //   numberOfColors,
-  //   keepColorIndices,
-  //   keepSpriteColorIndices,
-  // });
+  _console.log("reset", {
+    numberOfColors,
+    keepColorIndices,
+    keepSpriteColorIndices,
+  });
 
   const spriteColorIndices = state.spriteColorIndices.slice();
   const { fillColorIndex, lineColorIndex, backgroundColorIndex } = state;
+
+  const differences = diffContextState(state, DefaultDisplayContextState);
+  _console.log("reset differences", differences);
 
   Object.assign(state, DefaultDisplayContextState);
 
@@ -212,4 +215,6 @@ export function resetContextState(
   }
 
   state.bitmapColorIndices = new Array(numberOfColors).fill(0);
+
+  return differences;
 }

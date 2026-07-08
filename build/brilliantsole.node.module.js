@@ -5705,8 +5705,15 @@ function updateContextState(state, newState) {
     return differences;
 }
 function resetContextState(state, numberOfColors, keepColorIndices, keepSpriteColorIndices) {
+    _console$A.log("reset", {
+        numberOfColors,
+        keepColorIndices,
+        keepSpriteColorIndices,
+    });
     const spriteColorIndices = state.spriteColorIndices.slice();
     const { fillColorIndex, lineColorIndex, backgroundColorIndex } = state;
+    const differences = diffContextState(state, DefaultDisplayContextState);
+    _console$A.log("reset differences", differences);
     Object.assign(state, DefaultDisplayContextState);
     if (keepColorIndices) {
         state.fillColorIndex = fillColorIndex;
@@ -5720,6 +5727,7 @@ function resetContextState(state, numberOfColors, keepColorIndices, keepSpriteCo
         state.spriteColorIndices = new Array(numberOfColors).fill(0);
     }
     state.bitmapColorIndices = new Array(numberOfColors).fill(0);
+    return differences;
 }
 
 const _console$z = createConsole("DisplayUtils", { log: false });
@@ -10381,7 +10389,7 @@ let DisplayManager = (() => {
                 keepColorIndices,
                 keepSpriteColorIndices,
             });
-            this.#contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
+            return this.#contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
         }
         #onContextStateUpdate(differences) {
             _console$u.log("onContextStateUpdate", differences);
@@ -10749,14 +10757,8 @@ let DisplayManager = (() => {
         }
         async #clearContext(sendImmediately) {
             _console$u.log("#clearContext", { sendImmediately });
-            const contextState = this.#contextStack.pop();
-            if (!contextState) {
-                _console$u.warn("#contextStack empty");
-                return;
-            }
             {
-                const differences = this.#contextStateHelper.update(contextState);
-                _console$u.log("clearContext differences", differences);
+                this.#resetContextState(true, !this.#isDrawingBlankSprite);
             }
         }
         async clearContext(sendImmediately, isSending, displayCanvasHelper) {
