@@ -6326,7 +6326,7 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader = false
         headerLength += 2;
         headerLength += 2;
         headerLength += encodedName.byteLength;
-        headerLength += 2;
+        headerLength += 1;
         headerLength += 2 * sprites.length;
         headerLength += encodedSpriteNames.reduce((encodedSpriteNamesLength, encodedSpriteName) => encodedSpriteNamesLength + encodedSpriteName.byteLength, 0);
         _console$y.log({ headerLength });
@@ -6340,8 +6340,7 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader = false
         for (const value of encodedName) {
             headerDataView.setUint8(offset++, value);
         }
-        headerDataView.setUint16(offset, sprites.length, true);
-        offset += 2;
+        headerDataView.setUint8(offset++, sprites.length);
         let spriteNamesOffset = offset + 2 * sprites.length;
         for (const encodedSpriteName of encodedSpriteNames) {
             _console$y.log("encodedSpriteName", encodedSpriteName);
@@ -6356,8 +6355,8 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader = false
         _console$y.log("serialized headerDataView", headerDataView);
     }
     const numberOfSprites = sprites.length;
-    const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
-    numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
+    const numberOfSpritesDataView = new DataView(new ArrayBuffer(1));
+    numberOfSpritesDataView.setUint8(0, numberOfSprites);
     const spritePayloads = sprites.map((sprite, spriteIndex) => {
         const commandsData = serializeDisplayContextCommands(displayManager, sprite.commands);
         const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
@@ -6394,8 +6393,7 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader = true)
         name = textDecoder.decode(dataView.buffer.slice(offset, offset + nameLength));
         _console$y.log({ name });
         offset += nameLength;
-        const numberOfSpriteNames = dataView.getUint16(offset, true);
-        offset += 2;
+        const numberOfSpriteNames = dataView.getUint8(offset++);
         _console$y.log({ numberOfSpriteNames });
         for (let spriteNameIndex = 0; spriteNameIndex < numberOfSpriteNames; spriteNameIndex++) {
             const isLast = spriteNameIndex == numberOfSpriteNames - 1;
@@ -6416,8 +6414,7 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader = true)
         offset = headerLength;
     }
     const baseOffset = offset;
-    const numberOfSprites = dataView.getUint16(offset, true);
-    offset += 2;
+    const numberOfSprites = dataView.getUint8(offset++);
     _console$y.log({ numberOfSprites, offset });
     for (let spriteIndex = 0; spriteIndex < numberOfSprites; spriteIndex++) {
         const isLast = spriteIndex == numberOfSprites - 1;
@@ -7121,7 +7118,6 @@ function spriteLinesToSerializedLines(displayManager, spriteLines) {
             const serializedSubLine = {
                 spriteSheetIndex,
                 spriteIndices: [],
-                use2Bytes: spriteSheet.sprites.length > 255,
             };
             spriteSubLine.spriteNames.forEach((spriteName) => {
                 let spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
@@ -7135,6 +7131,9 @@ function spriteLinesToSerializedLines(displayManager, spriteLines) {
     });
     _console$y.log("spriteSerializedLines", spriteSerializedLines);
     return spriteSerializedLines;
+}
+function verifySpriteSheet(spriteSheet) {
+    _console$y.assertRangeWithError("spriteSheet.sprites.length", spriteSheet.sprites.length, 1, 255);
 }
 
 const _console$x = createConsole("DisplayBitmapUtils", { log: false });
@@ -8133,20 +8132,14 @@ function serializeDisplayContextCommandData(displayManager, command) {
             break;
         case "drawSprite":
             {
-                const { offsetX, offsetY, spriteIndex, use2Bytes } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 2 + (use2Bytes ? 2 : 1)));
+                const { offsetX, offsetY, spriteIndex } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 2 + 1));
                 let offset = 0;
                 dataView.setInt16(offset, offsetX, true);
                 offset += 2;
                 dataView.setInt16(offset, offsetY, true);
                 offset += 2;
-                if (use2Bytes) {
-                    dataView.setUint16(offset, spriteIndex, true);
-                    offset += 2;
-                }
-                else {
-                    dataView.setUint8(offset++, spriteIndex);
-                }
+                dataView.setUint8(offset++, spriteIndex);
             }
             break;
         case "drawSprites":
@@ -8156,15 +8149,10 @@ function serializeDisplayContextCommandData(displayManager, command) {
                 spriteSerializedLines.forEach((spriteLines) => {
                     const subLineArrayBuffers = [];
                     spriteLines.forEach((subSpriteLine) => {
-                        const { spriteSheetIndex, spriteIndices, use2Bytes } = subSpriteLine;
-                        const subLineSpriteIndicesDataView = new DataView(new ArrayBuffer(spriteIndices.length * (use2Bytes ? 2 : 1)));
+                        const { spriteSheetIndex, spriteIndices } = subSpriteLine;
+                        const subLineSpriteIndicesDataView = new DataView(new ArrayBuffer(spriteIndices.length * 1));
                         spriteIndices.forEach((spriteIndex, i) => {
-                            if (use2Bytes) {
-                                subLineSpriteIndicesDataView.setUint16(i * 2, spriteIndex, true);
-                            }
-                            else {
-                                subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
-                            }
+                            subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
                         });
                         const subLineHeaderDataView = new DataView(new ArrayBuffer(2));
                         subLineHeaderDataView.setUint8(0, spriteSheetIndex);
@@ -8817,17 +8805,9 @@ function parseDisplayContextCommands(displayManager, dataView) {
                     offset += 2;
                     const offsetY = dataView.getInt16(offset, true);
                     offset += 2;
-                    _console$w.assertWithError(displayManager.selectedSpriteSheet, "displayManager doesn't have a selected spriteSheet");
-                    const use2Bytes = displayManager.selectedSpriteSheet.sprites.length > 255;
                     let spriteIndex;
-                    if (use2Bytes) {
-                        spriteIndex = dataView.getUint16(offset, true);
-                        offset += 2;
-                    }
-                    else {
-                        spriteIndex = dataView.getUint8(offset++);
-                    }
-                    command = { type, offsetX, offsetY, spriteIndex, use2Bytes };
+                    spriteIndex = dataView.getUint8(offset++);
+                    command = { type, offsetX, offsetY, spriteIndex };
                 }
                 break;
             case "drawSprites":
@@ -8848,20 +8828,14 @@ function parseDisplayContextCommands(displayManager, dataView) {
                         while (offset < lineDataEnd) {
                             const spriteSheetIndex = dataView.getUint8(offset++);
                             const spriteCount = dataView.getUint8(offset++);
-                            const spriteSheet = displayManager.getSpriteSheetByIndex(spriteSheetIndex);
-                            _console$w.assertWithError(spriteSheet, `no spriteSheet found for spriteSheetIndex ${spriteSheetIndex}`);
-                            const use2Bytes = spriteSheet.sprites.length > 255;
                             const spriteIndices = [];
                             for (let i = 0; i < spriteCount; i++) {
-                                spriteIndices.push(use2Bytes
-                                    ? dataView.getUint16(offset, true)
-                                    : dataView.getUint8(offset));
-                                offset += use2Bytes ? 2 : 1;
+                                spriteIndices.push(dataView.getUint8(offset));
+                                offset += 1;
                             }
                             spriteLine.push({
                                 spriteSheetIndex,
                                 spriteIndices,
-                                use2Bytes,
                             });
                         }
                         spriteSerializedLines.push(spriteLine);
@@ -10591,6 +10565,7 @@ let DisplayManager = (() => {
                 sendImmediately,
                 isSending,
             });
+            let promise;
             if (!isSending) {
                 const serializedContextCommand = serializeDisplayContextCommand(this, contextCommand);
                 if (!serializedContextCommand) {
@@ -10603,21 +10578,34 @@ let DisplayManager = (() => {
                 const newLength = this.#contextCommandBuffers.reduce((sum, buffer) => sum + buffer.byteLength, serializedContextCommand.byteLength);
                 if (newLength > this.#maxCommandDataLength) {
                     _console$u.log("displayContextCommandBuffers too full - sending now");
-                    await this.#sendContextCommands();
+                    promise = this.#sendContextCommands();
                 }
                 this.#contextCommandBuffers.push(serializedContextCommand);
             }
             this.#contextCommands.push(contextCommand);
+            if (promise) {
+                await promise;
+            }
             if (sendImmediately) {
                 await this.#sendContextCommands();
             }
         }
+        #isSendingContextCommands = false;
+        #sendContextCommandsWhenDone = false;
         async #sendContextCommands() {
-            const displayContextCommands = this.#contextCommands.slice();
-            _console$u.log("sendContextCommands", displayContextCommands);
-            if (displayContextCommands.length == 0) {
+            _console$u.log("sendContextCommands");
+            if (this.#isSendingContextCommands) {
+                _console$u.log("already sending contextCommands");
+                this.#sendContextCommandsWhenDone = true;
                 return;
             }
+            if (this.#contextCommands.length == 0) {
+                _console$u.log("no contextCommands to send");
+                return;
+            }
+            const displayContextCommands = this.#contextCommands.slice();
+            _console$u.log("sending displayContextCommands", displayContextCommands);
+            this.#isSendingContextCommands = true;
             this.#contextCommands.length = 0;
             if (this.#contextCommandBuffers.length > 0) {
                 const data = concatenateArrayBuffers(this.#contextCommandBuffers);
@@ -10625,9 +10613,15 @@ let DisplayManager = (() => {
                 this.#contextCommandBuffers.length = 0;
                 await this.sendMessage([{ type: "displayContextCommands", data }], true);
             }
+            this.#isSendingContextCommands = false;
             this.#dispatchEvent("displayContextCommands", {
                 displayContextCommands,
             });
+            if (this.#sendContextCommandsWhenDone) {
+                this.#sendContextCommandsWhenDone = false;
+                _console$u.log(`${this.#contextCommands.length} followup contextCommands`);
+                await this.#sendContextCommands();
+            }
         }
         async flushContextCommands() {
             await this.#sendContextCommands();
@@ -11711,6 +11705,7 @@ let DisplayManager = (() => {
         }
         async uploadSpriteSheet(spriteSheet, displayCanvasHelper) {
             _console$u.log("uploadSpriteSheet", spriteSheet);
+            verifySpriteSheet(spriteSheet);
             if (spriteSheet.sprites.length == 0) {
                 _console$u.log("no sprites in spriteSheet");
                 return;
@@ -11811,7 +11806,6 @@ let DisplayManager = (() => {
                 offsetX,
                 offsetY,
                 spriteIndex,
-                use2Bytes: this.selectedSpriteSheet.sprites.length > 255,
             }, sendImmediately, isSending);
         }
         async drawSprites(offsetX, offsetY, spriteLines, sendImmediately, isSending, displayCanvasHelper) {
@@ -12049,6 +12043,8 @@ let DisplayManager = (() => {
             this.#pendingSpriteSheetName = undefined;
             this.#pendingSpriteSheetIndex = undefined;
             this.#isDrawingBlankSprite = false;
+            this.#isSendingContextCommands = false;
+            this.#sendContextCommandsWhenDone = false;
             Object.keys(this.#spriteSheetIndices).forEach((spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]);
             Object.keys(this.#spriteSheets).forEach((spriteSheetName) => delete this.#spriteSheets[spriteSheetName]);
         }
@@ -16386,7 +16382,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager = (() => {
+let DeviceManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -16703,7 +16699,7 @@ let DeviceManager = (() => {
     });
     return _classThis;
 })();
-var DeviceManager$1 = DeviceManager.shared;
+var DeviceManager = DeviceManager$1.shared;
 
 var _a$2;
 const _console$f = createConsole("BaseScanner", { log: false });
@@ -17334,7 +17330,7 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$d.log("connecting to discoveredDevice...", deviceId);
-        let device = DeviceManager$1.availableDevices
+        let device = DeviceManager.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -17366,7 +17362,7 @@ class NobleScanner extends BaseScanner {
     async disconnectFromDevice(deviceId) {
         super.disconnectFromDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
-        let device = DeviceManager$1.availableDevices
+        let device = DeviceManager.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -17404,16 +17400,16 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$c = createConsole("Scanner", { log: false });
-let scanner;
+let scanner$1;
 if (NobleScanner.isSupported) {
     _console$c.log("using NobleScanner");
-    scanner = new NobleScanner();
+    scanner$1 = new NobleScanner();
 }
 else {
     _console$c.log("Scanner not available");
-    scanner = new NullScanner();
+    scanner$1 = new NullScanner();
 }
-var scanner$1 = scanner;
+var scanner = scanner$1;
 
 var _a$1;
 const RequiredDeviceInformationMessageTypes = [
@@ -17450,9 +17446,9 @@ class BaseServer {
     }
     static OnServer;
     constructor() {
-        _console$b.assertWithError(scanner$1, "no scanner defined");
-        addEventListeners(scanner$1, this.#boundScannerListeners);
-        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
+        _console$b.assertWithError(scanner, "no scanner defined");
+        addEventListeners(scanner, this.#boundScannerListeners);
+        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
         _a$1.OnServer(this);
     }
@@ -17504,7 +17500,7 @@ class BaseServer {
         _console$b.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager$1.connectedDevices.forEach((device) => {
+            DeviceManager.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -17536,7 +17532,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner$1.isScanningAvailable,
+            data: scanner.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -17545,7 +17541,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner$1.isScanning,
+            data: scanner.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -17571,9 +17567,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner$1.discoveredDevicesArray
+        const serverMessages = scanner.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -17585,7 +17581,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -17876,10 +17872,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner$1.startScan();
+                scanner.startScan();
                 break;
             case "stopScan":
-                scanner$1.stopScan();
+                scanner.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -17897,12 +17893,12 @@ class BaseServer {
                     else {
                         _console$b.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
-                        scanner$1.connectToDevice(deviceId, connectionType);
+                        scanner.connectToDevice(deviceId, connectionType);
                     }
                 }
                 break;
@@ -17912,8 +17908,8 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner$1.devices[deviceId];
+                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner.devices[deviceId];
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17936,7 +17932,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -17960,7 +17956,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -18874,7 +18870,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager$1._checkDeviceAvailability(device);
+            DeviceManager._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -19353,7 +19349,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager$1.addEventListener("deviceConnected", (event) => {
+        DeviceManager.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -19930,5 +19926,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner$1 as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantsole.node.module.js.map

@@ -269,6 +269,7 @@ const selectUrls = [
   { name: "display toss", url: "../display-toss" },
   { name: "display workout", url: "../display-workout" },
   { name: "display face", url: "../display-face" },
+  { name: "display spotify", url: "../display-spotify" },
 ];
 const createIframeContainer = (src) => {
   const iframeContainer = iframeContainerTemplate.content
@@ -376,7 +377,7 @@ BS.ServerManager.deviceSensorDataToClientGuardManager.add(
 
 BS.ServerManager.clientDisplayContextCommandToDeviceGuardManager.add(
   ({ client, message, displayContextCommand }) => {
-    console.log("allow displayContextCommand?", displayContextCommand);
+    // console.log("allow displayContextCommand?", displayContextCommand);
     return true;
   },
 );

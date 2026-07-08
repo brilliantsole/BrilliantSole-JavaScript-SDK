@@ -21088,7 +21088,7 @@ function removeSubstrings(string, substrings) {
 const _console$z = createConsole("DisplaySpriteSheetUtils", { log: false });
 const spriteHeaderLength = 2 * 2;
 function calculateSpriteSheetHeaderLength(numberOfSprites) {
-    return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
+    return 1 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
 }
 function getCurvesPoints(curves) {
     const curvePoints = [];
@@ -21115,7 +21115,7 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader = false
         headerLength += 2;
         headerLength += 2;
         headerLength += encodedName.byteLength;
-        headerLength += 2;
+        headerLength += 1;
         headerLength += 2 * sprites.length;
         headerLength += encodedSpriteNames.reduce((encodedSpriteNamesLength, encodedSpriteName) => encodedSpriteNamesLength + encodedSpriteName.byteLength, 0);
         _console$z.log({ headerLength });
@@ -21129,8 +21129,7 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader = false
         for (const value of encodedName) {
             headerDataView.setUint8(offset++, value);
         }
-        headerDataView.setUint16(offset, sprites.length, true);
-        offset += 2;
+        headerDataView.setUint8(offset++, sprites.length);
         let spriteNamesOffset = offset + 2 * sprites.length;
         for (const encodedSpriteName of encodedSpriteNames) {
             _console$z.log("encodedSpriteName", encodedSpriteName);
@@ -21145,8 +21144,8 @@ function serializeSpriteSheet(displayManager, spriteSheet, includeHeader = false
         _console$z.log("serialized headerDataView", headerDataView);
     }
     const numberOfSprites = sprites.length;
-    const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
-    numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
+    const numberOfSpritesDataView = new DataView(new ArrayBuffer(1));
+    numberOfSpritesDataView.setUint8(0, numberOfSprites);
     const spritePayloads = sprites.map((sprite, spriteIndex) => {
         const commandsData = serializeDisplayContextCommands(displayManager, sprite.commands);
         const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
@@ -21183,8 +21182,7 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader = true)
         name = textDecoder.decode(dataView.buffer.slice(offset, offset + nameLength));
         _console$z.log({ name });
         offset += nameLength;
-        const numberOfSpriteNames = dataView.getUint16(offset, true);
-        offset += 2;
+        const numberOfSpriteNames = dataView.getUint8(offset++);
         _console$z.log({ numberOfSpriteNames });
         for (let spriteNameIndex = 0; spriteNameIndex < numberOfSpriteNames; spriteNameIndex++) {
             const isLast = spriteNameIndex == numberOfSpriteNames - 1;
@@ -21205,8 +21203,7 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader = true)
         offset = headerLength;
     }
     const baseOffset = offset;
-    const numberOfSprites = dataView.getUint16(offset, true);
-    offset += 2;
+    const numberOfSprites = dataView.getUint8(offset++);
     _console$z.log({ numberOfSprites, offset });
     for (let spriteIndex = 0; spriteIndex < numberOfSprites; spriteIndex++) {
         const isLast = spriteIndex == numberOfSprites - 1;
@@ -21923,7 +21920,6 @@ function spriteLinesToSerializedLines(displayManager, spriteLines) {
             const serializedSubLine = {
                 spriteSheetIndex,
                 spriteIndices: [],
-                use2Bytes: spriteSheet.sprites.length > 255,
             };
             spriteSubLine.spriteNames.forEach((spriteName) => {
                 let spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
@@ -21937,6 +21933,9 @@ function spriteLinesToSerializedLines(displayManager, spriteLines) {
     });
     _console$z.log("spriteSerializedLines", spriteSerializedLines);
     return spriteSerializedLines;
+}
+function verifySpriteSheet$1(spriteSheet) {
+    _console$z.assertRangeWithError("spriteSheet.sprites.length", spriteSheet.sprites.length, 1, 255);
 }
 
 const _console$y = createConsole("DisplayBitmapUtils", { log: false });
@@ -23136,20 +23135,14 @@ function serializeDisplayContextCommandData(displayManager, command) {
             break;
         case "drawSprite":
             {
-                const { offsetX, offsetY, spriteIndex, use2Bytes } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 2 + (use2Bytes ? 2 : 1)));
+                const { offsetX, offsetY, spriteIndex } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 2 + 1));
                 let offset = 0;
                 dataView.setInt16(offset, offsetX, true);
                 offset += 2;
                 dataView.setInt16(offset, offsetY, true);
                 offset += 2;
-                if (use2Bytes) {
-                    dataView.setUint16(offset, spriteIndex, true);
-                    offset += 2;
-                }
-                else {
-                    dataView.setUint8(offset++, spriteIndex);
-                }
+                dataView.setUint8(offset++, spriteIndex);
             }
             break;
         case "drawSprites":
@@ -23159,15 +23152,10 @@ function serializeDisplayContextCommandData(displayManager, command) {
                 spriteSerializedLines.forEach((spriteLines) => {
                     const subLineArrayBuffers = [];
                     spriteLines.forEach((subSpriteLine) => {
-                        const { spriteSheetIndex, spriteIndices, use2Bytes } = subSpriteLine;
-                        const subLineSpriteIndicesDataView = new DataView(new ArrayBuffer(spriteIndices.length * (use2Bytes ? 2 : 1)));
+                        const { spriteSheetIndex, spriteIndices } = subSpriteLine;
+                        const subLineSpriteIndicesDataView = new DataView(new ArrayBuffer(spriteIndices.length * 1));
                         spriteIndices.forEach((spriteIndex, i) => {
-                            if (use2Bytes) {
-                                subLineSpriteIndicesDataView.setUint16(i * 2, spriteIndex, true);
-                            }
-                            else {
-                                subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
-                            }
+                            subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
                         });
                         const subLineHeaderDataView = new DataView(new ArrayBuffer(2));
                         subLineHeaderDataView.setUint8(0, spriteSheetIndex);
@@ -23820,17 +23808,9 @@ function parseDisplayContextCommands(displayManager, dataView) {
                     offset += 2;
                     const offsetY = dataView.getInt16(offset, true);
                     offset += 2;
-                    _console$x.assertWithError(displayManager.selectedSpriteSheet, "displayManager doesn't have a selected spriteSheet");
-                    const use2Bytes = displayManager.selectedSpriteSheet.sprites.length > 255;
                     let spriteIndex;
-                    if (use2Bytes) {
-                        spriteIndex = dataView.getUint16(offset, true);
-                        offset += 2;
-                    }
-                    else {
-                        spriteIndex = dataView.getUint8(offset++);
-                    }
-                    command = { type, offsetX, offsetY, spriteIndex, use2Bytes };
+                    spriteIndex = dataView.getUint8(offset++);
+                    command = { type, offsetX, offsetY, spriteIndex };
                 }
                 break;
             case "drawSprites":
@@ -23851,20 +23831,14 @@ function parseDisplayContextCommands(displayManager, dataView) {
                         while (offset < lineDataEnd) {
                             const spriteSheetIndex = dataView.getUint8(offset++);
                             const spriteCount = dataView.getUint8(offset++);
-                            const spriteSheet = displayManager.getSpriteSheetByIndex(spriteSheetIndex);
-                            _console$x.assertWithError(spriteSheet, `no spriteSheet found for spriteSheetIndex ${spriteSheetIndex}`);
-                            const use2Bytes = spriteSheet.sprites.length > 255;
                             const spriteIndices = [];
                             for (let i = 0; i < spriteCount; i++) {
-                                spriteIndices.push(use2Bytes
-                                    ? dataView.getUint16(offset, true)
-                                    : dataView.getUint8(offset));
-                                offset += use2Bytes ? 2 : 1;
+                                spriteIndices.push(dataView.getUint8(offset));
+                                offset += 1;
                             }
                             spriteLine.push({
                                 spriteSheetIndex,
                                 spriteIndices,
-                                use2Bytes,
                             });
                         }
                         spriteSerializedLines.push(spriteLine);
@@ -25640,6 +25614,7 @@ let DisplayManager = (() => {
                 sendImmediately,
                 isSending,
             });
+            let promise;
             if (!isSending) {
                 const serializedContextCommand = serializeDisplayContextCommand(this, contextCommand);
                 if (!serializedContextCommand) {
@@ -25652,21 +25627,34 @@ let DisplayManager = (() => {
                 const newLength = this.#contextCommandBuffers.reduce((sum, buffer) => sum + buffer.byteLength, serializedContextCommand.byteLength);
                 if (newLength > this.#maxCommandDataLength) {
                     _console$v.log("displayContextCommandBuffers too full - sending now");
-                    await this.#sendContextCommands();
+                    promise = this.#sendContextCommands();
                 }
                 this.#contextCommandBuffers.push(serializedContextCommand);
             }
             this.#contextCommands.push(contextCommand);
+            if (promise) {
+                await promise;
+            }
             if (sendImmediately) {
                 await this.#sendContextCommands();
             }
         }
+        #isSendingContextCommands = false;
+        #sendContextCommandsWhenDone = false;
         async #sendContextCommands() {
-            const displayContextCommands = this.#contextCommands.slice();
-            _console$v.log("sendContextCommands", displayContextCommands);
-            if (displayContextCommands.length == 0) {
+            _console$v.log("sendContextCommands");
+            if (this.#isSendingContextCommands) {
+                _console$v.log("already sending contextCommands");
+                this.#sendContextCommandsWhenDone = true;
                 return;
             }
+            if (this.#contextCommands.length == 0) {
+                _console$v.log("no contextCommands to send");
+                return;
+            }
+            const displayContextCommands = this.#contextCommands.slice();
+            _console$v.log("sending displayContextCommands", displayContextCommands);
+            this.#isSendingContextCommands = true;
             this.#contextCommands.length = 0;
             if (this.#contextCommandBuffers.length > 0) {
                 const data = concatenateArrayBuffers(this.#contextCommandBuffers);
@@ -25674,9 +25662,15 @@ let DisplayManager = (() => {
                 this.#contextCommandBuffers.length = 0;
                 await this.sendMessage([{ type: "displayContextCommands", data }], true);
             }
+            this.#isSendingContextCommands = false;
             this.#dispatchEvent("displayContextCommands", {
                 displayContextCommands,
             });
+            if (this.#sendContextCommandsWhenDone) {
+                this.#sendContextCommandsWhenDone = false;
+                _console$v.log(`${this.#contextCommands.length} followup contextCommands`);
+                await this.#sendContextCommands();
+            }
         }
         async flushContextCommands() {
             await this.#sendContextCommands();
@@ -26760,6 +26754,7 @@ let DisplayManager = (() => {
         }
         async uploadSpriteSheet(spriteSheet, displayCanvasHelper) {
             _console$v.log("uploadSpriteSheet", spriteSheet);
+            verifySpriteSheet$1(spriteSheet);
             if (spriteSheet.sprites.length == 0) {
                 _console$v.log("no sprites in spriteSheet");
                 return;
@@ -26860,7 +26855,6 @@ let DisplayManager = (() => {
                 offsetX,
                 offsetY,
                 spriteIndex,
-                use2Bytes: this.selectedSpriteSheet.sprites.length > 255,
             }, sendImmediately, isSending);
         }
         async drawSprites(offsetX, offsetY, spriteLines, sendImmediately, isSending, displayCanvasHelper) {
@@ -27098,6 +27092,8 @@ let DisplayManager = (() => {
             this.#pendingSpriteSheetName = undefined;
             this.#pendingSpriteSheetIndex = undefined;
             this.#isDrawingBlankSprite = false;
+            this.#isSendingContextCommands = false;
+            this.#sendContextCommandsWhenDone = false;
             Object.keys(this.#spriteSheetIndices).forEach((spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]);
             Object.keys(this.#spriteSheets).forEach((spriteSheetName) => delete this.#spriteSheets[spriteSheetName]);
         }
@@ -35127,7 +35123,7 @@ class DisplayCanvasHelper {
             [stateKey]: direction,
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
-            this.deviceDisplayManager.setSpritesDirectionGeneric(direction, isOrthogonal, sendImmediately, isSending, this);
+            await this.deviceDisplayManager.setSpritesDirectionGeneric(direction, isOrthogonal, sendImmediately, isSending, this);
         }
         else {
             if (sendImmediately) {
@@ -35150,7 +35146,7 @@ class DisplayCanvasHelper {
             [stateKey]: spacing,
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
-            this.deviceDisplayManager.setSpritesSpacingGeneric(spacing, isOrthogonal, sendImmediately, isSending, this);
+            await this.deviceDisplayManager.setSpritesSpacingGeneric(spacing, isOrthogonal, sendImmediately, isSending, this);
         }
         else {
             if (sendImmediately) {
@@ -35174,7 +35170,7 @@ class DisplayCanvasHelper {
             [stateKey]: alignment,
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
-            this.deviceDisplayManager.setSpritesAlignmentGeneric(alignment, isOrthogonal, sendImmediately, isSending, this);
+            await this.deviceDisplayManager.setSpritesAlignmentGeneric(alignment, isOrthogonal, sendImmediately, isSending, this);
         }
         else {
             if (sendImmediately) {
@@ -36233,6 +36229,7 @@ class DisplayCanvasHelper {
     }
     async uploadSpriteSheet(spriteSheet) {
         _console$5.log("uploadSpriteSheet", spriteSheet);
+        verifySpriteSheet$1(spriteSheet);
         const isPending = this.deviceDisplayManager?.pendingSpriteSheet == spriteSheet;
         spriteSheet = structuredClone(spriteSheet);
         if (isPending) {
@@ -36296,7 +36293,7 @@ class DisplayCanvasHelper {
             spriteSheetName,
         });
         if (this.device?.isConnected && !this.#ignoreDevice) {
-            this.deviceDisplayManager.selectSpriteSheet(spriteSheetName, sendImmediately, isSending, this);
+            await this.deviceDisplayManager.selectSpriteSheet(spriteSheetName, sendImmediately, isSending, this);
         }
         else {
             if (sendImmediately) {

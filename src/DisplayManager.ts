@@ -109,6 +109,7 @@ import {
   spriteLinesToSerializedLines,
   getSpriteLinesMetrics,
   parseSpriteSheet,
+  verifySpriteSheet,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { wait } from "./utils/Timer.ts";
 import { default as DisplayCanvasHelper } from "./utils/DisplayCanvasHelper.ts";
@@ -657,6 +658,8 @@ class DisplayManager implements DisplayManagerInterface {
       isSending,
     });
 
+    let promise: Promise<void> | undefined;
+
     if (!isSending) {
       const serializedContextCommand = serializeDisplayContextCommand(
         this,
@@ -681,22 +684,37 @@ class DisplayManager implements DisplayManagerInterface {
       );
       if (newLength > this.#maxCommandDataLength) {
         _console.log("displayContextCommandBuffers too full - sending now");
-        await this.#sendContextCommands();
+        promise = this.#sendContextCommands();
       }
       this.#contextCommandBuffers.push(serializedContextCommand);
     }
+
     this.#contextCommands.push(contextCommand);
 
+    if (promise) {
+      await promise;
+    }
     if (sendImmediately) {
       await this.#sendContextCommands();
     }
   }
+  #isSendingContextCommands = false;
+  #sendContextCommandsWhenDone = false;
   async #sendContextCommands() {
-    const displayContextCommands = this.#contextCommands.slice();
-    _console.log("sendContextCommands", displayContextCommands);
-    if (displayContextCommands.length == 0) {
+    _console.log("sendContextCommands");
+    if (this.#isSendingContextCommands) {
+      _console.log("already sending contextCommands");
+      this.#sendContextCommandsWhenDone = true;
       return;
     }
+    if (this.#contextCommands.length == 0) {
+      _console.log("no contextCommands to send");
+      return;
+    }
+    const displayContextCommands = this.#contextCommands.slice();
+    _console.log("sending displayContextCommands", displayContextCommands);
+
+    this.#isSendingContextCommands = true;
     this.#contextCommands.length = 0;
     if (this.#contextCommandBuffers.length > 0) {
       const data = concatenateArrayBuffers(this.#contextCommandBuffers);
@@ -709,9 +727,15 @@ class DisplayManager implements DisplayManagerInterface {
 
       await this.sendMessage([{ type: "displayContextCommands", data }], true);
     }
+    this.#isSendingContextCommands = false;
     this.#dispatchEvent("displayContextCommands", {
       displayContextCommands,
     });
+    if (this.#sendContextCommandsWhenDone) {
+      this.#sendContextCommandsWhenDone = false;
+      _console.log(`${this.#contextCommands.length} followup contextCommands`);
+      await this.#sendContextCommands();
+    }
   }
   async flushContextCommands() {
     await this.#sendContextCommands();
@@ -2908,6 +2932,7 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     _console.log("uploadSpriteSheet", spriteSheet);
+    verifySpriteSheet(spriteSheet);
     if (spriteSheet.sprites.length == 0) {
       _console.log("no sprites in spriteSheet");
       return;
@@ -3067,7 +3092,6 @@ class DisplayManager implements DisplayManagerInterface {
         offsetX,
         offsetY,
         spriteIndex,
-        use2Bytes: this.selectedSpriteSheet!.sprites.length > 255,
       },
       sendImmediately,
       isSending,
@@ -3547,6 +3571,9 @@ class DisplayManager implements DisplayManagerInterface {
     this.#pendingSpriteSheetIndex = undefined;
 
     this.#isDrawingBlankSprite = false;
+
+    this.#isSendingContextCommands = false;
+    this.#sendContextCommandsWhenDone = false;
 
     Object.keys(this.#spriteSheetIndices).forEach(
       (spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName],

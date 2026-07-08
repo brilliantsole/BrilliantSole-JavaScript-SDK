@@ -116,6 +116,7 @@ import {
   serializeSpriteSheet,
   stringToSpriteLines,
   stringToSpriteLinesMetrics,
+  verifySpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 import autoBind from "auto-bind";
 
@@ -2190,7 +2191,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      this.deviceDisplayManager!.setSpritesDirectionGeneric(
+      await this.deviceDisplayManager!.setSpritesDirectionGeneric(
         direction,
         isOrthogonal,
         sendImmediately,
@@ -2243,7 +2244,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      this.deviceDisplayManager!.setSpritesSpacingGeneric(
+      await this.deviceDisplayManager!.setSpritesSpacingGeneric(
         spacing,
         isOrthogonal,
         sendImmediately,
@@ -2297,7 +2298,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      this.deviceDisplayManager!.setSpritesAlignmentGeneric(
+      await this.deviceDisplayManager!.setSpritesAlignmentGeneric(
         alignment,
         isOrthogonal,
         sendImmediately,
@@ -4203,6 +4204,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   async uploadSpriteSheet(spriteSheet: DisplaySpriteSheet) {
     _console.log("uploadSpriteSheet", spriteSheet);
+    verifySpriteSheet(spriteSheet);
     const isPending =
       this.deviceDisplayManager?.pendingSpriteSheet == spriteSheet;
     spriteSheet = structuredClone(spriteSheet);
@@ -4287,7 +4289,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      this.deviceDisplayManager!.selectSpriteSheet(
+      await this.deviceDisplayManager!.selectSpriteSheet(
         spriteSheetName,
         sendImmediately,
         isSending,

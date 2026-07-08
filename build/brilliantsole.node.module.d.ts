@@ -677,7 +677,6 @@ interface SelectDisplaySpriteSheetCommand extends BaseDisplayContextCommand {
 interface DrawDisplaySpriteCommand extends BaseOffsetPositionDisplayContextCommand {
     type: "drawSprite";
     spriteIndex: number;
-    use2Bytes: boolean;
 }
 interface DrawDisplaySpritesCommand extends BaseOffsetPositionDisplayContextCommand {
     type: "drawSprites";
@@ -697,7 +696,6 @@ type DisplaySpriteLines = DisplaySpriteLine[];
 type DisplaySpriteSerializedSubLine = {
     spriteSheetIndex: number;
     spriteIndices: number[];
-    use2Bytes: boolean;
 };
 type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
 type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
@@ -1037,12 +1035,12 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     #private;
     private static OnDisplayCanvasHelper;
     constructor();
-    get addEventListener(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void) => void;
-    get waitForEvent(): <T extends "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, options?: {
+    get addEventListener(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, listener: (event: ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>) => void) => void;
+    get waitForEvent(): <T extends "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>>;
-    get removeEventListeners(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "resize" | "numberOfColors" | "color" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => void;
+    }) => Promise<ListenerEvent<DisplayCanvasHelper, "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated", DisplayCanvasHelperEventMessages, T>>;
+    get removeEventListeners(): <T extends "*" | "device" | "deviceNotConnected" | "deviceConnected" | "deviceIsConnected" | "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete" | "deviceUpdated">(type: T) => void;
     removeAllEventListeners(): void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
@@ -2513,7 +2511,7 @@ declare class Device {
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    get connectionType(): "webSocket" | "udp" | "client" | "noble" | "webBluetooth" | undefined;
+    get connectionType(): "webSocket" | "udp" | "client" | "webBluetooth" | "noble" | undefined;
     disconnect(): Promise<boolean | undefined>;
     toggleConnection(options: ConnectOptions): Promise<void>;
     toggleConnection(reconnect?: boolean): Promise<void>;
@@ -2649,7 +2647,7 @@ declare class Device {
     reconnectViaUDP(): Promise<void>;
     private get _buildCameraData();
     get hasCamera(): boolean;
-    get cameraStatus(): "idle" | "asleep" | "focusing" | "takingPicture";
+    get cameraStatus(): "asleep" | "idle" | "focusing" | "takingPicture";
     takePicture(sensorRate?: number): Promise<void>;
     get autoPicture(): boolean;
     set autoPicture(newAutoPicture: boolean);
@@ -3120,9 +3118,9 @@ declare class ClientManager {
     static readonly shared: ClientManager;
     constructor();
     get clients(): Client[];
-    get addEventListener(): <T extends "clientConnected" | "*" | "client" | "clients" | "client*" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning">(type: T, listener: (event: ListenerEvent<ClientManager, "clientConnected" | "client" | "clients" | "client*" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning", ClientManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "clientConnected" | "*" | "client" | "clients" | "client*" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning">(type: T, listener: (event: ListenerEvent<ClientManager, "clientConnected" | "client" | "clients" | "client*" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning", ClientManagerEventMessages, T>) => void) => void;
-    get removeEventListeners(): <T extends "clientConnected" | "*" | "client" | "clients" | "client*" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning">(type: T) => void;
+    get addEventListener(): <T extends "clientConnected" | "*" | "client" | "clients" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning" | "client*">(type: T, listener: (event: ListenerEvent<ClientManager, "clientConnected" | "client" | "clients" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning" | "client*", ClientManagerEventMessages, T>) => void, options?: EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "clientConnected" | "*" | "client" | "clients" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning" | "client*">(type: T, listener: (event: ListenerEvent<ClientManager, "clientConnected" | "client" | "clients" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning" | "client*", ClientManagerEventMessages, T>) => void) => void;
+    get removeEventListeners(): <T extends "clientConnected" | "*" | "client" | "clients" | "clientNotConnected" | "clientConnecting" | "clientDisconnecting" | "clientConnectionStatus" | "clientIsConnected" | "clientIsScanningAvailable" | "clientIsScanning" | "clientDiscoveredDevice" | "clientExpiredDiscoveredDevice" | "clientScanningAvailable" | "clientScanningNotAvailable" | "clientScanning" | "clientNotScanning" | "client*">(type: T) => void;
 }
 declare const _default: ClientManager;
 

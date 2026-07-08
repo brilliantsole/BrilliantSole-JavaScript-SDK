@@ -13,7 +13,6 @@ export type DisplaySpriteLines = DisplaySpriteLine[];
 export type DisplaySpriteSerializedSubLine = {
     spriteSheetIndex: number;
     spriteIndices: number[];
-    use2Bytes: boolean;
 };
 export type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
 export type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
@@ -111,3 +110,4 @@ export type DisplaySpriteLinesMetrics = {
 };
 export declare function stringToSpriteLinesMetrics(string: string, spriteSheets: Record<string, DisplaySpriteSheet>, contextState: DisplayContextState, requireAll?: boolean, maxLineBreadth?: number, separators?: string[]): DisplaySpriteLinesMetrics;
 export declare function spriteLinesToSerializedLines(displayManager: DisplayManagerInterface, spriteLines: DisplaySpriteLines): DisplaySpriteSerializedLines;
+export declare function verifySpriteSheet(spriteSheet: DisplaySpriteSheet): void;

@@ -289,7 +289,6 @@ export interface SelectDisplaySpriteSheetCommand extends BaseDisplayContextComma
 export interface DrawDisplaySpriteCommand extends BaseOffsetPositionDisplayContextCommand {
     type: "drawSprite";
     spriteIndex: number;
-    use2Bytes: boolean;
 }
 export interface DrawDisplaySpritesCommand extends BaseOffsetPositionDisplayContextCommand {
     type: "drawSprites";

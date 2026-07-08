@@ -170,14 +170,11 @@ const draw = async () => {
 
   //console.log("drawing...");
 
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
 
-  await displayCanvasHelper.setColor(getTextColorIndex(), "white");
-  await displayCanvasHelper.setColor(
-    getCurrentTextBackgroundColorIndex(),
-    "green",
-  );
-  await displayCanvasHelper.setColor(getTextBackgroundColorIndex(), "#004700");
+  displayCanvasHelper.setColor(getTextColorIndex(), "white");
+  displayCanvasHelper.setColor(getCurrentTextBackgroundColorIndex(), "green");
+  displayCanvasHelper.setColor(getTextBackgroundColorIndex(), "#004700");
 
   if (spotifyState) {
     const { current_track } = spotifyState.track_window;
@@ -203,8 +200,8 @@ const draw = async () => {
       let nextNextLyricY, currentLyricY, nextLyricY;
 
       if (currentLyric) {
-        await displayCanvasHelper.setSpriteScale(1.1); // FIX
-        await displayCanvasHelper.saveContext();
+        displayCanvasHelper.setSpriteScale(1.1); // FIX
+        displayCanvasHelper.saveContext();
       }
 
       const maxLyricWidth =
@@ -279,9 +276,9 @@ const draw = async () => {
 
         //console.log({ lyricInterpolation });
 
-        await displayCanvasHelper.setFillBackground(true);
+        displayCanvasHelper.setFillBackground(true);
 
-        await displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
+        displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
 
         const centerX = displayCanvasHelper.width / 2;
 
@@ -307,15 +304,15 @@ const draw = async () => {
           lyricInterpolationOffsetY = 0;
         }
 
-        let drawCurrentLyric = async () => {};
-        let drawNextLyric = async () => {};
-        let drawNextNextLyric = async () => {};
+        let drawCurrentLyric = () => {};
+        let drawNextLyric = () => {};
+        let drawNextNextLyric = () => {};
 
         const lyricX = centerX - lineDurationTimerWidth / 2 - 4;
         currentLyricY = lyricOffsetY;
 
-        drawCurrentLyric = async () => {
-          await displayCanvasHelper.drawSpritesString(
+        drawCurrentLyric = () => {
+          displayCanvasHelper.drawSpritesString(
             lyricX,
             currentLyricY - lyricInterpolationOffsetY + lyricsOffsetY,
             currentLyricLine,
@@ -331,8 +328,8 @@ const draw = async () => {
             nextLyricSize.height / 2 +
             lyricSpacing;
 
-          drawNextLyric = async () => {
-            await displayCanvasHelper.drawSpritesString(
+          drawNextLyric = () => {
+            displayCanvasHelper.drawSpritesString(
               lyricX,
               nextLyricY - lyricInterpolationOffsetY + lyricsOffsetY,
               nextLyricLine,
@@ -350,8 +347,8 @@ const draw = async () => {
             nextNextLyricSize.height / 2 +
             lyricSpacing * 2;
 
-          drawNextNextLyric = async () => {
-            await displayCanvasHelper.drawSpritesString(
+          drawNextNextLyric = () => {
+            displayCanvasHelper.drawSpritesString(
               lyricX,
               nextNextLyricY - lyricInterpolationOffsetY + lyricsOffsetY,
               nextNextLyricLine,
@@ -361,39 +358,36 @@ const draw = async () => {
           };
         }
 
-        await displayCanvasHelper.selectBackgroundColor(
+        displayCanvasHelper.selectBackgroundColor(
           getCurrentTextBackgroundColorIndex(),
         );
-        await displayCanvasHelper.selectSpriteColor(
+        displayCanvasHelper.selectSpriteColor(
           0,
           getCurrentTextBackgroundColorIndex(),
         );
         if (isAnimatingLyric) {
-          await drawNextLyric();
+          drawNextLyric();
         } else {
-          await drawCurrentLyric();
+          drawCurrentLyric();
         }
-        await displayCanvasHelper.selectBackgroundColor(
+        displayCanvasHelper.selectBackgroundColor(
           getTextBackgroundColorIndex(),
         );
-        await displayCanvasHelper.selectSpriteColor(
-          0,
-          getTextBackgroundColorIndex(),
-        );
+        displayCanvasHelper.selectSpriteColor(0, getTextBackgroundColorIndex());
         if (isAnimatingLyric) {
-          await drawCurrentLyric();
-          await drawNextNextLyric();
+          drawCurrentLyric();
+          drawNextNextLyric();
         } else {
-          await drawNextLyric();
-          await drawNextNextLyric();
+          drawNextLyric();
+          drawNextNextLyric();
         }
 
         if (!isSpotifyTimeInputChanging && (!isMouseDown || !didMouseSeek)) {
-          await displayCanvasHelper.selectLineColor(getTextColorIndex());
-          await displayCanvasHelper.setLineWidth(8);
-          await displayCanvasHelper.setIgnoreFill(true);
-          await displayCanvasHelper.setFillBackground(false);
-          await displayCanvasHelper.drawArc(
+          displayCanvasHelper.selectLineColor(getTextColorIndex());
+          displayCanvasHelper.setLineWidth(8);
+          displayCanvasHelper.setIgnoreFill(true);
+          displayCanvasHelper.setFillBackground(false);
+          displayCanvasHelper.drawArc(
             centerX +
               (false && isAnimatingLyric
                 ? nextLyricSize.width
@@ -409,19 +403,19 @@ const draw = async () => {
           );
         }
 
-        await displayCanvasHelper.restoreContext();
+        displayCanvasHelper.restoreContext();
       }
     }
 
     if (true && !isUpdatingNonEnglishCharacters) {
-      await displayCanvasHelper.saveContext();
-      await displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
-      await displayCanvasHelper.selectSpriteColor(0, 0);
-      await displayCanvasHelper.setFillBackground(false);
+      displayCanvasHelper.saveContext();
+      displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
+      displayCanvasHelper.selectSpriteColor(0, 0);
+      displayCanvasHelper.setFillBackground(false);
 
-      await displayCanvasHelper.setHorizontalAlignment("start");
-      await displayCanvasHelper.setVerticalAlignment("end");
-      await displayCanvasHelper.setSpriteScale(fontScale);
+      displayCanvasHelper.setHorizontalAlignment("start");
+      displayCanvasHelper.setVerticalAlignment("end");
+      displayCanvasHelper.setSpriteScale(fontScale);
       const trackStringMaxWidth =
         displayCanvasHelper.width - (imageHeight + imagePadding);
       const isTrackStringTooWide =
@@ -455,56 +449,56 @@ const draw = async () => {
           lastTrackStringOffsetXUpdate = now;
         }
       }
-      await displayCanvasHelper.drawSpritesString(
+      displayCanvasHelper.drawSpritesString(
         imageHeight + imagePadding - trackStringOffsetX,
         displayCanvasHelper.height - timelineHeight - 10,
         trackString,
       );
-      await displayCanvasHelper.restoreContext();
+      displayCanvasHelper.restoreContext();
     }
 
     if (true) {
-      await displayCanvasHelper.saveContext();
-      await displayCanvasHelper.resetSpriteScale();
-      await displayCanvasHelper.resetSpriteColors();
-      await displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
-      await displayCanvasHelper.selectSpriteColor(
+      displayCanvasHelper.saveContext();
+      displayCanvasHelper.resetSpriteScale();
+      displayCanvasHelper.resetSpriteColors();
+      displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
+      displayCanvasHelper.selectSpriteColor(
         2,
         getCurrentTextBackgroundColorIndex(),
       );
-      // await displayCanvasHelper.selectBackgroundColor(1);
-      // await displayCanvasHelper.setFillBackground(true);
-      await displayCanvasHelper.setHorizontalAlignment("start");
-      await displayCanvasHelper.setVerticalAlignment("end");
+      // displayCanvasHelper.selectBackgroundColor(1);
+      // displayCanvasHelper.setFillBackground(true);
+      displayCanvasHelper.setHorizontalAlignment("start");
+      displayCanvasHelper.setVerticalAlignment("end");
       const spriteWidth =
         displayCanvasHelper.width - imageHeight - imagePadding - 10;
       const spriteHeight = timelineHeight;
-      await displayCanvasHelper.startSprite(
+      displayCanvasHelper.startSprite(
         imageHeight + imagePadding,
         displayCanvasHelper.height - 6,
         spriteWidth,
         38,
       );
-      await displayCanvasHelper.setHorizontalAlignment("start");
+      displayCanvasHelper.setHorizontalAlignment("start");
 
       const width = spriteWidth - 6;
       const height = spriteHeight - 8;
       const x = -width / 2;
-      await displayCanvasHelper.selectFillColor(
+      displayCanvasHelper.selectFillColor(
         spotifyPaused || isSpotifyTimeInputChanging ? 1 : 2,
       );
-      await displayCanvasHelper.drawRect(
+      displayCanvasHelper.drawRect(
         x + 3,
         0,
         width * timelineInterpolation,
         height - 6,
       );
-      await displayCanvasHelper.setLineWidth(6);
-      await displayCanvasHelper.setIgnoreFill(true);
-      await displayCanvasHelper.drawRoundRect(x - 2, 0, width, height, 10);
+      displayCanvasHelper.setLineWidth(6);
+      displayCanvasHelper.setIgnoreFill(true);
+      displayCanvasHelper.drawRoundRect(x - 2, 0, width, height, 10);
 
-      await displayCanvasHelper.endSprite();
-      await displayCanvasHelper.restoreContext();
+      displayCanvasHelper.endSprite();
+      displayCanvasHelper.restoreContext();
     }
 
     if (
@@ -513,23 +507,19 @@ const draw = async () => {
       displayCanvasHelper.spriteSheets["album"]
     ) {
       //console.log("drawing album art...");
-      await displayCanvasHelper.saveContext();
-      await displayCanvasHelper.setHorizontalAlignment("start");
-      await displayCanvasHelper.setVerticalAlignment("end");
-      await displayCanvasHelper.selectSpriteSheet("album");
-      await displayCanvasHelper.selectSpriteSheetPalette("album", 0, true);
-      await displayCanvasHelper.setSpriteScale(1);
-      await displayCanvasHelper.drawSprite(
-        0,
-        displayCanvasHelper.height,
-        "album",
-      );
-      await displayCanvasHelper.selectSpriteSheetPalette("album", 0);
-      await displayCanvasHelper.restoreContext();
+      displayCanvasHelper.saveContext();
+      displayCanvasHelper.setHorizontalAlignment("start");
+      displayCanvasHelper.setVerticalAlignment("end");
+      displayCanvasHelper.selectSpriteSheet("album");
+      displayCanvasHelper.selectSpriteSheetPalette("album", 0, true);
+      displayCanvasHelper.setSpriteScale(1);
+      displayCanvasHelper.drawSprite(0, displayCanvasHelper.height, "album");
+      displayCanvasHelper.selectSpriteSheetPalette("album", 0);
+      displayCanvasHelper.restoreContext();
     }
   }
 
-  await displayCanvasHelper.show();
+  displayCanvasHelper.show();
 };
 window.draw = draw;
 
@@ -655,8 +645,11 @@ spotifyToggleAuthorizationButton.addEventListener("click", () => {
     `&scope=${encodeURIComponent(spotifyScopes.join(" "))}` +
     `&redirect_uri=${encodeURIComponent(spotifyRedirectUrl)}`;
   console.log({ authUrl });
-  window.open(authUrl, "_blank").focus();
-  //window.location = authUrl;
+  if (BS.Environment.isInIframe) {
+    window.location = authUrl;
+  } else {
+    window.open(authUrl, "_blank").focus();
+  }
 });
 
 let spotifyClientId = "";
@@ -797,6 +790,7 @@ const setIsSpotifyWebPlaybackSDKReady = async (
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     if (code) {
+      console.log({ code });
       const tokenUrl = "https://accounts.spotify.com/api/token";
 
       const response = await fetch(tokenUrl, {

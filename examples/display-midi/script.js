@@ -278,50 +278,41 @@ let draw = async () => {
 
   console.log({ spritesLineHeight });
 
-  await displayCanvasHelper.setColor(getWhiteKeyColorIndex(), "white");
-  await displayCanvasHelper.setColor(getBlackKeyColorIndex(), "black");
-  await displayCanvasHelper.setColor(getWhiteKeyDownColorIndex(), "yellow");
-  await displayCanvasHelper.setColor(getBlackKeyDownColorIndex(), "#A0A018");
-  await displayCanvasHelper.setColor(getCorrectNoteColorIndex(), "green");
-  await displayCanvasHelper.setColor(getIncorrectNoteColorIndex(), "red");
-  await displayCanvasHelper.setColor(getHighlightedWhiteColorIndex(), "00BFFF");
-  await displayCanvasHelper.setColor(getHighlightedBlackColorIndex(), "blue");
-  await displayCanvasHelper.setColor(
-    getPitchHighlightedWhiteColorIndex(),
-    "orange",
-  );
-  await displayCanvasHelper.setColor(
-    getPitchHighlightedBlackColorIndex(),
-    "orange",
-  );
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  displayCanvasHelper.setColor(getWhiteKeyColorIndex(), "white");
+  displayCanvasHelper.setColor(getBlackKeyColorIndex(), "black");
+  displayCanvasHelper.setColor(getWhiteKeyDownColorIndex(), "yellow");
+  displayCanvasHelper.setColor(getBlackKeyDownColorIndex(), "#A0A018");
+  displayCanvasHelper.setColor(getCorrectNoteColorIndex(), "green");
+  displayCanvasHelper.setColor(getIncorrectNoteColorIndex(), "red");
+  displayCanvasHelper.setColor(getHighlightedWhiteColorIndex(), "00BFFF");
+  displayCanvasHelper.setColor(getHighlightedBlackColorIndex(), "blue");
+  displayCanvasHelper.setColor(getPitchHighlightedWhiteColorIndex(), "orange");
+  displayCanvasHelper.setColor(getPitchHighlightedBlackColorIndex(), "orange");
+  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
 
   if (shouldDrawSheet) {
     const spriteSheet = abcSpriteSheets[currentSystemIndex];
     const sprite = spriteSheet.sprites[0];
-    await displayCanvasHelper.selectSpriteColor(1, getAbcColorIndex());
-    await displayCanvasHelper.selectSpriteColor(2, getWhiteKeyDownColorIndex());
-    await displayCanvasHelper.selectSpriteColor(3, getCorrectNoteColorIndex());
-    await displayCanvasHelper.selectSpriteColor(
-      4,
-      getIncorrectNoteColorIndex(),
-    );
-    await displayCanvasHelper.selectSpriteColor(
+    displayCanvasHelper.selectSpriteColor(1, getAbcColorIndex());
+    displayCanvasHelper.selectSpriteColor(2, getWhiteKeyDownColorIndex());
+    displayCanvasHelper.selectSpriteColor(3, getCorrectNoteColorIndex());
+    displayCanvasHelper.selectSpriteColor(4, getIncorrectNoteColorIndex());
+    displayCanvasHelper.selectSpriteColor(
       5,
       getPitchHighlightedWhiteColorIndex(),
     );
 
     const { width, height } = sprite;
-    await displayCanvasHelper.setHorizontalAlignment("start");
-    await displayCanvasHelper.setVerticalAlignment("start");
-    await displayCanvasHelper.startSprite(0, 0, width, height);
-    await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
-    // await displayCanvasHelper.selectBackgroundColor(getAbcColorIndex());
-    // await displayCanvasHelper.setFillBackground(1);
-    await displayCanvasHelper.drawSprite(0, 0, spriteSheet.sprites[0].name);
+    displayCanvasHelper.setHorizontalAlignment("start");
+    displayCanvasHelper.setVerticalAlignment("start");
+    displayCanvasHelper.startSprite(0, 0, width, height);
+    displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+    // displayCanvasHelper.selectBackgroundColor(getAbcColorIndex());
+    // displayCanvasHelper.setFillBackground(1);
+    displayCanvasHelper.drawSprite(0, 0, spriteSheet.sprites[0].name);
 
     const overlaySpriteSheet = abcSpriteSheets["overlay"];
-    await displayCanvasHelper.selectSpriteSheet(overlaySpriteSheet.name);
+    displayCanvasHelper.selectSpriteSheet(overlaySpriteSheet.name);
 
     for (let i = 0; i <= downFrequencies.length; i++) {
       const downFrequency = downFrequencies[i] ?? pitchDetectionFrequency;
@@ -347,16 +338,16 @@ let draw = async () => {
 
       const pitchIndex = frequencyMidis.indexOf(downFrequency.toMidi());
 
-      // await displayCanvasHelper.selectFillColor(isCorrect ? 3 : 4);
+      // displayCanvasHelper.selectFillColor(isCorrect ? 3 : 4);
 
       //const hasDash = isOffStaff(downFrequency);
       const hasDash = ["C4", "C#4"].includes(downFrequency.toNote());
       let spriteIndex = hasDash ? 0 : 1;
       if (isPitchDetectionFrequency) {
         spriteIndex = 1;
-        await displayCanvasHelper.selectFillColor(5);
+        displayCanvasHelper.selectFillColor(5);
       } else {
-        await displayCanvasHelper.selectFillColor(isCorrect ? 3 : 4);
+        displayCanvasHelper.selectFillColor(isCorrect ? 3 : 4);
       }
 
       const sprite = overlaySpriteSheet.sprites[spriteIndex];
@@ -390,7 +381,7 @@ let draw = async () => {
         semitoneDifference = downFrequency.toMidi() - closestFrequency.toMidi();
       }
 
-      await displayCanvasHelper.drawSprite(
+      displayCanvasHelper.drawSprite(
         2 * x - width / 2 - 0.037064552307128906,
         2 * y - height / 2 - 15.5494384765625 + yOffset,
         sprite.name,
@@ -401,11 +392,11 @@ let draw = async () => {
         let sharpSprite = overlaySpriteSheet.sprites[2];
 
         if (isPitchDetectionFrequency) {
-          await displayCanvasHelper.selectFillColor(5);
+          displayCanvasHelper.selectFillColor(5);
         } else {
-          await displayCanvasHelper.selectFillColor(isCorrect ? 3 : 4);
+          displayCanvasHelper.selectFillColor(isCorrect ? 3 : 4);
         }
-        await displayCanvasHelper.drawSprite(
+        displayCanvasHelper.drawSprite(
           2 * x - width / 2 - 0.037064552307128906 - 21,
           2 * y - height / 2 - 15.5494384765625 + yOffset,
           sharpSprite.name,
@@ -414,32 +405,32 @@ let draw = async () => {
 
       //console.log({ staffDistance, semitoneDifference });
     }
-    await displayCanvasHelper.endSprite();
+    displayCanvasHelper.endSprite();
 
     if (shouldDrawCurrentMarker) {
       const { notePositions } = currentVoiceConfig;
       console.log({ shouldDrawCurrentMarker });
       let { x, y } = notePositions[0];
-      await displayCanvasHelper.setRotation(30, false);
-      await displayCanvasHelper.selectFillColor(getTextColorIndex());
-      await displayCanvasHelper.drawRegularPolygon(
+      displayCanvasHelper.setRotation(30, false);
+      displayCanvasHelper.selectFillColor(getTextColorIndex());
+      displayCanvasHelper.drawRegularPolygon(
         2 * x - 0.037064552307128906,
         sprite.height + 20,
         10,
         3,
       );
-      await displayCanvasHelper.clearRotation();
+      displayCanvasHelper.clearRotation();
     }
 
     if (shouldDrawNoteName) {
       const { notePositions, pitches, frequencies } = currentVoiceConfig;
       console.log({ shouldDrawNoteName });
       let { x, y } = notePositions[0];
-      await displayCanvasHelper.setHorizontalAlignment("center");
-      await displayCanvasHelper.selectSpriteSheet("english");
-      await displayCanvasHelper.selectFillColor(getTextColorIndex());
-      // await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight); // remove
-      await displayCanvasHelper.drawSpritesString(
+      displayCanvasHelper.setHorizontalAlignment("center");
+      displayCanvasHelper.selectSpriteSheet("english");
+      displayCanvasHelper.selectFillColor(getTextColorIndex());
+      // displayCanvasHelper.setSpritesLineHeight(spritesLineHeight); // remove
+      displayCanvasHelper.drawSpritesString(
         2 * x - 3,
         sprite.height + 20 + 10,
         frequencies[0].toNote().slice(0, -1),
@@ -463,14 +454,14 @@ let draw = async () => {
     const blackKeyWidth = Math.round(whiteKeyWidth / 2 + whiteKeySpacing * 2);
     const blackKeyHeight = Math.round(whiteKeyHeight * 0.6);
 
-    await displayCanvasHelper.setHorizontalAlignment("start");
-    await displayCanvasHelper.setVerticalAlignment("start");
+    displayCanvasHelper.setHorizontalAlignment("start");
+    displayCanvasHelper.setVerticalAlignment("start");
 
     const { frequencyMidis } = currentVoiceConfig;
 
     let frequency = Tone.Frequency(`C${startOctave}`);
     let xOffset = 0;
-    await displayCanvasHelper.selectFillColor(getWhiteKeyColorIndex());
+    displayCanvasHelper.selectFillColor(getWhiteKeyColorIndex());
     for (let i = 0; i < numberOfWhiteKeys; i++) {
       //console.log(`drawing white note ${frequency.toNote()}`);
 
@@ -483,31 +474,27 @@ let draw = async () => {
         pitchDetectionFrequency &&
         pitchDetectionFrequency.toMidi() == frequency.toMidi()
       ) {
-        await displayCanvasHelper.selectFillColor(
+        displayCanvasHelper.selectFillColor(
           getPitchHighlightedWhiteColorIndex(),
         );
       } else if (downFrequency) {
         if (isCurrent && shouldCorrectDrawnPianoDownKeys) {
-          await displayCanvasHelper.selectFillColor(
+          displayCanvasHelper.selectFillColor(
             isCorrect
               ? getCorrectNoteColorIndex()
               : getIncorrectNoteColorIndex(),
           );
         } else {
-          await displayCanvasHelper.selectFillColor(
-            getWhiteKeyDownColorIndex(),
-          );
+          displayCanvasHelper.selectFillColor(getWhiteKeyDownColorIndex());
         }
       } else {
         if (shouldHighlightCurrentVoiceNotes && isCorrect) {
-          await displayCanvasHelper.selectFillColor(
-            getHighlightedWhiteColorIndex(),
-          );
+          displayCanvasHelper.selectFillColor(getHighlightedWhiteColorIndex());
         } else {
-          await displayCanvasHelper.selectFillColor(getWhiteKeyColorIndex());
+          displayCanvasHelper.selectFillColor(getWhiteKeyColorIndex());
         }
       }
-      await displayCanvasHelper.drawRect(
+      displayCanvasHelper.drawRect(
         x + xOffset,
         y,
         whiteKeyWidth,
@@ -518,15 +505,15 @@ let draw = async () => {
         frequency = frequency.transpose(1);
       } while (frequency.toNote().length == 3);
       if (downFrequency) {
-        await displayCanvasHelper.selectFillColor(getWhiteKeyColorIndex());
+        displayCanvasHelper.selectFillColor(getWhiteKeyColorIndex());
       }
     }
 
     frequency = Tone.Frequency(`C#${startOctave}`);
-    await displayCanvasHelper.setHorizontalAlignment("center");
+    displayCanvasHelper.setHorizontalAlignment("center");
     xOffset = Math.round(whiteKeyWidth + whiteKeySpacing / 2);
     const blackKeySpacing = whiteKeyWidth + whiteKeySpacing;
-    await displayCanvasHelper.selectFillColor(getBlackKeyColorIndex());
+    displayCanvasHelper.selectFillColor(getBlackKeyColorIndex());
     for (let i = 0; i < numberOfBlackKeys; i++) {
       //console.log(`drawing black note ${frequency.toNote()}`);
       const isCorrect = frequencyMidis.includes(frequency.toMidi());
@@ -538,31 +525,27 @@ let draw = async () => {
         pitchDetectionFrequency &&
         pitchDetectionFrequency.toMidi() == frequency.toMidi()
       ) {
-        await displayCanvasHelper.selectFillColor(
+        displayCanvasHelper.selectFillColor(
           getPitchHighlightedBlackColorIndex(),
         );
       } else if (downFrequency) {
         if (isCurrent && shouldCorrectDrawnPianoDownKeys) {
-          await displayCanvasHelper.selectFillColor(
+          displayCanvasHelper.selectFillColor(
             isCorrect
               ? getCorrectNoteColorIndex()
               : getIncorrectNoteColorIndex(),
           );
         } else {
-          await displayCanvasHelper.selectFillColor(
-            getBlackKeyDownColorIndex(),
-          );
+          displayCanvasHelper.selectFillColor(getBlackKeyDownColorIndex());
         }
       } else {
         if (shouldHighlightCurrentVoiceNotes && isCorrect) {
-          await displayCanvasHelper.selectFillColor(
-            getHighlightedBlackColorIndex(),
-          );
+          displayCanvasHelper.selectFillColor(getHighlightedBlackColorIndex());
         } else {
-          await displayCanvasHelper.selectFillColor(getBlackKeyColorIndex());
+          displayCanvasHelper.selectFillColor(getBlackKeyColorIndex());
         }
       }
-      await displayCanvasHelper.drawRect(
+      displayCanvasHelper.drawRect(
         x + xOffset,
         y,
         blackKeyWidth,
@@ -581,7 +564,7 @@ let draw = async () => {
         frequency = frequency.transpose(1);
       } while (frequency.toNote().length == 2);
       if (downFrequency) {
-        await displayCanvasHelper.selectFillColor(getBlackKeyColorIndex());
+        displayCanvasHelper.selectFillColor(getBlackKeyColorIndex());
       }
     }
   }
@@ -589,8 +572,8 @@ let draw = async () => {
   latestDrawTime = Date.now();
   isWaitingToRedraw = false;
 
-  await displayCanvasHelper.selectFillColor(1);
-  await displayCanvasHelper.show();
+  displayCanvasHelper.selectFillColor(1);
+  displayCanvasHelper.show();
 };
 const debouncedDraw = false ? draw : BS.ThrottleUtils.debounce(draw, 40, false);
 window.draw = draw;

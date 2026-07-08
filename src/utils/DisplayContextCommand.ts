@@ -600,7 +600,6 @@ export interface SelectDisplaySpriteSheetCommand extends BaseDisplayContextComma
 export interface DrawDisplaySpriteCommand extends BaseOffsetPositionDisplayContextCommand {
   type: "drawSprite";
   spriteIndex: number;
-  use2Bytes: boolean;
 }
 
 export interface DrawDisplaySpritesCommand extends BaseOffsetPositionDisplayContextCommand {
@@ -1413,19 +1412,14 @@ export function serializeDisplayContextCommandData(
       break;
     case "drawSprite":
       {
-        const { offsetX, offsetY, spriteIndex, use2Bytes } = command;
-        dataView = new DataView(new ArrayBuffer(2 * 2 + (use2Bytes ? 2 : 1)));
+        const { offsetX, offsetY, spriteIndex } = command;
+        dataView = new DataView(new ArrayBuffer(2 * 2 + 1));
         let offset = 0;
         dataView.setInt16(offset, offsetX, true);
         offset += 2;
         dataView.setInt16(offset, offsetY, true);
         offset += 2;
-        if (use2Bytes) {
-          dataView.setUint16(offset, spriteIndex, true);
-          offset += 2;
-        } else {
-          dataView.setUint8(offset++, spriteIndex!);
-        }
+        dataView.setUint8(offset++, spriteIndex!);
       }
       break;
     case "drawSprites":
@@ -1435,21 +1429,12 @@ export function serializeDisplayContextCommandData(
         spriteSerializedLines.forEach((spriteLines) => {
           const subLineArrayBuffers: ArrayBuffer[] = [];
           spriteLines.forEach((subSpriteLine) => {
-            const { spriteSheetIndex, spriteIndices, use2Bytes } =
-              subSpriteLine;
+            const { spriteSheetIndex, spriteIndices } = subSpriteLine;
             const subLineSpriteIndicesDataView = new DataView(
-              new ArrayBuffer(spriteIndices.length * (use2Bytes ? 2 : 1)),
+              new ArrayBuffer(spriteIndices.length * 1),
             );
             spriteIndices.forEach((spriteIndex, i) => {
-              if (use2Bytes) {
-                subLineSpriteIndicesDataView.setUint16(
-                  i * 2,
-                  spriteIndex,
-                  true,
-                );
-              } else {
-                subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
-              }
+              subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
             });
             const subLineHeaderDataView = new DataView(new ArrayBuffer(2));
             subLineHeaderDataView.setUint8(0, spriteSheetIndex);
@@ -2234,21 +2219,10 @@ export function parseDisplayContextCommands(
           const offsetY = dataView.getInt16(offset, true);
           offset += 2;
 
-          _console.assertWithError(
-            displayManager.selectedSpriteSheet,
-            "displayManager doesn't have a selected spriteSheet",
-          );
-          const use2Bytes =
-            displayManager.selectedSpriteSheet!.sprites.length > 255;
           let spriteIndex: number;
-          if (use2Bytes) {
-            spriteIndex = dataView.getUint16(offset, true);
-            offset += 2;
-          } else {
-            spriteIndex = dataView.getUint8(offset++);
-          }
+          spriteIndex = dataView.getUint8(offset++);
 
-          command = { type, offsetX, offsetY, spriteIndex, use2Bytes };
+          command = { type, offsetX, offsetY, spriteIndex };
         }
         break;
       case "drawSprites":
@@ -2276,29 +2250,15 @@ export function parseDisplayContextCommands(
               const spriteSheetIndex = dataView.getUint8(offset++);
               const spriteCount = dataView.getUint8(offset++);
 
-              const spriteSheet =
-                displayManager.getSpriteSheetByIndex(spriteSheetIndex);
-              _console.assertWithError(
-                spriteSheet,
-                `no spriteSheet found for spriteSheetIndex ${spriteSheetIndex}`,
-              );
-
-              const use2Bytes = spriteSheet!.sprites.length > 255;
-
               const spriteIndices: number[] = [];
               for (let i = 0; i < spriteCount; i++) {
-                spriteIndices.push(
-                  use2Bytes
-                    ? dataView.getUint16(offset, true)
-                    : dataView.getUint8(offset),
-                );
-                offset += use2Bytes ? 2 : 1;
+                spriteIndices.push(dataView.getUint8(offset));
+                offset += 1;
               }
 
               spriteLine.push({
                 spriteSheetIndex,
                 spriteIndices,
-                use2Bytes,
               });
             }
 

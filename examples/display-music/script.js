@@ -135,15 +135,15 @@ const draw = async () => {
 
   displayCanvasHelper.setColor(getTextColorIndex(), "white");
 
-  await displayCanvasHelper.setVerticalAlignment("start");
-  await displayCanvasHelper.setHorizontalAlignment("start");
+  displayCanvasHelper.setVerticalAlignment("start");
+  displayCanvasHelper.setHorizontalAlignment("start");
   if (showCursor) {
     for (let i = 0; i < displayCanvasHelper.numberOfColors; i++) {
-      await displayCanvasHelper.selectSpriteColor(i, i);
+      displayCanvasHelper.selectSpriteColor(i, i);
     }
   } else {
     for (let i = 0; i < 2; i++) {
-      await displayCanvasHelper.selectSpriteColor(i, i);
+      displayCanvasHelper.selectSpriteColor(i, i);
     }
   }
 
@@ -163,12 +163,12 @@ const draw = async () => {
     const height = spriteSheet.sprites[0].height;
 
     console.log({ spriteX, spriteY });
-    await displayCanvasHelper.startSprite(spriteX, spriteY, osmdWidth, height);
+    displayCanvasHelper.startSprite(spriteX, spriteY, osmdWidth, height);
 
     let y = -height / 2;
 
-    await displayCanvasHelper.setVerticalAlignment("start");
-    await displayCanvasHelper.setHorizontalAlignment("start");
+    displayCanvasHelper.setVerticalAlignment("start");
+    displayCanvasHelper.setHorizontalAlignment("start");
 
     let cursorsToDraw = cursors.filter(
       (cursor) => cursor.systemIndex == systemIndex,
@@ -205,30 +205,25 @@ const draw = async () => {
       //   offsetY,
       // });
       //console.log({ drawnCursorIndex, colorIndex: 2 + drawnCursorIndex });
-      await displayCanvasHelper.selectFillColor(colorIndex);
-      await displayCanvasHelper.drawRect(
-        x + offsetX,
-        y + offsetY,
-        width,
-        height,
-      );
+      displayCanvasHelper.selectFillColor(colorIndex);
+      displayCanvasHelper.drawRect(x + offsetX, y + offsetY, width, height);
     }
 
-    await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
-    await displayCanvasHelper.drawSprite(x, y, "svg");
+    displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
+    displayCanvasHelper.drawSprite(x, y, "svg");
     spriteY += height;
 
-    await displayCanvasHelper.endSprite();
+    displayCanvasHelper.endSprite();
   }
 
   latestDrawTime = Date.now();
   if (currentCursor && drawnCursors.includes(currentCursor)) {
-    await displayCanvasHelper.setColor(
+    displayCanvasHelper.setColor(
       drawnCursors.indexOf(currentCursor),
       cursorColor,
     );
   }
-  await displayCanvasHelper.show();
+  displayCanvasHelper.show();
 };
 window.draw = draw;
 let latestDrawTime = 0;

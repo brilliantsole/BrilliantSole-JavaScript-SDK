@@ -37,7 +37,6 @@ export type DisplaySpriteLines = DisplaySpriteLine[];
 export type DisplaySpriteSerializedSubLine = {
   spriteSheetIndex: number;
   spriteIndices: number[];
-  use2Bytes: boolean;
 };
 export type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
 export type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
@@ -75,7 +74,7 @@ export type DisplaySpriteSheet = {
 export const spriteHeaderLength = 2 * 2; // width, height
 export function calculateSpriteSheetHeaderLength(numberOfSprites: number) {
   // numberOfSprites, spriteOffsets, spriteHeader
-  return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
+  return 1 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
 }
 export function getCurvesPoints(curves: DisplayBezierCurve[]) {
   const curvePoints: Vector2[] = [];
@@ -112,7 +111,7 @@ export function serializeSpriteSheet(
     headerLength += 2; // headerLength
     headerLength += 2; // nameLength
     headerLength += encodedName.byteLength; // name
-    headerLength += 2; // numberOfSprites
+    headerLength += 1; // numberOfSprites
     headerLength += 2 * sprites.length; // nameOffsets
     headerLength += encodedSpriteNames.reduce(
       (encodedSpriteNamesLength, encodedSpriteName) =>
@@ -132,8 +131,7 @@ export function serializeSpriteSheet(
       headerDataView.setUint8(offset++, value);
     }
 
-    headerDataView.setUint16(offset, sprites.length, true);
-    offset += 2;
+    headerDataView.setUint8(offset++, sprites.length);
 
     let spriteNamesOffset = offset + 2 * sprites.length;
     for (const encodedSpriteName of encodedSpriteNames) {
@@ -151,8 +149,8 @@ export function serializeSpriteSheet(
   }
 
   const numberOfSprites = sprites.length;
-  const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
-  numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
+  const numberOfSpritesDataView = new DataView(new ArrayBuffer(1));
+  numberOfSpritesDataView.setUint8(0, numberOfSprites);
 
   const spritePayloads = sprites.map((sprite, spriteIndex) => {
     const commandsData = serializeDisplayContextCommands(
@@ -222,8 +220,7 @@ export function parseSpriteSheet(
     _console.log({ name });
     offset += nameLength;
 
-    const numberOfSpriteNames = dataView.getUint16(offset, true);
-    offset += 2;
+    const numberOfSpriteNames = dataView.getUint8(offset++);
     _console.log({ numberOfSpriteNames });
 
     for (
@@ -262,8 +259,7 @@ export function parseSpriteSheet(
 
   const baseOffset = offset;
   // [numberOfSprites, ...spriteOffsets, ...[width, height, commands]]
-  const numberOfSprites = dataView.getUint16(offset, true);
-  offset += 2;
+  const numberOfSprites = dataView.getUint8(offset++);
   _console.log({ numberOfSprites, offset });
 
   for (let spriteIndex = 0; spriteIndex < numberOfSprites; spriteIndex++) {
@@ -1323,7 +1319,6 @@ export function spriteLinesToSerializedLines(
       const serializedSubLine: DisplaySpriteSerializedSubLine = {
         spriteSheetIndex,
         spriteIndices: [],
-        use2Bytes: spriteSheet.sprites.length > 255,
       };
       spriteSubLine.spriteNames.forEach((spriteName) => {
         let spriteIndex = spriteSheet.sprites.findIndex(
@@ -1342,4 +1337,13 @@ export function spriteLinesToSerializedLines(
   });
   _console.log("spriteSerializedLines", spriteSerializedLines);
   return spriteSerializedLines;
+}
+
+export function verifySpriteSheet(spriteSheet: DisplaySpriteSheet) {
+  _console.assertRangeWithError(
+    "spriteSheet.sprites.length",
+    spriteSheet.sprites.length,
+    1,
+    255,
+  );
 }
