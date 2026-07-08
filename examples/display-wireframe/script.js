@@ -258,12 +258,13 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  await displayCanvasHelper.setColor(1, "white");
-  await displayCanvasHelper.setColor(intersectingColorIndex, "lightgreen");
-  await displayCanvasHelper.setColor(draggingColorIndex, "green");
-  await displayCanvasHelper.setColor(boxColorIndex, "#00BFFF");
-  await displayCanvasHelper.selectFillColor(1);
-  await displayCanvasHelper.setSegmentRadius(2);
+  displayCanvasHelper.setColor(1, "white");
+  displayCanvasHelper.setColor(intersectingColorIndex, "lightgreen");
+  displayCanvasHelper.setColor(draggingColorIndex, "green");
+  displayCanvasHelper.setColor(boxColorIndex, "#00BFFF");
+  displayCanvasHelper.selectFillColor(1);
+  displayCanvasHelper.setSegmentRadius(2);
+  displayCanvasHelper.resetAlignment();
 
   switch (mode) {
     case "scene":
@@ -273,10 +274,10 @@ const draw = async () => {
       await drawScene(punchScene);
       break;
     case "glove":
-      await displayCanvasHelper.selectFillColor(1);
-      // await displayCanvasHelper.setSegmentRadius(2);
+      displayCanvasHelper.selectFillColor(1);
+      // displayCanvasHelper.setSegmentRadius(2);
       await drawScene(gloveScene, (entity) => entity.nodeName == "A-PLANE");
-      await displayCanvasHelper.selectFillColor(
+      displayCanvasHelper.selectFillColor(
         draggingEntity
           ? draggingColorIndex
           : intersecting
@@ -297,7 +298,7 @@ const draw = async () => {
       break;
   }
 
-  await displayCanvasHelper.show();
+  displayCanvasHelper.show();
 };
 window.draw = draw;
 
@@ -375,11 +376,11 @@ const drawScene = async (scene, filterCallback) => {
       ],
     };
     await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
-    await displayCanvasHelper.selectSpriteSheet("scene");
-    await displayCanvasHelper.selectSpriteColor(1, 1);
-    await displayCanvasHelper.drawSprite(640 / 2, 400 / 2, "wireframe");
+    displayCanvasHelper.selectSpriteSheet("scene");
+    displayCanvasHelper.selectSpriteColor(1, 1);
+    displayCanvasHelper.drawSprite(640 / 2, 400 / 2, "wireframe");
   } else {
-    await displayCanvasHelper.drawWireframe(wireframe);
+    displayCanvasHelper.drawWireframe(wireframe);
   }
 };
 window.drawScene = drawScene;
@@ -1350,7 +1351,7 @@ const setAutoDraw = (newAutoDraw) => {
 };
 
 displayCanvasHelper.addEventListener("deviceConnected", () => {
-  //setAutoDraw(true);
+  setAutoDraw(true);
 });
 
 displayCanvasHelper.addEventListener("ready", () => {
