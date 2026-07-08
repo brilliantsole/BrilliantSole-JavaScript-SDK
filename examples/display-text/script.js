@@ -293,13 +293,13 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  await displayCanvasHelper.setColor(textColorIndex, textColor);
-  await displayCanvasHelper.selectFillColor(textColorIndex);
+  displayCanvasHelper.setColor(textColorIndex, textColor);
+  displayCanvasHelper.selectFillColor(textColorIndex);
 
-  await displayCanvasHelper.setColor(backgroundColorIndex, backgroundColor);
-  await displayCanvasHelper.selectBackgroundColor(backgroundColorIndex);
-  await displayCanvasHelper.setFillBackground(true);
-  await displayCanvasHelper.selectSpriteColor(0, 2);
+  displayCanvasHelper.setColor(backgroundColorIndex, backgroundColor);
+  displayCanvasHelper.selectBackgroundColor(backgroundColorIndex);
+  displayCanvasHelper.setFillBackground(true);
+  displayCanvasHelper.selectSpriteColor(0, 2);
 
   const text = textarea.value;
   console.log(`drawing "${text}"`);
@@ -330,7 +330,7 @@ const draw = async () => {
         },
       );
       console.log("nonEnglishSpriteSheet", nonEnglishSpriteSheet);
-      await displayCanvasHelper.uploadSpriteSheet(nonEnglishSpriteSheet);
+      displayCanvasHelper.uploadSpriteSheet(nonEnglishSpriteSheet);
       nonEnglishSpriteSheets[nonEnglishSpriteSheetIndex++] = {
         spriteSheet: nonEnglishSpriteSheet,
         characters: newNonEnglishCharacters,
@@ -355,35 +355,29 @@ const draw = async () => {
     spritesLineAlignment,
   } = drawSpriteParams;
 
-  await displayCanvasHelper.setSpritesLineAlignment(spritesLineAlignment);
-  await displayCanvasHelper.setSpritesDirection(spritesDirection);
-  await displayCanvasHelper.setSpritesLineDirection(spritesLineDirection);
-  await displayCanvasHelper.setVerticalAlignment(verticalAlignment);
-  await displayCanvasHelper.setHorizontalAlignment(horizontalAlignment);
-  await displayCanvasHelper.setSpriteScaleX(scaleX);
-  await displayCanvasHelper.setSpriteScaleY(scaleY);
-  await displayCanvasHelper.setRotation(rotation);
-  await displayCanvasHelper.setSpritesSpacing(spritesSpacing);
-  await displayCanvasHelper.setSpritesLineSpacing(spritesLineSpacing);
+  displayCanvasHelper.setSpritesLineAlignment(spritesLineAlignment);
+  displayCanvasHelper.setSpritesDirection(spritesDirection);
+  displayCanvasHelper.setSpritesLineDirection(spritesLineDirection);
+  displayCanvasHelper.setVerticalAlignment(verticalAlignment);
+  displayCanvasHelper.setHorizontalAlignment(horizontalAlignment);
+  displayCanvasHelper.setSpriteScaleX(scaleX);
+  displayCanvasHelper.setSpriteScaleY(scaleY);
+  displayCanvasHelper.setRotation(rotation);
+  displayCanvasHelper.setSpritesSpacing(spritesSpacing);
+  displayCanvasHelper.setSpritesLineSpacing(spritesLineSpacing);
   console.log("spritesLineHeight", spritesLineHeight);
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
-  await displayCanvasHelper.selectSpriteColor(1, selectedColorIndex);
+  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  displayCanvasHelper.selectSpriteColor(1, selectedColorIndex);
 
   if (true) {
-    await displayCanvasHelper.drawSpritesString(
-      x,
-      y,
-      text,
-      false,
-      drawMaxBreadth,
-    );
+    displayCanvasHelper.drawSpritesString(x, y, text, false, drawMaxBreadth);
   } else {
     if (text.length > 0) {
-      await displayCanvasHelper.selectSpriteSheet("english");
-      await displayCanvasHelper.drawSprite(x, y, text[0]);
+      displayCanvasHelper.selectSpriteSheet("english");
+      displayCanvasHelper.drawSprite(x, y, text[0]);
     }
   }
-  await displayCanvasHelper.show();
+  displayCanvasHelper.show();
 };
 window.draw = draw;
 
