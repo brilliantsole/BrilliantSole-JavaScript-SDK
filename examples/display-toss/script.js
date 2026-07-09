@@ -103,9 +103,6 @@ displayCanvasHelper.addEventListener("color", (event) => {
 setupColors();
 const getTextColorIndex = () => 1;
 const getGraphColorIndex = () => 2;
-displayCanvasHelper.setColor(getTextColorIndex(), "white");
-displayCanvasHelper.setColor(getGraphColorIndex(), "white");
-displayCanvasHelper.flushContextCommands();
 
 // DRAW
 let isDrawing = false;
@@ -177,11 +174,15 @@ const draw = async () => {
 
   console.log("drawing...");
 
+  displayCanvasHelper.setColor(getTextColorIndex(), "white");
+  displayCanvasHelper.setColor(getGraphColorIndex(), "white");
+  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+
   if (positions.length > 1) {
-    await displayCanvasHelper.setSegmentCap("round");
-    await displayCanvasHelper.selectFillColor(getGraphColorIndex());
-    await displayCanvasHelper.setSegmentRadius(2);
-    await displayCanvasHelper.saveContext();
+    displayCanvasHelper.setSegmentCap("round");
+    displayCanvasHelper.selectFillColor(getGraphColorIndex());
+    displayCanvasHelper.setSegmentRadius(2);
+    displayCanvasHelper.saveContext();
     /** @type {BS.Vector2[]} */
     const points = [];
     const { range, width, height, offset } = graphParams;
@@ -204,14 +205,15 @@ const draw = async () => {
       points.push(point);
     });
     // console.log("points", points);
-    await displayCanvasHelper.drawSegments(points);
-    await displayCanvasHelper.restoreContext();
+    displayCanvasHelper.drawSegments(points);
+    displayCanvasHelper.restoreContext();
   }
 
-  await displayCanvasHelper.setHorizontalAlignment("start");
-  await displayCanvasHelper.setVerticalAlignment("start");
-  await displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
-  await displayCanvasHelper.saveContext();
+  displayCanvasHelper.setHorizontalAlignment("start");
+  displayCanvasHelper.setVerticalAlignment("start");
+  displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
+  displayCanvasHelper.selectFillColor(1);
+  displayCanvasHelper.saveContext();
   let string = trackingState + ` (${axis})`;
   if (airTime != undefined) {
     const seconds = Math.floor(airTime / 1000);
@@ -219,10 +221,11 @@ const draw = async () => {
     string += `\n${seconds}.${millis.toString().padEnd(4, "0")}`;
   }
   console.log({ string });
-  await displayCanvasHelper.drawSpritesString(0, 0, string);
-  await displayCanvasHelper.restoreContext();
+  console.log("color", structuredClone(displayCanvasHelper.contextState));
+  displayCanvasHelper.drawSpritesString(0, 0, string);
+  displayCanvasHelper.restoreContext();
 
-  await displayCanvasHelper.show();
+  displayCanvasHelper.show();
 };
 window.draw = draw;
 
@@ -232,6 +235,9 @@ displayCanvasHelper.addEventListener("ready", () => {
     isWaitingToRedraw = false;
     draw();
   }
+});
+displayCanvasHelper.addEventListener("deviceConnected", () => {
+  draw();
 });
 
 // PROGRESS
@@ -371,7 +377,17 @@ toggleSenseSensorDataInput.addEventListener("input", () => {
 const toggleSenseSensorData = () => {
   setSenseSensorData(!isSensorDataEnabled);
 };
-const setSenseSensorData = (enable) => {
+const setSenseSensorData = async (enable) => {
+  const device = senseDevice?.isConnected
+    ? senseDevice
+    : BS.DeviceManager.connectedDevices.find(
+        (device) =>
+          device.sensorTypes.includes("gameRotation") &&
+          !device.isDisplayAvailable,
+      );
+  if (!device) {
+    return;
+  }
   if (enable) {
     /** @type {BS.SensorConfiguration} */
     const newSensorConfiguration = {};
@@ -379,10 +395,13 @@ const setSenseSensorData = (enable) => {
       newSensorConfiguration[sensorType] = sensorRate;
     });
     console.log("newSensorConfiguration", newSensorConfiguration);
-    senseDevice.setSensorConfiguration(newSensorConfiguration);
+    await device.setSensorConfiguration(newSensorConfiguration);
   } else {
-    senseDevice.clearSensorConfiguration();
+    await device.clearSensorConfiguration();
   }
+  setIsSensorDataEnabled(
+    device.sensorConfiguration[requiredSensorTypes[0]] > 0,
+  );
 };
 
 let isSensorDataEnabled = false;
@@ -544,6 +563,12 @@ senseDevice.addEventListener("gameRotation", (event) => {
 senseDevice.addEventListener("rotation", (event) => {
   onQuaternion(event.message.rotation);
 });
+BS.DeviceManager.addEventListener("deviceGameRotation", (event) => {
+  onQuaternion(event.message.gameRotation);
+});
+BS.DeviceManager.addEventListener("deviceRotation", (event) => {
+  onQuaternion(event.message.rotation);
+});
 
 const resetYawButton = document.getElementById("resetYaw");
 resetYawButton.addEventListener("click", () => {
@@ -597,8 +622,9 @@ const setAxis = (newAxis) => {
 };
 setAxis(axis);
 
-senseDevice.addEventListener("linearAcceleration", (event) => {
-  let { timestamp, linearAcceleration } = event.message;
+/** @param {BS.DeviceEventMap["linearAcceleration"]["message"]} message */
+const onLinearAcceleration = (message) => {
+  let { timestamp, linearAcceleration } = message;
 
   if (shouldResetLinearAccelerationPosition) {
     shouldResetLinearAccelerationPosition = false;
@@ -654,6 +680,12 @@ senseDevice.addEventListener("linearAcceleration", (event) => {
 
     addPosition(linearAccelerationPosition.clone());
   }
+};
+// senseDevice.addEventListener("linearAcceleration", (event) => {
+//   onLinearAcceleration(event.message);
+// });
+BS.DeviceManager.addEventListener("deviceLinearAcceleration", (event) => {
+  onLinearAcceleration(event.message);
 });
 
 // FONT

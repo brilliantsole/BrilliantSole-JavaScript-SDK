@@ -788,12 +788,12 @@ const onQuaternion = (_quaternion) => {
   }
 };
 
-senseDevice.addEventListener("gameRotation", (event) => {
-  onQuaternion(event.message.gameRotation);
-});
-senseDevice.addEventListener("rotation", (event) => {
-  onQuaternion(event.message.rotation);
-});
+// senseDevice.addEventListener("gameRotation", (event) => {
+//   onQuaternion(event.message.gameRotation);
+// });
+// senseDevice.addEventListener("rotation", (event) => {
+//   onQuaternion(event.message.rotation);
+// });
 
 BS.DeviceManager.addEventListener("deviceGameRotation", (event) => {
   onQuaternion(event.message.gameRotation);

@@ -112,11 +112,6 @@ const getTextColorIndex = () => 1;
 const getGraphIndex1 = () => 2;
 const getGraphIndex2 = () => 3;
 const getGraphIndex3 = () => 4;
-displayCanvasHelper.setColor(getTextColorIndex(), "white");
-displayCanvasHelper.setColor(getGraphIndex1(), "red");
-displayCanvasHelper.setColor(getGraphIndex2(), "limegreen");
-displayCanvasHelper.setColor(getGraphIndex3(), "aqua");
-displayCanvasHelper.flushContextCommands();
 
 // DRAW
 let isDrawing = false;
@@ -263,22 +258,23 @@ window.drawGraphParams = drawGraphParams;
  * @param {number} y
  * @param {SenseGraphData} senseGraphData
  */
-const drawGraph = async (x, y, senseGraphData) => {
+const drawGraph = (x, y, senseGraphData) => {
   //console.log("drawGraph", { x, y }, senseGraphData);
   const { graphData, sensorTypes, numberOfSamples } = senseGraphData;
 
-  // await displayCanvasHelper.setFillBackground(true);
-  // await displayCanvasHelper.selectBackgroundColor(1);
+  // displayCanvasHelper.setFillBackground(true);
+  // displayCanvasHelper.selectBackgroundColor(1);
 
-  await displayCanvasHelper.selectSpriteColors([
+  displayCanvasHelper.selectSpriteColors([
     { spriteColorIndex: 1, colorIndex: getGraphIndex1() },
     { spriteColorIndex: 2, colorIndex: getGraphIndex2() },
     { spriteColorIndex: 3, colorIndex: getGraphIndex3() },
   ]);
-  await displayCanvasHelper.setHorizontalAlignment("start");
-  await displayCanvasHelper.setVerticalAlignment("start");
+  displayCanvasHelper.setHorizontalAlignment("start");
+  displayCanvasHelper.setVerticalAlignment("start");
   const { size } = drawGraphParams;
-  await displayCanvasHelper.startSprite(x, y, size.width, size.height);
+  displayCanvasHelper.startSprite(x, y, size.width, size.height);
+  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
 
   let _sensorLabels = sensorLabels[graphType];
 
@@ -317,10 +313,9 @@ const drawGraph = async (x, y, senseGraphData) => {
   //console.log("_graphData", _graphData);
   if (_graphData) {
     if (_graphData.length > 1) {
-      await displayCanvasHelper.setVerticalAlignment("end");
-      await displayCanvasHelper.setHorizontalAlignment("start");
-      await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
-      await displayCanvasHelper.setSpriteScale(fontScale);
+      displayCanvasHelper.setVerticalAlignment("end");
+      displayCanvasHelper.setHorizontalAlignment("start");
+      displayCanvasHelper.setSpriteScale(fontScale);
 
       let labelOffset = { x: 0, y: size.height / 2 };
 
@@ -328,8 +323,8 @@ const drawGraph = async (x, y, senseGraphData) => {
         const metrics = displayCanvasHelper.stringToSpriteLinesMetrics(
           graphType == "pressure" ? "sum" : _sensorLabels.join(""),
         );
-        await displayCanvasHelper.selectFillColor(0);
-        await displayCanvasHelper.drawRect(
+        displayCanvasHelper.selectFillColor(0);
+        displayCanvasHelper.drawRect(
           -size.width / 2,
           labelOffset.y,
           metrics.size.width,
@@ -345,7 +340,7 @@ const drawGraph = async (x, y, senseGraphData) => {
           continue;
         }
 
-        await displayCanvasHelper.selectSpriteColor(1, labelIndex + 1);
+        displayCanvasHelper.selectSpriteColor(1, labelIndex + 1);
         let x = 0;
         let y = 0;
 
@@ -357,12 +352,12 @@ const drawGraph = async (x, y, senseGraphData) => {
         const metrics = displayCanvasHelper.stringToSpriteLinesMetrics(label);
         labelOffset.x += metrics.size.width;
 
-        await displayCanvasHelper.drawSpritesString(x, y, label);
+        displayCanvasHelper.drawSpritesString(x, y, label);
       }
-      await displayCanvasHelper.selectSpriteColor(1, 1); // reset
+      displayCanvasHelper.selectSpriteColor(1, 1); // reset
 
-      await displayCanvasHelper.setSegmentCap("round");
-      await displayCanvasHelper.setSegmentRadius(2);
+      displayCanvasHelper.setSegmentCap("round");
+      displayCanvasHelper.setSegmentRadius(2);
 
       for (let labelIndex in _sensorLabels) {
         labelIndex = Number(labelIndex);
@@ -373,7 +368,7 @@ const drawGraph = async (x, y, senseGraphData) => {
         }
 
         //console.log({ label, labelIndex, labelIndexPlus1: labelIndex + 1 });
-        await displayCanvasHelper.selectFillColor(labelIndex + 1);
+        displayCanvasHelper.selectFillColor(labelIndex + 1);
 
         /** @type {BS.Vector2} */
         const points = [];
@@ -391,24 +386,26 @@ const drawGraph = async (x, y, senseGraphData) => {
           //console.log({ label, timestamp, value, x, y });
           points.push({ x, y });
         });
-        await displayCanvasHelper.drawSegments(points);
+        displayCanvasHelper.drawSegments(points);
       }
     }
   } else {
     console.error("no graph data found");
   }
   // FILL - draw device name
-  await displayCanvasHelper.endSprite();
+  displayCanvasHelper.endSprite();
 };
 
 let graphTypeScale = 1;
 
-const draw = async () => {
+const draw = () => {
   if (isUploading) {
+    isWaitingToRedraw = true;
     return;
   }
   if (!didLoad) {
     console.log("hasn't loaded yet");
+    isWaitingToRedraw = true;
     return;
   }
   if (isDrawing) {
@@ -420,20 +417,26 @@ const draw = async () => {
 
   // console.log("drawing...");
 
+  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  displayCanvasHelper.setColor(getTextColorIndex(), "white");
+  displayCanvasHelper.setColor(getGraphIndex1(), "red");
+  displayCanvasHelper.setColor(getGraphIndex2(), "limegreen");
+  displayCanvasHelper.setColor(getGraphIndex3(), "aqua");
+
   {
-    await displayCanvasHelper.setVerticalAlignment("start");
-    await displayCanvasHelper.setHorizontalAlignment("start");
-    await displayCanvasHelper.saveContext();
-    await displayCanvasHelper.setSpriteScale(graphTypeScale);
-    await displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
+    displayCanvasHelper.setVerticalAlignment("start");
+    displayCanvasHelper.setHorizontalAlignment("start");
+    displayCanvasHelper.saveContext();
+    displayCanvasHelper.setSpriteScale(graphTypeScale);
+    displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
     let string = graphType;
     switch (graphType) {
       case "linearAcceleration":
         string = "acceleration";
         break;
     }
-    await displayCanvasHelper.drawSpritesString(0, 0, string);
-    await displayCanvasHelper.restoreContext();
+    displayCanvasHelper.drawSpritesString(0, 0, string);
+    displayCanvasHelper.restoreContext();
   }
 
   {
@@ -445,17 +448,18 @@ const draw = async () => {
         senseGraphData[deviceId];
 
       // console.log(`drawing "${device.name}" sensor data...`);
-      await drawGraph(x, y, senseGraphData[deviceId]);
+      drawGraph(x, y, senseGraphData[deviceId]);
       y += size.height;
     }
   }
 
-  await displayCanvasHelper.show();
+  displayCanvasHelper.show();
 };
 window.draw = draw;
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
+  // console.log("ready", { isWaitingToRedraw });
   if (isWaitingToRedraw) {
     isWaitingToRedraw = false;
     draw();
@@ -700,6 +704,7 @@ const selectFont = async (newFontName) => {
   const spriteSheet = fontSpriteSheets[newFontName];
   fontMetrics = BS.getFontMetrics(selectedFont, fontSize, fontOptions);
   spritesLineHeight = BS.getFontMaxHeight(selectedFont, fontSize);
+  console.log({ spritesLineHeight });
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
   await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
@@ -1111,3 +1116,5 @@ let cycleGraphType = async (isPositive) => {
 };
 cycleGraphType = BS.ThrottleUtils.throttle(cycleGraphType, 400);
 didLoad = true;
+
+draw();
