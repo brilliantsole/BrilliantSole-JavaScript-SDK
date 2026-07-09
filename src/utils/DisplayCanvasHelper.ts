@@ -120,7 +120,7 @@ import {
 } from "./DisplaySpriteSheetUtils.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("DisplayCanvasHelper", { log: true });
+const _console = createConsole("DisplayCanvasHelper", { log: false });
 
 export const DisplayCanvasHelperEventTypes = [
   "contextState",

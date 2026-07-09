@@ -531,7 +531,7 @@ function onIFrameLoaded(gloveContainer) {
 
     if (devicePair[side]?.isConnected) {
       const device = devicePair[side];
-      if (!device.sensorTypes.includes("pressure")) {
+      if (device.sensorTypes.includes("pressure")) {
         if (isCursorEnabled) {
           device.setSensorConfiguration(pinchSensorConfiguration);
         } else {
@@ -547,7 +547,7 @@ function onIFrameLoaded(gloveContainer) {
         setIsPressureEnabled(isCursorEnabled);
       }
 
-      if (!device.sensorTypes.includes("pressure")) {
+      if (device.sensorTypes.includes("pressure")) {
         if (isCursorEnabled) {
           positionSelect.value = "linearAcceleration";
         } else {
@@ -950,7 +950,7 @@ const numberOfFeaturesInEachSensorType = {};
 BS.TfliteSensorTypes.forEach((sensorType) => {
   switch (sensorType) {
     case "pressure":
-      numberOfFeaturesInEachSensorType[sensorType] = 8; // change to 16 for ukaton
+      numberOfFeaturesInEachSensorType[sensorType] = 16; // change to 16 for ukaton
       break;
     case "linearAcceleration":
     case "gyroscope":

@@ -437,6 +437,8 @@ class VibrationManager {
       case "getVibrationLocations":
         this.#parseVibrationLocations(dataView);
         break;
+      case "triggerVibration":
+        break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }

@@ -50,6 +50,12 @@ device.addEventListener("connected", async () => {
     device.disconnect();
   }
 });
+BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  const { device } = event.message;
+  if (device.isGlasses && device.isDisplayAvailable) {
+    displayCanvasHelper.device = device;
+  }
+});
 
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
@@ -260,12 +266,9 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
-  await displayCanvasHelper.setColor(
-    displayCanvasHelper.numberOfColors - 1,
-    "white",
-  );
-  await displayCanvasHelper.selectSpriteColor(
+  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  displayCanvasHelper.setColor(displayCanvasHelper.numberOfColors - 1, "white");
+  displayCanvasHelper.selectSpriteColor(
     displayCanvasHelper.numberOfColors - 1,
     displayCanvasHelper.numberOfColors - 1,
   );
@@ -288,7 +291,7 @@ const draw = async () => {
 
     //console.log({ interpolation });
 
-    await displayCanvasHelper.setVerticalAlignment("end");
+    displayCanvasHelper.setVerticalAlignment("end");
 
     const isDrawingProfile = [state, previousState].includes("profile");
     if (isDrawingProfile) {
@@ -331,10 +334,10 @@ const draw = async () => {
 
       // console.log({ profileY, profileImageY });
 
-      await displayCanvasHelper.setHorizontalAlignment("start");
+      displayCanvasHelper.setHorizontalAlignment("start");
 
-      await displayCanvasHelper.selectSpriteSheet("english");
-      await displayCanvasHelper.selectSpriteColor(
+      displayCanvasHelper.selectSpriteSheet("english");
+      displayCanvasHelper.selectSpriteColor(
         1,
         displayCanvasHelper.numberOfColors - 1,
       );
@@ -344,14 +347,14 @@ const draw = async () => {
       ]
         .slice(0, useInterests ? 2 : 1)
         .join("\n");
-      await displayCanvasHelper.setSpriteScale(fontScale);
-      await displayCanvasHelper.drawSpritesString(paddingX, profileY, string);
+      displayCanvasHelper.setSpriteScale(fontScale);
+      displayCanvasHelper.drawSpritesString(paddingX, profileY, string);
 
-      await displayCanvasHelper.setSpriteScale(1);
-      await displayCanvasHelper.selectSpriteSheet(profile.id);
-      await displayCanvasHelper.selectSpriteSheetPalette(profile.id, 0, true);
-      await displayCanvasHelper.drawSprite(paddingX, profileImageY, profile.id);
-      await displayCanvasHelper.selectSpriteSheetPalette(profile.id, 0);
+      displayCanvasHelper.setSpriteScale(1);
+      displayCanvasHelper.selectSpriteSheet(profile.id);
+      displayCanvasHelper.selectSpriteSheetPalette(profile.id, 0, true);
+      displayCanvasHelper.drawSprite(paddingX, profileImageY, profile.id);
+      displayCanvasHelper.selectSpriteSheetPalette(profile.id, 0);
 
       latestYPositions.profile = profileY;
       latestYPositions.profileImage = profileImageY;
@@ -361,7 +364,7 @@ const draw = async () => {
       const isMovingIn = state == "scanning";
       const easedInterpolation = ease(interpolation, "circle");
 
-      await displayCanvasHelper.setHorizontalAlignment("end");
+      displayCanvasHelper.setHorizontalAlignment("end");
 
       const endScanningY = isMovingIn
         ? yPositions.scanning.end
@@ -375,13 +378,13 @@ const draw = async () => {
         easedInterpolation,
       );
 
-      await displayCanvasHelper.selectSpriteSheet("english");
-      await displayCanvasHelper.selectSpriteColor(
+      displayCanvasHelper.selectSpriteSheet("english");
+      displayCanvasHelper.selectSpriteColor(
         1,
         displayCanvasHelper.numberOfColors - 1,
       );
-      await displayCanvasHelper.setSpriteScale(fontScale);
-      await displayCanvasHelper.drawSpritesString(
+      displayCanvasHelper.setSpriteScale(fontScale);
+      displayCanvasHelper.drawSpritesString(
         displayCanvasHelper.width - paddingX,
         scanningY,
         "scanning...",
@@ -399,7 +402,7 @@ const draw = async () => {
     nextState = undefined;
   }
 
-  await displayCanvasHelper.show();
+  displayCanvasHelper.show();
 };
 window.draw = draw;
 

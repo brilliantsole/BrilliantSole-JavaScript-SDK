@@ -573,7 +573,7 @@ function UInt8ByteBuffer(value) {
 var _a$8;
 const _console$W = createConsole("FileTransferManager", { log: true });
 const emptyHeaderDataView = new DataView(new ArrayBuffer(2));
-emptyHeaderDataView.setUint16(0, 0, true);
+emptyHeaderDataView.setUint16(0, 2, true);
 const FileTransferMessageTypes = [
     "getFileTypes",
     "maxFileLength",
@@ -5292,6 +5292,8 @@ class VibrationManager {
         switch (messageType) {
             case "getVibrationLocations":
                 this.#parseVibrationLocations(dataView);
+                break;
+            case "triggerVibration":
                 break;
             default:
                 throw Error(`uncaught messageType ${messageType}`);
@@ -33331,7 +33333,7 @@ let WindowServer = (() => {
 })();
 var WindowServer$1 = WindowServer.shared;
 
-const _console$8 = createConsole("WindowManagerServer", { log: false });
+const _console$8 = createConsole("WindowManagerServer", { log: true });
 const WindowManagerServerEventTypes = [
     "clientConnected",
     "clientDisconnected",
@@ -33465,7 +33467,7 @@ let WindowManagerServer = (() => {
                     _console$8.error("no iframe found for event", event);
                     return;
                 }
-                client = this.#createClient(iframe);
+                client = await this.#createClient(iframe);
                 if (!client) {
                     return;
                 }
@@ -33476,19 +33478,24 @@ let WindowManagerServer = (() => {
             this.#parseWindowManagerClientMessage(client, dataView);
         }
         async #waitForClientToLoad(client) {
-            _console$8.log("waitForIFrameToLoad", client);
+            _console$8.log("waitForClientToLoad", client);
+            await this.#waitForiframeToLoad(client.iframe);
+        }
+        async #waitForiframeToLoad(iframe) {
+            _console$8.log("waitForiframeToLoad", iframe);
             await new Promise((resolve) => {
-                if (client.iframe.contentDocument?.readyState === "complete") {
+                if (iframe.contentDocument?.readyState === "complete") {
                     _console$8.log("iframe complete");
                     resolve();
                 }
                 else {
                     _console$8.log("waiting for iframe to load...");
-                    client.iframe.addEventListener("load", () => resolve(), { once: true });
+                    iframe.addEventListener("load", () => resolve(), { once: true });
                 }
             });
         }
-        #createClient(iframe) {
+        async #createClient(iframe) {
+            await this.#waitForiframeToLoad(iframe);
             addEventListeners(iframe, this.#boundIframeEventListeners);
             const client = {
                 iframe,
@@ -33551,7 +33558,7 @@ let WindowManagerServer = (() => {
             if (!client) {
                 return;
             }
-            _console$8.log("onIframeLoad", client);
+            _console$8.log("onIframeLoad client", client);
             this.#destroyClient(client);
         }
         #createMessageChannel(client) {
@@ -33635,7 +33642,7 @@ let WindowManagerServer = (() => {
 var WindowManagerServer_default = WindowManagerServer.shared;
 WindowServer$1.init();
 
-const _console$7 = createConsole("WindowManagerClient", { log: false });
+const _console$7 = createConsole("WindowManagerClient", { log: true });
 const WindowManagerClientConnectionStatuses = [
     "notConnected",
     "connecting",
@@ -33648,7 +33655,7 @@ const WindowManagerClientEventTypes = [
     "isConnected",
     "serverMessage",
 ];
-let WindowManagerClient = (() => {
+let WindowManagerClient$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -33834,7 +33841,7 @@ let WindowManagerClient = (() => {
     });
     return _classThis;
 })();
-var WindowManagerClient$1 = WindowManagerClient.shared;
+var WindowManagerClient = WindowManagerClient$1.shared;
 
 const _console$6 = createConsole("WindowClient", { log: false });
 let WindowClient = (() => {
@@ -33856,7 +33863,7 @@ let WindowClient = (() => {
         static shared;
         constructor() {
             super();
-            addEventListeners(WindowManagerClient$1, this.#boundWindowEventListeners);
+            addEventListeners(WindowManagerClient, this.#boundWindowEventListeners);
         }
         #boundWindowEventListeners = {
             connectionStatus: this.#onWindowManagerClientConnectionStatus.bind(this),
@@ -33871,10 +33878,10 @@ let WindowClient = (() => {
             this.parseMessage(event.message.dataView);
         }
         get isConnected() {
-            return WindowManagerClient$1.isConnected;
+            return WindowManagerClient.isConnected;
         }
         get isDisconnected() {
-            return WindowManagerClient$1.isDisconnected;
+            return WindowManagerClient.isDisconnected;
         }
         connect() {
             this.#onConnectionCommand();
@@ -33893,7 +33900,7 @@ let WindowClient = (() => {
         }
         sendServerMessage(...messages) {
             _console$6.log("sendServerMessage", messages);
-            WindowManagerClient$1.sendMessage({
+            WindowManagerClient.sendMessage({
                 type: "serverMessage",
                 data: createServerMessage(...messages),
             });
@@ -33907,7 +33914,7 @@ let WindowClient = (() => {
 var WindowClient_default = WindowClient.shared;
 
 var _a;
-const _console$5 = createConsole("DisplayCanvasHelper", { log: true });
+const _console$5 = createConsole("DisplayCanvasHelper", { log: false });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
     "numberOfColors",
@@ -37567,5 +37574,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager_default as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient$1 as WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer$1 as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager_default as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer$1 as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
 //# sourceMappingURL=brilliantsole.module.js.map

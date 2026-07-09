@@ -20,7 +20,7 @@ import { default as WindowServer } from "../server/window/WindowServer.ts";
 import { Singleton } from "../utils/TypeScriptUtils.ts";
 import { BaseServerClientContext } from "../server/BaseServer.ts";
 
-const _console = createConsole("WindowManagerServer", { log: false });
+const _console = createConsole("WindowManagerServer", { log: true });
 
 export interface WindowManagerServerClient {
   type: "window";
@@ -211,7 +211,7 @@ class WindowManagerServer {
         _console.error("no iframe found for event", event);
         return;
       }
-      client = this.#createClient(iframe);
+      client = await this.#createClient(iframe);
       if (!client) {
         return;
       }
@@ -225,19 +225,24 @@ class WindowManagerServer {
     this.#parseWindowManagerClientMessage(client, dataView);
   }
   async #waitForClientToLoad(client: WindowManagerServerClient) {
-    _console.log("waitForIFrameToLoad", client);
+    _console.log("waitForClientToLoad", client);
+    await this.#waitForiframeToLoad(client.iframe);
+  }
+  async #waitForiframeToLoad(iframe: HTMLIFrameElement) {
+    _console.log("waitForiframeToLoad", iframe);
     await new Promise<void>((resolve) => {
-      if (client.iframe.contentDocument?.readyState === "complete") {
+      if (iframe.contentDocument?.readyState === "complete") {
         _console.log("iframe complete");
         resolve();
       } else {
         _console.log("waiting for iframe to load...");
-        client.iframe.addEventListener("load", () => resolve(), { once: true });
+        iframe.addEventListener("load", () => resolve(), { once: true });
       }
     });
   }
 
-  #createClient(iframe: HTMLIFrameElement) {
+  async #createClient(iframe: HTMLIFrameElement) {
+    await this.#waitForiframeToLoad(iframe);
     addEventListeners(iframe, this.#boundIframeEventListeners);
     const client: WindowManagerServerClient = {
       iframe,
@@ -316,7 +321,7 @@ class WindowManagerServer {
     if (!client) {
       return;
     }
-    _console.log("onIframeLoad", client);
+    _console.log("onIframeLoad client", client);
     this.#destroyClient(client);
   }
 

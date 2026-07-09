@@ -166,6 +166,7 @@ onCurrentDevice((device) => {
         device.disconnect();
         return;
       }
+      console.log("sending tflite");
       device.sendTfliteConfiguration(punchConfiguration);
     },
     { immediate: true },

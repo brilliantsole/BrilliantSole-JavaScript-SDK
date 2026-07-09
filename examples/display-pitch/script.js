@@ -155,11 +155,11 @@ const draw = async (overrideIsMicrophoneLoaded = false) => {
 
   console.log("drawing...");
 
-  await displayCanvasHelper.setColor(getBackgroundColorIndex(), "#4f4f4f");
-  await displayCanvasHelper.setColor(getTextColorIndex(), "white");
-  await displayCanvasHelper.setColor(getGoodColorIndex(), "#00ff00");
-  await displayCanvasHelper.setColor(getMediumColorIndex(), "orange");
-  await displayCanvasHelper.setColor(getBadColorIndex(), "#ff4747");
+  displayCanvasHelper.setColor(getBackgroundColorIndex(), "#4f4f4f");
+  displayCanvasHelper.setColor(getTextColorIndex(), "white");
+  displayCanvasHelper.setColor(getGoodColorIndex(), "#00ff00");
+  displayCanvasHelper.setColor(getMediumColorIndex(), "orange");
+  displayCanvasHelper.setColor(getBadColorIndex(), "#ff4747");
 
   let spriteColorIndex;
   if (pitchOffsetAbs <= pitchOffsetThresholds.good) {
@@ -169,35 +169,31 @@ const draw = async (overrideIsMicrophoneLoaded = false) => {
   } else {
     spriteColorIndex = getBadColorIndex();
   }
-  await displayCanvasHelper.selectSpriteColor(0, getBackgroundColorIndex());
-  await displayCanvasHelper.selectSpriteColor(1, spriteColorIndex);
-  await displayCanvasHelper.selectBackgroundColor(getBackgroundColorIndex());
-  await displayCanvasHelper.setFillBackground(true);
-  await displayCanvasHelper.startSprite(
+  displayCanvasHelper.selectSpriteColor(0, getBackgroundColorIndex());
+  displayCanvasHelper.selectSpriteColor(1, spriteColorIndex);
+  displayCanvasHelper.selectBackgroundColor(getBackgroundColorIndex());
+  displayCanvasHelper.setFillBackground(true);
+  displayCanvasHelper.startSprite(
     drawOffset.x * displayCanvasHelper.width,
     drawOffset.y * displayCanvasHelper.height,
     drawSize.width,
     drawSize.height,
   );
-  await displayCanvasHelper.setIgnoreFill(true);
-  await displayCanvasHelper.setLineWidth(drawLineWidth);
-  await displayCanvasHelper.drawArc(
+  displayCanvasHelper.setIgnoreFill(true);
+  displayCanvasHelper.setLineWidth(drawLineWidth);
+  displayCanvasHelper.drawArc(
     0,
     0,
     drawSize.width / 2 - drawLineWidth,
     -90,
     normalizedPitchOffset * 145,
   );
-  await displayCanvasHelper.setSpriteScale(fontScale);
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
-  await displayCanvasHelper.drawSpritesString(
-    0,
-    0,
-    frequency.toNote().slice(0, -1),
-  );
-  await displayCanvasHelper.endSprite();
+  displayCanvasHelper.setSpriteScale(fontScale);
+  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  displayCanvasHelper.drawSpritesString(0, 0, frequency.toNote().slice(0, -1));
+  displayCanvasHelper.endSprite();
 
-  await displayCanvasHelper.show();
+  displayCanvasHelper.show();
 };
 window.draw = draw;
 displayCanvasHelper.addEventListener("ready", () => {

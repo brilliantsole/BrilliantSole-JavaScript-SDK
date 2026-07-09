@@ -563,7 +563,7 @@ function UInt8ByteBuffer(value) {
 var _a$7;
 const _console$U = createConsole("FileTransferManager", { log: true });
 const emptyHeaderDataView = new DataView(new ArrayBuffer(2));
-emptyHeaderDataView.setUint16(0, 0, true);
+emptyHeaderDataView.setUint16(0, 2, true);
 const FileTransferMessageTypes = [
     "getFileTypes",
     "maxFileLength",
@@ -5225,6 +5225,8 @@ class VibrationManager {
         switch (messageType) {
             case "getVibrationLocations":
                 this.#parseVibrationLocations(dataView);
+                break;
+            case "triggerVibration":
                 break;
             default:
                 throw Error(`uncaught messageType ${messageType}`);
