@@ -138,28 +138,27 @@ const draw = async () => {
 
   console.log("drawing...");
 
-  await displayCanvasHelper.setColor(getTextColorIndex(), "white");
-  await displayCanvasHelper.setColor(getTempoColorIndex(), "white");
-  await displayCanvasHelper.setColor(getGraphColorIndex(), "red");
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  displayCanvasHelper.setColor(getTextColorIndex(), "white");
+  displayCanvasHelper.setColor(getTempoColorIndex(), "white");
+  displayCanvasHelper.setColor(getGraphColorIndex(), "red");
+  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
 
   {
-    await displayCanvasHelper.setSegmentCap("round");
+    displayCanvasHelper.setSegmentCap("round");
 
-    await displayCanvasHelper.saveContext();
-    await displayCanvasHelper.selectFillColor(getTempoColorIndex());
-    await displayCanvasHelper.setSegmentRadius(3);
-    await displayCanvasHelper.drawSegments(tempoPoints);
-    await displayCanvasHelper.restoreContext();
+    displayCanvasHelper.saveContext();
+    displayCanvasHelper.selectFillColor(getTempoColorIndex());
+    displayCanvasHelper.setSegmentRadius(3);
+    displayCanvasHelper.drawSegments(tempoPoints);
+    displayCanvasHelper.restoreContext();
   }
 
-  // TODO - draw graph
   if (false) {
-    await displayCanvasHelper.saveContext();
-    await displayCanvasHelper.selectFillColor(getGraphColorIndex());
-    await displayCanvasHelper.setSegmentRadius(2);
-    await displayCanvasHelper.drawSegments(graphPoints);
-    await displayCanvasHelper.restoreContext();
+    displayCanvasHelper.saveContext();
+    displayCanvasHelper.selectFillColor(getGraphColorIndex());
+    displayCanvasHelper.setSegmentRadius(2);
+    displayCanvasHelper.drawSegments(graphPoints);
+    displayCanvasHelper.restoreContext();
   }
 
   if (didCalibrate && isSensorDataEnabled) {
@@ -173,16 +172,16 @@ const draw = async () => {
 
     ({ x, y } = tempoCurveParams.transform({ x, y }));
 
-    await displayCanvasHelper.saveContext();
-    await displayCanvasHelper.selectFillColor(getGraphColorIndex());
-    await displayCanvasHelper.drawCircle(x, y, 20);
-    await displayCanvasHelper.restoreContext();
+    displayCanvasHelper.saveContext();
+    displayCanvasHelper.selectFillColor(getGraphColorIndex());
+    displayCanvasHelper.drawCircle(x, y, 20);
+    displayCanvasHelper.restoreContext();
   }
 
-  await displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
-  await displayCanvasHelper.saveContext();
-  await displayCanvasHelper.setHorizontalAlignment("start");
-  await displayCanvasHelper.setVerticalAlignment("start");
+  displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
+  displayCanvasHelper.saveContext();
+  displayCanvasHelper.setHorizontalAlignment("start");
+  displayCanvasHelper.setVerticalAlignment("start");
   let string = "";
   switch (state) {
     case "idle":
@@ -209,10 +208,10 @@ const draw = async () => {
       }
       break;
   }
-  await displayCanvasHelper.drawSpritesString(0, 0, string);
-  await displayCanvasHelper.restoreContext();
+  displayCanvasHelper.drawSpritesString(0, 0, string);
+  displayCanvasHelper.restoreContext();
 
-  await displayCanvasHelper.show();
+  displayCanvasHelper.show();
 };
 window.draw = draw;
 
@@ -476,7 +475,7 @@ window.tempoCurveParams = tempoCurveParams;
 
 /** @type {BS.Vector2[]} */
 const tempoPoints = [];
-const tempoYValues = [1, 1, 0, 0];
+const tempoYValues = [0, 1, 1, 0];
 const updateTempoPoints = () => {
   tempoSum = tempo.reduce((sum, value) => sum + value, 0);
   console.log({ tempoSum });
@@ -502,7 +501,7 @@ const updateTempoPoints = () => {
 };
 window.updateTempoPoints = updateTempoPoints;
 
-setTempo([2, 1, 2, 1]);
+setTempo([1, 2, 1, 2]);
 
 // STATE
 
