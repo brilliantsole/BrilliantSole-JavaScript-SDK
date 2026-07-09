@@ -109,12 +109,6 @@ displayCanvasHelper.addEventListener("color", (event) => {
   displayColorInputs[colorIndex].value = colorHex;
 });
 setupColors();
-displayCanvasHelper.setColor(displayCanvasHelper.numberOfColors - 1, "white");
-displayCanvasHelper.selectSpriteColor(
-  displayCanvasHelper.numberOfColors - 1,
-  displayCanvasHelper.numberOfColors - 1,
-);
-displayCanvasHelper.flushContextCommands();
 
 // DRAW
 let isDrawing = false;
@@ -254,12 +248,27 @@ const draw = async () => {
     return;
   }
 
+  if (!displayCanvasHelper.spriteSheets[selectedProfile.id]) {
+    console.log("no spriteSheet defined for profile");
+    return;
+  }
+
   if (isDrawing) {
     //console.warn("busy drawing");
     isWaitingToRedraw = true;
     return;
   }
   isDrawing = true;
+
+  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  await displayCanvasHelper.setColor(
+    displayCanvasHelper.numberOfColors - 1,
+    "white",
+  );
+  await displayCanvasHelper.selectSpriteColor(
+    displayCanvasHelper.numberOfColors - 1,
+    displayCanvasHelper.numberOfColors - 1,
+  );
 
   let didFinishAnimating = false;
   if (isAnimatingState) {
@@ -392,6 +401,7 @@ const draw = async () => {
 
   await displayCanvasHelper.show();
 };
+window.draw = draw;
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
@@ -1072,7 +1082,9 @@ const selectProfile = async (selectedProfileId) => {
 
   if (selectedProfile) {
     const spriteSheet = await createProfileImageSpriteSheet(selectedProfile);
-    await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
+    if (spriteSheet) {
+      await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
+    }
   } else {
   }
 
@@ -1666,7 +1678,6 @@ const selectFont = async (newFontName) => {
   await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
   spritesLineHeight = BS.getFontMaxHeight(selectedFont, fontSize);
   console.log({ spritesLineHeight }, selectedFont, fontSize);
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await draw();
 };
 
