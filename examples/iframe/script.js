@@ -264,6 +264,7 @@ const selectUrls = [
   { name: "display image", url: "../display-image" },
   { name: "display prompt", url: "../display-prompt" },
   { name: "display 3d", url: "../display-3d" },
+  { name: "display pitch", url: "../display-pitch" },
   { name: "display graph", url: "../display-graph" },
   { name: "display map", url: "../display-map" },
   { name: "display midi", url: "../display-midi" },

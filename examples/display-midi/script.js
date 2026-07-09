@@ -289,6 +289,7 @@ let draw = async () => {
   displayCanvasHelper.setColor(getPitchHighlightedWhiteColorIndex(), "orange");
   displayCanvasHelper.setColor(getPitchHighlightedBlackColorIndex(), "orange");
   displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  displayCanvasHelper.resetSpriteScale();
 
   if (shouldDrawSheet) {
     const spriteSheet = abcSpriteSheets[currentSystemIndex];

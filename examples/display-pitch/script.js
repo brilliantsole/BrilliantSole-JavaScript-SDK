@@ -106,12 +106,6 @@ const getTextColorIndex = () => 2;
 const getGoodColorIndex = () => 3;
 const getMediumColorIndex = () => 4;
 const getBadColorIndex = () => 5;
-displayCanvasHelper.setColor(getBackgroundColorIndex(), "#4f4f4f");
-displayCanvasHelper.setColor(getTextColorIndex(), "white");
-displayCanvasHelper.setColor(getGoodColorIndex(), "#00ff00");
-displayCanvasHelper.setColor(getMediumColorIndex(), "orange");
-displayCanvasHelper.setColor(getBadColorIndex(), "#ff4747");
-displayCanvasHelper.flushContextCommands();
 
 // DRAW
 let isDrawing = false;
@@ -159,7 +153,13 @@ const draw = async (overrideIsMicrophoneLoaded = false) => {
 
   isDrawing = true;
 
-  //console.log("draw");
+  console.log("drawing...");
+
+  await displayCanvasHelper.setColor(getBackgroundColorIndex(), "#4f4f4f");
+  await displayCanvasHelper.setColor(getTextColorIndex(), "white");
+  await displayCanvasHelper.setColor(getGoodColorIndex(), "#00ff00");
+  await displayCanvasHelper.setColor(getMediumColorIndex(), "orange");
+  await displayCanvasHelper.setColor(getBadColorIndex(), "#ff4747");
 
   let spriteColorIndex;
   if (pitchOffsetAbs <= pitchOffsetThresholds.good) {

@@ -988,13 +988,13 @@ const draw = async () => {
     setDrawX((widthScalar * (minX + maxX)) / 2);
     setDrawY((heightScalar * (minY + maxY)) / 2);
 
-    // await displayCanvasHelper.setRotation(0);
-    // await displayCanvasHelper.drawRect(drawX, drawY, width, height);
+    // displayCanvasHelper.setRotation(0);
+    // displayCanvasHelper.drawRect(drawX, drawY, width, height);
 
     if (jitRender) {
       setDrawOutputHeight(height);
       let spriteScale = drawOutputHeight / drawInputHeight;
-      await displayCanvasHelper.setSpriteScale(spriteScale);
+      displayCanvasHelper.setSpriteScale(spriteScale);
 
       const canvas = await captureModelSnapshot(10, false);
       const width = canvas.width * (drawInputHeight / canvas.height);
@@ -1018,7 +1018,7 @@ const draw = async () => {
         maxFileLength,
       );
       checkSpriteSheetSize();
-      await displayCanvasHelper.drawSpriteFromSpriteSheet(
+      displayCanvasHelper.drawSpriteFromSpriteSheet(
         drawX,
         drawY,
         spriteSheet.sprites[0].name,
@@ -1029,7 +1029,7 @@ const draw = async () => {
       const { sprite, rotation } = await getClosestModelSprite();
 
       setDrawRotation(rotation);
-      await displayCanvasHelper.setRotation(drawRotation, true);
+      displayCanvasHelper.setRotation(drawRotation, true);
 
       const innerBox = innerBoxSize(
         width,
@@ -1039,17 +1039,17 @@ const draw = async () => {
       );
 
       let spriteScale = innerBox.height / sprite.height;
-      await displayCanvasHelper.setSpriteScale(spriteScale);
+      displayCanvasHelper.setSpriteScale(spriteScale);
 
       if (uploadWholeSpriteSheet) {
         console.log("drawing sprite");
-        await displayCanvasHelper.drawSprite(drawX, drawY, sprite.name);
+        displayCanvasHelper.drawSprite(drawX, drawY, sprite.name);
         if (!createSinglePalette) {
-          await displayCanvasHelper.selectSpriteSheetPalette(sprite.name);
+          displayCanvasHelper.selectSpriteSheetPalette(sprite.name);
         }
       } else {
         console.log("uploadng whole sprite");
-        await displayCanvasHelper.drawSpriteFromSpriteSheet(
+        displayCanvasHelper.drawSpriteFromSpriteSheet(
           drawX,
           drawY,
           sprite.name,
@@ -1059,7 +1059,7 @@ const draw = async () => {
       }
     }
   }
-  await displayCanvasHelper.show();
+  displayCanvasHelper.show();
 };
 
 function innerBoxSize(W, H, theta, aspectRatio) {
