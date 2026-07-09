@@ -105,9 +105,6 @@ const getImageNumberOfColors = () => displayCanvasHelper.numberOfColors - 2;
 const getTextColorIndex = () => displayCanvasHelper.numberOfColors - 1;
 const getTextBackgroundColorIndex = () =>
   displayCanvasHelper.numberOfColors - 2;
-displayCanvasHelper.setColor(getTextColorIndex(), "white");
-displayCanvasHelper.setColor(getTextBackgroundColorIndex(), "black"); // can set later
-displayCanvasHelper.flushContextCommands();
 
 // TEXTAREA
 
@@ -178,6 +175,10 @@ const draw = async () => {
   isDrawing = true;
 
   console.log("drawing...");
+
+  await displayCanvasHelper.setColor(getTextColorIndex(), "white");
+  await displayCanvasHelper.setColor(getTextColorIndex(), "white");
+  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
 
   if (
     !isTakingPicture &&
