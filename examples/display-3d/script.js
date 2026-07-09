@@ -4,6 +4,8 @@ import * as BS from "../../build/brilliantsole.module.js";
 /** @typedef {import("../utils/three/three.module.min").Quaternion} TQuaternion */
 /** @typedef {import("../utils/three/three.module.min").Euler} TEuler */
 
+BS.setConsoleLevelFlagsForType("DisplayBitmapUtils", { log: true });
+
 // DEVICE
 const device = new BS.Device();
 window.device = device;
@@ -971,6 +973,8 @@ const draw = async () => {
     return;
   }
   isDrawing = true;
+
+  console.log("drawing...");
 
   const boundingBox = await getModelScreenBoundingBox();
   if (boundingBox) {

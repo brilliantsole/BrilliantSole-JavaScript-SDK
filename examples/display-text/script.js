@@ -156,11 +156,11 @@ displayCanvasHelper.addEventListener("color", (event) => {
   const { colorHex, colorIndex } = event.message;
   switch (colorIndex) {
     case textColorIndex:
-      textColor = colorHex;
-      _console.log({ textColor });
+      // textColor = colorHex;
+      console.log({ textColor });
       break;
     case backgroundColorIndex:
-      backgroundColor = colorHex;
+      // backgroundColor = colorHex;
       _console.log({ backgroundColor });
       break;
   }
@@ -293,9 +293,11 @@ const draw = async () => {
   }
   isDrawing = true;
 
+  console.log({ textColor, textColorIndex });
   displayCanvasHelper.setColor(textColorIndex, textColor);
   displayCanvasHelper.selectFillColor(textColorIndex);
 
+  console.log({ backgroundColorIndex, backgroundColor });
   displayCanvasHelper.setColor(backgroundColorIndex, backgroundColor);
   displayCanvasHelper.selectBackgroundColor(backgroundColorIndex);
   displayCanvasHelper.setFillBackground(true);

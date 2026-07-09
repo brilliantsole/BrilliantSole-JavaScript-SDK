@@ -10,6 +10,9 @@ window.BS = BS;
 // BS.setConsoleLevelFlagsForType("Device", { log: true });
 // BS.setConsoleLevelFlagsForType("DisplayManagerInterface", { log: true });
 // BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
+// BS.setConsoleLevelFlagsForType("DisplayBitmapUtils", { log: true });
+// BS.setConsoleLevelFlagsForType("DisplaySpriteSheetUtils", { log: true });
+// BS.setConsoleLevelFlagsForType("DisplayBitmapUtils", { log: true });
 
 // WEBSOCKET CLIENT
 const client = new BS.WebSocketClient();
@@ -255,8 +258,8 @@ const selectUrls = [
   { name: "depth anything v2", url: "../depth-anything-v2" },
   { name: "gloves", url: "../gloves" },
   { name: "punch", url: "../punch" },
-  { name: "display wireframe", url: "../display-wireframe" },
   { name: "canvas", url: "../canvas" },
+  { name: "display wireframe", url: "../display-wireframe" },
   { name: "display text", url: "../display-text" },
   { name: "display image", url: "../display-image" },
   { name: "display prompt", url: "../display-prompt" },
@@ -354,7 +357,7 @@ const createIframeContainer = (src) => {
 };
 // createIframeContainer("../display-text");
 // createIframeContainer("../display-wireframe");
-createIframeContainer("../display-midi");
+createIframeContainer("../display-3d");
 // createIframeContainer();
 // createIframeContainer();
 window.createIframeContainer = createIframeContainer;

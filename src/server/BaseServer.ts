@@ -228,15 +228,16 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     for (const [device, _client] of [...this.#clientsRequestingSend]) {
       if (_client == client) {
         this.#clientsRequestingSend.delete(device);
+        device.cancelFileTransfer();
       }
     }
     for (const [device, _client] of [...this.#clientsSending]) {
       if (_client == client) {
         this.#clientsSending.delete(device);
+        _console.log("cancelling fileTransfer because client is gone");
+        device.cancelFileTransfer();
       }
     }
-
-    // TODO: - deal with any file transfers
 
     _console.log("onClientDisconnected");
     _console.log(`currently have ${this.clients.length} clients`);

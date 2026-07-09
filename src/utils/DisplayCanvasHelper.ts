@@ -4173,8 +4173,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
+    _console.log("drawBitmap", {
+      offsetX,
+      offsetY,
+      bitmap,
+      sendImmediately,
+      isSending,
+    });
     this.assertValidBitmap(bitmap);
-    // _console.log("drawBitmap", { offsetX, offsetY, bitmap, sendImmediately });
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawBitmapToCanvas(offsetX, offsetY, bitmap, contextState),
@@ -4359,6 +4365,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
+    _console.log("drawSprite", { offsetX, offsetY, spriteName });
     _console.assertWithError(
       this.selectedSpriteSheet,
       "no spriteSheet selected",

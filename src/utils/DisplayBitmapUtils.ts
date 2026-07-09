@@ -54,6 +54,16 @@ export function parseBitmap(dataView: DataView, offset: number) {
   const pixelDepth = numberOfColorsToPixelDepth(numberOfColors)!;
   const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
   const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
+  _console.log({
+    width,
+    numberOfPixels,
+    numberOfColors,
+    pixelDataLength,
+    height,
+    pixelDepth,
+    pixelsPerByte,
+    pixelBitWidth,
+  });
   const pixels: number[] = [];
   let pixelIndex = 0;
   for (let byteIndex = 0; byteIndex < pixelDataLength; byteIndex++) {
@@ -65,6 +75,7 @@ export function parseBitmap(dataView: DataView, offset: number) {
       pixels[pixelIndex++] = bitmapColorIndex;
     }
   }
+  pixels.length = numberOfPixels;
 
   const bitmap: DisplayBitmap = {
     width,
@@ -481,6 +492,7 @@ export function getBitmapNumberOfBytes(bitmap: DisplayBitmap) {
   return pixelDataLength;
 }
 export function assertValidBitmapPixels(bitmap: DisplayBitmap) {
+  _console.log("assertValidBitmapPixels", bitmap);
   _console.assertRangeWithError(
     "bitmap.pixels.length",
     bitmap.pixels.length,
