@@ -20,7 +20,7 @@ import { parseMessage } from "../utils/ParseUtils.ts";
 import { MessageLike } from "../server/ServerUtils.ts";
 import { Singleton } from "../utils/TypeScriptUtils.ts";
 
-const _console = createConsole("WindowManagerClient", { log: true });
+const _console = createConsole("WindowManagerClient", { log: false });
 
 export const WindowManagerClientConnectionStatuses = [
   "notConnected",

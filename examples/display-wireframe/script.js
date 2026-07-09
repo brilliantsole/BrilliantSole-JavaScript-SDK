@@ -597,7 +597,6 @@ glovesIframe.addEventListener("load", () => {
   gloveWindow.onIntersection = onIntersection;
   gloveIframe = glovesIframe.contentWindow.iframe;
 
-  glovesIframe.contentWindow.setIsCursorEnabled(true);
   window.glovesScene = gloveScene;
   window.gloveIframe = gloveIframe;
   gloveIframe.parentElement.style.width = displayCanvasHelper.width;
@@ -606,6 +605,8 @@ glovesIframe.addEventListener("load", () => {
   gloveIframe.style.width = "100%";
   gloveIframe.style.height = "100%";
   gloveIframe.scrollIntoView();
+
+  glovesIframe.contentWindow.setIsCursorEnabled(true);
 });
 
 window.movementScalar = 1;

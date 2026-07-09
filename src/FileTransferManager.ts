@@ -11,7 +11,7 @@ import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 import { ConnectionType } from "./connection/BaseConnectionManager.ts";
 
-const _console = createConsole("FileTransferManager", { log: true });
+const _console = createConsole("FileTransferManager", { log: false });
 
 const emptyHeaderDataView = new DataView(new ArrayBuffer(2));
 emptyHeaderDataView.setUint16(0, 2, true);

@@ -182,6 +182,7 @@ function onIFrameLoaded(gloveContainer) {
     }
   });
 
+  let gameRotationRate = 100;
   /** @type {HTMLSelectElement} */
   const orientationSelect = gloveContainer.querySelector(".orientation");
   orientationSelect.addEventListener("input", () => {
@@ -197,7 +198,7 @@ function onIFrameLoaded(gloveContainer) {
       case "none":
         break;
       case "gameRotation":
-        configuration.gameRotation = pinchSensorRate;
+        configuration.gameRotation = gameRotationRate;
         break;
       case "rotation":
         configuration.rotation = pinchSensorRate;
@@ -207,7 +208,7 @@ function onIFrameLoaded(gloveContainer) {
         break;
       case "gyroscope":
         configuration.gyroscope = pinchSensorRate;
-        configuration.gameRotation = pinchSensorRate;
+        configuration.gameRotation = gameRotationRate;
         break;
       default:
         console.error(
@@ -263,7 +264,7 @@ function onIFrameLoaded(gloveContainer) {
         break;
     }
 
-    console.log({ configuration });
+    // console.log({ configuration });
 
     devicePair[side]?.setSensorConfiguration(configuration);
   });
@@ -523,7 +524,7 @@ function onIFrameLoaded(gloveContainer) {
       }
     });
   };
-  const setIsCursorEnabled = (newIsCursorEnabled) => {
+  const setIsCursorEnabled = async (newIsCursorEnabled) => {
     isCursorEnabled = newIsCursorEnabled;
     toggleCursorButton.innerText = isCursorEnabled
       ? "disable cursor"
@@ -531,9 +532,9 @@ function onIFrameLoaded(gloveContainer) {
 
     if (devicePair[side]?.isConnected) {
       const device = devicePair[side];
-      if (device.sensorTypes.includes("pressure")) {
+      if (false && device.sensorTypes.includes("pressure")) {
         if (isCursorEnabled) {
-          device.setSensorConfiguration(pinchSensorConfiguration);
+          await device.setSensorConfiguration(pinchSensorConfiguration);
         } else {
           device.clearSensorConfiguration();
         }
@@ -544,10 +545,10 @@ function onIFrameLoaded(gloveContainer) {
           orientationSelect.value = "none";
         }
         orientationSelect.dispatchEvent(new Event("input"));
-        setIsPressureEnabled(isCursorEnabled);
+        //setIsPressureEnabled(isCursorEnabled);
       }
 
-      if (device.sensorTypes.includes("pressure")) {
+      if (true && device.sensorTypes.includes("pressure")) {
         if (isCursorEnabled) {
           positionSelect.value = "linearAcceleration";
         } else {
@@ -615,6 +616,7 @@ function onIFrameLoaded(gloveContainer) {
       return;
     }
     //toggleCursorButton.disabled = !device.isConnected;
+    setIsCursorEnabled(isCursorEnabled);
   });
 
   const cameraEntity = scene.querySelector(".camera");
@@ -858,6 +860,10 @@ pinchSensorTypes.forEach((sensorType) => {
 /** @param {BS.DeviceEventMap["sensorData"]} event */
 const onDeviceSensorData = (event) => {
   let data = [];
+  if (!pinchSensorTypes.includes(event.message.sensorType)) {
+    // console.log(`pinchSensorTypes doesn't include ${event.message.sensorType}`);
+    return;
+  }
   switch (event.message.sensorType) {
     case "pressure":
       data = event.message.pressure.sensors.map((sensor) => sensor.rawValue);
@@ -983,7 +989,7 @@ let isClassifying = false;
  * @param {number[]} data
  */
 function appendData(timestamp, sensorType, data) {
-  //console.log({ timestamp, sensorType, data });
+  // console.log({ timestamp, sensorType, data });
   if (!pendingSample || timestamp != pendingSample.timestamp) {
     pendingSample = { timestamp };
     //console.log("pendingSample", pendingSample);
@@ -1019,6 +1025,7 @@ function appendData(timestamp, sensorType, data) {
       });
     });
     isClassifying = true;
+    // console.log("classifying");
     //console.log("classifying", features);
     classify(features);
     isClassifying = false;
