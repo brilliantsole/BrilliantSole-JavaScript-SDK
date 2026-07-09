@@ -104,10 +104,6 @@ setupColors();
 const getTextColorIndex = () => 1;
 const getTempoColorIndex = () => 2;
 const getGraphColorIndex = () => 3;
-displayCanvasHelper.setColor(getTextColorIndex(), "white");
-displayCanvasHelper.setColor(getTempoColorIndex(), "white");
-displayCanvasHelper.setColor(getGraphColorIndex(), "red");
-displayCanvasHelper.flushContextCommands();
 
 // DRAW
 let isDrawing = false;
@@ -124,10 +120,12 @@ displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
 let didLoad = false;
 const draw = async () => {
   if (isUploading) {
+    isWaitingToRedraw = true;
     return;
   }
   if (!didLoad) {
     console.log("hasn't loaded yet");
+    isWaitingToRedraw = true;
     return;
   }
 
@@ -139,6 +137,11 @@ const draw = async () => {
   isDrawing = true;
 
   console.log("drawing...");
+
+  await displayCanvasHelper.setColor(getTextColorIndex(), "white");
+  await displayCanvasHelper.setColor(getTempoColorIndex(), "white");
+  await displayCanvasHelper.setColor(getGraphColorIndex(), "red");
+  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
 
   {
     await displayCanvasHelper.setSegmentCap("round");
@@ -215,10 +218,14 @@ window.draw = draw;
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
+  console.log("ready", { isWaitingToRedraw });
   if (isWaitingToRedraw) {
     isWaitingToRedraw = false;
     draw();
   }
+});
+displayCanvasHelper.addEventListener("deviceConnected", () => {
+  draw();
 });
 
 // PROGRESS
@@ -331,7 +338,18 @@ toggleSenseSensorDataInput.addEventListener("input", () => {
 const toggleSenseSensorData = () => {
   setSenseSensorData(!isSensorDataEnabled);
 };
-const setSenseSensorData = (enable) => {
+
+const setSenseSensorData = async (enable) => {
+  const device = senseDevice?.isConnected
+    ? senseDevice
+    : BS.DeviceManager.connectedDevices.find(
+        (device) =>
+          device.sensorTypes.includes("gameRotation") &&
+          !device.isDisplayAvailable,
+      );
+  if (!device) {
+    return;
+  }
   if (enable) {
     /** @type {BS.SensorConfiguration} */
     const newSensorConfiguration = {};
@@ -339,10 +357,13 @@ const setSenseSensorData = (enable) => {
       newSensorConfiguration[sensorType] = sensorRate;
     });
     console.log("newSensorConfiguration", newSensorConfiguration);
-    senseDevice.setSensorConfiguration(newSensorConfiguration);
+    await device.setSensorConfiguration(newSensorConfiguration);
   } else {
-    senseDevice.clearSensorConfiguration();
+    await device.clearSensorConfiguration();
   }
+  setIsSensorDataEnabled(
+    device.sensorConfiguration[requiredSensorTypes[0]] > 0,
+  );
 };
 
 let isSensorDataEnabled = false;
@@ -775,6 +796,13 @@ senseDevice.addEventListener("rotation", (event) => {
   onQuaternion(event.message.rotation);
 });
 
+BS.DeviceManager.addEventListener("deviceGameRotation", (event) => {
+  onQuaternion(event.message.gameRotation);
+});
+BS.DeviceManager.addEventListener("deviceRotation", (event) => {
+  onQuaternion(event.message.rotation);
+});
+
 const calibrateRepButton = document.getElementById("calibrateRep");
 calibrateRepButton.addEventListener("click", () => {
   if (state == "calibrating") {
@@ -1043,7 +1071,6 @@ const selectFont = async (newFontName) => {
   spritesLineHeight = BS.getFontMaxHeight(selectedFont, fontSize);
   await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
   await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
-  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await draw();
 };
 

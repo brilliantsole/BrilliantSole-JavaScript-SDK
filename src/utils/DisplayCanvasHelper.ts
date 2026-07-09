@@ -853,7 +853,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     this.#isReady = isReady;
-    console.log({ isReady: this.#isReady });
+    _console.log({ isReady: this.#isReady });
     if (this.#isReady) {
       this.#onSentContextCommands();
       this.#drawFrontDrawStack();

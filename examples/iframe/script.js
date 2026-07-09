@@ -358,7 +358,7 @@ const createIframeContainer = (src) => {
 };
 // createIframeContainer("../display-text");
 // createIframeContainer("../display-wireframe");
-createIframeContainer("../display-3d");
+createIframeContainer("../display-workout");
 // createIframeContainer();
 // createIframeContainer();
 window.createIframeContainer = createIframeContainer;
