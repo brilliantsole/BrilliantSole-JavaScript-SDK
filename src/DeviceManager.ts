@@ -309,6 +309,7 @@ class DeviceManager {
 
     _console.log({ bluetoothDevices });
 
+    // FILL - watchadvertisements and add once you see 1 advertisement (timeout after 3 seconds)
     bluetoothDevices.forEach((bluetoothDevice) => {
       if (!bluetoothDevice.gatt) {
         return;

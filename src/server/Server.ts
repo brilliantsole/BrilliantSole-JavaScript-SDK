@@ -1,6 +1,7 @@
-import BaseServer, {
+import {
   BaseServerEventDispatcherTypes,
   BaseServerEventMessages,
+  ServerType,
 } from "./BaseServer.ts";
 
 /** NODE_START */

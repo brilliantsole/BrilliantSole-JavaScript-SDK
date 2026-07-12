@@ -86,10 +86,16 @@ const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...RequiredDisplayMessageTypes,
 ];
 
-const _console = createConsole("BaseServer", { log: false });
+const _console = createConsole("BaseServer", { log: true });
 
 export const ServerTypes = ["window", "webSocket", "udp"] as const;
 export type ServerType = (typeof ServerTypes)[number];
+
+export const serverMtus: Record<ServerType, number> = {
+  udp: 1024,
+  webSocket: 1024,
+  window: 1024,
+};
 
 export interface BaseServerClient {
   readonly type: ServerType;
@@ -148,6 +154,16 @@ export interface BaseServerClientDeviceContext<
 abstract class BaseServer<ServerClient extends BaseServerClient> {
   static type: ServerType;
   abstract readonly type: ServerType;
+
+  protected get baseConstructor() {
+    return this.constructor as typeof BaseServer;
+  }
+  static get clientMtu() {
+    return serverMtus[this.type];
+  }
+  get clientMtu() {
+    return this.baseConstructor.clientMtu;
+  }
 
   // EVENT DISPATCHER
   #eventDispatcher: BaseServerEventDispatcher<ServerClient> =
@@ -393,11 +409,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       case "displayContextCommands":
         return {
           type: "displayContextCommands",
-          data: serializeDisplayContextCommands(device.displayManager, [
-            ...device.displayManager.serializeColors(),
-            ...device.displayManager.serializeOpacities(),
-            ...device.displayManager.serializeContextState(),
-          ]),
+          data:
+            dataView ??
+            serializeDisplayContextCommands(device.displayManager, [
+              ...device.displayManager.serializeColors(),
+              ...device.displayManager.serializeOpacities(),
+              ...device.displayManager.serializeContextState(),
+            ]),
         };
         break;
       default:
@@ -422,7 +440,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     }
   }
 
-  readonly localMtu = 1024;
   #onDeviceConnectionMessage(deviceEvent: DeviceEventMap["connectionMessage"]) {
     const { target: device, message: deviceConnectionMessage } = deviceEvent;
     _console.log("onDeviceConnectionMessage", deviceConnectionMessage);
@@ -538,7 +555,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
                     const deviceMessages: DeviceMessage[] = [];
                     const mtuDataView = new DataView(new ArrayBuffer(2));
-                    mtuDataView.setUint16(0, this.localMtu, true);
+                    mtuDataView.setUint16(0, this.clientMtu, true);
                     const mtuDeviceMessage = this.#createDeviceMessage(
                       device,
                       "getMtu",
@@ -620,7 +637,26 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     if (!device.isConnected) {
       return;
     }
-    // FILL - broadcast
+    const serializedDisplayContextCommands = serializeDisplayContextCommands(
+      device.displayManager,
+      displayContextCommands,
+    );
+    // _console.log(
+    //   "serializedDisplayContextCommands",
+    //   serializedDisplayContextCommands,
+    // );
+    const deviceMessage = this.#createDeviceMessage(
+      device,
+      "displayContextCommands",
+      new DataView(serializedDisplayContextCommands),
+    );
+    // _console.log("deviceMessage", deviceMessage);
+    const deviceServerMessage = this.#createDeviceServerMessage(
+      device,
+      deviceMessage,
+    );
+    // @ts-expect-error
+    ServerManager.broadcast(deviceServerMessage, undefined, undefined, false);
   }
 
   // STATIC DEVICE LISTENERS
@@ -993,15 +1029,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
           const messages: DeviceMessage[] = [];
 
-          RequiredDeviceInformationMessageTypes.forEach((messageType) => {
-            if (
-              device.latestConnectionMessages.has(messageType) &&
-              this.#allowDeviceToClient(device, client, messageType)
-            ) {
-              messages.push(this.#createDeviceMessage(device, messageType));
-            }
-          });
-
           if (device.hasCamera) {
             if (this.#allowDeviceToClient(device, client, "cameraData")) {
               messages.push(this.#createDeviceMessage(device, "cameraData"));
@@ -1021,6 +1048,15 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               );
             }
           }
+
+          RequiredDeviceInformationMessageTypes.forEach((messageType) => {
+            if (
+              device.latestConnectionMessages.has(messageType) &&
+              this.#allowDeviceToClient(device, client, messageType)
+            ) {
+              messages.push(this.#createDeviceMessage(device, messageType));
+            }
+          });
 
           const responseMessage = this.#createDeviceServerMessage(
             device,
@@ -1158,7 +1194,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 "filteredDisplayContextCommands",
                 filteredDisplayContextCommands,
               );
-              // FILL - if commands that block changing contextState, send back "corrected" commands and add to "responseMessages"
 
               const filteredDisplayContextCommandsData =
                 serializeDisplayContextCommands(
@@ -1169,10 +1204,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 _console.log("no filteredDisplayContextCommandsData");
                 return;
               }
-              broadcastDeviceMessages.push({
-                type: "displayContextCommands",
-                data: filteredDisplayContextCommandsData,
-              });
               message.data = filteredDisplayContextCommandsData;
             }
             break;
@@ -1511,7 +1542,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     const localBroadcastMessage = concatenateArrayBuffers(
       clientContext.localBroadcastMessages,
     );
-
     _console.log(
       `locally broadcasting ${localBroadcastMessage.byteLength} bytes...`,
     );

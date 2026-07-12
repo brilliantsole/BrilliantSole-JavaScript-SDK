@@ -16,9 +16,9 @@ import {
   windowManagerPongMessage,
 } from "./WindowManagerUtils.ts";
 
-import { default as WindowServer } from "../server/window/WindowServer.ts";
 import { Singleton } from "../utils/TypeScriptUtils.ts";
 import { BaseServerClientContext } from "../server/BaseServer.ts";
+import { default as WindowServer } from "../server/window/WindowServer.ts";
 
 const _console = createConsole("WindowManagerServer", { log: false });
 

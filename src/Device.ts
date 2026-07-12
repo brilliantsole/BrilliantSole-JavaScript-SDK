@@ -555,6 +555,9 @@ class Device {
     this._informationManager.connectionType = this.connectionType;
     this.#fileTransferManager.connectionType = this.connectionType;
     this.#displayManager.connectionType = this.connectionType;
+    if (this.connectionManager?.type == "client") {
+      this.#displayManager.clientMtu = this.connectionManager!.client.clientMtu;
+    }
   }
   async #sendTxMessages(messages?: TxMessage[], sendImmediately = true) {
     _console.log("sendTxMessages", messages, { sendImmediately });
@@ -714,6 +717,11 @@ class Device {
       hasRequiredInformation = this.#didReceiveMessageTypes(
         RequiredDisplayMessageTypes,
       );
+      if (this.connectionType == "client") {
+        hasRequiredInformation =
+          hasRequiredInformation &&
+          this.#didReceiveMessageTypes(["displayContextCommands"]);
+      }
     }
     return hasRequiredInformation;
   }

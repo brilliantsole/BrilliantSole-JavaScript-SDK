@@ -3,6 +3,7 @@ import { DeviceMessage } from "./ServerUtils.ts";
 import Device from "../Device.ts";
 export declare const ServerTypes: readonly ["window", "webSocket", "udp"];
 export type ServerType = (typeof ServerTypes)[number];
+export declare const serverMtus: Record<ServerType, number>;
 export interface BaseServerClient {
     readonly type: ServerType;
 }
@@ -38,6 +39,9 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     #private;
     static type: ServerType;
     abstract readonly type: ServerType;
+    protected get baseConstructor(): typeof BaseServer;
+    static get clientMtu(): number;
+    get clientMtu(): number;
     get addEventListener(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", BaseServerEventMessages<ServerClient>, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
     protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: BaseServerEventMessages<ServerClient>[T]) => void;
     get removeEventListener(): <T extends "*" | "clientConnected" | "clientDisconnected">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseServer<ServerClient>, "clientConnected" | "clientDisconnected", BaseServerEventMessages<ServerClient>, T>) => void) => void;
@@ -53,7 +57,6 @@ declare abstract class BaseServer<ServerClient extends BaseServerClient> {
     set clearSensorConfigurationsWhenNoClients(newValue: boolean);
     protected sendToClient(client: ServerClient, arrayBuffer: ArrayBuffer, isWrapped?: boolean): boolean;
     broadcast(arrayBuffer: ArrayBuffer, clients?: ServerClient[], excludeClients?: ServerClient[], isWrapped?: boolean): void;
-    readonly localMtu = 1024;
     protected parseClientMessage(client: ServerClient, dataView: DataView<ArrayBuffer>): BaseServerClientContext<BaseServerClient> | undefined;
     protected sendClientContext(clientContext: BaseServerClientContext<ServerClient>): void;
 }

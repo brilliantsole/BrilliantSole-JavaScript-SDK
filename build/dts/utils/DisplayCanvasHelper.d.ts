@@ -102,6 +102,8 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     set applyTransparency(newValue: boolean);
     get device(): Device | undefined;
     get deviceDisplayManager(): import("../DisplayManager.ts").default | undefined;
+    get isDeviceClientConnectionType(): boolean | undefined;
+    get isSettingDevice(): boolean;
     set device(newDevice: Device | undefined);
     flushContextCommands(): Promise<void>;
     get numberOfColors(): number;
@@ -242,6 +244,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     parseContextCommands(dataView: DataView, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
+    get ignoreDevice(): boolean;
     previewSprite(offsetX: number, offsetY: number, sprite: DisplaySprite, spriteSheet: DisplaySpriteSheet): void;
     previewSpriteCommands(commands: DisplayContextCommand[]): void;
     assertSpriteSheetPalette(paletteName: string): void;

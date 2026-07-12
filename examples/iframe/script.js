@@ -356,10 +356,10 @@ const createIframeContainer = (src) => {
 
   iframeContainers.appendChild(iframeContainer);
 };
-// createIframeContainer("../display-text");
+createIframeContainer("../display-text");
 // createIframeContainer("../display-wireframe");
 // createIframeContainer("../display-prompt");
-createIframeContainer();
+// createIframeContainer();
 // createIframeContainer();
 window.createIframeContainer = createIframeContainer;
 

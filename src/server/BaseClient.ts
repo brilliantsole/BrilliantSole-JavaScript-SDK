@@ -28,7 +28,7 @@ import {
   ClientConnectionType,
   ConnectionTypes,
 } from "../connection/BaseConnectionManager.ts";
-import { ServerTypes } from "./BaseServer.ts";
+import { serverMtus, ServerTypes } from "./BaseServer.ts";
 
 const _console = createConsole("BaseClient", { log: false });
 
@@ -92,6 +92,13 @@ abstract class BaseClient {
 
   constructor() {
     BaseClient.OnClient(this);
+  }
+
+  static get clientMtu() {
+    return serverMtus[this.type];
+  }
+  get clientMtu() {
+    return this.baseConstructor.clientMtu;
   }
 
   #reset() {

@@ -1468,6 +1468,10 @@ export async function runDisplayContextCommand(
         const spriteSheetName = Object.entries(
           displayManager.spriteSheetIndices,
         ).find((entry) => entry[1] == spriteSheetIndex)?.[0];
+        _console.assertWithError(
+          spriteSheetName,
+          `no spriteSheet found at index ${spriteSheetIndex}`,
+        );
         await displayManager.selectSpriteSheet(
           spriteSheetName!,
           sendImmediately,
