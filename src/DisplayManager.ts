@@ -425,7 +425,7 @@ class DisplayManager implements DisplayManagerInterface {
     });
   }
   serializeContextState(other?: PartialDisplayContextState) {
-    return this.#contextStateHelper.serialize(this.numberOfColors, other);
+    return this.#contextStateHelper.serialize(this, this.numberOfColors, other);
   }
   @ForwardToHelper
   async setContextState(
@@ -434,6 +434,7 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     const contextCommands = serializeContextState(
+      this,
       newState,
       this.numberOfColors,
       this.contextState,
@@ -3426,6 +3427,7 @@ class DisplayManager implements DisplayManagerInterface {
       );
     }
   }
+  //@ForwardToHelper // FIX
   async parseContextCommands(
     dataView: DataView,
     sendImmediately?: boolean,
@@ -3443,9 +3445,10 @@ class DisplayManager implements DisplayManagerInterface {
         isSending,
       );
     } else {
-      const contextCommands = parseDisplayContextCommands(this, dataView);
+      const parsedContextCommands = parseDisplayContextCommands(this, dataView);
+      _console.log("parsedContextCommands", parsedContextCommands);
       await this.runContextCommands(
-        contextCommands,
+        parsedContextCommands,
         sendImmediately,
         isSending,
       );
@@ -3542,6 +3545,8 @@ class DisplayManager implements DisplayManagerInterface {
   get pendingSpriteSheetIndex() {
     return this.#pendingSpriteSheetIndex;
   }
+
+  private _pendingSelectedSpriteSheetIndex?: number;
   #updateSpriteSheetName(updatedSpriteSheetName: string) {
     _console.assertTypeWithError(updatedSpriteSheetName, "string");
     this.#pendingSpriteSheetName = updatedSpriteSheetName;
@@ -3617,7 +3622,11 @@ class DisplayManager implements DisplayManagerInterface {
         this.#pendingSpriteSheet,
       );
       await this.waitForEvent("displaySpriteSheetUploadComplete");
-      await this.uploadSpriteSheet(spriteSheet);
+      _console.log(
+        "finished waiting for pendingSpriteSheet",
+        this.#pendingSpriteSheet,
+      );
+      await this.uploadSpriteSheet(spriteSheet, displayCanvasHelper);
       return;
     }
     this.#pendingSpriteSheet = spriteSheet;
@@ -3630,6 +3639,14 @@ class DisplayManager implements DisplayManagerInterface {
     const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
     this.sendFile("spriteSheet", buffer, includeHeader);
     await promise;
+
+    if (!this.displayCanvasHelper) {
+      const spriteSheetIndex = this.spriteSheetIndices[spriteSheet.name];
+      if (spriteSheetIndex == this._pendingSelectedSpriteSheetIndex) {
+        this._pendingSelectedSpriteSheetIndex = undefined;
+        await this.selectSpriteSheet(spriteSheet.name, true, true);
+      }
+    }
   }
   connectionType?: ConnectionType;
   get isClientConnectionType() {
@@ -3681,6 +3698,9 @@ class DisplayManager implements DisplayManagerInterface {
       return this.#spriteSheets[this.contextState.spriteSheetName];
     }
   }
+  get selectedSpriteSheetIndex() {
+    return this.#spriteSheetIndices[this.selectedSpriteSheetName!];
+  }
   get selectedSpriteSheetName() {
     return this.selectedSpriteSheet?.name;
   }
@@ -3689,9 +3709,6 @@ class DisplayManager implements DisplayManagerInterface {
     if (this.pendingContextState.spriteSheetName) {
       return this.#spriteSheets[this.pendingContextState.spriteSheetName];
     }
-  }
-  get pendingSelectedSpriteSheetName() {
-    return this.pendingSelectedSpriteSheet?.name;
   }
 
   @ForwardToHelper
@@ -3702,6 +3719,8 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     this.assertLoadedSpriteSheet(spriteSheetName);
+
+    _console.log("selecting", { spriteSheetName, sendImmediately, isSending });
 
     const spriteSheetIndex = this.spriteSheetIndices[spriteSheetName];
     const partialState: PartialDisplayContextState = { spriteSheetName };
@@ -3721,7 +3740,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
 
-    //_console.log("selecting", { spriteSheetIndex, spriteSheetName });
+    // _console.log("selecting", { spriteSheetIndex, spriteSheetName });
     await this.#sendContextCommand(
       { type: "selectSpriteSheet", spriteSheetIndex },
       sendImmediately,
@@ -4078,6 +4097,7 @@ class DisplayManager implements DisplayManagerInterface {
       spriteSheetName: this.#pendingSpriteSheetName!,
       spriteSheet: this.#pendingSpriteSheet!,
     });
+
     this.#pendingSpriteSheet = undefined;
   }
 
@@ -4266,6 +4286,8 @@ class DisplayManager implements DisplayManagerInterface {
     this.#pendingSpriteSheet = undefined;
     this.#pendingSpriteSheetName = undefined;
     this.#pendingSpriteSheetIndex = undefined;
+
+    this._pendingSelectedSpriteSheetIndex = undefined;
 
     this.#isDrawingBlankSprite = false;
 

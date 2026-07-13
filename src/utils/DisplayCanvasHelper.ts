@@ -120,7 +120,7 @@ import {
 } from "./DisplaySpriteSheetUtils.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("DisplayCanvasHelper", { log: true });
+const _console = createConsole("DisplayCanvasHelper", { log: false });
 
 export const DisplayCanvasHelperEventTypes = [
   "contextState",
@@ -350,6 +350,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
   ) {
     const contextCommands = serializeContextState(
+      this,
       newState,
       this.numberOfColors,
       this.contextState,
@@ -616,6 +617,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     const device = event.target;
     const { spriteSheet, spriteSheetName } = event.message;
+    _console.log(
+      "displaySpriteSheetUploadComplete",
+      spriteSheet,
+      spriteSheetName,
+    );
     this.#dispatchEvent("deviceSpriteSheetUploadComplete", {
       device,
       spriteSheet,
@@ -809,7 +815,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return this.#contextStateHelper.state;
   }
   serializeContextState(other?: PartialDisplayContextState) {
-    return this.#contextStateHelper.serialize(this.numberOfColors, other);
+    return this.#contextStateHelper.serialize(this, this.numberOfColors, other);
   }
   #onContextStateUpdate(differences: DisplayContextStateKey[]) {
     if (differences.length == 0) {
@@ -4295,7 +4301,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       _console.log("spriteSheet is already pending under device - won't copy");
       this.deviceDisplayManager!.pendingSpriteSheet = spriteSheet;
     }
-    this.#spriteSheets[spriteSheet.name] = spriteSheet;
+
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.uploadSpriteSheet(spriteSheet, this);
       const spriteSheetIndex =
@@ -4304,16 +4310,23 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         spriteSheetIndex != undefined,
         `no spriteSheetIndex found for spriteSheetName ${spriteSheet.name}`,
       );
+      this.#spriteSheets[spriteSheet.name] = spriteSheet;
       this.#spriteSheetIndices[spriteSheet.name] = spriteSheetIndex;
-    } else {
-      this.#spriteSheetIndices[spriteSheet.name] = Object.keys(
-        this.#spriteSheets,
-      ).length;
-    }
+      _console.log(
+        `updated spriteSheetIndex #${this.#spriteSheetIndices[spriteSheet.name]} for spriteSheet "${spriteSheet.name}" after uploading to device`,
+      );
 
-    _console.log(
-      `updated spriteSheetIndex #${this.#spriteSheetIndices[spriteSheet.name]} for spriteSheet "${spriteSheet.name}"`,
-    );
+      if (
+        spriteSheetIndex ==
+        this.deviceDisplayManager!._pendingSelectedSpriteSheetIndex
+      ) {
+        this.deviceDisplayManager!._pendingSelectedSpriteSheetIndex = undefined;
+        await this.selectSpriteSheet(spriteSheet.name, true, true);
+      }
+    } else {
+      this.#spriteSheets[spriteSheet.name] = spriteSheet;
+      _console.log(`added spriteSheet "${spriteSheet.name} (no index)"`);
+    }
   }
   async uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
     _console.log("uploadSpriteSheets", spriteSheets);
@@ -4321,6 +4334,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       _console.log(`uploading spriteSheet "${spriteSheet.name}"...`);
       await this.uploadSpriteSheet(spriteSheet);
     }
+    _console.log("finished uploadSpriteSheets", spriteSheets);
   }
   assertLoadedSpriteSheet(spriteSheetName: string) {
     assertLoadedSpriteSheet(this, spriteSheetName);
@@ -4390,7 +4404,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     command: DisplayContextCommand,
     contextState: DisplayContextState,
   ) {
-    _console.log("runSpriteCommand", command);
+    // _console.log("runSpriteCommand", command);
     if (command.type == "drawSprite") {
       const spriteSheet = this.spriteSheets[contextState.spriteSheetName!];
       const sprite = spriteSheet.sprites[command.spriteIndex];
@@ -4941,8 +4955,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       isSending,
     });
 
-    const contextCommands = parseDisplayContextCommands(this, dataView);
-    await this.runContextCommands(contextCommands, sendImmediately, isSending);
+    const parsedContextCommands = parseDisplayContextCommands(this, dataView);
+    _console.log("parsedContextCommands", parsedContextCommands);
+    await this.runContextCommands(
+      parsedContextCommands,
+      sendImmediately,
+      isSending,
+    );
   }
 
   get #contextScale() {

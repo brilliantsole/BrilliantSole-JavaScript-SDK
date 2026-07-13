@@ -296,6 +296,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     set pendingSpriteSheet(newPendingSpriteSheet: DisplaySpriteSheet | undefined);
     get pendingSpriteSheetName(): string | undefined;
     get pendingSpriteSheetIndex(): number | undefined;
+    private _pendingSelectedSpriteSheetIndex?;
     sendFile: SendFileCallback;
     serializeSpriteSheet(spriteSheet: DisplaySpriteSheet, includeHeader?: boolean, displayCanvasHelper?: DisplayCanvasHelper): ArrayBuffer;
     parseSpriteSheet(dataView: DataView<ArrayBuffer>, name?: string, includesHeader?: boolean, displayCanvasHelper?: DisplayCanvasHelper): DisplaySpriteSheet;
@@ -313,9 +314,9 @@ declare class DisplayManager implements DisplayManagerInterface {
     getSpriteSheetPaletteSwap(paletteSwapName: string): DisplaySpriteSheetPaletteSwap | undefined;
     getSpritePaletteSwap(spriteName: string, paletteSwapName: string): DisplaySpritePaletteSwap | undefined;
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
+    get selectedSpriteSheetIndex(): number;
     get selectedSpriteSheetName(): string | undefined;
     get pendingSelectedSpriteSheet(): DisplaySpriteSheet | undefined;
-    get pendingSelectedSpriteSheetName(): string | undefined;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     drawSprites(offsetX: number, offsetY: number, spriteLines: DisplaySpriteLines, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;

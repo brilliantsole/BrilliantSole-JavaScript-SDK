@@ -411,11 +411,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           type: "displayContextCommands",
           data:
             dataView ??
-            serializeDisplayContextCommands(device.displayManager, [
-              ...device.displayManager.serializeColors(),
-              ...device.displayManager.serializeOpacities(),
-              ...device.displayManager.serializeContextState(),
-            ]),
+            new DataView(
+              serializeDisplayContextCommands(device.displayManager, [
+                ...device.displayManager.serializeColors(),
+                ...device.displayManager.serializeOpacities(),
+                ...device.displayManager.serializeContextState(),
+              ]),
+            ),
         };
         break;
       default:
@@ -449,6 +451,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     }
 
     const { messageType, dataView } = deviceConnectionMessage;
+
+    const deviceMessages: DeviceMessage[] = [];
 
     switch (messageType) {
       case "sensorData":
@@ -609,6 +613,36 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           );
           return;
         }
+
+        switch (messageType) {
+          case "displaySpriteSheetIndex":
+            if (false) {
+              const spriteSheetIndex = dataView.getUint8(0);
+              if (
+                spriteSheetIndex ==
+                device.displayManager.selectedSpriteSheetIndex
+              ) {
+                _console.log("sending spriteSheetIndex");
+
+                const displayContextCommandsDeviceMessage =
+                  this.#createDeviceMessage(
+                    device,
+                    "displayContextCommands",
+                    new DataView(
+                      serializeDisplayContextCommands(device.displayManager, [
+                        {
+                          type: "selectSpriteSheet",
+                          spriteSheetIndex:
+                            device.displayManager.selectedSpriteSheetIndex,
+                        },
+                      ]),
+                    ),
+                  );
+                deviceMessages.push(displayContextCommandsDeviceMessage);
+              }
+            }
+            break;
+        }
         break;
       case "fileBytesTransferred":
         _console.log("skipping fileBytesTransferred");
@@ -623,8 +657,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       messageType,
       dataView,
     );
+    deviceMessages.unshift(deviceMessage);
+
     this.broadcast(
-      this.#createDeviceServerMessage(device, deviceMessage),
+      this.#createDeviceServerMessage(device, ...deviceMessages),
       this.#allowDeviceToClients(device, deviceMessage),
     );
   }
@@ -1355,27 +1391,50 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                       this.#createDeviceMessage(device, "fileTransferStatus");
                     deviceMessages.push(fileTransferStatusDeviceMessage);
 
-                    let followUpDeviceMessage: DeviceMessage | undefined;
                     switch (fileType) {
                       case "tflite":
-                        followUpDeviceMessage = this.#createDeviceMessage(
-                          device,
-                          "tfliteIsReady",
-                        );
+                        {
+                          const tfliteIsReadyDeviceMessage =
+                            this.#createDeviceMessage(device, "tfliteIsReady");
+                          deviceMessages.push(tfliteIsReadyDeviceMessage);
+                        }
                         break;
                       case "spriteSheet":
-                        followUpDeviceMessage = this.#createDeviceMessage(
-                          device,
-                          "displaySpriteSheetIndex",
-                        );
+                        {
+                          const displaySpriteSheetIndexDeviceMessage =
+                            this.#createDeviceMessage(
+                              device,
+                              "displaySpriteSheetIndex",
+                            );
+                          deviceMessages.push(
+                            displaySpriteSheetIndexDeviceMessage,
+                          );
+
+                          if (false) {
+                            const displayContextCommandsDeviceMessage =
+                              this.#createDeviceMessage(
+                                device,
+                                "displayContextCommands",
+                                new DataView(
+                                  serializeDisplayContextCommands(
+                                    device.displayManager,
+                                    [
+                                      {
+                                        type: "selectSpriteSheet",
+                                        spriteSheetIndex:
+                                          device.displayManager
+                                            .selectedSpriteSheetIndex,
+                                      },
+                                    ],
+                                  ),
+                                ),
+                              );
+                            deviceMessages.push(
+                              displayContextCommandsDeviceMessage,
+                            );
+                          }
+                        }
                         break;
-                    }
-                    if (followUpDeviceMessage) {
-                      _console.log(
-                        "followUpDeviceMessage",
-                        followUpDeviceMessage,
-                      );
-                      deviceMessages.push(followUpDeviceMessage);
                     }
                   }
 
@@ -1570,3 +1629,4 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 export default BaseServer;
 
 import { default as ServerManager } from "./ServerManager.ts";
+import { DisplaySpriteSheet } from "../BS.ts";

@@ -311,5 +311,5 @@ export type PathStateDisplayContextCommandType = (typeof PathStateDisplayContext
 declare const BitmapDisplayContextCommandTypes: readonly ["selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale"];
 export type BitmapDisplayContextCommandType = (typeof BitmapDisplayContextCommandTypes)[number];
 export declare function trimContextCommands(commands: DisplayContextCommand[]): DisplayContextCommand[];
-export declare function serializeContextState(state: PartialDisplayContextState, numberOfColors: number, other?: PartialDisplayContextState): DisplayContextCommand[];
+export declare function serializeContextState(displayManager: DisplayManagerInterface, state: PartialDisplayContextState, numberOfColors: number, other?: PartialDisplayContextState): DisplayContextCommand[];
 export {};

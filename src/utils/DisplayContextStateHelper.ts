@@ -8,6 +8,7 @@ import {
   resetContextState,
   updateContextState,
 } from "./DisplayContextState.ts";
+import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 
 const _console = createConsole("DisplayContextStateHelper", { log: false });
 
@@ -43,8 +44,17 @@ class DisplayContextStateHelper {
     );
   }
 
-  serialize(numberOfColors: number, other?: PartialDisplayContextState) {
-    return serializeContextState(this.#state, numberOfColors, other);
+  serialize(
+    displayManager: DisplayManagerInterface,
+    numberOfColors: number,
+    other?: PartialDisplayContextState,
+  ) {
+    return serializeContextState(
+      displayManager,
+      this.#state,
+      numberOfColors,
+      other,
+    );
   }
 }
 

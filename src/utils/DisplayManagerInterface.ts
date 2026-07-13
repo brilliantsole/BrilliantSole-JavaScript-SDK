@@ -1,4 +1,4 @@
-import {
+import DisplayManager, {
   DisplayBitmapColorPair,
   DisplayBrightness,
   DisplaySpriteColorPair,
@@ -8,6 +8,7 @@ import {
   DisplayWireframe,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
+import DisplayCanvasHelper from "./DisplayCanvasHelper.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
   DisplayAlignment,
@@ -1468,15 +1469,31 @@ export async function runDisplayContextCommand(
         const spriteSheetName = Object.entries(
           displayManager.spriteSheetIndices,
         ).find((entry) => entry[1] == spriteSheetIndex)?.[0];
-        _console.assertWithError(
-          spriteSheetName,
-          `no spriteSheet found at index ${spriteSheetIndex}`,
-        );
-        await displayManager.selectSpriteSheet(
-          spriteSheetName!,
-          sendImmediately,
-          isSending,
-        );
+        if (spriteSheetName != undefined) {
+          await displayManager.selectSpriteSheet(
+            spriteSheetName!,
+            sendImmediately,
+            isSending,
+          );
+        } else {
+          console.warn(
+            `no spriteSheet found at index #${spriteSheetIndex} - storing for later`,
+          );
+
+          let deviceDisplayManager: DisplayManager | undefined;
+          if (displayManager instanceof DisplayManager) {
+            deviceDisplayManager = displayManager;
+          } else if (displayManager instanceof DisplayCanvasHelper) {
+            deviceDisplayManager = displayManager.deviceDisplayManager;
+          }
+          _console.assertWithError(
+            deviceDisplayManager,
+            "deviceDisplayManager not found",
+          );
+          // @ts-expect-error
+          deviceDisplayManager._pendingSelectedSpriteSheetIndex =
+            spriteSheetIndex;
+        }
       }
       break;
     case "resetSpriteColors":

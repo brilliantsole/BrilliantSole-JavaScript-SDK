@@ -7,7 +7,8 @@ window.BS = BS;
 
 BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
-BS.setConsoleLevelFlagsForType("DisplayContextState", { log: true });
+BS.setConsoleLevelFlagsForType("BaseServer", { log: false });
+// BS.setConsoleLevelFlagsForType("DisplayContextState", { log: true });
 
 // CONNECT
 
@@ -49,11 +50,6 @@ BS.DeviceManager.addEventListener("deviceConnected", (event) => {
 displayCanvasHelper.addEventListener("deviceConnected", async () => {
   await draw();
 });
-
-BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
-BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
-BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
-BS.setConsoleLevelFlagsForType("DisplayManagerInterface", { log: true });
 
 // BRIGHTNESS
 /** @type {HTMLSelectElement} */
@@ -181,12 +177,14 @@ const draw = async () => {
   displayCanvasHelper.setColor(1, "white");
   displayCanvasHelper.setColor(2, "turquoise");
   displayCanvasHelper.setColor(3, "red");
+  displayCanvasHelper.setFillBackground(false);
   displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   displayCanvasHelper.selectSpriteSheet(fontSpriteSheet.name);
   displayCanvasHelper.setVerticalAlignment("center");
   displayCanvasHelper.setHorizontalAlignment("center");
   displayCanvasHelper.selectFillColor(1);
   displayCanvasHelper.resetSpriteScale();
+  displayCanvasHelper.clearRotation();
 
   if (mapData) {
     // console.log("drawing map...");
@@ -328,6 +326,7 @@ const draw = async () => {
     }
 
     if (selectedPlace || isAnimatingPlace) {
+      displayCanvasHelper.clearRotation();
       displayCanvasHelper.drawSpritesString(
         displayCanvasHelper.width / 2,
         y,
@@ -344,6 +343,7 @@ window.draw = draw;
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
+  console.log("ready", { isWaitingToRedraw, isAnimatingPlace });
   if (isWaitingToRedraw || isAnimatingPlace) {
     isWaitingToRedraw = false;
     draw();

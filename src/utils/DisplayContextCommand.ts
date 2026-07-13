@@ -2549,6 +2549,7 @@ export function trimContextCommands(commands: DisplayContextCommand[]) {
 }
 
 export function serializeContextState(
+  displayManager: DisplayManagerInterface,
   state: PartialDisplayContextState,
   numberOfColors: number,
   other?: PartialDisplayContextState,
@@ -2842,6 +2843,13 @@ export function serializeContextState(
         contextCommands.push({
           type: "setSpritesLineAlignment",
           spritesLineAlignment: state[difference],
+        });
+        break;
+      case "spriteSheetName":
+        contextCommands.push({
+          type: "selectSpriteSheet",
+          spriteSheetIndex:
+            displayManager.spriteSheetIndices[state[difference]],
         });
         break;
     }
