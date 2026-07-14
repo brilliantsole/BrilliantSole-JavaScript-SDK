@@ -51,6 +51,7 @@ export type EventDispatcherTypes<Target, EventType extends string, EventMessages
 export type EventDispatcherOptions = {
     once?: boolean;
     immediate?: boolean;
+    signal?: AbortSignal;
 };
 export type EventDispatcherListener = {
     listener: Function;

@@ -114,6 +114,7 @@ export type EventDispatcherTypes<
 export type EventDispatcherOptions = {
   once?: boolean;
   immediate?: boolean;
+  signal?: AbortSignal;
 };
 
 export type EventDispatcherListener = {
@@ -195,16 +196,29 @@ class EventDispatcher<
         listenerObject.listener === listener &&
         listenerObject.once === options.once &&
         listenerObject.immediate === options.immediate
+        // && listenerObject.signal == options.signal
       );
     });
     if (alreadyAdded) {
       _console.log("already added listener");
       return;
     }
+    if (options.signal) {
+      _console.log(`listening to "abort" signal`);
+      options.signal.addEventListener(
+        "abort",
+        () => {
+          _console.log(`removing listener after receiving "abort" signal`);
+          this.removeEventListener(type, listener);
+        },
+        { once: true },
+      );
+    }
     const listenerObj: EventDispatcherListener = {
       listener,
       once: options.once,
       immediate: options.immediate,
+      signal: options.signal,
     };
     _console.log(`adding "${type}" listener`, listenerObj);
     this.#listeners[type]!.push(listenerObj);
@@ -241,15 +255,19 @@ class EventDispatcher<
     if (!this.#listeners[type]) return;
 
     _console.log(`removing "${type}" listener...`, listener);
+    let foundListener = false;
     this.#listeners[type]!.forEach((listenerObj) => {
       const isListenerToRemove = listenerObj.listener === listener;
       if (isListenerToRemove) {
         _console.log(`flagging "${type}" listener`, listener);
         listenerObj.shouldRemove = true;
+        foundListener = true;
       }
     });
 
-    this.#updateEventListeners(type);
+    if (foundListener) {
+      this.#updateEventListeners(type);
+    }
   }
 
   removeEventListeners<T extends EventType | WildcardEventType>(type: T): void {

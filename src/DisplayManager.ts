@@ -424,12 +424,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
 
-    this.#pendingContextStateHelper.update(this.contextState);
-    this.#pendingContextStack = structuredClone(this.#contextStack);
-
-    _console.log("onContextStateUpdate", differences, {
-      pendingContextState: this.pendingContextState,
-    });
+    _console.log("onContextStateUpdate", differences);
 
     this.#dispatchEvent("displayContextState", {
       displayContextState: structuredClone(this.contextState),
@@ -680,10 +675,10 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
-    _console.log("sendContextCommand", contextCommand, {
-      sendImmediately,
-      isSending,
-    });
+    // _console.log("sendContextCommand", contextCommand, {
+    //   sendImmediately,
+    //   isSending,
+    // });
 
     let promise: Promise<void> | undefined;
 
@@ -1006,6 +1001,7 @@ class DisplayManager implements DisplayManagerInterface {
     const contextStateHelper = this.#getContextStateHelper(isSending);
     const contextStack = this.#getContextStack(isSending);
     const savedContext = structuredClone(contextStateHelper.state);
+    _console.log("#savedContext", savedContext);
     contextStack.push(savedContext);
   }
   @ForwardToHelper
@@ -1040,7 +1036,7 @@ class DisplayManager implements DisplayManagerInterface {
       _console.warn("#contextStack empty");
       return [];
     }
-    _console.log("restoredContext", restoredContext);
+    _console.log("#restoredContext", restoredContext);
 
     const differences = contextStateHelper.update(restoredContext);
     _console.log(
@@ -3433,6 +3429,12 @@ class DisplayManager implements DisplayManagerInterface {
         sendImmediately,
         isSending,
       );
+    }
+
+    if (!this.#shouldWait(isSending)) {
+      this.#pendingContextStateHelper.update(this.contextState);
+      this.#pendingContextStack = structuredClone(this.#contextStack);
+      _console.log("updated pendingContextStateHelper and pendingContextStack");
     }
   }
   @ForwardToHelper

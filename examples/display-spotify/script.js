@@ -188,6 +188,8 @@ const draw = async () => {
     // console.log({ duration, spotifyPosition, spotifyPaused });
 
     if (true && syncedLyrics && !isUpdatingNonEnglishCharacters) {
+      displayCanvasHelper.saveContext();
+
       const currentLyric = syncedLyrics[currentSpotifyLyricsLineIndex];
       const nextLyric = syncedLyrics[currentSpotifyLyricsLineIndex + 1];
       const nextNextLyric = syncedLyrics[currentSpotifyLyricsLineIndex + 2];
@@ -202,6 +204,7 @@ const draw = async () => {
 
       if (currentLyric) {
         displayCanvasHelper.setSpriteScale(1.1); // FIX
+        console.log("save before lyrics");
         displayCanvasHelper.saveContext();
       }
 
@@ -278,7 +281,6 @@ const draw = async () => {
         //console.log({ lyricInterpolation });
 
         displayCanvasHelper.setFillBackground(true);
-
         displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
 
         const centerX = displayCanvasHelper.width / 2;
@@ -313,6 +315,7 @@ const draw = async () => {
         currentLyricY = lyricOffsetY;
 
         drawCurrentLyric = () => {
+          console.log("drawCurrentLyric");
           displayCanvasHelper.drawSpritesString(
             lyricX,
             currentLyricY - lyricInterpolationOffsetY + lyricsOffsetY,
@@ -330,6 +333,7 @@ const draw = async () => {
             lyricSpacing;
 
           drawNextLyric = () => {
+            console.log("drawNextLyric");
             displayCanvasHelper.drawSpritesString(
               lyricX,
               nextLyricY - lyricInterpolationOffsetY + lyricsOffsetY,
@@ -349,6 +353,7 @@ const draw = async () => {
             lyricSpacing * 2;
 
           drawNextNextLyric = () => {
+            console.log("drawNextNextLyric");
             displayCanvasHelper.drawSpritesString(
               lyricX,
               nextNextLyricY - lyricInterpolationOffsetY + lyricsOffsetY,
@@ -384,6 +389,7 @@ const draw = async () => {
         }
 
         if (!isSpotifyTimeInputChanging && (!isMouseDown || !didMouseSeek)) {
+          console.log("drawing arc");
           displayCanvasHelper.selectLineColor(getTextColorIndex());
           displayCanvasHelper.setLineWidth(8);
           displayCanvasHelper.setIgnoreFill(true);
@@ -404,8 +410,11 @@ const draw = async () => {
           );
         }
 
+        console.log("restore after lyrics");
         displayCanvasHelper.restoreContext();
       }
+
+      displayCanvasHelper.restoreContext();
     }
 
     if (true && !isUpdatingNonEnglishCharacters) {
@@ -460,6 +469,8 @@ const draw = async () => {
 
     if (true) {
       displayCanvasHelper.saveContext();
+      // displayCanvasHelper.selectLineColor(1);
+      // displayCanvasHelper.setFillBackground(false);
       displayCanvasHelper.resetSpriteScale();
       displayCanvasHelper.resetSpriteColors();
       displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
@@ -847,7 +858,7 @@ const setSpotifyState = async (newSpotifyState) => {
   spotifyState = newSpotifyState;
 
   window.spotifyState = spotifyState;
-  // console.log("spotifyState", spotifyState);
+  console.log("spotifyState", spotifyState);
   updateSpotifyPlaybackControls();
 
   let shouldDraw = false;
@@ -915,6 +926,8 @@ const setSpotifyState = async (newSpotifyState) => {
       shouldDraw = true;
     }
   }
+
+  console.log({ shouldDraw });
   if (shouldDraw) {
     await draw();
   }
