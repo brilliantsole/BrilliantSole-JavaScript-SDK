@@ -828,7 +828,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     this.#dispatchEvent("contextState", {
-      contextState: structuredClone(this.contextState),
+      contextState: this.contextState,
       differences,
     });
   }

@@ -10107,7 +10107,7 @@ let DisplayCanvasHelper = (() => {
                 return;
             }
             this.#dispatchEvent("contextState", {
-                contextState: structuredClone(this.contextState),
+                contextState: this.contextState,
                 differences,
             });
         }
@@ -13782,7 +13782,7 @@ let DisplayManager = (() => {
             }
             _console$t.log("onContextStateUpdate", differences);
             this.#dispatchEvent("displayContextState", {
-                displayContextState: structuredClone(this.contextState),
+                displayContextState: this.contextState,
                 differences,
             });
         }
@@ -13995,19 +13995,30 @@ let DisplayManager = (() => {
                 _console$t.log("no contextCommands to send");
                 return;
             }
-            const displayContextCommands = this.#contextCommands.slice();
-            _console$t.log("sending displayContextCommands", displayContextCommands);
             this.#isSendingContextCommands = true;
-            this.#contextCommands.length = 0;
-            if (this.#contextCommandBuffers.length > 0) {
-                const data = concatenateArrayBuffers(this.#contextCommandBuffers);
-                _console$t.log("sending displayContextCommands buffers", this.#contextCommandBuffers.slice(), data);
-                this.#contextCommandBuffers.length = 0;
+            let numberOfCommands = 0;
+            let totalBufferLength = 0;
+            this.#contextCommandBuffers.some((contextCommandBuffer) => {
+                const newTotalBufferLength = totalBufferLength + contextCommandBuffer.byteLength;
+                if (newTotalBufferLength > this.#maxCommandDataLength) {
+                    return true;
+                }
+                totalBufferLength = newTotalBufferLength;
+                numberOfCommands++;
+            });
+            if (numberOfCommands == this.#contextCommandBuffers.length) {
+                numberOfCommands = this.#contextCommands.length;
+            }
+            const contextCommands = this.#contextCommands.splice(0, numberOfCommands);
+            const contextCommandBuffers = this.#contextCommandBuffers.splice(0, numberOfCommands);
+            if (contextCommandBuffers.length > 0) {
+                const data = concatenateArrayBuffers(contextCommandBuffers);
+                _console$t.log("sending displayContextCommands buffers", contextCommandBuffers.slice(), data);
                 await this.sendMessage([{ type: "displayContextCommands", data }], true);
             }
             this.#isSendingContextCommands = false;
             this.#dispatchEvent("displayContextCommands", {
-                displayContextCommands,
+                displayContextCommands: contextCommands,
             });
             if (this.#sendContextCommandsWhenDone) {
                 this.#sendContextCommandsWhenDone = false;

@@ -426,7 +426,7 @@ class DisplayManager implements DisplayManagerInterface {
     _console.log("onContextStateUpdate", differences);
 
     this.#dispatchEvent("displayContextState", {
-      displayContextState: structuredClone(this.contextState),
+      displayContextState: this.contextState,
       differences,
     });
   }
@@ -733,25 +733,44 @@ class DisplayManager implements DisplayManagerInterface {
       _console.log("no contextCommands to send");
       return;
     }
-    const displayContextCommands = this.#contextCommands.slice();
-    _console.log("sending displayContextCommands", displayContextCommands);
-
     this.#isSendingContextCommands = true;
-    this.#contextCommands.length = 0;
-    if (this.#contextCommandBuffers.length > 0) {
-      const data = concatenateArrayBuffers(this.#contextCommandBuffers);
+
+    let numberOfCommands = 0;
+    let totalBufferLength = 0;
+    this.#contextCommandBuffers.some((contextCommandBuffer) => {
+      const newTotalBufferLength =
+        totalBufferLength + contextCommandBuffer.byteLength;
+      if (newTotalBufferLength > this.#maxCommandDataLength) {
+        return true;
+      }
+      totalBufferLength = newTotalBufferLength;
+      numberOfCommands++;
+    });
+    if (numberOfCommands == this.#contextCommandBuffers.length) {
+      // _console.log("sending all commands");
+      numberOfCommands = this.#contextCommands.length;
+    }
+    // _console.log({ numberOfCommands });
+
+    const contextCommands = this.#contextCommands.splice(0, numberOfCommands);
+    const contextCommandBuffers = this.#contextCommandBuffers.splice(
+      0,
+      numberOfCommands,
+    );
+
+    if (contextCommandBuffers.length > 0) {
+      const data = concatenateArrayBuffers(contextCommandBuffers);
       _console.log(
         "sending displayContextCommands buffers",
-        this.#contextCommandBuffers.slice(),
+        contextCommandBuffers.slice(),
         data,
       );
-      this.#contextCommandBuffers.length = 0;
-
       await this.sendMessage([{ type: "displayContextCommands", data }], true);
     }
+
     this.#isSendingContextCommands = false;
     this.#dispatchEvent("displayContextCommands", {
-      displayContextCommands,
+      displayContextCommands: contextCommands,
     });
     if (this.#sendContextCommandsWhenDone) {
       this.#sendContextCommandsWhenDone = false;
