@@ -120,7 +120,7 @@ import {
 } from "./DisplaySpriteSheetUtils.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("DisplayCanvasHelper", { log: false });
+const _console = createConsole("DisplayCanvasHelper", { log: true });
 
 export const DisplayCanvasHelperEventTypes = [
   "contextState",
@@ -253,10 +253,10 @@ function ForwardToDeviceIfClient(lastIndex: number) {
         // });
 
         if (!isSending) {
-          _console.log(
-            `forwarding "${context.name as string}" to device.displayManager`,
-            context,
-          );
+          // _console.log(
+          //   `forwarding "${context.name as string}" to device.displayManager`,
+          //   context,
+          // );
 
           while (args.length <= lastIndex) {
             args.push(undefined);
@@ -520,6 +520,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.numberOfColors = this.device.numberOfDisplayColors!;
       await this.#updateCanvas(true, false);
       await this.#updateDevice(true, true);
+    }
+    _console.log("finished setting device", newDevice);
+    this.#isSettingDevice = false;
+
+    this.#setIsReady(this.device?.isDisplayReady ?? true);
+    await this.waitUntilReady();
+
+    if (this.device) {
       this.#dispatchEvent("deviceIsConnected", {
         device: this.device,
         isConnected: this.device!.isConnected,
@@ -531,9 +539,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         },
       );
     }
-    _console.log("finished setting device", newDevice);
-    this.#isSettingDevice = false;
-    this.#setIsReady(this.device?.isDisplayReady ?? true);
+
     this.#dispatchEvent("device", {
       device: this.device,
     });
@@ -917,6 +923,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#drawFrontDrawStack();
       this.#dispatchEvent("ready", {});
     }
+  }
+  async waitUntilReady() {
+    if (this.isReady) {
+      return;
+    }
+    await this.waitForEvent("ready");
   }
 
   @ForwardToDeviceIfClient(2)
@@ -4318,8 +4330,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
       if (
         spriteSheetIndex ==
+        // @ts-expect-error
         this.deviceDisplayManager!._pendingSelectedSpriteSheetIndex
       ) {
+        // @ts-expect-error
         this.deviceDisplayManager!._pendingSelectedSpriteSheetIndex = undefined;
         await this.selectSpriteSheet(spriteSheet.name, true, true);
       }
@@ -4336,44 +4350,66 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     _console.log("finished uploadSpriteSheets", spriteSheets);
   }
+  @ForwardToDeviceIfClient(1)
   assertLoadedSpriteSheet(spriteSheetName: string) {
     assertLoadedSpriteSheet(this, spriteSheetName);
   }
-  assertSelectedSpriteSheet(spriteSheetName: string) {
-    assertSelectedSpriteSheet(this, spriteSheetName);
+  @ForwardToDeviceIfClient(1)
+  assertSelectedSpriteSheet(spriteSheetName: string, isSending?: boolean) {
+    assertSelectedSpriteSheet(this, spriteSheetName, isSending);
   }
-  assertAnySelectedSpriteSheet() {
-    assertAnySelectedSpriteSheet(this);
+  @ForwardToDeviceIfClient(0)
+  assertAnySelectedSpriteSheet(isSending?: boolean) {
+    assertAnySelectedSpriteSheet(this, isSending);
   }
-  assertSprite(spriteName: string) {
-    return assertSprite(this, spriteName);
+  @ForwardToDeviceIfClient(1)
+  assertSprite(spriteName: string, isSending?: boolean) {
+    return assertSprite(this, spriteName, isSending);
   }
-  getSprite(spriteName: string): DisplaySprite | undefined {
-    return getSprite(this, spriteName);
+  @ForwardToDeviceIfClient(1)
+  getSprite(
+    spriteName: string,
+    isSending?: boolean,
+  ): DisplaySprite | undefined {
+    return getSprite(this, spriteName, isSending);
   }
+  @ForwardToDeviceIfClient(1)
   getSpriteSheetPalette(
     paletteName: string,
+    isSending?: boolean,
   ): DisplaySpriteSheetPalette | undefined {
-    return getSpriteSheetPalette(this, paletteName);
+    return getSpriteSheetPalette(this, paletteName, isSending);
   }
+  @ForwardToDeviceIfClient(1)
   getSpriteSheetPaletteSwap(
     paletteSwapName: string,
+    isSending?: boolean,
   ): DisplaySpriteSheetPaletteSwap | undefined {
-    return getSpriteSheetPaletteSwap(this, paletteSwapName);
+    return getSpriteSheetPaletteSwap(this, paletteSwapName, isSending);
   }
+  @ForwardToDeviceIfClient(2)
   getSpritePaletteSwap(
     spriteName: string,
     paletteSwapName: string,
+    isSending?: boolean,
   ): DisplaySpritePaletteSwap | undefined {
-    return getSpritePaletteSwap(this, spriteName, paletteSwapName);
+    return getSpritePaletteSwap(this, spriteName, paletteSwapName, isSending);
   }
-  get selectedSpriteSheet() {
+  @ForwardToDeviceIfClient(0)
+  getSelectedSpriteSheet(isSending?: boolean) {
     if (this.contextState.spriteSheetName) {
       return this.#spriteSheets[this.contextState.spriteSheetName];
     }
   }
-  get selectedSpriteSheetName() {
-    return this.selectedSpriteSheet?.name;
+  @ForwardToDeviceIfClient(0)
+  getSelectedSpriteSheetIndex(isSending?: boolean) {
+    return this.#spriteSheetIndices[
+      this.getSelectedSpriteSheetName(isSending)!
+    ];
+  }
+  @ForwardToDeviceIfClient(0)
+  getSelectedSpriteSheetName(isSending?: boolean) {
+    return this.getSelectedSpriteSheet(isSending)?.name;
   }
   @ForwardToDeviceIfClient(2)
   async selectSpriteSheet(
@@ -4458,10 +4494,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     _console.log("drawSprite", { offsetX, offsetY, spriteName });
     _console.assertWithError(
-      this.selectedSpriteSheet,
+      this.getSelectedSpriteSheet(isSending),
       "no spriteSheet selected",
     );
-    const sprite = this.selectedSpriteSheet?.sprites.find(
+    const sprite = this.getSelectedSpriteSheet(isSending)?.sprites.find(
       (sprite) => sprite.name == spriteName,
     );
     _console.assertWithError(sprite, `sprite "${spriteName}" not found`);
@@ -4765,6 +4801,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       isSending,
     );
   }
+  @ForwardToDeviceIfClient(7)
   async drawSpritesString(
     offsetX: number,
     offsetY: number,
@@ -4775,11 +4812,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
+    _console.log("drawSpritesString", { offsetX, offsetY, string, isSending });
     const spriteLines = this.stringToSpriteLines(
       string,
       requireAll,
       maxLineBreadth,
       separators,
+      isSending,
     );
     await this.drawSprites(
       offsetX,
@@ -4789,11 +4828,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       isSending,
     );
   }
+  @ForwardToDeviceIfClient(4)
   stringToSpriteLines(
     string: string,
     requireAll?: boolean,
     maxLineBreadth?: number,
     separators?: string[],
+    isSending?: boolean,
   ): DisplaySpriteLines {
     return stringToSpriteLines(
       string,
@@ -4804,11 +4845,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       separators,
     );
   }
+  @ForwardToDeviceIfClient(4)
   stringToSpriteLinesMetrics(
     string: string,
     requireAll?: boolean,
     maxLineBreadth?: number,
     separators?: string[],
+    isSending?: boolean,
   ) {
     return stringToSpriteLinesMetrics(
       string,
@@ -4913,12 +4956,17 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (!this.device?.isConnected) {
       return;
     }
-    if (!this.selectedSpriteSheetName) {
+    if (!this.getSelectedSpriteSheetName(isSending)) {
       return;
     }
-    _console.log("updateDeviceSelectedSpriteSheet");
+    _console.log("updateDeviceSelectedSpriteSheet", {
+      sendImmediately,
+      isSending,
+      updateSelf,
+    });
+
     await this.deviceDisplayManager?.selectSpriteSheet(
-      this.selectedSpriteSheetName,
+      this.getSelectedSpriteSheetName(isSending)!,
       sendImmediately,
       isSending,
       this,
@@ -5151,15 +5199,20 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   // SPRITE SHEET PALETTES
 
-  assertSpriteSheetPalette(paletteName: string) {
-    assertSpriteSheetPalette(this, paletteName);
+  assertSpriteSheetPalette(paletteName: string, isSending?: boolean) {
+    assertSpriteSheetPalette(this, paletteName, isSending);
   }
-  assertSpriteSheetPaletteSwap(paletteSwapName: string) {
-    assertSpriteSheetPaletteSwap(this, paletteSwapName);
+  assertSpriteSheetPaletteSwap(paletteSwapName: string, isSending?: boolean) {
+    assertSpriteSheetPaletteSwap(this, paletteSwapName, isSending);
   }
-  assertSpritePaletteSwap(spriteName: string, paletteSwapName: string) {
-    assertSpritePaletteSwap(this, spriteName, paletteSwapName);
+  assertSpritePaletteSwap(
+    spriteName: string,
+    paletteSwapName: string,
+    isSending?: boolean,
+  ) {
+    assertSpritePaletteSwap(this, spriteName, paletteSwapName, isSending);
   }
+  @ForwardToDeviceIfClient(4)
   async selectSpriteSheetPalette(
     paletteName: string,
     offset?: number,
@@ -5176,6 +5229,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       isSending,
     );
   }
+  @ForwardToDeviceIfClient(3)
   async selectSpriteSheetPaletteSwap(
     paletteSwapName: string,
     offset?: number,
@@ -5190,6 +5244,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       isSending,
     );
   }
+  @ForwardToDeviceIfClient(4)
   async selectSpritePaletteSwap(
     spriteName: string,
     paletteSwapName: string,

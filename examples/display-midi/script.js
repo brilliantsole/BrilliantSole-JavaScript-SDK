@@ -430,7 +430,7 @@ let draw = async () => {
       displayCanvasHelper.setHorizontalAlignment("center");
       displayCanvasHelper.selectSpriteSheet("english");
       displayCanvasHelper.selectFillColor(getTextColorIndex());
-      // displayCanvasHelper.setSpritesLineHeight(spritesLineHeight); // remove
+      // displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
       displayCanvasHelper.drawSpritesString(
         2 * x - 3,
         sprite.height + 20 + 10,

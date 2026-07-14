@@ -909,7 +909,9 @@ const setSpotifyState = async (newSpotifyState) => {
         },
       );
       console.log("nonEnglishSpriteSheet", nonEnglishSpriteSheet);
-      await displayCanvasHelper.uploadSpriteSheet(nonEnglishSpriteSheet);
+      if (nonEnglishSpriteSheet.sprites.length > 0) {
+        await displayCanvasHelper.uploadSpriteSheet(nonEnglishSpriteSheet);
+      }
       isUpdatingNonEnglishCharacters = false;
       shouldDraw = true;
     }

@@ -4,7 +4,7 @@ window.BS = BS;
 BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
 // BS.setConsoleLevelFlagsForType("DisplayContextState", { log: true });
-BS.setConsoleLevelFlagsForType("Device", { log: true });
+// BS.setConsoleLevelFlagsForType("Device", { log: true });
 
 /** @typedef {import("../utils/three/three.module.min").Vector3} TVector3 */
 /** @typedef {import("../utils/three/three.module.min").Vector2} TVector2 */
@@ -1352,7 +1352,9 @@ const setAutoDraw = (newAutoDraw) => {
 };
 
 displayCanvasHelper.addEventListener("deviceConnected", () => {
-  setAutoDraw(true);
+  console.log("device - gonna draw");
+  // setAutoDraw(true);
+  draw();
 });
 
 displayCanvasHelper.addEventListener("ready", () => {

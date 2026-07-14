@@ -185,6 +185,10 @@ const displayCanvas = document.getElementById("display");
 
 // DISPLAY CANVAS HELPER
 const displayCanvasHelper = new BS.DisplayCanvasHelper();
+const clearDisplayCanvasHelper = async () => {
+  await displayCanvasHelper.clearContext();
+  await displayCanvasHelper.clear();
+};
 // displayCanvasHelper.setBrightness("veryLow");
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
@@ -307,23 +311,26 @@ const createIframeContainer = (src) => {
     urlOptgroup.appendChild(new Option(name, url));
   });
   urlSelect.value = "none";
-  urlSelect.addEventListener("input", () => {
+  urlSelect.addEventListener("input", async () => {
     if (urlSelect.value == "none") {
       return;
     }
+    await clearDisplayCanvasHelper();
     iframe.src = urlSelect.value;
   });
 
-  const urlGo = () => {
+  const urlGo = async () => {
     console.log("urlGo");
+    await clearDisplayCanvasHelper();
     iframe.src = urlInput.value;
   };
   const urlGoButton = iframeContainer.querySelector(".urlGo");
   urlGoButton.addEventListener("click", () => urlGo());
 
-  const urlRefresh = () => {
+  const urlRefresh = async () => {
     console.log("urlRefresh");
     // iframe.contentWindow.location.reload();
+    await clearDisplayCanvasHelper();
     iframe.src = iframe.src;
   };
   const urlRefreshButton = iframeContainer.querySelector(".urlRefresh");

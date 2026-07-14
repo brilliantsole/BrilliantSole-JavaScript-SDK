@@ -1065,6 +1065,15 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
           const messages: DeviceMessage[] = [];
 
+          RequiredDeviceInformationMessageTypes.forEach((messageType) => {
+            if (
+              device.latestConnectionMessages.has(messageType) &&
+              this.#allowDeviceToClient(device, client, messageType)
+            ) {
+              messages.push(this.#createDeviceMessage(device, messageType));
+            }
+          });
+
           if (device.hasCamera) {
             if (this.#allowDeviceToClient(device, client, "cameraData")) {
               messages.push(this.#createDeviceMessage(device, "cameraData"));
@@ -1084,15 +1093,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               );
             }
           }
-
-          RequiredDeviceInformationMessageTypes.forEach((messageType) => {
-            if (
-              device.latestConnectionMessages.has(messageType) &&
-              this.#allowDeviceToClient(device, client, messageType)
-            ) {
-              messages.push(this.#createDeviceMessage(device, messageType));
-            }
-          });
 
           const responseMessage = this.#createDeviceServerMessage(
             device,

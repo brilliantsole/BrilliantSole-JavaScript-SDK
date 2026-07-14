@@ -674,19 +674,22 @@ export interface DisplayManagerInterface {
     isSending?: boolean,
   ): Promise<void>;
   assertLoadedSpriteSheet(spriteSheetName: string): void;
-  assertSelectedSpriteSheet(spriteSheetName: string): void;
-  assertAnySelectedSpriteSheet(): void;
-  assertSprite(spriteName: string): void;
-  getSprite(spriteName: string): DisplaySprite | undefined;
+  assertSelectedSpriteSheet(spriteSheetName: string, isSending?: boolean): void;
+  assertAnySelectedSpriteSheet(isSending?: boolean): void;
+  assertSprite(spriteName: string, isSending?: boolean): void;
+  getSprite(spriteName: string, isSending?: boolean): DisplaySprite | undefined;
   getSpriteSheetPalette(
     paletteName: string,
+    isSending?: boolean,
   ): DisplaySpriteSheetPalette | undefined;
   getSpriteSheetPaletteSwap(
     paletteSwapName: string,
+    isSending?: boolean,
   ): DisplaySpriteSheetPaletteSwap | undefined;
   getSpritePaletteSwap(
     spriteName: string,
     paletteSwapName: string,
+    isSending?: boolean,
   ): DisplaySpritePaletteSwap | undefined;
 
   drawSpriteFromSpriteSheet(
@@ -699,17 +702,25 @@ export interface DisplayManagerInterface {
     isSending?: boolean,
   ): Promise<void>;
 
-  get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
-  get selectedSpriteSheetName(): string | undefined;
+  getSelectedSpriteSheet(isSending?: boolean): DisplaySpriteSheet | undefined;
+  getSelectedSpriteSheetIndex(isSending?: boolean): number | undefined;
+  getSelectedSpriteSheetName(isSending?: boolean): string | undefined;
 
   spriteSheets: Record<string, DisplaySpriteSheet>;
   spriteSheetIndices: Record<string, number>;
 
   getSpriteSheetByIndex(index: number): DisplaySpriteSheet | undefined;
 
-  assertSpriteSheetPalette(paletteName: string): void;
-  assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
-  assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;
+  assertSpriteSheetPalette(paletteName: string, isSending?: boolean): void;
+  assertSpriteSheetPaletteSwap(
+    paletteSwapName: string,
+    isSending?: boolean,
+  ): void;
+  assertSpritePaletteSwap(
+    spriteName: string,
+    paletteSwapName: string,
+    isSending?: boolean,
+  ): void;
   selectSpriteSheetPalette(
     paletteName: string,
     offset?: number,
@@ -1343,7 +1354,8 @@ export async function runDisplayContextCommand(
       {
         const { offsetX, offsetY, spriteIndex } = command;
         const spriteName =
-          displayManager.selectedSpriteSheet?.sprites[spriteIndex].name!;
+          displayManager.getSelectedSpriteSheet(isSending)?.sprites[spriteIndex]
+            .name!;
         await displayManager.drawSprite(
           offsetX,
           offsetY,
@@ -1607,70 +1619,80 @@ export function assertLoadedSpriteSheet(
 export function assertSelectedSpriteSheet(
   displayManager: DisplayManagerInterface,
   spriteSheetName: string,
+  isSending?: boolean,
 ) {
   displayManager.assertLoadedSpriteSheet(spriteSheetName);
   _console.assertWithError(
-    displayManager.selectedSpriteSheetName == spriteSheetName,
+    displayManager.getSelectedSpriteSheetName(isSending) == spriteSheetName,
     `spriteSheet "${spriteSheetName}" not selected`,
   );
 }
 export function assertAnySelectedSpriteSheet(
   displayManager: DisplayManagerInterface,
+  isSending?: boolean,
 ) {
   _console.assertWithError(
-    displayManager.selectedSpriteSheet,
+    displayManager.getSelectedSpriteSheet(isSending),
     "no spriteSheet selected",
   );
 }
 export function getSprite(
   displayManager: DisplayManagerInterface,
   spriteName: string,
+  isSending?: boolean,
 ): DisplaySprite | undefined {
   displayManager.assertAnySelectedSpriteSheet();
-  return displayManager.selectedSpriteSheet!.sprites.find(
-    (sprite) => sprite.name == spriteName,
-  );
+  return displayManager
+    .getSelectedSpriteSheet(isSending)!
+    .sprites.find((sprite) => sprite.name == spriteName);
 }
 export function assertSprite(
   displayManager: DisplayManagerInterface,
   spriteName: string,
+  isSending?: boolean,
 ) {
   displayManager.assertAnySelectedSpriteSheet();
-  const sprite = displayManager.getSprite(spriteName);
+  const sprite = displayManager.getSprite(spriteName, isSending);
   _console.assertWithError(sprite, `no sprite found with name "${spriteName}"`);
 }
 export function getSpriteSheetPalette(
   displayManager: DisplayManagerInterface,
   paletteName: string,
+  isSending?: boolean,
 ): DisplaySpriteSheetPalette | undefined {
-  return displayManager.selectedSpriteSheet?.palettes?.find(
-    (palette) => palette.name == paletteName,
-  );
+  return displayManager
+    .getSelectedSpriteSheet(isSending)
+    ?.palettes?.find((palette) => palette.name == paletteName);
 }
 export function getSpriteSheetPaletteSwap(
   displayManager: DisplayManagerInterface,
   paletteSwapName: string,
+  isSending?: boolean,
 ): DisplaySpriteSheetPaletteSwap | undefined {
-  return displayManager.selectedSpriteSheet?.paletteSwaps?.find(
-    (paletteSwap) => paletteSwap.name == paletteSwapName,
-  );
+  return displayManager
+    .getSelectedSpriteSheet(isSending)
+    ?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
 }
 export function getSpritePaletteSwap(
   displayManager: DisplayManagerInterface,
   spriteName: string,
   paletteSwapName: string,
+  isSending?: boolean,
 ): DisplaySpritePaletteSwap | undefined {
   return displayManager
-    .getSprite(spriteName)
+    .getSprite(spriteName, isSending)
     ?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
 }
 
 export function assertSpriteSheetPalette(
   displayManagerInterface: DisplayManagerInterface,
   paletteName: string,
+  isSending?: boolean,
 ) {
-  const spriteSheetPalette =
-    displayManagerInterface.getSpriteSheetPalette(paletteName);
+  const spriteSheetPalette = displayManagerInterface.getSpriteSheetPalette(
+    paletteName,
+    isSending,
+  );
   _console.assertWithError(
     spriteSheetPalette,
     `no spriteSheetPalette found with name "${paletteName}"`,
@@ -1679,9 +1701,13 @@ export function assertSpriteSheetPalette(
 export function assertSpriteSheetPaletteSwap(
   displayManagerInterface: DisplayManagerInterface,
   paletteSwapName: string,
+  isSending?: boolean,
 ) {
   const spriteSheetPaletteSwap =
-    displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
+    displayManagerInterface.getSpriteSheetPaletteSwap(
+      paletteSwapName,
+      isSending,
+    );
   _console.assertWithError(
     spriteSheetPaletteSwap,
     `no paletteSwapName found with name "${paletteSwapName}"`,
@@ -1691,10 +1717,12 @@ export function assertSpritePaletteSwap(
   displayManagerInterface: DisplayManagerInterface,
   spriteName: string,
   paletteSwapName: string,
+  isSending?: boolean,
 ) {
   const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(
     spriteName,
     paletteSwapName,
+    isSending,
   );
   _console.assertWithError(
     spritePaletteSwap,
@@ -1711,9 +1739,12 @@ export async function selectSpriteSheetPalette(
 ) {
   offset = offset || 0;
 
-  displayManagerInterface.assertAnySelectedSpriteSheet();
-  displayManagerInterface.assertSpriteSheetPalette(paletteName);
-  const palette = displayManagerInterface.getSpriteSheetPalette(paletteName)!;
+  displayManagerInterface.assertAnySelectedSpriteSheet(isSending);
+  displayManagerInterface.assertSpriteSheetPalette(paletteName, isSending);
+  const palette = displayManagerInterface.getSpriteSheetPalette(
+    paletteName,
+    isSending,
+  )!;
 
   _console.assertWithError(
     palette.numberOfColors + offset <= displayManagerInterface.numberOfColors,
@@ -1757,11 +1788,16 @@ export async function selectSpriteSheetPaletteSwap(
   isSending?: boolean,
 ) {
   offset = offset || 0;
-  displayManagerInterface.assertAnySelectedSpriteSheet();
-  displayManagerInterface.assertSpriteSheetPaletteSwap(paletteSwapName);
+  displayManagerInterface.assertAnySelectedSpriteSheet(isSending);
+  displayManagerInterface.assertSpriteSheetPaletteSwap(
+    paletteSwapName,
+    isSending,
+  );
 
-  const paletteSwap =
-    displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName)!;
+  const paletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(
+    paletteSwapName,
+    isSending,
+  )!;
 
   const spriteColorPairs: DisplaySpriteColorPair[] = [];
   for (
@@ -1794,11 +1830,12 @@ export async function selectSpritePaletteSwap(
   isSending?: boolean,
 ) {
   offset = offset || 0;
-  displayManagerInterface.assertAnySelectedSpriteSheet();
+  displayManagerInterface.assertAnySelectedSpriteSheet(isSending);
 
   const paletteSwap = displayManagerInterface.getSpritePaletteSwap(
     spriteName,
     paletteSwapName,
+    isSending,
   )!;
 
   const spriteColorPairs: DisplaySpriteColorPair[] = [];
@@ -1836,8 +1873,18 @@ export async function drawSpriteFromSpriteSheet(
 ) {
   const reducedSpriteSheet = reduceSpriteSheet(spriteSheet, [spriteName]);
   await displayManagerInterface.uploadSpriteSheet(reducedSpriteSheet);
-  await displayManagerInterface.selectSpriteSheet(spriteSheet.name);
-  await displayManagerInterface.drawSprite(offsetX, offsetY, spriteName, false);
+  await displayManagerInterface.selectSpriteSheet(
+    spriteSheet.name,
+    sendImmediately,
+    isSending,
+  );
+  await displayManagerInterface.drawSprite(
+    offsetX,
+    offsetY,
+    spriteName,
+    false,
+    isSending,
+  );
   if (paletteName != undefined) {
     await displayManagerInterface.selectSpriteSheetPalette(
       paletteName,
