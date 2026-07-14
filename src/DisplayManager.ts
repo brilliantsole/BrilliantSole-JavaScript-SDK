@@ -4014,9 +4014,8 @@ class DisplayManager implements DisplayManagerInterface {
     separators?: string[],
     isSending?: boolean,
   ): DisplaySpriteLines {
-    const contextState = this.#shouldWait(isSending)
-      ? this.contextState
-      : this.pendingContextState;
+    const pending = this.#shouldWait(isSending);
+    const contextState = pending ? this.pendingContextState : this.contextState;
     return stringToSpriteLines(
       string,
       this.spriteSheets,
@@ -4033,9 +4032,8 @@ class DisplayManager implements DisplayManagerInterface {
     separators?: string[],
     isSending?: boolean,
   ) {
-    const contextState = this.#shouldWait(isSending)
-      ? this.contextState
-      : this.pendingContextState;
+    const pending = this.#shouldWait(isSending);
+    const contextState = pending ? this.pendingContextState : this.contextState;
     return stringToSpriteLinesMetrics(
       string,
       this.spriteSheets,

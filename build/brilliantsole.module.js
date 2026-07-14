@@ -30644,15 +30644,13 @@ let DisplayManager = (() => {
             await this.drawSprites(offsetX, offsetY, spriteLines, sendImmediately, isSending);
         }
         stringToSpriteLines(string, requireAll, maxLineBreadth, separators, isSending) {
-            const contextState = this.#shouldWait(isSending)
-                ? this.contextState
-                : this.pendingContextState;
+            const pending = this.#shouldWait(isSending);
+            const contextState = pending ? this.pendingContextState : this.contextState;
             return stringToSpriteLines(string, this.spriteSheets, contextState, requireAll, maxLineBreadth, separators);
         }
         stringToSpriteLinesMetrics(string, requireAll, maxLineBreadth, separators, isSending) {
-            const contextState = this.#shouldWait(isSending)
-                ? this.contextState
-                : this.pendingContextState;
+            const pending = this.#shouldWait(isSending);
+            const contextState = pending ? this.pendingContextState : this.contextState;
             return stringToSpriteLinesMetrics(string, this.spriteSheets, contextState, requireAll, maxLineBreadth, separators);
         }
         async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately, isSending, displayCanvasHelper) {
