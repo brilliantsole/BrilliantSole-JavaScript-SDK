@@ -13718,7 +13718,11 @@ let DisplayManager = (() => {
             const contextStateHelper = pending
                 ? this.#pendingContextStateHelper
                 : this.#contextStateHelper;
-            return contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
+            const differences = contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
+            if (!pending) {
+                this.#onContextStateUpdate(differences);
+            }
+            return differences;
         }
         #onContextStateUpdate(differences) {
             if (differences.length == 0) {
@@ -14097,7 +14101,7 @@ let DisplayManager = (() => {
         }
         #contextStack = [];
         #pendingContextStack = [];
-        async #saveContext(sendImmediately, pending) {
+        #saveContext(sendImmediately, pending) {
             const contextStateHelper = pending
                 ? this.#pendingContextStateHelper
                 : this.#contextStateHelper;
@@ -14110,14 +14114,10 @@ let DisplayManager = (() => {
         }
         async saveContext(sendImmediately, isSending, displayCanvasHelper) {
             _console$t.log("saveContext", { sendImmediately, isSending });
-            if (this.#shouldWait(isSending)) {
-                await this.#saveContext(sendImmediately, true);
-            }
-            else {
-                await this.#saveContext(sendImmediately);
-            }
+            const pending = this.#shouldWait(isSending);
+            this.#saveContext(sendImmediately, pending);
         }
-        async #restoreContext(sendImmediately, pending) {
+        #restoreContext(sendImmediately, pending) {
             _console$t.log("#restoreContext", { sendImmediately, pending });
             const contextStateHelper = pending
                 ? this.#pendingContextStateHelper
@@ -14131,20 +14131,17 @@ let DisplayManager = (() => {
                 return [];
             }
             _console$t.log("restoredContext", restoredContext);
-            {
-                const differences = contextStateHelper.update(restoredContext);
-                _console$t.log("restoreContext differences", differences);
+            const differences = contextStateHelper.update(restoredContext);
+            _console$t.log("restoreContext differences", differences, structuredClone(contextStateHelper.state));
+            if (!pending) {
                 this.#onContextStateUpdate(differences);
             }
+            return differences;
         }
         async restoreContext(sendImmediately, isSending, displayCanvasHelper) {
             _console$t.log("restoreContext", { sendImmediately, isSending });
-            if (this.#shouldWait(isSending)) {
-                await this.#restoreContext(sendImmediately, true);
-            }
-            else {
-                await this.#restoreContext(sendImmediately);
-            }
+            const pending = this.#shouldWait(isSending);
+            this.#restoreContext(sendImmediately, pending);
         }
         #clearContext(pending) {
             _console$t.log("#clearContext", { pending });
@@ -14153,14 +14150,9 @@ let DisplayManager = (() => {
         }
         async clearContext(sendImmediately, isSending, displayCanvasHelper) {
             _console$t.log("clearContext", { sendImmediately, isSending });
-            if (this.#shouldWait(isSending)) {
-                this.#clearContext(true);
-                await this.#sendContextCommand({ type: "clearContext" }, sendImmediately, isSending);
-            }
-            else {
-                const differences = this.#clearContext();
-                this.#onContextStateUpdate(differences);
-            }
+            const pending = this.#shouldWait(isSending);
+            this.#clearContext(pending);
+            await this.#sendContextCommand({ type: "clearContext" }, sendImmediately, isSending);
         }
         async #selectFillColor(fillColorIndex, sendImmediately, isSending) {
             await this.#sendContextCommand({ type: "selectFillColor", fillColorIndex }, sendImmediately, isSending);
@@ -15726,14 +15718,15 @@ let DisplayManager = (() => {
             _console$t.log("startSprite");
             _console$t.assertWithError(!this.#isDrawingBlankSprite, `already drawing blank sprite`);
             this.#isDrawingBlankSprite = true;
-            this.#shouldWait(isSending);
-            this.#saveContext(sendImmediately);
-            this.#resetContextState();
+            const pending = this.#shouldWait(isSending);
+            this.#saveContext(sendImmediately, pending);
+            this.#resetContextState(undefined, undefined, pending);
             await this.#sendContextCommand({ type: "startSprite", offsetX, offsetY, width, height }, sendImmediately, isSending);
         }
         async endSprite(sendImmediately, isSending, displayCanvasHelper) {
             _console$t.log("endSprite");
-            this.#restoreContext(sendImmediately);
+            const pending = this.#shouldWait(isSending);
+            this.#restoreContext(sendImmediately, pending);
             _console$t.assertWithError(this.#isDrawingBlankSprite, `not drawing blank sprite`);
             this.#isDrawingBlankSprite = false;
             await this.#sendContextCommand({ type: "endSprite" }, sendImmediately, isSending);

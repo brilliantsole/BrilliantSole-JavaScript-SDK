@@ -1139,6 +1139,8 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();
   }
 });
+window.keyToNote = keyToNote;
+window.onFrequency = onFrequency;
 document.addEventListener("keyup", (event) => {
   const { key } = event;
   console.log("keyup", key);

@@ -404,11 +404,15 @@ class DisplayManager implements DisplayManagerInterface {
     const contextStateHelper = pending
       ? this.#pendingContextStateHelper
       : this.#contextStateHelper;
-    return contextStateHelper.reset(
+    const differences = contextStateHelper.reset(
       this.numberOfColors,
       keepColorIndices,
       keepSpriteColorIndices,
     );
+    if (!pending) {
+      this.#onContextStateUpdate(differences);
+    }
+    return differences;
   }
   #onContextStateUpdate(differences: DisplayContextStateKey[]) {
     if (differences.length == 0) {
@@ -988,7 +992,7 @@ class DisplayManager implements DisplayManagerInterface {
 
   #contextStack: DisplayContextState[] = [];
   #pendingContextStack: DisplayContextState[] = [];
-  async #saveContext(sendImmediately?: boolean, pending?: boolean) {
+  #saveContext(sendImmediately?: boolean, pending?: boolean) {
     const contextStateHelper = pending
       ? this.#pendingContextStateHelper
       : this.#contextStateHelper;
@@ -1006,8 +1010,10 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     _console.log("saveContext", { sendImmediately, isSending });
-    if (this.#shouldWait(isSending)) {
-      await this.#saveContext(sendImmediately, true);
+    const pending = this.#shouldWait(isSending);
+    this.#saveContext(sendImmediately, pending);
+
+    if (pending) {
       if (false) {
         await this.#sendContextCommand(
           { type: "saveContext" },
@@ -1016,10 +1022,10 @@ class DisplayManager implements DisplayManagerInterface {
         );
       }
     } else {
-      await this.#saveContext(sendImmediately);
+      // we don't clear the context on save
     }
   }
-  async #restoreContext(sendImmediately?: boolean, pending?: boolean) {
+  #restoreContext(sendImmediately?: boolean, pending?: boolean) {
     _console.log("#restoreContext", { sendImmediately, pending });
 
     const contextStateHelper = pending
@@ -1035,14 +1041,17 @@ class DisplayManager implements DisplayManagerInterface {
       return [];
     }
     _console.log("restoredContext", restoredContext);
-    if (false) {
-      // @ts-expect-error
-      await this.setContextState(restoredContext, sendImmediately);
-    } else {
-      const differences = contextStateHelper.update(restoredContext);
-      _console.log("restoreContext differences", differences);
+
+    const differences = contextStateHelper.update(restoredContext);
+    _console.log(
+      "restoreContext differences",
+      differences,
+      structuredClone(contextStateHelper.state),
+    );
+    if (!pending) {
       this.#onContextStateUpdate(differences);
     }
+    return differences;
   }
   @ForwardToHelper
   async restoreContext(
@@ -1051,8 +1060,10 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     _console.log("restoreContext", { sendImmediately, isSending });
-    if (this.#shouldWait(isSending)) {
-      await this.#restoreContext(sendImmediately, true);
+    const pending = this.#shouldWait(isSending);
+    this.#restoreContext(sendImmediately, pending);
+
+    if (pending) {
       if (false) {
         await this.#sendContextCommand(
           { type: "restoreContext" },
@@ -1061,7 +1072,7 @@ class DisplayManager implements DisplayManagerInterface {
         );
       }
     } else {
-      await this.#restoreContext(sendImmediately);
+      //
     }
   }
   #clearContext(pending?: boolean) {
@@ -1080,17 +1091,14 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     _console.log("clearContext", { sendImmediately, isSending });
-    if (this.#shouldWait(isSending)) {
-      this.#clearContext(true);
-      await this.#sendContextCommand(
-        { type: "clearContext" },
-        sendImmediately,
-        isSending,
-      );
-    } else {
-      const differences = this.#clearContext();
-      this.#onContextStateUpdate(differences);
-    }
+    const pending = this.#shouldWait(isSending);
+    this.#clearContext(pending);
+
+    await this.#sendContextCommand(
+      { type: "clearContext" },
+      sendImmediately,
+      isSending,
+    );
   }
 
   async #selectFillColor(
@@ -4242,8 +4250,8 @@ class DisplayManager implements DisplayManagerInterface {
     );
     this.#isDrawingBlankSprite = true;
     const pending = this.#shouldWait(isSending);
-    this.#saveContext(sendImmediately);
-    this.#resetContextState();
+    this.#saveContext(sendImmediately, pending);
+    this.#resetContextState(undefined, undefined, pending);
 
     await this.#sendContextCommand(
       { type: "startSprite", offsetX, offsetY, width, height },
@@ -4259,7 +4267,8 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     _console.log("endSprite");
 
-    this.#restoreContext(sendImmediately);
+    const pending = this.#shouldWait(isSending);
+    this.#restoreContext(sendImmediately, pending);
 
     _console.assertWithError(
       this.#isDrawingBlankSprite,
