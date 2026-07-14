@@ -29043,11 +29043,9 @@ let DisplayManager = (() => {
                 await this.sendMessage([{ type: "displayContextCommands", data }], true);
             }
             this.#isSendingContextCommands = false;
-            if (contextCommandBuffers.length > 0) {
-                this.#dispatchEvent("displayContextCommands", {
-                    displayContextCommands: contextCommands,
-                });
-            }
+            this.#dispatchEvent("displayContextCommands", {
+                displayContextCommands: contextCommands,
+            });
             if (this.#sendContextCommandsWhenDone) {
                 this.#sendContextCommandsWhenDone = false;
                 _console$t.log(`${this.#contextCommands.length} followup contextCommands`);
