@@ -13238,7 +13238,7 @@ async function runDisplayContextCommands(displayManager, commands, sendImmediate
     });
     commands = commands.filter((command) => !command.hide);
     for (let command of commands) {
-        await runDisplayContextCommand(displayManager, command, false, isSending);
+        runDisplayContextCommand(displayManager, command, false, isSending);
     }
     if (sendImmediately) {
         await displayManager.flushContextCommands();
