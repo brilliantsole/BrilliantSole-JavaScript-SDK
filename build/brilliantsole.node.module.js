@@ -13701,25 +13701,30 @@ let DisplayManager = (() => {
                 isDisplayAvailable: this.#isAvailable,
             });
         }
-        #pendingContextStateHelper = new DisplayContextStateHelper();
         #contextStateHelper = new DisplayContextStateHelper();
+        #pendingContextStateHelper = new DisplayContextStateHelper();
+        #getContextStateHelper(isSending) {
+            const pending = this.#shouldWait(isSending);
+            return pending ? this.#pendingContextStateHelper : this.#contextStateHelper;
+        }
         get contextState() {
             return this.#contextStateHelper.state;
         }
         get pendingContextState() {
             return this.#pendingContextStateHelper.state;
         }
-        #resetContextState(keepColorIndices, keepSpriteColorIndices, pending) {
+        #getContextState(isSending) {
+            return this.#getContextStateHelper(isSending).state;
+        }
+        #resetContextState(keepColorIndices, keepSpriteColorIndices, isSending) {
             _console$t.log("resetContextState", {
                 keepColorIndices,
                 keepSpriteColorIndices,
-                pending,
+                isSending,
             });
-            const contextStateHelper = pending
-                ? this.#pendingContextStateHelper
-                : this.#contextStateHelper;
+            const contextStateHelper = this.#getContextStateHelper(isSending);
             const differences = contextStateHelper.reset(this.numberOfColors, keepColorIndices, keepSpriteColorIndices);
-            if (!pending) {
+            if (!this.#shouldWait(isSending)) {
                 this.#onContextStateUpdate(differences);
             }
             return differences;
@@ -14101,30 +14106,26 @@ let DisplayManager = (() => {
         }
         #contextStack = [];
         #pendingContextStack = [];
-        #saveContext(sendImmediately, pending) {
-            const contextStateHelper = pending
-                ? this.#pendingContextStateHelper
-                : this.#contextStateHelper;
-            const contextStack = pending
-                ? this.#pendingContextStack
-                : this.#contextStack;
+        #getContextStack(isSending) {
+            const pending = this.#shouldWait(isSending);
+            return pending ? this.#pendingContextStack : this.#contextStack;
+        }
+        #saveContext(sendImmediately, isSending) {
+            _console$t.log("#saveContext", { sendImmediately, isSending });
+            const contextStateHelper = this.#getContextStateHelper(isSending);
+            const contextStack = this.#getContextStack(isSending);
             const savedContext = structuredClone(contextStateHelper.state);
-            _console$t.log("#saveContext", { sendImmediately, pending }, savedContext);
             contextStack.push(savedContext);
         }
         async saveContext(sendImmediately, isSending, displayCanvasHelper) {
             _console$t.log("saveContext", { sendImmediately, isSending });
-            const pending = this.#shouldWait(isSending);
-            this.#saveContext(sendImmediately, pending);
+            this.#saveContext(sendImmediately, isSending);
+            if (this.#shouldWait(isSending)) ;
         }
-        #restoreContext(sendImmediately, pending) {
-            _console$t.log("#restoreContext", { sendImmediately, pending });
-            const contextStateHelper = pending
-                ? this.#pendingContextStateHelper
-                : this.#contextStateHelper;
-            const contextStack = pending
-                ? this.#pendingContextStack
-                : this.#contextStack;
+        #restoreContext(sendImmediately, isSending) {
+            _console$t.log("#restoreContext", { sendImmediately, isSending });
+            const contextStateHelper = this.#getContextStateHelper(isSending);
+            const contextStack = this.#getContextStack(isSending);
             const restoredContext = contextStack.pop();
             if (!restoredContext) {
                 _console$t.warn("#contextStack empty");
@@ -14133,25 +14134,24 @@ let DisplayManager = (() => {
             _console$t.log("restoredContext", restoredContext);
             const differences = contextStateHelper.update(restoredContext);
             _console$t.log("restoreContext differences", differences, structuredClone(contextStateHelper.state));
-            if (!pending) {
+            if (!this.#shouldWait(isSending)) {
                 this.#onContextStateUpdate(differences);
             }
             return differences;
         }
         async restoreContext(sendImmediately, isSending, displayCanvasHelper) {
             _console$t.log("restoreContext", { sendImmediately, isSending });
-            const pending = this.#shouldWait(isSending);
-            this.#restoreContext(sendImmediately, pending);
+            this.#restoreContext(sendImmediately, isSending);
+            if (this.#shouldWait(isSending)) ;
         }
-        #clearContext(pending) {
-            _console$t.log("#clearContext", { pending });
-            const differences = this.#resetContextState(true, !this.#isDrawingBlankSprite, pending);
+        #clearContext(isSending) {
+            _console$t.log("#clearContext", { isSending });
+            const differences = this.#resetContextState(true, !this.#isDrawingBlankSprite, isSending);
             return differences;
         }
         async clearContext(sendImmediately, isSending, displayCanvasHelper) {
             _console$t.log("clearContext", { sendImmediately, isSending });
-            const pending = this.#shouldWait(isSending);
-            this.#clearContext(pending);
+            this.#clearContext(isSending);
             await this.#sendContextCommand({ type: "clearContext" }, sendImmediately, isSending);
         }
         async #selectFillColor(fillColorIndex, sendImmediately, isSending) {
@@ -15061,10 +15061,7 @@ let DisplayManager = (() => {
                 return;
             }
             assertValidWireframe(wireframe);
-            const pending = this.#shouldWait(isSending);
-            const contextStateHelper = pending
-                ? this.#pendingContextStateHelper
-                : this.#contextStateHelper;
+            const contextStateHelper = this.#getContextStateHelper(isSending);
             if (contextStateHelper.isSegmentUniform) {
                 const polygon = isWireframePolygon(wireframe);
                 if (polygon) {
@@ -15503,11 +15500,9 @@ let DisplayManager = (() => {
             }, sendImmediately, isSending);
         }
         async drawSprites(offsetX, offsetY, spriteLines, sendImmediately, isSending, displayCanvasHelper) {
-            const pending = this.#shouldWait(isSending);
-            const contextState = pending ? this.pendingContextState : this.contextState;
+            const contextState = this.#getContextState(isSending);
             _console$t.log("drawSprites", {
                 isSending,
-                pending,
                 contextState,
             });
             _console$t.assertWithError(contextState.spritesLineHeight > 0, `spritesLineHeight must be >0`);
@@ -15612,14 +15607,10 @@ let DisplayManager = (() => {
             await this.drawSprites(offsetX, offsetY, spriteLines, sendImmediately, isSending);
         }
         stringToSpriteLines(string, requireAll, maxLineBreadth, separators, isSending) {
-            const pending = this.#shouldWait(isSending);
-            const contextState = pending ? this.pendingContextState : this.contextState;
-            return stringToSpriteLines(string, this.spriteSheets, contextState, requireAll, maxLineBreadth, separators);
+            return stringToSpriteLines(string, this.spriteSheets, this.#getContextState(isSending), requireAll, maxLineBreadth, separators);
         }
         stringToSpriteLinesMetrics(string, requireAll, maxLineBreadth, separators, isSending) {
-            const pending = this.#shouldWait(isSending);
-            const contextState = pending ? this.pendingContextState : this.contextState;
-            return stringToSpriteLinesMetrics(string, this.spriteSheets, contextState, requireAll, maxLineBreadth, separators);
+            return stringToSpriteLinesMetrics(string, this.spriteSheets, this.#getContextState(isSending), requireAll, maxLineBreadth, separators);
         }
         async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately, isSending, displayCanvasHelper) {
             return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately, isSending);
@@ -15718,15 +15709,13 @@ let DisplayManager = (() => {
             _console$t.log("startSprite");
             _console$t.assertWithError(!this.#isDrawingBlankSprite, `already drawing blank sprite`);
             this.#isDrawingBlankSprite = true;
-            const pending = this.#shouldWait(isSending);
-            this.#saveContext(sendImmediately, pending);
-            this.#resetContextState(undefined, undefined, pending);
+            this.#saveContext(sendImmediately, isSending);
+            this.#resetContextState(undefined, undefined, isSending);
             await this.#sendContextCommand({ type: "startSprite", offsetX, offsetY, width, height }, sendImmediately, isSending);
         }
         async endSprite(sendImmediately, isSending, displayCanvasHelper) {
             _console$t.log("endSprite");
-            const pending = this.#shouldWait(isSending);
-            this.#restoreContext(sendImmediately, pending);
+            this.#restoreContext(sendImmediately, isSending);
             _console$t.assertWithError(this.#isDrawingBlankSprite, `not drawing blank sprite`);
             this.#isDrawingBlankSprite = false;
             await this.#sendContextCommand({ type: "endSprite" }, sendImmediately, isSending);
@@ -20068,7 +20057,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager$1 = (() => {
+let DeviceManager = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -20385,7 +20374,7 @@ let DeviceManager$1 = (() => {
     });
     return _classThis;
 })();
-var DeviceManager = DeviceManager$1.shared;
+var DeviceManager$1 = DeviceManager.shared;
 
 var _a$2;
 const _console$f = createConsole("BaseScanner", { log: false });
@@ -21016,7 +21005,7 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$d.log("connecting to discoveredDevice...", deviceId);
-        let device = DeviceManager.availableDevices
+        let device = DeviceManager$1.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -21048,7 +21037,7 @@ class NobleScanner extends BaseScanner {
     async disconnectFromDevice(deviceId) {
         super.disconnectFromDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
-        let device = DeviceManager.availableDevices
+        let device = DeviceManager$1.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -21086,16 +21075,16 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$c = createConsole("Scanner", { log: false });
-let scanner$1;
+let scanner;
 if (NobleScanner.isSupported) {
     _console$c.log("using NobleScanner");
-    scanner$1 = new NobleScanner();
+    scanner = new NobleScanner();
 }
 else {
     _console$c.log("Scanner not available");
-    scanner$1 = new NullScanner();
+    scanner = new NullScanner();
 }
-var scanner = scanner$1;
+var scanner$1 = scanner;
 
 var _a$1;
 const RequiredDeviceInformationMessageTypes = [
@@ -21146,9 +21135,9 @@ class BaseServer {
     }
     static OnServer;
     constructor() {
-        _console$b.assertWithError(scanner, "no scanner defined");
-        addEventListeners(scanner, this.#boundScannerListeners);
-        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        _console$b.assertWithError(scanner$1, "no scanner defined");
+        addEventListeners(scanner$1, this.#boundScannerListeners);
+        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
         _a$1.OnServer(this);
     }
@@ -21203,7 +21192,7 @@ class BaseServer {
         _console$b.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager.connectedDevices.forEach((device) => {
+            DeviceManager$1.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -21235,7 +21224,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner.isScanningAvailable,
+            data: scanner$1.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -21244,7 +21233,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner.isScanning,
+            data: scanner$1.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -21270,9 +21259,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner.discoveredDevicesArray
+        const serverMessages = scanner$1.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -21284,7 +21273,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -21581,10 +21570,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner.startScan();
+                scanner$1.startScan();
                 break;
             case "stopScan":
-                scanner.stopScan();
+                scanner$1.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -21602,12 +21591,12 @@ class BaseServer {
                     else {
                         _console$b.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
-                        scanner.connectToDevice(deviceId, connectionType);
+                        scanner$1.connectToDevice(deviceId, connectionType);
                     }
                 }
                 break;
@@ -21617,8 +21606,8 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner.devices[deviceId];
+                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner$1.devices[deviceId];
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -21641,7 +21630,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -21665,7 +21654,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -22582,7 +22571,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager._checkDeviceAvailability(device);
+            DeviceManager$1._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -23061,7 +23050,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager.addEventListener("deviceConnected", (event) => {
+        DeviceManager$1.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -23638,5 +23627,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner$1 as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantsole.node.module.js.map

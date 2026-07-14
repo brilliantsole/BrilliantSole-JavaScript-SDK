@@ -383,33 +383,38 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   // DISPLAY CONTEXT STATE
-  #pendingContextStateHelper = new DisplayContextStateHelper();
   #contextStateHelper = new DisplayContextStateHelper();
+  #pendingContextStateHelper = new DisplayContextStateHelper();
+  #getContextStateHelper(isSending?: boolean) {
+    const pending = this.#shouldWait(isSending);
+    return pending ? this.#pendingContextStateHelper : this.#contextStateHelper;
+  }
   get contextState() {
     return this.#contextStateHelper.state;
   }
   get pendingContextState() {
     return this.#pendingContextStateHelper.state;
   }
+  #getContextState(isSending?: boolean) {
+    return this.#getContextStateHelper(isSending).state;
+  }
   #resetContextState(
     keepColorIndices?: boolean,
     keepSpriteColorIndices?: boolean,
-    pending?: boolean,
+    isSending?: boolean,
   ) {
     _console.log("resetContextState", {
       keepColorIndices,
       keepSpriteColorIndices,
-      pending,
+      isSending,
     });
-    const contextStateHelper = pending
-      ? this.#pendingContextStateHelper
-      : this.#contextStateHelper;
+    const contextStateHelper = this.#getContextStateHelper(isSending);
     const differences = contextStateHelper.reset(
       this.numberOfColors,
       keepColorIndices,
       keepSpriteColorIndices,
     );
-    if (!pending) {
+    if (!this.#shouldWait(isSending)) {
       this.#onContextStateUpdate(differences);
     }
     return differences;
@@ -992,15 +997,15 @@ class DisplayManager implements DisplayManagerInterface {
 
   #contextStack: DisplayContextState[] = [];
   #pendingContextStack: DisplayContextState[] = [];
-  #saveContext(sendImmediately?: boolean, pending?: boolean) {
-    const contextStateHelper = pending
-      ? this.#pendingContextStateHelper
-      : this.#contextStateHelper;
-    const contextStack = pending
-      ? this.#pendingContextStack
-      : this.#contextStack;
+  #getContextStack(isSending?: boolean) {
+    const pending = this.#shouldWait(isSending);
+    return pending ? this.#pendingContextStack : this.#contextStack;
+  }
+  #saveContext(sendImmediately?: boolean, isSending?: boolean) {
+    _console.log("#saveContext", { sendImmediately, isSending });
+    const contextStateHelper = this.#getContextStateHelper(isSending);
+    const contextStack = this.#getContextStack(isSending);
     const savedContext = structuredClone(contextStateHelper.state);
-    _console.log("#saveContext", { sendImmediately, pending }, savedContext);
     contextStack.push(savedContext);
   }
   @ForwardToHelper
@@ -1010,10 +1015,9 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     _console.log("saveContext", { sendImmediately, isSending });
-    const pending = this.#shouldWait(isSending);
-    this.#saveContext(sendImmediately, pending);
+    this.#saveContext(sendImmediately, isSending);
 
-    if (pending) {
+    if (this.#shouldWait(isSending)) {
       if (false) {
         await this.#sendContextCommand(
           { type: "saveContext" },
@@ -1025,15 +1029,11 @@ class DisplayManager implements DisplayManagerInterface {
       // we don't clear the context on save
     }
   }
-  #restoreContext(sendImmediately?: boolean, pending?: boolean) {
-    _console.log("#restoreContext", { sendImmediately, pending });
+  #restoreContext(sendImmediately?: boolean, isSending?: boolean) {
+    _console.log("#restoreContext", { sendImmediately, isSending });
 
-    const contextStateHelper = pending
-      ? this.#pendingContextStateHelper
-      : this.#contextStateHelper;
-    const contextStack = pending
-      ? this.#pendingContextStack
-      : this.#contextStack;
+    const contextStateHelper = this.#getContextStateHelper(isSending);
+    const contextStack = this.#getContextStack(isSending);
 
     const restoredContext = contextStack.pop();
     if (!restoredContext) {
@@ -1048,7 +1048,7 @@ class DisplayManager implements DisplayManagerInterface {
       differences,
       structuredClone(contextStateHelper.state),
     );
-    if (!pending) {
+    if (!this.#shouldWait(isSending)) {
       this.#onContextStateUpdate(differences);
     }
     return differences;
@@ -1060,10 +1060,9 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     _console.log("restoreContext", { sendImmediately, isSending });
-    const pending = this.#shouldWait(isSending);
-    this.#restoreContext(sendImmediately, pending);
+    this.#restoreContext(sendImmediately, isSending);
 
-    if (pending) {
+    if (this.#shouldWait(isSending)) {
       if (false) {
         await this.#sendContextCommand(
           { type: "restoreContext" },
@@ -1075,12 +1074,12 @@ class DisplayManager implements DisplayManagerInterface {
       //
     }
   }
-  #clearContext(pending?: boolean) {
-    _console.log("#clearContext", { pending });
+  #clearContext(isSending?: boolean) {
+    _console.log("#clearContext", { isSending });
     const differences = this.#resetContextState(
       true,
       !this.#isDrawingBlankSprite,
-      pending,
+      isSending,
     );
     return differences;
   }
@@ -1091,8 +1090,7 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     _console.log("clearContext", { sendImmediately, isSending });
-    const pending = this.#shouldWait(isSending);
-    this.#clearContext(pending);
+    this.#clearContext(isSending);
 
     await this.#sendContextCommand(
       { type: "clearContext" },
@@ -3007,10 +3005,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     assertValidWireframe(wireframe);
-    const pending = this.#shouldWait(isSending);
-    const contextStateHelper = pending
-      ? this.#pendingContextStateHelper
-      : this.#contextStateHelper;
+    const contextStateHelper = this.#getContextStateHelper(isSending);
 
     if (contextStateHelper.isSegmentUniform) {
       const polygon = isWireframePolygon(wireframe);
@@ -3808,11 +3803,9 @@ class DisplayManager implements DisplayManagerInterface {
     isSending?: boolean,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
-    const pending = this.#shouldWait(isSending);
-    const contextState = pending ? this.pendingContextState : this.contextState;
+    const contextState = this.#getContextState(isSending);
     _console.log("drawSprites", {
       isSending,
-      pending,
       contextState,
     });
     _console.assertWithError(
@@ -4022,12 +4015,10 @@ class DisplayManager implements DisplayManagerInterface {
     separators?: string[],
     isSending?: boolean,
   ): DisplaySpriteLines {
-    const pending = this.#shouldWait(isSending);
-    const contextState = pending ? this.pendingContextState : this.contextState;
     return stringToSpriteLines(
       string,
       this.spriteSheets,
-      contextState,
+      this.#getContextState(isSending),
       requireAll,
       maxLineBreadth,
       separators,
@@ -4040,12 +4031,10 @@ class DisplayManager implements DisplayManagerInterface {
     separators?: string[],
     isSending?: boolean,
   ) {
-    const pending = this.#shouldWait(isSending);
-    const contextState = pending ? this.pendingContextState : this.contextState;
     return stringToSpriteLinesMetrics(
       string,
       this.spriteSheets,
-      contextState,
+      this.#getContextState(isSending),
       requireAll,
       maxLineBreadth,
       separators,
@@ -4249,9 +4238,8 @@ class DisplayManager implements DisplayManagerInterface {
       `already drawing blank sprite`,
     );
     this.#isDrawingBlankSprite = true;
-    const pending = this.#shouldWait(isSending);
-    this.#saveContext(sendImmediately, pending);
-    this.#resetContextState(undefined, undefined, pending);
+    this.#saveContext(sendImmediately, isSending);
+    this.#resetContextState(undefined, undefined, isSending);
 
     await this.#sendContextCommand(
       { type: "startSprite", offsetX, offsetY, width, height },
@@ -4267,8 +4255,7 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     _console.log("endSprite");
 
-    const pending = this.#shouldWait(isSending);
-    this.#restoreContext(sendImmediately, pending);
+    this.#restoreContext(sendImmediately, isSending);
 
     _console.assertWithError(
       this.#isDrawingBlankSprite,
