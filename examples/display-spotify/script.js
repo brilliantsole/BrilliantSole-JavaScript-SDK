@@ -168,10 +168,9 @@ const draw = async () => {
   }
   isDrawing = true;
 
-  //console.log("drawing...");
+  console.log("drawing...");
 
   displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
-
   displayCanvasHelper.setColor(getTextColorIndex(), "white");
   displayCanvasHelper.setColor(getCurrentTextBackgroundColorIndex(), "green");
   displayCanvasHelper.setColor(getTextBackgroundColorIndex(), "#004700");

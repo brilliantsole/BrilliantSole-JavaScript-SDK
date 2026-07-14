@@ -4350,7 +4350,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     _console.log("finished uploadSpriteSheets", spriteSheets);
   }
-  @ForwardToDeviceIfClient(1)
   assertLoadedSpriteSheet(spriteSheetName: string) {
     assertLoadedSpriteSheet(this, spriteSheetName);
   }

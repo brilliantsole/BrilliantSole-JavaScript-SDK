@@ -24515,7 +24515,6 @@ let DisplayCanvasHelper = (() => {
     let _drawArc_decorators;
     let _drawArcEllipse_decorators;
     let _drawBitmap_decorators;
-    let _assertLoadedSpriteSheet_decorators;
     let _assertSelectedSpriteSheet_decorators;
     let _assertAnySelectedSpriteSheet_decorators;
     let _assertSprite_decorators;
@@ -24599,7 +24598,6 @@ let DisplayCanvasHelper = (() => {
             _drawArc_decorators = [ForwardToDeviceIfClient(7)];
             _drawArcEllipse_decorators = [ForwardToDeviceIfClient(8)];
             _drawBitmap_decorators = [ForwardToDeviceIfClient(4)];
-            _assertLoadedSpriteSheet_decorators = [ForwardToDeviceIfClient(1)];
             _assertSelectedSpriteSheet_decorators = [ForwardToDeviceIfClient(1)];
             _assertAnySelectedSpriteSheet_decorators = [ForwardToDeviceIfClient(0)];
             _assertSprite_decorators = [ForwardToDeviceIfClient(1)];
@@ -24680,7 +24678,6 @@ let DisplayCanvasHelper = (() => {
             __esDecorate(this, null, _drawArc_decorators, { kind: "method", name: "drawArc", static: false, private: false, access: { has: obj => "drawArc" in obj, get: obj => obj.drawArc }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _drawArcEllipse_decorators, { kind: "method", name: "drawArcEllipse", static: false, private: false, access: { has: obj => "drawArcEllipse" in obj, get: obj => obj.drawArcEllipse }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _drawBitmap_decorators, { kind: "method", name: "drawBitmap", static: false, private: false, access: { has: obj => "drawBitmap" in obj, get: obj => obj.drawBitmap }, metadata: _metadata }, null, _instanceExtraInitializers);
-            __esDecorate(this, null, _assertLoadedSpriteSheet_decorators, { kind: "method", name: "assertLoadedSpriteSheet", static: false, private: false, access: { has: obj => "assertLoadedSpriteSheet" in obj, get: obj => obj.assertLoadedSpriteSheet }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _assertSelectedSpriteSheet_decorators, { kind: "method", name: "assertSelectedSpriteSheet", static: false, private: false, access: { has: obj => "assertSelectedSpriteSheet" in obj, get: obj => obj.assertSelectedSpriteSheet }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _assertAnySelectedSpriteSheet_decorators, { kind: "method", name: "assertAnySelectedSpriteSheet", static: false, private: false, access: { has: obj => "assertAnySelectedSpriteSheet" in obj, get: obj => obj.assertAnySelectedSpriteSheet }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _assertSprite_decorators, { kind: "method", name: "assertSprite", static: false, private: false, access: { has: obj => "assertSprite" in obj, get: obj => obj.assertSprite }, metadata: _metadata }, null, _instanceExtraInitializers);
