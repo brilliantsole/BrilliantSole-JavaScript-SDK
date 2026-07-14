@@ -1226,6 +1226,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       lineColorIndex,
     });
 
+    _console.log("selectLineColor", {
+      lineColorIndex,
+      sendImmediately,
+      isSending,
+    });
+
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.selectLineColor(
         lineColorIndex,

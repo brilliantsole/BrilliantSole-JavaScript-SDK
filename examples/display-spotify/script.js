@@ -176,6 +176,7 @@ const draw = async () => {
   displayCanvasHelper.setColor(getTextBackgroundColorIndex(), "#004700");
   displayCanvasHelper.setVerticalAlignment("center");
   displayCanvasHelper.setHorizontalAlignment("center");
+  displayCanvasHelper.selectLineColor(1);
 
   if (spotifyState) {
     const { current_track } = spotifyState.track_window;

@@ -1216,6 +1216,11 @@ class DisplayManager implements DisplayManagerInterface {
     const partialState: PartialDisplayContextState = {
       lineColorIndex,
     };
+    _console.log("selectLineColor", {
+      lineColorIndex,
+      sendImmediately,
+      isSending,
+    });
     if (this.#shouldWait(isSending)) {
       this.#pendingContextStateHelper.update(partialState);
       await this.#selectLineColor(lineColorIndex, sendImmediately, isSending);
@@ -3453,14 +3458,7 @@ class DisplayManager implements DisplayManagerInterface {
         isSending,
       );
     }
-
-    if (!this.#shouldWait(isSending)) {
-      this.#pendingContextStateHelper.update(this.contextState);
-      this.#pendingContextStack = structuredClone(this.#contextStack);
-      _console.log("updated pendingContextStateHelper and pendingContextStack");
-    }
   }
-  @ForwardToHelper
   async parseContextCommands(
     dataView: DataView,
     sendImmediately?: boolean,
@@ -3471,13 +3469,27 @@ class DisplayManager implements DisplayManagerInterface {
       isSending,
     });
 
-    const parsedContextCommands = parseDisplayContextCommands(this, dataView);
-    _console.log("parsedContextCommands", parsedContextCommands);
-    await this.runContextCommands(
-      parsedContextCommands,
-      sendImmediately,
-      isSending,
-    );
+    if (this.displayCanvasHelper) {
+      await this.displayCanvasHelper.parseContextCommands(
+        dataView,
+        sendImmediately,
+        isSending,
+      );
+    } else {
+      const parsedContextCommands = parseDisplayContextCommands(this, dataView);
+      _console.log("parsedContextCommands", parsedContextCommands);
+      await this.runContextCommands(
+        parsedContextCommands,
+        sendImmediately,
+        isSending,
+      );
+    }
+
+    if (!this.#shouldWait(isSending)) {
+      this.#pendingContextStateHelper.update(this.contextState);
+      this.#pendingContextStack = structuredClone(this.#contextStack);
+      _console.log("updated pendingContextStateHelper and pendingContextStack");
+    }
   }
 
   #isReady = true;
