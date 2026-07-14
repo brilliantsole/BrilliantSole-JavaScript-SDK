@@ -10260,43 +10260,74 @@ let DisplayCanvasHelper = (() => {
             return serializeOpacities(this, other);
         }
         #contextStack = [];
-        async #saveContext(sendImmediately) {
+        #saveContext(sendImmediately, isSending) {
+            _console$v.log("#saveContext", { sendImmediately, isSending });
             const savedContext = structuredClone(this.contextState);
-            _console$v.log("savedContext", savedContext);
             this.#contextStack.push(savedContext);
-            if (this.device?.isConnected && !this.#ignoreDevice) {
-                await this.#updateDeviceContextState(sendImmediately);
-            }
+            _console$v.log("#savedContext", savedContext, {
+                "#contextStack.length": this.#contextStack.length,
+            });
         }
         async saveContext(sendImmediately, isSending) {
             _console$v.log("saveContext");
-            await this.#saveContext(sendImmediately);
-        }
-        async #restoreContext(sendImmediately) {
-            const restoredContextState = this.#contextStack.pop();
-            if (!restoredContextState) {
-                _console$v.warn("#contextStack empty");
-                return;
-            }
-            _console$v.log("restoredContextState", restoredContextState);
-            this.#contextStateHelper.update(restoredContextState);
+            this.#saveContext(sendImmediately, isSending);
             if (this.device?.isConnected && !this.#ignoreDevice) {
-                await this.#updateDeviceContextState(sendImmediately);
+                await this.deviceDisplayManager.saveContext(sendImmediately, isSending, this);
             }
+            else {
+                if (sendImmediately) {
+                    this.#onSentContextCommands();
+                }
+            }
+        }
+        #restoreContext(sendImmediately, isSending) {
+            _console$v.log("#restoreContext", { sendImmediately, isSending });
+            const restoredContext = this.#contextStack.pop();
+            if (!restoredContext) {
+                _console$v.warn("#contextStack empty");
+                return [];
+            }
+            _console$v.log("#restoredContext", restoredContext, {
+                "#contextStack.length": this.#contextStack.length,
+            });
+            const differences = this.#contextStateHelper.update(restoredContext);
+            _console$v.log("restoreContext differences", differences);
+            return differences;
         }
         async restoreContext(sendImmediately, isSending) {
             _console$v.log("restoreContext", { sendImmediately, isSending });
-            await this.#restoreContext(sendImmediately);
-        }
-        async #clearContext(sendImmediately) {
-            this.#resetContextState(true, !this.#isDrawingSprite && !this.#isDrawingBlankSprite);
+            const differences = this.#restoreContext(sendImmediately);
             if (this.device?.isConnected && !this.#ignoreDevice) {
-                await this.#updateDeviceContextState(sendImmediately);
+                await this.deviceDisplayManager.restoreContext(sendImmediately, isSending, this);
             }
+            else {
+                if (sendImmediately) {
+                    this.#onSentContextCommands();
+                }
+            }
+            this.#onContextStateUpdate(differences);
+        }
+        #clearContext(isSending) {
+            _console$v.log("#clearContext", { isSending });
+            const differences = this.#resetContextState(true, !this.#isDrawingSprite && !this.#isDrawingBlankSprite);
+            return differences;
         }
         async clearContext(sendImmediately, isSending) {
-            _console$v.log("clearContext");
-            await this.#clearContext(sendImmediately);
+            _console$v.log("clearContext", { sendImmediately, isSending });
+            const differences = this.#clearContext(isSending);
+            if (differences.length == 0) {
+                _console$v.log("no need to clear context - skipping");
+                return;
+            }
+            if (this.device?.isConnected && !this.#ignoreDevice) {
+                await this.deviceDisplayManager.clearContext(sendImmediately, isSending, this);
+            }
+            else {
+                if (sendImmediately) {
+                    this.#onSentContextCommands();
+                }
+            }
+            this.#onContextStateUpdate(differences);
         }
         async selectBackgroundColor(backgroundColorIndex, sendImmediately, isSending) {
             this.assertValidColorIndex(backgroundColorIndex);
@@ -12143,6 +12174,7 @@ let DisplayCanvasHelper = (() => {
             }
         }
         #drawSpriteToCanvas(offsetX, offsetY, sprite, contextState) {
+            _console$v.log("drawSprite");
             this.#saveContextForSprite(offsetX, offsetY, sprite, contextState);
             this.#setIsDrawingSprite(true);
             sprite.commands.forEach((command) => {
@@ -12150,6 +12182,7 @@ let DisplayCanvasHelper = (() => {
             });
             this.#restoreContextForSprite();
             this.#setIsDrawingSprite(false);
+            _console$v.log("finished drawSprite");
         }
         async drawSprite(offsetX, offsetY, spriteName, sendImmediately, isSending) {
             _console$v.log("drawSprite", { offsetX, offsetY, spriteName });
@@ -12170,6 +12203,7 @@ let DisplayCanvasHelper = (() => {
             }
         }
         #drawSpritesToCanvas(offsetX, offsetY, spriteLines, contextState) {
+            _console$v.log("#drawSpritesToCanvas", spriteLines);
             const { expandedSpritesLines, lineBreadths, localSize, size } = getSpriteLinesMetrics(spriteLines, this.#spriteSheets, contextState);
             const isSpritesDirectionPositive = isDirectionPositive(contextState.spritesDirection);
             const isSpritesLineDirectionPositive = isDirectionPositive(contextState.spritesLineDirection);
@@ -12348,6 +12382,7 @@ let DisplayCanvasHelper = (() => {
             this.#resetCanvasContextTransform();
             this.#restoreContext();
             this.#setIsDrawingSprite(false);
+            _console$v.log("finished #drawSpritesToCanvas");
         }
         async drawSprites(offsetX, offsetY, spriteLines, sendImmediately, isSending) {
             _console$v.assertWithError(this.contextState.spritesLineHeight > 0, `spritesLineHeight must be >0`);
@@ -12541,6 +12576,7 @@ let DisplayCanvasHelper = (() => {
             if ("name" in sprite) {
                 _console$v.assertWithError(!this.#spriteStack.includes(sprite), `cyclical sprite ${sprite.name} found in stack`);
             }
+            _console$v.log("#saveContextForSprite", contextState);
             this.#spriteContextStack.push(contextState);
             this.#resetContextState(true, true);
         }
@@ -12551,6 +12587,7 @@ let DisplayCanvasHelper = (() => {
                 _console$v.warn("#spriteContextStack empty");
                 return;
             }
+            _console$v.log("#restoreContextForSprite", contextState);
             this.#contextStateHelper.update(contextState);
         }
         #runPreviewSpriteCommand(command, spriteSheet) {
@@ -14117,8 +14154,10 @@ let DisplayManager = (() => {
             const contextStateHelper = this.#getContextStateHelper(isSending);
             const contextStack = this.#getContextStack(isSending);
             const savedContext = structuredClone(contextStateHelper.state);
-            _console$t.log("#savedContext", savedContext);
             contextStack.push(savedContext);
+            _console$t.log("#savedContext", savedContext, {
+                "contextStack.length": contextStack.length,
+            });
         }
         async saveContext(sendImmediately, isSending, displayCanvasHelper) {
             _console$t.log("saveContext", { sendImmediately, isSending });
@@ -14134,7 +14173,9 @@ let DisplayManager = (() => {
                 _console$t.warn("#contextStack empty");
                 return [];
             }
-            _console$t.log("#restoredContext", restoredContext);
+            _console$t.log("#restoredContext", restoredContext, {
+                "contextStack.length": contextStack.length,
+            });
             const differences = contextStateHelper.update(restoredContext);
             _console$t.log("restoreContext differences", differences, structuredClone(contextStateHelper.state));
             if (!this.#shouldWait(isSending)) {

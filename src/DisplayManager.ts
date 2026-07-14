@@ -423,7 +423,6 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-
     _console.log("onContextStateUpdate", differences);
 
     this.#dispatchEvent("displayContextState", {
@@ -1001,8 +1000,10 @@ class DisplayManager implements DisplayManagerInterface {
     const contextStateHelper = this.#getContextStateHelper(isSending);
     const contextStack = this.#getContextStack(isSending);
     const savedContext = structuredClone(contextStateHelper.state);
-    _console.log("#savedContext", savedContext);
     contextStack.push(savedContext);
+    _console.log("#savedContext", savedContext, {
+      "contextStack.length": contextStack.length,
+    });
   }
   @ForwardToHelper
   async saveContext(
@@ -1036,7 +1037,10 @@ class DisplayManager implements DisplayManagerInterface {
       _console.warn("#contextStack empty");
       return [];
     }
-    _console.log("#restoredContext", restoredContext);
+
+    _console.log("#restoredContext", restoredContext, {
+      "contextStack.length": contextStack.length,
+    });
 
     const differences = contextStateHelper.update(restoredContext);
     _console.log(

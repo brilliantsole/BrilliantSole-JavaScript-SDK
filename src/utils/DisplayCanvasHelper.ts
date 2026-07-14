@@ -1069,49 +1069,95 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   // CONTEXT COMMANDS
   #contextStack: DisplayContextState[] = [];
-  async #saveContext(sendImmediately?: boolean) {
+  #saveContext(sendImmediately?: boolean, isSending?: boolean) {
+    _console.log("#saveContext", { sendImmediately, isSending });
     const savedContext = structuredClone(this.contextState);
-    _console.log("savedContext", savedContext);
     this.#contextStack.push(savedContext);
-    if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.#updateDeviceContextState(sendImmediately);
-    }
+    _console.log("#savedContext", savedContext, {
+      "#contextStack.length": this.#contextStack.length,
+    });
   }
   @ForwardToDeviceIfClient(1)
   async saveContext(sendImmediately?: boolean, isSending?: boolean) {
     _console.log("saveContext");
-    await this.#saveContext(sendImmediately);
-  }
-  async #restoreContext(sendImmediately?: boolean) {
-    const restoredContextState = this.#contextStack.pop();
-    if (!restoredContextState) {
-      _console.warn("#contextStack empty");
-      return;
-    }
-    _console.log("restoredContextState", restoredContextState);
-    this.#contextStateHelper.update(restoredContextState);
+    this.#saveContext(sendImmediately, isSending);
+
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.#updateDeviceContextState(sendImmediately);
+      await this.deviceDisplayManager!.saveContext(
+        sendImmediately,
+        isSending,
+        this,
+      );
+    } else {
+      if (sendImmediately) {
+        this.#onSentContextCommands();
+      }
     }
+  }
+  #restoreContext(sendImmediately?: boolean, isSending?: boolean) {
+    _console.log("#restoreContext", { sendImmediately, isSending });
+
+    const restoredContext = this.#contextStack.pop();
+    if (!restoredContext) {
+      _console.warn("#contextStack empty");
+      return [];
+    }
+    _console.log("#restoredContext", restoredContext, {
+      "#contextStack.length": this.#contextStack.length,
+    });
+    const differences = this.#contextStateHelper.update(restoredContext);
+    _console.log("restoreContext differences", differences);
+    return differences;
   }
   @ForwardToDeviceIfClient(1)
   async restoreContext(sendImmediately?: boolean, isSending?: boolean) {
     _console.log("restoreContext", { sendImmediately, isSending });
-    await this.#restoreContext(sendImmediately);
+    const differences = this.#restoreContext(sendImmediately);
+
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.restoreContext(
+        sendImmediately,
+        isSending,
+        this,
+      );
+    } else {
+      if (sendImmediately) {
+        this.#onSentContextCommands();
+      }
+    }
+
+    this.#onContextStateUpdate(differences);
   }
-  async #clearContext(sendImmediately?: boolean) {
-    this.#resetContextState(
+  #clearContext(isSending?: boolean) {
+    _console.log("#clearContext", { isSending });
+    const differences = this.#resetContextState(
       true,
       !this.#isDrawingSprite && !this.#isDrawingBlankSprite, // FIX?
     );
-    if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.#updateDeviceContextState(sendImmediately);
-    }
+    return differences;
   }
   @ForwardToDeviceIfClient(1)
   async clearContext(sendImmediately?: boolean, isSending?: boolean) {
-    _console.log("clearContext");
-    await this.#clearContext(sendImmediately);
+    _console.log("clearContext", { sendImmediately, isSending });
+    const differences = this.#clearContext(isSending);
+    if (differences.length == 0) {
+      _console.log("no need to clear context - skipping");
+      return;
+    }
+
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.clearContext(
+        sendImmediately,
+        isSending,
+        this,
+      );
+    } else {
+      if (sendImmediately) {
+        this.#onSentContextCommands();
+      }
+    }
+
+    this.#onContextStateUpdate(differences);
   }
 
   @ForwardToDeviceIfClient(2)
@@ -4471,6 +4517,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sprite: DisplaySprite,
     contextState: DisplayContextState,
   ) {
+    _console.log("drawSprite");
     //this.#setIgnoreDevice(true);
     this.#saveContextForSprite(offsetX, offsetY, sprite, contextState);
     this.#setIsDrawingSprite(true);
@@ -4482,6 +4529,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restoreContextForSprite();
     this.#setIsDrawingSprite(false);
     //this.#setIgnoreDevice(false);
+    _console.log("finished drawSprite");
   }
   @ForwardToDeviceIfClient(4)
   async drawSprite(
@@ -4527,7 +4575,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spriteLines: DisplaySpriteLines,
     contextState: DisplayContextState,
   ) {
-    // _console.log({ offsetX, offsetY, spriteLines });
+    _console.log("#drawSpritesToCanvas", spriteLines);
 
     const { expandedSpritesLines, lineBreadths, localSize, size } =
       getSpriteLinesMetrics(spriteLines, this.#spriteSheets, contextState);
@@ -4565,6 +4613,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#setIsDrawingSprite(true);
 
     this.#saveContext();
+
     this.clearCrop();
     this.clearRotation();
     this.clearRotationCrop();
@@ -4747,6 +4796,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#setIsDrawingSprite(false);
     //this.#setIgnoreDevice(false);
+
+    _console.log("finished #drawSpritesToCanvas");
   }
   @ForwardToDeviceIfClient(4)
   async drawSprites(
@@ -5122,9 +5173,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
 
+    _console.log("#saveContextForSprite", contextState);
     this.#spriteContextStack.push(contextState);
     this.#resetContextState(true, true);
-    //_console.log("_saveContextForSprite", this.contextState);
   }
   #restoreContextForSprite() {
     this.#resetCanvasContextTransform();
@@ -5134,7 +5185,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       _console.warn("#spriteContextStack empty");
       return;
     }
-    //_console.log("_restoreContextForSprite", contextState);
+    _console.log("#restoreContextForSprite", contextState);
     this.#contextStateHelper.update(contextState);
   }
 
