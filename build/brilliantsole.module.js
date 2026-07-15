@@ -28977,24 +28977,32 @@ let DisplayManager = (() => {
             this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
             await promise;
         }
-        get #maxCommandDataLength() {
+        getMaxCommandDataLength(single) {
+            if (this.isClientConnectionType && !single) {
+                _console$t.assertTypeWithError(this.clientMtu, "number");
+                return this.clientMtu - 4;
+            }
             return this.mtu - 7;
         }
         #contextCommandBuffers = [];
         #contextCommands = [];
         async #sendContextCommand(contextCommand, sendImmediately, isSending) {
+            _console$t.log("sendContextCommand", contextCommand, {
+                sendImmediately,
+                isSending,
+            });
             let promise;
             if (!isSending) {
                 const serializedContextCommand = serializeDisplayContextCommand(this, contextCommand);
                 if (!serializedContextCommand) {
                     return;
                 }
-                if (serializedContextCommand.byteLength > this.#maxCommandDataLength) {
-                    _console$t.error(`serializedContextCommand ${serializedContextCommand.byteLength} too large (max ${this.#maxCommandDataLength})`);
+                if (serializedContextCommand.byteLength > this.getMaxCommandDataLength(true)) {
+                    _console$t.error(`serializedContextCommand ${serializedContextCommand.byteLength} too large (max ${this.getMaxCommandDataLength(true)})`);
                     return;
                 }
                 const newLength = this.#contextCommandBuffers.reduce((sum, buffer) => sum + buffer.byteLength, serializedContextCommand.byteLength);
-                if (newLength > this.#maxCommandDataLength) {
+                if (newLength > this.getMaxCommandDataLength()) {
                     _console$t.log("displayContextCommandBuffers too full - sending now");
                     promise = this.#sendContextCommands();
                 }
@@ -29026,7 +29034,7 @@ let DisplayManager = (() => {
             let totalBufferLength = 0;
             this.#contextCommandBuffers.some((contextCommandBuffer) => {
                 const newTotalBufferLength = totalBufferLength + contextCommandBuffer.byteLength;
-                if (newTotalBufferLength > this.#maxCommandDataLength) {
+                if (newTotalBufferLength > this.getMaxCommandDataLength()) {
                     return true;
                 }
                 totalBufferLength = newTotalBufferLength;
@@ -30162,8 +30170,8 @@ let DisplayManager = (() => {
             if (!dataView) {
                 return;
             }
-            if (dataView.byteLength > this.#maxCommandDataLength) {
-                _console$t.error(`wireframe data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
+            if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
+                _console$t.error(`wireframe data ${dataView.byteLength} too large (max ${this.getMaxCommandDataLength(true)})`);
                 return;
             }
             await this.#sendContextCommand({
@@ -30193,8 +30201,8 @@ let DisplayManager = (() => {
             if (!dataView) {
                 return;
             }
-            if (dataView.byteLength > this.#maxCommandDataLength) {
-                _console$t.error(`curve data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
+            if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
+                _console$t.error(`curve data ${dataView.byteLength} too large (max ${this.getMaxCommandDataLength(true)})`);
                 return;
             }
             await this.#sendContextCommand({
@@ -30226,8 +30234,8 @@ let DisplayManager = (() => {
             if (!dataView) {
                 return;
             }
-            if (dataView.byteLength > this.#maxCommandDataLength) {
-                _console$t.error(`path data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
+            if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
+                _console$t.error(`path data ${dataView.byteLength} too large (max ${this.getMaxCommandDataLength(true)})`);
                 return;
             }
             await this.#sendContextCommand({
@@ -30260,7 +30268,7 @@ let DisplayManager = (() => {
             if (!dataView) {
                 return;
             }
-            if (dataView.byteLength > this.#maxCommandDataLength) {
+            if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
                 const mid = Math.floor(points.length / 2);
                 const firstHalf = points.slice(0, mid + 1);
                 const secondHalf = points.slice(mid);
@@ -30312,7 +30320,7 @@ let DisplayManager = (() => {
         }
         #assertValidBitmapSize(bitmap) {
             const pixelDataLength = getBitmapNumberOfBytes(bitmap);
-            _console$t.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, this.#maxCommandDataLength - drawBitmapHeaderLength);
+            _console$t.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, this.getMaxCommandDataLength(true) - drawBitmapHeaderLength);
         }
         async drawBitmap(offsetX, offsetY, bitmap, sendImmediately, isSending, displayCanvasHelper) {
             this.assertValidBitmap(bitmap, true);
@@ -30614,7 +30622,7 @@ let DisplayManager = (() => {
             if (!dataView) {
                 return;
             }
-            if (dataView.byteLength > this.#maxCommandDataLength) {
+            if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
                 _console$t.log("breaking up sprites...");
                 const mid = Math.floor(spriteLines.length / 2);
                 const firstHalf = spriteLines.slice(0, mid);
@@ -31301,7 +31309,7 @@ class BaseConnectionManager {
     }
     #pendingMessages = [];
     #isSendingMessages = false;
-    async sendTxMessages(messages, sendImmediately = true) {
+    async sendTxMessages(messages, sendImmediately = true, indirectly) {
         this.assertIsConnectedAndNotDisconnecting();
         if (messages) {
             this.#pendingMessages.push(...messages);
@@ -31323,8 +31331,10 @@ class BaseConnectionManager {
         const arrayBuffers = [];
         const pendingMessages = this.#pendingMessages.filter((message) => {
             const arrayBuffer = createMessage(TxRxMessageTypes, true, message);
-            if (arrayBuffer.byteLength > this.mtu - 3) {
-                _console$q.error(`arrayBuffer is too big to send (max ${this.mtu - 3}, got ${arrayBuffer.byteLength})`, {
+            const isDivisble = message.type == "displayContextCommands";
+            _console$q.log({ message, isDivisble });
+            if (arrayBuffer.byteLength > this.#getMaxMessageSize(isDivisble)) {
+                _console$q.error(`arrayBuffer is too big to send (max ${this.#getMaxMessageSize(isDivisble)}, got ${arrayBuffer.byteLength})`, {
                     message,
                 });
                 return false;
@@ -31340,8 +31350,9 @@ class BaseConnectionManager {
                 let arrayBufferByteLength = 0;
                 let arrayBufferCount = 0;
                 arrayBuffers.some((arrayBuffer) => {
-                    if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu - 3) {
-                        _console$q.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
+                    if (arrayBufferByteLength + arrayBuffer.byteLength >
+                        this.#getMaxMessageSize(true)) {
+                        _console$q.log(`stopping appending arrayBuffers (length ${arrayBuffer.byteLength} too much)`);
                         return true;
                     }
                     _console$q.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
@@ -31362,13 +31373,20 @@ class BaseConnectionManager {
         }
         this.#isSendingMessages = false;
         pendingMessages.forEach((pendingMessage) => {
-            this.onMessageSent(pendingMessage);
+            this.onMessageSent(pendingMessage, indirectly);
         });
-        this.onMessagesSent(pendingMessages);
+        this.onMessagesSent(pendingMessages, indirectly);
         this.sendTxMessages(undefined, true);
     }
     defaultMtu = 23;
     mtu = this.defaultMtu;
+    #getMaxMessageSize(isDivisible) {
+        if (this.type == "client" && isDivisible) {
+            _console$q.assertTypeWithError(this.client.mtu, "number");
+            return this.client.mtu;
+        }
+        return this.mtu - 3;
+    }
     async sendTxData(data) {
         _console$q.log("sendTxData", data);
     }
@@ -33755,11 +33773,11 @@ class Device {
         _console$i.log("_onConnectionMessageSent", { messageType }, dataView);
         this.#onConnectionMessageReceived(messageType, dataView, isSending);
     }
-    #onConnectionMessageSent(message) {
-        _console$i.log("onConnectionMessageSent", message);
+    #onConnectionMessageSent(message, indirectly) {
+        _console$i.log("onConnectionMessageSent", message, { indirectly });
     }
-    #onConnectionMessagesSent(messages) {
-        _console$i.log("onConnectionMessagesSent", messages);
+    #onConnectionMessagesSent(messages, indirectly) {
+        _console$i.log("onConnectionMessagesSent", messages, { indirectly });
     }
     latestConnectionMessages = new Map();
     #deviceInformationManager = new DeviceInformationManager();
@@ -36046,12 +36064,39 @@ class BaseServer {
                             return this.#allowClientDisplayContextCommandToDevice(device, client, displayContextCommand);
                         });
                         _console$e.log("filteredDisplayContextCommands", filteredDisplayContextCommands);
-                        const filteredDisplayContextCommandsData = serializeDisplayContextCommands(device.displayManager, filteredDisplayContextCommands);
-                        if (filteredDisplayContextCommandsData.byteLength == 0) {
-                            _console$e.log("no filteredDisplayContextCommandsData");
-                            return;
+                        const partitionedDisplayContextCommandMessages = [];
+                        let bufferLength = 0;
+                        let serializedCommands = [];
+                        filteredDisplayContextCommands.forEach((displayContextCommand) => {
+                            const serializedCommand = serializeDisplayContextCommand(device.displayManager, displayContextCommand);
+                            if (bufferLength + serializedCommand.byteLength >
+                                device.displayManager.getMaxCommandDataLength()) {
+                                partitionedDisplayContextCommandMessages.push({
+                                    type: "displayContextCommands",
+                                    data: concatenateArrayBuffers(...serializedCommands),
+                                });
+                                bufferLength = 0;
+                                serializedCommands.length = 0;
+                            }
+                            else {
+                                bufferLength += serializedCommand.byteLength;
+                                serializedCommands.push(serializedCommand);
+                            }
+                        });
+                        if (serializedCommands.length > 0) {
+                            partitionedDisplayContextCommandMessages.push({
+                                type: "displayContextCommands",
+                                data: concatenateArrayBuffers(...serializedCommands),
+                            });
                         }
-                        message.data = filteredDisplayContextCommandsData;
+                        _console$e.log("partitionedDisplayContextCommandMessages", partitionedDisplayContextCommandMessages);
+                        partitionedDisplayContextCommandMessages.forEach((message) => {
+                            if (this.#allowClientToDevice(client, device, message)) {
+                                filteredTxMessages.push(message);
+                                device._onRemoteConnectionMessageSent(messageType, dataView);
+                            }
+                        });
+                        return;
                     }
                     break;
                 case "setFileTransferCommand":
@@ -36204,11 +36249,11 @@ class BaseServer {
                     break;
             }
             if (this.#allowClientToDevice(client, device, message)) {
-                filteredTxMessages.push(createMessage(TxRxMessageTypes, true, message));
+                filteredTxMessages.push(message);
                 device._onRemoteConnectionMessageSent(messageType, dataView);
             }
         }, null, true);
-        return new DataView(concatenateArrayBuffers(...filteredTxMessages));
+        return filteredTxMessages;
     }
     #parseClientDeviceMessageCallback(messageType, dataView, clientDeviceContext) {
         _console$e.log(`clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`);
@@ -36222,8 +36267,11 @@ class BaseServer {
                 device.connectionManager.sendSmpMessage(dataView.buffer);
                 break;
             case "tx":
-                dataView = this.#filterClientToDeviceTxMessage(client, device, dataView, deviceMessages, broadcastDeviceMessages);
-                device.connectionManager.sendTxData(dataView.buffer);
+                {
+                    const filteredTxMessages = this.#filterClientToDeviceTxMessage(client, device, dataView, deviceMessages, broadcastDeviceMessages);
+                    _console$e.log("filteredTxMessages", filteredTxMessages);
+                    device.connectionManager.sendTxMessages(filteredTxMessages, true, true);
+                }
                 break;
             default:
                 deviceMessages.push(message);

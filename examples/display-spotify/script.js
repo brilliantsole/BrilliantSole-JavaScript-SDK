@@ -5,6 +5,8 @@ const device = new BS.Device();
 window.device = device;
 window.BS = BS;
 
+BS.setConsoleLevelFlagsForType("BaseConnectionManager", { log: true });
+
 // CONNECT
 
 const toggleConnectionButton = document.getElementById("toggleConnection");

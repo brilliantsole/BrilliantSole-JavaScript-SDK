@@ -138,8 +138,14 @@ export type MessageReceivedCallback = (
 ) => void;
 export type MessagesReceivedCallback = () => void;
 
-export type MessageSentCallback = (message: TxMessage) => void;
-export type MessagesSentCallback = (messages: TxMessage[]) => void;
+export type MessageSentCallback = (
+  message: TxMessage,
+  indirectly?: boolean,
+) => void;
+export type MessagesSentCallback = (
+  messages: TxMessage[],
+  indirectly?: boolean,
+) => void;
 
 abstract class BaseConnectionManager {
   static #AssertValidTxRxMessageType(messageType: TxRxMessageType) {
@@ -307,6 +313,7 @@ abstract class BaseConnectionManager {
   async sendTxMessages(
     messages: TxMessage[] | undefined,
     sendImmediately: boolean = true,
+    indirectly?: boolean,
   ) {
     this.assertIsConnectedAndNotDisconnecting();
 
@@ -333,9 +340,11 @@ abstract class BaseConnectionManager {
     const arrayBuffers: ArrayBuffer[] = [];
     const pendingMessages = this.#pendingMessages.filter((message) => {
       const arrayBuffer = createMessage(TxRxMessageTypes, true, message);
-      if (arrayBuffer.byteLength > this.mtu! - 3) {
+      const isDivisble = message.type == "displayContextCommands";
+      _console.log({ message, isDivisble });
+      if (arrayBuffer.byteLength > this.#getMaxMessageSize(isDivisble)) {
         _console.error(
-          `arrayBuffer is too big to send (max ${this.mtu! - 3}, got ${arrayBuffer.byteLength})`,
+          `arrayBuffer is too big to send (max ${this.#getMaxMessageSize(isDivisble)}, got ${arrayBuffer.byteLength})`,
           {
             message,
           },
@@ -354,9 +363,12 @@ abstract class BaseConnectionManager {
         let arrayBufferByteLength = 0;
         let arrayBufferCount = 0;
         arrayBuffers.some((arrayBuffer) => {
-          if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu! - 3) {
+          if (
+            arrayBufferByteLength + arrayBuffer.byteLength >
+            this.#getMaxMessageSize(true)
+          ) {
             _console.log(
-              `stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`,
+              `stopping appending arrayBuffers (length ${arrayBuffer.byteLength} too much)`,
             );
             return true;
           }
@@ -382,9 +394,9 @@ abstract class BaseConnectionManager {
     this.#isSendingMessages = false;
 
     pendingMessages.forEach((pendingMessage) => {
-      this.onMessageSent!(pendingMessage);
+      this.onMessageSent!(pendingMessage, indirectly);
     });
-    this.onMessagesSent!(pendingMessages);
+    this.onMessagesSent!(pendingMessages, indirectly);
 
     this.sendTxMessages(undefined, true);
   }
@@ -392,6 +404,15 @@ abstract class BaseConnectionManager {
   protected defaultMtu = 23;
   //mtu?: number;
   mtu?: number = this.defaultMtu;
+  #getMaxMessageSize(isDivisible?: boolean) {
+    if (this.type == "client" && isDivisible) {
+      // @ts-expect-error
+      _console.assertTypeWithError(this.client!.mtu, "number");
+      // @ts-expect-error
+      return this.client!.mtu;
+    }
+    return this.mtu! - 3;
+  }
 
   async sendTxData(data: ArrayBuffer) {
     _console.log("sendTxData", data);

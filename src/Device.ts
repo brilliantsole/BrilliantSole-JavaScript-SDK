@@ -1129,11 +1129,11 @@ class Device {
     this.#onConnectionMessageReceived(messageType, dataView, isSending);
   }
 
-  #onConnectionMessageSent(message: TxMessage) {
-    _console.log("onConnectionMessageSent", message);
+  #onConnectionMessageSent(message: TxMessage, indirectly?: boolean) {
+    _console.log("onConnectionMessageSent", message, { indirectly });
   }
-  #onConnectionMessagesSent(messages: TxMessage[]) {
-    _console.log("onConnectionMessagesSent", messages);
+  #onConnectionMessagesSent(messages: TxMessage[], indirectly?: boolean) {
+    _console.log("onConnectionMessagesSent", messages, { indirectly });
   }
 
   latestConnectionMessages: Map<ConnectionMessageType, DataView> = new Map();

@@ -62,8 +62,8 @@ export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
 export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView<ArrayBuffer>) => void;
 export type MessagesReceivedCallback = () => void;
-export type MessageSentCallback = (message: TxMessage) => void;
-export type MessagesSentCallback = (messages: TxMessage[]) => void;
+export type MessageSentCallback = (message: TxMessage, indirectly?: boolean) => void;
+export type MessagesSentCallback = (messages: TxMessage[], indirectly?: boolean) => void;
 declare abstract class BaseConnectionManager {
     #private;
     abstract get bluetoothId(): string;
@@ -94,7 +94,7 @@ declare abstract class BaseConnectionManager {
     reconnect(): Promise<boolean>;
     disconnect(): Promise<boolean>;
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
-    sendTxMessages(messages: TxMessage[] | undefined, sendImmediately?: boolean): Promise<void>;
+    sendTxMessages(messages: TxMessage[] | undefined, sendImmediately?: boolean, indirectly?: boolean): Promise<void>;
     protected defaultMtu: number;
     mtu?: number;
     sendTxData(data: ArrayBuffer): Promise<void>;
