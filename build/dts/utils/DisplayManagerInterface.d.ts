@@ -8,7 +8,7 @@ export interface DisplayManagerInterface {
     get isReady(): boolean;
     get contextState(): DisplayContextState;
     serializeContextState(other?: PartialDisplayContextState): DisplayContextCommand[];
-    setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
+    setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     parseContextCommands(dataView: DataView): Promise<void>;
     flushContextCommands(isSending?: boolean): Promise<void>;
     get brightness(): DisplayBrightness;

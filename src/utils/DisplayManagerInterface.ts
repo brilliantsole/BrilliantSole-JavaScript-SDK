@@ -50,6 +50,7 @@ export interface DisplayManagerInterface {
   setContextState(
     newState: PartialDisplayContextState,
     sendImmediately?: boolean,
+    isSending?: boolean,
   ): Promise<void>;
 
   parseContextCommands(dataView: DataView): Promise<void>;

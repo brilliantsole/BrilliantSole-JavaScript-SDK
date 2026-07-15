@@ -94,7 +94,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
     get context(): CanvasRenderingContext2D;
-    setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
+    setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
     get width(): number;
     get height(): number;
     get aspectRatio(): number;

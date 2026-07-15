@@ -420,7 +420,7 @@ const draw = async () => {
       displayCanvasHelper.restoreContext();
     }
 
-    if (true && !isUpdatingNonEnglishCharacters) {
+    if (false && !isUpdatingNonEnglishCharacters) {
       displayCanvasHelper.saveContext();
       displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
       displayCanvasHelper.selectSpriteColor(0, 0);
@@ -517,7 +517,7 @@ const draw = async () => {
     }
 
     if (
-      true &&
+      false &&
       didUploadSpotifyAlbumArt &&
       displayCanvasHelper.spriteSheets["album"]
     ) {

@@ -345,9 +345,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   get context() {
     return this.#context;
   }
+  @ForwardToDeviceIfClient(2)
   async setContextState(
     newState: PartialDisplayContextState,
     sendImmediately?: boolean,
+    isSending?: boolean,
   ) {
     const contextCommands = serializeContextState(
       this,
@@ -355,8 +357,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.numberOfColors,
       this.contextState,
     );
-    _console.log("setContextState", newState, contextCommands);
-    await this.runContextCommands(contextCommands, sendImmediately);
+    _console.log("setContextState", newState, contextCommands, { isSending });
+    await this.runContextCommands(contextCommands, sendImmediately, isSending);
   }
 
   get width() {
@@ -656,7 +658,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   async #updateDevice(sendImmediately?: boolean, updateSelf?: boolean) {
     await this.#updateDeviceColors(false, updateSelf);
     await this.#updateDeviceOpacity(false, updateSelf);
-    await this.#updateDeviceContextState(false, updateSelf);
+    await this.#updateDeviceContextState(false, false, updateSelf);
     await this.#updateDeviceBrightness(false, updateSelf);
     await this.#updateDeviceSpriteSheets(updateSelf);
     await this.#updateDeviceSelectedSpriteSheet(false, false, updateSelf);
@@ -854,6 +856,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   async #updateDeviceContextState(
     sendImmediately?: boolean,
+    isSending?: boolean,
     updateSelf?: boolean,
   ) {
     if (!this.device?.isConnected) {
@@ -870,6 +873,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.deviceDisplayManager?.setContextState(
         this.contextState,
         sendImmediately,
+        isSending,
         this,
       );
     }
@@ -1088,7 +1092,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
       if (true) {
-        this.#updateDeviceContextState(sendImmediately);
+        // this.#updateDeviceContextState(sendImmediately, isSending);
       } else {
         await this.deviceDisplayManager!.saveContext(
           sendImmediately,
@@ -1124,7 +1128,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
       if (true) {
-        this.#updateDeviceContextState(sendImmediately);
+        this.#updateDeviceContextState(sendImmediately, isSending);
       } else {
         await this.deviceDisplayManager!.restoreContext(
           sendImmediately,
@@ -1159,7 +1163,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
       if (false) {
-        this.#updateDeviceContextState(sendImmediately);
+        this.#updateDeviceContextState(sendImmediately, isSending);
       } else {
         await this.deviceDisplayManager!.clearContext(
           sendImmediately,
@@ -4123,7 +4127,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     isRadians: boolean,
     contextState: DisplayContextState,
   ) {
-    _console.log("drawArcEllipseToCanvas");
+    // _console.log("drawArcEllipseToCanvas");
 
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     angleOffset = isRadians ? angleOffset : degToRad(angleOffset);

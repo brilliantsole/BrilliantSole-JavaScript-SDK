@@ -150,7 +150,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get contextState(): DisplayContextState;
     get pendingContextState(): DisplayContextState;
     serializeContextState(other?: PartialDisplayContextState): DisplayContextCommand[];
-    setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
+    setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     get displayStatus(): "awake" | "asleep";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;

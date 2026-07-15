@@ -437,6 +437,7 @@ class DisplayManager implements DisplayManagerInterface {
   async setContextState(
     newState: PartialDisplayContextState,
     sendImmediately?: boolean,
+    isSending?: boolean,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     const contextCommands = serializeContextState(
@@ -445,8 +446,11 @@ class DisplayManager implements DisplayManagerInterface {
       this.numberOfColors,
       this.contextState,
     );
-    _console.log("setContextState", newState, contextCommands);
-    await this.runContextCommands(contextCommands, sendImmediately);
+    _console.log("setContextState", newState, contextCommands, {
+      sendImmediately,
+      isSending,
+    });
+    await this.runContextCommands(contextCommands, sendImmediately, isSending);
   }
 
   // DISPLAY STATUS
@@ -1048,7 +1052,7 @@ class DisplayManager implements DisplayManagerInterface {
     const pending = this.#shouldWait(isSending);
     return pending ? this.#pendingContextStack : this.#contextStack;
   }
-  #saveContext(sendImmediately?: boolean, isSending?: boolean) {
+  async #saveContext(sendImmediately?: boolean, isSending?: boolean) {
     _console.log("#saveContext", { sendImmediately, isSending });
     const contextStateHelper = this.#getContextStateHelper(isSending);
     const contextStack = this.#getContextStack(isSending);
@@ -1057,6 +1061,7 @@ class DisplayManager implements DisplayManagerInterface {
     _console.log("#savedContext", savedContext, {
       "contextStack.length": contextStack.length,
     });
+    // nothing to send - we don't clear the context on save
   }
   @ForwardToHelper
   async saveContext(
@@ -1065,7 +1070,7 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     _console.log("saveContext", { sendImmediately, isSending });
-    this.#saveContext(sendImmediately, isSending);
+    await this.#saveContext(sendImmediately, isSending);
 
     if (this.#shouldWait(isSending)) {
       if (false) {
@@ -1076,10 +1081,10 @@ class DisplayManager implements DisplayManagerInterface {
         );
       }
     } else {
-      // we don't clear the context on save
+      //
     }
   }
-  #restoreContext(sendImmediately?: boolean, isSending?: boolean) {
+  async #restoreContext(sendImmediately?: boolean, isSending?: boolean) {
     _console.log("#restoreContext", { sendImmediately, isSending });
 
     const contextStateHelper = this.#getContextStateHelper(isSending);
@@ -1095,16 +1100,20 @@ class DisplayManager implements DisplayManagerInterface {
       "contextStack.length": contextStack.length,
     });
 
-    const differences = contextStateHelper.update(restoredContext);
-    _console.log(
-      "restoreContext differences",
-      differences,
-      structuredClone(contextStateHelper.state),
-    );
-    if (!this.#shouldWait(isSending)) {
-      this.#onContextStateUpdate(differences);
+    if (true) {
+      const differences = contextStateHelper.update(restoredContext);
+      _console.log(
+        "restoreContext differences",
+        differences,
+        structuredClone(contextStateHelper.state),
+      );
+      if (!this.#shouldWait(isSending)) {
+        this.#onContextStateUpdate(differences);
+      }
+      return differences;
+    } else {
+      await this.setContextState(restoredContext, sendImmediately, isSending);
     }
-    return differences;
   }
   @ForwardToHelper
   async restoreContext(
@@ -1113,7 +1122,7 @@ class DisplayManager implements DisplayManagerInterface {
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
     _console.log("restoreContext", { sendImmediately, isSending });
-    this.#restoreContext(sendImmediately, isSending);
+    await this.#restoreContext(sendImmediately, isSending);
 
     if (this.#shouldWait(isSending)) {
       if (false) {
