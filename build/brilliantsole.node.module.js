@@ -10272,7 +10272,9 @@ let DisplayCanvasHelper = (() => {
             _console$v.log("saveContext");
             this.#saveContext(sendImmediately, isSending);
             if (this.device?.isConnected && !this.#ignoreDevice) {
-                await this.deviceDisplayManager.saveContext(sendImmediately, isSending, this);
+                {
+                    this.#updateDeviceContextState(sendImmediately);
+                }
             }
             else {
                 if (sendImmediately) {
@@ -10298,7 +10300,9 @@ let DisplayCanvasHelper = (() => {
             _console$v.log("restoreContext", { sendImmediately, isSending });
             const differences = this.#restoreContext(sendImmediately);
             if (this.device?.isConnected && !this.#ignoreDevice) {
-                await this.deviceDisplayManager.restoreContext(sendImmediately, isSending, this);
+                {
+                    this.#updateDeviceContextState(sendImmediately);
+                }
             }
             else {
                 if (sendImmediately) {
@@ -10320,7 +10324,9 @@ let DisplayCanvasHelper = (() => {
                 return;
             }
             if (this.device?.isConnected && !this.#ignoreDevice) {
-                await this.deviceDisplayManager.clearContext(sendImmediately, isSending, this);
+                {
+                    this.#updateDeviceContextState(sendImmediately);
+                }
             }
             else {
                 if (sendImmediately) {
