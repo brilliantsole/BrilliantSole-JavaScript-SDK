@@ -795,6 +795,12 @@ class DisplayManager implements DisplayManagerInterface {
       }
     }
 
+    if (this.isClientConnectionType && isSending) {
+      this.#pendingContextStateHelper.update(this.contextState);
+      this.#pendingContextStack = structuredClone(this.#contextStack);
+      _console.log("updated pendingContextStateHelper and pendingContextStack");
+    }
+
     if (!isSending) {
       if (this.#sendContextCommandsWhenDone) {
         this.#sendContextCommandsWhenDone = false;
@@ -3441,7 +3447,6 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   // CONTEXT COMMANDS
-
   async runContextCommand(
     command: DisplayContextCommand,
     sendImmediately?: boolean,
@@ -3511,12 +3516,6 @@ class DisplayManager implements DisplayManagerInterface {
         sendImmediately,
         isSending,
       );
-    }
-
-    if (!this.#shouldWait(isSending)) {
-      this.#pendingContextStateHelper.update(this.contextState);
-      this.#pendingContextStack = structuredClone(this.#contextStack);
-      _console.log("updated pendingContextStateHelper and pendingContextStack");
     }
   }
 
