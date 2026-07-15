@@ -1270,11 +1270,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 partitionedDisplayContextCommandMessages,
               );
               partitionedDisplayContextCommandMessages.forEach((message) => {
-                if (this.#allowClientToDevice(client, device, message)) {
-                  filteredTxMessages.push(message as TxMessage);
-                  device._onRemoteConnectionMessageSent(messageType, dataView);
-                }
+                filteredTxMessages.push(message as TxMessage);
               });
+              device._onRemoteConnectionMessageSent(messageType, dataView);
               return;
             }
             break;

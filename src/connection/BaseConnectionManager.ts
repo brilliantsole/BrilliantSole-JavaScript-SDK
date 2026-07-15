@@ -398,7 +398,7 @@ abstract class BaseConnectionManager {
     });
     this.onMessagesSent!(pendingMessages, indirectly);
 
-    this.sendTxMessages(undefined, true);
+    this.sendTxMessages(undefined, true, indirectly);
   }
 
   protected defaultMtu = 23;
@@ -407,7 +407,7 @@ abstract class BaseConnectionManager {
   #getMaxMessageSize(isDivisible?: boolean) {
     if (this.type == "client" && isDivisible) {
       // @ts-expect-error
-      _console.assertTypeWithError(this.client!.mtu, "number");
+      _console.assertTypeWithError(this.client!.clientMtu, "number");
       // @ts-expect-error
       return this.client!.mtu;
     }

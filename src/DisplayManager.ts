@@ -752,16 +752,18 @@ class DisplayManager implements DisplayManagerInterface {
       numberOfCommands++;
     });
     if (numberOfCommands == this.#contextCommandBuffers.length) {
-      // _console.log("sending all commands");
+      _console.log("sending all commands");
       numberOfCommands = this.#contextCommands.length;
     }
-    // _console.log({ numberOfCommands });
+    _console.log({ numberOfCommands });
 
     const contextCommands = this.#contextCommands.splice(0, numberOfCommands);
     const contextCommandBuffers = this.#contextCommandBuffers.splice(
       0,
       numberOfCommands,
     );
+
+    _console.log("sending contextCommands", contextCommands);
 
     if (contextCommandBuffers.length > 0) {
       const data = concatenateArrayBuffers(contextCommandBuffers);

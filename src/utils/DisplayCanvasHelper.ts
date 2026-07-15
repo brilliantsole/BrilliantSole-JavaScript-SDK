@@ -1154,7 +1154,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      if (true) {
+      if (false) {
         this.#updateDeviceContextState(sendImmediately);
       } else {
         await this.deviceDisplayManager!.clearContext(
