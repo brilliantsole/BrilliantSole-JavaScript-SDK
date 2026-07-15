@@ -1252,10 +1252,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                     });
                     bufferLength = 0;
                     serializedCommands.length = 0;
-                  } else {
-                    bufferLength += serializedCommand.byteLength;
-                    serializedCommands.push(serializedCommand);
                   }
+                  bufferLength += serializedCommand.byteLength;
+                  serializedCommands.push(serializedCommand);
                 },
               );
               if (serializedCommands.length > 0) {

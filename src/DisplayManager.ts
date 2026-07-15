@@ -440,11 +440,12 @@ class DisplayManager implements DisplayManagerInterface {
     isSending?: boolean,
     displayCanvasHelper?: DisplayCanvasHelper,
   ) {
+    const contextState = this.#getContextState(isSending);
     const contextCommands = serializeContextState(
       this,
       newState,
       this.numberOfColors,
-      this.contextState,
+      contextState,
     );
     _console.log("setContextState", newState, contextCommands, {
       sendImmediately,
@@ -621,6 +622,8 @@ class DisplayManager implements DisplayManagerInterface {
     this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(
       0,
     );
+    this.#pendingContextStateHelper.update(this.contextState);
+
     this.#dispatchEvent("displayInformation", {
       displayInformation: this.#displayInformation,
     });
@@ -1100,7 +1103,9 @@ class DisplayManager implements DisplayManagerInterface {
       "contextStack.length": contextStack.length,
     });
 
-    if (true) {
+    if (this.#shouldWait(isSending)) {
+      await this.setContextState(restoredContext, sendImmediately, isSending);
+    } else {
       const differences = contextStateHelper.update(restoredContext);
       _console.log(
         "restoreContext differences",
@@ -1111,8 +1116,6 @@ class DisplayManager implements DisplayManagerInterface {
         this.#onContextStateUpdate(differences);
       }
       return differences;
-    } else {
-      await this.setContextState(restoredContext, sendImmediately, isSending);
     }
   }
   @ForwardToHelper
@@ -2120,7 +2123,9 @@ class DisplayManager implements DisplayManagerInterface {
     this.assertValidColorIndex(bitmapColorIndex);
     this.assertValidColorIndex(colorIndex);
 
-    const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
+    const contextState = this.#getContextState(isSending);
+
+    const bitmapColorIndices = contextState.bitmapColorIndices.slice();
     bitmapColorIndices[bitmapColorIndex] = colorIndex;
 
     const partialState: PartialDisplayContextState = {
@@ -2183,7 +2188,9 @@ class DisplayManager implements DisplayManagerInterface {
       this.numberOfColors,
     );
 
-    const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
+    const contextState = this.#getContextState(isSending);
+
+    const bitmapColorIndices = contextState.bitmapColorIndices.slice();
     bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
       this.assertValidColorIndex(bitmapColorIndex);
       this.assertValidColorIndex(colorIndex);
@@ -2384,7 +2391,8 @@ class DisplayManager implements DisplayManagerInterface {
     this.assertValidColorIndex(spriteColorIndex);
     this.assertValidColorIndex(colorIndex);
 
-    const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+    const contextState = this.#getContextState(isSending);
+    const spriteColorIndices = contextState.spriteColorIndices.slice();
     spriteColorIndices[spriteColorIndex] = colorIndex;
 
     const partialState: PartialDisplayContextState = { spriteColorIndices };
@@ -2446,7 +2454,9 @@ class DisplayManager implements DisplayManagerInterface {
       this.numberOfColors,
     );
 
-    const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+    const contextState = this.#getContextState(isSending);
+
+    const spriteColorIndices = contextState.spriteColorIndices.slice();
     spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
       this.assertValidColorIndex(spriteColorIndex);
       this.assertValidColorIndex(colorIndex);
@@ -3486,7 +3496,7 @@ class DisplayManager implements DisplayManagerInterface {
       isSending,
     });
 
-    if (this.displayCanvasHelper) {
+    if (this.displayCanvasHelper && !this.#shouldWait(isSending)) {
       await this.displayCanvasHelper.runContextCommands(
         commands,
         sendImmediately,

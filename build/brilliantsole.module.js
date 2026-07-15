@@ -28820,7 +28820,8 @@ let DisplayManager = (() => {
             return this.#contextStateHelper.serialize(this, this.numberOfColors, other);
         }
         async setContextState(newState, sendImmediately, isSending, displayCanvasHelper) {
-            const contextCommands = serializeContextState(this, newState, this.numberOfColors, this.contextState);
+            const contextState = this.#getContextState(isSending);
+            const contextCommands = serializeContextState(this, newState, this.numberOfColors, contextState);
             _console$t.log("setContextState", newState, contextCommands, {
                 sendImmediately,
                 isSending,
@@ -28953,6 +28954,7 @@ let DisplayManager = (() => {
             this.#opacities = new Array(this.numberOfColors).fill(1);
             this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
             this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
+            this.#pendingContextStateHelper.update(this.contextState);
             this.#dispatchEvent("displayInformation", {
                 displayInformation: this.#displayInformation,
             });
@@ -29247,7 +29249,10 @@ let DisplayManager = (() => {
             _console$t.log("#restoredContext", restoredContext, {
                 "contextStack.length": contextStack.length,
             });
-            {
+            if (this.#shouldWait(isSending)) {
+                await this.setContextState(restoredContext, sendImmediately, isSending);
+            }
+            else {
                 const differences = contextStateHelper.update(restoredContext);
                 _console$t.log("restoreContext differences", differences, structuredClone(contextStateHelper.state));
                 if (!this.#shouldWait(isSending)) {
@@ -29728,7 +29733,8 @@ let DisplayManager = (() => {
         async selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately, isSending, displayCanvasHelper) {
             this.assertValidColorIndex(bitmapColorIndex);
             this.assertValidColorIndex(colorIndex);
-            const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
+            const contextState = this.#getContextState(isSending);
+            const bitmapColorIndices = contextState.bitmapColorIndices.slice();
             bitmapColorIndices[bitmapColorIndex] = colorIndex;
             const partialState = {
                 bitmapColorIndices,
@@ -29756,7 +29762,8 @@ let DisplayManager = (() => {
         }
         async selectBitmapColors(bitmapColorPairs, sendImmediately, isSending, displayCanvasHelper) {
             _console$t.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, this.numberOfColors);
-            const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
+            const contextState = this.#getContextState(isSending);
+            const bitmapColorIndices = contextState.bitmapColorIndices.slice();
             bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
                 this.assertValidColorIndex(bitmapColorIndex);
                 this.assertValidColorIndex(colorIndex);
@@ -29856,7 +29863,8 @@ let DisplayManager = (() => {
         async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately, isSending, displayCanvasHelper) {
             this.assertValidColorIndex(spriteColorIndex);
             this.assertValidColorIndex(colorIndex);
-            const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+            const contextState = this.#getContextState(isSending);
+            const spriteColorIndices = contextState.spriteColorIndices.slice();
             spriteColorIndices[spriteColorIndex] = colorIndex;
             const partialState = { spriteColorIndices };
             if (this.#shouldWait(isSending)) {
@@ -29882,7 +29890,8 @@ let DisplayManager = (() => {
         }
         async selectSpriteColors(spriteColorPairs, sendImmediately, isSending, displayCanvasHelper) {
             _console$t.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, this.numberOfColors);
-            const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+            const contextState = this.#getContextState(isSending);
+            const spriteColorIndices = contextState.spriteColorIndices.slice();
             spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
                 this.assertValidColorIndex(spriteColorIndex);
                 this.assertValidColorIndex(colorIndex);
@@ -30380,7 +30389,7 @@ let DisplayManager = (() => {
                 sendImmediately,
                 isSending,
             });
-            if (this.displayCanvasHelper) {
+            if (this.displayCanvasHelper && !this.#shouldWait(isSending)) {
                 await this.displayCanvasHelper.runContextCommands(commands, sendImmediately, isSending);
             }
             else {
@@ -36101,10 +36110,8 @@ class BaseServer {
                                 bufferLength = 0;
                                 serializedCommands.length = 0;
                             }
-                            else {
-                                bufferLength += serializedCommand.byteLength;
-                                serializedCommands.push(serializedCommand);
-                            }
+                            bufferLength += serializedCommand.byteLength;
+                            serializedCommands.push(serializedCommand);
                         });
                         if (serializedCommands.length > 0) {
                             _console$e.log("sending remaining displayContextCommands");
