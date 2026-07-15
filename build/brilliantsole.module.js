@@ -25295,7 +25295,9 @@ let DisplayCanvasHelper = (() => {
             _console$v.log("saveContext");
             this.#saveContext(sendImmediately, isSending);
             if (this.device?.isConnected && !this.#ignoreDevice) {
-                await this.deviceDisplayManager.saveContext(sendImmediately, isSending, this);
+                {
+                    this.#updateDeviceContextState(sendImmediately);
+                }
             }
             else {
                 if (sendImmediately) {
@@ -25321,7 +25323,9 @@ let DisplayCanvasHelper = (() => {
             _console$v.log("restoreContext", { sendImmediately, isSending });
             const differences = this.#restoreContext(sendImmediately);
             if (this.device?.isConnected && !this.#ignoreDevice) {
-                await this.deviceDisplayManager.restoreContext(sendImmediately, isSending, this);
+                {
+                    this.#updateDeviceContextState(sendImmediately);
+                }
             }
             else {
                 if (sendImmediately) {
@@ -25343,7 +25347,9 @@ let DisplayCanvasHelper = (() => {
                 return;
             }
             if (this.device?.isConnected && !this.#ignoreDevice) {
-                await this.deviceDisplayManager.clearContext(sendImmediately, isSending, this);
+                {
+                    this.#updateDeviceContextState(sendImmediately);
+                }
             }
             else {
                 if (sendImmediately) {
@@ -28977,24 +28983,32 @@ let DisplayManager = (() => {
             this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
             await promise;
         }
-        get #maxCommandDataLength() {
+        getMaxCommandDataLength(single) {
+            if (this.isClientConnectionType && !single) {
+                _console$t.assertTypeWithError(this.clientMtu, "number");
+                return this.clientMtu - 4;
+            }
             return this.mtu - 7;
         }
         #contextCommandBuffers = [];
         #contextCommands = [];
         async #sendContextCommand(contextCommand, sendImmediately, isSending) {
+            _console$t.log("sendContextCommand", contextCommand, {
+                sendImmediately,
+                isSending,
+            });
             let promise;
             if (!isSending) {
                 const serializedContextCommand = serializeDisplayContextCommand(this, contextCommand);
                 if (!serializedContextCommand) {
                     return;
                 }
-                if (serializedContextCommand.byteLength > this.#maxCommandDataLength) {
-                    _console$t.error(`serializedContextCommand ${serializedContextCommand.byteLength} too large (max ${this.#maxCommandDataLength})`);
+                if (serializedContextCommand.byteLength > this.getMaxCommandDataLength(true)) {
+                    _console$t.error(`serializedContextCommand ${serializedContextCommand.byteLength} too large (max ${this.getMaxCommandDataLength(true)})`);
                     return;
                 }
                 const newLength = this.#contextCommandBuffers.reduce((sum, buffer) => sum + buffer.byteLength, serializedContextCommand.byteLength);
-                if (newLength > this.#maxCommandDataLength) {
+                if (newLength > this.getMaxCommandDataLength()) {
                     _console$t.log("displayContextCommandBuffers too full - sending now");
                     promise = this.#sendContextCommands();
                 }
@@ -29026,7 +29040,7 @@ let DisplayManager = (() => {
             let totalBufferLength = 0;
             this.#contextCommandBuffers.some((contextCommandBuffer) => {
                 const newTotalBufferLength = totalBufferLength + contextCommandBuffer.byteLength;
-                if (newTotalBufferLength > this.#maxCommandDataLength) {
+                if (newTotalBufferLength > this.getMaxCommandDataLength()) {
                     return true;
                 }
                 totalBufferLength = newTotalBufferLength;
@@ -30162,8 +30176,8 @@ let DisplayManager = (() => {
             if (!dataView) {
                 return;
             }
-            if (dataView.byteLength > this.#maxCommandDataLength) {
-                _console$t.error(`wireframe data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
+            if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
+                _console$t.error(`wireframe data ${dataView.byteLength} too large (max ${this.getMaxCommandDataLength(true)})`);
                 return;
             }
             await this.#sendContextCommand({
@@ -30193,8 +30207,8 @@ let DisplayManager = (() => {
             if (!dataView) {
                 return;
             }
-            if (dataView.byteLength > this.#maxCommandDataLength) {
-                _console$t.error(`curve data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
+            if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
+                _console$t.error(`curve data ${dataView.byteLength} too large (max ${this.getMaxCommandDataLength(true)})`);
                 return;
             }
             await this.#sendContextCommand({
@@ -30226,8 +30240,8 @@ let DisplayManager = (() => {
             if (!dataView) {
                 return;
             }
-            if (dataView.byteLength > this.#maxCommandDataLength) {
-                _console$t.error(`path data ${dataView.byteLength} too large (max ${this.#maxCommandDataLength})`);
+            if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
+                _console$t.error(`path data ${dataView.byteLength} too large (max ${this.getMaxCommandDataLength(true)})`);
                 return;
             }
             await this.#sendContextCommand({
@@ -30260,7 +30274,7 @@ let DisplayManager = (() => {
             if (!dataView) {
                 return;
             }
-            if (dataView.byteLength > this.#maxCommandDataLength) {
+            if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
                 const mid = Math.floor(points.length / 2);
                 const firstHalf = points.slice(0, mid + 1);
                 const secondHalf = points.slice(mid);
@@ -30312,7 +30326,7 @@ let DisplayManager = (() => {
         }
         #assertValidBitmapSize(bitmap) {
             const pixelDataLength = getBitmapNumberOfBytes(bitmap);
-            _console$t.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, this.#maxCommandDataLength - drawBitmapHeaderLength);
+            _console$t.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, this.getMaxCommandDataLength(true) - drawBitmapHeaderLength);
         }
         async drawBitmap(offsetX, offsetY, bitmap, sendImmediately, isSending, displayCanvasHelper) {
             this.assertValidBitmap(bitmap, true);
@@ -30614,7 +30628,7 @@ let DisplayManager = (() => {
             if (!dataView) {
                 return;
             }
-            if (dataView.byteLength > this.#maxCommandDataLength) {
+            if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
                 _console$t.log("breaking up sprites...");
                 const mid = Math.floor(spriteLines.length / 2);
                 const firstHalf = spriteLines.slice(0, mid);
@@ -31301,7 +31315,7 @@ class BaseConnectionManager {
     }
     #pendingMessages = [];
     #isSendingMessages = false;
-    async sendTxMessages(messages, sendImmediately = true) {
+    async sendTxMessages(messages, sendImmediately = true, indirectly) {
         this.assertIsConnectedAndNotDisconnecting();
         if (messages) {
             this.#pendingMessages.push(...messages);
@@ -31323,8 +31337,10 @@ class BaseConnectionManager {
         const arrayBuffers = [];
         const pendingMessages = this.#pendingMessages.filter((message) => {
             const arrayBuffer = createMessage(TxRxMessageTypes, true, message);
-            if (arrayBuffer.byteLength > this.mtu - 3) {
-                _console$q.error(`arrayBuffer is too big to send (max ${this.mtu - 3}, got ${arrayBuffer.byteLength})`, {
+            const isDivisble = message.type == "displayContextCommands";
+            _console$q.log({ message, isDivisble });
+            if (arrayBuffer.byteLength > this.#getMaxMessageSize(isDivisble)) {
+                _console$q.error(`arrayBuffer is too big to send (max ${this.#getMaxMessageSize(isDivisble)}, got ${arrayBuffer.byteLength})`, {
                     message,
                 });
                 return false;
@@ -31340,8 +31356,9 @@ class BaseConnectionManager {
                 let arrayBufferByteLength = 0;
                 let arrayBufferCount = 0;
                 arrayBuffers.some((arrayBuffer) => {
-                    if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu - 3) {
-                        _console$q.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
+                    if (arrayBufferByteLength + arrayBuffer.byteLength >
+                        this.#getMaxMessageSize(true)) {
+                        _console$q.log(`stopping appending arrayBuffers (length ${arrayBuffer.byteLength} too much)`);
                         return true;
                     }
                     _console$q.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
@@ -31362,13 +31379,20 @@ class BaseConnectionManager {
         }
         this.#isSendingMessages = false;
         pendingMessages.forEach((pendingMessage) => {
-            this.onMessageSent(pendingMessage);
+            this.onMessageSent(pendingMessage, indirectly);
         });
-        this.onMessagesSent(pendingMessages);
+        this.onMessagesSent(pendingMessages, indirectly);
         this.sendTxMessages(undefined, true);
     }
     defaultMtu = 23;
     mtu = this.defaultMtu;
+    #getMaxMessageSize(isDivisible) {
+        if (this.type == "client" && isDivisible) {
+            _console$q.assertTypeWithError(this.client.mtu, "number");
+            return this.client.mtu;
+        }
+        return this.mtu - 3;
+    }
     async sendTxData(data) {
         _console$q.log("sendTxData", data);
     }
@@ -33755,11 +33779,11 @@ class Device {
         _console$i.log("_onConnectionMessageSent", { messageType }, dataView);
         this.#onConnectionMessageReceived(messageType, dataView, isSending);
     }
-    #onConnectionMessageSent(message) {
-        _console$i.log("onConnectionMessageSent", message);
+    #onConnectionMessageSent(message, indirectly) {
+        _console$i.log("onConnectionMessageSent", message, { indirectly });
     }
-    #onConnectionMessagesSent(messages) {
-        _console$i.log("onConnectionMessagesSent", messages);
+    #onConnectionMessagesSent(messages, indirectly) {
+        _console$i.log("onConnectionMessagesSent", messages, { indirectly });
     }
     latestConnectionMessages = new Map();
     #deviceInformationManager = new DeviceInformationManager();
@@ -34865,7 +34889,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager = (() => {
+let DeviceManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -35182,7 +35206,7 @@ let DeviceManager = (() => {
     });
     return _classThis;
 })();
-var DeviceManager$1 = DeviceManager.shared;
+var DeviceManager = DeviceManager$1.shared;
 
 var _a$2;
 const _console$g = createConsole("BaseScanner", { log: false });
@@ -35380,12 +35404,12 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$f = createConsole("Scanner", { log: false });
-let scanner;
+let scanner$1;
 {
     _console$f.log("Scanner not available");
-    scanner = new NullScanner();
+    scanner$1 = new NullScanner();
 }
-var scanner$1 = scanner;
+var scanner = scanner$1;
 
 var _a$1;
 const RequiredDeviceInformationMessageTypes = [
@@ -35436,9 +35460,9 @@ class BaseServer {
     }
     static OnServer;
     constructor() {
-        _console$e.assertWithError(scanner$1, "no scanner defined");
-        addEventListeners(scanner$1, this.#boundScannerListeners);
-        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
+        _console$e.assertWithError(scanner, "no scanner defined");
+        addEventListeners(scanner, this.#boundScannerListeners);
+        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
         _a$1.OnServer(this);
     }
@@ -35493,7 +35517,7 @@ class BaseServer {
         _console$e.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager$1.connectedDevices.forEach((device) => {
+            DeviceManager.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -35525,7 +35549,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner$1.isScanningAvailable,
+            data: scanner.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -35534,7 +35558,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner$1.isScanning,
+            data: scanner.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -35560,9 +35584,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner$1.discoveredDevicesArray
+        const serverMessages = scanner.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -35574,7 +35598,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -35871,10 +35895,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner$1.startScan();
+                scanner.startScan();
                 break;
             case "stopScan":
-                scanner$1.stopScan();
+                scanner.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -35892,12 +35916,12 @@ class BaseServer {
                     else {
                         _console$e.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
-                        scanner$1.connectToDevice(deviceId, connectionType);
+                        scanner.connectToDevice(deviceId, connectionType);
                     }
                 }
                 break;
@@ -35907,8 +35931,8 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner$1.devices[deviceId];
+                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner.devices[deviceId];
                     if (!device) {
                         _console$e.error(`no device found with id ${deviceId}`);
                         break;
@@ -35931,7 +35955,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$e.error(`no device found with id ${deviceId}`);
                         break;
@@ -35955,7 +35979,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$e.error(`no device found with id ${deviceId}`);
                         break;
@@ -36046,12 +36070,39 @@ class BaseServer {
                             return this.#allowClientDisplayContextCommandToDevice(device, client, displayContextCommand);
                         });
                         _console$e.log("filteredDisplayContextCommands", filteredDisplayContextCommands);
-                        const filteredDisplayContextCommandsData = serializeDisplayContextCommands(device.displayManager, filteredDisplayContextCommands);
-                        if (filteredDisplayContextCommandsData.byteLength == 0) {
-                            _console$e.log("no filteredDisplayContextCommandsData");
-                            return;
+                        const partitionedDisplayContextCommandMessages = [];
+                        let bufferLength = 0;
+                        let serializedCommands = [];
+                        filteredDisplayContextCommands.forEach((displayContextCommand) => {
+                            const serializedCommand = serializeDisplayContextCommand(device.displayManager, displayContextCommand);
+                            if (bufferLength + serializedCommand.byteLength >
+                                device.displayManager.getMaxCommandDataLength()) {
+                                partitionedDisplayContextCommandMessages.push({
+                                    type: "displayContextCommands",
+                                    data: concatenateArrayBuffers(...serializedCommands),
+                                });
+                                bufferLength = 0;
+                                serializedCommands.length = 0;
+                            }
+                            else {
+                                bufferLength += serializedCommand.byteLength;
+                                serializedCommands.push(serializedCommand);
+                            }
+                        });
+                        if (serializedCommands.length > 0) {
+                            partitionedDisplayContextCommandMessages.push({
+                                type: "displayContextCommands",
+                                data: concatenateArrayBuffers(...serializedCommands),
+                            });
                         }
-                        message.data = filteredDisplayContextCommandsData;
+                        _console$e.log("partitionedDisplayContextCommandMessages", partitionedDisplayContextCommandMessages);
+                        partitionedDisplayContextCommandMessages.forEach((message) => {
+                            if (this.#allowClientToDevice(client, device, message)) {
+                                filteredTxMessages.push(message);
+                                device._onRemoteConnectionMessageSent(messageType, dataView);
+                            }
+                        });
+                        return;
                     }
                     break;
                 case "setFileTransferCommand":
@@ -36204,11 +36255,11 @@ class BaseServer {
                     break;
             }
             if (this.#allowClientToDevice(client, device, message)) {
-                filteredTxMessages.push(createMessage(TxRxMessageTypes, true, message));
+                filteredTxMessages.push(message);
                 device._onRemoteConnectionMessageSent(messageType, dataView);
             }
         }, null, true);
-        return new DataView(concatenateArrayBuffers(...filteredTxMessages));
+        return filteredTxMessages;
     }
     #parseClientDeviceMessageCallback(messageType, dataView, clientDeviceContext) {
         _console$e.log(`clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`);
@@ -36222,8 +36273,11 @@ class BaseServer {
                 device.connectionManager.sendSmpMessage(dataView.buffer);
                 break;
             case "tx":
-                dataView = this.#filterClientToDeviceTxMessage(client, device, dataView, deviceMessages, broadcastDeviceMessages);
-                device.connectionManager.sendTxData(dataView.buffer);
+                {
+                    const filteredTxMessages = this.#filterClientToDeviceTxMessage(client, device, dataView, deviceMessages, broadcastDeviceMessages);
+                    _console$e.log("filteredTxMessages", filteredTxMessages);
+                    device.connectionManager.sendTxMessages(filteredTxMessages, true, true);
+                }
                 break;
             default:
                 deviceMessages.push(message);
@@ -36872,7 +36926,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager$1._checkDeviceAvailability(device);
+            DeviceManager._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -37005,7 +37059,7 @@ const windowManagerPingMessage = createWindowManagerMessage("ping");
 const windowManagerPongMessage = createWindowManagerMessage("pong");
 
 const _console$8 = createConsole("WindowServer", { log: false });
-let WindowServer = (() => {
+let WindowServer$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -37060,7 +37114,7 @@ let WindowServer = (() => {
     };
     return WindowServer = _classThis;
 })();
-var WindowServer$1 = WindowServer.shared;
+var WindowServer = WindowServer$1.shared;
 
 const _console$7 = createConsole("WindowManagerServer", { log: false });
 const WindowManagerServerEventTypes = [
@@ -37099,7 +37153,7 @@ let WindowManagerServer = (() => {
         }
         removeAllEventListeners() {
             this.#eventDispatcher.removeAllEventListeners();
-            WindowServer$1.init();
+            WindowServer.init();
         }
         static shared;
         constructor() {
@@ -37324,7 +37378,7 @@ let WindowManagerServer = (() => {
             };
             parseMessage(dataView, WindowManagerMessageTypes, this.#onClientMessage.bind(this), clientContext, true);
             client.transfer = clientContext.transfer;
-            WindowServer$1.sendClientContext(clientContext);
+            WindowServer.sendClientContext(clientContext);
         }
         #onClientMessage(messageType, dataView, clientContext) {
             const { responseMessages, transfer, client, localBroadcastMessages, broadcastMessages, } = clientContext;
@@ -37338,7 +37392,7 @@ let WindowManagerServer = (() => {
                 case "pong":
                     break;
                 case "serverMessage":
-                    const _clientContext = WindowServer$1.parseClientMessage(client, dataView);
+                    const _clientContext = WindowServer.parseClientMessage(client, dataView);
                     if (_clientContext) {
                         if (_clientContext.responseMessages.length > 0) {
                             responseMessages.push(createWindowManagerMessage({
@@ -37369,7 +37423,7 @@ let WindowManagerServer = (() => {
     return _classThis;
 })();
 var WindowManagerServer_default = WindowManagerServer.shared;
-WindowServer$1.init();
+WindowServer.init();
 
 const _console$6 = createConsole("WindowManagerClient", { log: false });
 const WindowManagerClientConnectionStatuses = [
@@ -37384,7 +37438,7 @@ const WindowManagerClientEventTypes = [
     "isConnected",
     "serverMessage",
 ];
-let WindowManagerClient = (() => {
+let WindowManagerClient$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -37570,7 +37624,7 @@ let WindowManagerClient = (() => {
     });
     return _classThis;
 })();
-var WindowManagerClient$1 = WindowManagerClient.shared;
+var WindowManagerClient = WindowManagerClient$1.shared;
 
 const _console$5 = createConsole("WindowClient", { log: false });
 let WindowClient = (() => {
@@ -37592,7 +37646,7 @@ let WindowClient = (() => {
         static shared;
         constructor() {
             super();
-            addEventListeners(WindowManagerClient$1, this.#boundWindowEventListeners);
+            addEventListeners(WindowManagerClient, this.#boundWindowEventListeners);
         }
         #boundWindowEventListeners = {
             connectionStatus: this.#onWindowManagerClientConnectionStatus.bind(this),
@@ -37607,10 +37661,10 @@ let WindowClient = (() => {
             this.parseMessage(event.message.dataView);
         }
         get isConnected() {
-            return WindowManagerClient$1.isConnected;
+            return WindowManagerClient.isConnected;
         }
         get isDisconnected() {
-            return WindowManagerClient$1.isDisconnected;
+            return WindowManagerClient.isDisconnected;
         }
         connect() {
             this.#onConnectionCommand();
@@ -37629,7 +37683,7 @@ let WindowClient = (() => {
         }
         sendServerMessage(...messages) {
             _console$5.log("sendServerMessage", messages);
-            WindowManagerClient$1.sendMessage({
+            WindowManagerClient.sendMessage({
                 type: "serverMessage",
                 data: createServerMessage(...messages),
             });
@@ -38094,7 +38148,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager$1.addEventListener("deviceConnected", (event) => {
+        DeviceManager.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -38162,7 +38216,7 @@ const ConnectionManagers = [
 ];
 
 const Servers = [
-    WindowServer,
+    WindowServer$1,
 ];
 
 const Clients = [
@@ -38309,5 +38363,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager_default as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient$1 as WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer$1 as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager_default as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
 //# sourceMappingURL=brilliantsole.module.js.map

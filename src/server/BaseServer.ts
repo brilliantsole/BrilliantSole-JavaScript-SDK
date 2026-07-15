@@ -33,6 +33,7 @@ import {
   ConnectionMessageType,
   ConnectionMessageTypes,
   ConnectionTypes,
+  TxMessage,
   TxRxMessageTypes,
 } from "../connection/BaseConnectionManager.ts";
 import {
@@ -70,6 +71,7 @@ import { RequiredDisplayMessageTypes } from "../DisplayManager.ts";
 import {
   DisplayContextCommand,
   parseDisplayContextCommands,
+  serializeDisplayContextCommand,
   serializeDisplayContextCommands,
 } from "../utils/DisplayContextCommand.ts";
 
@@ -620,7 +622,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               const spriteSheetIndex = dataView.getUint8(0);
               if (
                 spriteSheetIndex ==
-                device.displayManager.selectedSpriteSheetIndex
+                device.displayManager.getSelectedSpriteSheetIndex()
               ) {
                 _console.log("sending spriteSheetIndex");
 
@@ -633,7 +635,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                         {
                           type: "selectSpriteSheet",
                           spriteSheetIndex:
-                            device.displayManager.selectedSpriteSheetIndex,
+                            device.displayManager.getSelectedSpriteSheetIndex(),
                         },
                       ]),
                     ),
@@ -1154,7 +1156,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     deviceMessages: DeviceMessage[],
     broadcastDeviceMessages: DeviceMessage[],
   ) {
-    const filteredTxMessages: ArrayBuffer[] = [];
+    const filteredTxMessages: TxMessage[] = [];
     parseMessage(
       dataView,
       TxRxMessageTypes,
@@ -1231,16 +1233,49 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 filteredDisplayContextCommands,
               );
 
-              const filteredDisplayContextCommandsData =
-                serializeDisplayContextCommands(
-                  device.displayManager,
-                  filteredDisplayContextCommands,
-                );
-              if (filteredDisplayContextCommandsData.byteLength == 0) {
-                _console.log("no filteredDisplayContextCommandsData");
-                return;
+              const partitionedDisplayContextCommandMessages: TxMessage[] = [];
+              let bufferLength = 0;
+              let serializedCommands: ArrayBuffer[] = [];
+              filteredDisplayContextCommands.forEach(
+                (displayContextCommand) => {
+                  const serializedCommand = serializeDisplayContextCommand(
+                    device.displayManager,
+                    displayContextCommand,
+                  )!;
+                  if (
+                    bufferLength + serializedCommand.byteLength >
+                    device.displayManager.getMaxCommandDataLength()
+                  ) {
+                    partitionedDisplayContextCommandMessages.push({
+                      type: "displayContextCommands",
+                      data: concatenateArrayBuffers(...serializedCommands),
+                    });
+                    bufferLength = 0;
+                    serializedCommands.length = 0;
+                  } else {
+                    bufferLength += serializedCommand.byteLength;
+                    serializedCommands.push(serializedCommand);
+                  }
+                },
+              );
+              if (serializedCommands.length > 0) {
+                partitionedDisplayContextCommandMessages.push({
+                  type: "displayContextCommands",
+                  data: concatenateArrayBuffers(...serializedCommands),
+                });
               }
-              message.data = filteredDisplayContextCommandsData;
+
+              _console.log(
+                "partitionedDisplayContextCommandMessages",
+                partitionedDisplayContextCommandMessages,
+              );
+              partitionedDisplayContextCommandMessages.forEach((message) => {
+                if (this.#allowClientToDevice(client, device, message)) {
+                  filteredTxMessages.push(message as TxMessage);
+                  device._onRemoteConnectionMessageSent(messageType, dataView);
+                }
+              });
+              return;
             }
             break;
           case "setFileTransferCommand":
@@ -1416,14 +1451,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                                 device,
                                 "displayContextCommands",
                                 new DataView(
-                                  serializeDisplayContextCommands(
+                                  concatenateArrayBuffers(
                                     device.displayManager,
                                     [
                                       {
                                         type: "selectSpriteSheet",
                                         spriteSheetIndex:
-                                          device.displayManager
-                                            .selectedSpriteSheetIndex,
+                                          device.displayManager.getSelectedSpriteSheetIndex(),
                                       },
                                     ],
                                   ),
@@ -1532,16 +1566,14 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         }
 
         if (this.#allowClientToDevice(client, device, message)) {
-          filteredTxMessages.push(
-            createMessage(TxRxMessageTypes, true, message),
-          );
+          filteredTxMessages.push(message as TxMessage);
           device._onRemoteConnectionMessageSent(messageType, dataView);
         }
       },
       null,
       true,
     );
-    return new DataView(concatenateArrayBuffers(...filteredTxMessages));
+    return filteredTxMessages;
   }
   #parseClientDeviceMessageCallback(
     messageType: ConnectionMessageType,
@@ -1565,14 +1597,21 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         device.connectionManager!.sendSmpMessage(dataView.buffer);
         break;
       case "tx":
-        dataView = this.#filterClientToDeviceTxMessage(
-          client,
-          device,
-          dataView,
-          deviceMessages,
-          broadcastDeviceMessages,
-        );
-        device.connectionManager!.sendTxData(dataView.buffer);
+        {
+          const filteredTxMessages = this.#filterClientToDeviceTxMessage(
+            client,
+            device,
+            dataView,
+            deviceMessages,
+            broadcastDeviceMessages,
+          );
+          _console.log("filteredTxMessages", filteredTxMessages);
+          device.connectionManager!.sendTxMessages(
+            filteredTxMessages,
+            true,
+            true,
+          );
+        }
         break;
       default:
         deviceMessages.push(message);

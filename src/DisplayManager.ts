@@ -664,7 +664,11 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   // DISPLAY CONTEXT
-  get #maxCommandDataLength() {
+  getMaxCommandDataLength(single?: boolean) {
+    if (this.isClientConnectionType && !single) {
+      _console.assertTypeWithError(this.clientMtu, "number");
+      return this.clientMtu! - 4; // FIX - "single" implies main header?
+    }
     return this.mtu - 7;
   }
   #contextCommandBuffers: ArrayBuffer[] = [];
@@ -674,10 +678,10 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
-    // _console.log("sendContextCommand", contextCommand, {
-    //   sendImmediately,
-    //   isSending,
-    // });
+    _console.log("sendContextCommand", contextCommand, {
+      sendImmediately,
+      isSending,
+    });
 
     let promise: Promise<void> | undefined;
 
@@ -690,11 +694,13 @@ class DisplayManager implements DisplayManagerInterface {
         return;
       }
 
-      if (serializedContextCommand.byteLength > this.#maxCommandDataLength) {
+      if (
+        serializedContextCommand.byteLength > this.getMaxCommandDataLength(true)
+      ) {
         _console.error(
-          `serializedContextCommand ${serializedContextCommand.byteLength} too large (max ${
-            this.#maxCommandDataLength
-          })`,
+          `serializedContextCommand ${serializedContextCommand.byteLength} too large (max ${this.getMaxCommandDataLength(
+            true,
+          )})`,
         );
         return;
       }
@@ -703,8 +709,7 @@ class DisplayManager implements DisplayManagerInterface {
         (sum, buffer) => sum + buffer.byteLength,
         serializedContextCommand.byteLength,
       );
-      // FILL - use this.clientMtu to determine fullness
-      if (newLength > this.#maxCommandDataLength) {
+      if (newLength > this.getMaxCommandDataLength()) {
         _console.log("displayContextCommandBuffers too full - sending now");
         promise = this.#sendContextCommands();
       }
@@ -740,7 +745,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.#contextCommandBuffers.some((contextCommandBuffer) => {
       const newTotalBufferLength =
         totalBufferLength + contextCommandBuffer.byteLength;
-      if (newTotalBufferLength > this.#maxCommandDataLength) {
+      if (newTotalBufferLength > this.getMaxCommandDataLength()) {
         return true;
       }
       totalBufferLength = newTotalBufferLength;
@@ -3046,11 +3051,11 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     // TODO: - split into sub-wireframes
-    if (dataView.byteLength > this.#maxCommandDataLength) {
+    if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
       _console.error(
-        `wireframe data ${dataView.byteLength} too large (max ${
-          this.#maxCommandDataLength
-        })`,
+        `wireframe data ${dataView.byteLength} too large (max ${this.getMaxCommandDataLength(
+          true,
+        )})`,
       );
       return;
     }
@@ -3106,11 +3111,11 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     // TODO: - split into sub-curves
-    if (dataView.byteLength > this.#maxCommandDataLength) {
+    if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
       _console.error(
-        `curve data ${dataView.byteLength} too large (max ${
-          this.#maxCommandDataLength
-        })`,
+        `curve data ${dataView.byteLength} too large (max ${this.getMaxCommandDataLength(
+          true,
+        )})`,
       );
       return;
     }
@@ -3191,11 +3196,11 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     // TODO: - split into sub-curves if not closed
-    if (dataView.byteLength > this.#maxCommandDataLength) {
+    if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
       _console.error(
-        `path data ${dataView.byteLength} too large (max ${
-          this.#maxCommandDataLength
-        })`,
+        `path data ${dataView.byteLength} too large (max ${this.getMaxCommandDataLength(
+          true,
+        )})`,
       );
       return;
     }
@@ -3262,7 +3267,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    if (dataView.byteLength > this.#maxCommandDataLength) {
+    if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
       const mid = Math.floor(points.length / 2);
       const firstHalf = points.slice(0, mid + 1);
       const secondHalf = points.slice(mid);
@@ -3359,7 +3364,7 @@ class DisplayManager implements DisplayManagerInterface {
       "bitmap.pixels.length",
       pixelDataLength,
       1,
-      this.#maxCommandDataLength - drawBitmapHeaderLength,
+      this.getMaxCommandDataLength(true) - drawBitmapHeaderLength,
     );
   }
   @ForwardToHelper
@@ -3864,7 +3869,7 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
-    if (dataView.byteLength > this.#maxCommandDataLength) {
+    if (dataView.byteLength > this.getMaxCommandDataLength(true)) {
       _console.log("breaking up sprites...");
       const mid = Math.floor(spriteLines.length / 2);
       const firstHalf = spriteLines.slice(0, mid);

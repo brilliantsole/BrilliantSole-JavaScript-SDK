@@ -1083,11 +1083,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#saveContext(sendImmediately, isSending);
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.saveContext(
-        sendImmediately,
-        isSending,
-        this,
-      );
+      if (true) {
+        this.#updateDeviceContextState(sendImmediately);
+      } else {
+        await this.deviceDisplayManager!.saveContext(
+          sendImmediately,
+          isSending,
+          this,
+        );
+      }
     } else {
       if (sendImmediately) {
         this.#onSentContextCommands();
@@ -1115,11 +1119,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const differences = this.#restoreContext(sendImmediately);
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.restoreContext(
-        sendImmediately,
-        isSending,
-        this,
-      );
+      if (true) {
+        this.#updateDeviceContextState(sendImmediately);
+      } else {
+        await this.deviceDisplayManager!.restoreContext(
+          sendImmediately,
+          isSending,
+          this,
+        );
+      }
     } else {
       if (sendImmediately) {
         this.#onSentContextCommands();
@@ -1146,11 +1154,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.deviceDisplayManager!.clearContext(
-        sendImmediately,
-        isSending,
-        this,
-      );
+      if (true) {
+        this.#updateDeviceContextState(sendImmediately);
+      } else {
+        await this.deviceDisplayManager!.clearContext(
+          sendImmediately,
+          isSending,
+          this,
+        );
+      }
     } else {
       if (sendImmediately) {
         this.#onSentContextCommands();
