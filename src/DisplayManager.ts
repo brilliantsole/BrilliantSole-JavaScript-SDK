@@ -672,6 +672,7 @@ class DisplayManager implements DisplayManagerInterface {
     return this.mtu - 7;
   }
   #contextCommandBuffers: ArrayBuffer[] = [];
+  #contextCommandBufferCommands: DisplayContextCommand[] = [];
   #contextCommands: DisplayContextCommand[] = [];
   async #sendContextCommand(
     contextCommand: DisplayContextCommand,
@@ -714,6 +715,7 @@ class DisplayManager implements DisplayManagerInterface {
         promise = this.#sendContextCommands(isSending);
       }
       this.#contextCommandBuffers.push(serializedContextCommand);
+      this.#contextCommandBufferCommands.push(contextCommand);
     }
 
     if (!this.#shouldWait(isSending)) {
@@ -762,6 +764,8 @@ class DisplayManager implements DisplayManagerInterface {
         0,
         numberOfCommands,
       );
+      const contextCommandBufferCommands =
+        this.#contextCommandBufferCommands.splice(0, numberOfCommands);
 
       if (contextCommandBuffers.length > 0) {
         const data = concatenateArrayBuffers(contextCommandBuffers);
@@ -769,6 +773,7 @@ class DisplayManager implements DisplayManagerInterface {
           "sending displayContextCommands buffers",
           contextCommandBuffers.slice(),
           data,
+          contextCommandBufferCommands,
         );
         await this.sendMessage(
           [{ type: "displayContextCommands", data }],
@@ -780,12 +785,14 @@ class DisplayManager implements DisplayManagerInterface {
     }
 
     if (!this.#shouldWait(isSending)) {
-      const displayContextCommands = this.#contextCommands.slice();
-      this.#contextCommands.length = 0;
-      _console.log("dispatching contextCommands", displayContextCommands);
-      this.#dispatchEvent("displayContextCommands", {
-        displayContextCommands,
-      });
+      if (this.#contextCommands.length > 0) {
+        const displayContextCommands = this.#contextCommands.slice();
+        this.#contextCommands.length = 0;
+        _console.log("dispatching contextCommands", displayContextCommands);
+        this.#dispatchEvent("displayContextCommands", {
+          displayContextCommands,
+        });
+      }
     }
 
     if (!isSending) {

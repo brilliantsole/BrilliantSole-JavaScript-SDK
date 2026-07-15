@@ -28991,6 +28991,7 @@ let DisplayManager = (() => {
             return this.mtu - 7;
         }
         #contextCommandBuffers = [];
+        #contextCommandBufferCommands = [];
         #contextCommands = [];
         async #sendContextCommand(contextCommand, sendImmediately, isSending) {
             _console$t.log("sendContextCommand", contextCommand, {
@@ -29013,6 +29014,7 @@ let DisplayManager = (() => {
                     promise = this.#sendContextCommands(isSending);
                 }
                 this.#contextCommandBuffers.push(serializedContextCommand);
+                this.#contextCommandBufferCommands.push(contextCommand);
             }
             if (!this.#shouldWait(isSending)) {
                 this.#contextCommands.push(contextCommand);
@@ -29051,20 +29053,23 @@ let DisplayManager = (() => {
                 });
                 _console$t.log({ numberOfCommands });
                 const contextCommandBuffers = this.#contextCommandBuffers.splice(0, numberOfCommands);
+                const contextCommandBufferCommands = this.#contextCommandBufferCommands.splice(0, numberOfCommands);
                 if (contextCommandBuffers.length > 0) {
                     const data = concatenateArrayBuffers(contextCommandBuffers);
-                    _console$t.log("sending displayContextCommands buffers", contextCommandBuffers.slice(), data);
+                    _console$t.log("sending displayContextCommands buffers", contextCommandBuffers.slice(), data, contextCommandBufferCommands);
                     await this.sendMessage([{ type: "displayContextCommands", data }], true);
                 }
                 this.#isSendingContextCommands = false;
             }
             if (!this.#shouldWait(isSending)) {
-                const displayContextCommands = this.#contextCommands.slice();
-                this.#contextCommands.length = 0;
-                _console$t.log("dispatching contextCommands", displayContextCommands);
-                this.#dispatchEvent("displayContextCommands", {
-                    displayContextCommands,
-                });
+                if (this.#contextCommands.length > 0) {
+                    const displayContextCommands = this.#contextCommands.slice();
+                    this.#contextCommands.length = 0;
+                    _console$t.log("dispatching contextCommands", displayContextCommands);
+                    this.#dispatchEvent("displayContextCommands", {
+                        displayContextCommands,
+                    });
+                }
             }
             if (!isSending) {
                 if (this.#sendContextCommandsWhenDone) {

@@ -420,7 +420,7 @@ const draw = async () => {
       displayCanvasHelper.restoreContext();
     }
 
-    if (false && !isUpdatingNonEnglishCharacters) {
+    if (true && !isUpdatingNonEnglishCharacters) {
       displayCanvasHelper.saveContext();
       displayCanvasHelper.selectSpriteColor(1, getTextColorIndex());
       displayCanvasHelper.selectSpriteColor(0, 0);
@@ -1710,10 +1710,10 @@ const selectFont = async (newFontName) => {
 };
 
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
-await loadFontUrl(
-  "https://fonts.googleapis.com/css2?family=Noto+Sans+KR",
-  false,
-);
+// await loadFontUrl(
+//   "https://fonts.googleapis.com/css2?family=Noto+Sans+KR",
+//   false,
+// );
 
 // MUSICAL NOTE
 /** @type {BS.DisplaySpriteSheet} */
