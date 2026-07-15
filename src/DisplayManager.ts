@@ -711,82 +711,96 @@ class DisplayManager implements DisplayManagerInterface {
       );
       if (newLength > this.getMaxCommandDataLength()) {
         _console.log("displayContextCommandBuffers too full - sending now");
-        promise = this.#sendContextCommands();
+        promise = this.#sendContextCommands(isSending);
       }
       this.#contextCommandBuffers.push(serializedContextCommand);
     }
 
-    this.#contextCommands.push(contextCommand);
+    if (!this.#shouldWait(isSending)) {
+      this.#contextCommands.push(contextCommand);
+    }
 
     if (promise) {
       await promise;
     }
     if (sendImmediately) {
-      await this.#sendContextCommands();
+      await this.#sendContextCommands(isSending);
     }
   }
   #isSendingContextCommands = false;
   #sendContextCommandsWhenDone = false;
-  async #sendContextCommands() {
-    _console.log("sendContextCommands");
-    if (this.#isSendingContextCommands) {
-      _console.log("already sending contextCommands");
-      this.#sendContextCommandsWhenDone = true;
-      return;
-    }
-    if (this.#contextCommands.length == 0) {
-      _console.log("no contextCommands to send");
-      return;
-    }
-    this.#isSendingContextCommands = true;
+  async #sendContextCommands(isSending?: boolean) {
+    _console.log("sendContextCommands", { isSending });
 
-    let numberOfCommands = 0;
-    let totalBufferLength = 0;
-    this.#contextCommandBuffers.some((contextCommandBuffer) => {
-      const newTotalBufferLength =
-        totalBufferLength + contextCommandBuffer.byteLength;
-      if (newTotalBufferLength > this.getMaxCommandDataLength()) {
-        return true;
+    if (!isSending) {
+      if (this.#isSendingContextCommands) {
+        _console.log("already sending contextCommands");
+        this.#sendContextCommandsWhenDone = true;
+        return;
       }
-      totalBufferLength = newTotalBufferLength;
-      numberOfCommands++;
-    });
-    if (numberOfCommands == this.#contextCommandBuffers.length) {
-      _console.log("sending all commands");
-      numberOfCommands = this.#contextCommands.length;
-    }
-    _console.log({ numberOfCommands });
 
-    const contextCommands = this.#contextCommands.splice(0, numberOfCommands);
-    const contextCommandBuffers = this.#contextCommandBuffers.splice(
-      0,
-      numberOfCommands,
-    );
+      if (this.#contextCommandBuffers.length == 0) {
+        _console.log("no contextCommandBuffers to send");
+        return;
+      }
+      this.#isSendingContextCommands = true;
 
-    _console.log("sending contextCommands", contextCommands);
+      let numberOfCommands = 0;
+      let totalBufferLength = 0;
+      this.#contextCommandBuffers.some((contextCommandBuffer) => {
+        const newTotalBufferLength =
+          totalBufferLength + contextCommandBuffer.byteLength;
+        if (newTotalBufferLength > this.getMaxCommandDataLength()) {
+          return true;
+        }
+        totalBufferLength = newTotalBufferLength;
+        numberOfCommands++;
+      });
+      _console.log({ numberOfCommands });
 
-    if (contextCommandBuffers.length > 0) {
-      const data = concatenateArrayBuffers(contextCommandBuffers);
-      _console.log(
-        "sending displayContextCommands buffers",
-        contextCommandBuffers.slice(),
-        data,
+      const contextCommandBuffers = this.#contextCommandBuffers.splice(
+        0,
+        numberOfCommands,
       );
-      await this.sendMessage([{ type: "displayContextCommands", data }], true);
+
+      if (contextCommandBuffers.length > 0) {
+        const data = concatenateArrayBuffers(contextCommandBuffers);
+        _console.log(
+          "sending displayContextCommands buffers",
+          contextCommandBuffers.slice(),
+          data,
+        );
+        await this.sendMessage(
+          [{ type: "displayContextCommands", data }],
+          true,
+        );
+      }
+
+      this.#isSendingContextCommands = false;
     }
 
-    this.#isSendingContextCommands = false;
-    this.#dispatchEvent("displayContextCommands", {
-      displayContextCommands: contextCommands,
-    });
-    if (this.#sendContextCommandsWhenDone) {
-      this.#sendContextCommandsWhenDone = false;
-      _console.log(`${this.#contextCommands.length} followup contextCommands`);
-      await this.#sendContextCommands();
+    if (!this.#shouldWait(isSending)) {
+      const displayContextCommands = this.#contextCommands.slice();
+      this.#contextCommands.length = 0;
+      _console.log("dispatching contextCommands", displayContextCommands);
+      this.#dispatchEvent("displayContextCommands", {
+        displayContextCommands,
+      });
+    }
+
+    if (!isSending) {
+      if (this.#sendContextCommandsWhenDone) {
+        this.#sendContextCommandsWhenDone = false;
+        _console.log(
+          `${this.#contextCommands.length} followup contextCommands`,
+        );
+        await this.#sendContextCommands(isSending);
+      }
     }
   }
-  async flushContextCommands() {
-    await this.#sendContextCommands();
+  async flushContextCommands(isSending?: boolean) {
+    _console.log("flushContextCommands", { isSending });
+    await this.#sendContextCommands(isSending);
   }
   async #show(sendImmediately?: boolean, isSending?: boolean) {
     await this.#sendContextCommand(

@@ -10,7 +10,7 @@ export interface DisplayManagerInterface {
     serializeContextState(other?: PartialDisplayContextState): DisplayContextCommand[];
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
     parseContextCommands(dataView: DataView): Promise<void>;
-    flushContextCommands(): Promise<void>;
+    flushContextCommands(isSending?: boolean): Promise<void>;
     get brightness(): DisplayBrightness;
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     show(sendImmediately?: boolean, waitUntilReady?: boolean, isSending?: boolean): Promise<void>;

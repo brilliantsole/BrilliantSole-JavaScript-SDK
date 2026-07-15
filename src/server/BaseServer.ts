@@ -1259,6 +1259,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 },
               );
               if (serializedCommands.length > 0) {
+                _console.log("sending remaining displayContextCommands");
                 partitionedDisplayContextCommandMessages.push({
                   type: "displayContextCommands",
                   data: concatenateArrayBuffers(...serializedCommands),

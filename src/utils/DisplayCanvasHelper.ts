@@ -545,9 +545,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
   }
 
-  async flushContextCommands() {
+  async flushContextCommands(isSending?: boolean) {
     if (this.#device?.isConnected) {
-      await this.#device.flushDisplayContextCommands();
+      await this.#device.flushDisplayContextCommands(isSending);
     }
     this.#onSentContextCommands();
   }
@@ -788,7 +788,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#pendingOpacities.length = 0;
   }
 
-  async #updateDeviceOpacity(sendImmediately?: boolean, updateSelf?: boolean) {
+  async #updateDeviceOpacity(
+    sendImmediately?: boolean,
+    updateSelf?: boolean,
+    isSending?: boolean,
+  ) {
     if (!this.device?.isConnected) {
       return;
     }
@@ -811,7 +815,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       }
     }
     if (sendImmediately) {
-      await this.flushContextCommands();
+      await this.flushContextCommands(isSending);
     }
   }
 

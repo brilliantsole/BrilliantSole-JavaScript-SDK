@@ -54,7 +54,7 @@ export interface DisplayManagerInterface {
 
   parseContextCommands(dataView: DataView): Promise<void>;
 
-  flushContextCommands(): Promise<void>;
+  flushContextCommands(isSending?: boolean): Promise<void>;
 
   get brightness(): DisplayBrightness;
   setBrightness(
@@ -1603,7 +1603,7 @@ export async function runDisplayContextCommands(
     await runDisplayContextCommand(displayManager, command, false, isSending);
   }
   if (sendImmediately) {
-    await displayManager.flushContextCommands();
+    await displayManager.flushContextCommands(isSending);
   }
 }
 
@@ -1777,7 +1777,7 @@ export async function selectSpriteSheetPalette(
   }
 
   if (sendImmediately) {
-    displayManagerInterface.flushContextCommands();
+    displayManagerInterface.flushContextCommands(isSending);
   }
 }
 export async function selectSpriteSheetPaletteSwap(
@@ -1818,7 +1818,7 @@ export async function selectSpriteSheetPaletteSwap(
   );
 
   if (sendImmediately) {
-    displayManagerInterface.flushContextCommands();
+    displayManagerInterface.flushContextCommands(isSending);
   }
 }
 export async function selectSpritePaletteSwap(
@@ -1857,7 +1857,7 @@ export async function selectSpritePaletteSwap(
   );
 
   if (sendImmediately) {
-    displayManagerInterface.flushContextCommands();
+    displayManagerInterface.flushContextCommands(isSending);
   }
 }
 
@@ -1894,7 +1894,7 @@ export async function drawSpriteFromSpriteSheet(
     );
   }
   if (sendImmediately) {
-    await displayManagerInterface.flushContextCommands();
+    await displayManagerInterface.flushContextCommands(isSending);
   }
 }
 
