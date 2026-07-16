@@ -88,7 +88,7 @@ const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
   ...RequiredDisplayMessageTypes,
 ];
 
-const _console = createConsole("BaseServer", { log: false });
+const _console = createConsole("BaseServer", { log: true });
 
 export const ServerTypes = ["window", "webSocket", "udp"] as const;
 export type ServerType = (typeof ServerTypes)[number];
@@ -1233,46 +1233,49 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 filteredDisplayContextCommands,
               );
 
-              const partitionedDisplayContextCommandMessages: TxMessage[] = [];
-              let bufferLength = 0;
-              let serializedCommands: ArrayBuffer[] = [];
+              const partitionedFilteredDisplayContextCommands: DisplayContextCommand[][] =
+                [[]];
+              let sendRemaining = false;
               filteredDisplayContextCommands.forEach(
-                (displayContextCommand) => {
-                  const serializedCommand = serializeDisplayContextCommand(
-                    device.displayManager,
-                    displayContextCommand,
-                  )!;
-                  if (
-                    bufferLength + serializedCommand.byteLength >
-                    device.displayManager.getMaxCommandDataLength()
-                  ) {
-                    partitionedDisplayContextCommandMessages.push({
-                      type: "displayContextCommands",
-                      data: concatenateArrayBuffers(...serializedCommands),
-                    });
-                    bufferLength = 0;
-                    serializedCommands.length = 0;
+                (displayContextCommand, index) => {
+                  const isLast =
+                    index == filteredDisplayContextCommands.length - 1;
+
+                  const sendImmediately =
+                    displayContextCommand.type == "clear" ||
+                    displayContextCommand.type == "show";
+
+                  partitionedFilteredDisplayContextCommands
+                    .at(-1)!
+                    .push(displayContextCommand);
+
+                  if (sendImmediately) {
+                    if (isLast) {
+                      sendRemaining = true;
+                    } else {
+                      partitionedFilteredDisplayContextCommands.push([]);
+                    }
                   }
-                  bufferLength += serializedCommand.byteLength;
-                  serializedCommands.push(serializedCommand);
                 },
               );
-              if (serializedCommands.length > 0) {
-                _console.log("sending remaining displayContextCommands");
-                partitionedDisplayContextCommandMessages.push({
-                  type: "displayContextCommands",
-                  data: concatenateArrayBuffers(...serializedCommands),
-                });
-              }
 
               _console.log(
-                "partitionedDisplayContextCommandMessages",
-                partitionedDisplayContextCommandMessages,
+                "partitionedFilteredDisplayContextCommands",
+                partitionedFilteredDisplayContextCommands,
               );
-              partitionedDisplayContextCommandMessages.forEach((message) => {
-                filteredTxMessages.push(message as TxMessage);
-              });
-              device._onRemoteConnectionMessageSent(messageType, dataView);
+              partitionedFilteredDisplayContextCommands.forEach(
+                (_filteredDisplayContextCommands, index) => {
+                  const isLast =
+                    index ==
+                    partitionedFilteredDisplayContextCommands.length - 1;
+                  const sendImmediately = !isLast || sendRemaining;
+                  device.displayManager.runContextCommands(
+                    filteredDisplayContextCommands,
+                    sendImmediately,
+                  );
+                },
+              );
+
               return;
             }
             break;

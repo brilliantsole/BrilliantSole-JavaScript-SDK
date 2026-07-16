@@ -21225,7 +21225,7 @@ const RequiredDeviceInformationMessageTypes = [
     ...RequiredMicrophoneMessageTypes,
     ...RequiredDisplayMessageTypes,
 ];
-const _console$b = createConsole("BaseServer", { log: false });
+const _console$b = createConsole("BaseServer", { log: true });
 const serverMtus = {
     udp: 1024,
     webSocket: 1024,
@@ -21871,35 +21871,31 @@ class BaseServer {
                             return this.#allowClientDisplayContextCommandToDevice(device, client, displayContextCommand);
                         });
                         _console$b.log("filteredDisplayContextCommands", filteredDisplayContextCommands);
-                        const partitionedDisplayContextCommandMessages = [];
-                        let bufferLength = 0;
-                        let serializedCommands = [];
-                        filteredDisplayContextCommands.forEach((displayContextCommand) => {
-                            const serializedCommand = serializeDisplayContextCommand(device.displayManager, displayContextCommand);
-                            if (bufferLength + serializedCommand.byteLength >
-                                device.displayManager.getMaxCommandDataLength()) {
-                                partitionedDisplayContextCommandMessages.push({
-                                    type: "displayContextCommands",
-                                    data: concatenateArrayBuffers(...serializedCommands),
-                                });
-                                bufferLength = 0;
-                                serializedCommands.length = 0;
+                        const partitionedFilteredDisplayContextCommands = [[]];
+                        let sendRemaining = false;
+                        filteredDisplayContextCommands.forEach((displayContextCommand, index) => {
+                            const isLast = index == filteredDisplayContextCommands.length - 1;
+                            const sendImmediately = displayContextCommand.type == "clear" ||
+                                displayContextCommand.type == "show";
+                            partitionedFilteredDisplayContextCommands
+                                .at(-1)
+                                .push(displayContextCommand);
+                            if (sendImmediately) {
+                                if (isLast) {
+                                    sendRemaining = true;
+                                }
+                                else {
+                                    partitionedFilteredDisplayContextCommands.push([]);
+                                }
                             }
-                            bufferLength += serializedCommand.byteLength;
-                            serializedCommands.push(serializedCommand);
                         });
-                        if (serializedCommands.length > 0) {
-                            _console$b.log("sending remaining displayContextCommands");
-                            partitionedDisplayContextCommandMessages.push({
-                                type: "displayContextCommands",
-                                data: concatenateArrayBuffers(...serializedCommands),
-                            });
-                        }
-                        _console$b.log("partitionedDisplayContextCommandMessages", partitionedDisplayContextCommandMessages);
-                        partitionedDisplayContextCommandMessages.forEach((message) => {
-                            filteredTxMessages.push(message);
+                        _console$b.log("partitionedFilteredDisplayContextCommands", partitionedFilteredDisplayContextCommands);
+                        partitionedFilteredDisplayContextCommands.forEach((_filteredDisplayContextCommands, index) => {
+                            const isLast = index ==
+                                partitionedFilteredDisplayContextCommands.length - 1;
+                            const sendImmediately = !isLast || sendRemaining;
+                            device.displayManager.runContextCommands(filteredDisplayContextCommands, sendImmediately);
                         });
-                        device._onRemoteConnectionMessageSent(messageType, dataView);
                         return;
                     }
                     break;
