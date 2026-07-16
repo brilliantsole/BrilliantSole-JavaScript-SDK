@@ -1489,7 +1489,7 @@ export async function runDisplayContextCommand(
             isSending,
           );
         } else {
-          console.warn(
+          _console.warn(
             `no spriteSheet found at index #${spriteSheetIndex} - storing for later`,
           );
 

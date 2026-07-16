@@ -309,7 +309,7 @@ class EventDispatcher<
     try {
       listenerObj.listener({ type, target: this.#target, message });
     } catch (error) {
-      console.error(error);
+      _console.error(error);
     }
 
     if (listenerObj.once) {

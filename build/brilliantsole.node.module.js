@@ -320,7 +320,7 @@ class EventDispatcher {
             listenerObj.listener({ type, target: this.#target, message });
         }
         catch (error) {
-            console.error(error);
+            _console$Y.error(error);
         }
         if (listenerObj.once) {
             _console$Y.log(`flagging "${type}" listener`, listenerObj);
@@ -5638,7 +5638,7 @@ function removeRedundancies(array) {
     return Array.from(new Set(array));
 }
 
-const _console$B = createConsole("DisplayContextState", { log: false });
+const _console$B = createConsole("DisplayContextState", { log: true });
 const DisplaySegmentCaps = ["flat", "round"];
 const DisplayAlignments = ["start", "center", "end"];
 const DisplayAlignmentDirections = ["horizontal", "vertical"];
@@ -10312,7 +10312,7 @@ let DisplayCanvasHelper = (() => {
         }
         #clearContext(isSending) {
             _console$v.log("#clearContext", { isSending });
-            const differences = this.#resetContextState(true, !this.#isDrawingSprite && !this.#isDrawingBlankSprite);
+            const differences = this.#resetContextState(true, this.#isDrawingSprite || this.#isDrawingBlankSprite);
             return differences;
         }
         async clearContext(sendImmediately, isSending) {
@@ -13173,7 +13173,7 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                     await displayManager.selectSpriteSheet(spriteSheetName, sendImmediately, isSending);
                 }
                 else {
-                    console.warn(`no spriteSheet found at index #${spriteSheetIndex} - storing for later`);
+                    _console$u.warn(`no spriteSheet found at index #${spriteSheetIndex} - storing for later`);
                     let deviceDisplayManager;
                     if (displayManager instanceof DisplayManager) {
                         deviceDisplayManager = displayManager;
@@ -14244,7 +14244,7 @@ let DisplayManager = (() => {
         }
         #clearContext(isSending) {
             _console$t.log("#clearContext", { isSending });
-            const differences = this.#resetContextState(true, !this.#isDrawingBlankSprite, isSending);
+            const differences = this.#resetContextState(true, this.#isDrawingBlankSprite, isSending);
             return differences;
         }
         async clearContext(sendImmediately, isSending, displayCanvasHelper) {
@@ -19881,6 +19881,10 @@ class Device {
         this.#assertDisplayIsAvailable();
         return this.#displayManager.clearCrop;
     }
+    get clearDisplayContext() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clearContext;
+    }
     get setDisplayRotationCropTop() {
         this.#assertDisplayIsAvailable();
         return this.#displayManager.setRotationCropTop;
@@ -21221,7 +21225,7 @@ const RequiredDeviceInformationMessageTypes = [
     ...RequiredMicrophoneMessageTypes,
     ...RequiredDisplayMessageTypes,
 ];
-const _console$b = createConsole("BaseServer", { log: true });
+const _console$b = createConsole("BaseServer", { log: false });
 const serverMtus = {
     udp: 1024,
     webSocket: 1024,

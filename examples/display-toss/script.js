@@ -221,7 +221,7 @@ const draw = async () => {
     string += `\n${seconds}.${millis.toString().padEnd(4, "0")}`;
   }
   console.log({ string });
-  console.log("color", structuredClone(displayCanvasHelper.contextState));
+  // console.log("color", structuredClone(displayCanvasHelper.contextState));
   displayCanvasHelper.drawSpritesString(0, 0, string);
   displayCanvasHelper.restoreContext();
 

@@ -1143,7 +1143,7 @@ class DisplayManager implements DisplayManagerInterface {
     _console.log("#clearContext", { isSending });
     const differences = this.#resetContextState(
       true,
-      !this.#isDrawingBlankSprite,
+      this.#isDrawingBlankSprite,
       isSending,
     );
     return differences;

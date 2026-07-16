@@ -161,7 +161,7 @@ displayCanvasHelper.addEventListener("color", (event) => {
       break;
     case backgroundColorIndex:
       // backgroundColor = colorHex;
-      _console.log({ backgroundColor });
+      console.log({ backgroundColor });
       break;
   }
 });

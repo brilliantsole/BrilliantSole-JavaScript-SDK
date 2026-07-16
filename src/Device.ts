@@ -2061,6 +2061,11 @@ class Device {
     return this.#displayManager.clearCrop;
   }
 
+  get clearDisplayContext() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.clearContext;
+  }
+
   get setDisplayRotationCropTop() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setRotationCropTop;

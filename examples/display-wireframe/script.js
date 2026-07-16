@@ -1353,7 +1353,7 @@ const setAutoDraw = (newAutoDraw) => {
 
 displayCanvasHelper.addEventListener("deviceConnected", () => {
   console.log("device - gonna draw");
-  // setAutoDraw(true);
+  setAutoDraw(true);
   draw();
 });
 

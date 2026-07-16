@@ -1,7 +1,7 @@
 import { createConsole } from "./Console.ts";
 import { deepEqual } from "./ObjectUtils.ts";
 
-const _console = createConsole("DisplayContextState", { log: false });
+const _console = createConsole("DisplayContextState", { log: true });
 
 export const DisplaySegmentCaps = ["flat", "round"] as const;
 export type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];

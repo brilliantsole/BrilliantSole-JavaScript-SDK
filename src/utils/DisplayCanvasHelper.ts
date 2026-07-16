@@ -1149,7 +1149,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     _console.log("#clearContext", { isSending });
     const differences = this.#resetContextState(
       true,
-      !this.#isDrawingSprite && !this.#isDrawingBlankSprite, // FIX?
+      this.#isDrawingSprite || this.#isDrawingBlankSprite, // FIX?
     );
     return differences;
   }
