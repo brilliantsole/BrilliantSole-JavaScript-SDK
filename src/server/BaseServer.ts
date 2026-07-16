@@ -71,7 +71,6 @@ import { RequiredDisplayMessageTypes } from "../DisplayManager.ts";
 import {
   DisplayContextCommand,
   parseDisplayContextCommands,
-  serializeDisplayContextCommand,
   serializeDisplayContextCommands,
 } from "../utils/DisplayContextCommand.ts";
 
@@ -249,6 +248,12 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         device.cancelFileTransfer();
       }
     }
+    for (const [device, clients] of [...this.#clientsWaitingToRequestSend]) {
+      if (clients.includes(client)) {
+        clients.splice(clients.indexOf(client), 1);
+      }
+    }
+
     for (const [device, _client] of [...this.#clientsSending]) {
       if (_client == client) {
         this.#clientsSending.delete(device);
@@ -400,6 +405,19 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     messageType: DeviceEventType,
     dataView?: DataView,
   ): DeviceMessage {
+    if (messageType == "fileTransferStatus") {
+      const isBusy =
+        this.#clientsSending.has(device) ||
+        this.#clientsRequestingSend.has(device);
+      if (isBusy) {
+        _console.log(`sending "idle" fileTransferStatus`);
+        return {
+          type: "fileTransferStatus",
+          data: enumToDataView(FileTransferStatuses, "idle"),
+        };
+      }
+    }
+
     switch (messageType) {
       case "cameraData":
         return {
@@ -550,7 +568,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                     }
                   } else {
                     _console.log(
-                      "device doesn't have device locally - requesting remote resend",
+                      "device doesn't have file locally - requesting local resend",
                     );
                     this.#clientsSending.set(device, clientRequestingSend);
                     device._onRemoteConnectionMessageSent(
@@ -560,6 +578,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                     );
 
                     const deviceMessages: DeviceMessage[] = [];
+                    // _console.log(
+                    //   `temporaily increasing mtu to ${this.clientMtu}`,
+                    // );
                     const mtuDataView = new DataView(new ArrayBuffer(2));
                     mtuDataView.setUint16(0, this.clientMtu, true);
                     const mtuDeviceMessage = this.#createDeviceMessage(
@@ -572,18 +593,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                     const fileTransferStatusDeviceMessage =
                       this.#createDeviceMessage(device, messageType, dataView);
                     deviceMessages.push(fileTransferStatusDeviceMessage);
-
-                    // is this necessary?
-                    if (false) {
-                      this.broadcast(
-                        this.#createDeviceServerMessage(
-                          device,
-                          ...deviceMessages,
-                        ),
-                        undefined,
-                        [clientRequestingSend!],
-                      );
-                    }
 
                     fileTransferStatusDeviceMessage.data = enumToDataView(
                       FileTransferStatuses,
@@ -710,6 +719,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceConnected", device.bluetoothId);
     addEventListeners(device, this.#boundDeviceListeners);
+    this.#clientsWaitingToRequestSend.set(device, []);
   }
 
   #onDeviceNotConnected(
@@ -718,6 +728,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceNotConnected", device.bluetoothId);
     removeEventListeners(device, this.#boundDeviceListeners);
+    this.#clientsWaitingToRequestSend.delete(device);
   }
 
   #onDeviceIsConnected(
@@ -1147,7 +1158,27 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   }
 
   #clientsRequestingSend: Map<Device, ServerClient> = new Map();
+  #clientsWaitingToRequestSend: Map<Device, ServerClient[]> = new Map();
   #clientsSending: Map<Device, ServerClient> = new Map();
+  #onDoneSendingMessage(device: Device, deviceMessages: DeviceMessage[]) {
+    _console.log("onDoneSendingMessage", device);
+    device._onRemoteConnectionMessageSent(
+      "fileTransferStatus",
+      enumToDataView(FileTransferStatuses, "idle"),
+      false,
+    );
+    this.#clientsSending.delete(device);
+    _console.log("restoring device mtu");
+    const resetMtuMessage = this.#createDeviceMessage(device, "getMtu");
+    deviceMessages.push(resetMtuMessage);
+    const fileTransferStatusDeviceMessage = this.#createDeviceMessage(
+      device,
+      "fileTransferStatus",
+    );
+    deviceMessages.push(fileTransferStatusDeviceMessage);
+
+    // FILL - find next client waiting
+  }
 
   #filterClientToDeviceTxMessage(
     client: ServerClient,
@@ -1296,23 +1327,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               });
               if (isClientSending) {
                 if (fileTransferCommand == "cancel") {
-                  device._onRemoteConnectionMessageSent(
-                    "fileTransferStatus",
-                    enumToDataView(FileTransferStatuses, "idle"),
-                    false,
-                  );
-                  this.#clientsSending.delete(device);
-
-                  const resetMtuMessage = this.#createDeviceMessage(
-                    device,
-                    "getMtu",
-                  );
-                  deviceMessages.push(resetMtuMessage);
-                  const fileTransferStatusMessage = this.#createDeviceMessage(
-                    device,
-                    "fileTransferStatus",
-                  );
-                  deviceMessages.push(fileTransferStatusMessage);
+                  _console.log("cancelling local file transfer");
+                  this.#onDoneSendingMessage(device, deviceMessages);
                 }
               } else if (fileTransferCommand == "startSend") {
                 if (
@@ -1326,11 +1342,34 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                   );
                 } else {
                   _console.log("too busy to send file to client");
-                  const fileTransferStatusMessage = this.#createDeviceMessage(
-                    device,
-                    "fileTransferStatus",
-                  );
-                  deviceMessages.push(fileTransferStatusMessage);
+                  if (true) {
+                    // wait until ready, then send "sending" message
+                    if (
+                      !this.#clientsWaitingToRequestSend
+                        .get(device)!
+                        .includes(client)
+                    ) {
+                      _console.log(
+                        "adding client to clientsWaitingToRequestSend",
+                      );
+                      this.#clientsWaitingToRequestSend
+                        .get(device)!
+                        .push(client);
+                    } else {
+                      _console.log(
+                        "client already in clientsWaitingToRequestSend",
+                      );
+                    }
+                  } else {
+                    // sends an "idle" message immediately, rejecting file transfer
+                    const fileTransferStatusMessage = this.#createDeviceMessage(
+                      device,
+                      "fileTransferStatus",
+                      enumToDataView(FileTransferStatuses, "idle"),
+                    );
+                    deviceMessages.push(fileTransferStatusMessage);
+                  }
+
                   return;
                 }
               }
@@ -1368,7 +1407,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                   if (isComplete) {
                     switch (fileType) {
                       case "tflite":
-                        // FILL
+                        // TODO
                         break;
                       case "spriteSheet":
                         {
@@ -1408,24 +1447,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                   }
 
                   if (isClientSending && isComplete) {
-                    device._onRemoteConnectionMessageSent(
-                      "fileTransferStatus",
-                      enumToDataView(FileTransferStatuses, "idle"),
-                      false,
-                    );
-                    this.#clientsSending.delete(device);
-
-                    _console.log(
-                      "done sending local file - notifying client...",
-                    );
-                    const resetMtuMessage = this.#createDeviceMessage(
-                      device,
-                      "getMtu",
-                    );
-                    deviceMessages.push(resetMtuMessage);
-                    const fileTransferStatusDeviceMessage =
-                      this.#createDeviceMessage(device, "fileTransferStatus");
-                    deviceMessages.push(fileTransferStatusDeviceMessage);
+                    _console.log("done sending local file");
+                    this.#onDoneSendingMessage(device, deviceMessages);
 
                     switch (fileType) {
                       case "tflite":
@@ -1669,4 +1692,3 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 export default BaseServer;
 
 import { default as ServerManager } from "./ServerManager.ts";
-import { DisplaySpriteSheet } from "../BS.ts";

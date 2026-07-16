@@ -9,6 +9,7 @@ export type BoundGenericEventListeners = {
 export function addEventListeners(
   target: any,
   boundEventListeners: BoundGenericEventListeners,
+  options?: EventListenerOptions,
 ) {
   let addEventListener =
     target.addEventListener ||
@@ -25,7 +26,7 @@ export function addEventListeners(
       ? eventListeners
       : [eventListeners];
     eventListeners.forEach((eventListener) => {
-      addEventListener(eventType, eventListener);
+      addEventListener(eventType, eventListener, options);
     });
   });
 }

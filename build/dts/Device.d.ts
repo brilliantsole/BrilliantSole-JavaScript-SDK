@@ -81,13 +81,13 @@ declare class Device {
     get getBatteryCurrent(): () => Promise<void>;
     get name(): string;
     get setName(): (newName: string) => Promise<void>;
-    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic";
+    get type(): "generic" | "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
     get setType(): (newType: DeviceType) => Promise<void>;
     get isInsole(): boolean;
     get isGlove(): boolean;
     get isGlasses(): boolean;
     get isGeneric(): boolean;
-    get side(): "left" | "right";
+    get side(): "right" | "left";
     get mtu(): number;
     get sensorTypes(): SensorType[];
     get continuousSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "barometer" | "light")[];
@@ -128,7 +128,7 @@ declare class Device {
     get numberOfButtons(): number;
     get hasTouches(): boolean;
     get numberOfTouches(): number;
-    get vibrationLocations(): ("left" | "right" | "front" | "rear")[];
+    get vibrationLocations(): ("right" | "left" | "front" | "rear")[];
     get hasVibration(): boolean;
     get triggerVibration(): {
         (vibrationConfiguration: VibrationConfiguration, sendImmediately?: boolean): Promise<void>;
@@ -200,7 +200,7 @@ declare class Device {
     reconnectViaUDP(): Promise<void>;
     private get _buildCameraData();
     get hasCamera(): boolean;
-    get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
+    get cameraStatus(): "idle" | "asleep" | "focusing" | "takingPicture";
     takePicture(sensorRate?: number): Promise<void>;
     get autoPicture(): boolean;
     set autoPicture(newAutoPicture: boolean);
@@ -209,7 +209,7 @@ declare class Device {
     wakeCamera(): Promise<void>;
     sleepCamera(): Promise<void>;
     get cameraConfiguration(): import("./CameraManager.ts").CameraConfiguration;
-    get availableCameraConfigurationTypes(): ("resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "brightness" | "saturation" | "contrast" | "sharpness")[];
+    get availableCameraConfigurationTypes(): ("brightness" | "resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "saturation" | "contrast" | "sharpness")[];
     get cameraConfigurationRanges(): import("./CameraManager.ts").CameraConfigurationRanges;
     get setCameraConfiguration(): (newCameraConfiguration: import("./CameraManager.ts").CameraConfiguration, sendImmediately?: boolean) => Promise<void>;
     get isRecordingCamera(): boolean;
@@ -240,7 +240,7 @@ declare class Device {
     get displayBitmapColors(): string[];
     get displayBitmapColorIndices(): number[];
     get displayColorOpacities(): number[];
-    get displayStatus(): "asleep" | "awake";
+    get displayStatus(): "awake" | "asleep";
     get displayBrightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     get setDisplayBrightness(): (newDisplayBrightness: import("./DisplayManager.ts").DisplayBrightness, sendImmediately?: boolean, displayCanvasHelper?: import("./BS.ts").DisplayCanvasHelper) => Promise<void>;
     get pendingDisplaySpriteSheetName(): string | undefined;

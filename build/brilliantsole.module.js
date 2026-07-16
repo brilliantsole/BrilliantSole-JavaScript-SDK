@@ -24396,7 +24396,7 @@ class DisplayContextStateHelper {
 }
 
 const _console$w = createConsole("EventUtils", { log: false });
-function addEventListeners(target, boundEventListeners) {
+function addEventListeners(target, boundEventListeners, options) {
     let addEventListener = target.addEventListener ||
         target.addListener ||
         target.on ||
@@ -24408,7 +24408,7 @@ function addEventListeners(target, boundEventListeners) {
             ? eventListeners
             : [eventListeners];
         eventListeners.forEach((eventListener) => {
-            addEventListener(eventType, eventListener);
+            addEventListener(eventType, eventListener, options);
         });
     });
 }
