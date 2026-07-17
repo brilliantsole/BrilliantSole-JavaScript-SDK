@@ -4,6 +4,7 @@ import { DeviceType } from "./InformationManager.ts";
 import { createConsole } from "./utils/Console.ts";
 import { isInBluefy, isInBrowser } from "./utils/environment.ts";
 import { addEventListeners } from "./utils/EventUtils.ts";
+import { wait } from "./utils/Timer.ts";
 
 import Device, {
   BoundDeviceEventListeners,
@@ -25,8 +26,9 @@ import {
   KeyOf,
   Singleton,
 } from "./utils/TypeScriptUtils.ts";
+import { serviceUUIDs } from "./connection/bluetooth/bluetoothUUIDs.ts";
 
-const _console = createConsole("DeviceManager", { log: false });
+const _console = createConsole("DeviceManager", { log: true });
 
 export interface LocalStorageDeviceInformation {
   type: DeviceType;
@@ -259,6 +261,7 @@ class DeviceManager {
   get canGetDevices() {
     return isInBrowser && navigator.bluetooth?.getDevices;
   }
+  #getDevicesTimeout = 1500;
   /**
    * retrieves devices already connected via web bluetooth in other tabs/windows
    *
@@ -309,11 +312,60 @@ class DeviceManager {
 
     _console.log({ bluetoothDevices });
 
-    // FILL - watchadvertisements and add once you see 1 advertisement (timeout after 3 seconds)
+    if (
+      bluetoothDevices[0] &&
+      typeof bluetoothDevices[0].watchAdvertisements == "function"
+    ) {
+      const waitAbortController = new AbortController();
+      const bluetoothDeviceAdvertisementEvents: Map<
+        BluetoothDevice,
+        BluetoothAdvertisingEvent
+      > = new Map();
+      const bluetoothDeviceAdvertisementAbortController = new AbortController();
+      bluetoothDevices.forEach(async (bluetoothDevice) => {
+        bluetoothDevice.addEventListener(
+          "advertisementreceived",
+          (event) => {
+            const isDevice = event.uuids.includes(serviceUUIDs[0]);
+            _console.log("advertisement received", bluetoothDevice, event, {
+              isDevice,
+            });
+
+            bluetoothDeviceAdvertisementEvents.set(bluetoothDevice, event);
+            if (
+              bluetoothDeviceAdvertisementEvents.size == bluetoothDevices.length
+            ) {
+              _console.log("all devices found - aborting early");
+              waitAbortController.abort();
+            }
+          },
+          {
+            once: true,
+            signal: bluetoothDeviceAdvertisementAbortController.signal,
+          },
+        );
+        await bluetoothDevice.watchAdvertisements({
+          signal: bluetoothDeviceAdvertisementAbortController.signal,
+        });
+      });
+
+      _console.log(
+        `waiting for advertisements for ${this.#getDevicesTimeout}ms`,
+      );
+      await wait(this.#getDevicesTimeout, waitAbortController.signal);
+      _console.log(`done waiting for advertisements`);
+      bluetoothDeviceAdvertisementAbortController.abort();
+
+      bluetoothDevices = bluetoothDevices.filter((bluetoothDevice) => {
+        return bluetoothDeviceAdvertisementEvents.has(bluetoothDevice);
+      });
+    }
+
     bluetoothDevices.forEach((bluetoothDevice) => {
       if (!bluetoothDevice.gatt) {
         return;
       }
+
       let deviceInformation = configuration.devices.find(
         (deviceInformation) =>
           bluetoothDevice.id == deviceInformation.bluetoothId,

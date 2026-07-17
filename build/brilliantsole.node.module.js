@@ -354,9 +354,13 @@ class EventDispatcher {
 }
 
 const _console$X = createConsole("Timer", { log: false });
-async function wait(delay) {
+async function wait(delay, signal) {
     _console$X.log(`waiting for ${delay}ms`);
     return new Promise((resolve) => {
+        if (signal) {
+            _console$X.log("aborting out of wait early");
+            signal.onabort = () => resolve();
+        }
         setTimeout(() => resolve(), delay);
     });
 }
@@ -20167,7 +20171,7 @@ function Singleton(target, context) {
     };
 }
 
-const _console$g = createConsole("DeviceManager", { log: false });
+const _console$g = createConsole("DeviceManager", { log: true });
 function getDeviceManagerDeviceEventTypes(deviceEventType) {
     return ["device"].map((prefix) => `${prefix}${capitalizeFirstCharacter(deviceEventType)}`);
 }
@@ -20305,6 +20309,7 @@ let DeviceManager = (() => {
         get canGetDevices() {
             return isInBrowser && navigator.bluetooth?.getDevices;
         }
+        #getDevicesTimeout = 1500;
         async getDevices() {
             if (!isInBrowser) {
                 _console$g.warn("GetDevices is only available in the browser");
@@ -20342,6 +20347,38 @@ let DeviceManager = (() => {
                 _console$g.warn(error);
             }
             _console$g.log({ bluetoothDevices });
+            if (bluetoothDevices[0] &&
+                typeof bluetoothDevices[0].watchAdvertisements == "function") {
+                const waitAbortController = new AbortController();
+                const bluetoothDeviceAdvertisementEvents = new Map();
+                const bluetoothDeviceAdvertisementAbortController = new AbortController();
+                bluetoothDevices.forEach(async (bluetoothDevice) => {
+                    bluetoothDevice.addEventListener("advertisementreceived", (event) => {
+                        const isDevice = event.uuids.includes(serviceUUIDs[0]);
+                        _console$g.log("advertisement received", bluetoothDevice, event, {
+                            isDevice,
+                        });
+                        bluetoothDeviceAdvertisementEvents.set(bluetoothDevice, event);
+                        if (bluetoothDeviceAdvertisementEvents.size == bluetoothDevices.length) {
+                            _console$g.log("all devices found - aborting early");
+                            waitAbortController.abort();
+                        }
+                    }, {
+                        once: true,
+                        signal: bluetoothDeviceAdvertisementAbortController.signal,
+                    });
+                    await bluetoothDevice.watchAdvertisements({
+                        signal: bluetoothDeviceAdvertisementAbortController.signal,
+                    });
+                });
+                _console$g.log(`waiting for advertisements for ${this.#getDevicesTimeout}ms`);
+                await wait(this.#getDevicesTimeout, waitAbortController.signal);
+                _console$g.log(`done waiting for advertisements`);
+                bluetoothDeviceAdvertisementAbortController.abort();
+                bluetoothDevices = bluetoothDevices.filter((bluetoothDevice) => {
+                    return bluetoothDeviceAdvertisementEvents.has(bluetoothDevice);
+                });
+            }
             bluetoothDevices.forEach((bluetoothDevice) => {
                 if (!bluetoothDevice.gatt) {
                     return;
@@ -21201,16 +21238,16 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$c = createConsole("Scanner", { log: false });
-let scanner;
+let scanner$1;
 if (NobleScanner.isSupported) {
     _console$c.log("using NobleScanner");
-    scanner = new NobleScanner();
+    scanner$1 = new NobleScanner();
 }
 else {
     _console$c.log("Scanner not available");
-    scanner = new NullScanner();
+    scanner$1 = new NullScanner();
 }
-var scanner$1 = scanner;
+var scanner = scanner$1;
 
 var _a$1;
 const RequiredDeviceInformationMessageTypes = [
@@ -21261,8 +21298,8 @@ class BaseServer {
     }
     static OnServer;
     constructor() {
-        _console$b.assertWithError(scanner$1, "no scanner defined");
-        addEventListeners(scanner$1, this.#boundScannerListeners);
+        _console$b.assertWithError(scanner, "no scanner defined");
+        addEventListeners(scanner, this.#boundScannerListeners);
         addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(this, this.#boundServerListeners);
         _a$1.OnServer(this);
@@ -21350,7 +21387,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner$1.isScanningAvailable,
+            data: scanner.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -21359,7 +21396,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner$1.isScanning,
+            data: scanner.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -21385,7 +21422,7 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner$1.discoveredDevicesArray
+        const serverMessages = scanner.discoveredDevicesArray
             .filter((discoveredDevice) => {
             const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
@@ -21696,10 +21733,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner$1.startScan();
+                scanner.startScan();
                 break;
             case "stopScan":
-                scanner$1.stopScan();
+                scanner.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -21722,7 +21759,7 @@ class BaseServer {
                         device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
-                        scanner$1.connectToDevice(deviceId, connectionType);
+                        scanner.connectToDevice(deviceId, connectionType);
                     }
                 }
                 break;
@@ -21733,7 +21770,7 @@ class BaseServer {
                         break;
                     }
                     let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner$1.devices[deviceId];
+                    device = device ?? scanner.devices[deviceId];
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -23776,5 +23813,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner$1 as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantsole.node.module.js.map

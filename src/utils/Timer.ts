@@ -2,9 +2,13 @@ import { createConsole } from "./Console.ts";
 
 const _console = createConsole("Timer", { log: false });
 
-export async function wait(delay: number): Promise<void> {
+export async function wait(delay: number, signal?: AbortSignal): Promise<void> {
   _console.log(`waiting for ${delay}ms`);
   return new Promise((resolve: Function) => {
+    if (signal) {
+      _console.log("aborting out of wait early");
+      signal.onabort = () => resolve();
+    }
     setTimeout(() => resolve(), delay);
   });
 }

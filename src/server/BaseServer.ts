@@ -253,6 +253,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         clients.splice(clients.indexOf(client), 1);
       }
     }
+    for (const [device, clientMap] of [
+      ...this.#clientsWaitingToRequestSendMetaData,
+    ]) {
+      if (clientMap.has(client)) {
+        clientMap.delete(client);
+      }
+    }
 
     for (const [device, _client] of [...this.#clientsSending]) {
       if (_client == client) {
@@ -720,6 +727,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     _console.log("onDeviceConnected", device.bluetoothId);
     addEventListeners(device, this.#boundDeviceListeners);
     this.#clientsWaitingToRequestSend.set(device, []);
+    this.#clientsWaitingToRequestSendMetaData.set(device, new Map());
   }
 
   #onDeviceNotConnected(
@@ -729,6 +737,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     _console.log("onDeviceNotConnected", device.bluetoothId);
     removeEventListeners(device, this.#boundDeviceListeners);
     this.#clientsWaitingToRequestSend.delete(device);
+    this.#clientsWaitingToRequestSendMetaData.delete(device);
   }
 
   #onDeviceIsConnected(
@@ -1159,9 +1168,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
   #clientsRequestingSend: Map<Device, ServerClient> = new Map();
   #clientsWaitingToRequestSend: Map<Device, ServerClient[]> = new Map();
+  #clientsWaitingToRequestSendMetaData: Map<
+    Device,
+    Map<ServerClient, TxMessage[]>
+  > = new Map();
   #clientsSending: Map<Device, ServerClient> = new Map();
   #onDoneSendingMessage(device: Device, deviceMessages: DeviceMessage[]) {
-    _console.log("onDoneSendingMessage", device);
+    _console.log("#onDoneSendingMessage", device);
     device._onRemoteConnectionMessageSent(
       "fileTransferStatus",
       enumToDataView(FileTransferStatuses, "idle"),
@@ -1177,7 +1190,23 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     );
     deviceMessages.push(fileTransferStatusDeviceMessage);
 
-    // FILL - find next client waiting
+    const clientsWaitingToRequestSend =
+      this.#clientsWaitingToRequestSend.get(device)!;
+
+    if (clientsWaitingToRequestSend.length > 0) {
+      const client = clientsWaitingToRequestSend.shift()!;
+      _console.log("clientWaitingToRequestSend", client);
+
+      const messages = this.#clientsWaitingToRequestSendMetaData
+        .get(device)!
+        .get(client)!;
+      this.#clientsWaitingToRequestSendMetaData.get(device)!.delete(client);
+      messages.push({
+        type: "setFileTransferCommand",
+        data: enumToDataView(FileTransferStatuses, "sending").buffer,
+      });
+      device.connectionManager!.sendTxMessages(messages, true, true);
+    }
   }
 
   #filterClientToDeviceTxMessage(
@@ -1310,6 +1339,32 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               return;
             }
             break;
+          case "setFileChecksum":
+          case "setFileLength":
+          case "setFileType":
+          case "setDisplaySpriteSheetName":
+          case "setTfliteSensorTypes":
+          case "setTfliteCaptureDelay":
+          case "setTfliteName":
+          case "setTfliteSampleRate":
+          case "setTfliteTask":
+          case "setTfliteThreshold":
+            if (device.fileTransferStatus != "idle") {
+              const map =
+                this.#clientsWaitingToRequestSendMetaData.get(device)!;
+              if (!map.has(client)) {
+                map.set(client, []);
+              }
+              const messages = map.get(client)!;
+              _console.log(
+                "device is busy - storing message in fileTransferMetadata",
+                message,
+              );
+              messages.push(message as TxMessage);
+              return;
+            }
+
+            break;
           case "setFileTransferCommand":
             {
               const fileTransferCommandEnum = dataView.getUint8(0);
@@ -1342,32 +1397,20 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                   );
                 } else {
                   _console.log("too busy to send file to client");
-                  if (true) {
-                    // wait until ready, then send "sending" message
-                    if (
-                      !this.#clientsWaitingToRequestSend
-                        .get(device)!
-                        .includes(client)
-                    ) {
-                      _console.log(
-                        "adding client to clientsWaitingToRequestSend",
-                      );
-                      this.#clientsWaitingToRequestSend
-                        .get(device)!
-                        .push(client);
-                    } else {
-                      _console.log(
-                        "client already in clientsWaitingToRequestSend",
-                      );
-                    }
-                  } else {
-                    // sends an "idle" message immediately, rejecting file transfer
-                    const fileTransferStatusMessage = this.#createDeviceMessage(
-                      device,
-                      "fileTransferStatus",
-                      enumToDataView(FileTransferStatuses, "idle"),
+                  // wait until ready, then send "sending" message
+                  if (
+                    !this.#clientsWaitingToRequestSend
+                      .get(device)!
+                      .includes(client)
+                  ) {
+                    _console.log(
+                      "adding client to clientsWaitingToRequestSend",
                     );
-                    deviceMessages.push(fileTransferStatusMessage);
+                    this.#clientsWaitingToRequestSend.get(device)!.push(client);
+                  } else {
+                    _console.log(
+                      "client already in clientsWaitingToRequestSend",
+                    );
                   }
 
                   return;
