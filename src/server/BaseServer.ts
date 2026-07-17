@@ -34,6 +34,7 @@ import {
   ConnectionMessageTypes,
   ConnectionTypes,
   TxMessage,
+  TxRxMessageType,
   TxRxMessageTypes,
 } from "../connection/BaseConnectionManager.ts";
 import {
@@ -1170,7 +1171,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   #clientsWaitingToRequestSend: Map<Device, ServerClient[]> = new Map();
   #clientsWaitingToRequestSendMetaData: Map<
     Device,
-    Map<ServerClient, TxMessage[]>
+    Map<ServerClient, DeviceMessage[]>
   > = new Map();
   #clientsSending: Map<Device, ServerClient> = new Map();
   #onDoneSendingMessage(device: Device, deviceMessages: DeviceMessage[]) {
@@ -1196,6 +1197,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     if (clientsWaitingToRequestSend.length > 0) {
       const client = clientsWaitingToRequestSend.shift()!;
       _console.log("clientWaitingToRequestSend", client);
+      this.#clientsRequestingSend.set(device, client);
 
       const messages = this.#clientsWaitingToRequestSendMetaData
         .get(device)!
@@ -1203,9 +1205,22 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       this.#clientsWaitingToRequestSendMetaData.get(device)!.delete(client);
       messages.push({
         type: "setFileTransferCommand",
-        data: enumToDataView(FileTransferStatuses, "sending").buffer,
+        data: enumToDataView(FileTransferStatuses, "sending"),
       });
-      device.connectionManager!.sendTxMessages(messages, true, true);
+      _console.log("fileTransfer metadata", messages);
+
+      const filteredTxMessages: TxMessage[] = [];
+      messages.forEach((message) => {
+        if (this.#allowClientToDevice(client, device, message)) {
+          filteredTxMessages.push(message as TxMessage);
+          device._onRemoteConnectionMessageSent(
+            message.type as TxRxMessageType,
+            message.data,
+          );
+        }
+      });
+      _console.log("filtered fileTransfer metadata", filteredTxMessages);
+      device.connectionManager!.sendTxMessages(filteredTxMessages, true, true);
     }
   }
 
@@ -1360,7 +1375,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 "device is busy - storing message in fileTransferMetadata",
                 message,
               );
-              messages.push(message as TxMessage);
+              messages.push(message);
               return;
             }
 
@@ -1412,7 +1427,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                       "client already in clientsWaitingToRequestSend",
                     );
                   }
-
                   return;
                 }
               }
