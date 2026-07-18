@@ -686,10 +686,10 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean,
     isSending?: boolean,
   ) {
-    _console.log("sendContextCommand", contextCommand, {
-      sendImmediately,
-      isSending,
-    });
+    // _console.log("sendContextCommand", contextCommand, {
+    //   sendImmediately,
+    //   isSending,
+    // });
 
     let promise: Promise<void> | undefined;
 
@@ -717,7 +717,10 @@ class DisplayManager implements DisplayManagerInterface {
         (sum, buffer) => sum + buffer.byteLength,
         serializedContextCommand.byteLength,
       );
-      if (newLength > this.getMaxCommandDataLength()) {
+      if (
+        newLength > this.getMaxCommandDataLength() &&
+        !this.#isSendingContextCommands
+      ) {
         _console.log("displayContextCommandBuffers too full - sending now");
         promise = this.#sendContextCommands(isSending);
       }
@@ -741,6 +744,7 @@ class DisplayManager implements DisplayManagerInterface {
   async #sendContextCommands(isSending?: boolean) {
     _console.log("sendContextCommands", { isSending });
 
+    let numberOfCommands = 0;
     if (!isSending) {
       if (this.#isSendingContextCommands) {
         _console.log("already sending contextCommands");
@@ -754,18 +758,22 @@ class DisplayManager implements DisplayManagerInterface {
       }
       this.#isSendingContextCommands = true;
 
-      let numberOfCommands = 0;
+      numberOfCommands = 0;
       let totalBufferLength = 0;
-      this.#contextCommandBuffers.some((contextCommandBuffer) => {
-        const newTotalBufferLength =
-          totalBufferLength + contextCommandBuffer.byteLength;
-        if (newTotalBufferLength > this.getMaxCommandDataLength()) {
-          return true;
-        }
-        totalBufferLength = newTotalBufferLength;
-        numberOfCommands++;
-      });
-      _console.log({ numberOfCommands });
+      const didntSendAllContextCommandBuffers =
+        this.#contextCommandBuffers.some((contextCommandBuffer) => {
+          const newTotalBufferLength =
+            totalBufferLength + contextCommandBuffer.byteLength;
+          if (newTotalBufferLength > this.getMaxCommandDataLength()) {
+            return true;
+          }
+          totalBufferLength = newTotalBufferLength;
+          numberOfCommands++;
+        });
+      this.#sendContextCommandsWhenDone =
+        this.#sendContextCommandsWhenDone || didntSendAllContextCommandBuffers;
+
+      _console.log({ numberOfCommands, didntSendAllContextCommandBuffers });
 
       const contextCommandBuffers = this.#contextCommandBuffers.splice(
         0,
@@ -789,12 +797,16 @@ class DisplayManager implements DisplayManagerInterface {
       }
 
       this.#isSendingContextCommands = false;
+    } else {
+      numberOfCommands = this.#contextCommands.length;
     }
 
     if (!this.#shouldWait(isSending)) {
       if (this.#contextCommands.length > 0) {
-        const displayContextCommands = this.#contextCommands.slice();
-        this.#contextCommands.length = 0;
+        const displayContextCommands = this.#contextCommands.splice(
+          0,
+          numberOfCommands,
+        );
         _console.log("dispatching contextCommands", displayContextCommands);
         this.#dispatchEvent("displayContextCommands", {
           displayContextCommands,
@@ -812,7 +824,8 @@ class DisplayManager implements DisplayManagerInterface {
       if (this.#sendContextCommandsWhenDone) {
         this.#sendContextCommandsWhenDone = false;
         _console.log(
-          `${this.#contextCommands.length} followup contextCommands`,
+          `${this.#contextCommandBuffers.length} followup contextCommands`,
+          this.#contextCommandBufferCommands,
         );
         await this.#sendContextCommands(isSending);
       }

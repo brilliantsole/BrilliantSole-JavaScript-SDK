@@ -1381,10 +1381,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             }
             break;
           case "displayContextCommands":
-            if (
-              !ServerManager.clientDisplayContextCommandToDeviceGuardManager
-                .isEmpty
-            ) {
+            {
               const displayContextCommands = parseDisplayContextCommands(
                 device.displayManager,
                 dataView,
@@ -1411,29 +1408,46 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               let sendRemaining = false;
               filteredDisplayContextCommands.forEach(
                 (displayContextCommand, index) => {
+                  const shouldSendImmediately =
+                    ShowDisplayContextCommandTypes.includes(
+                      displayContextCommand.type as ShowDisplayContextCommandType,
+                    );
                   const isLast =
                     index == filteredDisplayContextCommands.length - 1;
 
                   const _filteredDisplayContextCommands =
                     partitionedFilteredDisplayContextCommands.at(-1)!;
 
-                  const sendImmediately =
+                  const endsWithSendImmediately =
+                    _filteredDisplayContextCommands.length > 0 &&
                     ShowDisplayContextCommandTypes.includes(
-                      displayContextCommand.type as ShowDisplayContextCommandType,
+                      _filteredDisplayContextCommands.at(-1)!
+                        .type as ShowDisplayContextCommandType,
+                    );
+                  const allAreSendImmediately =
+                    _filteredDisplayContextCommands.length > 0 &&
+                    _filteredDisplayContextCommands.every((command) =>
+                      ShowDisplayContextCommandTypes.includes(
+                        command.type as ShowDisplayContextCommandType,
+                      ),
                     );
 
-                  if (sendImmediately) {
+                  _console.log({
+                    isLast,
+                    shouldSendImmediately,
+                    endsWithSendImmediately,
+                    _filteredDisplayContextCommands,
+                  });
+
+                  if (!shouldSendImmediately && endsWithSendImmediately) {
+                    partitionedFilteredDisplayContextCommands.push([]);
+                  }
+
+                  _filteredDisplayContextCommands.push(displayContextCommand);
+
+                  if (shouldSendImmediately) {
                     if (isLast) {
                       sendRemaining = true;
-                    } else if (
-                      _filteredDisplayContextCommands.length == 0 ||
-                      !_filteredDisplayContextCommands.every((command) =>
-                        ShowDisplayContextCommandTypes.includes(
-                          command.type as ShowDisplayContextCommandType,
-                        ),
-                      )
-                    ) {
-                      partitionedFilteredDisplayContextCommands.push([]);
                     }
                   }
                 },
@@ -1449,13 +1463,17 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                     index ==
                     partitionedFilteredDisplayContextCommands.length - 1;
                   const sendImmediately = !isLast || sendRemaining;
+                  _console.log(
+                    "filteredDisplayContextCommands",
+                    _filteredDisplayContextCommands,
+                    { isLast, sendImmediately },
+                  );
                   device.displayManager.runContextCommands(
-                    filteredDisplayContextCommands,
+                    _filteredDisplayContextCommands,
                     sendImmediately,
                   );
                 },
               );
-
               return;
             }
             break;
