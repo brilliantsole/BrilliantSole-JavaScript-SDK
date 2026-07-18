@@ -12,7 +12,10 @@ import {
   DisplayWireframeEdge,
   displayPointDataTypeToSize,
 } from "../DisplayManager.ts";
-import { concatenateArrayBuffers } from "./ArrayBufferUtils.ts";
+import {
+  concatenateArrayBuffers,
+  UInt8ByteBuffer,
+} from "./ArrayBufferUtils.ts";
 import { stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import {
@@ -265,6 +268,15 @@ export const DisplaySpriteContextCommandTypes = [
 ] as const satisfies readonly DisplayContextCommandType[];
 export type DisplaySpriteContextCommandType =
   (typeof DisplaySpriteContextCommandTypes)[number];
+
+export const ShowDisplayContextCommandTypes = [
+  "show",
+  "clear",
+  "setColor",
+  "setColorOpacity",
+] as const satisfies readonly DisplayContextCommandType[];
+export type ShowDisplayContextCommandType =
+  (typeof ShowDisplayContextCommandTypes)[number];
 
 export interface BaseDisplayContextCommand {
   type: DisplayContextCommandType | "runDisplayContextCommands";
@@ -1517,6 +1529,7 @@ export function serializeDisplayContextCommand(
     displayManager,
     command,
   );
+
   return concatenateArrayBuffers(
     enumToArrayBuffer(DisplayContextCommandTypes, command.type),
     serializedContextCommand,

@@ -573,7 +573,7 @@ async function getFileBuffer(file) {
     }
     return fileBuffer;
 }
-function UInt8ByteBuffer$1(value) {
+function UInt8ByteBuffer(value) {
     return Uint8Array.from([value]).buffer;
 }
 
@@ -615,7 +615,7 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
 function enumToArrayBuffer(enumeration, value) {
     _console$V.assertEnumWithError(enumeration, value);
     const valueEnum = enumeration.indexOf(value);
-    return UInt8ByteBuffer$1(valueEnum);
+    return UInt8ByteBuffer(valueEnum);
 }
 function enumToDataView(enumeration, value) {
     return new DataView(enumToArrayBuffer(enumeration, value));
@@ -4373,7 +4373,7 @@ class TfliteManager {
         this.sendMessage([
             {
                 type: "setTfliteInferencingEnabled",
-                data: UInt8ByteBuffer$1(Number(newInferencingEnabled)),
+                data: UInt8ByteBuffer(Number(newInferencingEnabled)),
             },
         ], sendImmediately);
         await promise;
@@ -5394,7 +5394,7 @@ class WifiManager {
         this.sendMessage([
             {
                 type: "setWifiConnectionEnabled",
-                data: UInt8ByteBuffer$1(Number(newWifiConnectionEnabled)),
+                data: UInt8ByteBuffer(Number(newWifiConnectionEnabled)),
             },
         ], sendImmediately);
         await promise;
@@ -7560,6 +7560,12 @@ const DisplaySpriteContextCommandTypes = [
     "drawArcEllipse",
     "drawBitmap",
     "drawSprite",
+];
+const ShowDisplayContextCommandTypes = [
+    "show",
+    "clear",
+    "setColor",
+    "setColorOpacity",
 ];
 function serializeDisplayContextCommandData(displayManager, command) {
     let dataView;
@@ -13838,7 +13844,7 @@ let DisplayManager = (() => {
             this.sendMessage([
                 {
                     type: "displayCommand",
-                    data: UInt8ByteBuffer$1(commandEnum),
+                    data: UInt8ByteBuffer(commandEnum),
                 },
             ], sendImmediately);
             await promise;
@@ -13956,7 +13962,7 @@ let DisplayManager = (() => {
                 return;
             }
             const newDisplayBrightnessEnum = DisplayBrightnesses.indexOf(newDisplayBrightness);
-            const newDisplayBrightnessData = UInt8ByteBuffer$1(newDisplayBrightnessEnum);
+            const newDisplayBrightnessData = UInt8ByteBuffer(newDisplayBrightnessEnum);
             const promise = this.waitForEvent("getDisplayBrightness");
             this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
             await promise;
@@ -21469,10 +21475,11 @@ class BaseServer {
     };
     #createDeviceMessage(device, messageType, dataView) {
         if (messageType == "fileTransferStatus") {
-            const isBusy = this.#clientsSending.has(device) ||
-                this.#clientsRequestingSend.has(device);
+            const isBusy = !dataView &&
+                (this.#clientsSending.has(device) ||
+                    this.#clientsRequestingSend.has(device));
             if (isBusy) {
-                _console$b.log(`sending "idle" fileTransferStatus`);
+                _console$b.log(`busy - sending "idle" fileTransferStatus`);
                 return {
                     type: "fileTransferStatus",
                     data: enumToDataView(FileTransferStatuses, "idle"),
@@ -22002,16 +22009,14 @@ class BaseServer {
                         let sendRemaining = false;
                         filteredDisplayContextCommands.forEach((displayContextCommand, index) => {
                             const isLast = index == filteredDisplayContextCommands.length - 1;
-                            const sendImmediately = displayContextCommand.type == "clear" ||
-                                displayContextCommand.type == "show";
-                            partitionedFilteredDisplayContextCommands
-                                .at(-1)
-                                .push(displayContextCommand);
+                            const _filteredDisplayContextCommands = partitionedFilteredDisplayContextCommands.at(-1);
+                            const sendImmediately = ShowDisplayContextCommandTypes.includes(displayContextCommand.type);
                             if (sendImmediately) {
                                 if (isLast) {
                                     sendRemaining = true;
                                 }
-                                else {
+                                else if (_filteredDisplayContextCommands.length == 0 ||
+                                    !_filteredDisplayContextCommands.every((command) => ShowDisplayContextCommandTypes.includes(command.type))) {
                                     partitionedFilteredDisplayContextCommands.push([]);
                                 }
                             }

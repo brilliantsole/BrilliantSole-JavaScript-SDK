@@ -583,7 +583,7 @@ async function getFileBuffer(file) {
     }
     return fileBuffer;
 }
-function UInt8ByteBuffer$1(value) {
+function UInt8ByteBuffer(value) {
     return Uint8Array.from([value]).buffer;
 }
 
@@ -625,7 +625,7 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
 function enumToArrayBuffer(enumeration, value) {
     _console$W.assertEnumWithError(enumeration, value);
     const valueEnum = enumeration.indexOf(value);
-    return UInt8ByteBuffer$1(valueEnum);
+    return UInt8ByteBuffer(valueEnum);
 }
 function enumToDataView(enumeration, value) {
     return new DataView(enumToArrayBuffer(enumeration, value));
@@ -4431,7 +4431,7 @@ class TfliteManager {
         this.sendMessage([
             {
                 type: "setTfliteInferencingEnabled",
-                data: UInt8ByteBuffer$1(Number(newInferencingEnabled)),
+                data: UInt8ByteBuffer(Number(newInferencingEnabled)),
             },
         ], sendImmediately);
         await promise;
@@ -5452,7 +5452,7 @@ class WifiManager {
         this.sendMessage([
             {
                 type: "setWifiConnectionEnabled",
-                data: UInt8ByteBuffer$1(Number(newWifiConnectionEnabled)),
+                data: UInt8ByteBuffer(Number(newWifiConnectionEnabled)),
             },
         ], sendImmediately);
         await promise;
@@ -22539,6 +22539,12 @@ const DisplaySpriteContextCommandTypes = [
     "drawBitmap",
     "drawSprite",
 ];
+const ShowDisplayContextCommandTypes = [
+    "show",
+    "clear",
+    "setColor",
+    "setColorOpacity",
+];
 function serializeDisplayContextCommandData(displayManager, command) {
     let dataView;
     switch (command.type) {
@@ -28862,7 +28868,7 @@ let DisplayManager = (() => {
             this.sendMessage([
                 {
                     type: "displayCommand",
-                    data: UInt8ByteBuffer$1(commandEnum),
+                    data: UInt8ByteBuffer(commandEnum),
                 },
             ], sendImmediately);
             await promise;
@@ -28980,7 +28986,7 @@ let DisplayManager = (() => {
                 return;
             }
             const newDisplayBrightnessEnum = DisplayBrightnesses.indexOf(newDisplayBrightness);
-            const newDisplayBrightnessData = UInt8ByteBuffer$1(newDisplayBrightnessEnum);
+            const newDisplayBrightnessData = UInt8ByteBuffer(newDisplayBrightnessEnum);
             const promise = this.waitForEvent("getDisplayBrightness");
             this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
             await promise;
@@ -35698,10 +35704,11 @@ class BaseServer {
     };
     #createDeviceMessage(device, messageType, dataView) {
         if (messageType == "fileTransferStatus") {
-            const isBusy = this.#clientsSending.has(device) ||
-                this.#clientsRequestingSend.has(device);
+            const isBusy = !dataView &&
+                (this.#clientsSending.has(device) ||
+                    this.#clientsRequestingSend.has(device));
             if (isBusy) {
-                _console$e.log(`sending "idle" fileTransferStatus`);
+                _console$e.log(`busy - sending "idle" fileTransferStatus`);
                 return {
                     type: "fileTransferStatus",
                     data: enumToDataView(FileTransferStatuses, "idle"),
@@ -35854,22 +35861,7 @@ class BaseServer {
         ServerManager_default.broadcast(deviceServerMessage, undefined, undefined, false);
     }
     #onDeviceFileTransferComplete(deviceEvent) {
-        const { target: device, message } = deviceEvent;
-        const { file, fileType } = message;
-        _console$e.log("onDeviceFileTransferComplete", { fileType });
-        if (!device.isConnected) {
-            _console$e.warn("device isn't connected");
-            return;
-        }
-        const fileConfiguration = device.sentFileConfigurations.find((fileConfiguration) => fileConfiguration.file == file);
-        _console$e.assertWithError(fileConfiguration, "fileConfiguration not found");
-        _console$e.log("fileConfiguration", fileConfiguration);
-        this.#clientFileConfigurations
-            .get(device)
-            .set(fileConfiguration, new Map());
-        this.clients.forEach((client) => {
-            this.#sendDeviceFileConfigurationToClient(device, fileConfiguration, client);
-        });
+        return;
     }
     #boundDeviceManagerListeners = {
         deviceConnected: this.#onDeviceConnected.bind(this),
@@ -36246,16 +36238,14 @@ class BaseServer {
                         let sendRemaining = false;
                         filteredDisplayContextCommands.forEach((displayContextCommand, index) => {
                             const isLast = index == filteredDisplayContextCommands.length - 1;
-                            const sendImmediately = displayContextCommand.type == "clear" ||
-                                displayContextCommand.type == "show";
-                            partitionedFilteredDisplayContextCommands
-                                .at(-1)
-                                .push(displayContextCommand);
+                            const _filteredDisplayContextCommands = partitionedFilteredDisplayContextCommands.at(-1);
+                            const sendImmediately = ShowDisplayContextCommandTypes.includes(displayContextCommand.type);
                             if (sendImmediately) {
                                 if (isLast) {
                                     sendRemaining = true;
                                 }
-                                else {
+                                else if (_filteredDisplayContextCommands.length == 0 ||
+                                    !_filteredDisplayContextCommands.every((command) => ShowDisplayContextCommandTypes.includes(command.type))) {
                                     partitionedFilteredDisplayContextCommands.push([]);
                                 }
                             }

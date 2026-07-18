@@ -75,6 +75,8 @@ import {
   DisplayContextCommand,
   parseDisplayContextCommands,
   serializeDisplayContextCommands,
+  ShowDisplayContextCommandType,
+  ShowDisplayContextCommandTypes,
 } from "../utils/DisplayContextCommand.ts";
 
 const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
@@ -441,10 +443,11 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   ): DeviceMessage {
     if (messageType == "fileTransferStatus") {
       const isBusy =
-        this.#clientsSending.has(device) ||
-        this.#clientsRequestingSend.has(device);
+        !dataView &&
+        (this.#clientsSending.has(device) ||
+          this.#clientsRequestingSend.has(device));
       if (isBusy) {
-        _console.log(`sending "idle" fileTransferStatus`);
+        _console.log(`busy - sending "idle" fileTransferStatus`);
         return {
           type: "fileTransferStatus",
           data: enumToDataView(FileTransferStatuses, "idle"),
@@ -1411,18 +1414,25 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                   const isLast =
                     index == filteredDisplayContextCommands.length - 1;
 
-                  const sendImmediately =
-                    displayContextCommand.type == "clear" ||
-                    displayContextCommand.type == "show";
+                  const _filteredDisplayContextCommands =
+                    partitionedFilteredDisplayContextCommands.at(-1)!;
 
-                  partitionedFilteredDisplayContextCommands
-                    .at(-1)!
-                    .push(displayContextCommand);
+                  const sendImmediately =
+                    ShowDisplayContextCommandTypes.includes(
+                      displayContextCommand.type as ShowDisplayContextCommandType,
+                    );
 
                   if (sendImmediately) {
                     if (isLast) {
                       sendRemaining = true;
-                    } else {
+                    } else if (
+                      _filteredDisplayContextCommands.length == 0 ||
+                      !_filteredDisplayContextCommands.every((command) =>
+                        ShowDisplayContextCommandTypes.includes(
+                          command.type as ShowDisplayContextCommandType,
+                        ),
+                      )
+                    ) {
                       partitionedFilteredDisplayContextCommands.push([]);
                     }
                   }
