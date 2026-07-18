@@ -70,6 +70,7 @@ import {
   Vector2,
 } from "./MathUtils.ts";
 import { deepEqual } from "./ObjectUtils.ts";
+import { enumToArrayBuffer } from "./ParseUtils.ts";
 
 const _console = createConsole("DisplayContextCommand", { log: false });
 
@@ -267,6 +268,15 @@ export const DisplaySpriteContextCommandTypes = [
 ] as const satisfies readonly DisplayContextCommandType[];
 export type DisplaySpriteContextCommandType =
   (typeof DisplaySpriteContextCommandTypes)[number];
+
+export const ShowDisplayContextCommandTypes = [
+  "show",
+  "clear",
+  "setColor",
+  "setColorOpacity",
+] as const satisfies readonly DisplayContextCommandType[];
+export type ShowDisplayContextCommandType =
+  (typeof ShowDisplayContextCommandTypes)[number];
 
 export interface BaseDisplayContextCommand {
   type: DisplayContextCommandType | "runDisplayContextCommands";
@@ -1515,15 +1525,13 @@ export function serializeDisplayContextCommand(
 
   _console.assertEnumWithError(DisplayContextCommandTypes, command.type);
 
-  const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
-    command.type,
-  );
   const serializedContextCommand = serializeDisplayContextCommandData(
     displayManager,
     command,
   );
+
   return concatenateArrayBuffers(
-    UInt8ByteBuffer(displayContextCommandEnum),
+    enumToArrayBuffer(DisplayContextCommandTypes, command.type),
     serializedContextCommand,
   );
 }

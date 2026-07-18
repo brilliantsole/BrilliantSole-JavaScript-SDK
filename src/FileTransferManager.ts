@@ -3,15 +3,15 @@ import { crc32 } from "./utils/checksum.ts";
 import {
   concatenateArrayBuffers,
   getFileBuffer,
-  UInt8ByteBuffer,
 } from "./utils/ArrayBufferUtils.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 import { ConnectionType } from "./connection/BaseConnectionManager.ts";
+import { enumToArrayBuffer } from "./utils/ParseUtils.ts";
 
-const _console = createConsole("FileTransferManager", { log: false });
+const _console = createConsole("FileTransferManager", { log: true });
 
 const emptyHeaderDataView = new DataView(new ArrayBuffer(2));
 emptyHeaderDataView.setUint16(0, 2, true);
@@ -78,7 +78,7 @@ export interface FileConfiguration {
   fileType: FileType;
 }
 
-export interface SentFileConfiguration extends FileConfiguration {
+export interface ExtendedFileConfiguration extends FileConfiguration {
   checksum: number;
   length: number;
 }
@@ -238,10 +238,8 @@ class FileTransferManager {
 
     const promise = this.waitForEvent("getFileType");
 
-    const typeEnum = FileTypes.indexOf(newType);
-
     this.sendMessage(
-      [{ type: "setFileType", data: UInt8ByteBuffer(typeEnum) }],
+      [{ type: "setFileType", data: enumToArrayBuffer(FileTypes, newType) }],
       sendImmediately,
     );
 
@@ -327,7 +325,7 @@ class FileTransferManager {
       [
         {
           type: "setFileTransferCommand",
-          data: UInt8ByteBuffer(commandEnum),
+          data: enumToArrayBuffer(FileTransferCommands, command),
         },
       ],
       sendImmediately,
@@ -650,7 +648,7 @@ class FileTransferManager {
     if (isComplete) {
       _console.log("finished sending buffer");
 
-      const sentFileConfiguration: SentFileConfiguration = {
+      const sentFileConfiguration: ExtendedFileConfiguration = {
         file,
         fileType,
         length: this.#length,
@@ -718,7 +716,7 @@ class FileTransferManager {
   get indirectSentBlocks() {
     return this.#indirectSentBlocks;
   }
-  sentFileConfigurations: SentFileConfiguration[] = [];
+  sentFileConfigurations: ExtendedFileConfiguration[] = [];
   getCurrentSentFileConfiguration() {
     const sentFileConfiguration = this.sentFileConfigurations.find(
       ({ fileType, checksum, length }) => {
@@ -797,7 +795,7 @@ class FileTransferManager {
       this.#indirectSentBlocks.length = 0;
       file = file!;
 
-      const sentFileConfiguration: SentFileConfiguration = {
+      const sentFileConfiguration: ExtendedFileConfiguration = {
         file,
         fileType,
         length: this.#length,

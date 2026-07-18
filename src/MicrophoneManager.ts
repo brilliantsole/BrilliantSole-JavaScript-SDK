@@ -2,13 +2,11 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
-import {
-  concatenateArrayBuffers,
-  UInt8ByteBuffer,
-} from "./utils/ArrayBufferUtils.ts";
+import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.ts";
 import { float32ArrayToWav } from "./utils/AudioUtils.ts";
 
 import * as _alawmulaw from "alawmulaw";
+import { enumToArrayBuffer } from "./utils/ParseUtils.ts";
 const alawmulaw = (_alawmulaw as any).default ?? _alawmulaw;
 const { mulaw } = alawmulaw;
 
@@ -168,13 +166,12 @@ class MicrophoneManager {
 
     const promise = this.waitForEvent("microphoneStatus");
     _console.log(`setting command "${command}"`);
-    const commandEnum = MicrophoneCommands.indexOf(command);
 
     this.sendMessage(
       [
         {
           type: "microphoneCommand",
-          data: UInt8ByteBuffer(commandEnum),
+          data: enumToArrayBuffer(MicrophoneCommands, command),
         },
       ],
       sendImmediately,

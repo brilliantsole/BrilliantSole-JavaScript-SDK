@@ -723,6 +723,9 @@ class Device {
           this.#didReceiveMessageTypes(["displayContextCommands"]);
       }
     }
+    if (hasRequiredInformation && this.connectionType == "client") {
+      hasRequiredInformation = this.fileTransferStatus == "idle";
+    }
     return hasRequiredInformation;
   }
   #requestRequiredInformation() {
