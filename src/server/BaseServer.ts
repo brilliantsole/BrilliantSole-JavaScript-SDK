@@ -1404,58 +1404,93 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               );
 
               const partitionedFilteredDisplayContextCommands: DisplayContextCommand[][] =
-                [[]];
+                [];
               let sendRemaining = false;
-              filteredDisplayContextCommands.forEach(
-                (displayContextCommand, index) => {
+
+              if (true) {
+                let lastCommandToSendImmediatelyIndex = -1;
+                for (
+                  let index = filteredDisplayContextCommands.length - 1;
+                  index >= 0;
+                  index--
+                ) {
+                  const displayContextCommand =
+                    filteredDisplayContextCommands[index];
                   const shouldSendImmediately =
                     ShowDisplayContextCommandTypes.includes(
                       displayContextCommand.type as ShowDisplayContextCommandType,
                     );
-                  const isLast =
-                    index == filteredDisplayContextCommands.length - 1;
-
-                  const _filteredDisplayContextCommands =
-                    partitionedFilteredDisplayContextCommands.at(-1)!;
-
-                  const endsWithSendImmediately =
-                    _filteredDisplayContextCommands.length > 0 &&
-                    ShowDisplayContextCommandTypes.includes(
-                      _filteredDisplayContextCommands.at(-1)!
-                        .type as ShowDisplayContextCommandType,
-                    );
-                  const allAreSendImmediately =
-                    _filteredDisplayContextCommands.length > 0 &&
-                    _filteredDisplayContextCommands.every((command) =>
-                      ShowDisplayContextCommandTypes.includes(
-                        command.type as ShowDisplayContextCommandType,
-                      ),
-                    );
-
-                  _console.log({
-                    isLast,
-                    shouldSendImmediately,
-                    endsWithSendImmediately,
-                    _filteredDisplayContextCommands,
-                  });
-
-                  if (!shouldSendImmediately && endsWithSendImmediately) {
-                    partitionedFilteredDisplayContextCommands.push([]);
-                  }
-
-                  _filteredDisplayContextCommands.push(displayContextCommand);
-
                   if (shouldSendImmediately) {
-                    if (isLast) {
+                    lastCommandToSendImmediatelyIndex = index;
+                    break;
+                  }
+                }
+
+                sendRemaining =
+                  lastCommandToSendImmediatelyIndex == -1 ||
+                  lastCommandToSendImmediatelyIndex ==
+                    filteredDisplayContextCommands.length - 1;
+                if (sendRemaining) {
+                  partitionedFilteredDisplayContextCommands.push(
+                    filteredDisplayContextCommands,
+                  );
+                } else {
+                  partitionedFilteredDisplayContextCommands.push(
+                    filteredDisplayContextCommands.slice(
+                      0,
+                      lastCommandToSendImmediatelyIndex + 1,
+                    ),
+                  );
+                  partitionedFilteredDisplayContextCommands.push(
+                    filteredDisplayContextCommands.slice(
+                      lastCommandToSendImmediatelyIndex + 1,
+                    ),
+                  );
+                }
+              } else {
+                partitionedFilteredDisplayContextCommands.push([]);
+                filteredDisplayContextCommands.forEach(
+                  (displayContextCommand, index) => {
+                    const shouldSendImmediately =
+                      ShowDisplayContextCommandTypes.includes(
+                        displayContextCommand.type as ShowDisplayContextCommandType,
+                      );
+                    const isLast =
+                      index == filteredDisplayContextCommands.length - 1;
+
+                    const _filteredDisplayContextCommands =
+                      partitionedFilteredDisplayContextCommands.at(-1)!;
+
+                    const endsWithSendImmediately =
+                      _filteredDisplayContextCommands.length > 0 &&
+                      ShowDisplayContextCommandTypes.includes(
+                        _filteredDisplayContextCommands.at(-1)!
+                          .type as ShowDisplayContextCommandType,
+                      );
+
+                    _console.log({
+                      isLast,
+                      shouldSendImmediately,
+                      endsWithSendImmediately,
+                      _filteredDisplayContextCommands,
+                    });
+
+                    if (!shouldSendImmediately && endsWithSendImmediately) {
+                      partitionedFilteredDisplayContextCommands.push([]);
+                    }
+
+                    _filteredDisplayContextCommands.push(displayContextCommand);
+
+                    if (shouldSendImmediately && isLast) {
                       sendRemaining = true;
                     }
-                  }
-                },
-              );
-
+                  },
+                );
+              }
               _console.log(
                 "partitionedFilteredDisplayContextCommands",
                 partitionedFilteredDisplayContextCommands,
+                { sendRemaining },
               );
               partitionedFilteredDisplayContextCommands.forEach(
                 (_filteredDisplayContextCommands, index) => {

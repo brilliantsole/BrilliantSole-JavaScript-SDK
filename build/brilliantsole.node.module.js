@@ -22006,34 +22006,31 @@ class BaseServer {
                             return this.#allowClientDisplayContextCommandToDevice(device, client, displayContextCommand);
                         });
                         _console$b.log("filteredDisplayContextCommands", filteredDisplayContextCommands);
-                        const partitionedFilteredDisplayContextCommands = [[]];
+                        const partitionedFilteredDisplayContextCommands = [];
                         let sendRemaining = false;
-                        filteredDisplayContextCommands.forEach((displayContextCommand, index) => {
-                            const shouldSendImmediately = ShowDisplayContextCommandTypes.includes(displayContextCommand.type);
-                            const isLast = index == filteredDisplayContextCommands.length - 1;
-                            const _filteredDisplayContextCommands = partitionedFilteredDisplayContextCommands.at(-1);
-                            const endsWithSendImmediately = _filteredDisplayContextCommands.length > 0 &&
-                                ShowDisplayContextCommandTypes.includes(_filteredDisplayContextCommands.at(-1)
-                                    .type);
-                            _filteredDisplayContextCommands.length > 0 &&
-                                _filteredDisplayContextCommands.every((command) => ShowDisplayContextCommandTypes.includes(command.type));
-                            _console$b.log({
-                                isLast,
-                                shouldSendImmediately,
-                                endsWithSendImmediately,
-                                _filteredDisplayContextCommands,
-                            });
-                            if (!shouldSendImmediately && endsWithSendImmediately) {
-                                partitionedFilteredDisplayContextCommands.push([]);
-                            }
-                            _filteredDisplayContextCommands.push(displayContextCommand);
-                            if (shouldSendImmediately) {
-                                if (isLast) {
-                                    sendRemaining = true;
+                        {
+                            let lastCommandToSendImmediatelyIndex = -1;
+                            for (let index = filteredDisplayContextCommands.length - 1; index >= 0; index--) {
+                                const displayContextCommand = filteredDisplayContextCommands[index];
+                                const shouldSendImmediately = ShowDisplayContextCommandTypes.includes(displayContextCommand.type);
+                                if (shouldSendImmediately) {
+                                    lastCommandToSendImmediatelyIndex = index;
+                                    break;
                                 }
                             }
-                        });
-                        _console$b.log("partitionedFilteredDisplayContextCommands", partitionedFilteredDisplayContextCommands);
+                            sendRemaining =
+                                lastCommandToSendImmediatelyIndex == -1 ||
+                                    lastCommandToSendImmediatelyIndex ==
+                                        filteredDisplayContextCommands.length - 1;
+                            if (sendRemaining) {
+                                partitionedFilteredDisplayContextCommands.push(filteredDisplayContextCommands);
+                            }
+                            else {
+                                partitionedFilteredDisplayContextCommands.push(filteredDisplayContextCommands.slice(0, lastCommandToSendImmediatelyIndex + 1));
+                                partitionedFilteredDisplayContextCommands.push(filteredDisplayContextCommands.slice(lastCommandToSendImmediatelyIndex + 1));
+                            }
+                        }
+                        _console$b.log("partitionedFilteredDisplayContextCommands", partitionedFilteredDisplayContextCommands, { sendRemaining });
                         partitionedFilteredDisplayContextCommands.forEach((_filteredDisplayContextCommands, index) => {
                             const isLast = index ==
                                 partitionedFilteredDisplayContextCommands.length - 1;
