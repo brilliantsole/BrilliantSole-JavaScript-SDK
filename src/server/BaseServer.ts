@@ -64,6 +64,8 @@ import {
   FileTransferCommands,
   FileTransferStatuses,
   RequiredFileTransferMessageTypes,
+  ExtendedFileConfiguration,
+  FileConfiguration,
 } from "../FileTransferManager.ts";
 import { RequiredTfliteMessageTypes } from "../TfliteManager.ts";
 import { RequiredCameraMessageTypes } from "../CameraManager.ts";
@@ -153,6 +155,11 @@ export interface BaseServerClientDeviceContext<
   device: Device;
 }
 
+export interface BaseServerClientMetadata {
+  requestedReceive: boolean;
+  bytesTransferred: number;
+}
+
 abstract class BaseServer<ServerClient extends BaseServerClient> {
   static type: ServerType;
   abstract readonly type: ServerType;
@@ -234,6 +241,16 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     }
     _console.log("onClientConnected");
     _console.log(`currently have ${this.clients.length} clients`);
+
+    for (const [device, map] of [...this.#clientFileConfigurations]) {
+      for (const [fileConfiguration, _] of [...map]) {
+        this.#sendDeviceFileConfigurationToClient(
+          device,
+          fileConfiguration,
+          client,
+        );
+      }
+    }
   }
   #onClientDisconnected(
     event: BaseServerEventMap<ServerClient>["clientDisconnected"],
@@ -267,6 +284,14 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         this.#clientsSending.delete(device);
         _console.log("cancelling fileTransfer because client is gone");
         device.cancelFileTransfer();
+      }
+    }
+
+    for (const [device, map] of [...this.#clientFileConfigurations]) {
+      for (const [fileConfiguration, _map] of [...map]) {
+        if (_map.has(client)) {
+          _map.delete(client);
+        }
       }
     }
 
@@ -406,6 +431,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   #boundDeviceListeners: BoundDeviceEventListeners = {
     connectionMessage: this.#onDeviceConnectionMessage.bind(this),
     displayContextCommands: this.#onDeviceDisplayContextCommands.bind(this),
+    fileTransferComplete: this.#onDeviceFileTransferComplete.bind(this),
   };
 
   #createDeviceMessage(
@@ -475,6 +501,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     _console.log("onDeviceConnectionMessage", deviceConnectionMessage);
 
     if (!device.isConnected) {
+      _console.log("device isn't connected");
       return;
     }
 
@@ -690,6 +717,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     const { displayContextCommands } = message;
     _console.log("onDeviceDisplayContextCommands", displayContextCommands);
     if (!device.isConnected) {
+      _console.warn("device isn't connected");
       return;
     }
     const serializedDisplayContextCommands = serializeDisplayContextCommands(
@@ -713,6 +741,37 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     // @ts-expect-error
     ServerManager.broadcast(deviceServerMessage, undefined, undefined, false);
   }
+  #onDeviceFileTransferComplete(
+    deviceEvent: DeviceEventMap["fileTransferComplete"],
+  ) {
+    return;
+    const { target: device, message } = deviceEvent;
+    const { file, fileType } = message;
+
+    _console.log("onDeviceFileTransferComplete", { fileType });
+    if (!device.isConnected) {
+      _console.warn("device isn't connected");
+      return;
+    }
+
+    const fileConfiguration = device.sentFileConfigurations.find(
+      (fileConfiguration) => fileConfiguration.file == file,
+    )!;
+    _console.assertWithError(fileConfiguration, "fileConfiguration not found");
+    _console.log("fileConfiguration", fileConfiguration);
+
+    this.#clientFileConfigurations
+      .get(device)!
+      .set(fileConfiguration, new Map());
+
+    this.clients.forEach((client) => {
+      this.#sendDeviceFileConfigurationToClient(
+        device,
+        fileConfiguration,
+        client,
+      );
+    });
+  }
 
   // STATIC DEVICE LISTENERS
   #boundDeviceManagerListeners: BoundDeviceManagerEventListeners = {
@@ -729,6 +788,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     addEventListeners(device, this.#boundDeviceListeners);
     this.#clientsWaitingToRequestSend.set(device, []);
     this.#clientsWaitingToRequestSendMetaData.set(device, new Map());
+    this.#clientFileConfigurations.set(device, new Map());
   }
 
   #onDeviceNotConnected(
@@ -739,6 +799,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     removeEventListeners(device, this.#boundDeviceListeners);
     this.#clientsWaitingToRequestSend.delete(device);
     this.#clientsWaitingToRequestSendMetaData.delete(device);
+    this.#clientFileConfigurations.delete(device);
   }
 
   #onDeviceIsConnected(
@@ -1185,6 +1246,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     _console.log("restoring device mtu");
     const resetMtuMessage = this.#createDeviceMessage(device, "getMtu");
     deviceMessages.push(resetMtuMessage);
+
     const fileTransferStatusDeviceMessage = this.#createDeviceMessage(
       device,
       "fileTransferStatus",
@@ -1221,7 +1283,40 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       });
       _console.log("filtered fileTransfer metadata", filteredTxMessages);
       device.connectionManager!.sendTxMessages(filteredTxMessages, true, true);
+    } else if (false) {
+      // TODO - check if any files to send to device
     }
+  }
+
+  // create single map for (ClientFileReceiveConfiguration)
+  #clientFileConfigurations: Map<
+    Device,
+    Map<ExtendedFileConfiguration, Map<ServerClient, BaseServerClientMetadata>>
+  > = new Map();
+
+  #sendDeviceFileConfigurationToClient(
+    device: Device,
+    fileConfiguration: ExtendedFileConfiguration,
+    client: ServerClient,
+  ) {
+    _console.log(
+      "#sendDeviceFileConfigurationToClient",
+      device,
+      fileConfiguration,
+      client,
+    );
+    const map = this.#clientFileConfigurations
+      .get(device)!
+      .get(fileConfiguration)!;
+    _console.assertWithError(map, "map not found");
+
+    // FILL - check if busy
+    if (map.has(client)) {
+      // FILL - trigger send if free
+    } else {
+      // FILL - add to map
+    }
+    // FILL - send if not budy
   }
 
   #filterClientToDeviceTxMessage(
@@ -1378,7 +1473,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
               messages.push(message);
               return;
             }
-
             break;
           case "setFileTransferCommand":
             {
@@ -1431,6 +1525,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 }
               }
             }
+            break;
+          case "fileBytesTransferred":
+            // FILL - check if
             break;
           case "setFileBlock":
             {

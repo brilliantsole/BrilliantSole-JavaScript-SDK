@@ -3,11 +3,8 @@ import { createConsole } from "./utils/Console.ts";
 import { isInBrowser, isInNode } from "./utils/environment.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
-import { parseMessage } from "./utils/ParseUtils.ts";
-import {
-  concatenateArrayBuffers,
-  UInt8ByteBuffer,
-} from "./utils/ArrayBufferUtils.ts";
+import { enumToArrayBuffer, parseMessage } from "./utils/ParseUtils.ts";
+import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.ts";
 
 /** NODE_START */
 import sharp from "sharp";
@@ -213,13 +210,12 @@ class CameraManager {
 
     const promise = this.waitForEvent("cameraStatus");
     _console.log(`setting command "${command}"`);
-    const commandEnum = CameraCommands.indexOf(command);
 
     this.sendMessage(
       [
         {
           type: "cameraCommand",
-          data: UInt8ByteBuffer(commandEnum),
+          data: enumToArrayBuffer(CameraCommands, command),
         },
       ],
       sendImmediately,

@@ -1,7 +1,7 @@
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { SensorType } from "./sensor/SensorDataManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
-import { FileConfiguration as BaseFileConfiguration } from "./FileTransferManager.ts";
+import { FileConfiguration } from "./FileTransferManager.ts";
 export declare const TfliteMessageTypes: readonly ["getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference"];
 export type TfliteMessageType = (typeof TfliteMessageTypes)[number];
 export declare const TfliteEventTypes: readonly ["getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference"];
@@ -52,7 +52,7 @@ export type TfliteEventDispatcher = EventDispatcher<Device, TfliteEventType, Tfl
 export type SendTfliteMessageCallback = SendMessageCallback<TfliteMessageType>;
 export declare const TfliteSensorTypes: readonly ["pressure", "linearAcceleration", "gyroscope", "magnetometer", "microphone", "camera"];
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
-export interface TfliteFileConfiguration extends BaseFileConfiguration {
+export interface TfliteFileConfiguration extends FileConfiguration {
     fileType: "tflite";
     name: string;
     sensorTypes: TfliteSensorType[];
@@ -67,11 +67,11 @@ declare class TfliteManager {
     constructor();
     sendMessage: SendTfliteMessageCallback;
     eventDispatcher: TfliteEventDispatcher;
-    get addEventListenter(): <T extends "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "*" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled", TfliteEventMessages, T>) => void, options?: import("./utils/EventDispatcher.ts").EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "*" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled", TfliteEventMessages, T>) => void) => void;
-    get waitForEvent(): <T extends "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled">(type: T, options?: {
+    get addEventListenter(): <T extends "*" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference", TfliteEventMessages, T>) => void, options?: import("./utils/EventDispatcher.ts").EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference">(type: T, listener: (event: import("./utils/EventDispatcher.ts").ListenerEvent<Device, "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference", TfliteEventMessages, T>) => void) => void;
+    get waitForEvent(): <T extends "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference">(type: T, options?: {
         immediate?: boolean;
-    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled", TfliteEventMessages, T>>;
+    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference", TfliteEventMessages, T>>;
     get classes(): string[] | undefined;
     setClasses(newClasses?: string[]): void;
     get name(): string;
@@ -81,7 +81,7 @@ declare class TfliteManager {
     get sampleRate(): number;
     setSampleRate(newSampleRate: number, sendImmediately?: boolean): Promise<void>;
     static AssertValidSensorType(sensorType: SensorType): void;
-    get sensorTypes(): ("linearAcceleration" | "gyroscope" | "magnetometer" | "pressure" | "camera" | "microphone")[];
+    get sensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer" | "camera" | "microphone")[];
     setSensorTypes(newSensorTypes: SensorType[], sendImmediately?: boolean): Promise<void>;
     get isReady(): boolean;
     get captureDelay(): number;

@@ -8,8 +8,9 @@ import { parseTimestamp } from "./utils/MathUtils.ts";
 import { SensorType } from "./sensor/SensorDataManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import autoBind from "auto-bind";
-import { FileConfiguration as BaseFileConfiguration } from "./FileTransferManager.ts";
+import { FileConfiguration } from "./FileTransferManager.ts";
 import { UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
+import { enumToArrayBuffer } from "./utils/ParseUtils.ts";
 
 const _console = createConsole("TfliteManager", { log: false });
 
@@ -88,7 +89,7 @@ export const TfliteSensorTypes = [
 ] as const satisfies readonly SensorType[];
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
 
-export interface TfliteFileConfiguration extends BaseFileConfiguration {
+export interface TfliteFileConfiguration extends FileConfiguration {
   fileType: "tflite";
   name: string;
   sensorTypes: TfliteSensorType[];
@@ -198,9 +199,13 @@ class TfliteManager {
 
     const promise = this.waitForEvent("getTfliteTask");
 
-    const taskEnum = TfliteTasks.indexOf(newTask);
     this.sendMessage(
-      [{ type: "setTfliteTask", data: UInt8ByteBuffer(taskEnum) }],
+      [
+        {
+          type: "setTfliteTask",
+          data: enumToArrayBuffer(TfliteTasks, newTask),
+        },
+      ],
       sendImmediately,
     );
 

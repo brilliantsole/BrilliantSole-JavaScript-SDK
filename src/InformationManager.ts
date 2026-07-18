@@ -1,8 +1,8 @@
 import { ConnectionType } from "./connection/BaseConnectionManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
-import { UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
 import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
+import { enumToArrayBuffer } from "./utils/ParseUtils.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
 import autoBind from "auto-bind";
 
@@ -173,19 +173,13 @@ class InformationManager {
 
     this.#dispatchEvent("getType", { type: this.#type });
   }
-  async #setTypeEnum(newTypeEnum: number) {
-    this.#assertValidDeviceTypeEnum(newTypeEnum);
-
-    const setTypeData = UInt8ByteBuffer(newTypeEnum);
-    _console.log({ setTypeData });
-    const promise = this.waitForEvent("getType");
-    this.sendMessage([{ type: "setType", data: setTypeData }]);
-    await promise;
-  }
   async setType(newType: DeviceType) {
     this.#assertValidDeviceType(newType);
-    const newTypeEnum = DeviceTypes.indexOf(newType);
-    this.#setTypeEnum(newTypeEnum);
+    const promise = this.waitForEvent("getType");
+    this.sendMessage([
+      { type: "setType", data: enumToArrayBuffer(DeviceTypes, newType) },
+    ]);
+    await promise;
   }
 
   get isInsole() {

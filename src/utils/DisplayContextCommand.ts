@@ -12,10 +12,7 @@ import {
   DisplayWireframeEdge,
   displayPointDataTypeToSize,
 } from "../DisplayManager.ts";
-import {
-  concatenateArrayBuffers,
-  UInt8ByteBuffer,
-} from "./ArrayBufferUtils.ts";
+import { concatenateArrayBuffers } from "./ArrayBufferUtils.ts";
 import { stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import {
@@ -70,6 +67,7 @@ import {
   Vector2,
 } from "./MathUtils.ts";
 import { deepEqual } from "./ObjectUtils.ts";
+import { enumToArrayBuffer } from "./ParseUtils.ts";
 
 const _console = createConsole("DisplayContextCommand", { log: false });
 
@@ -1515,15 +1513,12 @@ export function serializeDisplayContextCommand(
 
   _console.assertEnumWithError(DisplayContextCommandTypes, command.type);
 
-  const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
-    command.type,
-  );
   const serializedContextCommand = serializeDisplayContextCommandData(
     displayManager,
     command,
   );
   return concatenateArrayBuffers(
-    UInt8ByteBuffer(displayContextCommandEnum),
+    enumToArrayBuffer(DisplayContextCommandTypes, command.type),
     serializedContextCommand,
   );
 }
