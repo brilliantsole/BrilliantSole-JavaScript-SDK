@@ -93,7 +93,11 @@ import {
   serializeColors,
   serializeOpacities,
 } from "./utils/DisplayManagerInterface.ts";
-import { SendFileCallback } from "./FileTransferManager.ts";
+import {
+  BaseFileConfiguration,
+  OnSendFileCallback,
+  SendFileCallback,
+} from "./FileTransferManager.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
 import {
   DisplaySprite,
@@ -324,6 +328,12 @@ export type DisplayBitmap = {
   numberOfColors: number;
   pixels: number[];
 };
+
+export interface DisplaySpriteSheetFileConfiguration extends BaseFileConfiguration {
+  fileType: "spriteSheet";
+  spriteSheetIndex?: number;
+  spriteSheet: DisplaySpriteSheet;
+}
 
 function ForwardToHelper(
   originalMethod: Function,
@@ -3652,6 +3662,7 @@ class DisplayManager implements DisplayManagerInterface {
     });
   }
   sendFile!: SendFileCallback;
+  onSendFile!: OnSendFileCallback;
   @ForwardToHelper
   serializeSpriteSheet(
     spriteSheet: DisplaySpriteSheet,
@@ -4199,6 +4210,11 @@ class DisplayManager implements DisplayManagerInterface {
       spriteSheet: this.#pendingSpriteSheet!,
     });
 
+    this.onSendFile({
+      fileType: "spriteSheet",
+      spriteSheet: this.#pendingSpriteSheet!,
+      spriteSheetIndex,
+    });
     this.#pendingSpriteSheet = undefined;
   }
 

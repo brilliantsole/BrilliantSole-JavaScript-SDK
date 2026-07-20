@@ -120,7 +120,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         optionalServices: isInBrowser ? optionalServiceUUIDs : [],
       });
 
-      _console.log("got BluetoothDevice");
+      _console.log("got BluetoothDevice", device);
       this.device = device;
 
       _console.log("connecting to device...");

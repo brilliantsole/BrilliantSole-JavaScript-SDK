@@ -81,13 +81,13 @@ declare class Device {
     get getBatteryCurrent(): () => Promise<void>;
     get name(): string;
     get setName(): (newName: string) => Promise<void>;
-    get type(): "generic" | "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic";
     get setType(): (newType: DeviceType) => Promise<void>;
     get isInsole(): boolean;
     get isGlove(): boolean;
     get isGlasses(): boolean;
     get isGeneric(): boolean;
-    get side(): "right" | "left";
+    get side(): "left" | "right";
     get mtu(): number;
     get sensorTypes(): SensorType[];
     get continuousSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "barometer" | "light")[];
@@ -128,7 +128,7 @@ declare class Device {
     get numberOfButtons(): number;
     get hasTouches(): boolean;
     get numberOfTouches(): number;
-    get vibrationLocations(): ("right" | "left" | "front" | "rear")[];
+    get vibrationLocations(): ("left" | "right" | "front" | "rear")[];
     get hasVibration(): boolean;
     get triggerVibration(): {
         (vibrationConfiguration: VibrationConfiguration, sendImmediately?: boolean): Promise<void>;
@@ -137,16 +137,16 @@ declare class Device {
     get _fileTransferManager(): FileTransferManager;
     get sentFileConfigurations(): import("./FileTransferManager.ts").ExtendedFileConfiguration[];
     get getCurrentSentFileConfiguration(): () => import("./FileTransferManager.ts").ExtendedFileConfiguration | undefined;
-    get fileTypes(): ("cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet")[];
+    get fileTypes(): ("cameraImage" | "tflite" | "spriteSheet" | "wifiServerCert" | "wifiServerKey")[];
     get maxFileLength(): number;
-    get validFileTypes(): ("cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet")[];
+    get validFileTypes(): ("cameraImage" | "tflite" | "spriteSheet" | "wifiServerCert" | "wifiServerKey")[];
     get fileLength(): number;
     get fileChecksum(): number;
-    get fileType(): "cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | undefined;
+    get fileType(): "cameraImage" | "tflite" | "spriteSheet" | "wifiServerCert" | "wifiServerKey" | undefined;
     get fileBytesTransferred(): number;
     get fileHeaderLength(): number | undefined;
-    sendFile(fileType: FileType, file: FileLike): Promise<void>;
-    receiveFile(fileType: FileType): Promise<void>;
+    sendFile(fileType: FileType, file: FileLike): Promise<boolean>;
+    receiveFile(fileType: FileType): Promise<boolean>;
     get fileTransferStatus(): "idle" | "sending" | "receiving";
     cancelFileTransfer(): void;
     get isTfliteAvailable(): boolean;
@@ -200,7 +200,7 @@ declare class Device {
     reconnectViaUDP(): Promise<void>;
     private get _buildCameraData();
     get hasCamera(): boolean;
-    get cameraStatus(): "idle" | "asleep" | "focusing" | "takingPicture";
+    get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
     takePicture(sensorRate?: number): Promise<void>;
     get autoPicture(): boolean;
     set autoPicture(newAutoPicture: boolean);
@@ -209,7 +209,7 @@ declare class Device {
     wakeCamera(): Promise<void>;
     sleepCamera(): Promise<void>;
     get cameraConfiguration(): import("./CameraManager.ts").CameraConfiguration;
-    get availableCameraConfigurationTypes(): ("brightness" | "resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "saturation" | "contrast" | "sharpness")[];
+    get availableCameraConfigurationTypes(): ("resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "brightness" | "saturation" | "contrast" | "sharpness")[];
     get cameraConfigurationRanges(): import("./CameraManager.ts").CameraConfigurationRanges;
     get setCameraConfiguration(): (newCameraConfiguration: import("./CameraManager.ts").CameraConfiguration, sendImmediately?: boolean) => Promise<void>;
     get isRecordingCamera(): boolean;
@@ -240,7 +240,7 @@ declare class Device {
     get displayBitmapColors(): string[];
     get displayBitmapColorIndices(): number[];
     get displayColorOpacities(): number[];
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get displayBrightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     get setDisplayBrightness(): (newDisplayBrightness: import("./DisplayManager.ts").DisplayBrightness, sendImmediately?: boolean, displayCanvasHelper?: import("./BS.ts").DisplayCanvasHelper) => Promise<void>;
     get pendingDisplaySpriteSheetName(): string | undefined;

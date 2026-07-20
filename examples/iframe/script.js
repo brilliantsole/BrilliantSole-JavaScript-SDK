@@ -1,8 +1,10 @@
 import * as BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
 
-// BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
-// BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
+// BS.setConsoleLevelFlagsForType("DisplayManager", { log: false });
+// BS.setConsoleLevelFlagsForType("DeviceManager", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: false });
+// BS.setConsoleLevelFlagsForType("WebBluetoothConnectionManager", { log: true });
 // BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
 // BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
 // BS.setConsoleLevelFlagsForType("BaseServer", { log: true });
@@ -392,3 +394,20 @@ BS.ServerManager.clientDisplayContextCommandToDeviceGuardManager.add(
     return true;
   },
 );
+
+/** @type {BS.DisplaySpriteSheet} */
+const testSpriteSheet = {
+  name: "test",
+  sprites: [],
+};
+for (let i = 0; i < 1; i++) {
+  testSpriteSheet.sprites.push({
+    name: `test${i}`,
+    width: 100,
+    height: 200,
+    commands: [
+      { type: "drawRect", width: 100, height: 100, offsetX: 0, offsetY: 0 },
+    ],
+  });
+}
+// displayCanvasHelper.uploadSpriteSheet(testSpriteSheet);

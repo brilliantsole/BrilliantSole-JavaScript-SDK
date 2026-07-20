@@ -79,3 +79,39 @@ export function enumToDataView<T extends string | number>(
 ) {
   return new DataView(enumToArrayBuffer(enumeration, value));
 }
+
+export function valueToUInt16DataView(value: number, littleEndian?: boolean) {
+  const dataView = new DataView(new ArrayBuffer(2));
+  dataView.setUint16(0, value, littleEndian);
+  return dataView;
+}
+
+export function valueToUInt16ArrayBuffer(
+  value: number,
+  littleEndian?: boolean,
+) {
+  return valueToUInt16DataView(value, littleEndian).buffer;
+}
+
+export function valueToInt16DataView(value: number, littleEndian?: boolean) {
+  const dataView = new DataView(new ArrayBuffer(2));
+  dataView.setInt16(0, value, littleEndian);
+  return dataView;
+}
+
+export function valueToInt16ArrayBuffer(value: number, littleEndian?: boolean) {
+  return valueToInt16DataView(value, littleEndian).buffer;
+}
+
+export function valueToUInt32DataView(value: number, littleEndian?: boolean) {
+  const dataView = new DataView(new ArrayBuffer(4));
+  dataView.setUint32(0, value, littleEndian);
+  return dataView;
+}
+
+export function valueToUInt32ArrayBuffer(
+  value: number,
+  littleEndian?: boolean,
+) {
+  return valueToUInt32DataView(value, littleEndian).buffer;
+}

@@ -5,7 +5,7 @@ import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection, DisplayCo
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap, PartialDisplayContextState } from "./utils/DisplayContextState.ts";
 import { DisplayContextCommand } from "./utils/DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
-import { SendFileCallback } from "./FileTransferManager.ts";
+import { BaseFileConfiguration, OnSendFileCallback, SendFileCallback } from "./FileTransferManager.ts";
 import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, DisplaySpriteSheet, DisplaySpriteLines } from "./utils/DisplaySpriteSheetUtils.ts";
 import { default as DisplayCanvasHelper } from "./utils/DisplayCanvasHelper.ts";
 import { ConnectionType } from "./connection/BaseConnectionManager.ts";
@@ -137,6 +137,11 @@ export type DisplayBitmap = {
     numberOfColors: number;
     pixels: number[];
 };
+export interface DisplaySpriteSheetFileConfiguration extends BaseFileConfiguration {
+    fileType: "spriteSheet";
+    spriteSheetIndex?: number;
+    spriteSheet: DisplaySpriteSheet;
+}
 declare class DisplayManager implements DisplayManagerInterface {
     #private;
     constructor();
@@ -151,7 +156,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get pendingContextState(): DisplayContextState;
     serializeContextState(other?: PartialDisplayContextState): DisplayContextCommand[];
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -165,7 +170,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     getMaxCommandDataLength(single?: boolean): number;
@@ -299,6 +304,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get pendingSpriteSheetIndex(): number | undefined;
     private _pendingSelectedSpriteSheetIndex?;
     sendFile: SendFileCallback;
+    onSendFile: OnSendFileCallback;
     serializeSpriteSheet(spriteSheet: DisplaySpriteSheet, includeHeader?: boolean, displayCanvasHelper?: DisplayCanvasHelper): ArrayBuffer;
     parseSpriteSheet(dataView: DataView<ArrayBuffer>, name?: string, includesHeader?: boolean, displayCanvasHelper?: DisplayCanvasHelper): DisplaySpriteSheet;
     uploadSpriteSheet(spriteSheet: DisplaySpriteSheet, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;

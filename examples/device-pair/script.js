@@ -67,7 +67,6 @@ BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const { availableDevices } = event.message;
   onAvailableDevices(availableDevices);
 });
-getDevices();
 
 // CONNECTION
 const devicePair = BS.DevicePair.insoles;

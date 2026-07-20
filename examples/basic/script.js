@@ -13,6 +13,7 @@ BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
+BS.setConsoleLevelFlagsForType("BaseServer", { log: false });
 // BS.setConsoleLevelFlagsForType("Device", { log: true });
 
 // GET DEVICES
@@ -75,7 +76,6 @@ BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const { availableDevices } = event.message;
   onAvailableDevices(availableDevices);
 });
-getDevices();
 
 // DEVICE
 

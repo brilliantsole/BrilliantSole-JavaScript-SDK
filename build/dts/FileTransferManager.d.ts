@@ -2,6 +2,8 @@ import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { ConnectionType } from "./connection/BaseConnectionManager.ts";
+import { TfliteFileConfiguration } from "./TfliteManager.ts";
+import { DisplaySpriteSheetFileConfiguration } from "./DisplayManager.ts";
 export declare const FileTransferMessageTypes: readonly ["getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred"];
 export type FileTransferMessageType = (typeof FileTransferMessageTypes)[number];
 export declare const FileTypes: readonly ["tflite", "wifiServerCert", "wifiServerKey", "spriteSheet", "cameraImage"];
@@ -16,14 +18,18 @@ export type FileTransferDirection = (typeof FileTransferDirections)[number];
 export declare const FileTransferEventTypes: readonly ["getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "fileTransferProgress", "fileTransferComplete", "fileReceived", "fileSent"];
 export type FileTransferEventType = (typeof FileTransferEventTypes)[number];
 export declare const RequiredFileTransferMessageTypes: FileTransferMessageType[];
-export interface FileConfiguration {
+export interface BaseFileConfiguration {
     file: FileLike;
     fileType: FileType;
 }
-export interface ExtendedFileConfiguration extends FileConfiguration {
+export type FileConfiguration = TfliteFileConfiguration | DisplaySpriteSheetFileConfiguration;
+export type ExtendedFileConfiguration = FileConfiguration & {
     checksum: number;
     length: number;
-}
+    indirectly?: boolean;
+    buffer: ArrayBuffer;
+    file: FileOrBlob;
+};
 export interface FileTransferEventMessages {
     getFileTypes: {
         fileTypes: FileType[];
@@ -71,6 +77,7 @@ export interface FileTransferEventMessages {
         fileType: FileType;
         file: FileOrBlob;
         indirectly?: boolean;
+        sentFileConfiguration: ExtendedFileConfiguration;
     };
     fileBytesTransferred: {
         bytesTransferred: number;
@@ -79,6 +86,7 @@ export interface FileTransferEventMessages {
 export type FileTransferEventDispatcher = EventDispatcher<Device, FileTransferEventType, FileTransferEventMessages>;
 export type SendFileTransferMessageCallback = SendMessageCallback<FileTransferMessageType>;
 export type SendFileCallback = (fileType: FileType, file: FileLike, includesHeader?: boolean) => Promise<boolean>;
+export type OnSendFileCallback = (fileConfiguration: Partial<FileConfiguration>) => Promise<void>;
 declare class FileTransferManager {
     #private;
     constructor();
@@ -89,23 +97,24 @@ declare class FileTransferManager {
     get waitForEvent(): <T extends "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "fileSent">(type: T, options?: {
         immediate?: boolean;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "fileSent", FileTransferEventMessages, T>>;
-    get fileTypes(): ("cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet")[];
+    get fileTypes(): ("cameraImage" | "tflite" | "spriteSheet" | "wifiServerCert" | "wifiServerKey")[];
     static get MaxLength(): number;
     /** kB */
     get maxLength(): number;
-    get type(): "cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | undefined;
+    get type(): "cameraImage" | "tflite" | "spriteSheet" | "wifiServerCert" | "wifiServerKey" | undefined;
     get length(): number;
     get checksum(): number;
     get status(): "idle" | "sending" | "receiving";
     parseMessage(messageType: FileTransferMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     send(type: FileType, file: FileLike, includesHeader?: boolean): Promise<boolean>;
+    onSend<T extends BaseFileConfiguration>(fileConfiguration: Partial<T>): Promise<void>;
     get bytesTransferred(): number;
     mtu: number;
     get indirectSentBlocks(): DataView<ArrayBuffer>[];
     sentFileConfigurations: ExtendedFileConfiguration[];
     getCurrentSentFileConfiguration(): ExtendedFileConfiguration | undefined;
     get headerLength(): number | undefined;
-    receive(type: FileType): Promise<void>;
+    receive(type: FileType): Promise<boolean>;
     cancel(): Promise<void>;
     requestRequiredInformation(): void;
     clear(): void;

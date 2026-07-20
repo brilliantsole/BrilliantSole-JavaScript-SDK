@@ -36,7 +36,8 @@ export interface BaseServerClientDeviceContext<ServerClient extends BaseServerCl
     device: Device;
 }
 export interface BaseServerClientMetadata {
-    requestedReceive: boolean;
+    sent?: boolean;
+    initiated?: boolean;
     bytesTransferred: number;
 }
 declare abstract class BaseServer<ServerClient extends BaseServerClient> {

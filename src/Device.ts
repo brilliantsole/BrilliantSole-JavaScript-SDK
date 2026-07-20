@@ -60,6 +60,7 @@ import FileTransferManager, {
   FileTypes,
   RequiredFileTransferMessageTypes,
   SendFileCallback,
+  OnSendFileCallback,
 } from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
@@ -121,6 +122,7 @@ import DisplayManager, {
   DisplayEventTypes,
   DisplayMessageType,
   DisplayMessageTypes,
+  DisplaySpriteSheetFileConfiguration,
   RequiredDisplayMessageTypes,
   SendDisplayMessageCallback,
 } from "./DisplayManager.ts";
@@ -282,6 +284,8 @@ class Device {
       .sendTxMessages as SendTfliteMessageCallback;
     this.#tfliteManager.eventDispatcher = this
       .#eventDispatcher as TfliteEventDispatcher;
+    this.#tfliteManager.onSendFile = this.#fileTransferManager
+      .onSend as OnSendFileCallback;
 
     this.#fileTransferManager.sendMessage = this
       .sendTxMessages as SendFileTransferMessageCallback;
@@ -309,6 +313,8 @@ class Device {
       .#eventDispatcher as DisplayEventDispatcher;
     this.#displayManager.sendFile = this.#fileTransferManager
       .send as SendFileCallback;
+    this.#displayManager.onSendFile = this.#fileTransferManager
+      .onSend as OnSendFileCallback;
 
     this.#ledManager.sendMessage = this
       .sendTxMessages as SendLedMessageCallback;
@@ -1448,13 +1454,21 @@ class Device {
       `invalid fileType ${fileType}`,
     );
     const promise = this.waitForEvent("fileTransferComplete");
-    this.#fileTransferManager.send(fileType, file);
+    const isSending = await this.#fileTransferManager.send(fileType, file);
+    if (!isSending) {
+      return false;
+    }
     await promise;
+    return true;
   }
   async receiveFile(fileType: FileType) {
     const promise = this.waitForEvent("fileTransferComplete");
-    this.#fileTransferManager.receive(fileType);
+    const isReceiving = await this.#fileTransferManager.receive(fileType);
+    if (!isReceiving) {
+      return false;
+    }
     await promise;
+    return true;
   }
 
   get fileTransferStatus() {

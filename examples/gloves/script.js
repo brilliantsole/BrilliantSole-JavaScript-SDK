@@ -74,7 +74,6 @@ BS.DeviceManager.addEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
-getDevices();
 
 // ADD DEVICE
 

@@ -8,7 +8,10 @@ import { parseTimestamp } from "./utils/MathUtils.ts";
 import { SensorType } from "./sensor/SensorDataManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import autoBind from "auto-bind";
-import { FileConfiguration } from "./FileTransferManager.ts";
+import {
+  BaseFileConfiguration,
+  OnSendFileCallback,
+} from "./FileTransferManager.ts";
 import { UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
 import { enumToArrayBuffer } from "./utils/ParseUtils.ts";
 
@@ -89,7 +92,7 @@ export const TfliteSensorTypes = [
 ] as const satisfies readonly SensorType[];
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
 
-export interface TfliteFileConfiguration extends FileConfiguration {
+export interface TfliteFileConfiguration extends BaseFileConfiguration {
   fileType: "tflite";
   name: string;
   sensorTypes: TfliteSensorType[];
@@ -106,6 +109,7 @@ class TfliteManager {
   }
 
   sendMessage!: SendTfliteMessageCallback;
+  onSendFile!: OnSendFileCallback;
 
   #assertValidTask(task: TfliteTask) {
     _console.assertEnumWithError(TfliteTasks, task);
@@ -338,6 +342,17 @@ class TfliteManager {
     _console.log({ isReady });
     this.#isReady = isReady;
     this.#dispatchEvent("tfliteIsReady", { tfliteIsReady: isReady });
+    if (isReady) {
+      this.onSendFile({
+        fileType: "tflite",
+        name: this.name,
+        sampleRate: this.sampleRate,
+        sensorTypes: this.sensorTypes.slice(),
+        captureDelay: this.captureDelay,
+        task: this.task,
+        classes: this.classes,
+      });
+    }
   }
   #assertIsReady() {
     _console.assertWithError(this.isReady, `tflite is not ready`);

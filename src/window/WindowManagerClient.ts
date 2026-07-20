@@ -184,6 +184,7 @@ class WindowManagerClient {
     messageType: WindowManagerMessageType,
     dataView: DataView<ArrayBuffer>,
   ) {
+    _console.log("#onWindowManagerMessage", { messageType }, dataView);
     switch (messageType) {
       case "ping":
         this.#pong();
@@ -244,6 +245,7 @@ class WindowManagerClient {
 
   // connection is automatic for now
   connect() {
+    _console.log("connect");
     this.#ping();
   }
   disconnect(): void {
@@ -282,9 +284,11 @@ class WindowManagerClient {
 
   // PING
   #ping() {
+    _console.log("#ping");
     this.#sendMessage(windowManagerPingMessage);
   }
   #pong() {
+    _console.log("#pong");
     this.#sendMessage(windowManagerPongMessage);
   }
 }

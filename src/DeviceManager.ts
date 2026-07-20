@@ -388,6 +388,10 @@ class DeviceManager {
             existingAvailableDevice.bluetoothId &&
           existingConnectedDevice != existingAvailableDevice
         ) {
+          _console.log("replacing available device with connected device", {
+            existingAvailableDevice,
+            existingConnectedDevice,
+          });
           this.availableDevices[
             this.#availableDevices.indexOf(existingAvailableDevice)
           ] = existingConnectedDevice;
