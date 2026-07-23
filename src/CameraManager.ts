@@ -10,6 +10,7 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.ts";
 import sharp from "sharp";
 import { spawn } from "child_process";
 import fs from "fs/promises";
+import { BaseFileConfiguration } from "./FileTransferManager.ts";
 /** NODE_END */
 
 const _console = createConsole("CameraManager", { log: false });
@@ -141,6 +142,10 @@ export type CameraEventDispatcher = EventDispatcher<
   CameraEventMessages
 >;
 export type SendCameraMessageCallback = SendMessageCallback<CameraMessageType>;
+
+export interface CameraImageFileConfiguration extends BaseFileConfiguration {
+  fileType: "cameraImage";
+}
 
 class CameraManager {
   constructor() {

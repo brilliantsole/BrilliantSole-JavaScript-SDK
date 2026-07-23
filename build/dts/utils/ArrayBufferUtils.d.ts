@@ -5,5 +5,6 @@ export declare function objectToArrayBuffer(object: object): ArrayBuffer;
 export declare function sliceDataView(dataView: DataView<ArrayBuffer>, begin: number, length?: number): DataView<ArrayBuffer>;
 export type FileLike = number[] | ArrayBuffer | DataView | URL | string | File | Buffer | Blob;
 export declare function getFileBuffer(file: FileLike): Promise<ArrayBuffer>;
-export declare function UInt8ByteBuffer(value: number): ArrayBuffer;
+export declare function valueToUInt8DataView(value: number): DataView<ArrayBuffer>;
+export declare function valueToUInt8ArrayBuffer(value: number): ArrayBuffer;
 export declare function areArrayBuffersEqual(a: ArrayBuffer, b: ArrayBuffer): boolean;

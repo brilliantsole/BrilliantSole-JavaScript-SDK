@@ -14,7 +14,7 @@ import {
 } from "../DisplayManager.ts";
 import {
   concatenateArrayBuffers,
-  UInt8ByteBuffer,
+  valueToUInt8ArrayBuffer,
 } from "./ArrayBufferUtils.ts";
 import { stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";

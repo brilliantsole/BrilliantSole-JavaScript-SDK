@@ -10,9 +10,9 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import autoBind from "auto-bind";
 import {
   BaseFileConfiguration,
-  OnSendFileCallback,
+  OnParseFileCallback,
 } from "./FileTransferManager.ts";
-import { UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
+import { valueToUInt8ArrayBuffer } from "./utils/ArrayBufferUtils.ts";
 import { enumToArrayBuffer } from "./utils/ParseUtils.ts";
 
 const _console = createConsole("TfliteManager", { log: false });
@@ -109,7 +109,7 @@ class TfliteManager {
   }
 
   sendMessage!: SendTfliteMessageCallback;
-  onSendFile!: OnSendFileCallback;
+  onParseFile!: OnParseFileCallback;
 
   #assertValidTask(task: TfliteTask) {
     _console.assertEnumWithError(TfliteTasks, task);
@@ -343,7 +343,7 @@ class TfliteManager {
     this.#isReady = isReady;
     this.#dispatchEvent("tfliteIsReady", { tfliteIsReady: isReady });
     if (isReady) {
-      this.onSendFile({
+      this.onParseFile({
         fileType: "tflite",
         name: this.name,
         sampleRate: this.sampleRate,
@@ -469,7 +469,7 @@ class TfliteManager {
         {
           type: "setTfliteInferencingEnabled",
 
-          data: UInt8ByteBuffer(Number(newInferencingEnabled)),
+          data: valueToUInt8ArrayBuffer(Number(newInferencingEnabled)),
         },
       ],
       sendImmediately,
@@ -593,7 +593,7 @@ class TfliteManager {
   get configuration() {
     return this.#configuration;
   }
-  sendConfiguration(
+  async sendConfiguration(
     configuration: TfliteFileConfiguration,
     sendImmediately?: boolean,
   ) {
@@ -625,7 +625,7 @@ class TfliteManager {
       this.setThreshold(threshold, false);
     }
     this.setSensorTypes(sensorTypes, false);
-    this.setName(name, sendImmediately);
+    await this.setName(name, sendImmediately);
   }
 
   clear() {

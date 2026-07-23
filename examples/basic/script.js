@@ -12,7 +12,7 @@ window.BS = BS;
 BS.setConsoleLevelFlagsForType("DisplayManager", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
 BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
-BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
+BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: false });
 BS.setConsoleLevelFlagsForType("BaseServer", { log: false });
 // BS.setConsoleLevelFlagsForType("Device", { log: true });
 

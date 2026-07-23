@@ -3,7 +3,7 @@ window.BS = BS;
 
 // BS.setConsoleLevelFlagsForType("DisplayManager", { log: false });
 // BS.setConsoleLevelFlagsForType("DeviceManager", { log: true });
-BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: false });
+BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
 // BS.setConsoleLevelFlagsForType("WebBluetoothConnectionManager", { log: true });
 // BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: true });
 // BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
@@ -367,6 +367,7 @@ const createIframeContainer = (src) => {
 };
 createIframeContainer("../display-text");
 // createIframeContainer("../display-wireframe");
+// createIframeContainer("../display-midi");
 // createIframeContainer("../display-prompt");
 // createIframeContainer();
 // createIframeContainer();
@@ -395,19 +396,24 @@ BS.ServerManager.clientDisplayContextCommandToDeviceGuardManager.add(
   },
 );
 
-/** @type {BS.DisplaySpriteSheet} */
-const testSpriteSheet = {
-  name: "test",
-  sprites: [],
+const generateSpriteSheet = (name, length) => {
+  /** @type {BS.DisplaySpriteSheet} */
+  const spriteSheet = {
+    name,
+    sprites: [],
+  };
+  for (let i = 0; i < length; i++) {
+    spriteSheet.sprites.push({
+      name: `test${i}`,
+      width: 100,
+      height: 200,
+      commands: [
+        { type: "drawRect", width: 100, height: 100, offsetX: 0, offsetY: 0 },
+      ],
+    });
+  }
+  displayCanvasHelper.uploadSpriteSheet(spriteSheet);
 };
-for (let i = 0; i < 1; i++) {
-  testSpriteSheet.sprites.push({
-    name: `test${i}`,
-    width: 100,
-    height: 200,
-    commands: [
-      { type: "drawRect", width: 100, height: 100, offsetX: 0, offsetY: 0 },
-    ],
-  });
-}
-// displayCanvasHelper.uploadSpriteSheet(testSpriteSheet);
+generateSpriteSheet("test", 100);
+// generateSpriteSheet("test2", 50);
+// generateSpriteSheet("test3", 200);

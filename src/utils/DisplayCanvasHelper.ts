@@ -4393,7 +4393,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         this.deviceDisplayManager!.spriteSheetIndices[spriteSheet.name];
       _console.assertWithError(
         spriteSheetIndex != undefined,
-        `no spriteSheetIndex found for spriteSheetName ${spriteSheet.name}`,
+        `no spriteSheetIndex found for spriteSheetName "${spriteSheet.name}"`,
       );
       this.#spriteSheets[spriteSheet.name] = spriteSheet;
       this.#spriteSheetIndices[spriteSheet.name] = spriteSheetIndex;
@@ -4412,7 +4412,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       }
     } else {
       this.#spriteSheets[spriteSheet.name] = spriteSheet;
-      _console.log(`added spriteSheet "${spriteSheet.name} (no index)"`);
+      _console.log(`added spriteSheet "${spriteSheet.name}" (no index)`);
     }
   }
   async uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
@@ -5017,12 +5017,35 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     _console.log("updateDeviceSpriteSheets", { updateSelf });
-    // TODO: - is updateSelf needed?
-    const sortedSpriteSheets = Object.values(this.spriteSheets).sort(
-      (a, b) =>
-        this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name],
-    );
+
+    // TEST
+
+    const directDeviceSpriteSheets: DisplaySpriteSheet[] = [];
+    if (updateSelf) {
+      Object.values(this.deviceDisplayManager!.spriteSheets).forEach(
+        (spriteSheet) => {
+          const spriteSheetIndex =
+            this.deviceDisplayManager!.spriteSheetIndices[spriteSheet.name];
+          this.#spriteSheets[spriteSheet.name] = spriteSheet;
+          this.#spriteSheetIndices[spriteSheet.name] = spriteSheetIndex;
+          this.spriteSheetIndices[spriteSheet.name];
+          _console.log(
+            `updated spriteSheetIndex #${this.#spriteSheetIndices[spriteSheet.name]} for spriteSheet "${spriteSheet.name}" after adding directly from device`,
+          );
+          directDeviceSpriteSheets.push(spriteSheet);
+        },
+      );
+      _console.log("directDeviceSpriteSheets", directDeviceSpriteSheets);
+    }
+
+    const sortedSpriteSheets = Object.values(this.spriteSheets)
+      .sort(
+        (a, b) =>
+          this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name],
+      )
+      .filter((spriteSheet) => !directDeviceSpriteSheets.includes(spriteSheet));
     _console.log("sortedSpriteSheets", sortedSpriteSheets);
+
     await this.uploadSpriteSheets(sortedSpriteSheets);
   }
   async #updateDeviceSelectedSpriteSheet(

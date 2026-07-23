@@ -1,4 +1,4 @@
-import { sliceDataView, UInt8ByteBuffer } from "./ArrayBufferUtils.ts";
+import { sliceDataView, valueToUInt8ArrayBuffer } from "./ArrayBufferUtils.ts";
 import { createConsole } from "./Console.ts";
 import { textDecoder } from "./Text.ts";
 
@@ -71,7 +71,7 @@ export function enumToArrayBuffer<T extends string | number>(
 ) {
   _console.assertEnumWithError(enumeration, value);
   const valueEnum = enumeration.indexOf(value);
-  return UInt8ByteBuffer(valueEnum);
+  return valueToUInt8ArrayBuffer(valueEnum);
 }
 export function enumToDataView<T extends string | number>(
   enumeration: readonly T[],

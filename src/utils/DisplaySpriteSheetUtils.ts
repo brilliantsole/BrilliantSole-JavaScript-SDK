@@ -210,51 +210,54 @@ export function parseSpriteSheet(
     const headerLength = dataView.getUint16(offset, true);
     offset += 2;
     _console.log({ headerLength });
-
-    const nameLength = dataView.getUint16(offset, true);
-    offset += 2;
-    _console.log({ nameLength });
-    name = textDecoder.decode(
-      dataView.buffer.slice(offset, offset + nameLength),
-    );
-    _console.log({ name });
-    offset += nameLength;
-
-    const numberOfSpriteNames = dataView.getUint8(offset++);
-    _console.log({ numberOfSpriteNames });
-
-    for (
-      let spriteNameIndex = 0;
-      spriteNameIndex < numberOfSpriteNames;
-      spriteNameIndex++
-    ) {
-      const isLast = spriteNameIndex == numberOfSpriteNames - 1;
-
-      _console.log("parsing", { spriteNameIndex, isLast });
-
-      const spriteNameOffset = dataView.getUint16(offset, true);
-      _console.log({ spriteNameOffset });
+    if (headerLength == 2) {
+      _console.log("spriteSheet doesn't contain any metadata");
+    } else {
+      const nameLength = dataView.getUint16(offset, true);
       offset += 2;
-
-      const nextSpriteNameOffset = isLast
-        ? headerLength
-        : dataView.getUint16(offset, true);
-      const spriteNameLength = nextSpriteNameOffset - spriteNameOffset;
-      _console.log({ nextSpriteNameOffset, spriteNameLength });
-
-      const spriteName = textDecoder.decode(
-        dataView.buffer.slice(
-          spriteNameOffset,
-          spriteNameOffset + spriteNameLength,
-        ),
+      _console.log({ nameLength });
+      name = textDecoder.decode(
+        dataView.buffer.slice(offset, offset + nameLength),
       );
-      _console.log({ spriteName });
+      _console.log({ name });
+      offset += nameLength;
 
-      spriteNames.push(spriteName);
+      const numberOfSpriteNames = dataView.getUint8(offset++);
+      _console.log({ numberOfSpriteNames });
+
+      for (
+        let spriteNameIndex = 0;
+        spriteNameIndex < numberOfSpriteNames;
+        spriteNameIndex++
+      ) {
+        const isLast = spriteNameIndex == numberOfSpriteNames - 1;
+
+        _console.log("parsing", { spriteNameIndex, isLast });
+
+        const spriteNameOffset = dataView.getUint16(offset, true);
+        _console.log({ spriteNameOffset });
+        offset += 2;
+
+        const nextSpriteNameOffset = isLast
+          ? headerLength
+          : dataView.getUint16(offset, true);
+        const spriteNameLength = nextSpriteNameOffset - spriteNameOffset;
+        _console.log({ nextSpriteNameOffset, spriteNameLength });
+
+        const spriteName = textDecoder.decode(
+          dataView.buffer.slice(
+            spriteNameOffset,
+            spriteNameOffset + spriteNameLength,
+          ),
+        );
+        _console.log({ spriteName });
+
+        spriteNames.push(spriteName);
+      }
+      _console.log("spriteNames", spriteNames);
+
+      offset = headerLength;
     }
-    _console.log("spriteNames", spriteNames);
-
-    offset = headerLength;
   }
 
   const baseOffset = offset;

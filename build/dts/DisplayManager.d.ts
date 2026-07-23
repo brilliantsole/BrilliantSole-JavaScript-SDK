@@ -5,7 +5,7 @@ import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection, DisplayCo
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap, PartialDisplayContextState } from "./utils/DisplayContextState.ts";
 import { DisplayContextCommand } from "./utils/DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
-import { BaseFileConfiguration, OnSendFileCallback, SendFileCallback } from "./FileTransferManager.ts";
+import { ExtendedFileConfiguration, OnParseFileCallback, SendFileCallback } from "./FileTransferManager.ts";
 import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, DisplaySpriteSheet, DisplaySpriteLines } from "./utils/DisplaySpriteSheetUtils.ts";
 import { default as DisplayCanvasHelper } from "./utils/DisplayCanvasHelper.ts";
 import { ConnectionType } from "./connection/BaseConnectionManager.ts";
@@ -137,7 +137,7 @@ export type DisplayBitmap = {
     numberOfColors: number;
     pixels: number[];
 };
-export interface DisplaySpriteSheetFileConfiguration extends BaseFileConfiguration {
+export interface DisplaySpriteSheetFileConfiguration extends ExtendedFileConfiguration {
     fileType: "spriteSheet";
     spriteSheetIndex?: number;
     spriteSheet: DisplaySpriteSheet;
@@ -304,7 +304,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get pendingSpriteSheetIndex(): number | undefined;
     private _pendingSelectedSpriteSheetIndex?;
     sendFile: SendFileCallback;
-    onSendFile: OnSendFileCallback;
+    onParseFile: OnParseFileCallback;
     serializeSpriteSheet(spriteSheet: DisplaySpriteSheet, includeHeader?: boolean, displayCanvasHelper?: DisplayCanvasHelper): ArrayBuffer;
     parseSpriteSheet(dataView: DataView<ArrayBuffer>, name?: string, includesHeader?: boolean, displayCanvasHelper?: DisplayCanvasHelper): DisplaySpriteSheet;
     uploadSpriteSheet(spriteSheet: DisplaySpriteSheet, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;

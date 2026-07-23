@@ -60,7 +60,9 @@ import FileTransferManager, {
   FileTypes,
   RequiredFileTransferMessageTypes,
   SendFileCallback,
-  OnSendFileCallback,
+  OnParseFileCallback,
+  ExtendedFileConfiguration,
+  OnFileConfigurationCallback,
 } from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
@@ -122,7 +124,6 @@ import DisplayManager, {
   DisplayEventTypes,
   DisplayMessageType,
   DisplayMessageTypes,
-  DisplaySpriteSheetFileConfiguration,
   RequiredDisplayMessageTypes,
   SendDisplayMessageCallback,
 } from "./DisplayManager.ts";
@@ -284,13 +285,15 @@ class Device {
       .sendTxMessages as SendTfliteMessageCallback;
     this.#tfliteManager.eventDispatcher = this
       .#eventDispatcher as TfliteEventDispatcher;
-    this.#tfliteManager.onSendFile = this.#fileTransferManager
-      .onSend as OnSendFileCallback;
+    this.#tfliteManager.onParseFile = this.#fileTransferManager
+      .onParseFile as OnParseFileCallback;
 
     this.#fileTransferManager.sendMessage = this
       .sendTxMessages as SendFileTransferMessageCallback;
     this.#fileTransferManager.eventDispatcher = this
       .#eventDispatcher as FileTransferEventDispatcher;
+    this.#fileTransferManager.onFileConfiguration =
+      this.#onFileConfiguration.bind(this) as OnFileConfigurationCallback;
 
     this.#wifiManager.sendMessage = this
       .sendTxMessages as SendWifiMessageCallback;
@@ -313,8 +316,8 @@ class Device {
       .#eventDispatcher as DisplayEventDispatcher;
     this.#displayManager.sendFile = this.#fileTransferManager
       .send as SendFileCallback;
-    this.#displayManager.onSendFile = this.#fileTransferManager
-      .onSend as OnSendFileCallback;
+    this.#displayManager.onParseFile = this.#fileTransferManager
+      .onParseFile as OnParseFileCallback;
 
     this.#ledManager.sendMessage = this
       .sendTxMessages as SendLedMessageCallback;
@@ -503,20 +506,6 @@ class Device {
               spriteSheet: this.#displayManager.pendingSpriteSheet!,
               spriteSheetName: this.#displayManager.pendingSpriteSheetName!,
             });
-          }
-          break;
-        default:
-          break;
-      }
-    });
-    this.addEventListener("fileReceived", async (event) => {
-      const { fileType, file } = event.message;
-      switch (fileType) {
-        case "cameraImage":
-          {
-            const arrayBuffer = await file.arrayBuffer();
-            const dataView = new DataView(arrayBuffer);
-            this.#cameraManager.parseMessage("cameraData", dataView);
           }
           break;
         default:
@@ -1411,11 +1400,34 @@ class Device {
     return this.#fileTransferManager;
   }
   #fileTransferManager = new FileTransferManager();
-  get sentFileConfigurations() {
-    return this.#fileTransferManager.sentFileConfigurations;
-  }
-  get getCurrentSentFileConfiguration() {
-    return this.#fileTransferManager.getCurrentSentFileConfiguration;
+  async #onFileConfiguration(fileConfiguration: ExtendedFileConfiguration) {
+    console.log("#onFileConfiguration", fileConfiguration);
+    const { fileType, buffer, direction } = fileConfiguration;
+    switch (fileType) {
+      case "cameraImage":
+        if (direction == "receiving") {
+          const dataView = new DataView(buffer);
+          this.#cameraManager.parseMessage("cameraData", dataView);
+          this.#fileTransferManager.onParseFile({ fileType: "cameraImage" });
+        }
+        break;
+      case "spriteSheet":
+        {
+          const dataView = new DataView(buffer);
+          const parsedSpriteSheet = this.parseDisplaySpriteSheet(
+            dataView,
+            this.pendingDisplaySpriteSheetName,
+          );
+          this.#displayManager.pendingSpriteSheet = parsedSpriteSheet;
+          await this.uploadDisplaySpriteSheet(parsedSpriteSheet);
+        }
+        break;
+      case "tflite":
+        // TODO: - use litert
+        break;
+      default:
+        break;
+    }
   }
 
   get fileTypes() {
@@ -1494,7 +1506,7 @@ class Device {
 
   async sendTfliteConfiguration(configuration: TfliteFileConfiguration) {
     configuration.fileType = "tflite";
-    this.#tfliteManager.sendConfiguration(configuration, false);
+    await this.#tfliteManager.sendConfiguration(configuration, false);
     const didSendFile = await this.#fileTransferManager.send(
       configuration.fileType,
       configuration.file,

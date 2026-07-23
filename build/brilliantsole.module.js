@@ -583,8 +583,13 @@ async function getFileBuffer(file) {
     }
     return fileBuffer;
 }
-function UInt8ByteBuffer(value) {
-    return Uint8Array.from([value]).buffer;
+function valueToUInt8DataView(value) {
+    const dataView = new DataView(new ArrayBuffer(1));
+    dataView.setUint8(0, value);
+    return dataView;
+}
+function valueToUInt8ArrayBuffer(value) {
+    return valueToUInt8DataView(value).buffer;
 }
 
 const _console$W = createConsole("ParseUtils", { log: false });
@@ -625,7 +630,7 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
 function enumToArrayBuffer(enumeration, value) {
     _console$W.assertEnumWithError(enumeration, value);
     const valueEnum = enumeration.indexOf(value);
-    return UInt8ByteBuffer(valueEnum);
+    return valueToUInt8ArrayBuffer(valueEnum);
 }
 function enumToDataView(enumeration, value) {
     return new DataView(enumToArrayBuffer(enumeration, value));
@@ -903,15 +908,46 @@ class FileTransferManager {
             : this.#length;
         const progress = bytesReceived / length;
         _console$V.log(`received ${bytesReceived}/${length}} bytes (${progress * 100}%) - ${length - bytesReceived} bytes remaining`);
+        const direction = "receiving";
         const indirectly = !this.#isRequestingReceive;
         const fileType = this.type;
         let file;
         const isComplete = progress == 1;
         _console$V.log({ isComplete });
+        let buffer;
+        let fileConfiguration;
         if (isComplete) {
-            file = await this.#createFile(this.#receivedBlocks);
+            buffer = concatenateArrayBuffers(this.#receivedBlocks);
+            file = this.#createFile(buffer);
             _console$V.assertWithError(file, "file not created");
             _console$V.log("received file", file);
+            file = file;
+            buffer = buffer;
+            const checksum = this.#checksum;
+            fileConfiguration = {
+                fileType,
+                file,
+                buffer,
+                indirectly,
+                checksum,
+                length: this.#length,
+                direction,
+            };
+            this.fileConfigurations.push(fileConfiguration);
+        }
+        this.#dispatchEvent("fileTransferProgress", {
+            progress,
+            fileType,
+            direction,
+            bytesTransferred: this.#bytesTransferred,
+            isComplete,
+            file,
+            fileConfiguration,
+            indirectly,
+        });
+        this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
+        if (isComplete) {
+            this.onFileConfiguration(fileConfiguration);
         }
         else {
             if (this.#isRequestingReceive ||
@@ -926,31 +962,6 @@ class FileTransferManager {
             else {
                 _console$V.log("not sending fileBytesTransferred (not requesting)");
             }
-        }
-        const direction = "receiving";
-        this.#dispatchEvent("fileTransferProgress", {
-            progress,
-            fileType,
-            direction,
-            bytesTransferred: this.#bytesTransferred,
-            isComplete,
-            file,
-            indirectly,
-        });
-        this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
-        if (isComplete) {
-            file = file;
-            this.#dispatchEvent("fileTransferComplete", {
-                direction,
-                fileType,
-                file,
-                indirectly,
-            });
-            this.#dispatchEvent("fileReceived", {
-                fileType,
-                file,
-                indirectly,
-            });
         }
     }
     parseMessage(messageType, dataView, isSending) {
@@ -1065,59 +1076,79 @@ class FileTransferManager {
             await this.cancel();
             return false;
         }
-        this.#file = await this.#createFile([fileBufferWithHeader]);
+        this.#file = this.#createFile(fileBufferWithHeader);
         await this.#send(this.isClientConnectionType ? fileBufferWithHeader : fileBuffer, fileBufferWithHeader);
         return true;
     }
     #pendingBufferWithHeader;
-    async onSend(fileConfiguration) {
-        _console$V.log("onSend", fileConfiguration);
-        _console$V.assertWithError(this.#type == fileConfiguration.fileType, `wrong fileType - expected "${this.#type}", received "${fileConfiguration.fileType}"`);
-        let sentFileConfiguration = this.getCurrentSentFileConfiguration();
-        if (sentFileConfiguration) {
-            _console$V.log("sentFileConfiguration - assigning", fileConfiguration);
-            Object.assign(sentFileConfiguration, fileConfiguration);
+    get pendingBufferWithHeader() {
+        return this.#pendingBufferWithHeader;
+    }
+    onFileConfiguration;
+    async onParseFile(partialFileConfiguration) {
+        _console$V.log("onParseFile", partialFileConfiguration);
+        _console$V.assertWithError(this.#type == partialFileConfiguration.fileType, `wrong fileType - expected "${this.#type}", received "${partialFileConfiguration.fileType}"`);
+        let fileConfiguration = this.getCurrentFileConfiguration();
+        if (fileConfiguration) {
+            _console$V.log("fileConfiguration - assigning", partialFileConfiguration);
+            Object.assign(fileConfiguration, partialFileConfiguration);
         }
         else {
-            _console$V.log("no sentFileConfiguration - checking #pendingBufferWithHeader");
+            _console$V.log("no fileConfiguration - checking #pendingBufferWithHeader");
             if (!this.#pendingBufferWithHeader) {
                 _console$V.log("no pendingBuffer - skipping");
                 return;
             }
-            const file = await this.#createFile([this.#pendingBufferWithHeader]);
+            const file = this.#createFile(this.#pendingBufferWithHeader);
             if (!file) {
                 _console$V.error("no file defined");
                 return;
             }
-            const fileType = fileConfiguration.fileType;
+            const fileType = partialFileConfiguration.fileType;
             const indirectly = true;
             const buffer = await file.arrayBuffer();
-            sentFileConfiguration = {
-                ...fileConfiguration,
+            fileConfiguration = {
+                ...partialFileConfiguration,
                 fileType,
                 file,
                 length: this.#length,
                 checksum: this.#checksum,
                 indirectly,
                 buffer,
+                direction: "sending",
             };
-            this.sentFileConfigurations.push(sentFileConfiguration);
+            this.fileConfigurations.push(fileConfiguration);
         }
-        sentFileConfiguration = sentFileConfiguration;
-        const { indirectly, fileType, file } = sentFileConfiguration;
-        _console$V.log("onSend", { sentFileConfiguration, indirectly });
+        fileConfiguration = fileConfiguration;
+        const { indirectly, fileType, file } = fileConfiguration;
+        _console$V.log("onParseFile", {
+            fileConfiguration,
+            indirectly,
+        });
+        const { direction } = fileConfiguration;
         this.#dispatchEvent("fileTransferComplete", {
-            direction: "sending",
+            direction,
             fileType,
             file,
             indirectly,
+            fileConfiguration,
         });
-        this.#dispatchEvent("fileSent", {
-            fileType,
-            file,
-            indirectly,
-            sentFileConfiguration,
-        });
+        if (direction == "receiving") {
+            this.#dispatchEvent("fileReceived", {
+                fileType,
+                file,
+                indirectly,
+                fileConfiguration,
+            });
+        }
+        else {
+            this.#dispatchEvent("fileSent", {
+                fileType,
+                file,
+                indirectly,
+                fileConfiguration,
+            });
+        }
     }
     #buffer;
     #bufferWithHeader;
@@ -1151,37 +1182,40 @@ class FileTransferManager {
         _console$V.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
-        _console$V.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
+        _console$V.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (currently ${progress * 100}%)`);
         const isComplete = progress == 1;
         const fileType = this.type;
         const file = this.#file;
         const direction = "sending";
+        let fileConfiguration;
+        if (isComplete) {
+            _console$V.log("finished sending buffer");
+            fileConfiguration = {
+                file,
+                fileType,
+                length: this.#length,
+                checksum: this.#checksum,
+                buffer: this.#bufferWithHeader,
+                direction,
+            };
+            _console$V.log("sent file directly", fileConfiguration);
+            this.fileConfigurations.push(fileConfiguration);
+        }
         this.#dispatchEvent("fileTransferProgress", {
             progress,
             fileType,
             direction,
             bytesTransferred: this.#bytesTransferred,
             isComplete,
+            fileConfiguration,
             file: isComplete ? file : undefined,
         });
-        if (isComplete) {
-            _console$V.log("finished sending buffer");
-            const sentFileConfiguration = {
-                file,
-                fileType,
-                length: this.#length,
-                checksum: this.#checksum,
-                buffer: this.#bufferWithHeader,
-            };
-            _console$V.log("sent file directly", sentFileConfiguration);
-            this.sentFileConfigurations.push(sentFileConfiguration);
-        }
-        else {
+        if (!isComplete) {
             this.#bytesTransferred = offset + slicedBuffer.byteLength;
             await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
         }
     }
-    async #createFile(blocks) {
+    #createFile(buffer) {
         let fileName = new Date().toLocaleString();
         switch (this.type) {
             case "tflite":
@@ -1196,12 +1230,12 @@ class FileTransferManager {
         }
         let file;
         if (typeof File !== "undefined") {
-            file = new File(blocks, fileName);
+            file = new File([buffer], fileName);
         }
         else {
-            file = new Blob(blocks);
+            file = new Blob([buffer]);
         }
-        const arrayBufferWithHeader = await file.arrayBuffer();
+        const arrayBufferWithHeader = buffer;
         const arrayBuffer = arrayBufferWithHeader.slice(this.#headerLength);
         const checksum = crc32(arrayBuffer);
         _console$V.log({
@@ -1221,15 +1255,15 @@ class FileTransferManager {
     get indirectSentBlocks() {
         return this.#indirectSentBlocks;
     }
-    sentFileConfigurations = [];
-    getCurrentSentFileConfiguration() {
-        const sentFileConfiguration = this.sentFileConfigurations.find(({ fileType, checksum, length }) => {
+    fileConfigurations = [];
+    getCurrentFileConfiguration() {
+        const currentFileConfiguration = this.fileConfigurations.find(({ fileType, checksum, length }) => {
             return (fileType == this.type &&
                 checksum == this.checksum &&
                 length == this.length);
         });
-        _console$V.log("sentFileConfiguration", sentFileConfiguration);
-        return sentFileConfiguration;
+        _console$V.log("currentFileConfiguration", currentFileConfiguration);
+        return currentFileConfiguration;
     }
     #headerLength;
     get headerLength() {
@@ -1257,29 +1291,31 @@ class FileTransferManager {
         const indirectly = true;
         const bufferWithHeader = concatenateArrayBuffers(this.#indirectSentBlocks.map((dataView) => dataView.buffer));
         if (isComplete) {
-            file = await this.#createFile([bufferWithHeader]);
+            file = this.#createFile(bufferWithHeader);
             _console$V.assertWithError(file, "file not created");
             _console$V.log("file transfer complete", file);
         }
         const direction = "sending";
+        let fileConfiguration;
         if (isComplete) {
             this.#indirectSentBlocks.length = 0;
             file = file;
-            const sentFileConfiguration = {
+            fileConfiguration = {
                 file,
                 fileType,
                 length: this.#length,
                 checksum: this.#checksum,
                 indirectly,
                 buffer: bufferWithHeader,
+                direction,
             };
-            const currentSentFileConfiguration = this.getCurrentSentFileConfiguration();
+            const currentSentFileConfiguration = this.getCurrentFileConfiguration();
             if (currentSentFileConfiguration) {
                 _console$V.log("replacing currentSentFileConfiguration...", currentSentFileConfiguration);
-                this.sentFileConfigurations.splice(this.sentFileConfigurations.indexOf(currentSentFileConfiguration), 1);
+                this.fileConfigurations.splice(this.fileConfigurations.indexOf(currentSentFileConfiguration), 1);
             }
-            this.sentFileConfigurations.push(sentFileConfiguration);
-            _console$V.log("sent file indirectly", sentFileConfiguration);
+            this.fileConfigurations.push(fileConfiguration);
+            _console$V.log("sent file indirectly", fileConfiguration);
         }
         this.#dispatchEvent("fileTransferProgress", {
             isComplete,
@@ -1289,6 +1325,7 @@ class FileTransferManager {
             bytesTransferred: this.#bytesTransferred,
             indirectly,
             file,
+            fileConfiguration,
         });
         this.#dispatchEvent("setFileBlock", { fileTransferBlock: dataView });
     }
@@ -1342,7 +1379,7 @@ class FileTransferManager {
     clear() {
         this.#receivedBlocks.length = 0;
         this.#indirectSentBlocks.length = 0;
-        this.sentFileConfigurations.length = 0;
+        this.fileConfigurations.length = 0;
         this.#isCancelling = false;
         this.#buffer = undefined;
         this.#bufferWithHeader = undefined;
@@ -4223,7 +4260,7 @@ class TfliteManager {
         autoBind(this);
     }
     sendMessage;
-    onSendFile;
+    onParseFile;
     #assertValidTask(task) {
         _console$I.assertEnumWithError(TfliteTasks, task);
     }
@@ -4411,7 +4448,7 @@ class TfliteManager {
         this.#isReady = isReady;
         this.#dispatchEvent("tfliteIsReady", { tfliteIsReady: isReady });
         if (isReady) {
-            this.onSendFile({
+            this.onParseFile({
                 fileType: "tflite",
                 name: this.name,
                 sampleRate: this.sampleRate,
@@ -4510,7 +4547,7 @@ class TfliteManager {
         this.sendMessage([
             {
                 type: "setTfliteInferencingEnabled",
-                data: UInt8ByteBuffer(Number(newInferencingEnabled)),
+                data: valueToUInt8ArrayBuffer(Number(newInferencingEnabled)),
             },
         ], sendImmediately);
         await promise;
@@ -4613,7 +4650,7 @@ class TfliteManager {
     get configuration() {
         return this.#configuration;
     }
-    sendConfiguration(configuration, sendImmediately) {
+    async sendConfiguration(configuration, sendImmediately) {
         if (configuration == this.#configuration) {
             _console$I.log("redundant tflite configuration assignment");
             return;
@@ -4634,7 +4671,7 @@ class TfliteManager {
             this.setThreshold(threshold, false);
         }
         this.setSensorTypes(sensorTypes, false);
-        this.setName(name, sendImmediately);
+        await this.setName(name, sendImmediately);
     }
     clear() {
         this.#classes = undefined;
@@ -5531,7 +5568,7 @@ class WifiManager {
         this.sendMessage([
             {
                 type: "setWifiConnectionEnabled",
-                data: UInt8ByteBuffer(Number(newWifiConnectionEnabled)),
+                data: valueToUInt8ArrayBuffer(Number(newWifiConnectionEnabled)),
             },
         ], sendImmediately);
         await promise;
@@ -21278,31 +21315,36 @@ function parseSpriteSheet(displayManager, dataView, name, includesHeader = true)
         const headerLength = dataView.getUint16(offset, true);
         offset += 2;
         _console$z.log({ headerLength });
-        const nameLength = dataView.getUint16(offset, true);
-        offset += 2;
-        _console$z.log({ nameLength });
-        name = textDecoder.decode(dataView.buffer.slice(offset, offset + nameLength));
-        _console$z.log({ name });
-        offset += nameLength;
-        const numberOfSpriteNames = dataView.getUint8(offset++);
-        _console$z.log({ numberOfSpriteNames });
-        for (let spriteNameIndex = 0; spriteNameIndex < numberOfSpriteNames; spriteNameIndex++) {
-            const isLast = spriteNameIndex == numberOfSpriteNames - 1;
-            _console$z.log("parsing", { spriteNameIndex, isLast });
-            const spriteNameOffset = dataView.getUint16(offset, true);
-            _console$z.log({ spriteNameOffset });
-            offset += 2;
-            const nextSpriteNameOffset = isLast
-                ? headerLength
-                : dataView.getUint16(offset, true);
-            const spriteNameLength = nextSpriteNameOffset - spriteNameOffset;
-            _console$z.log({ nextSpriteNameOffset, spriteNameLength });
-            const spriteName = textDecoder.decode(dataView.buffer.slice(spriteNameOffset, spriteNameOffset + spriteNameLength));
-            _console$z.log({ spriteName });
-            spriteNames.push(spriteName);
+        if (headerLength == 2) {
+            _console$z.log("spriteSheet doesn't contain any metadata");
         }
-        _console$z.log("spriteNames", spriteNames);
-        offset = headerLength;
+        else {
+            const nameLength = dataView.getUint16(offset, true);
+            offset += 2;
+            _console$z.log({ nameLength });
+            name = textDecoder.decode(dataView.buffer.slice(offset, offset + nameLength));
+            _console$z.log({ name });
+            offset += nameLength;
+            const numberOfSpriteNames = dataView.getUint8(offset++);
+            _console$z.log({ numberOfSpriteNames });
+            for (let spriteNameIndex = 0; spriteNameIndex < numberOfSpriteNames; spriteNameIndex++) {
+                const isLast = spriteNameIndex == numberOfSpriteNames - 1;
+                _console$z.log("parsing", { spriteNameIndex, isLast });
+                const spriteNameOffset = dataView.getUint16(offset, true);
+                _console$z.log({ spriteNameOffset });
+                offset += 2;
+                const nextSpriteNameOffset = isLast
+                    ? headerLength
+                    : dataView.getUint16(offset, true);
+                const spriteNameLength = nextSpriteNameOffset - spriteNameOffset;
+                _console$z.log({ nextSpriteNameOffset, spriteNameLength });
+                const spriteName = textDecoder.decode(dataView.buffer.slice(spriteNameOffset, spriteNameOffset + spriteNameLength));
+                _console$z.log({ spriteName });
+                spriteNames.push(spriteName);
+            }
+            _console$z.log("spriteNames", spriteNames);
+            offset = headerLength;
+        }
     }
     const baseOffset = offset;
     const numberOfSprites = dataView.getUint8(offset++);
@@ -27195,7 +27237,7 @@ let DisplayCanvasHelper = (() => {
             if (this.device?.isConnected && !this.#ignoreDevice) {
                 await this.deviceDisplayManager.uploadSpriteSheet(spriteSheet, this);
                 const spriteSheetIndex = this.deviceDisplayManager.spriteSheetIndices[spriteSheet.name];
-                _console$v.assertWithError(spriteSheetIndex != undefined, `no spriteSheetIndex found for spriteSheetName ${spriteSheet.name}`);
+                _console$v.assertWithError(spriteSheetIndex != undefined, `no spriteSheetIndex found for spriteSheetName "${spriteSheet.name}"`);
                 this.#spriteSheets[spriteSheet.name] = spriteSheet;
                 this.#spriteSheetIndices[spriteSheet.name] = spriteSheetIndex;
                 _console$v.log(`updated spriteSheetIndex #${this.#spriteSheetIndices[spriteSheet.name]} for spriteSheet "${spriteSheet.name}" after uploading to device`);
@@ -27207,7 +27249,7 @@ let DisplayCanvasHelper = (() => {
             }
             else {
                 this.#spriteSheets[spriteSheet.name] = spriteSheet;
-                _console$v.log(`added spriteSheet "${spriteSheet.name} (no index)"`);
+                _console$v.log(`added spriteSheet "${spriteSheet.name}" (no index)`);
             }
         }
         async uploadSpriteSheets(spriteSheets) {
@@ -27586,7 +27628,21 @@ let DisplayCanvasHelper = (() => {
                 return;
             }
             _console$v.log("updateDeviceSpriteSheets", { updateSelf });
-            const sortedSpriteSheets = Object.values(this.spriteSheets).sort((a, b) => this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name]);
+            const directDeviceSpriteSheets = [];
+            if (updateSelf) {
+                Object.values(this.deviceDisplayManager.spriteSheets).forEach((spriteSheet) => {
+                    const spriteSheetIndex = this.deviceDisplayManager.spriteSheetIndices[spriteSheet.name];
+                    this.#spriteSheets[spriteSheet.name] = spriteSheet;
+                    this.#spriteSheetIndices[spriteSheet.name] = spriteSheetIndex;
+                    this.spriteSheetIndices[spriteSheet.name];
+                    _console$v.log(`updated spriteSheetIndex #${this.#spriteSheetIndices[spriteSheet.name]} for spriteSheet "${spriteSheet.name}" after adding directly from device`);
+                    directDeviceSpriteSheets.push(spriteSheet);
+                });
+                _console$v.log("directDeviceSpriteSheets", directDeviceSpriteSheets);
+            }
+            const sortedSpriteSheets = Object.values(this.spriteSheets)
+                .sort((a, b) => this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name])
+                .filter((spriteSheet) => !directDeviceSpriteSheets.includes(spriteSheet));
             _console$v.log("sortedSpriteSheets", sortedSpriteSheets);
             await this.uploadSpriteSheets(sortedSpriteSheets);
         }
@@ -28947,7 +29003,7 @@ let DisplayManager = (() => {
             this.sendMessage([
                 {
                     type: "displayCommand",
-                    data: UInt8ByteBuffer(commandEnum),
+                    data: valueToUInt8ArrayBuffer(commandEnum),
                 },
             ], sendImmediately);
             await promise;
@@ -29065,7 +29121,7 @@ let DisplayManager = (() => {
                 return;
             }
             const newDisplayBrightnessEnum = DisplayBrightnesses.indexOf(newDisplayBrightness);
-            const newDisplayBrightnessData = UInt8ByteBuffer(newDisplayBrightnessEnum);
+            const newDisplayBrightnessData = valueToUInt8ArrayBuffer(newDisplayBrightnessEnum);
             const promise = this.waitForEvent("getDisplayBrightness");
             this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
             await promise;
@@ -30580,7 +30636,7 @@ let DisplayManager = (() => {
             });
         }
         sendFile;
-        onSendFile;
+        onParseFile;
         serializeSpriteSheet(spriteSheet, includeHeader, displayCanvasHelper) {
             return serializeSpriteSheet(this, spriteSheet, includeHeader);
         }
@@ -30621,12 +30677,27 @@ let DisplayManager = (() => {
                 return;
             }
             this.#pendingSpriteSheet = spriteSheet;
-            const includeHeader = this.isClientConnectionType;
+            const includeHeader = true;
             const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet, includeHeader);
-            await this.#setSpriteSheetName(this.#pendingSpriteSheet.name);
-            const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
+            this.#setSpriteSheetName(this.#pendingSpriteSheet.name, false);
+            const promise = new Promise((resolve) => {
+                this.eventDispatcher.addEventListener("displaySpriteSheetUploadComplete", (event) => {
+                    const { spriteSheetName, spriteSheet: _spriteSheet } = event.message;
+                    if (spriteSheetName == spriteSheet.name) {
+                        const isSameSpriteSheet = spriteSheet == _spriteSheet;
+                        _console$t.log("finished uploading spriteSheet", {
+                            isSameSpriteSheet,
+                        });
+                        resolve(isSameSpriteSheet);
+                    }
+                    else {
+                        _console$t.log(`different spriteSheet was uploaded (got "${spriteSheetName}", expected "${spriteSheet.name}") - waiting for right one`);
+                    }
+                });
+            });
             this.sendFile("spriteSheet", buffer, includeHeader);
-            await promise;
+            const isSameSpriteSheet = await promise;
+            _console$t.log({ isSameSpriteSheet });
             if (!this.displayCanvasHelper) {
                 const spriteSheetIndex = this.spriteSheetIndices[spriteSheet.name];
                 if (spriteSheetIndex == this._pendingSelectedSpriteSheetIndex) {
@@ -30870,7 +30941,7 @@ let DisplayManager = (() => {
                 spriteSheetName: this.#pendingSpriteSheetName,
                 spriteSheet: this.#pendingSpriteSheet,
             });
-            this.onSendFile({
+            this.onParseFile({
                 fileType: "spriteSheet",
                 spriteSheet: this.#pendingSpriteSheet,
                 spriteSheetIndex,
@@ -32029,4 +32100,7010 @@ function encode(value) {
   function writeUint64(value) {
     const low = value % POW_2_32;
     const high = (value - low) / POW_2_32;
-    
+    const dataView = prepareWrite(8);
+    dataView.setUint32(offset, high);
+    dataView.setUint32(offset + 4, low);
+    commitWrite();
+  }
+  function writeTypeAndLength(type, length) {
+    if (length < 24) {
+      writeUint8((type << 5) | length);
+    } else if (length < 0x100) {
+      writeUint8((type << 5) | 24);
+      writeUint8(length);
+    } else if (length < 0x10000) {
+      writeUint8((type << 5) | 25);
+      writeUint16(length);
+    } else if (length < 0x100000000) {
+      writeUint8((type << 5) | 26);
+      writeUint32(length);
+    } else {
+      writeUint8((type << 5) | 27);
+      writeUint64(length);
+    }
+  }
+  function encodeItem(value) {
+    let i;
+    const utf8data = [];
+    let length;
+    if (value === false) {
+      return writeUint8(0xf4);
+    }
+    if (value === true) {
+      return writeUint8(0xf5);
+    }
+    if (value === null) {
+      return writeUint8(0xf6);
+    }
+    if (value === undefined) {
+      return writeUint8(0xf7);
+    }
+    switch (typeof value) {
+      case "number":
+        if (Math.floor(value) === value) {
+          if (value >= 0 && value <= POW_2_53) {
+            return writeTypeAndLength(0, value);
+          }
+          if (-POW_2_53 <= value && value < 0) {
+            return writeTypeAndLength(1, -(value + 1));
+          }
+        }
+        writeUint8(0xfb);
+        return writeFloat64(value);
+      case "string":
+        for (i = 0; i < value.length; ++i) {
+          let charCode = value.charCodeAt(i);
+          if (charCode < 0x80) {
+            utf8data.push(charCode);
+          } else if (charCode < 0x800) {
+            utf8data.push(0xc0 | (charCode >> 6));
+            utf8data.push(0x80 | (charCode & 0x3f));
+          } else if (charCode < 0xd800) {
+            utf8data.push(0xe0 | (charCode >> 12));
+            utf8data.push(0x80 | ((charCode >> 6) & 0x3f));
+            utf8data.push(0x80 | (charCode & 0x3f));
+          } else {
+            charCode = (charCode & 0x3ff) << 10;
+            charCode |= value.charCodeAt(++i) & 0x3ff;
+            charCode += 0x10000;
+            utf8data.push(0xf0 | (charCode >> 18));
+            utf8data.push(0x80 | ((charCode >> 12) & 0x3f));
+            utf8data.push(0x80 | ((charCode >> 6) & 0x3f));
+            utf8data.push(0x80 | (charCode & 0x3f));
+          }
+        }
+        writeTypeAndLength(3, utf8data.length);
+        return writeUint8Array(utf8data);
+      default:
+        if (Array.isArray(value)) {
+          length = value.length;
+          writeTypeAndLength(4, length);
+          for (i = 0; i < length; ++i) {
+            encodeItem(value[i]);
+          }
+        } else if (value instanceof Uint8Array) {
+          writeTypeAndLength(2, value.length);
+          writeUint8Array(value);
+        } else {
+          const keys = Object.keys(value);
+          length = keys.length;
+          writeTypeAndLength(5, length);
+          for (i = 0; i < length; ++i) {
+            const key = keys[i];
+            encodeItem(key);
+            encodeItem(value[key]);
+          }
+        }
+    }
+  }
+  encodeItem(value);
+  if ("slice" in data) {
+    return data.slice(0, offset);
+  }
+  const ret = new ArrayBuffer(offset);
+  const retView = new DataView(ret);
+  for (let i = 0; i < offset; ++i) {
+    retView.setUint8(i, dataView.getUint8(i));
+  }
+  return ret;
+}
+function decode(data, tagger, simpleValue) {
+  const dataView = new DataView(data);
+  let offset = 0;
+  if (typeof tagger !== "function") {
+    tagger = function (value) {
+      return value;
+    };
+  }
+  if (typeof simpleValue !== "function") {
+    simpleValue = function () {
+      return undefined;
+    };
+  }
+  function commitRead(length, value) {
+    offset += length;
+    return value;
+  }
+  function readArrayBuffer(length) {
+    return commitRead(length, new Uint8Array(data, offset, length));
+  }
+  function readFloat16() {
+    const tempArrayBuffer = new ArrayBuffer(4);
+    const tempDataView = new DataView(tempArrayBuffer);
+    const value = readUint16();
+    const sign = value & 0x8000;
+    let exponent = value & 0x7c00;
+    const fraction = value & 0x03ff;
+    if (exponent === 0x7c00) {
+      exponent = 0xff << 10;
+    } else if (exponent !== 0) {
+      exponent += (127 - 15) << 10;
+    } else if (fraction !== 0) {
+      return (sign ? -1 : 1) * fraction * POW_2_24;
+    }
+    tempDataView.setUint32(0, (sign << 16) | (exponent << 13) | (fraction << 13));
+    return tempDataView.getFloat32(0);
+  }
+  function readFloat32() {
+    return commitRead(4, dataView.getFloat32(offset));
+  }
+  function readFloat64() {
+    return commitRead(8, dataView.getFloat64(offset));
+  }
+  function readUint8() {
+    return commitRead(1, dataView.getUint8(offset));
+  }
+  function readUint16() {
+    return commitRead(2, dataView.getUint16(offset));
+  }
+  function readUint32() {
+    return commitRead(4, dataView.getUint32(offset));
+  }
+  function readUint64() {
+    return readUint32() * POW_2_32 + readUint32();
+  }
+  function readBreak() {
+    if (dataView.getUint8(offset) !== 0xff) {
+      return false;
+    }
+    offset += 1;
+    return true;
+  }
+  function readLength(additionalInformation) {
+    if (additionalInformation < 24) {
+      return additionalInformation;
+    }
+    if (additionalInformation === 24) {
+      return readUint8();
+    }
+    if (additionalInformation === 25) {
+      return readUint16();
+    }
+    if (additionalInformation === 26) {
+      return readUint32();
+    }
+    if (additionalInformation === 27) {
+      return readUint64();
+    }
+    if (additionalInformation === 31) {
+      return -1;
+    }
+    throw new Error("Invalid length encoding");
+  }
+  function readIndefiniteStringLength(majorType) {
+    const initialByte = readUint8();
+    if (initialByte === 0xff) {
+      return -1;
+    }
+    const length = readLength(initialByte & 0x1f);
+    if (length < 0 || initialByte >> 5 !== majorType) {
+      throw new Error("Invalid indefinite length element");
+    }
+    return length;
+  }
+  function appendUtf16Data(utf16data, length) {
+    for (let i = 0; i < length; ++i) {
+      let value = readUint8();
+      if (value & 0x80) {
+        if (value < 0xe0) {
+          value = ((value & 0x1f) << 6) | (readUint8() & 0x3f);
+          length -= 1;
+        } else if (value < 0xf0) {
+          value = ((value & 0x0f) << 12) | ((readUint8() & 0x3f) << 6) | (readUint8() & 0x3f);
+          length -= 2;
+        } else {
+          value =
+            ((value & 0x0f) << 18) | ((readUint8() & 0x3f) << 12) | ((readUint8() & 0x3f) << 6) | (readUint8() & 0x3f);
+          length -= 3;
+        }
+      }
+      if (value < 0x10000) {
+        utf16data.push(value);
+      } else {
+        value -= 0x10000;
+        utf16data.push(0xd800 | (value >> 10));
+        utf16data.push(0xdc00 | (value & 0x3ff));
+      }
+    }
+  }
+  function decodeItem() {
+    const initialByte = readUint8();
+    const majorType = initialByte >> 5;
+    const additionalInformation = initialByte & 0x1f;
+    let i;
+    let length;
+    if (majorType === 7) {
+      switch (additionalInformation) {
+        case 25:
+          return readFloat16();
+        case 26:
+          return readFloat32();
+        case 27:
+          return readFloat64();
+      }
+    }
+    length = readLength(additionalInformation);
+    if (length < 0 && (majorType < 2 || majorType > 6)) {
+      throw new Error("Invalid length");
+    }
+    const utf16data = [];
+    let retArray;
+    const retObject = {};
+    switch (majorType) {
+      case 0:
+        return length;
+      case 1:
+        return -1 - length;
+      case 2:
+        if (length < 0) {
+          const elements = [];
+          let fullArrayLength = 0;
+          while ((length = readIndefiniteStringLength(majorType)) >= 0) {
+            fullArrayLength += length;
+            elements.push(readArrayBuffer(length));
+          }
+          const fullArray = new Uint8Array(fullArrayLength);
+          let fullArrayOffset = 0;
+          for (i = 0; i < elements.length; ++i) {
+            fullArray.set(elements[i], fullArrayOffset);
+            fullArrayOffset += elements[i].length;
+          }
+          return fullArray;
+        }
+        return readArrayBuffer(length);
+      case 3:
+        if (length < 0) {
+          while ((length = readIndefiniteStringLength(majorType)) >= 0) {
+            appendUtf16Data(utf16data, length);
+          }
+        } else {
+          appendUtf16Data(utf16data, length);
+        }
+        return String.fromCharCode.apply(null, utf16data);
+      case 4:
+        if (length < 0) {
+          retArray = [];
+          while (!readBreak()) {
+            retArray.push(decodeItem());
+          }
+        } else {
+          retArray = new Array(length);
+          for (i = 0; i < length; ++i) {
+            retArray[i] = decodeItem();
+          }
+        }
+        return retArray;
+      case 5:
+        for (i = 0; i < length || (length < 0 && !readBreak()); ++i) {
+          const key = decodeItem();
+          retObject[key] = decodeItem();
+        }
+        return retObject;
+      case 6:
+        return tagger(decodeItem(), length);
+      case 7:
+        switch (length) {
+          case 20:
+            return false;
+          case 21:
+            return true;
+          case 22:
+            return null;
+          case 23:
+            return undefined;
+          default:
+            return simpleValue(length);
+        }
+    }
+  }
+  const ret = decodeItem();
+  if (offset !== data.byteLength) {
+    throw new Error("Remaining bytes");
+  }
+  return ret;
+}
+const CBOR = {
+  encode,
+  decode,
+};
+
+const _console$m = createConsole("mcumgr", { log: false });
+const constants = {
+  MGMT_OP_READ: 0,
+  MGMT_OP_READ_RSP: 1,
+  MGMT_OP_WRITE: 2,
+  MGMT_OP_WRITE_RSP: 3,
+  MGMT_GROUP_ID_OS: 0,
+  MGMT_GROUP_ID_IMAGE: 1,
+  MGMT_GROUP_ID_FS: 8,
+  OS_MGMT_ID_ECHO: 0,
+  OS_MGMT_ID_TASKSTAT: 2,
+  OS_MGMT_ID_MPSTAT: 3,
+  OS_MGMT_ID_RESET: 5,
+  IMG_MGMT_ID_STATE: 0,
+  IMG_MGMT_ID_UPLOAD: 1,
+  IMG_MGMT_ID_ERASE: 5,
+  FS_MGMT_ID_FILE: 0,
+};
+class MCUManager {
+  constructor() {
+    this._mtu = 256;
+    this._messageCallback = null;
+    this._imageUploadProgressCallback = null;
+    this._imageUploadNextCallback = null;
+    this._fileUploadProgressCallback = null;
+    this._fileUploadNextCallback = null;
+    this._uploadIsInProgress = false;
+    this._downloadIsInProgress = false;
+    this._buffer = new Uint8Array();
+    this._seq = 0;
+  }
+  onMessage(callback) {
+    this._messageCallback = callback;
+    return this;
+  }
+  onImageUploadNext(callback) {
+    this._imageUploadNextCallback = callback;
+    return this;
+  }
+  onImageUploadProgress(callback) {
+    this._imageUploadProgressCallback = callback;
+    return this;
+  }
+  onImageUploadFinished(callback) {
+    this._imageUploadFinishedCallback = callback;
+    return this;
+  }
+  onFileUploadNext(callback) {
+    this._fileUploadNextCallback = callback;
+    return this;
+  }
+  onFileUploadProgress(callback) {
+    this._fileUploadProgressCallback = callback;
+    return this;
+  }
+  onFileUploadFinished(callback) {
+    this._fileUploadFinishedCallback = callback;
+    return this;
+  }
+  onFileDownloadNext(callback) {
+    this._fileDownloadNextCallback = callback;
+    return this;
+  }
+  onFileDownloadProgress(callback) {
+    this._fileDownloadProgressCallback = callback;
+    return this;
+  }
+  onFileDownloadFinished(callback) {
+    this._fileDownloadFinishedCallback = callback;
+    return this;
+  }
+  _getMessage(op, group, id, data) {
+    const _flags = 0;
+    let encodedData = [];
+    if (typeof data !== "undefined") {
+      encodedData = [...new Uint8Array(CBOR.encode(data))];
+    }
+    const lengthLo = encodedData.length & 255;
+    const lengthHi = encodedData.length >> 8;
+    const groupLo = group & 255;
+    const groupHi = group >> 8;
+    const message = [op, _flags, lengthHi, lengthLo, groupHi, groupLo, this._seq, id, ...encodedData];
+    this._seq = (this._seq + 1) % 256;
+    return message;
+  }
+  _notification(buffer) {
+    _console$m.log("mcumgr - message received");
+    const message = new Uint8Array(buffer);
+    this._buffer = new Uint8Array([...this._buffer, ...message]);
+    const messageLength = this._buffer[2] * 256 + this._buffer[3];
+    if (this._buffer.length < messageLength + 8) return;
+    this._processMessage(this._buffer.slice(0, messageLength + 8));
+    this._buffer = this._buffer.slice(messageLength + 8);
+  }
+  _processMessage(message) {
+    const [op, , lengthHi, lengthLo, groupHi, groupLo, , id] = message;
+    const data = CBOR.decode(message.slice(8).buffer);
+    const length = lengthHi * 256 + lengthLo;
+    const group = groupHi * 256 + groupLo;
+    _console$m.log("mcumgr - Process Message - Group: " + group + ", Id: " + id + ", Off: " + data.off);
+    if (group === constants.MGMT_GROUP_ID_IMAGE && id === constants.IMG_MGMT_ID_UPLOAD && data.off) {
+      this._uploadOffset = data.off;
+      this._uploadNext();
+      return;
+    }
+    if (
+      op === constants.MGMT_OP_WRITE_RSP &&
+      group === constants.MGMT_GROUP_ID_FS &&
+      id === constants.FS_MGMT_ID_FILE &&
+      data.off
+    ) {
+      this._uploadFileOffset = data.off;
+      this._uploadFileNext();
+      return;
+    }
+    if (op === constants.MGMT_OP_READ_RSP && group === constants.MGMT_GROUP_ID_FS && id === constants.FS_MGMT_ID_FILE) {
+      this._downloadFileOffset += data.data.length;
+      if (data.len != undefined) {
+        this._downloadFileLength = data.len;
+      }
+      _console$m.log("downloaded " + this._downloadFileOffset + " bytes of " + this._downloadFileLength);
+      if (this._downloadFileLength > 0) {
+        this._fileDownloadProgressCallback({
+          percentage: Math.floor((this._downloadFileOffset / this._downloadFileLength) * 100),
+        });
+      }
+      if (this._messageCallback) this._messageCallback({ op, group, id, data, length });
+      this._downloadFileNext();
+      return;
+    }
+    if (this._messageCallback) this._messageCallback({ op, group, id, data, length });
+  }
+  cmdReset() {
+    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_OS, constants.OS_MGMT_ID_RESET);
+  }
+  smpEcho(message) {
+    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_OS, constants.OS_MGMT_ID_ECHO, {
+      d: message,
+    });
+  }
+  cmdImageState() {
+    return this._getMessage(constants.MGMT_OP_READ, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE);
+  }
+  cmdImageErase() {
+    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_ERASE, {});
+  }
+  cmdImageTest(hash) {
+    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE, {
+      hash,
+      confirm: false,
+    });
+  }
+  cmdImageConfirm(hash) {
+    return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE, {
+      hash,
+      confirm: true,
+    });
+  }
+  _hash(image) {
+    return crypto.subtle.digest("SHA-256", image);
+  }
+  async _uploadNext() {
+    if (!this._uploadImage) {
+      return;
+    }
+    if (this._uploadOffset >= this._uploadImage.byteLength) {
+      this._uploadIsInProgress = false;
+      this._imageUploadFinishedCallback();
+      return;
+    }
+    const nmpOverhead = 8;
+    const message = { data: new Uint8Array(), off: this._uploadOffset };
+    if (this._uploadOffset === 0) {
+      message.len = this._uploadImage.byteLength;
+      message.sha = new Uint8Array(await this._hash(this._uploadImage));
+    }
+    this._imageUploadProgressCallback({
+      percentage: Math.floor((this._uploadOffset / this._uploadImage.byteLength) * 100),
+    });
+    const length = this._mtu - CBOR.encode(message).byteLength - nmpOverhead - 3 - 5;
+    message.data = new Uint8Array(this._uploadImage.slice(this._uploadOffset, this._uploadOffset + length));
+    this._uploadOffset += length;
+    const packet = this._getMessage(
+      constants.MGMT_OP_WRITE,
+      constants.MGMT_GROUP_ID_IMAGE,
+      constants.IMG_MGMT_ID_UPLOAD,
+      message
+    );
+    _console$m.log("mcumgr - _uploadNext: Message Length: " + packet.length);
+    this._imageUploadNextCallback({ packet });
+  }
+  async reset() {
+    this._messageCallback = null;
+    this._imageUploadProgressCallback = null;
+    this._imageUploadNextCallback = null;
+    this._fileUploadProgressCallback = null;
+    this._fileUploadNextCallback = null;
+    this._uploadIsInProgress = false;
+    this._downloadIsInProgress = false;
+    this._buffer = new Uint8Array();
+    this._seq = 0;
+  }
+  async cmdUpload(image, slot = 0) {
+    if (this._uploadIsInProgress) {
+      _console$m.error("Upload is already in progress.");
+      return;
+    }
+    this._uploadIsInProgress = true;
+    this._uploadOffset = 0;
+    this._uploadImage = image;
+    this._uploadSlot = slot;
+    this._uploadNext();
+  }
+  async cmdUploadFile(filebuf, destFilename) {
+    if (this._uploadIsInProgress) {
+      _console$m.error("Upload is already in progress.");
+      return;
+    }
+    this._uploadIsInProgress = true;
+    this._uploadFileOffset = 0;
+    this._uploadFile = filebuf;
+    this._uploadFilename = destFilename;
+    this._uploadFileNext();
+  }
+  async _uploadFileNext() {
+    _console$m.log("uploadFileNext - offset: " + this._uploadFileOffset + ", length: " + this._uploadFile.byteLength);
+    if (this._uploadFileOffset >= this._uploadFile.byteLength) {
+      this._uploadIsInProgress = false;
+      this._fileUploadFinishedCallback();
+      return;
+    }
+    const nmpOverhead = 8;
+    const message = { data: new Uint8Array(), off: this._uploadFileOffset };
+    if (this._uploadFileOffset === 0) {
+      message.len = this._uploadFile.byteLength;
+    }
+    message.name = this._uploadFilename;
+    this._fileUploadProgressCallback({
+      percentage: Math.floor((this._uploadFileOffset / this._uploadFile.byteLength) * 100),
+    });
+    const length = this._mtu - CBOR.encode(message).byteLength - nmpOverhead;
+    message.data = new Uint8Array(this._uploadFile.slice(this._uploadFileOffset, this._uploadFileOffset + length));
+    this._uploadFileOffset += length;
+    const packet = this._getMessage(
+      constants.MGMT_OP_WRITE,
+      constants.MGMT_GROUP_ID_FS,
+      constants.FS_MGMT_ID_FILE,
+      message
+    );
+    _console$m.log("mcumgr - _uploadNext: Message Length: " + packet.length);
+    this._fileUploadNextCallback({ packet });
+  }
+  async cmdDownloadFile(filename, destFilename) {
+    if (this._downloadIsInProgress) {
+      _console$m.error("Download is already in progress.");
+      return;
+    }
+    this._downloadIsInProgress = true;
+    this._downloadFileOffset = 0;
+    this._downloadFileLength = 0;
+    this._downloadRemoteFilename = filename;
+    this._downloadLocalFilename = destFilename;
+    this._downloadFileNext();
+  }
+  async _downloadFileNext() {
+    if (this._downloadFileLength > 0) {
+      if (this._downloadFileOffset >= this._downloadFileLength) {
+        this._downloadIsInProgress = false;
+        this._fileDownloadFinishedCallback();
+        return;
+      }
+    }
+    const message = { off: this._downloadFileOffset };
+    if (this._downloadFileOffset === 0) {
+      message.name = this._downloadRemoteFilename;
+    }
+    const packet = this._getMessage(
+      constants.MGMT_OP_READ,
+      constants.MGMT_GROUP_ID_FS,
+      constants.FS_MGMT_ID_FILE,
+      message
+    );
+    _console$m.log("mcumgr - _downloadNext: Message Length: " + packet.length);
+    this._fileDownloadNextCallback({ packet });
+  }
+  async imageInfo(image) {
+    const info = {};
+    const view = new Uint8Array(image);
+    if (view.length < 32) {
+      throw new Error("Invalid image (too short file)");
+    }
+    if (view[0] !== 0x3d || view[1] !== 0xb8 || view[2] !== 0xf3 || view[3] !== 0x96) {
+      throw new Error("Invalid image (wrong magic bytes)");
+    }
+    if (view[4] !== 0x00 || view[5] !== 0x00 || view[6] !== 0x00 || view[7] !== 0x00) {
+      throw new Error("Invalid image (wrong load address)");
+    }
+    const headerSize = view[8] + view[9] * 2 ** 8;
+    if (view[10] !== 0x00 || view[11] !== 0x00) {
+      throw new Error("Invalid image (wrong protected TLV area size)");
+    }
+    const imageSize = view[12] + view[13] * 2 ** 8 + view[14] * 2 ** 16 + view[15] * 2 ** 24;
+    info.imageSize = imageSize;
+    if (view.length < imageSize + headerSize) {
+      throw new Error("Invalid image (wrong image size)");
+    }
+    if (view[16] !== 0x00 || view[17] !== 0x00 || view[18] !== 0x00 || view[19] !== 0x00) {
+      throw new Error("Invalid image (wrong flags)");
+    }
+    const version = `${view[20]}.${view[21]}.${view[22] + view[23] * 2 ** 8}`;
+    info.version = version;
+    info.hash = [...new Uint8Array(await this._hash(image.slice(0, imageSize + 32)))]
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    return info;
+  }
+}
+
+const _console$l = createConsole("FirmwareManager", { log: false });
+const FirmwareMessageTypes = ["smp"];
+const FirmwareEventTypes = [
+    ...FirmwareMessageTypes,
+    "firmwareImages",
+    "firmwareUploadProgress",
+    "firmwareStatus",
+    "firmwareUploadComplete",
+];
+const FirmwareStatuses = [
+    "idle",
+    "uploading",
+    "uploaded",
+    "pending",
+    "testing",
+    "erasing",
+];
+class FirmwareManager {
+    sendMessage;
+    constructor() {
+        this.#assignMcuManagerCallbacks();
+        autoBind(this);
+    }
+    eventDispatcher;
+    get addEventListenter() {
+        return this.eventDispatcher.addEventListener;
+    }
+    get #dispatchEvent() {
+        return this.eventDispatcher.dispatchEvent;
+    }
+    get removeEventListener() {
+        return this.eventDispatcher.removeEventListener;
+    }
+    get waitForEvent() {
+        return this.eventDispatcher.waitForEvent;
+    }
+    parseMessage(messageType, dataView, isSending) {
+        _console$l.log({ messageType, isSending }, dataView);
+        switch (messageType) {
+            case "smp":
+                this.#mcuManager._notification(Array.from(new Uint8Array(dataView.buffer)));
+                this.#dispatchEvent("smp", { dataView });
+                break;
+            default:
+                throw Error(`uncaught messageType ${messageType}`);
+        }
+    }
+    async uploadFirmware(file) {
+        _console$l.log("uploadFirmware", file);
+        const promise = this.waitForEvent("firmwareUploadComplete");
+        await this.getImages();
+        const arrayBuffer = await getFileBuffer(file);
+        const imageInfo = await this.#mcuManager.imageInfo(arrayBuffer);
+        _console$l.log({ imageInfo });
+        this.#mcuManager.cmdUpload(arrayBuffer, 1);
+        this.#updateStatus("uploading");
+        await promise;
+    }
+    #status = "idle";
+    get status() {
+        return this.#status;
+    }
+    #updateStatus(newStatus) {
+        _console$l.assertEnumWithError(FirmwareStatuses, newStatus);
+        if (this.#status == newStatus) {
+            _console$l.log(`redundant firmwareStatus assignment "${newStatus}"`);
+            return;
+        }
+        this.#status = newStatus;
+        _console$l.log({ firmwareStatus: this.#status });
+        this.#dispatchEvent("firmwareStatus", { firmwareStatus: this.#status });
+    }
+    #images;
+    get images() {
+        return this.#images;
+    }
+    #assertImages() {
+        _console$l.assertWithError(this.#images, "didn't get imageState");
+    }
+    #assertValidImageIndex(imageIndex) {
+        _console$l.assertTypeWithError(imageIndex, "number");
+        _console$l.assertWithError(imageIndex == 0 || imageIndex == 1, "imageIndex must be 0 or 1");
+    }
+    async getImages() {
+        const promise = this.waitForEvent("firmwareImages");
+        _console$l.log("getting firmware image state...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageState()).buffer);
+        await promise;
+    }
+    async testImage(imageIndex = 1) {
+        this.#assertValidImageIndex(imageIndex);
+        this.#assertImages();
+        if (!this.#images[imageIndex]) {
+            _console$l.log(`image ${imageIndex} not found`);
+            return;
+        }
+        if (this.#images[imageIndex].pending == true) {
+            _console$l.log(`image ${imageIndex} is already pending`);
+            return;
+        }
+        if (this.#images[imageIndex].empty) {
+            _console$l.log(`image ${imageIndex} is empty`);
+            return;
+        }
+        const promise = this.waitForEvent("smp");
+        _console$l.log("testing firmware image...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageTest(this.#images[imageIndex].hash)).buffer);
+        await promise;
+    }
+    async eraseImage() {
+        this.#assertImages();
+        const promise = this.waitForEvent("smp");
+        _console$l.log("erasing image...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageErase()).buffer);
+        this.#updateStatus("erasing");
+        await promise;
+        await this.getImages();
+    }
+    async confirmImage(imageIndex = 0) {
+        this.#assertValidImageIndex(imageIndex);
+        this.#assertImages();
+        if (this.#images[imageIndex].confirmed === true) {
+            _console$l.log(`image ${imageIndex} is already confirmed`);
+            return;
+        }
+        const promise = this.waitForEvent("smp");
+        _console$l.log("confirming image...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[imageIndex].hash)).buffer);
+        await promise;
+    }
+    async echo(string) {
+        _console$l.assertTypeWithError(string, "string");
+        const promise = this.waitForEvent("smp");
+        _console$l.log("sending echo...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.smpEcho(string)).buffer);
+        await promise;
+    }
+    async reset() {
+        const promise = this.waitForEvent("smp");
+        _console$l.log("resetting...");
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdReset()).buffer);
+        await promise;
+    }
+    #mtu;
+    get mtu() {
+        return this.#mtu;
+    }
+    set mtu(newMtu) {
+        this.#mtu = newMtu;
+        this.#mcuManager._mtu = newMtu;
+    }
+    #mcuManager = new MCUManager();
+    #assignMcuManagerCallbacks() {
+        this.#mcuManager.onMessage(this.#onMcuMessage.bind(this));
+        this.#mcuManager.onFileDownloadNext(this.#onMcuFileDownloadNext);
+        this.#mcuManager.onFileDownloadProgress(this.#onMcuFileDownloadProgress.bind(this));
+        this.#mcuManager.onFileDownloadFinished(this.#onMcuFileDownloadFinished.bind(this));
+        this.#mcuManager.onFileUploadNext(this.#onMcuFileUploadNext.bind(this));
+        this.#mcuManager.onFileUploadProgress(this.#onMcuFileUploadProgress.bind(this));
+        this.#mcuManager.onFileUploadFinished(this.#onMcuFileUploadFinished.bind(this));
+        this.#mcuManager.onImageUploadNext(this.#onMcuImageUploadNext.bind(this));
+        this.#mcuManager.onImageUploadProgress(this.#onMcuImageUploadProgress.bind(this));
+        this.#mcuManager.onImageUploadFinished(this.#onMcuImageUploadFinished.bind(this));
+    }
+    #onMcuMessage({ op, group, id, data, length, }) {
+        _console$l.log("onMcuMessage", ...arguments);
+        switch (group) {
+            case constants.MGMT_GROUP_ID_OS:
+                switch (id) {
+                    case constants.OS_MGMT_ID_ECHO:
+                        _console$l.log(`echo "${data.r}"`);
+                        break;
+                    case constants.OS_MGMT_ID_TASKSTAT:
+                        _console$l.table(data.tasks);
+                        break;
+                    case constants.OS_MGMT_ID_MPSTAT:
+                        _console$l.log(data);
+                        break;
+                }
+                break;
+            case constants.MGMT_GROUP_ID_IMAGE:
+                switch (id) {
+                    case constants.IMG_MGMT_ID_STATE:
+                        this.#onMcuImageState(data);
+                }
+                break;
+            default:
+                throw Error(`uncaught mcuMessage group ${group}`);
+        }
+    }
+    #onMcuFileDownloadNext() {
+        _console$l.log("onMcuFileDownloadNext", ...arguments);
+    }
+    #onMcuFileDownloadProgress() {
+        _console$l.log("onMcuFileDownloadProgress", ...arguments);
+    }
+    #onMcuFileDownloadFinished() {
+        _console$l.log("onMcuFileDownloadFinished", ...arguments);
+    }
+    #onMcuFileUploadNext() {
+        _console$l.log("onMcuFileUploadNext");
+    }
+    #onMcuFileUploadProgress() {
+        _console$l.log("onMcuFileUploadProgress");
+    }
+    #onMcuFileUploadFinished() {
+        _console$l.log("onMcuFileUploadFinished");
+    }
+    #onMcuImageUploadNext({ packet }) {
+        _console$l.log("onMcuImageUploadNext");
+        this.sendMessage(Uint8Array.from(packet).buffer);
+    }
+    #onMcuImageUploadProgress({ percentage }) {
+        const progress = percentage / 100;
+        _console$l.log("onMcuImageUploadProgress", ...arguments);
+        this.#dispatchEvent("firmwareUploadProgress", { progress });
+    }
+    async #onMcuImageUploadFinished() {
+        _console$l.log("onMcuImageUploadFinished", ...arguments);
+        await this.getImages();
+        this.#dispatchEvent("firmwareUploadProgress", { progress: 100 });
+        this.#dispatchEvent("firmwareUploadComplete", {});
+    }
+    #onMcuImageState({ images }) {
+        if (images) {
+            this.#images = images;
+            _console$l.log("images", this.#images);
+        }
+        else {
+            _console$l.log("no images found");
+            return;
+        }
+        let newStatus = "idle";
+        if (this.#images.length == 2) {
+            if (!this.#images[1].bootable) {
+                _console$l.warn('Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image');
+            }
+            else if (!this.#images[0].confirmed) {
+                _console$l.log('Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.');
+                newStatus = "testing";
+            }
+            else {
+                if (this.#images[1].pending) {
+                    _console$l.log("reset to upload to the new firmware image");
+                    newStatus = "pending";
+                }
+                else {
+                    _console$l.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
+                    newStatus = "uploaded";
+                }
+            }
+        }
+        if (this.#images.length == 1) {
+            this.#images.push({
+                slot: 1,
+                empty: true,
+                version: "Empty",
+                pending: false,
+                confirmed: false,
+                bootable: false,
+                active: false,
+                permanent: false,
+            });
+            _console$l.log("Select a firmware upload image to upload to slot 1.");
+        }
+        this.#updateStatus(newStatus);
+        this.#dispatchEvent("firmwareImages", { firmwareImages: this.#images });
+    }
+}
+
+const _console$k = createConsole("WebSocketUtils", { log: false });
+const webSocketPingTimeout = 30_000;
+const webSocketReconnectTimeout = 3_000;
+const WebSocketMessageTypes$1 = ["ping", "pong", "serverMessage"];
+function createWebSocketMessage$1(...messages) {
+    _console$k.log("createWebSocketMessage", ...messages);
+    return createMessage(WebSocketMessageTypes$1, true, ...messages);
+}
+const webSocketPingMessage = createWebSocketMessage$1("ping");
+const webSocketPongMessage = createWebSocketMessage$1("pong");
+
+const _console$j = createConsole("WebSocketConnectionManager", { log: false });
+const WebSocketMessageTypes = [
+    "ping",
+    "pong",
+    "batteryLevel",
+    "deviceInformation",
+    "message",
+];
+function createWebSocketMessage(...messages) {
+    _console$j.log("createWebSocketMessage", ...messages);
+    return createMessage(WebSocketMessageTypes, true, ...messages);
+}
+const WebSocketDeviceInformationMessageTypes = [
+    "deviceInformation",
+    "batteryLevel",
+];
+class WebSocketConnectionManager extends BaseConnectionManager {
+    #bluetoothId;
+    get bluetoothId() {
+        return this.#bluetoothId ?? "";
+    }
+    defaultMtu = 2 ** 10;
+    constructor(ipAddress = "192.168.4.1", isSecure = false, bluetoothId) {
+        super();
+        this.ipAddress = ipAddress;
+        this.isSecure = isSecure;
+        this.mtu = this.defaultMtu;
+        this.#bluetoothId = bluetoothId;
+    }
+    get isAvailable() {
+        return true;
+    }
+    static get isSupported() {
+        return true;
+    }
+    static type = "webSocket";
+    type = WebSocketConnectionManager.type;
+    #webSocket;
+    get webSocket() {
+        return this.#webSocket;
+    }
+    set webSocket(newWebSocket) {
+        if (this.#webSocket == newWebSocket) {
+            _console$j.log("redundant webSocket assignment");
+            return;
+        }
+        _console$j.log("assigning webSocket", newWebSocket);
+        if (this.#webSocket) {
+            removeEventListeners(this.#webSocket, this.#boundWebSocketEventListeners);
+            if (this.#webSocket.readyState == this.#webSocket.OPEN) {
+                this.#webSocket.close();
+            }
+        }
+        if (newWebSocket) {
+            addEventListeners(newWebSocket, this.#boundWebSocketEventListeners);
+        }
+        this.#webSocket = newWebSocket;
+        _console$j.log("assigned webSocket");
+    }
+    #ipAddress;
+    get ipAddress() {
+        return this.#ipAddress;
+    }
+    set ipAddress(newIpAddress) {
+        this.assertIsNotConnected();
+        if (this.#ipAddress == newIpAddress) {
+            _console$j.log(`redundnant ipAddress assignment "${newIpAddress}"`);
+            return;
+        }
+        this.#ipAddress = newIpAddress;
+        _console$j.log(`updated ipAddress to "${this.ipAddress}"`);
+    }
+    #isSecure = false;
+    get isSecure() {
+        return this.#isSecure;
+    }
+    set isSecure(newIsSecure) {
+        this.assertIsNotConnected();
+        if (this.#isSecure == newIsSecure) {
+            _console$j.log(`redundant isSecure assignment ${newIsSecure}`);
+            return;
+        }
+        this.#isSecure = newIsSecure;
+        _console$j.log(`updated isSecure to "${this.isSecure}"`);
+    }
+    get url() {
+        return `${this.isSecure ? "wss" : "ws"}://${this.ipAddress}/ws`;
+    }
+    async connect() {
+        const canContinue = await super.connect();
+        if (!canContinue) {
+            return false;
+        }
+        try {
+            this.webSocket = new WebSocket(this.url);
+            return true;
+        }
+        catch (error) {
+            _console$j.error("error connecting to webSocket", error);
+            this.status = "notConnected";
+            return false;
+        }
+    }
+    async disconnect() {
+        const canContinue = await super.disconnect();
+        if (!canContinue) {
+            return false;
+        }
+        _console$j.log("closing websocket");
+        this.#pingTimer.stop();
+        this.#webSocket?.close();
+        return true;
+    }
+    get canReconnect() {
+        return Boolean(this.webSocket);
+    }
+    async reconnect() {
+        const canContinue = await super.reconnect();
+        if (!canContinue) {
+            return false;
+        }
+        this.webSocket = new WebSocket(this.url);
+        return true;
+    }
+    async sendSmpMessage(data) {
+        super.sendSmpMessage(data);
+        _console$j.error("smp not supported on webSockets");
+    }
+    async sendTxData(data) {
+        await super.sendTxData(data);
+        if (data.byteLength == 0) {
+            return;
+        }
+        this.#sendWebSocketMessage({ type: "message", data });
+    }
+    #sendMessage(message) {
+        this.assertIsConnected();
+        _console$j.log("sending webSocket message", message);
+        this.#webSocket.send(message);
+        this.#pingTimer.restart();
+    }
+    #sendWebSocketMessage(...messages) {
+        this.#sendMessage(createWebSocketMessage(...messages));
+    }
+    #boundWebSocketEventListeners = {
+        open: this.#onWebSocketOpen.bind(this),
+        message: this.#onWebSocketMessage.bind(this),
+        close: this.#onWebSocketClose.bind(this),
+        error: this.#onWebSocketError.bind(this),
+    };
+    #onWebSocketOpen(event) {
+        _console$j.log("webSocket.open", event);
+        this.#pingTimer.start();
+        this.status = "connected";
+        this.#requestDeviceInformation();
+    }
+    async #onWebSocketMessage(event) {
+        const arrayBuffer = await event.data.arrayBuffer();
+        const dataView = new DataView(arrayBuffer);
+        _console$j.log(`webSocket.message (${dataView.byteLength} bytes)`);
+        this.#parseWebSocketMessage(dataView);
+    }
+    #onWebSocketClose(event) {
+        _console$j.log("webSocket.close", event);
+        this.status = "notConnected";
+        this.#pingTimer.stop();
+    }
+    #onWebSocketError(event) {
+        _console$j.error("webSocket.error", event);
+    }
+    #parseWebSocketMessage(dataView) {
+        parseMessage(dataView, WebSocketMessageTypes, this.#onMessage.bind(this), null, true);
+    }
+    #onMessage(messageType, dataView) {
+        _console$j.log(`received "${messageType}" message (${dataView.byteLength} bytes)`);
+        switch (messageType) {
+            case "ping":
+                this.#pong();
+                break;
+            case "pong":
+                break;
+            case "batteryLevel":
+                this.onMessageReceived?.("batteryLevel", dataView);
+                break;
+            case "deviceInformation":
+                parseMessage(dataView, DeviceInformationTypes, (deviceInformationType, dataView) => {
+                    this.onMessageReceived(deviceInformationType, dataView);
+                });
+                break;
+            case "message":
+                this.parseRxMessage(dataView);
+                break;
+            default:
+                _console$j.error(`uncaught messageType "${messageType}"`);
+                break;
+        }
+    }
+    #pingTimer = new Timer(this.#ping.bind(this), webSocketPingTimeout - 1_000);
+    #ping() {
+        _console$j.log("pinging");
+        this.#sendWebSocketMessage("ping");
+    }
+    #pong() {
+        _console$j.log("ponging");
+        this.#sendWebSocketMessage("pong");
+    }
+    #requestDeviceInformation() {
+        this.#sendWebSocketMessage(...WebSocketDeviceInformationMessageTypes);
+    }
+    remove() {
+        super.remove();
+        this.webSocket = undefined;
+    }
+}
+
+var _a$3;
+const _console$i = createConsole("Device", { log: false });
+const DeviceEventTypes = [
+    "connectionMessage",
+    ...ConnectionEventTypes,
+    ...MetaConnectionMessageTypes,
+    ...BatteryLevelMessageTypes,
+    ...InformationEventTypes,
+    ...DeviceInformationEventTypes,
+    ...SensorConfigurationEventTypes,
+    ...SensorDataEventTypes,
+    ...VibrationEventTypes,
+    ...FileTransferEventTypes,
+    ...TfliteEventTypes,
+    ...WifiEventTypes,
+    ...CameraEventTypes,
+    ...MicrophoneEventTypes,
+    ...DisplayEventTypes,
+    ...SensorMetaDataEventTypes,
+    ...LedEventTypes,
+    ...FirmwareEventTypes,
+];
+const RequiredInformationConnectionMessages = [
+    "isCharging",
+    "getBatteryCurrent",
+    "getId",
+    "getMtu",
+    "getName",
+    "getType",
+    "getCurrentTime",
+    "getSensorConfiguration",
+    "getSensorScalars",
+    "getVibrationLocations",
+    "getFileTypes",
+    "isWifiAvailable",
+    "isDisplayAvailable",
+    "getLedInformation",
+];
+class Device {
+    static OnDevice;
+    static OnDeviceConnectionStatusUpdated;
+    get bluetoothId() {
+        return this.#connectionManager?.bluetoothId;
+    }
+    get isAvailable() {
+        return this.#connectionManager?.isAvailable;
+    }
+    constructor() {
+        autoBind(this);
+        this.#deviceInformationManager.eventDispatcher = this
+            .#eventDispatcher;
+        this._informationManager.sendMessage = this
+            .sendTxMessages;
+        this._informationManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#sensorConfigurationManager.sendMessage = this
+            .sendTxMessages;
+        this.#sensorConfigurationManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#sensorDataManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#vibrationManager.sendMessage = this
+            .sendTxMessages;
+        this.#vibrationManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#tfliteManager.sendMessage = this
+            .sendTxMessages;
+        this.#tfliteManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#tfliteManager.onParseFile = this.#fileTransferManager
+            .onParseFile;
+        this.#fileTransferManager.sendMessage = this
+            .sendTxMessages;
+        this.#fileTransferManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#fileTransferManager.onFileConfiguration =
+            this.#onFileConfiguration.bind(this);
+        this.#wifiManager.sendMessage = this
+            .sendTxMessages;
+        this.#wifiManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#cameraManager.sendMessage = this
+            .sendTxMessages;
+        this.#cameraManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#microphoneManager.sendMessage = this
+            .sendTxMessages;
+        this.#microphoneManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#displayManager.sendMessage = this
+            .sendTxMessages;
+        this.#displayManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#displayManager.sendFile = this.#fileTransferManager
+            .send;
+        this.#displayManager.onParseFile = this.#fileTransferManager
+            .onParseFile;
+        this.#ledManager.sendMessage = this
+            .sendTxMessages;
+        this.#ledManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#firmwareManager.sendMessage = this
+            .sendSmpMessage;
+        this.#firmwareManager.eventDispatcher = this
+            .#eventDispatcher;
+        this.#initThisEventListeners();
+        if (isInBrowser) {
+            window.addEventListener("beforeunload", () => {
+                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+                    this.clearSensorConfiguration();
+                }
+            });
+        }
+        if (isInNode) {
+            process.on("exit", () => {
+                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+                    this.clearSensorConfiguration();
+                }
+            });
+        }
+    }
+    static #DefaultConnectionManager() {
+        return new WebBluetoothConnectionManager();
+    }
+    #eventDispatcher = new EventDispatcher(this, DeviceEventTypes);
+    get addEventListener() {
+        return this.#eventDispatcher.addEventListener;
+    }
+    get #dispatchEvent() {
+        return this.#eventDispatcher.dispatchEvent;
+    }
+    get removeEventListener() {
+        return this.#eventDispatcher.removeEventListener;
+    }
+    get waitForEvent() {
+        return this.#eventDispatcher.waitForEvent;
+    }
+    get removeEventListeners() {
+        return this.#eventDispatcher.removeEventListeners;
+    }
+    removeAllEventListeners() {
+        this.#eventDispatcher.removeAllEventListeners();
+        this.#initThisEventListeners();
+    }
+    #initThisEventListeners() {
+        this.addEventListener("getMtu", () => {
+            _console$i.log("updating mtu", { mtu: this.mtu });
+            this.#firmwareManager.mtu = this.mtu;
+            this.#fileTransferManager.mtu = this.mtu;
+            this.connectionManager.mtu = this.mtu;
+            this.#displayManager.mtu = this.mtu;
+        });
+        this.addEventListener("getSensorConfiguration", () => {
+            if (this.connectionType == "client") {
+                return;
+            }
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
+            if (this.sensorTypes.includes("pressure")) {
+                _console$i.log("requesting required pressure information");
+                const messages = RequiredPressureMessageTypes.map((messageType) => ({
+                    type: messageType,
+                }));
+                this.sendTxMessages(messages, false);
+            }
+            else {
+                _console$i.log("don't need to request pressure infomration");
+            }
+            if (this.sensorTypes.includes("camera")) {
+                _console$i.log("requesting required camera information");
+                const messages = RequiredCameraMessageTypes.map((messageType) => ({
+                    type: messageType,
+                }));
+                this.sendTxMessages(messages, false);
+            }
+            else {
+                _console$i.log("don't need to request camera infomration");
+            }
+            if (this.sensorTypes.includes("microphone")) {
+                _console$i.log("requesting required microphone information");
+                const messages = RequiredMicrophoneMessageTypes.map((messageType) => ({
+                    type: messageType,
+                }));
+                this.sendTxMessages(messages, false);
+            }
+            else {
+                _console$i.log("don't need to request microphone infomration");
+            }
+            if (this.sensorTypes.includes("buttons") ||
+                this.sensorTypes.includes("touches")) {
+                _console$i.log("requesting number of buttons/touches");
+                const messages = RequiredSensorMetaDataMessageTypes.map((messageType) => ({
+                    type: messageType,
+                }));
+                this.sendTxMessages(messages, false);
+            }
+            else {
+                _console$i.log("don't need to request number of buttons/touches");
+            }
+        });
+        this.addEventListener("getSensorConfiguration", (event) => {
+            const { sensorConfiguration } = event.message;
+            this.#cameraManager.sensorRate = sensorConfiguration.camera ?? 0;
+        });
+        this.addEventListener("isDisplayAvailable", (event) => {
+            if (this.connectionType == "client") {
+                return;
+            }
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
+            if (this.isDisplayAvailable) {
+                this.#displayManager.requestRequiredInformation();
+            }
+        });
+        this.addEventListener("getFileTypes", () => {
+            if (this.connectionType == "client") {
+                return;
+            }
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
+            if (this.fileTypes.length > 0) {
+                this.#fileTransferManager.requestRequiredInformation();
+            }
+            if (this.fileTypes.includes("tflite")) {
+                this.#tfliteManager.requestRequiredInformation();
+            }
+        });
+        this.addEventListener("isWifiAvailable", () => {
+            if (this.connectionType == "client") {
+                return;
+            }
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
+            if (this.isWifiAvailable) {
+                this.#wifiManager.requestRequiredInformation();
+            }
+        });
+        this.addEventListener("fileTransferProgress", (event) => {
+            const { fileType, progress } = event.message;
+            switch (fileType) {
+                case "spriteSheet":
+                    this.#dispatchEvent("displaySpriteSheetUploadProgress", {
+                        spriteSheet: this.#displayManager.pendingSpriteSheet,
+                        spriteSheetName: this.#displayManager.pendingSpriteSheetName,
+                        progress,
+                    });
+                    break;
+                case "cameraImage":
+                    this.#dispatchEvent("cameraImageProgress", {
+                        progress,
+                        type: "image",
+                    });
+                    break;
+            }
+        });
+        this.addEventListener("fileTransferStatus", (event) => {
+            const { fileType, fileTransferStatus } = event.message;
+            switch (fileType) {
+                case "spriteSheet":
+                    if (fileTransferStatus == "sending") {
+                        this.#dispatchEvent("displaySpriteSheetUploadStart", {
+                            spriteSheet: this.#displayManager.pendingSpriteSheet,
+                            spriteSheetName: this.#displayManager.pendingSpriteSheetName,
+                        });
+                    }
+                    break;
+            }
+        });
+        _a$3.OnDevice(this);
+    }
+    #connectionManager;
+    get connectionManager() {
+        return this.#connectionManager;
+    }
+    set connectionManager(newConnectionManager) {
+        if (this.connectionManager == newConnectionManager) {
+            _console$i.log("same connectionManager is already assigned");
+            return;
+        }
+        if (this.connectionManager) {
+            this.connectionManager.remove();
+        }
+        if (newConnectionManager) {
+            newConnectionManager.onStatusUpdated =
+                this.#onConnectionStatusUpdated.bind(this);
+            newConnectionManager.onMessageReceived =
+                this.#onConnectionMessageReceived.bind(this);
+            newConnectionManager.onMessagesReceived =
+                this.#onConnectionMessagesReceived.bind(this);
+            newConnectionManager.onMessageSent =
+                this.#onConnectionMessageSent.bind(this);
+            newConnectionManager.onMessagesSent =
+                this.#onConnectionMessagesSent.bind(this);
+        }
+        this.#connectionManager = newConnectionManager;
+        _console$i.log("assigned new connectionManager", this.#connectionManager);
+        this._informationManager.connectionType = this.connectionType;
+        this.#fileTransferManager.connectionType = this.connectionType;
+        this.#displayManager.connectionType = this.connectionType;
+        if (this.connectionManager?.type == "client") {
+            this.#displayManager.clientMtu = this.connectionManager.client.clientMtu;
+        }
+    }
+    async #sendTxMessages(messages, sendImmediately = true) {
+        _console$i.log("sendTxMessages", messages, { sendImmediately });
+        await this.#connectionManager?.sendTxMessages(messages, sendImmediately);
+        if (sendImmediately) {
+            this.#ledManager.onSendTxMessages();
+        }
+    }
+    sendTxMessages = this.#sendTxMessages.bind(this);
+    async connect(options) {
+        if (this.isConnected) {
+            _console$i.log("already connected");
+            return;
+        }
+        if (this.connectionStatus == "connecting") {
+            _console$i.log("already connecting");
+            return;
+        }
+        if (options?.reconnect && this.canReconnect) {
+            return this.reconnect();
+        }
+        _console$i.log("connect options", options);
+        if (options) {
+            switch (options.type) {
+                case "webBluetooth":
+                    if (this.connectionManager?.type != "webBluetooth") {
+                        this.connectionManager = new WebBluetoothConnectionManager();
+                    }
+                    break;
+                case "webSocket":
+                    {
+                        let createConnectionManager = false;
+                        if (this.connectionManager?.type == "webSocket") {
+                            if (this.connectionManager.ipAddress != options.ipAddress ||
+                                this.connectionManager.isSecure != options.isWifiSecure) {
+                                createConnectionManager = true;
+                            }
+                        }
+                        else {
+                            createConnectionManager = true;
+                        }
+                        if (createConnectionManager) {
+                            this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isWifiSecure, this.bluetoothId);
+                        }
+                    }
+                    break;
+                case "udp":
+                    {
+                        let createConnectionManager = false;
+                        if (this.connectionManager?.type == "udp") {
+                            if (this.connectionManager.ipAddress != options.ipAddress) {
+                                createConnectionManager = true;
+                            }
+                            this.reconnectOnDisconnection = true;
+                        }
+                        else {
+                            createConnectionManager = true;
+                        }
+                        if (createConnectionManager) {
+                            this.connectionManager = new UDPConnectionManager(options.ipAddress, this.bluetoothId);
+                        }
+                    }
+                    break;
+            }
+        }
+        if (!this.connectionManager) {
+            this.connectionManager = _a$3.#DefaultConnectionManager();
+        }
+        this.#clear();
+        if (options?.type == "client") {
+            _console$i.assertWithError(this.connectionManager.type == "client", "expected clientConnectionManager");
+            if (this.connectionManager.type == "client") {
+                this.connectionManager.subType = options.subType;
+                return this.connectionManager.connect();
+            }
+        }
+        _console$i.log("connectionManager type", this.connectionManager.type);
+        return this.connectionManager.connect();
+    }
+    #isConnected = false;
+    get isConnected() {
+        return this.#isConnected;
+    }
+    #assertIsConnected() {
+        _console$i.assertWithError(this.isConnected, "notConnected");
+    }
+    #didReceiveMessageTypes(messageTypes) {
+        return messageTypes.every((messageType) => {
+            let hasConnectionMessage = this.latestConnectionMessages.has(messageType);
+            if (!hasConnectionMessage) {
+                if (messageType == "getLedInformation" ||
+                    messageType == "isDisplayAvailable") {
+                    hasConnectionMessage = true;
+                }
+                else {
+                    _console$i.log(`didn't receive "${messageType}" message`);
+                }
+            }
+            return hasConnectionMessage;
+        });
+    }
+    get #hasRequiredInformation() {
+        let hasRequiredInformation = this.#didReceiveMessageTypes(RequiredInformationConnectionMessages);
+        if (hasRequiredInformation && this.sensorTypes.includes("pressure")) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredPressureMessageTypes);
+        }
+        if (hasRequiredInformation && this.isWifiAvailable) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredWifiMessageTypes);
+        }
+        if (hasRequiredInformation && this.fileTypes.length > 0) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredFileTransferMessageTypes);
+        }
+        if (hasRequiredInformation && this.fileTypes.includes("tflite")) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredTfliteMessageTypes);
+        }
+        if (hasRequiredInformation && this.hasCamera) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredCameraMessageTypes);
+        }
+        if (hasRequiredInformation && this.hasMicrophone) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredMicrophoneMessageTypes);
+        }
+        if (hasRequiredInformation && this.isDisplayAvailable) {
+            hasRequiredInformation = this.#didReceiveMessageTypes(RequiredDisplayMessageTypes);
+            if (this.connectionType == "client") {
+                hasRequiredInformation =
+                    hasRequiredInformation &&
+                        this.#didReceiveMessageTypes(["displayContextCommands"]);
+            }
+        }
+        if (hasRequiredInformation && this.connectionType == "client") {
+            hasRequiredInformation = this.fileTransferStatus == "idle";
+        }
+        return hasRequiredInformation;
+    }
+    #requestRequiredInformation() {
+        _console$i.log("requesting required information");
+        const messages = RequiredInformationConnectionMessages.map((messageType) => ({
+            type: messageType,
+        }));
+        this.#sendTxMessages(messages);
+    }
+    get canReconnect() {
+        return this.connectionManager?.canReconnect;
+    }
+    #assertCanReconnect() {
+        _console$i.assertWithError(this.canReconnect, "cannot reconnect to device");
+    }
+    async reconnect() {
+        if (this.isConnected) {
+            _console$i.log("already connected");
+            return;
+        }
+        if (this.connectionStatus == "connecting") {
+            _console$i.log("already connecting");
+            return;
+        }
+        if (!this.canReconnect) {
+            _console$i.warn("cannot reconnect");
+            return false;
+        }
+        _console$i.log("attempting to reconnect...");
+        this.#clear();
+        _console$i.log("reconnecting...");
+        return this.connectionManager?.reconnect();
+    }
+    static async Connect() {
+        const device = new _a$3();
+        await device.connect();
+        return device;
+    }
+    static #ReconnectOnDisconnection = false;
+    static get ReconnectOnDisconnection() {
+        return this.#ReconnectOnDisconnection;
+    }
+    static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
+        _console$i.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        this.#ReconnectOnDisconnection = newReconnectOnDisconnection;
+    }
+    #reconnectOnDisconnection = _a$3.ReconnectOnDisconnection;
+    get reconnectOnDisconnection() {
+        return this.#reconnectOnDisconnection;
+    }
+    set reconnectOnDisconnection(newReconnectOnDisconnection) {
+        _console$i.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        this.#reconnectOnDisconnection = newReconnectOnDisconnection;
+    }
+    #reconnectIntervalId;
+    get connectionType() {
+        return this.connectionManager?.type;
+    }
+    async disconnect() {
+        if (this.connectionStatus == "notConnected") {
+            _console$i.log("already not connected");
+            return;
+        }
+        if (this.connectionStatus == "disconnecting") {
+            _console$i.log("already disconnecting");
+            return;
+        }
+        if (this.reconnectOnDisconnection) {
+            this.reconnectOnDisconnection = false;
+            this.addEventListener("isConnected", () => {
+                this.reconnectOnDisconnection = true;
+            }, { once: true });
+        }
+        return this.connectionManager.disconnect();
+    }
+    async toggleConnection(arg = true) {
+        let options;
+        let reconnect = true;
+        switch (typeof arg) {
+            case "boolean":
+                reconnect = Boolean(arg);
+                break;
+            case "object":
+                options = arg;
+                reconnect = false;
+                break;
+            default:
+                _console$i.error("uncaught toggleConnection param", arg);
+                break;
+        }
+        _console$i.log("reconnect", { reconnect, options });
+        switch (this.connectionStatus) {
+            case "connecting":
+            case "connected":
+                await this.disconnect();
+                break;
+            case "disconnecting":
+                break;
+            case "notConnected":
+                if (reconnect && this.canReconnect) {
+                    try {
+                        await this.reconnect();
+                    }
+                    catch (error) {
+                        _console$i.error("error trying to reconnect", error);
+                        await this.connect(options);
+                    }
+                }
+                else {
+                    await this.connect(options);
+                }
+                break;
+        }
+    }
+    get connectionStatus() {
+        switch (this.#connectionManager?.status) {
+            case "connected":
+                return this.isConnected ? "connected" : "connecting";
+            case "notConnected":
+            case "connecting":
+            case "disconnecting":
+                return this.#connectionManager.status;
+            default:
+                return "notConnected";
+        }
+    }
+    get isConnectionBusy() {
+        return (this.connectionStatus == "connecting" ||
+            this.connectionStatus == "disconnecting");
+    }
+    async #onConnectionStatusUpdated(connectionStatus) {
+        _console$i.log({ connectionStatus });
+        if (connectionStatus == "notConnected") {
+            this.#clearConnection();
+            await this.stopRecordingCamera();
+            this.stopRecordingMicrophone();
+            if (this.canReconnect && this.reconnectOnDisconnection) {
+                _console$i.log("starting reconnect interval...");
+                this.#reconnectIntervalId = setInterval(() => {
+                    _console$i.log("attempting reconnect...");
+                    this.reconnect();
+                }, 1000);
+            }
+        }
+        else {
+            if (this.#reconnectIntervalId != undefined) {
+                _console$i.log("clearing reconnect interval");
+                clearInterval(this.#reconnectIntervalId);
+                this.#reconnectIntervalId = undefined;
+            }
+        }
+        this.#checkConnection();
+        if (connectionStatus == "connected" && !this.#isConnected) {
+            if (this.connectionType != "client") {
+                this.#requestRequiredInformation();
+            }
+        }
+        _a$3.OnDeviceConnectionStatusUpdated(this, connectionStatus);
+    }
+    #dispatchConnectionEvents(includeIsConnected = false) {
+        this.#dispatchEvent("connectionStatus", {
+            connectionStatus: this.connectionStatus,
+        });
+        this.#dispatchEvent(this.connectionStatus, {});
+        if (includeIsConnected) {
+            this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
+        }
+    }
+    #checkConnection() {
+        this.#isConnected =
+            Boolean(this.connectionManager?.isConnected) &&
+                this.#hasRequiredInformation &&
+                this._informationManager.isCurrentTimeSet;
+        switch (this.connectionStatus) {
+            case "connected":
+                if (this.#isConnected) {
+                    this.#dispatchConnectionEvents(true);
+                }
+                break;
+            case "notConnected":
+                this.#dispatchConnectionEvents(true);
+                break;
+            default:
+                this.#dispatchConnectionEvents(false);
+                break;
+        }
+    }
+    #clear() {
+        this.#clearConnection();
+        this._informationManager.clear();
+        this.#deviceInformationManager.clear();
+        this.#tfliteManager.clear();
+        this.#fileTransferManager.clear();
+        this.#wifiManager.clear();
+        this.#cameraManager.clear();
+        this.#microphoneManager.clear();
+        this.#sensorDataManager.clear();
+        this.#sensorConfigurationManager.clear();
+        this.#displayManager.reset();
+        this.#ledManager.clear();
+        this.#batteryLevel = undefined;
+    }
+    #clearConnection() {
+        _console$i.log("clearConnection");
+        this.connectionManager?.clear();
+        this.latestConnectionMessages.clear();
+    }
+    #onConnectionMessageReceived(messageType, dataView, isSending) {
+        _console$i.log({ messageType, dataView, isSending });
+        switch (messageType) {
+            case "batteryLevel":
+                const batteryLevel = dataView.getUint8(0);
+                _console$i.log("received battery level", { batteryLevel });
+                this.#updateBatteryLevel(batteryLevel);
+                break;
+            default:
+                if (FileTransferMessageTypes.includes(messageType)) {
+                    this.#fileTransferManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (TfliteMessageTypes.includes(messageType)) {
+                    this.#tfliteManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (SensorDataMessageTypes.includes(messageType)) {
+                    this.#sensorDataManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (SensorMetaDataMessageTypes.includes(messageType)) {
+                    this.#sensorDataManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (FirmwareMessageTypes.includes(messageType)) {
+                    this.#firmwareManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (DeviceInformationTypes.includes(messageType)) {
+                    this.#deviceInformationManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (InformationMessageTypes.includes(messageType)) {
+                    this._informationManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (SensorConfigurationMessageTypes.includes(messageType)) {
+                    this.#sensorConfigurationManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (VibrationMessageTypes.includes(messageType)) {
+                    this.#vibrationManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (WifiMessageTypes.includes(messageType)) {
+                    this.#wifiManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (CameraMessageTypes.includes(messageType)) {
+                    this.#cameraManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (MicrophoneMessageTypes.includes(messageType)) {
+                    this.#microphoneManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (DisplayMessageTypes.includes(messageType)) {
+                    this.#displayManager.parseMessage(messageType, dataView, isSending);
+                }
+                else if (LedMessageTypes.includes(messageType)) {
+                    this.#ledManager.parseMessage(messageType, dataView, isSending);
+                }
+                else {
+                    throw Error(`uncaught messageType ${messageType}`);
+                }
+        }
+        if (isSending) {
+            return;
+        }
+        this.latestConnectionMessages.set(messageType, dataView);
+        if (messageType.startsWith("set")) {
+            this.latestConnectionMessages.set(
+            messageType.replace("set", "get"), dataView);
+        }
+        this.#dispatchEvent("connectionMessage", { messageType, dataView });
+    }
+    #onConnectionMessagesReceived() {
+        if (!this.isConnected && this.#hasRequiredInformation) {
+            this.#checkConnection();
+        }
+        if (this.connectionStatus == "notConnected" ||
+            this.connectionStatus == "disconnecting") {
+            return;
+        }
+        this.#sendTxMessages();
+    }
+    _onRemoteConnectionMessageSent(messageType, dataView, isSending = true) {
+        _console$i.log("_onConnectionMessageSent", { messageType }, dataView);
+        this.#onConnectionMessageReceived(messageType, dataView, isSending);
+    }
+    #onConnectionMessageSent(message, indirectly) {
+        _console$i.log("onConnectionMessageSent", message, { indirectly });
+    }
+    #onConnectionMessagesSent(messages, indirectly) {
+        _console$i.log("onConnectionMessagesSent", messages, { indirectly });
+    }
+    latestConnectionMessages = new Map();
+    #deviceInformationManager = new DeviceInformationManager();
+    get deviceInformation() {
+        return this.#deviceInformationManager.information;
+    }
+    #batteryLevel = undefined;
+    get batteryLevel() {
+        return this.#batteryLevel ?? 0;
+    }
+    #updateBatteryLevel(updatedBatteryLevel) {
+        _console$i.assertTypeWithError(updatedBatteryLevel, "number");
+        if (this.#batteryLevel == updatedBatteryLevel) {
+            _console$i.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
+            return;
+        }
+        this.#batteryLevel = updatedBatteryLevel;
+        _console$i.log({ updatedBatteryLevel: this.#batteryLevel });
+        this.#dispatchEvent("batteryLevel", { batteryLevel: this.#batteryLevel });
+    }
+    _informationManager = new InformationManager();
+    get id() {
+        return this._informationManager.id;
+    }
+    get isCharging() {
+        return this._informationManager.isCharging;
+    }
+    get batteryCurrent() {
+        return this._informationManager.batteryCurrent;
+    }
+    get getBatteryCurrent() {
+        return this._informationManager.getBatteryCurrent;
+    }
+    get name() {
+        return this._informationManager.name;
+    }
+    get setName() {
+        return this._informationManager.setName;
+    }
+    get type() {
+        return this._informationManager.type;
+    }
+    get setType() {
+        return this._informationManager.setType;
+    }
+    get isInsole() {
+        return this._informationManager.isInsole;
+    }
+    get isGlove() {
+        return this._informationManager.isGlove;
+    }
+    get isGlasses() {
+        return this._informationManager.isGlasses;
+    }
+    get isGeneric() {
+        return this._informationManager.isGeneric;
+    }
+    get side() {
+        return this._informationManager.side;
+    }
+    get mtu() {
+        return this._informationManager.mtu;
+    }
+    get sensorTypes() {
+        return Object.keys(this.sensorConfiguration);
+    }
+    get continuousSensorTypes() {
+        return ContinuousSensorTypes.filter((sensorType) => this.sensorTypes.includes(sensorType));
+    }
+    #sensorConfigurationManager = new SensorConfigurationManager();
+    get sensorConfiguration() {
+        return this.#sensorConfigurationManager.configuration;
+    }
+    get setSensorConfiguration() {
+        this.#assertIsConnected();
+        return this.#sensorConfigurationManager.setConfiguration;
+    }
+    get toggleSensor() {
+        this.#assertIsConnected();
+        return this.#sensorConfigurationManager.toggleSensor;
+    }
+    get availableSensorTypes() {
+        return this.#sensorConfigurationManager.availableSensorTypes;
+    }
+    get hasSensorType() {
+        return this.#sensorConfigurationManager.hasSensorType;
+    }
+    async clearSensorConfiguration() {
+        this.#assertIsConnected();
+        return this.#sensorConfigurationManager.clearSensorConfiguration();
+    }
+    static #ClearSensorConfigurationOnLeave = false;
+    static get ClearSensorConfigurationOnLeave() {
+        return this.#ClearSensorConfigurationOnLeave;
+    }
+    static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
+        _console$i.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        this.#ClearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
+    }
+    #clearSensorConfigurationOnLeave = _a$3.ClearSensorConfigurationOnLeave;
+    get clearSensorConfigurationOnLeave() {
+        return this.#clearSensorConfigurationOnLeave;
+    }
+    set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
+        _console$i.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
+    }
+    #sensorDataManager = new SensorDataManager();
+    #assertPressure() {
+        _console$i.assertWithError(this.hasSensorType("pressure"), "pressure sensorType not included in device");
+    }
+    get numberOfPressureSensors() {
+        if (this.hasSensorType("pressure")) {
+            return this.#sensorDataManager.pressureSensorDataManager.numberOfSensors;
+        }
+        else {
+            return 0;
+        }
+    }
+    get pressureSensorPositions() {
+        if (this.hasSensorType("pressure")) {
+            return this.#sensorDataManager.pressureSensorDataManager.positions;
+        }
+        else {
+            return [];
+        }
+    }
+    get autoPressureRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.autoRange;
+    }
+    get setPressureAutoRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.setAutoRange;
+    }
+    get togglePressureAutoRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.toggleAutoRange;
+    }
+    get autoPressureMotionRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.motionAutoRange;
+    }
+    get setPressureMotionAutoRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.setMotionAutoRange;
+    }
+    get togglePressureMotionAutoRange() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .toggleMotionAutoRange;
+    }
+    get resetPressureRange() {
+        return this.#sensorDataManager.pressureSensorDataManager.resetRange;
+    }
+    get canCalibratePressure() {
+        return this.#sensorDataManager.pressureSensorDataManager.canCalibrate;
+    }
+    get isRecordingPressureCalibrationData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .isRecordingCalibrationData;
+    }
+    get isTrainingPressureCalibrationModel() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .isTrainingCalibrationModel;
+    }
+    get startRecordingPressureCalibrationData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .startRecordingCalibrationData;
+    }
+    get stopRecordingPressureCalibrationData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .stopRecordingCalibrationData;
+    }
+    toggleRecordingPressureCalibrationData() {
+        this.#sensorDataManager.pressureSensorDataManager.toggleRecordingCalibrationData();
+    }
+    get pressureCalibrationModel() {
+        return this.#sensorDataManager.pressureSensorDataManager.calibrationModel;
+    }
+    get isPressureCalibrationModelTrained() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .isCalibrationModelTrained;
+    }
+    async trainPressureCalibrationModel() {
+        await this.#sensorDataManager.pressureSensorDataManager.train();
+    }
+    get savePressureCalibrationModel() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .saveCalibrationModel;
+    }
+    get loadPressureCalibrationModel() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .loadCalibrationModel;
+    }
+    get addPressureCalibrationModelData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .addCalibrationModelData;
+    }
+    get clearPressureCalibrationModelData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .clearCalibrationModelData;
+    }
+    get pressureCalibrationModelData() {
+        return this.#sensorDataManager.pressureSensorDataManager
+            .calibrationModelData;
+    }
+    get hasButtons() {
+        return this.numberOfButtons > 0;
+    }
+    get numberOfButtons() {
+        return this.#sensorDataManager.buttonSensorDataManager.numberOfButtons;
+    }
+    get hasTouches() {
+        return this.numberOfTouches > 0;
+    }
+    get numberOfTouches() {
+        return this.#sensorDataManager.touchSensorDataManager.numberOfTouches;
+    }
+    get vibrationLocations() {
+        return this.#vibrationManager.vibrationLocations;
+    }
+    get hasVibration() {
+        return this.vibrationLocations.length > 0;
+    }
+    #vibrationManager = new VibrationManager();
+    get triggerVibration() {
+        return this.#vibrationManager.triggerVibration;
+    }
+    get _fileTransferManager() {
+        return this.#fileTransferManager;
+    }
+    #fileTransferManager = new FileTransferManager();
+    async #onFileConfiguration(fileConfiguration) {
+        console.log("#onFileConfiguration", fileConfiguration);
+        const { fileType, buffer, direction } = fileConfiguration;
+        switch (fileType) {
+            case "cameraImage":
+                if (direction == "receiving") {
+                    const dataView = new DataView(buffer);
+                    this.#cameraManager.parseMessage("cameraData", dataView);
+                    this.#fileTransferManager.onParseFile({ fileType: "cameraImage" });
+                }
+                break;
+            case "spriteSheet":
+                {
+                    const dataView = new DataView(buffer);
+                    const parsedSpriteSheet = this.parseDisplaySpriteSheet(dataView, this.pendingDisplaySpriteSheetName);
+                    this.#displayManager.pendingSpriteSheet = parsedSpriteSheet;
+                    await this.uploadDisplaySpriteSheet(parsedSpriteSheet);
+                }
+                break;
+        }
+    }
+    get fileTypes() {
+        return this.#fileTransferManager.fileTypes;
+    }
+    get maxFileLength() {
+        return this.#fileTransferManager.maxLength;
+    }
+    get validFileTypes() {
+        return FileTypes.filter((fileType) => {
+            if (fileType.includes("wifi") && !this.isWifiAvailable) {
+                return false;
+            }
+            return true;
+        });
+    }
+    get fileLength() {
+        return this.#fileTransferManager.length;
+    }
+    get fileChecksum() {
+        return this.#fileTransferManager.checksum;
+    }
+    get fileType() {
+        return this.#fileTransferManager.type;
+    }
+    get fileBytesTransferred() {
+        return this.#fileTransferManager.bytesTransferred;
+    }
+    get fileHeaderLength() {
+        return this.#fileTransferManager.headerLength;
+    }
+    async sendFile(fileType, file) {
+        _console$i.assertWithError(this.validFileTypes.includes(fileType), `invalid fileType ${fileType}`);
+        const promise = this.waitForEvent("fileTransferComplete");
+        const isSending = await this.#fileTransferManager.send(fileType, file);
+        if (!isSending) {
+            return false;
+        }
+        await promise;
+        return true;
+    }
+    async receiveFile(fileType) {
+        const promise = this.waitForEvent("fileTransferComplete");
+        const isReceiving = await this.#fileTransferManager.receive(fileType);
+        if (!isReceiving) {
+            return false;
+        }
+        await promise;
+        return true;
+    }
+    get fileTransferStatus() {
+        return this.#fileTransferManager.status;
+    }
+    cancelFileTransfer() {
+        this.#fileTransferManager.cancel();
+    }
+    #tfliteManager = new TfliteManager();
+    get isTfliteAvailable() {
+        return this.fileTypes.includes("tflite");
+    }
+    get tfliteName() {
+        return this.#tfliteManager.name;
+    }
+    get setTfliteName() {
+        return this.#tfliteManager.setName;
+    }
+    async sendTfliteConfiguration(configuration) {
+        configuration.fileType = "tflite";
+        await this.#tfliteManager.sendConfiguration(configuration, false);
+        const didSendFile = await this.#fileTransferManager.send(configuration.fileType, configuration.file);
+        _console$i.log({ didSendFile });
+        if (!didSendFile) {
+            this.#sendTxMessages();
+            if (this.tfliteIsReady) {
+                this.#dispatchEvent("tfliteIsReady", {
+                    tfliteIsReady: this.tfliteIsReady,
+                });
+            }
+        }
+    }
+    get tfliteClasses() {
+        return this.#tfliteManager.classes;
+    }
+    get setTfliteClasses() {
+        return this.#tfliteManager.setClasses;
+    }
+    get tfliteTask() {
+        return this.#tfliteManager.task;
+    }
+    get setTfliteTask() {
+        return this.#tfliteManager.setTask;
+    }
+    get tfliteSampleRate() {
+        return this.#tfliteManager.sampleRate;
+    }
+    get setTfliteSampleRate() {
+        return this.#tfliteManager.setSampleRate;
+    }
+    get tfliteSensorTypes() {
+        return this.#tfliteManager.sensorTypes;
+    }
+    get allowedTfliteSensorTypes() {
+        return this.sensorTypes.filter((sensorType) => TfliteSensorTypes.includes(sensorType));
+    }
+    get setTfliteSensorTypes() {
+        return this.#tfliteManager.setSensorTypes;
+    }
+    get tfliteIsReady() {
+        return this.#tfliteManager.isReady;
+    }
+    get tfliteInferencingEnabled() {
+        return this.#tfliteManager.inferencingEnabled;
+    }
+    get setTfliteInferencingEnabled() {
+        return this.#tfliteManager.setInferencingEnabled;
+    }
+    async enableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(true);
+    }
+    async disableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(false);
+    }
+    get toggleTfliteInferencing() {
+        return this.#tfliteManager.toggleInferencingEnabled;
+    }
+    get tfliteCaptureDelay() {
+        return this.#tfliteManager.captureDelay;
+    }
+    get setTfliteCaptureDelay() {
+        return this.#tfliteManager.setCaptureDelay;
+    }
+    get tfliteThreshold() {
+        return this.#tfliteManager.threshold;
+    }
+    get setTfliteThreshold() {
+        return this.#tfliteManager.setThreshold;
+    }
+    #firmwareManager = new FirmwareManager();
+    get canUpdateFirmware() {
+        return this.#connectionManager?.canUpdateFirmware;
+    }
+    #assertCanUpdateFirmware() {
+        _console$i.assertWithError(this.canUpdateFirmware, "can't update firmware");
+    }
+    #sendSmpMessage(data) {
+        this.#assertCanUpdateFirmware();
+        return this.#connectionManager.sendSmpMessage(data);
+    }
+    sendSmpMessage = this.#sendSmpMessage.bind(this);
+    get uploadFirmware() {
+        this.#assertCanUpdateFirmware();
+        return this.#firmwareManager.uploadFirmware;
+    }
+    get canReset() {
+        return this.canUpdateFirmware;
+    }
+    async reset() {
+        _console$i.assertWithError(this.canReset, "reset is not enabled for this device");
+        await this.#firmwareManager.reset();
+        return this.#connectionManager.disconnect();
+    }
+    get firmwareStatus() {
+        return this.#firmwareManager.status;
+    }
+    get getFirmwareImages() {
+        this.#assertCanUpdateFirmware();
+        return this.#firmwareManager.getImages;
+    }
+    get firmwareImages() {
+        return this.#firmwareManager.images;
+    }
+    get eraseFirmwareImage() {
+        this.#assertCanUpdateFirmware();
+        return this.#firmwareManager.eraseImage;
+    }
+    get confirmFirmwareImage() {
+        this.#assertCanUpdateFirmware();
+        return this.#firmwareManager.confirmImage;
+    }
+    get testFirmwareImage() {
+        this.#assertCanUpdateFirmware();
+        return this.#firmwareManager.testImage;
+    }
+    #wifiManager = new WifiManager();
+    get isWifiAvailable() {
+        return this.#wifiManager.isWifiAvailable;
+    }
+    get wifiSSID() {
+        return this.#wifiManager.wifiSSID;
+    }
+    async setWifiSSID(newWifiSSID) {
+        return this.#wifiManager.setWifiSSID(newWifiSSID);
+    }
+    get wifiPassword() {
+        return this.#wifiManager.wifiPassword;
+    }
+    async setWifiPassword(newWifiPassword) {
+        return this.#wifiManager.setWifiPassword(newWifiPassword);
+    }
+    get isWifiConnected() {
+        return this.#wifiManager.isWifiConnected;
+    }
+    get ipAddress() {
+        return this.#wifiManager.ipAddress;
+    }
+    get wifiConnectionEnabled() {
+        return this.#wifiManager.wifiConnectionEnabled;
+    }
+    get enableWifiConnection() {
+        return this.#wifiManager.enableWifiConnection;
+    }
+    get setWifiConnectionEnabled() {
+        return this.#wifiManager.setWifiConnectionEnabled;
+    }
+    get disableWifiConnection() {
+        return this.#wifiManager.disableWifiConnection;
+    }
+    get toggleWifiConnection() {
+        return this.#wifiManager.toggleWifiConnection;
+    }
+    get isWifiSecure() {
+        return this.#wifiManager.isWifiSecure;
+    }
+    async reconnectViaWebSockets() {
+        _console$i.assertWithError(this.isWifiConnected, "wifi is not connected");
+        _console$i.assertWithError(this.connectionType != "webSocket", "already connected via webSockets");
+        _console$i.assertTypeWithError(this.ipAddress, "string");
+        _console$i.log("reconnecting via websockets...");
+        await this.disconnect();
+        await this.connect({
+            type: "webSocket",
+            ipAddress: this.ipAddress,
+            isWifiSecure: this.isWifiSecure,
+        });
+    }
+    async reconnectViaUDP() {
+        _console$i.assertWithError(isInNode, "udp is only available in node");
+        _console$i.assertWithError(this.isWifiConnected, "wifi is not connected");
+        _console$i.assertWithError(this.connectionType != "udp", "already connected via udp");
+        _console$i.assertTypeWithError(this.ipAddress, "string");
+        _console$i.log("reconnecting via udp...");
+        await this.disconnect();
+        await this.connect({
+            type: "udp",
+            ipAddress: this.ipAddress,
+        });
+    }
+    #cameraManager = new CameraManager();
+    get _buildCameraData() {
+        return this.#cameraManager.buildCameraData;
+    }
+    get hasCamera() {
+        return this.sensorTypes.includes("camera");
+    }
+    get cameraStatus() {
+        return this.#cameraManager.cameraStatus;
+    }
+    #assertHasCamera() {
+        _console$i.assertWithError(this.hasCamera, "camera not available");
+    }
+    async takePicture(sensorRate) {
+        this.#assertHasCamera();
+        if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
+            sensorRate = 20;
+        }
+        if (sensorRate != undefined &&
+            this.sensorConfiguration.camera != sensorRate) {
+            this.setSensorConfiguration({ camera: sensorRate }, false, false);
+        }
+        await this.#cameraManager.takePicture();
+    }
+    get autoPicture() {
+        return this.#cameraManager.autoPicture;
+    }
+    set autoPicture(newAutoPicture) {
+        this.#cameraManager.autoPicture = newAutoPicture;
+    }
+    async focusCamera(sensorRate) {
+        this.#assertHasCamera();
+        if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
+            sensorRate = 20;
+        }
+        if (sensorRate != undefined &&
+            this.sensorConfiguration.camera != sensorRate) {
+            this.setSensorConfiguration({ camera: sensorRate }, false, false);
+        }
+        await this.#cameraManager.focus();
+    }
+    async stopCamera() {
+        this.#assertHasCamera();
+        await this.#cameraManager.stop();
+    }
+    async wakeCamera() {
+        this.#assertHasCamera();
+        await this.#cameraManager.wake();
+    }
+    async sleepCamera() {
+        this.#assertHasCamera();
+        await this.#cameraManager.sleep();
+    }
+    get cameraConfiguration() {
+        return this.#cameraManager.cameraConfiguration;
+    }
+    get availableCameraConfigurationTypes() {
+        return this.#cameraManager.availableCameraConfigurationTypes;
+    }
+    get cameraConfigurationRanges() {
+        return this.#cameraManager.cameraConfigurationRanges;
+    }
+    get setCameraConfiguration() {
+        return this.#cameraManager.setCameraConfiguration;
+    }
+    get isRecordingCamera() {
+        return this.#cameraManager.isRecording;
+    }
+    get startRecordingCamera() {
+        return this.#cameraManager.startRecording;
+    }
+    get stopRecordingCamera() {
+        return this.#cameraManager.stopRecording;
+    }
+    get toggleCameraRecording() {
+        return this.#cameraManager.toggleRecording;
+    }
+    #microphoneManager = new MicrophoneManager();
+    get hasMicrophone() {
+        return this.sensorTypes.includes("microphone");
+    }
+    get microphoneStatus() {
+        return this.#microphoneManager.microphoneStatus;
+    }
+    #assertHasMicrophone() {
+        _console$i.assertWithError(this.hasMicrophone, "microphone not available");
+    }
+    async startMicrophone(sensorRate) {
+        this.#assertHasMicrophone();
+        if (sensorRate == undefined && this.sensorConfiguration.microphone == 0) {
+            sensorRate = 5;
+        }
+        if (sensorRate != undefined &&
+            this.sensorConfiguration.microphone != sensorRate) {
+            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
+        }
+        await this.#microphoneManager.start();
+    }
+    async stopMicrophone() {
+        this.#assertHasMicrophone();
+        await this.#microphoneManager.stop();
+    }
+    async enableMicrophoneVad() {
+        this.#assertHasMicrophone();
+        await this.#microphoneManager.vad();
+    }
+    async toggleMicrophone(sensorRate = 20) {
+        this.#assertHasMicrophone();
+        if (this.sensorConfiguration.microphone == 0 &&
+            this.sensorConfiguration.microphone != sensorRate) {
+            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
+        }
+        await this.#microphoneManager.toggle();
+    }
+    get microphoneConfiguration() {
+        return this.#microphoneManager.microphoneConfiguration;
+    }
+    get availableMicrophoneConfigurationTypes() {
+        return this.#microphoneManager.availableMicrophoneConfigurationTypes;
+    }
+    get setMicrophoneConfiguration() {
+        return this.#microphoneManager.setMicrophoneConfiguration;
+    }
+    #assertWebAudioSupport() {
+        _console$i.assertWithError(AudioContext, "WebAudio is not supported");
+    }
+    get audioContext() {
+        this.#assertWebAudioSupport();
+        return this.#microphoneManager.audioContext;
+    }
+    set audioContext(newAudioContext) {
+        this.#assertWebAudioSupport();
+        this.#microphoneManager.audioContext = newAudioContext;
+    }
+    get microphoneMediaStreamDestination() {
+        this.#assertWebAudioSupport();
+        return this.#microphoneManager.mediaStreamDestination;
+    }
+    get microphoneGainNode() {
+        this.#assertWebAudioSupport();
+        return this.#microphoneManager.gainNode;
+    }
+    get isRecordingMicrophone() {
+        return this.#microphoneManager.isRecording;
+    }
+    startRecordingMicrophone() {
+        this.#microphoneManager.startRecording();
+    }
+    stopRecordingMicrophone() {
+        this.#microphoneManager.stopRecording();
+    }
+    toggleMicrophoneRecording() {
+        this.#microphoneManager.toggleRecording();
+    }
+    #displayManager = new DisplayManager();
+    get isDisplayAvailable() {
+        return this.#displayManager.isAvailable;
+    }
+    get isDisplayReady() {
+        return this.isConnected && this.#displayManager.isReady;
+    }
+    get displayContextState() {
+        return this.#displayManager.contextState;
+    }
+    get displayColors() {
+        return this.#displayManager.colors;
+    }
+    get displayBitmapColors() {
+        return this.#displayManager.bitmapColors;
+    }
+    get displayBitmapColorIndices() {
+        return this.#displayManager.bitmapColorIndices;
+    }
+    get displayColorOpacities() {
+        return this.#displayManager.opacities;
+    }
+    #assertDisplayIsAvailable() {
+        _console$i.assertWithError(this.isDisplayAvailable, "display not available");
+    }
+    get displayStatus() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.displayStatus;
+    }
+    get displayBrightness() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.brightness;
+    }
+    get setDisplayBrightness() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBrightness;
+    }
+    get pendingDisplaySpriteSheetName() {
+        return this.#displayManager.pendingSpriteSheetName;
+    }
+    get parseDisplaySpriteSheet() {
+        return this.#displayManager.parseSpriteSheet;
+    }
+    get displayInformation() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.displayInformation;
+    }
+    get numberOfDisplayColors() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.numberOfColors;
+    }
+    get wakeDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.wake;
+    }
+    get sleepDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.sleep;
+    }
+    get toggleDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.toggle;
+    }
+    get isDisplayAwake() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.isDisplayAwake;
+    }
+    get showDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.show;
+    }
+    get clearDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clear;
+    }
+    get setDisplayColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setColor;
+    }
+    get setDisplayColorOpacity() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setColorOpacity;
+    }
+    get setDisplayOpacity() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setOpacity;
+    }
+    get saveDisplayContext() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.saveContext;
+    }
+    get restoreDisplayContext() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.restoreContext;
+    }
+    get clearDisplayRect() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clearRect;
+    }
+    get selectDisplayBackgroundColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectBackgroundColor;
+    }
+    get selectDisplayFillColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectFillColor;
+    }
+    get selectDisplayLineColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectLineColor;
+    }
+    get setDisplayIgnoreFill() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setIgnoreFill;
+    }
+    get setDisplayIgnoreLine() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setIgnoreLine;
+    }
+    get setDisplayFillBackground() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setFillBackground;
+    }
+    get setDisplayLineWidth() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setLineWidth;
+    }
+    get setDisplayRotation() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotation;
+    }
+    get clearDisplayRotation() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clearRotation;
+    }
+    get setDisplaySegmentStartCap() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentStartCap;
+    }
+    get setDisplaySegmentEndCap() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentEndCap;
+    }
+    get setDisplaySegmentCap() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentCap;
+    }
+    get setDisplaySegmentStartRadius() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentStartRadius;
+    }
+    get setDisplaySegmentEndRadius() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentEndRadius;
+    }
+    get setDisplaySegmentRadius() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSegmentRadius;
+    }
+    get setDisplayCropTop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setCropTop;
+    }
+    get setDisplayCropRight() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setCropRight;
+    }
+    get setDisplayCropBottom() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setCropBottom;
+    }
+    get setDisplayCropLeft() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setCropLeft;
+    }
+    get setDisplayCrop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setCrop;
+    }
+    get clearDisplayCrop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clearCrop;
+    }
+    get clearDisplayContext() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clearContext;
+    }
+    get setDisplayRotationCropTop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotationCropTop;
+    }
+    get setDisplayRotationCropRight() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotationCropRight;
+    }
+    get setDisplayRotationCropBottom() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotationCropBottom;
+    }
+    get setDisplayRotationCropLeft() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotationCropLeft;
+    }
+    get setDisplayRotationCrop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setRotationCrop;
+    }
+    get clearDisplayRotationCrop() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.clearRotationCrop;
+    }
+    get flushDisplayContextCommands() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.flushContextCommands;
+    }
+    get drawDisplayRect() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawRect;
+    }
+    get drawDisplayCircle() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawCircle;
+    }
+    get drawDisplayEllipse() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawEllipse;
+    }
+    get drawDisplayRoundRect() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawRoundRect;
+    }
+    get drawDisplayRegularPolygon() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawRegularPolygon;
+    }
+    get drawDisplayPolygon() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawPolygon;
+    }
+    get drawDisplayWireframe() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawWireframe;
+    }
+    get drawDisplaySegment() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawSegment;
+    }
+    get drawDisplaySegments() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawSegments;
+    }
+    get drawDisplayArc() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawArc;
+    }
+    get drawDisplayArcEllipse() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawArcEllipse;
+    }
+    get drawDisplayBitmap() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawBitmap;
+    }
+    get imageToDisplayBitmap() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.imageToBitmap;
+    }
+    get quantizeDisplayImage() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.quantizeImage;
+    }
+    get resizeAndQuantizeDisplayImage() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.resizeAndQuantizeImage;
+    }
+    get setDisplayContextState() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setContextState;
+    }
+    get selectDisplayBitmapColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectBitmapColor;
+    }
+    get selectDisplayBitmapColors() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectBitmapColors;
+    }
+    get setDisplayBitmapColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapColor;
+    }
+    get setDisplayBitmapColorOpacity() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapColorOpacity;
+    }
+    get setDisplayBitmapScaleDirection() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapScaleDirection;
+    }
+    get setDisplayBitmapScaleX() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapScaleX;
+    }
+    get setDisplayBitmapScaleY() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapScaleY;
+    }
+    get setDisplayBitmapScale() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setBitmapScale;
+    }
+    get resetDisplayBitmapScale() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.resetBitmapScale;
+    }
+    get selectDisplaySpriteColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectSpriteColor;
+    }
+    get selectDisplaySpriteColors() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectSpriteColors;
+    }
+    get setDisplaySpriteColor() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteColor;
+    }
+    get setDisplaySpriteColorOpacity() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteColorOpacity;
+    }
+    get resetDisplaySpriteColors() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.resetSpriteColors;
+    }
+    get setDisplaySpriteScaleDirection() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteScaleDirection;
+    }
+    get setDisplaySpriteScaleX() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteScaleX;
+    }
+    get setDisplaySpriteScaleY() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteScaleY;
+    }
+    get setDisplaySpriteScale() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setSpriteScale;
+    }
+    get resetDisplaySpriteScale() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.resetSpriteScale;
+    }
+    get displayManager() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager;
+    }
+    get uploadDisplaySpriteSheet() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.uploadSpriteSheet;
+    }
+    get uploadDisplaySpriteSheets() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.uploadSpriteSheets;
+    }
+    get selectDisplaySpriteSheet() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.selectSpriteSheet;
+    }
+    get drawDisplaySprite() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawSprite;
+    }
+    get startDisplaySprite() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.startSprite;
+    }
+    get endDisplaySprite() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.endSprite;
+    }
+    get displaySpriteSheets() {
+        return this.#displayManager.spriteSheets;
+    }
+    get serializeDisplaySpriteSheet() {
+        return this.#displayManager.serializeSpriteSheet;
+    }
+    get setDisplayAlignment() {
+        return this.#displayManager.setAlignment;
+    }
+    get setDisplayVerticalAlignment() {
+        return this.#displayManager.setVerticalAlignment;
+    }
+    get setDisplayHorizontalAlignment() {
+        return this.#displayManager.setHorizontalAlignment;
+    }
+    get resetDisplayAlignment() {
+        return this.#displayManager.resetAlignment;
+    }
+    get setDisplaySpritesDirection() {
+        return this.#displayManager.setSpritesDirection;
+    }
+    get setDisplaySpritesLineDirection() {
+        return this.#displayManager.setSpritesLineDirection;
+    }
+    get setDisplaySpritesSpacing() {
+        return this.#displayManager.setSpritesSpacing;
+    }
+    get setDisplaySpritesLineSpacing() {
+        return this.#displayManager.setSpritesLineSpacing;
+    }
+    get setDisplaySpritesAlignment() {
+        return this.#displayManager.setSpritesAlignment;
+    }
+    get drawDisplayQuadraticBezierCurve() {
+        return this.#displayManager.drawQuadraticBezierCurve;
+    }
+    get drawDisplayQuadraticBezierCurves() {
+        return this.#displayManager.drawQuadraticBezierCurves;
+    }
+    get drawDisplayCubicBezierCurve() {
+        return this.#displayManager.drawCubicBezierCurve;
+    }
+    get drawDisplayCubicBezierCurves() {
+        return this.#displayManager.drawCubicBezierCurves;
+    }
+    get drawDisplayPath() {
+        return this.#displayManager.drawPath;
+    }
+    get drawDisplayClosedPath() {
+        return this.#displayManager.drawClosedPath;
+    }
+    #ledManager = new LedManager();
+    get leds() {
+        return this.#ledManager.leds;
+    }
+    get hasLeds() {
+        return this.leds.length > 0;
+    }
+    get setLed() {
+        return this.#ledManager.setLed;
+    }
+    get setLeds() {
+        return this.#ledManager.setLeds;
+    }
+    get clearLeds() {
+        return this.#ledManager.clearLeds;
+    }
+}
+_a$3 = Device;
+
+function Singleton(target, context) {
+    let shared;
+    return class extends target {
+        static get shared() {
+            return (shared ??= new this());
+        }
+        constructor(...args) {
+            if (shared) {
+                throw new Error(`${target.name} is a singleton - use ${target.name}.shared`);
+            }
+            super(...args);
+            shared = this;
+        }
+    };
+}
+
+const _console$h = createConsole("DeviceManager", { log: true });
+function getDeviceManagerDeviceEventTypes(deviceEventType) {
+    return ["device"].map((prefix) => `${prefix}${capitalizeFirstCharacter(deviceEventType)}`);
+}
+const DeviceManagerDeviceEventTypes = DeviceEventTypes.flatMap((eventType) => getDeviceManagerDeviceEventTypes(eventType));
+const wildcardDeviceEventType = "device*";
+const BaseDeviceManagerEventTypes = [
+    "availableDevice",
+    "availableDevices",
+    "connectedDevices",
+    wildcardDeviceEventType,
+];
+const DeviceManagerEventTypes = [
+    ...DeviceManagerDeviceEventTypes,
+    ...BaseDeviceManagerEventTypes,
+];
+let DeviceManager$1 = (() => {
+    let _classDecorators = [Singleton];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    (class {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        static shared;
+        constructor() {
+            Device.OnDevice = this.onDevice.bind(this);
+            Device.OnDeviceConnectionStatusUpdated =
+                this.onDeviceConnectionStatusUpdated.bind(this);
+            if (this.canUseLocalStorage) {
+                this.useLocalStorage = true;
+            }
+        }
+        #boundDeviceEventListeners = {
+            getType: this.#onDeviceType.bind(this),
+            notConnected: this.#onDeviceNotConnected.bind(this),
+            connected: this.#onDeviceConnected.bind(this),
+            [wildcardEventType]: this.#onDeviceEvent.bind(this),
+        };
+        onDevice(device) {
+            addEventListeners(device, this.#boundDeviceEventListeners);
+        }
+        #onDeviceType(deviceEvent) {
+            if (this.#useLocalStorage) {
+                this.#updateLocalStorageConfigurationForDevice(deviceEvent.target);
+            }
+        }
+        onDeviceConnectionStatusUpdated(device, connectionStatus) {
+            if (connectionStatus == "notConnected" &&
+                !device.canReconnect &&
+                this.#availableDevices.includes(device)) {
+                const deviceIndex = this.#availableDevices.indexOf(device);
+                this.#availableDevices.splice(deviceIndex, 1);
+                this.#dispatchAvailableDevices();
+            }
+        }
+        #connectedDevices = [];
+        get connectedDevices() {
+            return this.#connectedDevices;
+        }
+        #useLocalStorage = false;
+        get useLocalStorage() {
+            return this.#useLocalStorage;
+        }
+        set useLocalStorage(newUseLocalStorage) {
+            this.#assertLocalStorage();
+            _console$h.assertTypeWithError(newUseLocalStorage, "boolean");
+            this.#useLocalStorage = newUseLocalStorage;
+            if (this.#useLocalStorage && !this.#localStorageConfiguration) {
+                this.#loadFromLocalStorage();
+            }
+        }
+        #defaultLocalStorageConfiguration = {
+            devices: [],
+        };
+        #localStorageConfiguration;
+        get canUseLocalStorage() {
+            return isInBrowser && window.localStorage;
+        }
+        #assertLocalStorage() {
+            _console$h.assertWithError(isInBrowser, "localStorage is only available in the browser");
+            _console$h.assertWithError(window.localStorage, "localStorage not found");
+        }
+        #localStorageKey = "BS.Device";
+        #SaveToLocalStorage() {
+            this.#assertLocalStorage();
+            localStorage.setItem(this.#localStorageKey, JSON.stringify(this.#localStorageConfiguration));
+        }
+        async #loadFromLocalStorage() {
+            this.#assertLocalStorage();
+            let localStorageString = localStorage.getItem(this.#localStorageKey);
+            if (typeof localStorageString != "string") {
+                _console$h.log("no info found in localStorage");
+                this.#localStorageConfiguration = Object.assign({}, this.#defaultLocalStorageConfiguration);
+                this.#SaveToLocalStorage();
+                return;
+            }
+            try {
+                const configuration = JSON.parse(localStorageString);
+                _console$h.log({ configuration });
+                this.#localStorageConfiguration = configuration;
+                if (this.canGetDevices) {
+                    await this.getDevices();
+                }
+            }
+            catch (error) {
+                _console$h.warn(error);
+            }
+        }
+        #updateLocalStorageConfigurationForDevice(device) {
+            if (device.connectionType != "webBluetooth") {
+                _console$h.log("localStorage is only for webBluetooth devices");
+                return;
+            }
+            this.#assertLocalStorage();
+            const deviceInformationIndex = this.#localStorageConfiguration.devices.findIndex((deviceInformation) => {
+                return deviceInformation.bluetoothId == device.bluetoothId;
+            });
+            if (deviceInformationIndex == -1) {
+                return;
+            }
+            this.#localStorageConfiguration.devices[deviceInformationIndex].type =
+                device.type;
+            this.#SaveToLocalStorage();
+        }
+        #availableDevices = [];
+        get availableDevices() {
+            return this.#availableDevices;
+        }
+        get canGetDevices() {
+            return isInBrowser && navigator.bluetooth?.getDevices;
+        }
+        #getDevicesTimeout = 1500;
+        async getDevices() {
+            if (!isInBrowser) {
+                _console$h.warn("GetDevices is only available in the browser");
+                return;
+            }
+            if (!navigator.bluetooth) {
+                _console$h.warn("bluetooth is not available in this browser");
+                return;
+            }
+            if (isInBluefy) {
+                _console$h.warn("bluefy lists too many devices...");
+                return;
+            }
+            if (!navigator.bluetooth.getDevices) {
+                _console$h.warn("bluetooth.getDevices() is not available in this browser");
+                return;
+            }
+            if (!this.canGetDevices) {
+                _console$h.log("CanGetDevices is false");
+                return;
+            }
+            if (!this.#localStorageConfiguration) {
+                this.#loadFromLocalStorage();
+            }
+            const configuration = this.#localStorageConfiguration;
+            if (!configuration.devices || configuration.devices.length == 0) {
+                _console$h.log("no devices found in configuration");
+                return;
+            }
+            let bluetoothDevices = [];
+            try {
+                bluetoothDevices = await navigator.bluetooth.getDevices();
+            }
+            catch (error) {
+                _console$h.warn(error);
+            }
+            _console$h.log({ bluetoothDevices });
+            if (bluetoothDevices[0] &&
+                typeof bluetoothDevices[0].watchAdvertisements == "function") {
+                const waitAbortController = new AbortController();
+                const bluetoothDeviceAdvertisementEvents = new Map();
+                const bluetoothDeviceAdvertisementAbortController = new AbortController();
+                bluetoothDevices.forEach(async (bluetoothDevice) => {
+                    bluetoothDevice.addEventListener("advertisementreceived", (event) => {
+                        const isDevice = event.uuids.includes(serviceUUIDs[0]);
+                        _console$h.log("advertisement received", bluetoothDevice, event, {
+                            isDevice,
+                        });
+                        bluetoothDeviceAdvertisementEvents.set(bluetoothDevice, event);
+                        if (bluetoothDeviceAdvertisementEvents.size == bluetoothDevices.length) {
+                            _console$h.log("all devices found - aborting early");
+                            waitAbortController.abort();
+                        }
+                    }, {
+                        once: true,
+                        signal: bluetoothDeviceAdvertisementAbortController.signal,
+                    });
+                    await bluetoothDevice.watchAdvertisements({
+                        signal: bluetoothDeviceAdvertisementAbortController.signal,
+                    });
+                });
+                _console$h.log(`waiting for advertisements for ${this.#getDevicesTimeout}ms`);
+                await wait(this.#getDevicesTimeout, waitAbortController.signal);
+                _console$h.log(`done waiting for advertisements`);
+                bluetoothDeviceAdvertisementAbortController.abort();
+                bluetoothDevices = bluetoothDevices.filter((bluetoothDevice) => {
+                    return bluetoothDeviceAdvertisementEvents.has(bluetoothDevice);
+                });
+            }
+            bluetoothDevices.forEach((bluetoothDevice) => {
+                if (!bluetoothDevice.gatt) {
+                    return;
+                }
+                let deviceInformation = configuration.devices.find((deviceInformation) => bluetoothDevice.id == deviceInformation.bluetoothId);
+                if (!deviceInformation) {
+                    return;
+                }
+                let existingConnectedDevice = this.connectedDevices
+                    .filter((device) => device.connectionType == "webBluetooth")
+                    .find((device) => device.bluetoothId == bluetoothDevice.id);
+                const existingAvailableDevice = this.availableDevices
+                    .filter((device) => device.connectionType == "webBluetooth")
+                    .find((device) => device.bluetoothId == bluetoothDevice.id);
+                if (existingAvailableDevice) {
+                    if (existingConnectedDevice &&
+                        existingConnectedDevice?.bluetoothId ==
+                            existingAvailableDevice.bluetoothId &&
+                        existingConnectedDevice != existingAvailableDevice) {
+                        _console$h.log("replacing available device with connected device", {
+                            existingAvailableDevice,
+                            existingConnectedDevice,
+                        });
+                        this.availableDevices[this.#availableDevices.indexOf(existingAvailableDevice)] = existingConnectedDevice;
+                    }
+                    return;
+                }
+                if (existingConnectedDevice) {
+                    this.#pushAvailableDevice(existingConnectedDevice);
+                    return;
+                }
+                const device = new Device();
+                const connectionManager = new WebBluetoothConnectionManager();
+                connectionManager.device = bluetoothDevice;
+                if (bluetoothDevice.name) {
+                    device._informationManager.updateName(bluetoothDevice.name);
+                }
+                device._informationManager.updateType(deviceInformation.type);
+                device.connectionManager = connectionManager;
+                this.#pushAvailableDevice(device);
+            });
+            this.#dispatchAvailableDevices();
+            return this.availableDevices;
+        }
+        #eventDispatcher = new EventDispatcher(this, DeviceManagerEventTypes);
+        get addEventListener() {
+            return this.#eventDispatcher.addEventListener;
+        }
+        get #dispatchEvent() {
+            return this.#eventDispatcher.dispatchEvent;
+        }
+        get removeEventListener() {
+            return this.#eventDispatcher.removeEventListener;
+        }
+        get removeEventListeners() {
+            return this.#eventDispatcher.removeEventListeners;
+        }
+        #onDeviceConnected(deviceEvent) {
+            const { target: device } = deviceEvent;
+            this.#onDeviceIsConnected(device);
+        }
+        #onDeviceNotConnected(deviceEvent) {
+            const { target: device } = deviceEvent;
+            this.#onDeviceIsConnected(device);
+        }
+        #onDeviceIsConnected(device) {
+            if (device.isConnected) {
+                if (!this.#connectedDevices.includes(device)) {
+                    _console$h.log("adding device", device);
+                    this.#connectedDevices.push(device);
+                    if (this.useLocalStorage && device.connectionType == "webBluetooth") {
+                        const deviceInformation = {
+                            type: device.type,
+                            bluetoothId: device.bluetoothId,
+                            ipAddress: device.ipAddress,
+                            isWifiSecure: device.isWifiSecure,
+                        };
+                        const deviceInformationIndex = this.#localStorageConfiguration.devices.findIndex((_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId);
+                        if (deviceInformationIndex == -1) {
+                            this.#localStorageConfiguration.devices.push(deviceInformation);
+                        }
+                        else {
+                            this.#localStorageConfiguration.devices[deviceInformationIndex] =
+                                deviceInformation;
+                        }
+                        this.#SaveToLocalStorage();
+                    }
+                    this.#dispatchConnectedDevices();
+                }
+                else {
+                    _console$h.log("device already included");
+                }
+            }
+            else {
+                if (this.#connectedDevices.includes(device)) {
+                    _console$h.log("removing device", device);
+                    this.#connectedDevices.splice(this.#connectedDevices.indexOf(device), 1);
+                    this.#dispatchConnectedDevices();
+                }
+                else {
+                    _console$h.log("device already not included");
+                }
+            }
+            if (this.canGetDevices) {
+                this.getDevices();
+            }
+            if (device.isConnected && !this.availableDevices.includes(device)) {
+                const existingAvailableDevice = this.availableDevices.find((_device) => _device.bluetoothId == device.bluetoothId);
+                _console$h.log({ existingAvailableDevice });
+                if (existingAvailableDevice) {
+                    this.availableDevices[this.availableDevices.indexOf(existingAvailableDevice)] = device;
+                }
+                else {
+                    this.#pushAvailableDevice(device);
+                }
+                this.#dispatchAvailableDevices();
+            }
+            this._checkDeviceAvailability(device);
+        }
+        #onDeviceEvent(deviceEvent) {
+            const { type: deviceEventType, target: device, message } = deviceEvent;
+            this.#dispatchEvent(wildcardDeviceEventType, {
+                ...message,
+                device,
+                deviceEventType,
+            });
+            getDeviceManagerDeviceEventTypes(deviceEventType).forEach((eventType) => {
+                this.#dispatchEvent(eventType, {
+                    ...message,
+                    device,
+                });
+            });
+        }
+        _checkDeviceAvailability(device) {
+            if (!device.isConnected &&
+                !device.isAvailable &&
+                this.#availableDevices.includes(device)) {
+                _console$h.log("removing device from availableDevices...");
+                this.#availableDevices.splice(this.#availableDevices.indexOf(device), 1);
+                this.#dispatchAvailableDevices();
+            }
+        }
+        #pushAvailableDevice(availableDevice) {
+            _console$h.log({ availableDevice });
+            this.availableDevices.push(availableDevice);
+            this.#dispatchEvent("availableDevice", { availableDevice });
+        }
+        #dispatchAvailableDevices() {
+            _console$h.log({ availableDevices: this.availableDevices });
+            this.#dispatchEvent("availableDevices", {
+                availableDevices: this.availableDevices,
+            });
+        }
+        #dispatchConnectedDevices() {
+            _console$h.log({ connectedDevices: this.connectedDevices });
+            this.#dispatchEvent("connectedDevices", {
+                connectedDevices: this.connectedDevices,
+            });
+        }
+    });
+    return _classThis;
+})();
+var DeviceManager = DeviceManager$1.shared;
+
+var _a$2;
+const _console$g = createConsole("BaseScanner", { log: false });
+const ScannerEventTypes = [
+    "isScanningAvailable",
+    "isScanning",
+    "discoveredDevice",
+    "expiredDiscoveredDevice",
+    "scanningAvailable",
+    "scanningNotAvailable",
+    "scanning",
+    "notScanning",
+];
+class BaseScanner {
+    get baseConstructor() {
+        return this.constructor;
+    }
+    static get isSupported() {
+        return false;
+    }
+    get isSupported() {
+        return this.baseConstructor.isSupported;
+    }
+    #assertIsSupported() {
+        _console$g.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+    }
+    #assertIsSubclass() {
+        _console$g.assertWithError(this.constructor != _a$2, `${this.constructor.name} must be subclassed`);
+    }
+    constructor() {
+        this.#assertIsSubclass();
+        this.#assertIsSupported();
+        addEventListeners(this, this.#boundEventListeners);
+    }
+    #boundEventListeners = {
+        discoveredDevice: this.#onDiscoveredDevice.bind(this),
+        isScanning: this.#onIsScanning.bind(this),
+        isScanningAvailable: this.#onIsScanningAvailable.bind(this),
+    };
+    #eventDispatcher = new EventDispatcher(this, ScannerEventTypes);
+    get addEventListener() {
+        return this.#eventDispatcher.addEventListener;
+    }
+    get dispatchEvent() {
+        return this.#eventDispatcher.dispatchEvent;
+    }
+    get removeEventListener() {
+        return this.#eventDispatcher.removeEventListener;
+    }
+    get waitForEvent() {
+        return this.#eventDispatcher.waitForEvent;
+    }
+    get isScanningAvailable() {
+        return false;
+    }
+    #assertIsAvailable() {
+        _console$g.assertWithError(this.isScanningAvailable, "scanner not available");
+    }
+    get isScanning() {
+        return false;
+    }
+    #assertIsScanning() {
+        _console$g.assertWithError(this.isScanning, "not scanning");
+    }
+    #assertIsNotScanning() {
+        _console$g.assertWithError(!this.isScanning, "already scanning");
+    }
+    startScan() {
+        if (!this.isScanningAvailable) {
+            _console$g.warn("scanning is not available");
+            return false;
+        }
+        if (this.isScanning) {
+            _console$g.log("already scanning");
+            return false;
+        }
+        _console$g.log("startScan");
+        return true;
+    }
+    stopScan() {
+        if (!this.isScanning) {
+            _console$g.log("already not scanning");
+            return false;
+        }
+        _console$g.log("stopScan");
+        return true;
+    }
+    #onIsScanning(event) {
+        if (this.isScanning) {
+            this.#discoveredDevices = {};
+            this.#discoveredDeviceTimestamps = {};
+        }
+        else {
+            this.#checkDiscoveredDevicesExpirationTimer.stop();
+        }
+        if (this.isScanning) {
+            this.#eventDispatcher.dispatchEvent("scanning", {});
+        }
+        else {
+            this.#eventDispatcher.dispatchEvent("notScanning", {});
+        }
+    }
+    #onIsScanningAvailable(event) {
+        if (this.isScanningAvailable) {
+            this.#eventDispatcher.dispatchEvent("scanningAvailable", {});
+        }
+        else {
+            this.#eventDispatcher.dispatchEvent("scanningNotAvailable", {});
+        }
+    }
+    #discoveredDevices = {};
+    get discoveredDevices() {
+        return this.#discoveredDevices;
+    }
+    get discoveredDevicesArray() {
+        return Object.values(this.#discoveredDevices).sort((a, b) => {
+            return (this.#discoveredDeviceTimestamps[a.bluetoothId] -
+                this.#discoveredDeviceTimestamps[b.bluetoothId]);
+        });
+    }
+    #assertValidDiscoveredDeviceId(discoveredDeviceId) {
+        _console$g.assertWithError(this.#discoveredDevices[discoveredDeviceId], `no discovered device with id "${discoveredDeviceId}"`);
+    }
+    #onDiscoveredDevice(event) {
+        const { discoveredDevice } = event.message;
+        this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+        this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
+        this.#checkDiscoveredDevicesExpirationTimer.start();
+    }
+    #discoveredDeviceTimestamps = {};
+    static #DiscoveredDeviceExpirationTimeout = 5000;
+    static get DiscoveredDeviceExpirationTimeout() {
+        return this.#DiscoveredDeviceExpirationTimeout;
+    }
+    get #discoveredDeviceExpirationTimeout() {
+        return _a$2.DiscoveredDeviceExpirationTimeout;
+    }
+    #checkDiscoveredDevicesExpirationTimer = new Timer(this.#checkDiscoveredDevicesExpiration.bind(this), 1000);
+    #checkDiscoveredDevicesExpiration() {
+        const entries = Object.entries(this.#discoveredDevices);
+        if (entries.length == 0) {
+            this.#checkDiscoveredDevicesExpirationTimer.stop();
+            return;
+        }
+        const now = Date.now();
+        entries.forEach(([id, discoveredDevice]) => {
+            const timestamp = this.#discoveredDeviceTimestamps[id];
+            if (now - timestamp > this.#discoveredDeviceExpirationTimeout) {
+                _console$g.log("discovered device timeout");
+                delete this.#discoveredDevices[id];
+                delete this.#discoveredDeviceTimestamps[id];
+                this.dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
+            }
+        });
+    }
+    async connectToDevice(deviceId, connectionType) {
+        this.#assertIsAvailable();
+    }
+    async disconnectFromDevice(deviceId) {
+        this.#assertIsAvailable();
+    }
+    get canReset() {
+        return false;
+    }
+    reset() {
+        _console$g.assertWithError(this.canReset, `${this.constructor.name} does not support reset`);
+        _console$g.log("resetting...");
+    }
+}
+_a$2 = BaseScanner;
+
+createConsole("NobleConnectionManager", { log: false });
+
+createConsole("NobleScanner", { log: false });
+serviceUUIDs[0].replaceAll("-", "");
+
+createConsole("NullScanner", { log: false });
+class NullScanner extends BaseScanner {
+    static get isSupported() {
+        return true;
+    }
+    get isScanning() {
+        return false;
+    }
+    get isScanningAvailable() {
+        return false;
+    }
+    get canReset() {
+        return false;
+    }
+    #devices = {};
+    get devices() {
+        return this.#devices;
+    }
+}
+
+const _console$f = createConsole("Scanner", { log: false });
+let scanner$1;
+{
+    _console$f.log("Scanner not available");
+    scanner$1 = new NullScanner();
+}
+var scanner = scanner$1;
+
+var _a$1;
+const RequiredDeviceInformationMessageTypes = [
+    ...DeviceInformationTypes,
+    "batteryLevel",
+    ...RequiredInformationConnectionMessages,
+    ...RequiredPressureMessageTypes,
+    ...RequiredWifiMessageTypes,
+    ...RequiredFileTransferMessageTypes,
+    ...RequiredTfliteMessageTypes,
+    ...RequiredCameraMessageTypes,
+    ...RequiredMicrophoneMessageTypes,
+    ...RequiredDisplayMessageTypes,
+];
+const _console$e = createConsole("BaseServer", { log: true });
+const serverMtus = {
+    udp: 1024,
+    webSocket: 1024,
+    window: 1024,
+};
+const ServerEventTypes = [
+    "clientConnected",
+    "clientDisconnected",
+];
+class BaseServer {
+    static type;
+    get baseConstructor() {
+        return this.constructor;
+    }
+    static get clientMtu() {
+        return serverMtus[this.type];
+    }
+    get clientMtu() {
+        return this.baseConstructor.clientMtu;
+    }
+    #eventDispatcher = new EventDispatcher(this, ServerEventTypes);
+    get addEventListener() {
+        return this.#eventDispatcher.addEventListener;
+    }
+    get dispatchEvent() {
+        return this.#eventDispatcher.dispatchEvent;
+    }
+    get removeEventListener() {
+        return this.#eventDispatcher.removeEventListener;
+    }
+    get waitForEvent() {
+        return this.#eventDispatcher.waitForEvent;
+    }
+    static OnServer;
+    constructor() {
+        _console$e.assertWithError(scanner, "no scanner defined");
+        addEventListeners(scanner, this.#boundScannerListeners);
+        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        addEventListeners(this, this.#boundServerListeners);
+        _a$1.OnServer(this);
+    }
+    clients = [];
+    static #ClearSensorConfigurationsWhenNoClients = true;
+    static get ClearSensorConfigurationsWhenNoClients() {
+        return this.#ClearSensorConfigurationsWhenNoClients;
+    }
+    static set ClearSensorConfigurationsWhenNoClients(newValue) {
+        _console$e.assertTypeWithError(newValue, "boolean");
+        this.#ClearSensorConfigurationsWhenNoClients = newValue;
+    }
+    #clearSensorConfigurationsWhenNoClients = _a$1.#ClearSensorConfigurationsWhenNoClients;
+    get clearSensorConfigurationsWhenNoClients() {
+        return this.#clearSensorConfigurationsWhenNoClients;
+    }
+    set clearSensorConfigurationsWhenNoClients(newValue) {
+        _console$e.assertTypeWithError(newValue, "boolean");
+        this.#clearSensorConfigurationsWhenNoClients = newValue;
+    }
+    #boundServerListeners = {
+        clientConnected: this.#onClientConnected.bind(this),
+        clientDisconnected: this.#onClientDisconnected.bind(this),
+    };
+    #onClientConnected(event) {
+        const client = event.message.client;
+        if (!this.clients.includes(client)) {
+            this.clients.push(client);
+        }
+        _console$e.log("onClientConnected");
+        _console$e.log(`currently have ${this.clients.length} clients`);
+    }
+    #onClientDisconnected(event) {
+        const client = event.message.client;
+        if (this.clients.includes(client)) {
+            this.clients.splice(this.clients.indexOf(client), 1);
+        }
+        for (const [device, _client] of [...this.#clientsRequestingSend]) {
+            if (_client == client) {
+                this.#clientsRequestingSend.delete(device);
+                device.cancelFileTransfer();
+            }
+        }
+        for (const [device, _client] of [...this.#clientsSendingToDevice]) {
+            if (_client == client) {
+                this.#clientsSendingToDevice.delete(device);
+                device.cancelFileTransfer();
+            }
+        }
+        for (const [device, clients] of [...this.#clientsWaitingToRequestSend]) {
+            if (clients.includes(client)) {
+                clients.splice(clients.indexOf(client), 1);
+            }
+        }
+        for (const [device, clientMap] of [
+            ...this.#clientsWaitingToRequestSendMetaData,
+        ]) {
+            if (clientMap.has(client)) {
+                clientMap.delete(client);
+            }
+        }
+        for (const [device, _client] of [...this.#clientsSendingToSelf]) {
+            if (_client == client) {
+                this.#clientsSendingToSelf.delete(device);
+                _console$e.log("cancelling fileTransfer because client is gone");
+                device.cancelFileTransfer();
+            }
+        }
+        for (const [device, map] of [...this.#clientSentFileConfigurations]) {
+            for (const [fileConfiguration, _map] of [...map]) {
+                if (_map.has(client)) {
+                    _map.delete(client);
+                }
+            }
+        }
+        _console$e.log("onClientDisconnected");
+        _console$e.log(`currently have ${this.clients.length} clients`);
+        if (this.clients.length == 0 &&
+            this.clearSensorConfigurationsWhenNoClients) {
+            DeviceManager.connectedDevices.forEach((device) => {
+                device.clearSensorConfiguration();
+                device.setTfliteInferencingEnabled(false);
+            });
+        }
+    }
+    sendToClient(client, arrayBuffer, isWrapped) {
+        return this.#allowServerToClient(client);
+    }
+    broadcast(arrayBuffer, clients = this.clients, excludeClients, isWrapped) {
+        _console$e.log("broadcasting", arrayBuffer);
+        if (excludeClients) {
+            clients = clients.filter((client) => !excludeClients.includes(client));
+        }
+        clients
+            .filter((client) => this.clients.includes(client))
+            .forEach((client) => {
+            this.sendToClient(client, arrayBuffer, isWrapped);
+        });
+    }
+    #boundScannerListeners = {
+        isScanningAvailable: this.#onScannerIsAvailable.bind(this),
+        isScanning: this.#onScannerIsScanning.bind(this),
+        discoveredDevice: this.#onScannerDiscoveredDevice.bind(this),
+        expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
+    };
+    #onScannerIsAvailable(event) {
+        this.broadcast(this.#isScanningAvailableMessage, this.#filterServerToClients("isScanningAvailable"));
+    }
+    get #isScanningAvailableMessage() {
+        return createServerMessage({
+            type: "isScanningAvailable",
+            data: scanner.isScanningAvailable,
+        });
+    }
+    #onScannerIsScanning(event) {
+        this.broadcast(this.#isScanningMessage, this.#filterServerToClients("isScanning"));
+    }
+    get #isScanningMessage() {
+        return createServerMessage({
+            type: "isScanning",
+            data: scanner.isScanning,
+        });
+    }
+    #onScannerDiscoveredDevice(event) {
+        const { discoveredDevice } = event.message;
+        _console$e.log(discoveredDevice);
+        this.broadcast(this.#createDiscoveredDeviceMessage(discoveredDevice), this.#filterServerToClients("discoveredDevice"));
+    }
+    #createDiscoveredDeviceMessage(discoveredDevice) {
+        return createServerMessage({
+            type: "discoveredDevice",
+            data: discoveredDevice,
+        });
+    }
+    #onExpiredDiscoveredDevice(event) {
+        const { discoveredDevice } = event.message;
+        _console$e.log("expired", discoveredDevice);
+        this.broadcast(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice), this.#filterServerToClients("discoveredDevice"));
+    }
+    #createExpiredDiscoveredDeviceMessage(discoveredDevice) {
+        return createServerMessage({
+            type: "expiredDiscoveredDevice",
+            data: discoveredDevice.bluetoothId,
+        });
+    }
+    get #discoveredDevicesMessage() {
+        const serverMessages = scanner.discoveredDevicesArray
+            .filter((discoveredDevice) => {
+            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            return !existingConnectedDevice;
+        })
+            .map((discoveredDevice) => {
+            return { type: "discoveredDevice", data: discoveredDevice };
+        });
+        return createServerMessage(...serverMessages);
+    }
+    get #connectedDevicesMessage() {
+        return createServerMessage({
+            type: "connectedDevices",
+            data: JSON.stringify({
+                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
+            }),
+        });
+    }
+    #boundDeviceListeners = {
+        connectionMessage: this.#onDeviceConnectionMessage.bind(this),
+        displayContextCommands: this.#onDeviceDisplayContextCommands.bind(this),
+        fileSent: this.#onDeviceSentFile.bind(this),
+    };
+    #isClientBusyReceivingFileFromSelf(client, device) {
+        return Boolean(this.#getCurrentFileConfigurationSendingToClientDevice(client, device));
+    }
+    #getCurrentFileConfigurationSendingToClientDevice(client, device) {
+        const fileConfigurationMaps = device
+            ? [this.#clientSentFileConfigurations.get(device)]
+            : this.#clientSentFileConfigurations.values();
+        for (const fileConfigurationMap of fileConfigurationMaps) {
+            if (!fileConfigurationMap) {
+                continue;
+            }
+            for (const [fileConfiguration, clientMap] of fileConfigurationMap) {
+                const state = clientMap.get(client);
+                if (state?.initiated && !state.sent) {
+                    return fileConfiguration;
+                }
+            }
+        }
+    }
+    #isBusyTransferringFile(device, client) {
+        if (device) {
+            if (device._fileTransferManager.pendingBufferWithHeader) {
+                return true;
+            }
+            if (device.fileTransferStatus != "idle") {
+                return true;
+            }
+            if (this.#clientsSendingToDevice.has(device)) {
+                return true;
+            }
+            if (this.#clientsRequestingSend.has(device)) {
+                return true;
+            }
+            if (this.#clientsSendingToSelf.has(device)) {
+                return true;
+            }
+        }
+        if (client) {
+            if (this.#isClientBusyReceivingFileFromSelf(client, device)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    #createDeviceMessage(device, messageType, dataView) {
+        switch (messageType) {
+            case "cameraData":
+                return {
+                    type: "cameraData",
+                    data: dataView ?? device._buildCameraData(),
+                };
+            case "displayContextCommands":
+                return {
+                    type: "displayContextCommands",
+                    data: dataView ??
+                        new DataView(serializeDisplayContextCommands(device.displayManager, [
+                            ...device.displayManager.serializeColors(),
+                            ...device.displayManager.serializeOpacities(),
+                            ...device.displayManager.serializeContextState(),
+                        ])),
+                };
+            default:
+                if (ConnectionMessageTypes.includes(messageType)) {
+                    const connectionMessageType = messageType;
+                    _console$e.assertWithError(dataView ||
+                        device.latestConnectionMessages.has(connectionMessageType), `device doesn't have dataView for messageType "${messageType}"`);
+                    dataView =
+                        dataView ??
+                            device.latestConnectionMessages.get(connectionMessageType);
+                }
+                return {
+                    type: messageType,
+                    data: dataView,
+                };
+        }
+    }
+    #onDeviceConnectionMessage(deviceEvent) {
+        if (this.clients.length == 0) {
+            return;
+        }
+        const { target: device, message: deviceConnectionMessage } = deviceEvent;
+        _console$e.log("onDeviceConnectionMessage", deviceConnectionMessage);
+        if (!device.isConnected) {
+            _console$e.log("device isn't connected");
+            return;
+        }
+        const { messageType, dataView } = deviceConnectionMessage;
+        const deviceMessages = [];
+        switch (messageType) {
+            case "sensorData":
+                if (!ServerManager_default.deviceSensorDataToClientGuardManager.isEmpty) {
+                    const clientSensorDataMessageMap = new Map();
+                    const timestampArrayBuffer = dataView.buffer.slice(0, 2);
+                    parseSensorData(dataView, (sensorType, sensorDataView, context, isLast) => {
+                        this.clients.forEach((client) => {
+                            if (this.#allowDeviceSensorDataToClient(device, client, sensorType, sensorDataView)) {
+                                if (!clientSensorDataMessageMap.has(client)) {
+                                    clientSensorDataMessageMap.set(client, []);
+                                }
+                                clientSensorDataMessageMap.get(client).push(createMessage(SensorTypes, false, {
+                                    type: sensorType,
+                                    data: sensorDataView,
+                                }));
+                            }
+                        });
+                    });
+                    clientSensorDataMessageMap.forEach((data, client) => {
+                        const dataView = new DataView(concatenateArrayBuffers(timestampArrayBuffer, ...data));
+                        const deviceMessage = this.#createDeviceMessage(device, "sensorData", dataView);
+                        this.sendToClient(client, this.#createDeviceServerMessage(device, deviceMessage));
+                    });
+                    return;
+                }
+                break;
+            case "fileTransferStatus":
+                {
+                    const clientRequestingSend = this.#clientsRequestingSend.get(device);
+                    const clientSendingToSelf = this.#clientsSendingToSelf.get(device);
+                    const clientSendingToDevice = this.#clientsSendingToDevice.get(device);
+                    const fileTransferStatusEnum = dataView.getUint8(0);
+                    const fileTransferStatus = FileTransferStatuses[fileTransferStatusEnum];
+                    _console$e.assertEnumWithError(FileTransferStatuses, fileTransferStatus);
+                    _console$e.log({
+                        fileTransferStatus,
+                        clientRequestingSend,
+                        clientSendingToSelf,
+                        clientSendingToDevice,
+                    });
+                    if (clientRequestingSend) {
+                        this.#clientsRequestingSend.delete(device);
+                        this.#clientsSendingToDevice.set(device, clientRequestingSend);
+                        switch (fileTransferStatus) {
+                            case "sending":
+                                if (clientSendingToSelf) {
+                                    _console$e.log(`already sending "sending" fileTransferStatus to client`);
+                                    return;
+                                }
+                                else {
+                                    _console$e.log(`sending "sending" fileTransferStatus only to client`);
+                                    const deviceMessage = this.#createDeviceMessage(device, messageType, dataView);
+                                    this.sendToClient(clientRequestingSend, this.#createDeviceServerMessage(device, deviceMessage));
+                                    return;
+                                }
+                            case "idle":
+                                {
+                                    this.#clientsSendingToDevice.delete(device);
+                                    const currentSentFileConfiguration = device._fileTransferManager.getCurrentFileConfiguration();
+                                    if (currentSentFileConfiguration) {
+                                        _console$e.log("already received file - no need to resend");
+                                        if (clientSendingToSelf) {
+                                            _console$e.log(`already sending "idle" fileTransferStatus to client`);
+                                            return;
+                                        }
+                                    }
+                                    else {
+                                        _console$e.log("local device doesn't have file - requesting client send to self");
+                                        this.#clientsSendingToSelf.set(device, clientRequestingSend);
+                                        device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "sending"), false);
+                                        const deviceMessages = [];
+                                        const mtuDeviceMessage = this.#createDeviceMessage(device, "getMtu", valueToUInt16DataView(this.clientMtu, true));
+                                        deviceMessages.push(mtuDeviceMessage);
+                                        const fileTransferStatusDeviceMessage = this.#createDeviceMessage(device, messageType, dataView);
+                                        deviceMessages.push(fileTransferStatusDeviceMessage);
+                                        fileTransferStatusDeviceMessage.data = enumToDataView(FileTransferStatuses, "sending");
+                                        this.sendToClient(clientRequestingSend, this.#createDeviceServerMessage(device, ...deviceMessages));
+                                        return;
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                    else if (clientSendingToSelf) {
+                        _console$e.log("file is being transferred locally - not relaying fileTransferStatus");
+                        return;
+                    }
+                    else if (clientSendingToDevice) {
+                        switch (fileTransferStatus) {
+                            case "idle":
+                                _console$e.log("client done sending file to device");
+                                this.#clientsSendingToDevice.delete(device);
+                                break;
+                            default:
+                                _console$e.error(`uncaught fileTransferStatus "${fileTransferStatus}" when sending file between client and device`);
+                                return;
+                        }
+                    }
+                    else {
+                        _console$e.log("file is being sent directly to device - not relaying fileTransferStatus");
+                        return;
+                    }
+                }
+                break;
+            case "tfliteIsReady":
+            case "displaySpriteSheetIndex":
+                {
+                    const fileConfiguration = device._fileTransferManager.getCurrentFileConfiguration();
+                    if (!fileConfiguration) {
+                        _console$e.log(`delaying messageType "${messageType}" until after receiving file from client`);
+                        return;
+                    }
+                    else if (!fileConfiguration.indirectly) {
+                        _console$e.log(`delaying messageType "${messageType}" until after sending file to clients`);
+                        return;
+                    }
+                }
+                break;
+            case "setFileChecksum":
+            case "setFileLength":
+            case "setFileType":
+            case "setDisplaySpriteSheetName":
+            case "setTfliteSensorTypes":
+            case "setTfliteName":
+            case "setTfliteSampleRate":
+            case "setTfliteTask":
+                {
+                    const clientRequestingSend = this.#clientsRequestingSend.get(device);
+                    const clientSendingToSelf = this.#clientsSendingToSelf.get(device);
+                    const clientSendingToDevice = this.#clientsSendingToDevice.get(device);
+                    _console$e.log({
+                        clientRequestingSend,
+                        clientSendingToSelf,
+                        clientSendingToDevice,
+                    });
+                    if (clientRequestingSend) {
+                        _console$e.log("sending fileTransfer metadata response to clientRequestingSend");
+                        const deviceMessage = this.#createDeviceMessage(device, messageType, dataView);
+                        this.sendToClient(clientRequestingSend, this.#createDeviceServerMessage(device, deviceMessage));
+                    }
+                    else {
+                        _console$e.log(`no client to send fileTransfer metadata "${messageType}" response to`);
+                    }
+                    return;
+                }
+            case "fileBytesTransferred":
+                _console$e.log("skipping fileBytesTransferred");
+                return;
+        }
+        const deviceMessage = this.#createDeviceMessage(device, messageType, dataView);
+        deviceMessages.unshift(deviceMessage);
+        this.broadcast(this.#createDeviceServerMessage(device, ...deviceMessages), this.#allowDeviceToClients(device, deviceMessage));
+    }
+    #onDeviceDisplayContextCommands(deviceEvent) {
+        if (this.clients.length == 0) {
+            return;
+        }
+        const { target: device, message } = deviceEvent;
+        const { displayContextCommands } = message;
+        _console$e.log("onDeviceDisplayContextCommands", displayContextCommands);
+        if (!device.isConnected) {
+            _console$e.warn("device isn't connected");
+            return;
+        }
+        const serializedDisplayContextCommands = serializeDisplayContextCommands(device.displayManager, displayContextCommands);
+        const deviceMessage = this.#createDeviceMessage(device, "displayContextCommands", new DataView(serializedDisplayContextCommands));
+        const deviceServerMessage = this.#createDeviceServerMessage(device, deviceMessage);
+        ServerManager_default.broadcast(deviceServerMessage, undefined, undefined, false);
+    }
+    #onDeviceSentFile(deviceEvent) {
+        if (this.clients.length == 0) {
+            return;
+        }
+        const { target: device, message } = deviceEvent;
+        _console$e.log("#onDeviceSentFile", message);
+        if (!device.isConnected) {
+            _console$e.warn("device isn't connected");
+            return;
+        }
+        const { fileConfiguration } = message;
+        if (!this.#clientSentFileConfigurations.get(device).has(fileConfiguration)) {
+            this.#clientSentFileConfigurations
+                .get(device)
+                .set(fileConfiguration, new Map());
+        }
+        const fileTransferMetaData = [];
+        switch (fileConfiguration.fileType) {
+            case "tflite":
+                fileTransferMetaData.push(this.#createDeviceMessage(device, "setTfliteTask"));
+                fileTransferMetaData.push(this.#createDeviceMessage(device, "setTfliteSensorTypes"));
+                fileTransferMetaData.push(this.#createDeviceMessage(device, "setTfliteName"));
+                break;
+            case "spriteSheet":
+                fileTransferMetaData.push(this.#createDeviceMessage(device, "setDisplaySpriteSheetName"));
+                break;
+        }
+        this.#clientFileConfigurationMetaData
+            .get(device)
+            .set(fileConfiguration, fileTransferMetaData);
+        this.clients.forEach((client) => {
+            this.#sendDeviceFileConfigurationToClient(device, fileConfiguration, client);
+        });
+    }
+    #boundDeviceManagerListeners = {
+        deviceConnected: this.#onDeviceConnected.bind(this),
+        deviceNotConnected: this.#onDeviceNotConnected.bind(this),
+        deviceIsConnected: this.#onDeviceIsConnected.bind(this),
+    };
+    #onDeviceConnected(staticDeviceEvent) {
+        const { device } = staticDeviceEvent.message;
+        _console$e.log("onDeviceConnected", device.bluetoothId);
+        addEventListeners(device, this.#boundDeviceListeners);
+        this.#clientsWaitingToRequestSend.set(device, []);
+        this.#clientsWaitingToRequestSendMetaData.set(device, new Map());
+        this.#clientSentFileConfigurations.set(device, new Map());
+        this.#clientFileConfigurationMetaData.set(device, new Map());
+    }
+    #onDeviceNotConnected(staticDeviceEvent) {
+        const { device } = staticDeviceEvent.message;
+        _console$e.log("onDeviceNotConnected", device.bluetoothId);
+        removeEventListeners(device, this.#boundDeviceListeners);
+        this.#clientsWaitingToRequestSend.delete(device);
+        this.#clientsWaitingToRequestSendMetaData.delete(device);
+        this.#clientSentFileConfigurations.delete(device);
+        this.#clientFileConfigurationMetaData.delete(device);
+    }
+    #onDeviceIsConnected(staticDeviceEvent) {
+        const { device } = staticDeviceEvent.message;
+        _console$e.log("onDeviceIsConnected", device.bluetoothId);
+        this.broadcast(this.#createDeviceIsConnectedMessage(device), this.#allowDeviceToClients(device, "isConnected"));
+    }
+    #createDeviceIsConnectedMessage(device) {
+        return this.#createDeviceServerMessage(device, {
+            type: "isConnected",
+            data: device.isConnected,
+        });
+    }
+    #createDeviceServerMessage(device, ...messages) {
+        _console$e.log("#createDeviceServerMessage", ...messages);
+        return createServerMessage({
+            type: "deviceMessage",
+            data: [device.bluetoothId, createDeviceMessage(...messages)],
+        });
+    }
+    #allowClientToServer(client, message) {
+        return ServerManager_default.clientToServerGuardManager.evaluate({
+            message,
+            client,
+            server: this,
+        });
+    }
+    #allowServerToClient(client, message) {
+        if (typeof message == "string") {
+            message = { type: message };
+        }
+        return ServerManager_default.serverToClientGuardManager.evaluate({
+            client,
+            message,
+            server: this,
+        });
+    }
+    #filterServerToClients(message, clients = this.clients, excludeClients) {
+        if (excludeClients) {
+            clients = clients.filter((client) => !excludeClients.includes(client));
+        }
+        return clients.filter((client) => this.#allowServerToClient(client, message));
+    }
+    #allowClientToDevice(client, device, message) {
+        return ServerManager_default.clientToDeviceGuardManager.evaluate({
+            device,
+            client,
+            message,
+            server: this,
+        });
+    }
+    #allowDeviceToClient(device, client, message) {
+        if (typeof message == "string") {
+            message = { type: message };
+        }
+        return ServerManager_default.deviceToClientGuardManager.evaluate({
+            device,
+            client,
+            message,
+            server: this,
+        });
+    }
+    #allowDeviceToClients(device, message, clients = this.clients, excludeClients) {
+        if (excludeClients) {
+            clients = clients.filter((client) => !excludeClients.includes(client));
+        }
+        return clients.filter((client) => this.#allowDeviceToClient(device, client, message));
+    }
+    #allowDeviceSensorDataToClient(device, client, sensorType, sensorData) {
+        return ServerManager_default.deviceSensorDataToClientGuardManager.evaluate({
+            device,
+            client,
+            sensorType,
+            sensorData,
+            server: this,
+        });
+    }
+    #allowClientSensorConfigurationToDevice(device, client, sensorType, sensorRate) {
+        return ServerManager_default.clientSensorConfigurationToDeviceGuardManager.evaluate({
+            device,
+            client,
+            sensorType,
+            sensorRate,
+            server: this,
+        });
+    }
+    #allowClientDisplayContextCommandToDevice(device, client, displayContextCommand) {
+        return ServerManager_default.clientDisplayContextCommandToDeviceGuardManager.evaluate({
+            device,
+            client,
+            displayContextCommand,
+            server: this,
+        });
+    }
+    parseClientMessage(client, dataView) {
+        if (!this.#allowClientToServer(client)) {
+            return;
+        }
+        const clientContext = {
+            responseMessages: [],
+            broadcastMessages: [],
+            localBroadcastMessages: [],
+            client,
+        };
+        parseMessage(dataView, ServerMessageTypes, this.#onClientMessage.bind(this), clientContext, true);
+        clientContext.responseMessages =
+            clientContext.responseMessages.filter(Boolean);
+        clientContext.broadcastMessages =
+            clientContext.broadcastMessages.filter(Boolean);
+        clientContext.localBroadcastMessages =
+            clientContext.localBroadcastMessages.filter(Boolean);
+        return clientContext;
+    }
+    #onClientMessage(messageType, dataView, clientContext) {
+        _console$e.log(`onClientMessage "${messageType}" (${dataView.byteLength} bytes)`);
+        const { client, responseMessages, localBroadcastMessages, broadcastMessages, } = clientContext;
+        const message = { type: messageType, data: dataView };
+        if (!this.#allowClientToServer(client, message)) {
+            return;
+        }
+        switch (messageType) {
+            case "isScanningAvailable":
+                if (this.#allowServerToClient(client, "isScanningAvailable")) {
+                    responseMessages.push(this.#isScanningAvailableMessage);
+                }
+                break;
+            case "isScanning":
+                if (this.#allowServerToClient(client, "isScanning")) {
+                    responseMessages.push(this.#isScanningMessage);
+                }
+                break;
+            case "startScan":
+                scanner.startScan();
+                break;
+            case "stopScan":
+                scanner.stopScan();
+                break;
+            case "discoveredDevices":
+                if (this.#allowServerToClient(client, "discoveredDevices")) {
+                    responseMessages.push(this.#discoveredDevicesMessage);
+                }
+                break;
+            case "connectToDevice":
+                {
+                    const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
+                    let connectionType = undefined;
+                    if (byteOffset < dataView.byteLength) {
+                        connectionType = ConnectionTypes[dataView.getUint8(byteOffset)];
+                        _console$e.log(`connectToDevice ${deviceId} via ${connectionType}`);
+                    }
+                    else {
+                        _console$e.log(`connecting to device with id ${deviceId}...`);
+                    }
+                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    if (device) {
+                        device.connect({ type: connectionType, reconnect: true });
+                    }
+                    else {
+                        scanner.connectToDevice(deviceId, connectionType);
+                    }
+                }
+                break;
+            case "disconnectFromDevice":
+                {
+                    const { string: deviceId } = parseStringFromDataView(dataView);
+                    if (!deviceId) {
+                        break;
+                    }
+                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner.devices[deviceId];
+                    if (!device) {
+                        _console$e.error(`no device found with id ${deviceId}`);
+                        break;
+                    }
+                    _console$e.log(`disconnecting from device with id ${deviceId}...`);
+                    device.addEventListener("notConnected", () => {
+                        this.broadcast(this.#createDeviceIsConnectedMessage(device), this.#allowDeviceToClients(device, "isConnected"));
+                    }, { once: true });
+                    device.disconnect();
+                }
+                break;
+            case "connectedDevices":
+                if (this.#allowServerToClient(client, "connectedDevices")) {
+                    responseMessages.push(this.#connectedDevicesMessage);
+                }
+                break;
+            case "deviceMessage":
+                {
+                    const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
+                    if (!deviceId) {
+                        break;
+                    }
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    if (!device) {
+                        _console$e.error(`no device found with id ${deviceId}`);
+                        break;
+                    }
+                    const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
+                    const clientDeviceContext = this.#parseClientDeviceMessage(client, device, _dataView);
+                    if (clientDeviceContext) {
+                        const { deviceMessages, broadcastDeviceMessages } = clientDeviceContext;
+                        if (deviceMessages.length > 0) {
+                            responseMessages.push(this.#createDeviceServerMessage(device, ...deviceMessages));
+                        }
+                        if (broadcastDeviceMessages.length > 0) {
+                            broadcastMessages.push(this.#createDeviceServerMessage(device, ...broadcastDeviceMessages));
+                        }
+                    }
+                }
+                break;
+            case "requiredDeviceInformation":
+                {
+                    const { string: deviceId } = parseStringFromDataView(dataView);
+                    if (!deviceId) {
+                        break;
+                    }
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    if (!device) {
+                        _console$e.error(`no device found with id ${deviceId}`);
+                        break;
+                    }
+                    const messages = [];
+                    RequiredDeviceInformationMessageTypes.forEach((messageType) => {
+                        if (device.latestConnectionMessages.has(messageType) &&
+                            this.#allowDeviceToClient(device, client, messageType)) {
+                            messages.push(this.#createDeviceMessage(device, messageType));
+                        }
+                    });
+                    if (device.hasCamera) {
+                        if (this.#allowDeviceToClient(device, client, "cameraData")) {
+                            messages.push(this.#createDeviceMessage(device, "cameraData"));
+                        }
+                    }
+                    if (device.isDisplayAvailable) {
+                        if (this.#allowDeviceToClient(device, client, "displayContextCommands")) {
+                            messages.push(this.#createDeviceMessage(device, "displayContextCommands"));
+                        }
+                    }
+                    for (const [device, map] of [...this.#clientSentFileConfigurations]) {
+                        for (const [fileConfiguration, _] of [...map]) {
+                            const _messages = this.#sendDeviceFileConfigurationToClient(device, fileConfiguration, client, false);
+                            if (_messages) {
+                                messages.push(..._messages);
+                            }
+                        }
+                    }
+                    const responseMessage = this.#createDeviceServerMessage(device, ...messages);
+                    if (responseMessage) {
+                        responseMessages.push(responseMessage);
+                    }
+                }
+                break;
+            default:
+                _console$e.error(`uncaught messageType "${messageType}"`);
+                break;
+        }
+        _console$e.log("responseMessages", responseMessages);
+    }
+    #parseClientDeviceMessage(client, device, dataView) {
+        _console$e.log("onDeviceMessage", device.bluetoothId, dataView);
+        if (!this.#allowClientToDevice(client, device)) {
+            return;
+        }
+        const clientDeviceContext = {
+            deviceMessages: [],
+            broadcastDeviceMessages: [],
+            device,
+            client,
+        };
+        parseMessage(dataView, ConnectionMessageTypes, this.#parseClientDeviceMessageCallback.bind(this), clientDeviceContext, true);
+        clientDeviceContext.deviceMessages =
+            clientDeviceContext.deviceMessages.filter(Boolean);
+        clientDeviceContext.broadcastDeviceMessages =
+            clientDeviceContext.broadcastDeviceMessages.filter(Boolean);
+        return clientDeviceContext;
+    }
+    #clientsSendingToDevice = new Map();
+    #clientsRequestingSend = new Map();
+    #clientsWaitingToRequestSend = new Map();
+    #clientsWaitingToRequestSendMetaData = new Map();
+    #clientsSendingToSelf = new Map();
+    #appendClientSentFileConfigurations(device, client) {
+        _console$e.log("#appendClientSentFileConfigurations", device, client);
+        const currentSentFileConfiguration = device._fileTransferManager.getCurrentFileConfiguration();
+        if (currentSentFileConfiguration) {
+            _console$e.log("adding currentSentFileConfiguration to clientFileConfigurations");
+            if (!this.#clientSentFileConfigurations
+                .get(device)
+                .has(currentSentFileConfiguration)) {
+                this.#clientSentFileConfigurations
+                    .get(device)
+                    .set(currentSentFileConfiguration, new Map());
+            }
+            this.#clientSentFileConfigurations
+                .get(device)
+                .get(currentSentFileConfiguration)
+                .set(client, {
+                sent: true,
+                initiated: false,
+                bytesTransferred: currentSentFileConfiguration.length,
+            });
+        }
+    }
+    #onDoneReceivingFileFromClient(device, client, deviceMessages) {
+        _console$e.log("#onDoneReceivingFileFromClient", device);
+        this.#appendClientSentFileConfigurations(device, client);
+        device._onRemoteConnectionMessageSent("fileTransferStatus", enumToDataView(FileTransferStatuses, "idle"), false);
+        this.#clientsSendingToSelf.delete(device);
+        _console$e.log("restoring device mtu");
+        const resetMtuMessage = this.#createDeviceMessage(device, "getMtu");
+        deviceMessages.push(resetMtuMessage);
+        const fileTransferStatusDeviceMessage = this.#createDeviceMessage(device, "fileTransferStatus");
+        deviceMessages.push(fileTransferStatusDeviceMessage);
+        const clientsWaitingToRequestSend = this.#clientsWaitingToRequestSend.get(device);
+        if (clientsWaitingToRequestSend.length > 0) {
+            const client = clientsWaitingToRequestSend.shift();
+            _console$e.log("clientWaitingToRequestSend", client);
+            this.#clientsRequestingSend.set(device, client);
+            const messages = this.#clientsWaitingToRequestSendMetaData
+                .get(device)
+                .get(client);
+            this.#clientsWaitingToRequestSendMetaData.get(device).delete(client);
+            messages.push({
+                type: "setFileTransferCommand",
+                data: enumToDataView(FileTransferStatuses, "sending"),
+            });
+            _console$e.log("fileTransfer metadata", messages);
+            const filteredTxMessages = [];
+            messages.forEach((message) => {
+                if (this.#allowClientToDevice(client, device, message)) {
+                    filteredTxMessages.push(message);
+                    device._onRemoteConnectionMessageSent(message.type, message.data);
+                }
+            });
+            _console$e.log("filtered fileTransfer metadata", filteredTxMessages);
+            device.connectionManager.sendTxMessages(filteredTxMessages, true, true);
+        }
+    }
+    #clientSentFileConfigurations = new Map();
+    #clientFileConfigurationMetaData = new Map();
+    #sendFileBlockToClient(device, client, fileConfiguration, metadata) {
+        _console$e.log("#sendFileBlockToClient", device, client, fileConfiguration, metadata);
+        const deviceMessages = [];
+        if (!metadata.initiated) {
+            metadata.initiated = true;
+            metadata.bytesTransferred = 0;
+        }
+        const maxBlockLength = this.clientMtu - 3;
+        const block = fileConfiguration.buffer.slice(metadata.bytesTransferred, metadata.bytesTransferred + maxBlockLength);
+        const blockLength = block.byteLength;
+        _console$e.log(`sending block [${metadata.bytesTransferred}, ${metadata.bytesTransferred + blockLength}] (${blockLength} bytes)`, metadata);
+        _console$e.assertWithError(blockLength > 0, "blockLength cannot be 0");
+        metadata.bytesTransferred += blockLength;
+        metadata.sent =
+            metadata.bytesTransferred == fileConfiguration.buffer.byteLength;
+        const fileBlockDeviceMessage = this.#createDeviceMessage(device, "getFileBlock", new DataView(block));
+        deviceMessages.push(fileBlockDeviceMessage);
+        if (metadata.sent) {
+            _console$e.log("finished sending file to client");
+            const idleFileTransferStatusMessage = this.#createDeviceMessage(device, "fileTransferStatus", enumToDataView(FileTransferStatuses, "idle"));
+            deviceMessages.push(idleFileTransferStatusMessage);
+            const _deviceMessages = this.#onDoneSendingFileToClient(device, client, fileConfiguration);
+            deviceMessages.push(..._deviceMessages);
+        }
+        return deviceMessages;
+    }
+    #sendNextFileToClient(device, client) {
+        _console$e.log("#sendNextFileToClient", device, client);
+        const deviceMessages = [];
+        let nextFileConfiguration;
+        _console$e.log("finding next fileConfiguration to send");
+        if (this.#clientSentFileConfigurations.has(device)) {
+            for (const [_fileConfiguration, map] of [
+                ...this.#clientSentFileConfigurations.get(device).entries(),
+            ]) {
+                if (map.has(client)) {
+                    const metadata = map.get(client);
+                    const { sent, initiated } = metadata;
+                    if (!sent && !initiated) {
+                        _console$e.log("found nextFileConfiguration", _fileConfiguration);
+                        nextFileConfiguration = _fileConfiguration;
+                        break;
+                    }
+                }
+            }
+        }
+        _console$e.log("nextFileConfiguration", nextFileConfiguration);
+        if (nextFileConfiguration) {
+            _console$e.log("sending followup nextFileConfiguration", nextFileConfiguration);
+            const _deviceMessages = this.#sendDeviceFileConfigurationToClient(device, nextFileConfiguration, client, false);
+            if (_deviceMessages) {
+                deviceMessages.push(..._deviceMessages);
+            }
+        }
+        return deviceMessages;
+    }
+    #onDoneSendingFileToClient(device, client, fileConfiguration) {
+        _console$e.log("#onDoneSendingFileToClient", device, client, fileConfiguration);
+        const deviceMessages = [];
+        switch (fileConfiguration.fileType) {
+            case "spriteSheet":
+                {
+                    const spriteSheetFileConfiguration = fileConfiguration;
+                    const displaySpriteSheetIndexDeviceMessage = this.#createDeviceMessage(device, "displaySpriteSheetIndex", valueToUInt8DataView(spriteSheetFileConfiguration.spriteSheetIndex));
+                    deviceMessages.push(displaySpriteSheetIndexDeviceMessage);
+                }
+                break;
+            case "tflite":
+                {
+                    const tfliteIsReadyDeviceMessage = this.#createDeviceMessage(device, "tfliteIsReady");
+                    deviceMessages.push(tfliteIsReadyDeviceMessage);
+                }
+                break;
+            default:
+                _console$e.log(`uncaught fileType "${fileConfiguration.fileType}"`);
+                break;
+        }
+        const _deviceMessages = this.#sendNextFileToClient(device, client);
+        if (_deviceMessages) {
+            deviceMessages.push(..._deviceMessages);
+        }
+        return deviceMessages;
+    }
+    #sendDeviceFileConfigurationToClient(device, fileConfiguration, client, sendImmediately = true) {
+        _console$e.log("#sendDeviceFileConfigurationToClient", device, fileConfiguration, client, { sendImmediately });
+        switch (fileConfiguration.fileType) {
+            case "tflite":
+            case "spriteSheet":
+                break;
+            default:
+                _console$e.log(`not sending fileType "${fileConfiguration.fileType}"`);
+                return;
+        }
+        const map = this.#clientSentFileConfigurations
+            .get(device)
+            .get(fileConfiguration);
+        _console$e.assertWithError(map, "map not found");
+        let metadata = map.get(client);
+        if (metadata) {
+            const { sent, initiated } = map.get(client);
+            if (initiated) {
+                _console$e.log("already initiated");
+                return;
+            }
+            if (sent) {
+                _console$e.log("already sent file");
+                return;
+            }
+        }
+        else {
+            metadata = {
+                bytesTransferred: 0,
+            };
+            map.set(client, metadata);
+        }
+        const isBusy = this.#isBusyTransferringFile(device, client);
+        _console$e.log({ isBusy, metadata });
+        if (isBusy) {
+            _console$e.log("currently busy - will send later");
+        }
+        else {
+            _console$e.log("not busy - sending file to client");
+            const fileLengthDeviceMessage = this.#createDeviceMessage(device, "getFileLength", valueToUInt32DataView(fileConfiguration.length, true));
+            const fileChecksumDeviceMessage = this.#createDeviceMessage(device, "getFileChecksum", valueToUInt32DataView(fileConfiguration.checksum, true));
+            const receivingFileTransferStatusDeviceMessage = this.#createDeviceMessage(device, "fileTransferStatus", enumToDataView(FileTransferStatuses, "receiving"));
+            const deviceMessages = [
+                fileLengthDeviceMessage,
+                fileChecksumDeviceMessage,
+                receivingFileTransferStatusDeviceMessage,
+            ];
+            const fileMetaData = this.#clientFileConfigurationMetaData
+                .get(device)
+                .get(fileConfiguration);
+            deviceMessages.unshift(...fileMetaData);
+            const fileTypeDeviceMessage = this.#createDeviceMessage(device, "getFileType", enumToDataView(FileTypes, fileConfiguration.fileType));
+            deviceMessages.unshift(fileTypeDeviceMessage);
+            const _deviceMessages = this.#sendFileBlockToClient(device, client, fileConfiguration, metadata);
+            if (_deviceMessages) {
+                deviceMessages.push(..._deviceMessages);
+            }
+            if (sendImmediately) {
+                this.sendToClient(client, this.#createDeviceServerMessage(device, ...deviceMessages));
+            }
+            return deviceMessages;
+        }
+    }
+    #filterClientToDeviceTxMessage(client, device, dataView, deviceMessages, broadcastDeviceMessages) {
+        const filteredTxMessages = [];
+        parseMessage(dataView, TxRxMessageTypes, (messageType, dataView) => {
+            _console$e.log("filtering txMessage", { messageType, dataView });
+            let message = { type: messageType, data: dataView };
+            switch (message.type) {
+                case "setSensorConfiguration":
+                    if (!ServerManager_default.clientSensorConfigurationToDeviceGuardManager
+                        .isEmpty) {
+                        _console$e.log("trimming sensorConfiguration...");
+                        const sensorConfiguration = parseSensorConfiguration(message.data, (sensorType, sensorRate) => {
+                            return this.#allowClientSensorConfigurationToDevice(device, client, sensorType, sensorRate);
+                        });
+                        _console$e.log("trimmed sensorConfiguration", sensorConfiguration);
+                        const sensorConfigurationData = serializeSensorConfiguration(sensorConfiguration);
+                        if (sensorConfigurationData.byteLength > 0) {
+                            message.data = sensorConfigurationData;
+                        }
+                        else {
+                            _console$e.log("no sensorConfigurationData - sending existing sensorConfiguration");
+                            const getSensorConfigurationMessage = this.#createDeviceMessage(device, "getSensorConfiguration");
+                            {
+                                deviceMessages.push(getSensorConfigurationMessage);
+                                return;
+                            }
+                        }
+                    }
+                    break;
+                case "displayContextCommands":
+                    {
+                        const displayContextCommands = parseDisplayContextCommands(device.displayManager, dataView);
+                        _console$e.log("trimming displayContextCommands...", displayContextCommands);
+                        const filteredDisplayContextCommands = displayContextCommands.filter((displayContextCommand) => {
+                            return this.#allowClientDisplayContextCommandToDevice(device, client, displayContextCommand);
+                        });
+                        _console$e.log("filteredDisplayContextCommands", filteredDisplayContextCommands);
+                        const partitionedFilteredDisplayContextCommands = [];
+                        let sendRemaining = false;
+                        {
+                            let lastCommandToSendImmediatelyIndex = -1;
+                            for (let index = filteredDisplayContextCommands.length - 1; index >= 0; index--) {
+                                const displayContextCommand = filteredDisplayContextCommands[index];
+                                const shouldSendImmediately = ShowDisplayContextCommandTypes.includes(displayContextCommand.type);
+                                if (shouldSendImmediately) {
+                                    lastCommandToSendImmediatelyIndex = index;
+                                    break;
+                                }
+                            }
+                            sendRemaining =
+                                lastCommandToSendImmediatelyIndex == -1 ||
+                                    lastCommandToSendImmediatelyIndex ==
+                                        filteredDisplayContextCommands.length - 1;
+                            if (sendRemaining) {
+                                partitionedFilteredDisplayContextCommands.push(filteredDisplayContextCommands);
+                            }
+                            else {
+                                partitionedFilteredDisplayContextCommands.push(filteredDisplayContextCommands.slice(0, lastCommandToSendImmediatelyIndex + 1));
+                                partitionedFilteredDisplayContextCommands.push(filteredDisplayContextCommands.slice(lastCommandToSendImmediatelyIndex + 1));
+                            }
+                        }
+                        _console$e.log("partitionedFilteredDisplayContextCommands", partitionedFilteredDisplayContextCommands, { sendRemaining });
+                        partitionedFilteredDisplayContextCommands.forEach((_filteredDisplayContextCommands, index) => {
+                            const isLast = index ==
+                                partitionedFilteredDisplayContextCommands.length - 1;
+                            const sendImmediately = !isLast || sendRemaining;
+                            _console$e.log("filteredDisplayContextCommands", _filteredDisplayContextCommands, { isLast, sendImmediately });
+                            device.displayManager.runContextCommands(_filteredDisplayContextCommands, sendImmediately);
+                        });
+                        return;
+                    }
+                case "setFileChecksum":
+                case "setFileLength":
+                case "setFileType":
+                case "setDisplaySpriteSheetName":
+                case "setTfliteSensorTypes":
+                case "setTfliteName":
+                case "setTfliteSampleRate":
+                case "setTfliteTask":
+                    {
+                        const map = this.#clientsWaitingToRequestSendMetaData.get(device);
+                        if (!map.has(client)) {
+                            map.set(client, []);
+                        }
+                        const messages = map.get(client);
+                        _console$e.log("storing message in fileTransferMetaData", message);
+                        messages.push(message);
+                        return;
+                    }
+                case "setFileTransferCommand":
+                    {
+                        const fileTransferCommandEnum = dataView.getUint8(0);
+                        const fileTransferCommand = FileTransferCommands[fileTransferCommandEnum];
+                        _console$e.assertEnumWithError(FileTransferCommands, fileTransferCommand);
+                        const isClientSendingToSelf = client == this.#clientsSendingToSelf.get(device);
+                        const isClientSendingToDevice = client == this.#clientsSendingToDevice.get(device);
+                        const isClientReceivingFileFromSelf = this.#isClientBusyReceivingFileFromSelf(client, device);
+                        _console$e.log({
+                            fileTransferCommand,
+                            isClientSendingToSelf,
+                            isClientSendingToDevice,
+                            isClientReceivingFileFromSelf,
+                        });
+                        if (this.#isBusyTransferringFile(device, client)) {
+                            _console$e.log("busy transferring file");
+                            switch (fileTransferCommand) {
+                                case "startSend":
+                                    _console$e.log("adding client to #clientsWaitingToRequestSend...");
+                                    if (!this.#clientsWaitingToRequestSend
+                                        .get(device)
+                                        .includes(client)) {
+                                        this.#clientsWaitingToRequestSend
+                                            .get(device)
+                                            .push(client);
+                                    }
+                                    else {
+                                        _console$e.error("client already in #clientsWaitingToRequestSend");
+                                    }
+                                    break;
+                                case "startReceive":
+                                    _console$e.log("adding client to receive queue...");
+                                    break;
+                                case "cancel":
+                                    if (isClientSendingToSelf) {
+                                        _console$e.log("cancelling client sending file to self");
+                                        this.#onDoneReceivingFileFromClient(device, client, deviceMessages);
+                                        return;
+                                    }
+                                    else if (isClientReceivingFileFromSelf) {
+                                        _console$e.log("cancelling client receiving file to self");
+                                        return;
+                                    }
+                                    else if (isClientSendingToDevice) {
+                                        _console$e.log("cancelling client sending file to device");
+                                    }
+                                    else {
+                                        _console$e.error("not allowing client to cancel device file transfer");
+                                        return;
+                                    }
+                                    break;
+                            }
+                            return;
+                        }
+                        else {
+                            switch (fileTransferCommand) {
+                                case "startSend":
+                                    _console$e.log("adding client to #clientsRequestingSend");
+                                    this.#clientsRequestingSend.set(device, client);
+                                    const fileTransferMetaDataMessages = this.#clientsWaitingToRequestSendMetaData
+                                        .get(device)
+                                        .get(client);
+                                    this.#clientsWaitingToRequestSendMetaData
+                                        .get(device)
+                                        .delete(client);
+                                    _console$e.log("fileTransferMetaDataMessages", fileTransferMetaDataMessages);
+                                    fileTransferMetaDataMessages.forEach((message) => {
+                                        if (this.#allowClientToDevice(client, device, message)) {
+                                            filteredTxMessages.push(message);
+                                            device._onRemoteConnectionMessageSent(message.type, message.data);
+                                        }
+                                    });
+                                    break;
+                                case "startReceive":
+                                    break;
+                                case "cancel":
+                                    _console$e.error("device is not busy - no reason to cancel");
+                                    break;
+                            }
+                        }
+                    }
+                    break;
+                case "fileBytesTransferred":
+                    if (this.#isClientBusyReceivingFileFromSelf(client, device)) {
+                        const bytesTransferred = dataView.getUint32(0, true);
+                        const fileConfiguration = this.#getCurrentFileConfigurationSendingToClientDevice(client, device);
+                        const metadata = this.#clientSentFileConfigurations
+                            .get(device)
+                            .get(fileConfiguration)
+                            .get(client);
+                        _console$e.log({ bytesTransferred, fileConfiguration, metadata });
+                        if (metadata.bytesTransferred != bytesTransferred) {
+                            _console$e.log(`invalid bytesTransferred - expected ${metadata.bytesTransferred}, got ${bytesTransferred} - cancelling`);
+                            metadata.initiated = false;
+                            metadata.bytesTransferred = 0;
+                            const idleFileTransferStatusMessage = this.#createDeviceMessage(device, "fileTransferStatus", enumToDataView(FileTransferStatuses, "idle"));
+                            deviceMessages.push(idleFileTransferStatusMessage);
+                            const _deviceMessages = this.#sendNextFileToClient(device, client);
+                            if (_deviceMessages) {
+                                deviceMessages.push(..._deviceMessages);
+                            }
+                            return;
+                        }
+                        const _deviceMessages = this.#sendFileBlockToClient(device, client, fileConfiguration, metadata);
+                        if (_deviceMessages) {
+                            deviceMessages.push(..._deviceMessages);
+                        }
+                        return;
+                    }
+                    break;
+                case "setFileBlock":
+                    {
+                        const isClientSendingToSelf = client == this.#clientsSendingToSelf.get(device);
+                        const isDeviceConnectedDirectly = device.connectionType != "client";
+                        const isClientSendingToDevice = client == this.#clientsSendingToDevice.get(device);
+                        _console$e.log({
+                            isClientSendingToSelf,
+                            isDeviceConnectedDirectly,
+                            isClientSendingToDevice,
+                        });
+                        let sentToDevice = false;
+                        device.addEventListener("fileTransferProgress", async (event) => {
+                            const { message } = event;
+                            const { isComplete, fileType, fileConfiguration } = message;
+                            let { bytesTransferred } = message;
+                            _console$e.log("intercepted fileTransferProgress", message, {
+                                sentToDevice,
+                            });
+                            if (isComplete && !isClientSendingToSelf) {
+                                this.#appendClientSentFileConfigurations(device, client);
+                            }
+                            const deviceMessages = [];
+                            if (isComplete) {
+                                switch (fileType) {
+                                    case "tflite":
+                                        break;
+                                    case "spriteSheet":
+                                        {
+                                            const arrayBuffer = fileConfiguration.buffer;
+                                            const dataView = new DataView(arrayBuffer);
+                                            const parsedSpriteSheet = device.parseDisplaySpriteSheet(dataView, device.pendingDisplaySpriteSheetName);
+                                            if (!isClientSendingToSelf) {
+                                                device.displayManager.pendingSpriteSheet =
+                                                    parsedSpriteSheet;
+                                            }
+                                            await device.uploadDisplaySpriteSheet(parsedSpriteSheet);
+                                        }
+                                        break;
+                                }
+                            }
+                            if (!sentToDevice) {
+                                _console$e.log("relaying fileBytesTransferred back to client directly");
+                                const fileBytesTransferredDeviceMessage = this.#createDeviceMessage(device, "fileBytesTransferred", valueToUInt32DataView(bytesTransferred, true));
+                                deviceMessages.push(fileBytesTransferredDeviceMessage);
+                            }
+                            if (isComplete && isClientSendingToSelf) {
+                                _console$e.log("client done sending file to self");
+                                this.#onDoneReceivingFileFromClient(device, client, deviceMessages);
+                                switch (fileType) {
+                                    case "tflite":
+                                        {
+                                            const tfliteIsReadyDeviceMessage = this.#createDeviceMessage(device, "tfliteIsReady");
+                                            deviceMessages.push(tfliteIsReadyDeviceMessage);
+                                        }
+                                        break;
+                                    case "spriteSheet":
+                                        {
+                                            const displaySpriteSheetIndexDeviceMessage = this.#createDeviceMessage(device, "displaySpriteSheetIndex");
+                                            deviceMessages.push(displaySpriteSheetIndexDeviceMessage);
+                                        }
+                                        break;
+                                }
+                            }
+                            if (deviceMessages.length > 0) {
+                                _console$e.log("sending fileTransfer deviceMessages to client", deviceMessages);
+                                this.sendToClient(client, this.#createDeviceServerMessage(device, ...deviceMessages));
+                            }
+                        }, {
+                            once: true,
+                        });
+                        if (isClientSendingToSelf) {
+                            _console$e.log("parsing file block sent from client");
+                            device._onRemoteConnectionMessageSent(messageType, dataView);
+                            return;
+                        }
+                        else {
+                            if (isDeviceConnectedDirectly) {
+                                const { fileBytesTransferred } = device;
+                                const fileHeaderLength = device._fileTransferManager.indirectSentBlocks.length == 0
+                                    ? dataView.getUint16(0, true)
+                                    : device.fileHeaderLength;
+                                const headerBytesRemaining = Math.max(0, fileHeaderLength - fileBytesTransferred);
+                                const didSendHeader = headerBytesRemaining == 0;
+                                _console$e.log({
+                                    fileBytesTransferred,
+                                    fileHeaderLength,
+                                    headerBytesRemaining,
+                                    didSendHeader,
+                                });
+                                const data = message.data;
+                                const nonHeaderData = data.buffer.slice(headerBytesRemaining);
+                                _console$e.log("nonHeaderData", nonHeaderData);
+                                if (nonHeaderData.byteLength > 0) {
+                                    _console$e.log("relaying nonHeaderData", nonHeaderData);
+                                    message.data = nonHeaderData;
+                                    device.addEventListener("fileBytesTransferred", (event) => {
+                                        let { bytesTransferred } = event.message;
+                                        bytesTransferred += device.fileHeaderLength;
+                                        _console$e.log(`relaying bytesTransferred ${bytesTransferred} (+${device.fileHeaderLength})`);
+                                        const fileBytesTransferredDeviceMessage = this.#createDeviceMessage(device, "fileBytesTransferred", valueToUInt32DataView(bytesTransferred, true));
+                                        this.sendToClient(client, this.#createDeviceServerMessage(device, fileBytesTransferredDeviceMessage));
+                                    }, { once: true });
+                                }
+                                else {
+                                    _console$e.log("nonHeaderData is empty - parsing client file block locally");
+                                    device._onRemoteConnectionMessageSent(messageType, dataView);
+                                    return;
+                                }
+                            }
+                        }
+                        sentToDevice = true;
+                    }
+                    break;
+            }
+            if (this.#allowClientToDevice(client, device, message)) {
+                filteredTxMessages.push(message);
+                device._onRemoteConnectionMessageSent(messageType, dataView);
+            }
+        }, null, true);
+        return filteredTxMessages;
+    }
+    #parseClientDeviceMessageCallback(messageType, dataView, clientDeviceContext) {
+        _console$e.log(`clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`);
+        const { client, device, deviceMessages, broadcastDeviceMessages } = clientDeviceContext;
+        const message = { type: messageType, data: dataView };
+        if (!this.#allowClientToDevice(client, device, message)) {
+            return;
+        }
+        switch (messageType) {
+            case "smp":
+                device.connectionManager.sendSmpMessage(dataView.buffer);
+                break;
+            case "tx":
+                {
+                    const filteredTxMessages = this.#filterClientToDeviceTxMessage(client, device, dataView, deviceMessages, broadcastDeviceMessages);
+                    _console$e.log("filteredTxMessages", filteredTxMessages);
+                    device.connectionManager.sendTxMessages(filteredTxMessages, true, true);
+                }
+                break;
+            default:
+                deviceMessages.push(message);
+                break;
+        }
+    }
+    sendClientContext(clientContext) {
+        _console$e.log("sendClientContext", clientContext);
+        clientContext.responseMessages =
+            clientContext.responseMessages.filter(Boolean);
+        clientContext.broadcastMessages =
+            clientContext.broadcastMessages.filter(Boolean);
+        clientContext.localBroadcastMessages =
+            clientContext.localBroadcastMessages.filter(Boolean);
+        const responseMessage = concatenateArrayBuffers(clientContext.responseMessages);
+        _console$e.log(`sending ${responseMessage.byteLength} bytes to client...`);
+        this.sendToClient(clientContext.client, responseMessage, true);
+        const localBroadcastMessage = concatenateArrayBuffers(clientContext.localBroadcastMessages);
+        _console$e.log(`locally broadcasting ${localBroadcastMessage.byteLength} bytes...`);
+        this.broadcast(localBroadcastMessage, undefined, [clientContext.client], true);
+        const broadcastMessage = concatenateArrayBuffers(clientContext.broadcastMessages);
+        _console$e.log(`broadcasting ${broadcastMessage.byteLength} bytes...`);
+        ServerManager_default.broadcast(broadcastMessage, undefined,
+        [clientContext.client], true);
+    }
+}
+_a$1 = BaseServer;
+
+class GuardManager {
+    #guards = [];
+    add(guard) {
+        if (this.#guards.includes(guard)) {
+            return;
+        }
+        this.#guards.push(guard);
+    }
+    remove(guard) {
+        if (!this.#guards.includes(guard)) {
+            return;
+        }
+        this.#guards.splice(this.#guards.indexOf(guard), 1);
+    }
+    evaluate(...args) {
+        return this.#guards.every((guard) => guard(...args));
+    }
+    clear() {
+        this.length = 0;
+    }
+    get length() {
+        return this.#guards.length;
+    }
+    set length(newLength) {
+        this.#guards.length = newLength;
+    }
+    get isEmpty() {
+        return this.length == 0;
+    }
+}
+
+const _console$d = createConsole("ServerManager", { log: false });
+function getServerManagerServerEventTypes(serverEventType) {
+    return ["server"].map((prefix) => `${prefix}${capitalizeFirstCharacter(serverEventType)}`);
+}
+const ServerManagerServerEventTypes = ServerEventTypes.flatMap((eventType) => getServerManagerServerEventTypes(eventType));
+const wildcardServerEventType = "server*";
+const BaseServerManagerEventTypes = [
+    "server",
+    "servers",
+    wildcardServerEventType,
+];
+const ServerManagerEventTypes = [
+    ...ServerManagerServerEventTypes,
+    ...BaseServerManagerEventTypes,
+];
+let ServerManager = (() => {
+    let _classDecorators = [Singleton];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    (class {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        static shared;
+        constructor() {
+            BaseServer.OnServer = this.#onServer.bind(this);
+        }
+        #servers = [];
+        get servers() {
+            return this.#servers;
+        }
+        #boundServerEventListeners = {
+            [wildcardEventType]: this.#onServerEvent.bind(this),
+        };
+        #onServer(server) {
+            _console$d.log("onServer", server);
+            addEventListeners(server, this.#boundServerEventListeners);
+            if (!this.#servers.includes(server)) {
+                _console$d.log("server", server);
+                this.#servers.push(server);
+                this.#dispatchEvent("server", { server });
+                this.#dispatchEvent("servers", {
+                    servers: this.servers,
+                });
+            }
+        }
+        #onServerEvent(serverEvent) {
+            const { type: serverEventType, target: server, message } = serverEvent;
+            _console$d.log("onServerEvent", serverEvent);
+            this.#dispatchEvent(wildcardServerEventType, {
+                ...message,
+                server: server,
+                serverEventType,
+            });
+            getServerManagerServerEventTypes(serverEventType).forEach((eventType) => {
+                this.#dispatchEvent(eventType, {
+                    ...message,
+                    server: server,
+                });
+            });
+        }
+        #eventDispatcher = new EventDispatcher(this, ServerManagerEventTypes);
+        get addEventListener() {
+            return this.#eventDispatcher.addEventListener;
+        }
+        get #dispatchEvent() {
+            return this.#eventDispatcher.dispatchEvent;
+        }
+        get removeEventListener() {
+            return this.#eventDispatcher.removeEventListener;
+        }
+        get removeEventListeners() {
+            return this.#eventDispatcher.removeEventListeners;
+        }
+        broadcast(arrayBuffer, clients, excludeClients, isWrapped) {
+            if (arrayBuffer.byteLength == 0) {
+                return;
+            }
+            _console$d.log("broadcast", arrayBuffer, {
+                clients,
+                excludeClients,
+                isWrapped,
+            });
+            this.servers.forEach((server) => {
+                server.broadcast(arrayBuffer, clients, excludeClients, isWrapped);
+            });
+        }
+        clientToServerGuardManager = new GuardManager();
+        serverToClientGuardManager = new GuardManager();
+        clientToDeviceGuardManager = new GuardManager();
+        deviceToClientGuardManager = new GuardManager();
+        deviceSensorDataToClientGuardManager = new GuardManager();
+        clientSensorConfigurationToDeviceGuardManager = new GuardManager();
+        clientDisplayContextCommandToDeviceGuardManager = new GuardManager();
+        deviceDisplayContextCommandToClientGuardManager = new GuardManager();
+    });
+    return _classThis;
+})();
+var ServerManager_default = ServerManager.shared;
+
+const _console$c = createConsole("ClientConnectionManager", { log: false });
+[
+    ...DeviceInformationTypes,
+    "batteryLevel",
+];
+class ClientConnectionManager extends BaseConnectionManager {
+    static get isSupported() {
+        return isInBrowser;
+    }
+    static type = "client";
+    type = ClientConnectionManager.type;
+    subType;
+    get canUpdateFirmware() {
+        return false;
+    }
+    client;
+    discoveredDevice;
+    #bluetoothId;
+    get bluetoothId() {
+        return this.#bluetoothId;
+    }
+    set bluetoothId(newBluetoothId) {
+        _console$c.assertTypeWithError(newBluetoothId, "string");
+        if (this.#bluetoothId == newBluetoothId) {
+            _console$c.log("redundant bluetoothId assignment");
+            return;
+        }
+        this.#bluetoothId = newBluetoothId;
+    }
+    #isConnected = false;
+    get isConnected() {
+        return this.#isConnected;
+    }
+    set isConnected(newIsConnected) {
+        _console$c.assertTypeWithError(newIsConnected, "boolean");
+        if (this.#isConnected == newIsConnected) {
+            _console$c.log("redundant newIsConnected assignment", newIsConnected);
+            return;
+        }
+        this.#isConnected = newIsConnected;
+        _console$c.log({ isConnected: this.isConnected });
+        this.status = this.#isConnected ? "connected" : "notConnected";
+        if (this.isConnected) {
+            this.#requestDeviceInformation();
+        }
+        else {
+            this.#didRequestDeviceInformation = false;
+        }
+    }
+    get isAvailable() {
+        return this.client.isConnected;
+    }
+    async connect() {
+        const canContinue = await super.connect();
+        if (!canContinue) {
+            return false;
+        }
+        this.sendClientConnectMessage(this.subType);
+        return true;
+    }
+    async disconnect() {
+        const canContinue = await super.disconnect();
+        if (!canContinue) {
+            return false;
+        }
+        this.sendClientDisconnectMessage();
+        return true;
+    }
+    get canReconnect() {
+        return true;
+    }
+    async reconnect() {
+        const canContinue = await super.reconnect();
+        if (!canContinue) {
+            return false;
+        }
+        this.sendClientConnectMessage();
+        return true;
+    }
+    sendClientMessage;
+    sendClientConnectMessage;
+    sendClientDisconnectMessage;
+    sendRequiredDeviceInformationMessage;
+    async sendSmpMessage(data) {
+        super.sendSmpMessage(data);
+        this.sendClientMessage({ type: "smp", data });
+    }
+    async sendTxData(data) {
+        super.sendTxData(data);
+        if (data.byteLength == 0) {
+            return;
+        }
+        this.sendClientMessage({ type: "tx", data });
+    }
+    #didRequestDeviceInformation = false;
+    #requestDeviceInformation() {
+        _console$c.log("requestDeviceInformation");
+        if (this.#didRequestDeviceInformation == false) {
+            this.sendRequiredDeviceInformationMessage();
+            this.#didRequestDeviceInformation = true;
+        }
+        else {
+            _console$c.log("already requested deviceInformation");
+        }
+    }
+    onClientMessage(dataView) {
+        _console$c.log({ dataView });
+        parseMessage(dataView, DeviceEventTypes, this.#onClientMessageCallback.bind(this), null, true);
+        this.onMessagesReceived();
+    }
+    #onClientMessageCallback(messageType, dataView) {
+        let byteOffset = 0;
+        _console$c.log({ messageType }, dataView);
+        switch (messageType) {
+            case "isConnected":
+                const isConnected = Boolean(dataView.getUint8(byteOffset++));
+                _console$c.log({ isConnected });
+                this.isConnected = isConnected;
+                break;
+            case "rx":
+                this.parseRxMessage(dataView);
+                break;
+            default:
+                this.onMessageReceived(messageType, dataView);
+                break;
+        }
+    }
+}
+
+var _a;
+const _console$b = createConsole("BaseClient", { log: false });
+const ClientConnectionStatuses = [
+    "notConnected",
+    "connecting",
+    "connected",
+    "disconnecting",
+];
+const ClientEventTypes = [
+    ...ClientConnectionStatuses,
+    "connectionStatus",
+    "isConnected",
+    ...ScannerEventTypes,
+];
+class BaseClient {
+    static type;
+    get baseConstructor() {
+        return this.constructor;
+    }
+    static OnClient;
+    constructor() {
+        _a.OnClient(this);
+    }
+    static get clientMtu() {
+        return serverMtus[this.type];
+    }
+    get clientMtu() {
+        return this.baseConstructor.clientMtu;
+    }
+    #reset() {
+        this.#isScanningAvailable = false;
+        this.#isScanning = false;
+        for (const id in this.#devices) {
+            const device = this.#devices[id];
+            const connectionManager = device.connectionManager;
+            connectionManager.isConnected = false;
+        }
+        this.#receivedMessageTypes.length = 0;
+    }
+    #devices = {};
+    get devices() {
+        return this.#devices;
+    }
+    #eventDispatcher = new EventDispatcher(this, ClientEventTypes);
+    get addEventListener() {
+        return this.#eventDispatcher.addEventListener;
+    }
+    get #dispatchEvent() {
+        return this.#eventDispatcher.dispatchEvent;
+    }
+    get removeEventListener() {
+        return this.#eventDispatcher.removeEventListener;
+    }
+    get waitForEvent() {
+        return this.#eventDispatcher.waitForEvent;
+    }
+    assertConnection() {
+        _console$b.assertWithError(this.isConnected, "notConnected");
+    }
+    assertDisconnection() {
+        _console$b.assertWithError(this.isDisconnected, "not disconnected");
+    }
+    static _reconnectOnDisconnection = true;
+    static get ReconnectOnDisconnection() {
+        return this._reconnectOnDisconnection;
+    }
+    static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
+        _console$b.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        this._reconnectOnDisconnection = newReconnectOnDisconnection;
+    }
+    _reconnectOnDisconnection = this.baseConstructor.ReconnectOnDisconnection;
+    get reconnectOnDisconnection() {
+        return this._reconnectOnDisconnection;
+    }
+    set reconnectOnDisconnection(newReconnectOnDisconnection) {
+        _console$b.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        this._reconnectOnDisconnection = newReconnectOnDisconnection;
+    }
+    #_connectionStatus = "notConnected";
+    get _connectionStatus() {
+        return this.#_connectionStatus;
+    }
+    set _connectionStatus(newConnectionStatus) {
+        _console$b.assertTypeWithError(newConnectionStatus, "string");
+        _console$b.log({ newConnectionStatus });
+        if (this.#_connectionStatus == newConnectionStatus) {
+            return;
+        }
+        this.#_connectionStatus = newConnectionStatus;
+        this.#dispatchEvent("connectionStatus", {
+            connectionStatus: this.connectionStatus,
+        });
+        this.#dispatchEvent(this.connectionStatus, {});
+        switch (newConnectionStatus) {
+            case "connected":
+            case "notConnected":
+                this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
+                if (this.isConnected) ;
+                else {
+                    this.#reset();
+                }
+                break;
+        }
+    }
+    get connectionStatus() {
+        return this._connectionStatus;
+    }
+    static #RequiredMessageTypes = [
+        "isScanningAvailable",
+        "discoveredDevices",
+        "connectedDevices",
+    ];
+    get #requiredMessageTypes() {
+        return _a.#RequiredMessageTypes;
+    }
+    _sendRequiredMessages() {
+        _console$b.log("sending required messages", this.#requiredMessageTypes);
+        this.sendServerMessage(...this.#requiredMessageTypes);
+    }
+    #receivedMessageTypes = [];
+    #checkIfFullyConnected() {
+        if (this.connectionStatus != "connecting") {
+            return;
+        }
+        _console$b.log("checking if fully connected...");
+        if (!this.#receivedMessageTypes.includes("isScanningAvailable")) {
+            _console$b.log("not fully connected - didn't receive isScanningAvailable");
+            return;
+        }
+        if (this.isScanningAvailable) {
+            if (!this.#receivedMessageTypes.includes("isScanning")) {
+                _console$b.log("not fully connected - didn't receive isScanning");
+                return;
+            }
+        }
+        _console$b.log("fully connected");
+        this._connectionStatus = "connected";
+    }
+    parseMessage(dataView) {
+        _console$b.log("parseMessage", { dataView });
+        parseMessage(dataView, ServerMessageTypes, this.#parseMessageCallback.bind(this), null, true);
+        this.#checkIfFullyConnected();
+    }
+    #parseMessageCallback(messageType, dataView) {
+        let byteOffset = 0;
+        _console$b.log({ messageType }, dataView);
+        switch (messageType) {
+            case "isScanningAvailable":
+                {
+                    const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
+                    _console$b.log({ isScanningAvailable });
+                    this.#isScanningAvailable = isScanningAvailable;
+                }
+                break;
+            case "isScanning":
+                {
+                    const isScanning = Boolean(dataView.getUint8(byteOffset++));
+                    _console$b.log({ isScanning });
+                    this.#isScanning = isScanning;
+                }
+                break;
+            case "discoveredDevice":
+                {
+                    const { string: discoveredDeviceString } = parseStringFromDataView(dataView, byteOffset);
+                    _console$b.log({ discoveredDeviceString });
+                    const discoveredDevice = JSON.parse(discoveredDeviceString);
+                    _console$b.log({ discoveredDevice });
+                    this.onDiscoveredDevice(discoveredDevice);
+                }
+                break;
+            case "expiredDiscoveredDevice":
+                {
+                    const { string: bluetoothId } = parseStringFromDataView(dataView, byteOffset);
+                    this.#onExpiredDiscoveredDevice(bluetoothId);
+                }
+                break;
+            case "connectedDevices":
+                {
+                    if (dataView.byteLength == 0) {
+                        break;
+                    }
+                    const { string: connectedBluetoothDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
+                    _console$b.log({ connectedBluetoothDeviceIdStrings });
+                    const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings).connectedDevices;
+                    _console$b.log({ connectedBluetoothDeviceIds });
+                    this.onConnectedBluetoothDeviceIds(connectedBluetoothDeviceIds);
+                }
+                break;
+            case "deviceMessage":
+                {
+                    const { string: bluetoothId, byteOffset: _byteOffset } = parseStringFromDataView(dataView, byteOffset);
+                    byteOffset = _byteOffset;
+                    let device = this.#devices[bluetoothId];
+                    if (!device) {
+                        device = this.onConnectedBluetoothDeviceIds([bluetoothId])[0];
+                    }
+                    _console$b.assertWithError(device, `no device found for id ${bluetoothId}`);
+                    const connectionManager = device.connectionManager;
+                    const _dataView = sliceDataView(dataView, byteOffset);
+                    connectionManager.onClientMessage(_dataView);
+                }
+                break;
+            default:
+                _console$b.error(`uncaught messageType "${messageType}"`);
+                break;
+        }
+        if (this.connectionStatus == "connecting") {
+            this.#receivedMessageTypes.push(messageType);
+        }
+    }
+    #_isScanningAvailable = false;
+    get #isScanningAvailable() {
+        return this.#_isScanningAvailable;
+    }
+    set #isScanningAvailable(newIsAvailable) {
+        _console$b.assertTypeWithError(newIsAvailable, "boolean");
+        this.#_isScanningAvailable = newIsAvailable;
+        this.#dispatchEvent("isScanningAvailable", {
+            isScanningAvailable: this.isScanningAvailable,
+        });
+        if (this.isScanningAvailable) {
+            this.#requestIsScanning();
+        }
+    }
+    get isScanningAvailable() {
+        return this.#isScanningAvailable;
+    }
+    #assertIsScanningAvailable() {
+        this.assertConnection();
+        _console$b.assertWithError(this.isScanningAvailable, "scanning is not available");
+    }
+    requestIsScanningAvailable() {
+        this.sendServerMessage("isScanningAvailable");
+    }
+    #_isScanning = false;
+    get #isScanning() {
+        return this.#_isScanning;
+    }
+    set #isScanning(newIsScanning) {
+        _console$b.assertTypeWithError(newIsScanning, "boolean");
+        this.#_isScanning = newIsScanning;
+        this.#dispatchEvent("isScanning", { isScanning: this.isScanning });
+    }
+    get isScanning() {
+        return this.#isScanning;
+    }
+    #requestIsScanning() {
+        this.sendServerMessage("isScanning");
+    }
+    #assertIsScanning() {
+        _console$b.assertWithError(this.isScanning, "is not scanning");
+    }
+    #assertIsNotScanning() {
+        _console$b.assertWithError(!this.isScanning, "is already scanning");
+    }
+    startScan() {
+        this.#assertIsNotScanning();
+        this.sendServerMessage("startScan");
+    }
+    stopScan() {
+        this.#assertIsScanning();
+        this.sendServerMessage("stopScan");
+    }
+    toggleScan() {
+        this.#assertIsScanningAvailable();
+        if (this.isScanning) {
+            this.stopScan();
+        }
+        else {
+            this.startScan();
+        }
+    }
+    #discoveredDevices = {};
+    get discoveredDevices() {
+        return this.#discoveredDevices;
+    }
+    onDiscoveredDevice(discoveredDevice) {
+        _console$b.log({ discoveredDevice });
+        this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+        this.#dispatchEvent("discoveredDevice", { discoveredDevice });
+    }
+    requestDiscoveredDevices() {
+        this.sendServerMessage({ type: "discoveredDevices" });
+    }
+    #onExpiredDiscoveredDevice(bluetoothId) {
+        _console$b.log({ expiredBluetoothDeviceId: bluetoothId });
+        const discoveredDevice = this.#discoveredDevices[bluetoothId];
+        if (!discoveredDevice) {
+            _console$b.warn(`no discoveredDevice found with id "${bluetoothId}"`);
+            return;
+        }
+        _console$b.log({ expiredDiscoveredDevice: discoveredDevice });
+        delete this.#discoveredDevices[bluetoothId];
+        this.#dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
+    }
+    connectToDevice(bluetoothId, connectionType) {
+        return this.requestConnectionToDevice(bluetoothId, connectionType);
+    }
+    requestConnectionToDevice(bluetoothId, connectionType) {
+        this.assertConnection();
+        _console$b.assertTypeWithError(bluetoothId, "string");
+        const device = this.#getOrCreateDevice(bluetoothId);
+        if (device.connectionStatus == "notConnected") {
+            if (connectionType) {
+                device.connect({ type: "client", subType: connectionType });
+            }
+            else {
+                device.connect();
+            }
+        }
+        return device;
+    }
+    sendConnectToDeviceMessage(bluetoothId, connectionType) {
+        if (connectionType) {
+            this.sendServerMessage({
+                type: "connectToDevice",
+                data: concatenateArrayBuffers(stringToArrayBuffer(bluetoothId), ConnectionTypes.indexOf(connectionType)),
+            });
+        }
+        else {
+            this.sendServerMessage({ type: "connectToDevice", data: bluetoothId });
+        }
+    }
+    createDevice(bluetoothId) {
+        const device = new Device();
+        const discoveredDevice = this.#discoveredDevices[bluetoothId];
+        const clientConnectionManager = new ClientConnectionManager();
+        clientConnectionManager.discoveredDevice = Object.assign({}, discoveredDevice);
+        clientConnectionManager.client = this;
+        clientConnectionManager.bluetoothId = bluetoothId;
+        clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(this, bluetoothId);
+        clientConnectionManager.sendRequiredDeviceInformationMessage =
+            this.sendRequiredDeviceInformationMessage.bind(this, bluetoothId);
+        clientConnectionManager.sendClientConnectMessage =
+            this.sendConnectToDeviceMessage.bind(this, bluetoothId);
+        clientConnectionManager.sendClientDisconnectMessage =
+            this.sendDisconnectFromDeviceMessage.bind(this, bluetoothId);
+        device.connectionManager = clientConnectionManager;
+        return device;
+    }
+    #getOrCreateDevice(bluetoothId) {
+        let device = this.#devices[bluetoothId];
+        if (!device) {
+            device = this.createDevice(bluetoothId);
+            this.#devices[bluetoothId] = device;
+        }
+        return device;
+    }
+    onConnectedBluetoothDeviceIds(bluetoothIds) {
+        _console$b.log({ bluetoothIds });
+        return bluetoothIds.map((bluetoothId) => {
+            const device = this.#getOrCreateDevice(bluetoothId);
+            const connectionManager = device.connectionManager;
+            connectionManager.isConnected = true;
+            DeviceManager._checkDeviceAvailability(device);
+            return device;
+        });
+    }
+    disconnectFromDevice(bluetoothId) {
+        this.requestDisconnectionFromDevice(bluetoothId);
+    }
+    requestDisconnectionFromDevice(bluetoothId) {
+        this.assertConnection();
+        _console$b.assertTypeWithError(bluetoothId, "string");
+        const device = this.devices[bluetoothId];
+        _console$b.assertWithError(device, `no device found with id ${bluetoothId}`);
+        device.disconnect();
+        return device;
+    }
+    sendDisconnectFromDeviceMessage(bluetoothId) {
+        this.sendServerMessage({ type: "disconnectFromDevice", data: bluetoothId });
+    }
+    sendDeviceMessage(bluetoothId, ...messages) {
+        this.sendServerMessage({
+            type: "deviceMessage",
+            data: [bluetoothId, createClientDeviceMessage(...messages)],
+        });
+    }
+    sendRequiredDeviceInformationMessage(bluetoothId) {
+        this.sendServerMessage({
+            type: "requiredDeviceInformation",
+            data: [bluetoothId],
+        });
+    }
+}
+_a = BaseClient;
+
+const _console$a = createConsole("ClientManager", { log: false });
+function getClientManagerClientEventTypes(clientEventType) {
+    return ["client"].map((prefix) => `${prefix}${capitalizeFirstCharacter(clientEventType)}`);
+}
+const ClientManagerClientEventTypes = ClientEventTypes.flatMap((eventType) => getClientManagerClientEventTypes(eventType));
+const wildcardClientEventType = "client*";
+const BaseClientManagerEventTypes = [
+    "client",
+    "clients",
+    wildcardClientEventType,
+];
+const ClientManagerEventTypes = [
+    ...ClientManagerClientEventTypes,
+    ...BaseClientManagerEventTypes,
+];
+let ClientManager = (() => {
+    let _classDecorators = [Singleton];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    (class {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        static shared;
+        constructor() {
+            BaseClient.OnClient = this.#onClient.bind(this);
+        }
+        #clients = [];
+        get clients() {
+            return this.#clients;
+        }
+        #boundClientEventListeners = {
+            [wildcardEventType]: this.#onClientEvent.bind(this),
+        };
+        #onClient(client) {
+            _console$a.log("onClient", client);
+            addEventListeners(client, this.#boundClientEventListeners);
+            if (!this.#clients.includes(client)) {
+                _console$a.log("client", client);
+                this.#clients.push(client);
+                this.#dispatchEvent("client", { client });
+                this.#dispatchEvent("clients", {
+                    clients: this.clients,
+                });
+            }
+        }
+        #onClientEvent(clientEvent) {
+            const { type: clientEventType, target: client, message } = clientEvent;
+            _console$a.log("onClientEvent", clientEvent);
+            this.#dispatchEvent(wildcardClientEventType, {
+                ...message,
+                client: client,
+                clientEventType,
+            });
+            getClientManagerClientEventTypes(clientEventType).forEach((eventType) => {
+                this.#dispatchEvent(eventType, {
+                    ...message,
+                    client: client,
+                });
+            });
+        }
+        #eventDispatcher = new EventDispatcher(this, ClientManagerEventTypes);
+        get addEventListener() {
+            return this.#eventDispatcher.addEventListener;
+        }
+        get #dispatchEvent() {
+            return this.#eventDispatcher.dispatchEvent;
+        }
+        get removeEventListener() {
+            return this.#eventDispatcher.removeEventListener;
+        }
+        get removeEventListeners() {
+            return this.#eventDispatcher.removeEventListeners;
+        }
+    });
+    return _classThis;
+})();
+var ClientManager_default = ClientManager.shared;
+
+const _console$9 = createConsole("WindowManagerUtils", { log: false });
+const WindowManagerMessageTypes = [
+    "ping",
+    "pong",
+    "serverMessage",
+];
+function createWindowManagerMessage(...messages) {
+    _console$9.log("createWindowManagerMessage", ...messages);
+    return createMessage(WindowManagerMessageTypes, true, ...messages);
+}
+const windowManagerMessageKey = "BrilliantWear";
+const windowManagerPingMessage = createWindowManagerMessage("ping");
+const windowManagerPongMessage = createWindowManagerMessage("pong");
+
+const _console$8 = createConsole("WindowServer", { log: false });
+let WindowServer$1 = (() => {
+    let _classDecorators = [Singleton];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = BaseServer;
+    var WindowServer = class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            WindowServer = _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        }
+        static type = "window";
+        type = WindowServer.type;
+        static shared;
+        init() {
+            addEventListeners(WindowManagerServer_default, this.#boundWindowManagerServerEventListeners);
+        }
+        constructor() {
+            super();
+            this.clearSensorConfigurationsWhenNoClients = false;
+        }
+        sendToClient(client, arrayBuffer, isWrapped) {
+            if (!super.sendToClient(client, arrayBuffer, isWrapped)) {
+                return false;
+            }
+            return WindowManagerServer_default.sendToClient(client, isWrapped
+                ? arrayBuffer
+                : createWindowManagerMessage({
+                    type: "serverMessage",
+                    data: arrayBuffer,
+                }));
+        }
+        #boundWindowManagerServerEventListeners = {
+            clientConnected: this.#onWindowManagerServerClientConnected.bind(this),
+            clientDisconnected: this.#onWindowManagerServerClientDisconnected.bind(this),
+        };
+        #onWindowManagerServerClientConnected(event) {
+            const { client } = event.message;
+            _console$8.log("onWindowManagerServerClientConnected", client);
+            this.dispatchEvent("clientConnected", { client });
+        }
+        #onWindowManagerServerClientDisconnected(event) {
+            const { client } = event.message;
+            _console$8.log("onWindowManagerServerClientDisconnected", client);
+            this.dispatchEvent("clientDisconnected", { client });
+        }
+        static {
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+    };
+    return WindowServer = _classThis;
+})();
+var WindowServer = WindowServer$1.shared;
+
+const _console$7 = createConsole("WindowManagerServer", { log: false });
+const WindowManagerServerEventTypes = [
+    "clientConnected",
+    "clientDisconnected",
+];
+let WindowManagerServer = (() => {
+    let _classDecorators = [Singleton];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    (class {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        #eventDispatcher = new EventDispatcher(this, WindowManagerServerEventTypes);
+        get addEventListener() {
+            return this.#eventDispatcher.addEventListener;
+        }
+        get #dispatchEvent() {
+            return this.#eventDispatcher.dispatchEvent;
+        }
+        get removeEventListener() {
+            return this.#eventDispatcher.removeEventListener;
+        }
+        get waitForEvent() {
+            return this.#eventDispatcher.waitForEvent;
+        }
+        get removeEventListeners() {
+            return this.#eventDispatcher.removeEventListeners;
+        }
+        removeAllEventListeners() {
+            this.#eventDispatcher.removeAllEventListeners();
+            WindowServer.init();
+        }
+        static shared;
+        constructor() {
+            addEventListeners(window, this.#boundWindowEventListeners);
+            this.#iframeObserver = new MutationObserver((mutations) => {
+                for (const mutation of mutations) {
+                    for (const node of mutation.addedNodes) {
+                        this.#collectIframes(node).forEach((iframe) => {
+                            this.#onIframeAdded(iframe);
+                        });
+                    }
+                    for (const node of mutation.removedNodes) {
+                        this.#collectIframes(node).forEach((iframe) => {
+                            this.#onIframeRemoved(iframe);
+                        });
+                    }
+                }
+            });
+            this.#iframeObserver.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+            });
+            document.querySelectorAll("iframe").forEach((iframe) => {
+                this.#onIframeAdded(iframe);
+            });
+        }
+        #clients = [];
+        get clients() {
+            return this.#clients;
+        }
+        #getClientByiFrame(iframe) {
+            return this.clients.find((client) => client.iframe == iframe);
+        }
+        #getClientBySource(source) {
+            return this.clients.find((client) => client.iframe.contentWindow == source);
+        }
+        #getClientByMessagePort(port) {
+            return this.clients.find((client) => client.messageChannel?.port1 == port);
+        }
+        #sendToClient(client, arrayBuffer) {
+            if (arrayBuffer.byteLength == 0) {
+                _console$7.log("nothing to send to client");
+                return false;
+            }
+            _console$7.log("sendToClient", client, arrayBuffer);
+            const { messageChannel, iframe, didSendMessagePort } = client;
+            if (messageChannel && didSendMessagePort) {
+                messageChannel.port1.postMessage(arrayBuffer, {
+                    transfer: client.transfer,
+                });
+            }
+            else {
+                if (messageChannel) {
+                    client.didSendMessagePort = true;
+                }
+                iframe.contentWindow.postMessage({
+                    [windowManagerMessageKey]: arrayBuffer,
+                }, "*", client.transfer);
+            }
+            if (client.transfer) {
+                delete client.transfer;
+            }
+            return true;
+        }
+        sendToClient(client, arrayBuffer) {
+            return this.#sendToClient(client, arrayBuffer);
+        }
+        #boundWindowEventListeners = {
+            message: this.#onWindowMessage.bind(this),
+        };
+        async #onWindowMessage(event) {
+            if (event.source == window) {
+                return;
+            }
+            if (!event.source) {
+                return;
+            }
+            if (event.source == window.parent) {
+                return;
+            }
+            _console$7.log("onWindowMessage", event);
+            const data = event.data[windowManagerMessageKey];
+            if (!data) {
+                return;
+            }
+            let client = this.#getClientBySource(event.source);
+            if (client) {
+                await this.#waitForClientToLoad(client);
+                client = this.#getClientBySource(event.source);
+            }
+            if (!client) {
+                const iframe = this.#iframes.find((iframe) => iframe.contentWindow == event.source);
+                if (!iframe) {
+                    _console$7.error("no iframe found for event", event);
+                    return;
+                }
+                client = await this.#createClient(iframe);
+                if (!client) {
+                    return;
+                }
+            }
+            _console$7.log("onWindowMessage", client, data);
+            const dataView = new DataView(data);
+            _console$7.log(`received ${dataView.byteLength} bytes via window`, dataView.buffer);
+            this.#parseWindowManagerClientMessage(client, dataView);
+        }
+        async #waitForClientToLoad(client) {
+            _console$7.log("waitForClientToLoad", client);
+            await this.#waitForiframeToLoad(client.iframe);
+        }
+        async #waitForiframeToLoad(iframe) {
+            _console$7.log("waitForiframeToLoad", iframe);
+            await new Promise((resolve) => {
+                if (iframe.contentDocument?.readyState === "complete") {
+                    _console$7.log("iframe complete");
+                    resolve();
+                }
+                else {
+                    _console$7.log("waiting for iframe to load...");
+                    iframe.addEventListener("load", () => resolve(), { once: true });
+                }
+            });
+        }
+        async #createClient(iframe) {
+            await this.#waitForiframeToLoad(iframe);
+            addEventListeners(iframe, this.#boundIframeEventListeners);
+            const client = {
+                iframe,
+                type: "window",
+            };
+            this.#clients.push(client);
+            this.#dispatchEvent("clientConnected", { client });
+            return client;
+        }
+        #destroyClient(client) {
+            _console$7.log("onClientDisconnected", client);
+            const { messageChannel } = client;
+            if (messageChannel) {
+                messageChannel.port1.close();
+                removeEventListeners(messageChannel.port1, this.#boundMessageChannelPortEventListeners);
+            }
+            this.#clients.splice(this.#clients.indexOf(client), 1);
+            this.#dispatchEvent("clientDisconnected", { client });
+            return client;
+        }
+        #iframeObserver;
+        #collectIframes(node) {
+            if (node.nodeType !== Node.ELEMENT_NODE)
+                return [];
+            const element = node;
+            const direct = element.tagName === "IFRAME" ? [element] : [];
+            const nested = Array.from(element.querySelectorAll?.("iframe") ?? []);
+            return [...direct, ...nested];
+        }
+        #iframes = [];
+        #onIframeAdded(iframe) {
+            if (this.#iframes.includes(iframe)) {
+                _console$7.log("redundant iframe added", iframe);
+                return;
+            }
+            _console$7.log("iframe added", iframe);
+            this.#iframes.push(iframe);
+        }
+        #onIframeRemoved(iframe) {
+            if (!this.#iframes.includes(iframe)) {
+                return;
+            }
+            _console$7.log("iframe removed", iframe);
+            this.#iframes.splice(this.#iframes.indexOf(iframe));
+            removeEventListeners(iframe, this.#boundIframeEventListeners);
+            const client = this.#getClientByiFrame(iframe);
+            if (!client) {
+                _console$7.error("no client found for iframe", iframe);
+                return;
+            }
+            this.#destroyClient(client);
+        }
+        #boundIframeEventListeners = {
+            load: this.#onIframeLoad.bind(this),
+        };
+        #onIframeLoad(event) {
+            _console$7.log("onIframeLoad", event);
+            const iframe = event.currentTarget;
+            const client = this.#getClientByiFrame(iframe);
+            if (!client) {
+                return;
+            }
+            _console$7.log("onIframeLoad client", client);
+            this.#destroyClient(client);
+        }
+        #createMessageChannel(client) {
+            _console$7.log("createMessageChannel", client);
+            const messageChannel = new MessageChannel();
+            addEventListeners(messageChannel.port1, this.#boundMessageChannelPortEventListeners);
+            messageChannel.port1.start();
+            client.messageChannel = messageChannel;
+            client.didSendMessagePort = false;
+        }
+        #boundMessageChannelPortEventListeners = {
+            message: this.#onMessagePortMessage.bind(this),
+        };
+        #onMessagePortMessage(event) {
+            const port = event.currentTarget;
+            const client = this.#getClientByMessagePort(port);
+            if (!client) {
+                _console$7.error("no client found for port", port);
+                return;
+            }
+            const arrayBuffer = event.data;
+            const dataView = new DataView(arrayBuffer);
+            _console$7.log(`received ${dataView.byteLength} bytes via port`, dataView.buffer, client);
+            this.#parseWindowManagerClientMessage(client, dataView);
+        }
+        #parseWindowManagerClientMessage(client, dataView) {
+            _console$7.log("parseWindowManagerClientMessage", client, dataView);
+            const clientContext = {
+                responseMessages: [],
+                client,
+                transfer: [],
+                localBroadcastMessages: [],
+                broadcastMessages: [],
+            };
+            parseMessage(dataView, WindowManagerMessageTypes, this.#onClientMessage.bind(this), clientContext, true);
+            client.transfer = clientContext.transfer;
+            WindowServer.sendClientContext(clientContext);
+        }
+        #onClientMessage(messageType, dataView, clientContext) {
+            const { responseMessages, transfer, client, localBroadcastMessages, broadcastMessages, } = clientContext;
+            _console$7.log("onClientMessage", { messageType }, clientContext);
+            switch (messageType) {
+                case "ping":
+                    this.#createMessageChannel(client);
+                    transfer.push(client.messageChannel.port2);
+                    responseMessages.push(windowManagerPongMessage);
+                    break;
+                case "pong":
+                    break;
+                case "serverMessage":
+                    const _clientContext = WindowServer.parseClientMessage(client, dataView);
+                    if (_clientContext) {
+                        if (_clientContext.responseMessages.length > 0) {
+                            responseMessages.push(createWindowManagerMessage({
+                                type: "serverMessage",
+                                data: concatenateArrayBuffers(_clientContext.responseMessages),
+                            }));
+                        }
+                        if (_clientContext.broadcastMessages.length > 0) {
+                            broadcastMessages.push(createWindowManagerMessage({
+                                type: "serverMessage",
+                                data: concatenateArrayBuffers(_clientContext.broadcastMessages),
+                            }));
+                        }
+                        if (_clientContext.localBroadcastMessages.length > 0) {
+                            localBroadcastMessages.push(createWindowManagerMessage({
+                                type: "serverMessage",
+                                data: concatenateArrayBuffers(_clientContext.localBroadcastMessages),
+                            }));
+                        }
+                    }
+                    break;
+                default:
+                    _console$7.error(`uncaught messageType "${messageType}"`);
+                    break;
+            }
+        }
+    });
+    return _classThis;
+})();
+var WindowManagerServer_default = WindowManagerServer.shared;
+WindowServer.init();
+
+const _console$6 = createConsole("WindowManagerClient", { log: false });
+const WindowManagerClientConnectionStatuses = [
+    "notConnected",
+    "connecting",
+    "connected",
+    "disconnecting",
+];
+const WindowManagerClientEventTypes = [
+    ...WindowManagerClientConnectionStatuses,
+    "connectionStatus",
+    "isConnected",
+    "serverMessage",
+];
+let WindowManagerClient$1 = (() => {
+    let _classDecorators = [Singleton];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    (class {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        #eventDispatcher = new EventDispatcher(this, WindowManagerClientEventTypes);
+        get addEventListener() {
+            return this.#eventDispatcher.addEventListener;
+        }
+        get #dispatchEvent() {
+            return this.#eventDispatcher.dispatchEvent;
+        }
+        get removeEventListener() {
+            return this.#eventDispatcher.removeEventListener;
+        }
+        get waitForEvent() {
+            return this.#eventDispatcher.waitForEvent;
+        }
+        get removeEventListeners() {
+            return this.#eventDispatcher.removeEventListeners;
+        }
+        get removeAllEventListeners() {
+            return this.#eventDispatcher.removeAllEventListeners;
+        }
+        static shared;
+        constructor() {
+            addEventListeners(window, this.#boundWindowEventListeners);
+            this.connect();
+        }
+        #boundWindowEventListeners = {
+            message: this.#onWindowMessage.bind(this),
+        };
+        #onWindowMessage(event) {
+            if (event.source == window) {
+                return;
+            }
+            if (!event.source) {
+                return;
+            }
+            if (event.source != window.parent) {
+                return;
+            }
+            _console$6.log("onWindowMessage", event);
+            const arrayBuffer = event.data[windowManagerMessageKey];
+            if (!arrayBuffer) {
+                return;
+            }
+            const { ports } = event;
+            if (ports?.length > 0) {
+                this.#onMessagePort(ports[0]);
+            }
+            _console$6.log("onWindowMessage", arrayBuffer, ports);
+            const dataView = new DataView(arrayBuffer);
+            _console$6.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
+            this.#parseWindowManagerMessage(dataView);
+        }
+        #port;
+        #onMessagePort(port) {
+            if (this.#port == port) {
+                return;
+            }
+            if (this.#port) {
+                removeEventListeners(this.#port, this.#boundMessageChannelPortEventListeners);
+                this.#port.close();
+            }
+            this.#port = port;
+            _console$6.log("port", this.#port);
+            addEventListeners(this.#port, this.#boundMessageChannelPortEventListeners);
+            this.#port.start();
+        }
+        #boundMessageChannelPortEventListeners = {
+            message: this.#onMessagePortMessage.bind(this),
+        };
+        #onMessagePortMessage(event) {
+            _console$6.log("onMessagePortMessage", event);
+            const port = event.currentTarget;
+            if (this.#port != port) {
+                _console$6.error("received message from wrong port");
+                return;
+            }
+            const arrayBuffer = event.data;
+            const dataView = new DataView(arrayBuffer);
+            _console$6.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
+            this.#parseWindowManagerMessage(dataView);
+        }
+        #parseWindowManagerMessage(dataView) {
+            parseMessage(dataView, WindowManagerMessageTypes, this.#onWindowManagerMessage.bind(this), null, true);
+        }
+        #onWindowManagerMessage(messageType, dataView) {
+            _console$6.log("#onWindowManagerMessage", { messageType }, dataView);
+            switch (messageType) {
+                case "ping":
+                    this.#pong();
+                    break;
+                case "pong":
+                    this.connectionStatus = "connected";
+                    break;
+                case "serverMessage":
+                    this.#dispatchEvent("serverMessage", { dataView });
+                    break;
+                default:
+                    _console$6.error(`uncaught messageType "${messageType}"`);
+                    break;
+            }
+        }
+        #connectionStatus = "notConnected";
+        get connectionStatus() {
+            return this.#connectionStatus;
+        }
+        set connectionStatus(newConnectionStatus) {
+            _console$6.assertTypeWithError(newConnectionStatus, "string");
+            _console$6.log({ newConnectionStatus });
+            if (this.#connectionStatus == newConnectionStatus) {
+                return;
+            }
+            this.#connectionStatus = newConnectionStatus;
+            this.#dispatchEvent("connectionStatus", {
+                connectionStatus: this.connectionStatus,
+            });
+            this.#dispatchEvent(this.connectionStatus, {});
+            switch (newConnectionStatus) {
+                case "connected":
+                case "notConnected":
+                    this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
+                    break;
+            }
+        }
+        get isConnected() {
+            return this.connectionStatus == "connected";
+        }
+        get isDisconnected() {
+            return !this.isConnected;
+        }
+        #assertConnection() {
+            _console$6.assertWithError(this.isConnected, "notConnected");
+        }
+        #assertDisconnection() {
+            _console$6.assertWithError(this.isDisconnected, "not disconnected");
+        }
+        connect() {
+            _console$6.log("connect");
+            this.#ping();
+        }
+        disconnect() {
+            throw new Error("Method not implemented.");
+        }
+        reconnect() {
+            throw new Error("Method not implemented.");
+        }
+        toggleConnection() {
+            throw new Error("Method not implemented.");
+        }
+        #sendMessage(message, transfer) {
+            if (message != windowManagerPingMessage) {
+                this.#assertConnection();
+            }
+            _console$6.log("sendMessage", message, { transfer });
+            if (this.#port) {
+                this.#port.postMessage(message, { transfer });
+            }
+            else {
+                window.parent.postMessage({
+                    [windowManagerMessageKey]: message,
+                }, "*", transfer);
+            }
+        }
+        sendMessage(...messages) {
+            _console$6.log("sendMessage", ...messages);
+            this.#sendMessage(createWindowManagerMessage(...messages));
+        }
+        #ping() {
+            _console$6.log("#ping");
+            this.#sendMessage(windowManagerPingMessage);
+        }
+        #pong() {
+            _console$6.log("#pong");
+            this.#sendMessage(windowManagerPongMessage);
+        }
+    });
+    return _classThis;
+})();
+var WindowManagerClient = WindowManagerClient$1.shared;
+
+const _console$5 = createConsole("WindowClient", { log: false });
+let WindowClient = (() => {
+    let _classDecorators = [Singleton];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = BaseClient;
+    var WindowClient = class extends _classSuper {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            WindowClient = _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        }
+        static type = "window";
+        type = WindowClient.type;
+        static shared;
+        constructor() {
+            super();
+            addEventListeners(WindowManagerClient, this.#boundWindowEventListeners);
+        }
+        #boundWindowEventListeners = {
+            connectionStatus: this.#onWindowManagerClientConnectionStatus.bind(this),
+            serverMessage: this.#onWindowManagerClientServerMessage.bind(this),
+        };
+        #onWindowManagerClientConnectionStatus(event) {
+            _console$5.log("onWindowManagerClientConnectionStatus", event.message.connectionStatus);
+            this._sendRequiredMessages();
+        }
+        #onWindowManagerClientServerMessage(event) {
+            _console$5.log("onWindowManagerClientServerMessage", event.message.dataView);
+            this.parseMessage(event.message.dataView);
+        }
+        get isConnected() {
+            return WindowManagerClient.isConnected;
+        }
+        get isDisconnected() {
+            return WindowManagerClient.isDisconnected;
+        }
+        connect() {
+            this.#onConnectionCommand();
+        }
+        disconnect() {
+            this.#onConnectionCommand();
+        }
+        reconnect() {
+            this.#onConnectionCommand();
+        }
+        toggleConnection() {
+            this.#onConnectionCommand();
+        }
+        #onConnectionCommand() {
+            throw new Error("WindowClient connection is automatic");
+        }
+        sendServerMessage(...messages) {
+            _console$5.log("sendServerMessage", messages);
+            WindowManagerClient.sendMessage({
+                type: "serverMessage",
+                data: createServerMessage(...messages),
+            });
+        }
+        static {
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+    };
+    return WindowClient = _classThis;
+})();
+var WindowClient_default = WindowClient.shared;
+
+const _console$4 = createConsole("DisplayCanvasHelperManager", { log: false });
+function getDisplayCanvasHelperManagerDisplayCanvasHelperEventTypes(displayCanvasHelperEventType) {
+    return ["displayCanvasHelper"].map((prefix) => `${prefix}${capitalizeFirstCharacter(displayCanvasHelperEventType)}`);
+}
+const DisplayCanvasHelperManagerDisplayCanvasHelperEventTypes = DisplayCanvasHelperEventTypes.flatMap((eventType) => getDisplayCanvasHelperManagerDisplayCanvasHelperEventTypes(eventType));
+const wildcardDisplayCanvasHelperEventType = "displayCanvasHelper*";
+const BaseDisplayCanvasHelperManagerEventTypes = [
+    "displayCanvasHelper",
+    "displayCanvasHelpers",
+    wildcardDisplayCanvasHelperEventType,
+];
+const DisplayCanvasHelperManagerEventTypes = [
+    ...DisplayCanvasHelperManagerDisplayCanvasHelperEventTypes,
+    ...BaseDisplayCanvasHelperManagerEventTypes,
+];
+let DisplayCanvasHelperManager = (() => {
+    let _classDecorators = [Singleton];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    (class {
+        static { _classThis = this; }
+        static {
+            const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(null) : void 0;
+            __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+            _classThis = _classDescriptor.value;
+            if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+            __runInitializers(_classThis, _classExtraInitializers);
+        }
+        static shared;
+        constructor() {
+            DisplayCanvasHelper.OnDisplayCanvasHelper =
+                this.#onDisplayCanvasHelper.bind(this);
+        }
+        #displayCanvasHelpers = [];
+        get displayCanvasHelpers() {
+            return this.#displayCanvasHelpers;
+        }
+        findDisplayCanvasHelpersByDevice(device) {
+            return this.displayCanvasHelpers.find((displayCanvasHelper) => displayCanvasHelper.device == device);
+        }
+        findDisplayCanvasHelpersByDisplayManager(displayManager) {
+            return this.displayCanvasHelpers.find((displayCanvasHelper) => displayCanvasHelper.device?.displayManager == displayManager);
+        }
+        #boundDisplayCanvasHelperEventListeners = {
+            [wildcardEventType]: this.#onDisplayCanvasHelperEvent.bind(this),
+        };
+        #onDisplayCanvasHelper(displayCanvasHelper) {
+            _console$4.log("onDisplayCanvasHelper", displayCanvasHelper);
+            addEventListeners(displayCanvasHelper, this.#boundDisplayCanvasHelperEventListeners);
+            if (!this.#displayCanvasHelpers.includes(displayCanvasHelper)) {
+                _console$4.log("displayCanvasHelper", displayCanvasHelper);
+                this.#displayCanvasHelpers.push(displayCanvasHelper);
+                this.#dispatchEvent("displayCanvasHelper", { displayCanvasHelper });
+                this.#dispatchEvent("displayCanvasHelpers", {
+                    displayCanvasHelpers: this.displayCanvasHelpers,
+                });
+            }
+        }
+        #eventDispatcher = new EventDispatcher(this, DisplayCanvasHelperManagerEventTypes);
+        get addEventListener() {
+            return this.#eventDispatcher.addEventListener;
+        }
+        get #dispatchEvent() {
+            return this.#eventDispatcher.dispatchEvent;
+        }
+        get removeEventListener() {
+            return this.#eventDispatcher.removeEventListener;
+        }
+        get removeEventListeners() {
+            return this.#eventDispatcher.removeEventListeners;
+        }
+        #onDisplayCanvasHelperEvent(displayCanvasHelperEvent) {
+            const { type: displayCanvasHelperEventType, target: displayCanvasHelper, message, } = displayCanvasHelperEvent;
+            this.#dispatchEvent(wildcardDisplayCanvasHelperEventType, {
+                ...message,
+                displayCanvasHelper,
+                displayCanvasHelperEventType,
+            });
+            getDisplayCanvasHelperManagerDisplayCanvasHelperEventTypes(displayCanvasHelperEventType).forEach((eventType) => {
+                this.#dispatchEvent(eventType, {
+                    ...message,
+                    displayCanvasHelper,
+                });
+            });
+        }
+    });
+    return _classThis;
+})();
+var DisplayCanvasHelperManager_default = DisplayCanvasHelperManager.shared;
+
+const _console$3 = createConsole("DevicePairPressureSensorDataManager", {
+    log: false,
+});
+class DevicePairPressureSensorDataManager {
+    #rawPressure = {};
+    #pressureTimestamps = {};
+    #centerOfPressureHelper = new CenterOfPressureHelper();
+    #normalizedSumRangeHelper = new RangeHelper();
+    constructor() {
+        this.resetPressureRange();
+    }
+    resetPressureRange() {
+        this.#centerOfPressureHelper.reset();
+        this.#normalizedSumRangeHelper.reset();
+    }
+    onDevicePressureData(event) {
+        const { pressure, timestamp } = event.message;
+        const { side } = event.target;
+        _console$3.log({ pressure, side });
+        this.#rawPressure[side] = pressure;
+        this.#pressureTimestamps[side] = timestamp;
+        if (this.#hasAllPressureData) {
+            return this.#updatePressureData();
+        }
+        else {
+            _console$3.log("doesn't have all pressure data yet...");
+        }
+    }
+    get #hasAllPressureData() {
+        const now = Date.now();
+        const hasBothSides = Sides.every((side) => side in this.#rawPressure);
+        const bothSidesAreRecent = Sides.every((side) => now - this.#pressureTimestamps[side] < 500);
+        return hasBothSides && bothSidesAreRecent;
+    }
+    #updatePressureData() {
+        const pressureData = {
+            scaledSum: 0,
+            normalizedSum: 0,
+            sensors: { left: [], right: [] },
+            sides: { left: this.#rawPressure.left, right: this.#rawPressure.right },
+        };
+        Sides.forEach((side) => {
+            const sidePressure = this.#rawPressure[side];
+            pressureData.sensors[side].push(...sidePressure.sensors);
+        });
+        let numberOfSidesWithCenter = 0;
+        Sides.forEach((side) => {
+            const sidePressureData = this.#rawPressure[side];
+            if (sidePressureData.center) {
+                numberOfSidesWithCenter++;
+            }
+        });
+        Sides.forEach((side) => {
+            const sidePressure = this.#rawPressure[side];
+            pressureData.scaledSum += sidePressure.scaledSum;
+        });
+        pressureData.normalizedSum +=
+            this.#normalizedSumRangeHelper.updateAndGetNormalization(pressureData.scaledSum);
+        if (numberOfSidesWithCenter == 2) {
+            pressureData.center = { x: 0, y: 0 };
+            Sides.forEach((side) => {
+                const sidePressureData = this.#rawPressure[side];
+                let centerOfPressure;
+                if (sidePressureData.calibratedCenter) {
+                    centerOfPressure = sidePressureData.calibratedCenter;
+                }
+                else if (sidePressureData.motionCenter) {
+                    centerOfPressure = sidePressureData.motionCenter;
+                }
+                const sidePressureWeight = sidePressureData.scaledSum / pressureData.scaledSum;
+                if (sidePressureWeight > 0) {
+                    if (centerOfPressure) {
+                        pressureData.center.x += centerOfPressure.x * 0.5;
+                        pressureData.center.y += centerOfPressure.y * 0.5;
+                    }
+                    else {
+                        if (sidePressureData.normalizedCenter?.y != undefined) {
+                            pressureData.center.y +=
+                                sidePressureData.normalizedCenter.y * sidePressureWeight;
+                        }
+                        if (side == "right") {
+                            pressureData.center.x = sidePressureWeight;
+                        }
+                    }
+                }
+            });
+            pressureData.normalizedCenter =
+                this.#centerOfPressureHelper.updateAndGetNormalization(pressureData.center);
+        }
+        _console$3.log({ devicePairPressureData: pressureData });
+        return pressureData;
+    }
+}
+
+const _console$2 = createConsole("DevicePairSensorDataManager", { log: false });
+const DevicePairSensorTypes = ["pressure", "sensorData"];
+const DevicePairSensorDataEventTypes = DevicePairSensorTypes;
+class DevicePairSensorDataManager {
+    eventDispatcher;
+    get dispatchEvent() {
+        return this.eventDispatcher.dispatchEvent;
+    }
+    #timestamps = {};
+    pressureSensorDataManager = new DevicePairPressureSensorDataManager();
+    resetPressureRange() {
+        this.pressureSensorDataManager.resetPressureRange();
+    }
+    onDeviceSensorData(event) {
+        const { timestamp, sensorType } = event.message;
+        _console$2.log({ sensorType, timestamp, event });
+        if (!this.#timestamps[sensorType]) {
+            this.#timestamps[sensorType] = {};
+        }
+        this.#timestamps[sensorType][event.target.side] = timestamp;
+        let value;
+        switch (sensorType) {
+            case "pressure":
+                value = this.pressureSensorDataManager.onDevicePressureData(event);
+                break;
+            default:
+                _console$2.log(`uncaught sensorType "${sensorType}"`);
+                break;
+        }
+        if (value) {
+            const timestamps = Object.assign({}, this.#timestamps[sensorType]);
+            this.dispatchEvent(sensorType, {
+                sensorType,
+                timestamps,
+                [sensorType]: value,
+            });
+            this.dispatchEvent("sensorData", {
+                sensorType,
+                timestamps,
+                [sensorType]: value,
+            });
+        }
+        else {
+            _console$2.log("no value received");
+        }
+    }
+}
+
+const _console$1 = createConsole("DevicePair", { log: false });
+function getDevicePairDeviceEventTypes(deviceEventType) {
+    return ["device", ...Sides].map((prefix) => `${prefix}${capitalizeFirstCharacter(deviceEventType)}`);
+}
+const DevicePairDeviceEventTypes = DeviceEventTypes.flatMap((eventType) => getDevicePairDeviceEventTypes(eventType));
+const DevicePairConnectionEventTypes = [
+    "isConnected",
+    wildcardDeviceEventType,
+];
+const DevicePairEventTypes = [
+    ...DevicePairConnectionEventTypes,
+    ...DevicePairSensorDataEventTypes,
+    ...DevicePairDeviceEventTypes,
+];
+const DevicePairTypes = ["insoles", "gloves"];
+class DevicePair {
+    constructor(type) {
+        this.#type = type;
+        this.#sensorDataManager.eventDispatcher = this
+            .#eventDispatcher;
+    }
+    get sides() {
+        return Sides;
+    }
+    #type;
+    get type() {
+        return this.#type;
+    }
+    #eventDispatcher = new EventDispatcher(this, DevicePairEventTypes);
+    get addEventListener() {
+        return this.#eventDispatcher.addEventListener;
+    }
+    get #dispatchEvent() {
+        return this.#eventDispatcher.dispatchEvent;
+    }
+    get removeEventListener() {
+        return this.#eventDispatcher.removeEventListener;
+    }
+    get waitForEvent() {
+        return this.#eventDispatcher.waitForEvent;
+    }
+    get removeEventListeners() {
+        return this.#eventDispatcher.removeEventListeners;
+    }
+    get removeAllEventListeners() {
+        return this.#eventDispatcher.removeAllEventListeners;
+    }
+    #left;
+    get left() {
+        return this.#left;
+    }
+    #right;
+    get right() {
+        return this.#right;
+    }
+    get isConnected() {
+        return Sides.every((side) => this[side]?.isConnected);
+    }
+    get isPartiallyConnected() {
+        return Sides.some((side) => this[side]?.isConnected);
+    }
+    get isHalfConnected() {
+        return this.isPartiallyConnected && !this.isConnected;
+    }
+    #assertIsConnected() {
+        _console$1.assertWithError(this.isConnected, "devicePair must be connected");
+    }
+    #isDeviceCorrectType(device) {
+        switch (this.type) {
+            case "insoles":
+                return device.isInsole;
+            case "gloves":
+                return device.isGlove;
+        }
+    }
+    assignDevice(device) {
+        if (!this.#isDeviceCorrectType(device)) {
+            _console$1.log(`device is incorrect type ${device.type} for ${this.type} devicePair`);
+            return;
+        }
+        const side = device.side;
+        const currentDevice = this[side];
+        if (device == currentDevice) {
+            _console$1.log("device already assigned");
+            return;
+        }
+        if (currentDevice) {
+            this.#removeDeviceEventListeners(currentDevice);
+        }
+        this.#addDeviceEventListeners(device);
+        switch (side) {
+            case "left":
+                this.#left = device;
+                break;
+            case "right":
+                this.#right = device;
+                break;
+        }
+        _console$1.log(`assigned ${side} ${this.type} device`, device);
+        this.resetPressureRange();
+        this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
+        this.#dispatchEvent("deviceIsConnected", {
+            device,
+            isConnected: device.isConnected,
+            side,
+        });
+        return currentDevice;
+    }
+    #addDeviceEventListeners(device) {
+        addEventListeners(device, this.#boundDeviceEventListeners);
+    }
+    #removeDeviceEventListeners(device) {
+        removeEventListeners(device, this.#boundDeviceEventListeners);
+    }
+    #removeDevice(device) {
+        const foundDevice = Sides.some((side) => {
+            if (this[side] != device) {
+                return false;
+            }
+            _console$1.log(`removing ${side} ${this.type} device`, device);
+            removeEventListeners(device, this.#boundDeviceEventListeners);
+            switch (side) {
+                case "left":
+                    this.#left = undefined;
+                    break;
+                case "right":
+                    this.#right = undefined;
+                    break;
+            }
+            return true;
+        });
+        if (foundDevice) {
+            this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
+        }
+        return foundDevice;
+    }
+    #boundDeviceEventListeners = {
+        isConnected: this.#onDeviceIsConnected.bind(this),
+        sensorData: this.#onDeviceSensorData.bind(this),
+        getType: this.#onDeviceGetType.bind(this),
+        [wildcardEventType]: this.#onDeviceEvent.bind(this),
+    };
+    #onDeviceIsConnected(deviceEvent) {
+        this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
+    }
+    #onDeviceGetType(deviceEvent) {
+        const { target: device } = deviceEvent;
+        if (this[device.side] == device) {
+            return;
+        }
+        const foundDevice = this.#removeDevice(device);
+        if (!foundDevice) {
+            return;
+        }
+        this.assignDevice(device);
+    }
+    #onDeviceEvent(deviceEvent) {
+        const { type: deviceType, target: device, message } = deviceEvent;
+        this.#dispatchEvent(wildcardDeviceEventType, {
+            ...message,
+            device,
+            deviceEventType: deviceType,
+            side: device.side,
+        });
+        getDevicePairDeviceEventTypes(deviceType).forEach((_type) => {
+            this.#dispatchEvent(_type, {
+                ...message,
+                device,
+                side: device.side,
+            });
+        });
+    }
+    async setSensorConfiguration(sensorConfiguration) {
+        for (let i = 0; i < Sides.length; i++) {
+            const side = Sides[i];
+            if (this[side]?.isConnected) {
+                await this[side].setSensorConfiguration(sensorConfiguration);
+            }
+        }
+    }
+    #sensorDataManager = new DevicePairSensorDataManager();
+    #onDeviceSensorData(deviceEvent) {
+        if (this.isConnected) {
+            this.#sensorDataManager.onDeviceSensorData(deviceEvent);
+        }
+    }
+    resetPressureRange(resetSides = true) {
+        if (resetSides) {
+            Sides.forEach((side) => this[side]?.resetPressureRange());
+        }
+        this.#sensorDataManager.resetPressureRange();
+    }
+    setPressureAutoRange(newPressureAutoRange) {
+        Sides.forEach((side) => this[side]?.setPressureAutoRange(newPressureAutoRange));
+    }
+    togglePressureAutoRange() {
+        Sides.forEach((side) => this[side]?.togglePressureAutoRange());
+    }
+    setPressureMotionAutoRange(newPressureMotionAutoRange) {
+        Sides.forEach((side) => this[side]?.setPressureMotionAutoRange(newPressureMotionAutoRange));
+    }
+    togglePressureMotionAutoRange() {
+        Sides.forEach((side) => this[side]?.togglePressureMotionAutoRange());
+    }
+    async triggerVibration(vibrationConfigurations, sendImmediately) {
+        const promises = Sides.map((side) => {
+            return this[side]?.triggerVibration(vibrationConfigurations, sendImmediately);
+        }).filter(Boolean);
+        return Promise.allSettled(promises);
+    }
+    static #insoles = new DevicePair("insoles");
+    static get insoles() {
+        return this.#insoles;
+    }
+    static #gloves = new DevicePair("gloves");
+    static get gloves() {
+        return this.#gloves;
+    }
+    static {
+        DeviceManager.addEventListener("deviceConnected", (event) => {
+            const { device } = event.message;
+            if (device.isInsole) {
+                this.#insoles.assignDevice(device);
+            }
+            if (device.isGlove) {
+                this.#gloves.assignDevice(device);
+            }
+        });
+    }
+}
+
+function throttle(fn, interval, trailing = false) {
+    let lastTime = 0;
+    let timeout = null;
+    let lastArgs = null;
+    return function (...args) {
+        const now = Date.now();
+        const remaining = interval - (now - lastTime);
+        if (remaining <= 0) {
+            if (timeout) {
+                clearTimeout(timeout);
+                timeout = null;
+            }
+            lastTime = now;
+            fn(...args);
+        }
+        else if (trailing) {
+            lastArgs = args;
+            if (!timeout) {
+                timeout = setTimeout(() => {
+                    lastTime = Date.now();
+                    timeout = null;
+                    if (lastArgs) {
+                        fn(...lastArgs);
+                        lastArgs = null;
+                    }
+                }, remaining);
+            }
+        }
+    };
+}
+function debounce(fn, interval, callImmediately = false) {
+    let timeout = null;
+    return function (...args) {
+        const callNow = callImmediately && !timeout;
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(() => {
+            timeout = null;
+            if (!callImmediately) {
+                fn(...args);
+            }
+        }, interval);
+        if (callNow) {
+            fn(...args);
+        }
+    };
+}
+
+const ConnectionManagers = [
+    WebBluetoothConnectionManager,
+    WebSocketConnectionManager,
+    ClientConnectionManager,
+];
+
+const Servers = [
+    WindowServer$1,
+];
+
+const Clients = [
+    WindowClient,
+];
+
+const _console = createConsole("WebSocketClient", { log: false });
+class WebSocketClient extends BaseClient {
+    static type = "webSocket";
+    type = WebSocketClient.type;
+    #webSocket;
+    get webSocket() {
+        return this.#webSocket;
+    }
+    set webSocket(newWebSocket) {
+        if (this.#webSocket == newWebSocket) {
+            _console.log("redundant webSocket assignment");
+            return;
+        }
+        _console.log("assigning webSocket", newWebSocket);
+        if (this.#webSocket) {
+            removeEventListeners(this.#webSocket, this.#boundWebSocketEventListeners);
+        }
+        addEventListeners(newWebSocket, this.#boundWebSocketEventListeners);
+        this.#webSocket = newWebSocket;
+        _console.log("assigned webSocket");
+    }
+    get #readyState() {
+        return this.webSocket?.readyState;
+    }
+    get isConnected() {
+        return this.#readyState == WebSocket.OPEN;
+    }
+    get isDisconnected() {
+        return this.#readyState == WebSocket.CLOSED;
+    }
+    connect(url = `${location.protocol.includes("https") ? "wss" : "ws"}://${location.host}`) {
+        if (this.webSocket) {
+            this.assertDisconnection();
+        }
+        this._connectionStatus = "connecting";
+        this.webSocket = new WebSocket(url);
+    }
+    disconnect() {
+        this.assertConnection();
+        if (this.reconnectOnDisconnection) {
+            this.reconnectOnDisconnection = false;
+            this.webSocket.addEventListener("close", () => {
+                this.reconnectOnDisconnection = true;
+            }, { once: true });
+        }
+        this._connectionStatus = "disconnecting";
+        this.webSocket.close();
+    }
+    reconnect() {
+        this.assertDisconnection();
+        this.connect(this.webSocket.url);
+    }
+    toggleConnection(url) {
+        if (this.isConnected) {
+            this.disconnect();
+        }
+        else if (url && this.webSocket?.url == url) {
+            this.reconnect();
+        }
+        else {
+            this.connect(url);
+        }
+    }
+    #sendMessage(message) {
+        this.assertConnection();
+        this.#webSocket.send(message);
+        this.#pingTimer.restart();
+    }
+    sendServerMessage(...messages) {
+        this.#sendMessage(createWebSocketMessage$1({
+            type: "serverMessage",
+            data: createServerMessage(...messages),
+        }));
+    }
+    #boundWebSocketEventListeners = {
+        open: this.#onWebSocketOpen.bind(this),
+        message: this.#onWebSocketMessage.bind(this),
+        close: this.#onWebSocketClose.bind(this),
+        error: this.#onWebSocketError.bind(this),
+    };
+    #onWebSocketOpen(event) {
+        _console.log("webSocket.open", event);
+        this.#pingTimer.start();
+        this._sendRequiredMessages();
+    }
+    async #onWebSocketMessage(event) {
+        _console.log("webSocket.message", event);
+        const arrayBuffer = await event.data.arrayBuffer();
+        const dataView = new DataView(arrayBuffer);
+        this.#parseWebSocketMessage(dataView);
+    }
+    #onWebSocketClose(event) {
+        _console.log("webSocket.close", event);
+        this._connectionStatus = "notConnected";
+        this.#pingTimer.stop();
+        if (this.reconnectOnDisconnection) {
+            setTimeout(() => {
+                this.reconnect();
+            }, webSocketReconnectTimeout);
+        }
+    }
+    #onWebSocketError(event) {
+        _console.error("webSocket.error", event);
+    }
+    #parseWebSocketMessage(dataView) {
+        parseMessage(dataView, WebSocketMessageTypes$1, this.#onServerMessage.bind(this), null, true);
+    }
+    #onServerMessage(messageType, dataView) {
+        switch (messageType) {
+            case "ping":
+                this.#pong();
+                break;
+            case "pong":
+                break;
+            case "serverMessage":
+                this.parseMessage(dataView);
+                break;
+            default:
+                _console.error(`uncaught messageType "${messageType}"`);
+                break;
+        }
+    }
+    #pingTimer = new Timer(this.#ping.bind(this), webSocketPingTimeout);
+    #ping() {
+        this.#sendMessage(webSocketPingMessage);
+    }
+    #pong() {
+        this.#sendMessage(webSocketPongMessage);
+    }
+}
+
+const EventUtils = {
+    addEventListeners,
+    removeEventListeners,
+};
+const ThrottleUtils = {
+    throttle,
+    debounce,
+};
+
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager_default as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager_default as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
+//# sourceMappingURL=brilliantsole.module.js.map

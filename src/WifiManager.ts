@@ -1,5 +1,5 @@
 import Device, { SendMessageCallback } from "./Device.ts";
-import { UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
+import { valueToUInt8ArrayBuffer } from "./utils/ArrayBufferUtils.ts";
 import { createConsole } from "./utils/Console.ts";
 import { isInNode } from "./utils/environment.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
@@ -206,7 +206,7 @@ class WifiManager {
         {
           type: "setWifiConnectionEnabled",
 
-          data: UInt8ByteBuffer(Number(newWifiConnectionEnabled)),
+          data: valueToUInt8ArrayBuffer(Number(newWifiConnectionEnabled)),
         },
       ],
       sendImmediately,

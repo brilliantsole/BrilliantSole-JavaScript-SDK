@@ -1,7 +1,7 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import {
   concatenateArrayBuffers,
-  UInt8ByteBuffer,
+  valueToUInt8ArrayBuffer,
 } from "./utils/ArrayBufferUtils.ts";
 import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
@@ -95,7 +95,8 @@ import {
 } from "./utils/DisplayManagerInterface.ts";
 import {
   BaseFileConfiguration,
-  OnSendFileCallback,
+  ExtendedFileConfiguration,
+  OnParseFileCallback,
   SendFileCallback,
 } from "./FileTransferManager.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
@@ -329,7 +330,7 @@ export type DisplayBitmap = {
   pixels: number[];
 };
 
-export interface DisplaySpriteSheetFileConfiguration extends BaseFileConfiguration {
+export interface DisplaySpriteSheetFileConfiguration extends ExtendedFileConfiguration {
   fileType: "spriteSheet";
   spriteSheetIndex?: number;
   spriteSheet: DisplaySpriteSheet;
@@ -508,7 +509,7 @@ class DisplayManager implements DisplayManagerInterface {
       [
         {
           type: "displayCommand",
-          data: UInt8ByteBuffer(commandEnum),
+          data: valueToUInt8ArrayBuffer(commandEnum),
         },
       ],
       sendImmediately,
@@ -670,7 +671,9 @@ class DisplayManager implements DisplayManagerInterface {
     }
     const newDisplayBrightnessEnum =
       DisplayBrightnesses.indexOf(newDisplayBrightness);
-    const newDisplayBrightnessData = UInt8ByteBuffer(newDisplayBrightnessEnum);
+    const newDisplayBrightnessData = valueToUInt8ArrayBuffer(
+      newDisplayBrightnessEnum,
+    );
 
     const promise = this.waitForEvent("getDisplayBrightness");
     this.sendMessage(
@@ -3662,7 +3665,7 @@ class DisplayManager implements DisplayManagerInterface {
     });
   }
   sendFile!: SendFileCallback;
-  onSendFile!: OnSendFileCallback;
+  onParseFile!: OnParseFileCallback;
   @ForwardToHelper
   serializeSpriteSheet(
     spriteSheet: DisplaySpriteSheet,
@@ -3737,15 +3740,34 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     this.#pendingSpriteSheet = spriteSheet;
-    const includeHeader = this.isClientConnectionType;
+    const includeHeader = true;
     const buffer = this.serializeSpriteSheet(
       this.#pendingSpriteSheet,
       includeHeader,
     );
-    await this.#setSpriteSheetName(this.#pendingSpriteSheet.name);
-    const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
+    this.#setSpriteSheetName(this.#pendingSpriteSheet.name, false);
+    const promise = new Promise<boolean>((resolve) => {
+      this.eventDispatcher.addEventListener(
+        "displaySpriteSheetUploadComplete",
+        (event) => {
+          const { spriteSheetName, spriteSheet: _spriteSheet } = event.message;
+          if (spriteSheetName == spriteSheet.name) {
+            const isSameSpriteSheet = spriteSheet == _spriteSheet;
+            _console.log("finished uploading spriteSheet", {
+              isSameSpriteSheet,
+            });
+            resolve(isSameSpriteSheet);
+          } else {
+            _console.log(
+              `different spriteSheet was uploaded (got "${spriteSheetName}", expected "${spriteSheet.name}") - waiting for right one`,
+            );
+          }
+        },
+      );
+    });
     this.sendFile("spriteSheet", buffer, includeHeader);
-    await promise;
+    const isSameSpriteSheet = await promise;
+    _console.log({ isSameSpriteSheet });
 
     if (!this.displayCanvasHelper) {
       const spriteSheetIndex = this.spriteSheetIndices[spriteSheet.name];
@@ -4210,7 +4232,7 @@ class DisplayManager implements DisplayManagerInterface {
       spriteSheet: this.#pendingSpriteSheet!,
     });
 
-    this.onSendFile({
+    this.onParseFile({
       fileType: "spriteSheet",
       spriteSheet: this.#pendingSpriteSheet!,
       spriteSheetIndex,
