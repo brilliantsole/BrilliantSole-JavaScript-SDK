@@ -3746,6 +3746,7 @@ class DisplayManager implements DisplayManagerInterface {
       includeHeader,
     );
     this.#setSpriteSheetName(this.#pendingSpriteSheet.name, false);
+    const abortController = new AbortController();
     const promise = new Promise<boolean>((resolve) => {
       this.eventDispatcher.addEventListener(
         "displaySpriteSheetUploadComplete",
@@ -3756,6 +3757,7 @@ class DisplayManager implements DisplayManagerInterface {
             _console.log("finished uploading spriteSheet", {
               isSameSpriteSheet,
             });
+            abortController.abort();
             resolve(isSameSpriteSheet);
           } else {
             _console.log(
@@ -3763,10 +3765,12 @@ class DisplayManager implements DisplayManagerInterface {
             );
           }
         },
+        { signal: abortController.signal },
       );
     });
     this.sendFile("spriteSheet", buffer, includeHeader);
     const isSameSpriteSheet = await promise;
+
     _console.log({ isSameSpriteSheet });
 
     if (!this.displayCanvasHelper) {

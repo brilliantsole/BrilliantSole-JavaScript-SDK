@@ -414,6 +414,6 @@ const generateSpriteSheet = (name, length) => {
   }
   displayCanvasHelper.uploadSpriteSheet(spriteSheet);
 };
-generateSpriteSheet("test", 100);
-// generateSpriteSheet("test2", 50);
+generateSpriteSheet("test", 50);
+// generateSpriteSheet("test2", 100);
 // generateSpriteSheet("test3", 200);

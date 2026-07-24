@@ -5018,8 +5018,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     _console.log("updateDeviceSpriteSheets", { updateSelf });
 
-    // TEST
-
     const directDeviceSpriteSheets: DisplaySpriteSheet[] = [];
     if (updateSelf) {
       Object.values(this.deviceDisplayManager!.spriteSheets).forEach(
@@ -5043,7 +5041,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         (a, b) =>
           this.spriteSheetIndices[a.name] - this.spriteSheetIndices[b.name],
       )
-      .filter((spriteSheet) => !directDeviceSpriteSheets.includes(spriteSheet));
+      .filter((spriteSheet) => {
+        const alreadyIncluded = directDeviceSpriteSheets.includes(spriteSheet);
+        if (alreadyIncluded) {
+          _console.log(
+            `spriteSheet "${spriteSheet.name} already included in device - skipping"`,
+            spriteSheet,
+          );
+        }
+        return !alreadyIncluded;
+      });
     _console.log("sortedSpriteSheets", sortedSpriteSheets);
 
     await this.uploadSpriteSheets(sortedSpriteSheets);

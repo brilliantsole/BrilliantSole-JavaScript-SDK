@@ -52,6 +52,10 @@ import DeviceManager, {
   DeviceManagerEventMap,
   BoundDeviceManagerEventListeners,
 } from "../DeviceManager.ts";
+import DisplayCanvasHelperManager, {
+  BoundDisplayCanvasHelperManagerEventListeners,
+  DisplayCanvasHelperManagerEventMap,
+} from "../utils/DisplayCanvasHelperManager.ts";
 import { RequiredWifiMessageTypes } from "../WifiManager.ts";
 import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
 import {
@@ -210,6 +214,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
     addEventListeners(scanner, this.#boundScannerListeners);
     addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+    addEventListeners(
+      DisplayCanvasHelperManager,
+      this.#boundDisplayCanvasHelperManagerEventListeners,
+    );
     addEventListeners(this, this.#boundServerListeners);
 
     // @ts-expect-error
@@ -437,7 +445,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   #boundDeviceListeners: BoundDeviceEventListeners = {
     connectionMessage: this.#onDeviceConnectionMessage.bind(this),
     displayContextCommands: this.#onDeviceDisplayContextCommands.bind(this),
-    fileSent: this.#onDeviceSentFile.bind(this),
+    fileSent: this.#onDeviceFileSent.bind(this),
   };
 
   #isClientBusyReceivingFileFromSelf(client: ServerClient, device?: Device) {
@@ -476,6 +484,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       if (device.fileTransferStatus != "idle") {
         return true;
       }
+      if (device.displayManager.displayCanvasHelper?.isSettingDevice) {
+        return true;
+      }
 
       // client => self => device (self intercepts)
       if (this.#clientsSendingToDevice.has(device)) {
@@ -505,17 +516,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     messageType: DeviceEventType,
     dataView?: DataView,
   ): DeviceMessage {
-    // if (messageType == "fileTransferStatus" && dataView) {
-    //   const isBusy = this.#isBusyTransferringFile(device);
-    //   if (isBusy) {
-    //     _console.log(`busy - sending "idle" fileTransferStatus`);
-    //     return {
-    //       type: "fileTransferStatus",
-    //       data: enumToDataView(FileTransferStatuses, "idle"),
-    //     };
-    //   }
-    // }
-
     switch (messageType) {
       case "cameraData":
         return {
@@ -747,8 +747,19 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
           } else if (clientSendingToDevice) {
             switch (fileTransferStatus) {
               case "idle":
-                _console.log("client done sending file to device");
-                this.#clientsSendingToDevice.delete(device);
+                {
+                  _console.log("client done sending file to device");
+                  this.#clientsSendingToDevice.delete(device);
+                  if (false) {
+                    const _deviceMessages = this.#onDoneTransferringFile(
+                      device,
+                      clientSendingToDevice,
+                    );
+                    if (_deviceMessages) {
+                      deviceMessages.push(..._deviceMessages);
+                    }
+                  }
+                }
                 break;
               default:
                 _console.error(
@@ -879,13 +890,13 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     // @ts-expect-error
     ServerManager.broadcast(deviceServerMessage, undefined, undefined, false);
   }
-  #onDeviceSentFile(deviceEvent: DeviceEventMap["fileSent"]) {
+  #onDeviceFileSent(deviceEvent: DeviceEventMap["fileSent"]) {
     if (this.clients.length == 0) {
       return;
     }
 
     const { target: device, message } = deviceEvent;
-    _console.log("#onDeviceSentFile", message);
+    _console.log("#onDeviceFileSent", message);
     if (!device.isConnected) {
       _console.warn("device isn't connected");
       return;
@@ -931,6 +942,23 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         client,
       );
     });
+  }
+
+  // STATIC DISPLAY CANVAS HELPER MANAGER LISTENERS
+  #boundDisplayCanvasHelperManagerEventListeners: BoundDisplayCanvasHelperManagerEventListeners =
+    {
+      displayCanvasHelperDeviceConnected:
+        this.#onDisplayCanvasHelperDeviceConnected.bind(this),
+    };
+  #onDisplayCanvasHelperDeviceConnected(
+    staticDisplayCanvasHelperEvent: DisplayCanvasHelperManagerEventMap["displayCanvasHelperDeviceConnected"],
+  ) {
+    const { device } = staticDisplayCanvasHelperEvent.message;
+    console.log(
+      "#onDisplayCanvasHelperDeviceConnected",
+      staticDisplayCanvasHelperEvent,
+    );
+    this.#onDoneTransferringFile(device, undefined, true);
   }
 
   // STATIC DEVICE LISTENERS
@@ -1415,28 +1443,95 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   #appendClientSentFileConfigurations(device: Device, client: ServerClient) {
     _console.log("#appendClientSentFileConfigurations", device, client);
     const currentSentFileConfiguration =
-      device._fileTransferManager.getCurrentFileConfiguration();
-    if (currentSentFileConfiguration) {
-      _console.log(
-        "adding currentSentFileConfiguration to clientFileConfigurations",
-      );
-      if (
-        !this.#clientSentFileConfigurations
-          .get(device)!
-          .has(currentSentFileConfiguration)
-      ) {
-        this.#clientSentFileConfigurations
-          .get(device)!
-          .set(currentSentFileConfiguration, new Map());
-      }
+      device._fileTransferManager.getCurrentFileConfiguration()!;
+    _console.assertWithError(
+      currentSentFileConfiguration,
+      "currentSentFileConfiguration not found",
+    );
+    _console.log(
+      "adding currentSentFileConfiguration to clientFileConfigurations",
+    );
+    if (
+      !this.#clientSentFileConfigurations
+        .get(device)!
+        .has(currentSentFileConfiguration)
+    ) {
       this.#clientSentFileConfigurations
         .get(device)!
-        .get(currentSentFileConfiguration)!
-        .set(client, {
-          sent: true,
-          initiated: false,
-          bytesTransferred: currentSentFileConfiguration.length,
-        });
+        .set(currentSentFileConfiguration, new Map());
+    }
+    this.#clientSentFileConfigurations
+      .get(device)!
+      .get(currentSentFileConfiguration)!
+      .set(client, {
+        sent: true,
+        initiated: false,
+        bytesTransferred: currentSentFileConfiguration.length,
+      });
+    return currentSentFileConfiguration;
+  }
+  #onDoneTransferringFile(
+    device: Device,
+    client?: ServerClient,
+    sendImmediately?: boolean,
+  ) {
+    _console.log("#onDoneTransferringFile", device, client);
+
+    if (client) {
+      const _deviceMessages = this.#sendNextFileToClient(device, client);
+      if (_deviceMessages) {
+        return _deviceMessages;
+      }
+    } else {
+      let deviceMessages: DeviceMessage[] | undefined;
+      let client: ServerClient | undefined;
+      this.clients.some((_client) => {
+        deviceMessages = this.#sendNextFileToClient(device, _client);
+        if (deviceMessages) {
+          client = _client;
+        }
+        return Boolean(client);
+      });
+      if (deviceMessages && client) {
+        if (sendImmediately) {
+          this.sendToClient(
+            client,
+            this.#createDeviceServerMessage(device, ...deviceMessages),
+          );
+        }
+        return deviceMessages;
+      }
+    }
+
+    const clientsWaitingToRequestSend =
+      this.#clientsWaitingToRequestSend.get(device)!;
+    if (clientsWaitingToRequestSend.length > 0) {
+      const client = clientsWaitingToRequestSend.shift()!;
+      _console.log("clientWaitingToRequestSend", client);
+      this.#clientsRequestingSend.set(device, client);
+
+      const messages = this.#clientsWaitingToRequestSendMetaData
+        .get(device)!
+        .get(client)!;
+      this.#clientsWaitingToRequestSendMetaData.get(device)!.delete(client);
+      messages.push({
+        type: "setFileTransferCommand",
+        data: enumToDataView(FileTransferCommands, "startSend"),
+      });
+      _console.log("fileTransfer metadata", messages);
+
+      const filteredTxMessages: TxMessage[] = [];
+      messages.forEach((message) => {
+        if (this.#allowClientToDevice(client, device, message)) {
+          filteredTxMessages.push(message as TxMessage);
+          device._onRemoteConnectionMessageSent(
+            message.type as TxRxMessageType,
+            message.data,
+          );
+        }
+      });
+      _console.log("filtered fileTransfer metadata", filteredTxMessages);
+      device.connectionManager!.sendTxMessages(filteredTxMessages, true, true);
     }
   }
   #onDoneReceivingFileFromClient(
@@ -1464,38 +1559,9 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     );
     deviceMessages.push(fileTransferStatusDeviceMessage);
 
-    const clientsWaitingToRequestSend =
-      this.#clientsWaitingToRequestSend.get(device)!;
-
-    if (clientsWaitingToRequestSend.length > 0) {
-      const client = clientsWaitingToRequestSend.shift()!;
-      _console.log("clientWaitingToRequestSend", client);
-      this.#clientsRequestingSend.set(device, client);
-
-      const messages = this.#clientsWaitingToRequestSendMetaData
-        .get(device)!
-        .get(client)!;
-      this.#clientsWaitingToRequestSendMetaData.get(device)!.delete(client);
-      messages.push({
-        type: "setFileTransferCommand",
-        data: enumToDataView(FileTransferStatuses, "sending"),
-      });
-      _console.log("fileTransfer metadata", messages);
-
-      const filteredTxMessages: TxMessage[] = [];
-      messages.forEach((message) => {
-        if (this.#allowClientToDevice(client, device, message)) {
-          filteredTxMessages.push(message as TxMessage);
-          device._onRemoteConnectionMessageSent(
-            message.type as TxRxMessageType,
-            message.data,
-          );
-        }
-      });
-      _console.log("filtered fileTransfer metadata", filteredTxMessages);
-      device.connectionManager!.sendTxMessages(filteredTxMessages, true, true);
-    } else if (false) {
-      // TODO: - is this the right place to send files from the parent?
+    const _deviceMessages = this.#onDoneTransferringFile(device, client);
+    if (_deviceMessages) {
+      deviceMessages.push(..._deviceMessages);
     }
   }
 
@@ -1532,7 +1598,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     );
     const blockLength = block.byteLength;
     _console.log(
-      `sending block [${metadata.bytesTransferred}, ${metadata.bytesTransferred + blockLength}] (${blockLength} bytes)`,
+      `sending ${blockLength} bytes [${metadata.bytesTransferred}-${metadata.bytesTransferred + blockLength}]/${metadata.bytesTransferred + blockLength} (${(100 * (metadata.bytesTransferred + blockLength)) / fileConfiguration.buffer.byteLength}%)`,
       metadata,
     );
     _console.assertWithError(blockLength > 0, "blockLength cannot be 0");
@@ -1567,8 +1633,6 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
   #sendNextFileToClient(device: Device, client: ServerClient) {
     _console.log("#sendNextFileToClient", device, client);
 
-    const deviceMessages: DeviceMessage[] = [];
-
     let nextFileConfiguration: ExtendedFileConfiguration | undefined;
     _console.log("finding next fileConfiguration to send");
     if (this.#clientSentFileConfigurations.has(device)) {
@@ -1599,12 +1663,8 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         client,
         false,
       );
-      if (_deviceMessages) {
-        deviceMessages.push(..._deviceMessages);
-      }
+      return _deviceMessages;
     }
-
-    return deviceMessages;
   }
   #onDoneSendingFileToClient(
     device: Device,
@@ -1650,7 +1710,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         break;
     }
 
-    const _deviceMessages = this.#sendNextFileToClient(device, client);
+    const _deviceMessages = this.#onDoneTransferringFile(device, client);
     if (_deviceMessages) {
       deviceMessages.push(..._deviceMessages);
     }
@@ -1712,12 +1772,12 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       _console.log("not busy - sending file to client");
       const fileLengthDeviceMessage = this.#createDeviceMessage(
         device,
-        "getFileLength",
+        "setFileLength",
         valueToUInt32DataView(fileConfiguration.length, true),
       );
       const fileChecksumDeviceMessage = this.#createDeviceMessage(
         device,
-        "getFileChecksum",
+        "setFileChecksum",
         valueToUInt32DataView(fileConfiguration.checksum, true),
       );
 
@@ -1740,7 +1800,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
       const fileTypeDeviceMessage = this.#createDeviceMessage(
         device,
-        "getFileType",
+        "setFileType",
         enumToDataView(FileTypes, fileConfiguration.fileType),
       );
       deviceMessages.unshift(fileTypeDeviceMessage);
@@ -1992,15 +2052,17 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 client == this.#clientsSendingToDevice.get(device);
               const isClientReceivingFileFromSelf =
                 this.#isClientBusyReceivingFileFromSelf(client, device);
+              const isBusy = this.#isBusyTransferringFile(device, client);
 
               _console.log({
+                isBusy,
                 fileTransferCommand,
                 isClientSendingToSelf,
                 isClientSendingToDevice,
                 isClientReceivingFileFromSelf,
               });
 
-              if (this.#isBusyTransferringFile(device, client)) {
+              if (isBusy) {
                 _console.log("busy transferring file");
                 switch (fileTransferCommand) {
                   case "startSend":

@@ -1418,8 +1418,22 @@ class Device {
             dataView,
             this.pendingDisplaySpriteSheetName,
           );
+          const existingPendingSpriteSheet =
+            this.#displayManager.pendingSpriteSheet;
+          _console.log(
+            "existingPendingSpriteSheet",
+            existingPendingSpriteSheet,
+          );
           this.#displayManager.pendingSpriteSheet = parsedSpriteSheet;
           await this.uploadDisplaySpriteSheet(parsedSpriteSheet);
+          if (existingPendingSpriteSheet) {
+            _console.log(
+              "replacing existingPendingSpriteSheet",
+              existingPendingSpriteSheet,
+            );
+            this.#displayManager.pendingSpriteSheet =
+              existingPendingSpriteSheet;
+          }
         }
         break;
       case "tflite":

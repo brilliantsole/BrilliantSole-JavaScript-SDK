@@ -56,6 +56,15 @@ export const FileTransferCommands = [
 ] as const;
 export type FileTransferCommand = (typeof FileTransferCommands)[number];
 
+export const FileTransferCommandStatusMap: Record<
+  FileTransferCommand,
+  FileTransferStatus
+> = {
+  startSend: "sending",
+  startReceive: "receiving",
+  cancel: "idle",
+};
+
 export const FileTransferDirections = ["sending", "receiving"] as const;
 export type FileTransferDirection = (typeof FileTransferDirections)[number];
 
@@ -207,7 +216,10 @@ class FileTransferManager {
   get fileTypes() {
     return this.#fileTypes;
   }
-  #parseFileTypes(dataView: DataView<ArrayBuffer>) {
+  #parseFileTypes(dataView: DataView<ArrayBuffer>, isSending?: boolean) {
+    if (isSending) {
+      return;
+    }
     const fileTypes = Array.from(new Uint8Array(dataView.buffer))
       .map((index) => FileTypes[index])
       .filter(Boolean);
@@ -227,7 +239,10 @@ class FileTransferManager {
   get maxLength() {
     return this.#maxLength;
   }
-  #parseMaxLength(dataView: DataView<ArrayBuffer>) {
+  #parseMaxLength(dataView: DataView<ArrayBuffer>, isSending?: boolean) {
+    if (isSending) {
+      return;
+    }
     _console.log("parseFileMaxLength", dataView);
     const maxLength = dataView.getUint32(0, true);
     _console.log(`maxLength: ${maxLength / 1024}kB`);
@@ -249,7 +264,10 @@ class FileTransferManager {
   get type() {
     return this.#type;
   }
-  #parseType(dataView: DataView<ArrayBuffer>) {
+  #parseType(dataView: DataView<ArrayBuffer>, isSending?: boolean) {
+    if (isSending) {
+      return;
+    }
     _console.log("parseFileType", dataView);
     const typeEnum = dataView.getUint8(0);
     this.#assertValidTypeEnum(typeEnum);
@@ -263,12 +281,34 @@ class FileTransferManager {
   }
   async #setType(newType: FileType, sendImmediately?: boolean) {
     this.#assertValidType(newType);
-    if (this.type == newType) {
+    if (this.type == newType && !this.isClientConnectionType) {
       _console.log(`redundant type assignment ${newType}`);
       return;
     }
 
-    const promise = this.waitForEvent("getFileType");
+    let promise: Promise<any>;
+    if (false) {
+      promise = this.waitForEvent("getFileType");
+    } else {
+      const abortController = new AbortController();
+      promise = new Promise<void>((resolve) => {
+        this.addEventListener(
+          "getFileType",
+          (event) => {
+            const { fileType } = event.message;
+            if (fileType == newType) {
+              abortController.abort();
+              resolve();
+            } else {
+              _console.log(
+                `different fileType "${fileType}" - waiting for "${newType}"`,
+              );
+            }
+          },
+          { signal: abortController.signal },
+        );
+      });
+    }
 
     this.sendMessage(
       [{ type: "setFileType", data: enumToArrayBuffer(FileTypes, newType) }],
@@ -282,8 +322,11 @@ class FileTransferManager {
   get length() {
     return this.#length;
   }
-  #parseLength(dataView: DataView<ArrayBuffer>) {
-    _console.log("parseFileLength", dataView);
+  #parseLength(dataView: DataView<ArrayBuffer>, isSending?: boolean) {
+    if (isSending) {
+      return;
+    }
+    _console.log("parseFileLength", dataView, { isSending });
     const length = dataView.getUint32(0, true);
 
     this.#updateLength(length);
@@ -296,12 +339,35 @@ class FileTransferManager {
   async #setLength(newLength: number, sendImmediately: boolean) {
     _console.assertTypeWithError(newLength, "number");
     this.#assertValidLength(newLength);
-    if (this.length == newLength) {
+    _console.log("#setLength", { newLength, sendImmediately });
+    if (this.length == newLength && !this.isClientConnectionType) {
       _console.log(`redundant length assignment ${newLength}`);
       return;
     }
 
-    const promise = this.waitForEvent("getFileLength");
+    let promise: Promise<any>;
+    if (false) {
+      promise = this.waitForEvent("getFileLength");
+    } else {
+      const abortController = new AbortController();
+      promise = new Promise<void>((resolve) => {
+        this.addEventListener(
+          "getFileLength",
+          (event) => {
+            const { fileLength } = event.message;
+            if (fileLength == newLength) {
+              abortController.abort();
+              resolve();
+            } else {
+              _console.log(
+                `different fileLength "${fileLength}" - waiting for "${newLength}"`,
+              );
+            }
+          },
+          { signal: abortController.signal },
+        );
+      });
+    }
 
     const dataView = new DataView(new ArrayBuffer(4));
     dataView.setUint32(0, newLength, true);
@@ -317,7 +383,10 @@ class FileTransferManager {
   get checksum() {
     return this.#checksum;
   }
-  #parseChecksum(dataView: DataView<ArrayBuffer>) {
+  #parseChecksum(dataView: DataView<ArrayBuffer>, isSending?: boolean) {
+    if (isSending) {
+      return;
+    }
     _console.log("checksum", dataView);
     const checksum = dataView.getUint32(0, true);
     this.#updateChecksum(checksum);
@@ -329,12 +398,35 @@ class FileTransferManager {
   }
   async #setChecksum(newChecksum: number, sendImmediately: boolean) {
     _console.assertTypeWithError(newChecksum, "number");
-    if (this.checksum == newChecksum) {
+    _console.log("#setChecksum", { newChecksum, sendImmediately });
+    if (this.checksum == newChecksum && !this.isClientConnectionType) {
       _console.log(`redundant checksum assignment ${newChecksum}`);
       return;
     }
 
-    const promise = this.waitForEvent("getFileChecksum");
+    let promise: Promise<any>;
+    if (false) {
+      promise = this.waitForEvent("getFileChecksum");
+    } else {
+      const abortController = new AbortController();
+      promise = new Promise<void>((resolve) => {
+        this.addEventListener(
+          "getFileChecksum",
+          (event) => {
+            const { fileChecksum } = event.message;
+            if (fileChecksum == newChecksum) {
+              abortController.abort();
+              resolve();
+            } else {
+              _console.log(
+                `different fileChecksum "${fileChecksum}" - waiting for "${newChecksum}"`,
+              );
+            }
+          },
+          { signal: abortController.signal },
+        );
+      });
+    }
 
     const dataView = new DataView(new ArrayBuffer(4));
     dataView.setUint32(0, newChecksum, true);
@@ -349,7 +441,32 @@ class FileTransferManager {
   async #setCommand(command: FileTransferCommand, sendImmediately?: boolean) {
     this.#assertValidCommand(command);
 
-    const promise = this.waitForEvent("fileTransferStatus");
+    let promise: Promise<any>;
+    if (false) {
+      promise = this.waitForEvent("fileTransferStatus");
+    } else {
+      const abortController = new AbortController();
+      promise = new Promise<void>((resolve) => {
+        this.addEventListener(
+          "fileTransferStatus",
+          (event) => {
+            const { fileTransferStatus } = event.message;
+            const expectedStatus = FileTransferCommandStatusMap[command];
+
+            if (fileTransferStatus == expectedStatus) {
+              abortController.abort();
+              resolve();
+            } else {
+              _console.log(
+                `different fileTransferStatus "${fileTransferStatus}" - waiting for "${expectedStatus}"`,
+              );
+            }
+          },
+          { signal: abortController.signal },
+        );
+      });
+    }
+
     _console.log(`setting command ${command}`);
     this.sendMessage(
       [
@@ -375,7 +492,10 @@ class FileTransferManager {
   get status() {
     return this.#status;
   }
-  #parseStatus(dataView: DataView<ArrayBuffer>) {
+  #parseStatus(dataView: DataView<ArrayBuffer>, isSending?: boolean) {
+    if (isSending) {
+      return;
+    }
     _console.log("parseFileTransferStatus", dataView);
     const statusEnum = dataView.getUint8(0);
     this.#assertValidStatusEnum(statusEnum);
@@ -505,25 +625,25 @@ class FileTransferManager {
 
     switch (messageType) {
       case "getFileTypes":
-        this.#parseFileTypes(dataView);
+        this.#parseFileTypes(dataView, isSending);
         break;
       case "maxFileLength":
-        this.#parseMaxLength(dataView);
+        this.#parseMaxLength(dataView, isSending);
         break;
       case "getFileType":
       case "setFileType":
-        this.#parseType(dataView);
+        this.#parseType(dataView, isSending);
         break;
       case "getFileLength":
       case "setFileLength":
-        this.#parseLength(dataView);
+        this.#parseLength(dataView, isSending);
         break;
       case "getFileChecksum":
       case "setFileChecksum":
-        this.#parseChecksum(dataView);
+        this.#parseChecksum(dataView, isSending);
         break;
       case "fileTransferStatus":
-        this.#parseStatus(dataView);
+        this.#parseStatus(dataView, isSending);
         break;
       case "getFileBlock":
         this.#parseFileBlock(dataView, isSending);
@@ -561,25 +681,26 @@ class FileTransferManager {
 
     let fileBufferWithHeader = await getFileBuffer(file);
     let fileBuffer: ArrayBuffer;
+    let headerLength: number;
     if (includesHeader) {
       const fileDataView = new DataView(fileBufferWithHeader);
 
       let offset = 0;
-      const headerLength = fileDataView.getUint16(offset, true);
+      headerLength = fileDataView.getUint16(offset, true);
       _console.log({ headerLength });
-      this.#headerLength = headerLength;
       // offset += 2; // headerLength includes "headerLength" itself
 
       offset += headerLength;
       fileBuffer = fileBufferWithHeader.slice(offset);
     } else {
-      this.#headerLength = 2;
+      headerLength = 2;
       fileBuffer = fileBufferWithHeader;
       fileBufferWithHeader = concatenateArrayBuffers(
         emptyHeaderDataView.buffer,
         fileBuffer,
       );
     }
+    this.#headerLength = headerLength;
 
     _console.log({
       fileBufferWithHeader,
@@ -598,7 +719,7 @@ class FileTransferManager {
     } else if (checksum != this.checksum) {
       _console.log("different fileChecksums - sending");
     } else {
-      _console.log("already attempted to send file");
+      _console.log("attempted sending similar file");
       // return false;
     }
 
@@ -616,6 +737,11 @@ class FileTransferManager {
 
     await Promise.all(promises);
 
+    if (this.#pendingBufferWithHeader != fileBufferWithHeader) {
+      _console.log("file uploaded early - exiting");
+      return;
+    }
+
     this.#pendingBufferWithHeader = undefined;
 
     if (this.#status != "sending") {
@@ -629,12 +755,16 @@ class FileTransferManager {
       return false;
     }
     if (this.#length != fileLength) {
-      _console.log("wrong fileLength");
+      _console.log(
+        `wrong fileLength - expected ${fileLength}, got ${this.#length}`,
+      );
       await this.cancel();
       return false;
     }
     if (this.#checksum != checksum) {
-      _console.log("wrong checksum");
+      _console.log(
+        `wrong checksum - expected ${checksum}, got ${this.#checksum}`,
+      );
       await this.cancel();
       return false;
     }
@@ -678,15 +808,16 @@ class FileTransferManager {
       }
 
       const file = this.#createFile(this.#pendingBufferWithHeader);
+      const buffer = this.#pendingBufferWithHeader;
+      this.#pendingBufferWithHeader = undefined;
       if (!file) {
         _console.error("no file defined");
         return;
       }
 
       const fileType = partialFileConfiguration.fileType!;
-      const indirectly = true;
+      const indirectly = false;
 
-      const buffer = await file.arrayBuffer();
       fileConfiguration = {
         ...partialFileConfiguration,
         fileType,
@@ -831,14 +962,15 @@ class FileTransferManager {
       file = new Blob([buffer]);
     }
 
+    const headerLength = new DataView(buffer).getUint16(0, true);
     const arrayBufferWithHeader = buffer;
-    const arrayBuffer = arrayBufferWithHeader.slice(this.#headerLength);
+    const arrayBuffer = arrayBufferWithHeader.slice(headerLength);
     const checksum = crc32(arrayBuffer);
     _console.log({
       arrayBufferWithHeader,
       arrayBuffer,
       checksum,
-      headerLength: this.#headerLength,
+      headerLength,
     });
 
     if (checksum != this.#checksum) {
@@ -866,7 +998,11 @@ class FileTransferManager {
         );
       },
     );
-    _console.log("currentFileConfiguration", currentFileConfiguration);
+    _console.log(
+      "currentFileConfiguration",
+      currentFileConfiguration,
+      this.fileConfigurations,
+    );
     return currentFileConfiguration;
   }
   #headerLength?: number;
