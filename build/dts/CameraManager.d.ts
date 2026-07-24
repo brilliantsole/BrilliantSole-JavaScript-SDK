@@ -78,7 +78,7 @@ declare class CameraManager {
         immediate?: boolean;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "isRecordingCamera" | "startRecordingCamera" | "stopRecordingCamera" | "cameraRecording" | "autoPicture", CameraEventMessages, T>>;
     requestRequiredInformation(sendImmediately?: boolean): void;
-    get cameraStatus(): "asleep" | "idle" | "focusing" | "takingPicture";
+    get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
     focus(): Promise<void>;
     takePicture(): Promise<void>;
     stop(): Promise<void>;

@@ -1401,7 +1401,7 @@ class Device {
   }
   #fileTransferManager = new FileTransferManager();
   async #onFileConfiguration(fileConfiguration: ExtendedFileConfiguration) {
-    console.log("#onFileConfiguration", fileConfiguration);
+    _console.log("#onFileConfiguration", fileConfiguration);
     const { fileType, buffer, direction } = fileConfiguration;
     switch (fileType) {
       case "cameraImage":

@@ -111,7 +111,7 @@ declare class FileTransferManager {
     get type(): "cameraImage" | "tflite" | "wifiServerCert" | "wifiServerKey" | "spriteSheet" | undefined;
     get length(): number;
     get checksum(): number;
-    get status(): "idle" | "sending" | "receiving";
+    get status(): "sending" | "receiving" | "idle";
     parseMessage(messageType: FileTransferMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     send(type: FileType, file: FileLike, includesHeader?: boolean): Promise<boolean | undefined>;
     get pendingBufferWithHeader(): ArrayBuffer | undefined;

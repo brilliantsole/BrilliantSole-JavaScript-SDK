@@ -370,7 +370,7 @@ createIframeContainer("../display-text");
 // createIframeContainer("../display-midi");
 // createIframeContainer("../display-prompt");
 // createIframeContainer();
-// createIframeContainer();
+createIframeContainer();
 window.createIframeContainer = createIframeContainer;
 
 BS.ServerManager.clientSensorConfigurationToDeviceGuardManager.add(

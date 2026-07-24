@@ -3069,6 +3069,7 @@ onCurrentDevice(() => {
           displayColorIndex.innerText = `color #${colorIndex}`;
           const displayColorInput =
             displayColorContainer.querySelector("input");
+          displayColorInput.value = currentDevice.displayColors[colorIndex];
           displayColorInput.addEventListener("input", () => {
             setDisplayColor(colorIndex, displayColorInput.value);
             if (colorIndex == fillColorIndex) {
@@ -3114,6 +3115,7 @@ onCurrentDevice(() => {
   );
   currentDevice.addEventListener("displayColor", (event) => {
     const { colorIndex, color, colorHex } = event.message;
+    // console.log({ colorIndex, color });
     displayColorsContainer
       .querySelectorAll(".displayColor")
       [colorIndex].querySelector("input").value = colorHex;

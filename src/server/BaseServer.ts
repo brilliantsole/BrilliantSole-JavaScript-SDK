@@ -457,6 +457,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     client: ServerClient,
     device?: Device,
   ) {
+    _console.log("#getCurrentFileConfigurationSendingToClientDevice", {
+      client,
+      device,
+    });
     const fileConfigurationMaps = device
       ? [this.#clientSentFileConfigurations.get(device)!]
       : this.#clientSentFileConfigurations.values();
@@ -469,6 +473,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       for (const [fileConfiguration, clientMap] of fileConfigurationMap) {
         const state = clientMap.get(client);
         if (state?.initiated && !state.sent) {
+          _console.log(
+            "found currentFileConfigurationSendingToClientDevice",
+            fileConfiguration,
+          );
           return fileConfiguration;
         }
       }
@@ -750,15 +758,15 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
                 {
                   _console.log("client done sending file to device");
                   this.#clientsSendingToDevice.delete(device);
-                  if (false) {
-                    const _deviceMessages = this.#onDoneTransferringFile(
-                      device,
-                      clientSendingToDevice,
-                    );
-                    if (_deviceMessages) {
-                      deviceMessages.push(..._deviceMessages);
-                    }
-                  }
+                  // if (false) {
+                  //   const _deviceMessages = this.#onDoneTransferringFile(
+                  //     device,
+                  //     clientSendingToDevice,
+                  //   );
+                  //   if (_deviceMessages) {
+                  //     deviceMessages.push(..._deviceMessages);
+                  //   }
+                  // }
                 }
                 break;
               default:
@@ -958,7 +966,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       "#onDisplayCanvasHelperDeviceConnected",
       staticDisplayCanvasHelperEvent,
     );
-    this.#onDoneTransferringFile(device, undefined, true);
+    this.#onDoneTransferringFile(device, undefined);
   }
 
   // STATIC DEVICE LISTENERS
@@ -1470,36 +1478,38 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
       });
     return currentSentFileConfiguration;
   }
-  #onDoneTransferringFile(
-    device: Device,
-    client?: ServerClient,
-    sendImmediately?: boolean,
-  ) {
+  #onDoneTransferringFile(device: Device, client?: ServerClient) {
     _console.log("#onDoneTransferringFile", device, client);
 
     if (client) {
-      const _deviceMessages = this.#sendNextFileToClient(device, client);
-      if (_deviceMessages) {
-        return _deviceMessages;
+      const deviceMessages = this.#sendNextFileToClient(device, client);
+      if (deviceMessages) {
+        return deviceMessages;
       }
-    } else {
+    }
+
+    {
       let deviceMessages: DeviceMessage[] | undefined;
-      let client: ServerClient | undefined;
-      this.clients.some((_client) => {
-        deviceMessages = this.#sendNextFileToClient(device, _client);
-        if (deviceMessages) {
-          client = _client;
+      let _client: ServerClient | undefined;
+      this.clients.some((__client) => {
+        if (__client == client) {
+          return false;
         }
-        return Boolean(client);
+        deviceMessages = this.#sendNextFileToClient(device, __client);
+        if (deviceMessages) {
+          _client = __client;
+        }
+        return Boolean(_client);
       });
-      if (deviceMessages && client) {
-        if (sendImmediately) {
+      if (deviceMessages && _client) {
+        if (client == _client) {
+          return deviceMessages;
+        } else {
           this.sendToClient(
-            client,
+            _client,
             this.#createDeviceServerMessage(device, ...deviceMessages),
           );
         }
-        return deviceMessages;
       }
     }
 
@@ -1598,7 +1608,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     );
     const blockLength = block.byteLength;
     _console.log(
-      `sending ${blockLength} bytes [${metadata.bytesTransferred}-${metadata.bytesTransferred + blockLength}]/${metadata.bytesTransferred + blockLength} (${(100 * (metadata.bytesTransferred + blockLength)) / fileConfiguration.buffer.byteLength}%)`,
+      `sending ${blockLength} bytes [${metadata.bytesTransferred}-${metadata.bytesTransferred + blockLength}]/${fileConfiguration.buffer.byteLength} (${(100 * (metadata.bytesTransferred + blockLength)) / fileConfiguration.buffer.byteLength}%)`,
       metadata,
     );
     _console.assertWithError(blockLength > 0, "blockLength cannot be 0");
