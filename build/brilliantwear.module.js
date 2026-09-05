@@ -34074,11 +34074,21 @@ class Device {
             _console$j.assertWithError(this.connectionManager.type == "client", "expected clientConnectionManager");
             if (this.connectionManager.type == "client") {
                 this.connectionManager.subType = options.subType;
-                return this.connectionManager.connect();
             }
         }
         _console$j.log("connectionManager type", this.connectionManager.type);
-        return this.connectionManager.connect();
+        const abortController = new AbortController();
+        const waitForIsConnected = this.waitForEvent("isConnected", {
+            signal: abortController.signal,
+        });
+        const isConnectionManagerConnected = await this.connectionManager.connect();
+        if (isConnectionManagerConnected) {
+            await waitForIsConnected;
+        }
+        else {
+            abortController.abort();
+        }
+        return this.isConnected;
     }
     #isConnected = false;
     get isConnected() {
@@ -34212,7 +34222,9 @@ class Device {
                 this.reconnectOnDisconnection = true;
             }, { once: true });
         }
-        return this.connectionManager.disconnect();
+        const waitForIsConnected = this.waitForEvent("isConnected");
+        this.connectionManager.disconnect();
+        await waitForIsConnected;
     }
     async toggleConnection(arg = true) {
         let options;
