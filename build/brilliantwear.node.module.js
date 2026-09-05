@@ -17271,9 +17271,6 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             addEventListeners(newDevice, this.#boundBluetoothDeviceEventListeners);
         }
         _console$j.log("set device", newDevice);
-        if (this.#device && !newDevice) {
-            this.deviceMap.delete(this.#device);
-        }
         this.#device = newDevice;
     }
     get server() {
@@ -17304,6 +17301,10 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
                 const existingConnectionManager = this.deviceMap.get(device);
                 if (existingConnectionManager) {
                     _console$j.warn("device is already connected", existingConnectionManager);
+                    if (!existingConnectionManager.isConnected &&
+                        existingConnectionManager.canReconnect) {
+                        existingConnectionManager.reconnect();
+                    }
                     return false;
                 }
                 this.device = device;

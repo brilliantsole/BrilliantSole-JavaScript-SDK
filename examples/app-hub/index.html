@@ -121,6 +121,19 @@
     </script>
 
     <script type="module">
+      import * as litSignals from "https://cdn.jsdelivr.net/npm/@lit-labs/signals/+esm";
+      // with {
+      //   integrity: "sha256-29vokUfSDA9f7ch0l1G7D5fogI+fnFXb9zeag/CU+S0=",
+      //   crossOriginStorage: "*",
+      // };
+      console.log("litSignals loaded", litSignals);
+      window.litSignals = litSignals;
+      window.dispatchEvent(
+        new CustomEvent("litSignals-loaded", { detail: litSignals }),
+      );
+    </script>
+
+    <script type="module">
       // import * as BW from "./src/brilliantwear/brilliantwear.module.min.js";
       import * as BW from "../../../build/brilliantwear.module.js";
       // with {

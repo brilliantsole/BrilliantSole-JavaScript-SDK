@@ -71,6 +71,7 @@ export async function waitForGlobals() {
     waitForWindowValue("litKeyed"),
     waitForWindowValue("litRef"),
     waitForWindowValue("litRepeat"),
+    waitForWindowValue("litSignals"),
     waitForWindowValue("BW"),
   ]);
   // console.log("values", values);
@@ -85,6 +86,8 @@ export async function waitForGlobals() {
   const litRef = window.litRef;
   /** @type {import("@lit-labs/router")} */
   const litRouter = window.litRouter;
+  /** @type {import("@lit-labs/signals")} */
+  const litSignals = window.litSignals;
   /** @type {import("@lit/context")} */
   const litContext = window.litContext;
   /** @type {import("lit/directives/repeat.js")} */
@@ -103,5 +106,6 @@ export async function waitForGlobals() {
     litRef,
     litRepeat,
     litStyleMap,
+    litSignals,
   };
 }

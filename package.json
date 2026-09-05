@@ -41,6 +41,7 @@
   "license": "MIT",
   "devDependencies": {
     "@huggingface/transformers": "^4.2.0",
+    "@lit-labs/signals": "^0.3.0",
     "@lit/context": "^1.1.6",
     "@rollup/plugin-commonjs": "^25.0.8",
     "@rollup/plugin-node-resolve": "^15.2.3",

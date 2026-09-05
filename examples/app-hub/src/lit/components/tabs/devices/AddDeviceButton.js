@@ -1,24 +1,25 @@
 import { waitForGlobals } from "../../../../utils/cross-origin-storage-utils.js";
 
-const { lit, BW, litRef } = await waitForGlobals();
+const { lit, BW, litRef, litSignals } = await waitForGlobals();
 
 const { ref, createRef } = litRef;
+const { SignalWatcher, watch, signal } = litSignals;
 
 const { LitElement, html, css } = lit;
 
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/button/button.js";
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/spinner/spinner.js";
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/animation/animation.js";
+
 import { createDisableTransitionsContextConsumer } from "../../../contexts/disableTransitionsContext.js";
 
-class AddDeviceButton extends LitElement {
+/** @type {import("@lit-labs/signals").Signal.State<Boolean>} */
+const isConnecting = signal(false);
+
+class AddDeviceButton extends SignalWatcher(LitElement) {
   createRenderRoot() {
     return this;
   }
-
-  static properties = {
-    isConnecting: { type: Boolean },
-  };
 
   animationRef = createRef();
 
@@ -34,7 +35,7 @@ class AddDeviceButton extends LitElement {
   /** @type {AbortController?} */
   _abortController;
   async _onClick() {
-    if (this.isConnecting) {
+    if (isConnecting.get()) {
       console.log("cancelling existing device connection");
       this._abortController?.abort();
       this._abortController = undefined;
@@ -45,20 +46,20 @@ class AddDeviceButton extends LitElement {
       if (!this.disableTransitions) {
         this.animationRef.value.play = true;
       }
-      this.isConnecting = true;
+      isConnecting.set(true);
 
       const device = await BW.Device.Connect();
     } catch (error) {
       console.error("failed to connect to device", error);
     } finally {
-      this.isConnecting = false;
+      isConnecting.set(false);
       this.animationRef.value.play = false;
       this._abortController = undefined;
     }
   }
 
   render() {
-    const slot = this.isConnecting
+    const slot = isConnecting.get()
       ? html`<wa-spinner slot="start"></wa-spinner>`
       : html`<wa-icon slot="start" name="plus"></wa-icon>`;
     return html`

@@ -99,9 +99,9 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
 
     _console.log("set device", newDevice);
 
-    if (this.#device && !newDevice) {
-      this.deviceMap.delete(this.#device);
-    }
+    // if (this.#device && !newDevice) {
+    //   this.deviceMap.delete(this.#device);
+    // }
     this.#device = newDevice;
   }
 
@@ -143,6 +143,12 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             "device is already connected",
             existingConnectionManager,
           );
+          if (
+            !existingConnectionManager.isConnected &&
+            existingConnectionManager.canReconnect
+          ) {
+            existingConnectionManager.reconnect();
+          }
           return false;
         }
         this.device = device;

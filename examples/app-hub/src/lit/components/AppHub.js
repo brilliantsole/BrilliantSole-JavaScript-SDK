@@ -1475,7 +1475,7 @@ class AppHub extends LitElement {
         _mainOverlayRefs[[value1, value2].join("-")] = createRef();
       });
     });
-    console.log("_mainOverlayRefs", _mainOverlayRefs);
+    // console.log("_mainOverlayRefs", _mainOverlayRefs);
     return _mainOverlayRefs;
   })();
   _updateMainOverlayResizeObservers() {
