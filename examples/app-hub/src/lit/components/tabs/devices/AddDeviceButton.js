@@ -56,7 +56,6 @@ class AddDeviceButton extends SignalWatcher(LitElement) {
       const device = await BW.Device.Connect({
         signal: _abortController.signal,
       });
-      console.log("device", device);
     } catch (error) {
       console.error("failed to connect to device", error);
     } finally {
