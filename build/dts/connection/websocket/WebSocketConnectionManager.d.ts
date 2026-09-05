@@ -1,4 +1,4 @@
-import BaseConnectionManager from "../BaseConnectionManager.ts";
+import BaseConnectionManager, { ConnectionManagerConnectOptions } from "../BaseConnectionManager.ts";
 declare class WebSocketConnectionManager extends BaseConnectionManager {
     #private;
     get bluetoothId(): string;
@@ -15,7 +15,7 @@ declare class WebSocketConnectionManager extends BaseConnectionManager {
     get isSecure(): boolean;
     set isSecure(newIsSecure: boolean);
     get url(): string;
-    connect(): Promise<boolean>;
+    connect(options?: ConnectionManagerConnectOptions): Promise<boolean>;
     disconnect(): Promise<boolean>;
     get canReconnect(): boolean;
     reconnect(): Promise<boolean>;

@@ -3,6 +3,7 @@ import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 import * as noble from "@stoprocent/noble";
 import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs.ts";
 import NobleScanner from "../../scanner/NobleScanner.ts";
+import { ConnectionManagerConnectOptions } from "../BaseConnectionManager.ts";
 interface HasConnectionManager {
     connectionManager: NobleConnectionManager | undefined;
 }
@@ -24,7 +25,7 @@ declare class NobleConnectionManager extends BluetoothConnectionManager {
     static type: "noble";
     readonly type: "noble";
     get isConnected(): boolean;
-    connect(): Promise<boolean>;
+    connect(options?: ConnectionManagerConnectOptions): Promise<boolean>;
     disconnect(): Promise<boolean>;
     writeCharacteristic(characteristicName: BluetoothCharacteristicName, data: ArrayBuffer): Promise<void>;
     get canReconnect(): boolean;

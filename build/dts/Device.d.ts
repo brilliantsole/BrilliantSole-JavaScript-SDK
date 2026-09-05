@@ -61,7 +61,7 @@ declare class Device {
     get canReconnect(): boolean | undefined;
     reconnect(): Promise<boolean | undefined>;
     static get CanConnect(): boolean;
-    static Connect(): Promise<Device | undefined>;
+    static Connect(options?: ConnectOptions): Promise<Device | undefined>;
     static get ReconnectOnDisconnection(): boolean;
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;

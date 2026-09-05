@@ -20,13 +20,14 @@ import {
 } from "./bluetoothUUIDs.ts";
 import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
 type WebBluetoothInterface = webbluetooth.Bluetooth | Bluetooth;
 var bluetooth: WebBluetoothInterface | undefined;
 
 /** NODE_START */
 import * as webbluetooth from "webbluetooth";
+import { ConnectionManagerConnectOptions } from "../BaseConnectionManager.ts";
 /** NODE_END */
 
 /** NODE_START */
@@ -122,8 +123,8 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     return WebBluetoothConnectionManager.#DeviceMap;
   }
 
-  async connect() {
-    const canContinue = super.connect();
+  async connect(options?: ConnectionManagerConnectOptions) {
+    const canContinue = super.connect(options);
     if (!canContinue) {
       return false;
     }
@@ -153,18 +154,29 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         }
         this.device = device;
       }
+      if (this._checkSignalIfAborted()) {
+        return false;
+      }
 
       _console.log("connecting to device...");
       const server = await this.server!.connect();
       _console.log(`connected to device? ${server.connected}`);
 
+      if (this._checkSignalIfAborted()) {
+        return false;
+      }
+
       await this.#getServicesAndCharacteristics();
+      if (this._checkSignalIfAborted()) {
+        return false;
+      }
 
       _console.log("fully connected");
 
       this.deviceMap.set(this.#device!, this);
 
       this.status = "connected";
+
       return true;
     } catch (error) {
       _console.error(error);
@@ -182,6 +194,10 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     _console.log("got services", services.length);
     //const service = await this.server!.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
 
+    if (this._checkSignalIfAborted()) {
+      return;
+    }
+
     _console.log("getting characteristics...");
     for (const serviceIndex in services) {
       const service = services[serviceIndex] as BluetoothService;
@@ -196,6 +212,9 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
       this.#services.set(serviceName, service);
       _console.log(`getting characteristics for "${serviceName}" service`);
       const characteristics = await service.getCharacteristics();
+      if (this._checkSignalIfAborted()) {
+        return;
+      }
       _console.log(`got characteristics for "${serviceName}" service`);
       for (const characteristicIndex in characteristics) {
         const characteristic = characteristics[
@@ -226,10 +245,16 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             `starting notifications for "${characteristicName}" characteristic`,
           );
           await characteristic.startNotifications();
+          if (this._checkSignalIfAborted()) {
+            return;
+          }
         }
         if (characteristicProperties.read) {
           _console.log(`reading "${characteristicName}" characteristic...`);
           await characteristic.readValue();
+          if (this._checkSignalIfAborted()) {
+            return;
+          }
           if (isInBluefy || isInWebBLE) {
             this.#onCharacteristicValueChanged(characteristic);
           }

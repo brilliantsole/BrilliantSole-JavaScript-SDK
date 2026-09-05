@@ -3,6 +3,7 @@ import { isInBrowser } from "../utils/environment.ts";
 import BaseConnectionManager, {
   ConnectionMessageType,
   ClientConnectionType,
+  ConnectionManagerConnectOptions,
 } from "./BaseConnectionManager.ts";
 import { DeviceEventTypes } from "../Device.ts";
 import { parseMessage } from "../utils/ParseUtils.ts";
@@ -85,8 +86,8 @@ class ClientConnectionManager extends BaseConnectionManager {
     return this.client.isConnected;
   }
 
-  async connect() {
-    const canContinue = await super.connect();
+  async connect(options?: ConnectionManagerConnectOptions) {
+    const canContinue = await super.connect(options);
     if (!canContinue) {
       return false;
     }

@@ -13,6 +13,7 @@ import {
 import { parseMessage } from "../../utils/ParseUtils.ts";
 import { Timer } from "../../utils/Timer.ts";
 import BaseConnectionManager, {
+  ConnectionManagerConnectOptions,
   ConnectionType,
 } from "../BaseConnectionManager.ts";
 
@@ -240,8 +241,8 @@ class UDPConnectionManager extends BaseConnectionManager {
   }
 
   // CONNECTION
-  async connect() {
-    const canContinue = await super.connect();
+  async connect(options?: ConnectionManagerConnectOptions) {
+    const canContinue = await super.connect(options);
     if (!canContinue) {
       return false;
     }

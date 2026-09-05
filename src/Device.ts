@@ -651,7 +651,9 @@ class Device {
     const waitForIsConnected = this.waitForEvent("isConnected", {
       signal: abortController.signal,
     });
-    const isConnectionManagerConnected = await this.connectionManager.connect();
+    const isConnectionManagerConnected =
+      await this.connectionManager.connect(options);
+    console.log({ isConnectionManagerConnected });
     if (isConnectionManagerConnected) {
       await waitForIsConnected;
     } else {
@@ -774,13 +776,16 @@ class Device {
   static get CanConnect() {
     return WebBluetoothConnectionManager.isSupported;
   }
-  static async Connect() {
+  static async Connect(options?: ConnectOptions) {
     _console.assertWithError(
       this.CanConnect,
       `can't connect to any device - must connect to discovered device`,
     );
     const device = new Device();
-    const isConnected = await device.connect();
+    const isConnected = await device.connect({
+      type: "webBluetooth",
+      ...options,
+    });
     if (isConnected) {
       return device;
     }

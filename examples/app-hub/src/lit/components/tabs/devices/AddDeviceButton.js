@@ -16,6 +16,9 @@ import { createDisableTransitionsContextConsumer } from "../../../contexts/disab
 /** @type {import("@lit-labs/signals").Signal.State<Boolean>} */
 const isConnecting = signal(false);
 
+/** @type {import("@lit-labs/signals").Signal.State<AbortController?>} */
+const abortController = signal();
+
 class AddDeviceButton extends SignalWatcher(LitElement) {
   createRenderRoot() {
     return this;
@@ -32,13 +35,12 @@ class AddDeviceButton extends SignalWatcher(LitElement) {
     return this._disableTransitionsState.disableTransitions;
   }
 
-  /** @type {AbortController?} */
-  _abortController;
   async _onClick() {
-    if (isConnecting.get()) {
+    const _abortController = abortController.get();
+    if (_abortController) {
       console.log("cancelling existing device connection");
-      this._abortController?.abort();
-      this._abortController = undefined;
+      _abortController.abort();
+      abortController.set();
       return;
     }
 
@@ -48,13 +50,19 @@ class AddDeviceButton extends SignalWatcher(LitElement) {
       }
       isConnecting.set(true);
 
-      const device = await BW.Device.Connect();
+      const _abortController = new AbortController();
+      abortController.set(_abortController);
+
+      const device = await BW.Device.Connect({
+        signal: _abortController.signal,
+      });
+      console.log("device", device);
     } catch (error) {
       console.error("failed to connect to device", error);
     } finally {
       isConnecting.set(false);
       this.animationRef.value.play = false;
-      this._abortController = undefined;
+      abortController.set();
     }
   }
 

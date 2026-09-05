@@ -795,7 +795,9 @@ interface NobleConnectOptions extends BaseConnectOptions {
 }
 type ConnectOptions = {
     reconnect?: boolean;
+    signal?: AbortSignal;
 } & (WebBluetoothConnectOptions | WebSocketConnectOptions | UDPConnectOptions | ClientConnectOptions | NobleConnectOptions);
+type ConnectionManagerConnectOptions = ConnectOptions;
 declare const ConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 type ConnectionStatus = (typeof ConnectionStatuses)[number];
 declare const ConnectionEventTypes: readonly ["notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected"];
@@ -850,7 +852,9 @@ declare abstract class BaseConnectionManager {
     protected assertIsConnected(): void;
     /** @throws {Error} if not connected or is disconnecting */
     assertIsConnectedAndNotDisconnecting(): void;
-    connect(): Promise<boolean>;
+    private _signal?;
+    protected _checkSignalIfAborted(disconnectIfAborted?: boolean): boolean;
+    connect(options?: ConnectionManagerConnectOptions): Promise<boolean>;
     get canReconnect(): boolean;
     reconnect(): Promise<boolean>;
     disconnect(): Promise<boolean>;
@@ -2303,7 +2307,7 @@ declare class ClientConnectionManager extends BaseConnectionManager {
     get isConnected(): boolean;
     set isConnected(newIsConnected: boolean);
     get isAvailable(): boolean;
-    connect(): Promise<boolean>;
+    connect(options?: ConnectionManagerConnectOptions): Promise<boolean>;
     disconnect(): Promise<boolean>;
     get canReconnect(): boolean;
     reconnect(): Promise<boolean>;
@@ -2339,7 +2343,7 @@ declare class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     get server(): BluetoothRemoteGATTServer | undefined;
     get isConnected(): boolean;
     get deviceMap(): Map<BluetoothDevice, WebBluetoothConnectionManager>;
-    connect(): Promise<boolean>;
+    connect(options?: ConnectionManagerConnectOptions): Promise<boolean>;
     disconnect(): Promise<boolean>;
     writeCharacteristic(characteristicName: BluetoothCharacteristicName, data: ArrayBuffer): Promise<void>;
     get canReconnect(): boolean;
@@ -2363,7 +2367,7 @@ declare class WebSocketConnectionManager extends BaseConnectionManager {
     get isSecure(): boolean;
     set isSecure(newIsSecure: boolean);
     get url(): string;
-    connect(): Promise<boolean>;
+    connect(options?: ConnectionManagerConnectOptions): Promise<boolean>;
     disconnect(): Promise<boolean>;
     get canReconnect(): boolean;
     reconnect(): Promise<boolean>;
@@ -2473,7 +2477,7 @@ declare class Device {
     get canReconnect(): boolean | undefined;
     reconnect(): Promise<boolean | undefined>;
     static get CanConnect(): boolean;
-    static Connect(): Promise<Device | undefined>;
+    static Connect(options?: ConnectOptions): Promise<Device | undefined>;
     static get ReconnectOnDisconnection(): boolean;
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;

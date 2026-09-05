@@ -1,5 +1,6 @@
 import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs.ts";
 import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
+import { ConnectionManagerConnectOptions } from "../BaseConnectionManager.ts";
 export interface BluetoothService extends BluetoothRemoteGATTService {
     name?: BluetoothServiceName;
 }
@@ -18,7 +19,7 @@ declare class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     get server(): BluetoothRemoteGATTServer | undefined;
     get isConnected(): boolean;
     get deviceMap(): Map<BluetoothDevice, WebBluetoothConnectionManager>;
-    connect(): Promise<boolean>;
+    connect(options?: ConnectionManagerConnectOptions): Promise<boolean>;
     disconnect(): Promise<boolean>;
     writeCharacteristic(characteristicName: BluetoothCharacteristicName, data: ArrayBuffer): Promise<void>;
     get canReconnect(): boolean;

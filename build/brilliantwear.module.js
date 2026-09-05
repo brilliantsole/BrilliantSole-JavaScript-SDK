@@ -31767,7 +31767,7 @@ createServerMessage("startScan");
 createServerMessage("stopScan");
 createServerMessage("discoveredDevices");
 
-const _console$s = createConsole("BaseConnectionManager", { log: false });
+const _console$s = createConsole("BaseConnectionManager", { log: true });
 const ConnectionTypes = [
     "webBluetooth",
     "noble",
@@ -31859,6 +31859,7 @@ class BaseConnectionManager {
         }
         if (this.#status == "notConnected") {
             this.mtu = this.defaultMtu;
+            this.signal = undefined;
         }
     }
     get isConnected() {
@@ -31883,7 +31884,20 @@ class BaseConnectionManager {
         this.assertIsConnected();
         this.#assertIsNotDisconnecting();
     }
-    async connect() {
+    _signal;
+    _checkSignalIfAborted(disconnectIfAborted = true) {
+        if (this._signal?.aborted) {
+            _console$s.log("signal was aborted - disconnecting", {
+                disconnectIfAborted,
+            });
+            if (disconnectIfAborted) {
+                this.disconnect();
+            }
+            return true;
+        }
+        return false;
+    }
+    async connect(options) {
         if (this.isConnected) {
             _console$s.log("already connected");
             return false;
@@ -31892,6 +31906,7 @@ class BaseConnectionManager {
             _console$s.log("already connecting");
             return false;
         }
+        this._signal = options?.signal;
         this.status = "connecting";
         return true;
     }
@@ -32253,7 +32268,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
     }
 }
 
-const _console$k = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console$l = createConsole("WebBluetoothConnectionManager", { log: true });
 var bluetooth;
 if (isInBrowser) {
     bluetooth = window.navigator.bluetooth;
@@ -32283,7 +32298,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     set device(newDevice) {
         if (this.#device == newDevice) {
             if (this.#device) {
-                _console$k.log("tried to assign the same BluetoothDevice");
+                _console$l.log("tried to assign the same BluetoothDevice");
             }
             return;
         }
@@ -32293,7 +32308,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         if (newDevice) {
             addEventListeners(newDevice, this.#boundBluetoothDeviceEventListeners);
         }
-        _console$k.log("set device", newDevice);
+        _console$l.log("set device", newDevice);
         this.#device = newDevice;
     }
     get server() {
@@ -32308,8 +32323,8 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     get deviceMap() {
         return WebBluetoothConnectionManager.#DeviceMap;
     }
-    async connect() {
-        const canContinue = super.connect();
+    async connect(options) {
+        const canContinue = super.connect(options);
         if (!canContinue) {
             return false;
         }
@@ -32320,10 +32335,10 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
                     filters: [{ services: serviceUUIDs }],
                     optionalServices: isInBrowser ? optionalServiceUUIDs : [],
                 });
-                _console$k.log("got BluetoothDevice", device);
+                _console$l.log("got BluetoothDevice", device);
                 const existingConnectionManager = this.deviceMap.get(device);
                 if (existingConnectionManager) {
-                    _console$k.warn("device is already connected", existingConnectionManager);
+                    _console$l.warn("device is already connected", existingConnectionManager);
                     if (!existingConnectionManager.isConnected &&
                         existingConnectionManager.canReconnect) {
                         existingConnectionManager.reconnect();
@@ -32332,17 +32347,26 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
                 }
                 this.device = device;
             }
-            _console$k.log("connecting to device...");
+            if (this._checkSignalIfAborted()) {
+                return false;
+            }
+            _console$l.log("connecting to device...");
             const server = await this.server.connect();
-            _console$k.log(`connected to device? ${server.connected}`);
+            _console$l.log(`connected to device? ${server.connected}`);
+            if (this._checkSignalIfAborted()) {
+                return false;
+            }
             await this.#getServicesAndCharacteristics();
-            _console$k.log("fully connected");
+            if (this._checkSignalIfAborted()) {
+                return false;
+            }
+            _console$l.log("fully connected");
             this.deviceMap.set(this.#device, this);
             this.status = "connected";
             return true;
         }
         catch (error) {
-            _console$k.error(error);
+            _console$l.error(error);
             this.status = "notConnected";
             this.server?.disconnect();
             this.device = undefined;
@@ -32351,39 +32375,51 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     }
     async #getServicesAndCharacteristics() {
         this.#removeEventListeners();
-        _console$k.log("getting services...");
+        _console$l.log("getting services...");
         const services = await this.server.getPrimaryServices();
-        _console$k.log("got services", services.length);
-        _console$k.log("getting characteristics...");
+        _console$l.log("got services", services.length);
+        if (this._checkSignalIfAborted()) {
+            return;
+        }
+        _console$l.log("getting characteristics...");
         for (const serviceIndex in services) {
             const service = services[serviceIndex];
-            _console$k.log({ service });
+            _console$l.log({ service });
             const serviceName = getServiceNameFromUUID(service.uuid);
-            _console$k.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-            _console$k.log(`got "${serviceName}" service`);
+            _console$l.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console$l.log(`got "${serviceName}" service`);
             service.name = serviceName;
             this.#services.set(serviceName, service);
-            _console$k.log(`getting characteristics for "${serviceName}" service`);
+            _console$l.log(`getting characteristics for "${serviceName}" service`);
             const characteristics = await service.getCharacteristics();
-            _console$k.log(`got characteristics for "${serviceName}" service`);
+            if (this._checkSignalIfAborted()) {
+                return;
+            }
+            _console$l.log(`got characteristics for "${serviceName}" service`);
             for (const characteristicIndex in characteristics) {
                 const characteristic = characteristics[characteristicIndex];
-                _console$k.log({ characteristic });
+                _console$l.log({ characteristic });
                 const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-                _console$k.assertWithError(Boolean(characteristicName), `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`);
-                _console$k.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+                _console$l.assertWithError(Boolean(characteristicName), `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`);
+                _console$l.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
                 characteristic.name = characteristicName;
                 this.#characteristics.set(characteristicName, characteristic);
                 addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
                 const characteristicProperties = characteristic.properties ||
                     getCharacteristicProperties(characteristicName);
                 if (characteristicProperties.notify) {
-                    _console$k.log(`starting notifications for "${characteristicName}" characteristic`);
+                    _console$l.log(`starting notifications for "${characteristicName}" characteristic`);
                     await characteristic.startNotifications();
+                    if (this._checkSignalIfAborted()) {
+                        return;
+                    }
                 }
                 if (characteristicProperties.read) {
-                    _console$k.log(`reading "${characteristicName}" characteristic...`);
+                    _console$l.log(`reading "${characteristicName}" characteristic...`);
                     await characteristic.readValue();
+                    if (this._checkSignalIfAborted()) {
+                        return;
+                    }
                     if (isInBluefy || isInWebBLE) {
                         this.#onCharacteristicValueChanged(characteristic);
                     }
@@ -32401,7 +32437,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             const characteristicProperties = characteristic.properties ||
                 getCharacteristicProperties(characteristicName);
             if (characteristicProperties.notify) {
-                _console$k.log(`stopping notifications for "${characteristicName}" characteristic`);
+                _console$l.log(`stopping notifications for "${characteristicName}" characteristic`);
                 return characteristic.stopNotifications();
             }
         });
@@ -32418,43 +32454,43 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         return true;
     }
     #onCharacteristicvaluechanged(event) {
-        _console$k.log("oncharacteristicvaluechanged");
+        _console$l.log("oncharacteristicvaluechanged");
         const characteristic = event.target;
         this.#onCharacteristicValueChanged(characteristic);
     }
     #onCharacteristicValueChanged(characteristic) {
-        _console$k.log("onCharacteristicValue");
+        _console$l.log("onCharacteristicValue");
         const characteristicName = characteristic.name;
-        _console$k.assertWithError(Boolean(characteristicName), `no name found for characteristic with uuid "${characteristic.uuid}"`);
-        _console$k.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
+        _console$l.assertWithError(Boolean(characteristicName), `no name found for characteristic with uuid "${characteristic.uuid}"`);
+        _console$l.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
         const dataView = characteristic.value;
-        _console$k.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-        _console$k.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+        _console$l.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+        _console$l.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
         try {
             this.onCharacteristicValueChanged(characteristicName, dataView);
         }
         catch (error) {
-            _console$k.error(error);
+            _console$l.error(error);
         }
     }
     async writeCharacteristic(characteristicName, data) {
         super.writeCharacteristic(characteristicName, data);
         const characteristic = this.#characteristics.get(characteristicName);
-        _console$k.assertWithError(characteristic, `${characteristicName} characteristic not found`);
-        _console$k.log("writing characteristic", characteristic, data);
+        _console$l.assertWithError(characteristic, `${characteristicName} characteristic not found`);
+        _console$l.log("writing characteristic", characteristic, data);
         const characteristicProperties = characteristic.properties ||
             getCharacteristicProperties(characteristicName);
         if (characteristicProperties.writeWithoutResponse) {
-            _console$k.log("writing without response");
+            _console$l.log("writing without response");
             await characteristic.writeValueWithoutResponse(data);
         }
         else {
-            _console$k.log("writing with response");
+            _console$l.log("writing with response");
             await characteristic.writeValueWithResponse(data);
         }
-        _console$k.log("wrote characteristic");
+        _console$l.log("wrote characteristic");
         if (characteristicProperties.read && !characteristicProperties.notify) {
-            _console$k.log("reading value after write...");
+            _console$l.log("reading value after write...");
             await characteristic.readValue();
             if (isInBluefy || isInWebBLE) {
                 this.#onCharacteristicValueChanged(characteristic);
@@ -32462,7 +32498,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         }
     }
     #onGattserverdisconnected() {
-        _console$k.log("gattserverdisconnected");
+        _console$l.log("gattserverdisconnected");
         this.status = "notConnected";
     }
     get canReconnect() {
@@ -32477,18 +32513,18 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             await this.server.connect();
         }
         catch (error) {
-            _console$k.error(error);
+            _console$l.error(error);
             this.isInRange = false;
             return false;
         }
         if (this.isConnected) {
-            _console$k.log("successfully reconnected!");
+            _console$l.log("successfully reconnected!");
             await this.#getServicesAndCharacteristics();
             this.status = "connected";
             return true;
         }
         else {
-            _console$k.log("unable to reconnect");
+            _console$l.log("unable to reconnect");
             this.status = "notConnected";
             return false;
         }
@@ -33476,7 +33512,7 @@ function createWebSocketMessage$1(...messages) {
 const webSocketPingMessage = createWebSocketMessage$1("ping");
 const webSocketPongMessage = createWebSocketMessage$1("pong");
 
-const _console$l = createConsole("WebSocketConnectionManager", { log: false });
+const _console$k = createConsole("WebSocketConnectionManager", { log: false });
 const WebSocketMessageTypes = [
     "ping",
     "pong",
@@ -33485,7 +33521,7 @@ const WebSocketMessageTypes = [
     "message",
 ];
 function createWebSocketMessage(...messages) {
-    _console$l.log("createWebSocketMessage", ...messages);
+    _console$k.log("createWebSocketMessage", ...messages);
     return createMessage(WebSocketMessageTypes, true, ...messages);
 }
 const WebSocketDeviceInformationMessageTypes = [
@@ -33519,10 +33555,10 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     }
     set webSocket(newWebSocket) {
         if (this.#webSocket == newWebSocket) {
-            _console$l.log("redundant webSocket assignment");
+            _console$k.log("redundant webSocket assignment");
             return;
         }
-        _console$l.log("assigning webSocket", newWebSocket);
+        _console$k.log("assigning webSocket", newWebSocket);
         if (this.#webSocket) {
             removeEventListeners(this.#webSocket, this.#boundWebSocketEventListeners);
             if (this.#webSocket.readyState == this.#webSocket.OPEN) {
@@ -33533,7 +33569,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
             addEventListeners(newWebSocket, this.#boundWebSocketEventListeners);
         }
         this.#webSocket = newWebSocket;
-        _console$l.log("assigned webSocket");
+        _console$k.log("assigned webSocket");
     }
     #ipAddress;
     get ipAddress() {
@@ -33542,11 +33578,11 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     set ipAddress(newIpAddress) {
         this.assertIsNotConnected();
         if (this.#ipAddress == newIpAddress) {
-            _console$l.log(`redundnant ipAddress assignment "${newIpAddress}"`);
+            _console$k.log(`redundnant ipAddress assignment "${newIpAddress}"`);
             return;
         }
         this.#ipAddress = newIpAddress;
-        _console$l.log(`updated ipAddress to "${this.ipAddress}"`);
+        _console$k.log(`updated ipAddress to "${this.ipAddress}"`);
     }
     #isSecure = false;
     get isSecure() {
@@ -33555,17 +33591,17 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     set isSecure(newIsSecure) {
         this.assertIsNotConnected();
         if (this.#isSecure == newIsSecure) {
-            _console$l.log(`redundant isSecure assignment ${newIsSecure}`);
+            _console$k.log(`redundant isSecure assignment ${newIsSecure}`);
             return;
         }
         this.#isSecure = newIsSecure;
-        _console$l.log(`updated isSecure to "${this.isSecure}"`);
+        _console$k.log(`updated isSecure to "${this.isSecure}"`);
     }
     get url() {
         return `${this.isSecure ? "wss" : "ws"}://${this.ipAddress}/ws`;
     }
-    async connect() {
-        const canContinue = await super.connect();
+    async connect(options) {
+        const canContinue = await super.connect(options);
         if (!canContinue) {
             return false;
         }
@@ -33574,7 +33610,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
             return true;
         }
         catch (error) {
-            _console$l.error("error connecting to webSocket", error);
+            _console$k.error("error connecting to webSocket", error);
             this.status = "notConnected";
             return false;
         }
@@ -33584,7 +33620,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
         if (!canContinue) {
             return false;
         }
-        _console$l.log("closing websocket");
+        _console$k.log("closing websocket");
         this.#pingTimer.stop();
         this.#webSocket?.close();
         return true;
@@ -33602,7 +33638,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     }
     async sendSmpMessage(data) {
         super.sendSmpMessage(data);
-        _console$l.error("smp not supported on webSockets");
+        _console$k.error("smp not supported on webSockets");
     }
     async sendTxData(data) {
         await super.sendTxData(data);
@@ -33613,7 +33649,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     }
     #sendMessage(message) {
         this.assertIsConnected();
-        _console$l.log("sending webSocket message", message);
+        _console$k.log("sending webSocket message", message);
         this.#webSocket.send(message);
         this.#pingTimer.restart();
     }
@@ -33627,7 +33663,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
         error: this.#onWebSocketError.bind(this),
     };
     #onWebSocketOpen(event) {
-        _console$l.log("webSocket.open", event);
+        _console$k.log("webSocket.open", event);
         this.#pingTimer.start();
         this.status = "connected";
         this.#requestDeviceInformation();
@@ -33635,22 +33671,22 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     async #onWebSocketMessage(event) {
         const arrayBuffer = await event.data.arrayBuffer();
         const dataView = new DataView(arrayBuffer);
-        _console$l.log(`webSocket.message (${dataView.byteLength} bytes)`);
+        _console$k.log(`webSocket.message (${dataView.byteLength} bytes)`);
         this.#parseWebSocketMessage(dataView);
     }
     #onWebSocketClose(event) {
-        _console$l.log("webSocket.close", event);
+        _console$k.log("webSocket.close", event);
         this.status = "notConnected";
         this.#pingTimer.stop();
     }
     #onWebSocketError(event) {
-        _console$l.error("webSocket.error", event);
+        _console$k.error("webSocket.error", event);
     }
     #parseWebSocketMessage(dataView) {
         parseMessage(dataView, WebSocketMessageTypes, this.#onMessage.bind(this), null, true);
     }
     #onMessage(messageType, dataView) {
-        _console$l.log(`received "${messageType}" message (${dataView.byteLength} bytes)`);
+        _console$k.log(`received "${messageType}" message (${dataView.byteLength} bytes)`);
         switch (messageType) {
             case "ping":
                 this.#pong();
@@ -33669,17 +33705,17 @@ class WebSocketConnectionManager extends BaseConnectionManager {
                 this.parseRxMessage(dataView);
                 break;
             default:
-                _console$l.error(`uncaught messageType "${messageType}"`);
+                _console$k.error(`uncaught messageType "${messageType}"`);
                 break;
         }
     }
     #pingTimer = new Timer(this.#ping.bind(this), webSocketPingTimeout - 1_000);
     #ping() {
-        _console$l.log("pinging");
+        _console$k.log("pinging");
         this.#sendWebSocketMessage("ping");
     }
     #pong() {
-        _console$l.log("ponging");
+        _console$k.log("ponging");
         this.#sendWebSocketMessage("pong");
     }
     #requestDeviceInformation() {
@@ -34081,7 +34117,8 @@ class Device {
         const waitForIsConnected = this.waitForEvent("isConnected", {
             signal: abortController.signal,
         });
-        const isConnectionManagerConnected = await this.connectionManager.connect();
+        const isConnectionManagerConnected = await this.connectionManager.connect(options);
+        console.log({ isConnectionManagerConnected });
         if (isConnectionManagerConnected) {
             await waitForIsConnected;
         }
@@ -34179,10 +34216,13 @@ class Device {
     static get CanConnect() {
         return WebBluetoothConnectionManager.isSupported;
     }
-    static async Connect() {
+    static async Connect(options) {
         _console$j.assertWithError(this.CanConnect, `can't connect to any device - must connect to discovered device`);
         const device = new _a$3();
-        const isConnected = await device.connect();
+        const isConnected = await device.connect({
+            type: "webBluetooth",
+            ...options,
+        });
         if (isConnected) {
             return device;
         }
@@ -36276,8 +36316,8 @@ class ClientConnectionManager extends BaseConnectionManager {
     get isAvailable() {
         return this.client.isConnected;
     }
-    async connect() {
-        const canContinue = await super.connect();
+    async connect(options) {
+        const canContinue = await super.connect(options);
         if (!canContinue) {
             return false;
         }

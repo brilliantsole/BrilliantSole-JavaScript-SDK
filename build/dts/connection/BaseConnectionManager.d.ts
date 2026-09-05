@@ -28,7 +28,9 @@ export interface NobleConnectOptions extends BaseConnectOptions {
 }
 export type ConnectOptions = {
     reconnect?: boolean;
+    signal?: AbortSignal;
 } & (WebBluetoothConnectOptions | WebSocketConnectOptions | UDPConnectOptions | ClientConnectOptions | NobleConnectOptions);
+export type ConnectionManagerConnectOptions = ConnectOptions;
 export declare const ConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 export type ConnectionStatus = (typeof ConnectionStatuses)[number];
 export declare const ConnectionEventTypes: readonly ["notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected"];
@@ -89,7 +91,9 @@ declare abstract class BaseConnectionManager {
     protected assertIsConnected(): void;
     /** @throws {Error} if not connected or is disconnecting */
     assertIsConnectedAndNotDisconnecting(): void;
-    connect(): Promise<boolean>;
+    private _signal?;
+    protected _checkSignalIfAborted(disconnectIfAborted?: boolean): boolean;
+    connect(options?: ConnectionManagerConnectOptions): Promise<boolean>;
     get canReconnect(): boolean;
     reconnect(): Promise<boolean>;
     disconnect(): Promise<boolean>;

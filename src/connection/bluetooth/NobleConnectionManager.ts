@@ -37,6 +37,7 @@ import {
   BluetoothServiceName,
 } from "./bluetoothUUIDs.ts";
 import NobleScanner from "../../scanner/NobleScanner.ts";
+import { ConnectionManagerConnectOptions } from "../BaseConnectionManager.ts";
 
 interface HasConnectionManager {
   connectionManager: NobleConnectionManager | undefined;
@@ -74,8 +75,8 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     return this.#noblePeripheral?.state == "connected";
   }
 
-  async connect() {
-    const canConnect = await super.connect();
+  async connect(options?: ConnectionManagerConnectOptions) {
+    const canConnect = await super.connect(options);
     _console.log({ canConnect });
     if (!canConnect) {
       return false;

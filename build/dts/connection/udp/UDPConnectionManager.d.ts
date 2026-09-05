@@ -1,4 +1,4 @@
-import BaseConnectionManager from "../BaseConnectionManager.ts";
+import BaseConnectionManager, { ConnectionManagerConnectOptions } from "../BaseConnectionManager.ts";
 import * as dgram from "dgram";
 export declare const UDPSendPort = 3000;
 export declare const UDPPingInterval = 2000;
@@ -19,7 +19,7 @@ declare class UDPConnectionManager extends BaseConnectionManager {
     set socket(newSocket: dgram.Socket | undefined);
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
     sendTxData(data: ArrayBuffer): Promise<void>;
-    connect(): Promise<boolean>;
+    connect(options?: ConnectionManagerConnectOptions): Promise<boolean>;
     disconnect(): Promise<boolean>;
     get canReconnect(): boolean;
     reconnect(): Promise<boolean>;

@@ -19,7 +19,7 @@ import { DisplayMessageTypes } from "../DisplayManager.ts";
 import { LedMessageTypes } from "../led/LedManager.ts";
 import { createMessage } from "../server/ServerUtils.ts";
 
-const _console = createConsole("BaseConnectionManager", { log: false });
+const _console = createConsole("BaseConnectionManager", { log: true });
 
 export const ConnectionTypes = [
   "webBluetooth",
@@ -59,13 +59,18 @@ export interface NobleConnectOptions extends BaseConnectOptions {
   type: "noble";
 }
 
-export type ConnectOptions = { reconnect?: boolean } & (
+export type ConnectOptions = {
+  reconnect?: boolean;
+  signal?: AbortSignal;
+} & (
   | WebBluetoothConnectOptions
   | WebSocketConnectOptions
   | UDPConnectOptions
   | ClientConnectOptions
   | NobleConnectOptions
 );
+
+export type ConnectionManagerConnectOptions = ConnectOptions;
 
 export const ConnectionStatuses = [
   "notConnected",
@@ -211,6 +216,7 @@ abstract class BaseConnectionManager {
 
     if (this.#status == "notConnected") {
       this.mtu = this.defaultMtu;
+      this.signal = undefined;
     }
   }
 
@@ -250,7 +256,20 @@ abstract class BaseConnectionManager {
     this.#assertIsNotDisconnecting();
   }
 
-  async connect() {
+  private _signal?: AbortSignal;
+  protected _checkSignalIfAborted(disconnectIfAborted = true) {
+    if (this._signal?.aborted) {
+      _console.log("signal was aborted - disconnecting", {
+        disconnectIfAborted,
+      });
+      if (disconnectIfAborted) {
+        this.disconnect();
+      }
+      return true;
+    }
+    return false;
+  }
+  async connect(options?: ConnectionManagerConnectOptions) {
     if (this.isConnected) {
       _console.log("already connected");
       return false;
@@ -259,6 +278,7 @@ abstract class BaseConnectionManager {
       _console.log("already connecting");
       return false;
     }
+    this._signal = options?.signal;
     // this.assertIsNotConnected();
     // this.#assertIsNotConnecting();
     this.status = "connecting";
