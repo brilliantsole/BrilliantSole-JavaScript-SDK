@@ -49,6 +49,7 @@ declare abstract class BaseScanner {
     get removeEventListener(): <T extends "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseScanner, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning", ScannerEventMessages, T>) => void) => void;
     get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, options?: {
         immediate?: boolean;
+        signal?: AbortSignal;
     }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<BaseScanner, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning", ScannerEventMessages, T>>;
     get isScanningAvailable(): boolean;
     get isScanning(): boolean;

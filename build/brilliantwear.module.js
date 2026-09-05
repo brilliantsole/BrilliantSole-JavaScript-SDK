@@ -374,6 +374,7 @@ class EventDispatcher {
             this.addEventListener(type, resolve, {
                 once: true,
                 immediate: options.immediate,
+                signal: options.signal,
             });
         });
     }
@@ -32252,7 +32253,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
     }
 }
 
-const _console$p = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console$k = createConsole("WebBluetoothConnectionManager", { log: false });
 var bluetooth;
 if (isInBrowser) {
     bluetooth = window.navigator.bluetooth;
@@ -32281,7 +32282,9 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     }
     set device(newDevice) {
         if (this.#device == newDevice) {
-            _console$p.log("tried to assign the same BluetoothDevice");
+            if (this.#device) {
+                _console$k.log("tried to assign the same BluetoothDevice");
+            }
             return;
         }
         if (this.#device) {
@@ -32289,6 +32292,10 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         }
         if (newDevice) {
             addEventListeners(newDevice, this.#boundBluetoothDeviceEventListeners);
+        }
+        _console$k.log("set device", newDevice);
+        if (this.#device && !newDevice) {
+            this.deviceMap.delete(this.#device);
         }
         this.#device = newDevice;
     }
@@ -32300,68 +32307,81 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     }
     #services = new Map();
     #characteristics = new Map();
+    static #DeviceMap = new Map();
+    get deviceMap() {
+        return WebBluetoothConnectionManager.#DeviceMap;
+    }
     async connect() {
         const canContinue = super.connect();
         if (!canContinue) {
             return false;
         }
         try {
-            const device = await bluetooth.requestDevice({
-                filters: [{ services: serviceUUIDs }],
-                optionalServices: isInBrowser ? optionalServiceUUIDs : [],
-            });
-            _console$p.log("got BluetoothDevice", device);
-            this.device = device;
-            _console$p.log("connecting to device...");
+            let device = this.device;
+            if (!device) {
+                device = await bluetooth.requestDevice({
+                    filters: [{ services: serviceUUIDs }],
+                    optionalServices: isInBrowser ? optionalServiceUUIDs : [],
+                });
+                _console$k.log("got BluetoothDevice", device);
+                const existingConnectionManager = this.deviceMap.get(device);
+                if (existingConnectionManager) {
+                    _console$k.warn("device is already connected", existingConnectionManager);
+                    return false;
+                }
+                this.device = device;
+            }
+            _console$k.log("connecting to device...");
             const server = await this.server.connect();
-            _console$p.log(`connected to device? ${server.connected}`);
+            _console$k.log(`connected to device? ${server.connected}`);
             await this.#getServicesAndCharacteristics();
-            _console$p.log("fully connected");
+            _console$k.log("fully connected");
+            this.deviceMap.set(this.#device, this);
             this.status = "connected";
             return true;
         }
         catch (error) {
-            _console$p.error(error);
+            _console$k.error(error);
             this.status = "notConnected";
             this.server?.disconnect();
-            await this.#removeEventListeners();
+            this.device = undefined;
             return false;
         }
     }
     async #getServicesAndCharacteristics() {
         this.#removeEventListeners();
-        _console$p.log("getting services...");
+        _console$k.log("getting services...");
         const services = await this.server.getPrimaryServices();
-        _console$p.log("got services", services.length);
-        _console$p.log("getting characteristics...");
+        _console$k.log("got services", services.length);
+        _console$k.log("getting characteristics...");
         for (const serviceIndex in services) {
             const service = services[serviceIndex];
-            _console$p.log({ service });
+            _console$k.log({ service });
             const serviceName = getServiceNameFromUUID(service.uuid);
-            _console$p.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-            _console$p.log(`got "${serviceName}" service`);
+            _console$k.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console$k.log(`got "${serviceName}" service`);
             service.name = serviceName;
             this.#services.set(serviceName, service);
-            _console$p.log(`getting characteristics for "${serviceName}" service`);
+            _console$k.log(`getting characteristics for "${serviceName}" service`);
             const characteristics = await service.getCharacteristics();
-            _console$p.log(`got characteristics for "${serviceName}" service`);
+            _console$k.log(`got characteristics for "${serviceName}" service`);
             for (const characteristicIndex in characteristics) {
                 const characteristic = characteristics[characteristicIndex];
-                _console$p.log({ characteristic });
+                _console$k.log({ characteristic });
                 const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-                _console$p.assertWithError(Boolean(characteristicName), `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`);
-                _console$p.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+                _console$k.assertWithError(Boolean(characteristicName), `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`);
+                _console$k.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
                 characteristic.name = characteristicName;
                 this.#characteristics.set(characteristicName, characteristic);
                 addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
                 const characteristicProperties = characteristic.properties ||
                     getCharacteristicProperties(characteristicName);
                 if (characteristicProperties.notify) {
-                    _console$p.log(`starting notifications for "${characteristicName}" characteristic`);
+                    _console$k.log(`starting notifications for "${characteristicName}" characteristic`);
                     await characteristic.startNotifications();
                 }
                 if (characteristicProperties.read) {
-                    _console$p.log(`reading "${characteristicName}" characteristic...`);
+                    _console$k.log(`reading "${characteristicName}" characteristic...`);
                     await characteristic.readValue();
                     if (isInBluefy || isInWebBLE) {
                         this.#onCharacteristicValueChanged(characteristic);
@@ -32380,7 +32400,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             const characteristicProperties = characteristic.properties ||
                 getCharacteristicProperties(characteristicName);
             if (characteristicProperties.notify) {
-                _console$p.log(`stopping notifications for "${characteristicName}" characteristic`);
+                _console$k.log(`stopping notifications for "${characteristicName}" characteristic`);
                 return characteristic.stopNotifications();
             }
         });
@@ -32397,43 +32417,43 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         return true;
     }
     #onCharacteristicvaluechanged(event) {
-        _console$p.log("oncharacteristicvaluechanged");
+        _console$k.log("oncharacteristicvaluechanged");
         const characteristic = event.target;
         this.#onCharacteristicValueChanged(characteristic);
     }
     #onCharacteristicValueChanged(characteristic) {
-        _console$p.log("onCharacteristicValue");
+        _console$k.log("onCharacteristicValue");
         const characteristicName = characteristic.name;
-        _console$p.assertWithError(Boolean(characteristicName), `no name found for characteristic with uuid "${characteristic.uuid}"`);
-        _console$p.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
+        _console$k.assertWithError(Boolean(characteristicName), `no name found for characteristic with uuid "${characteristic.uuid}"`);
+        _console$k.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
         const dataView = characteristic.value;
-        _console$p.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-        _console$p.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+        _console$k.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+        _console$k.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
         try {
             this.onCharacteristicValueChanged(characteristicName, dataView);
         }
         catch (error) {
-            _console$p.error(error);
+            _console$k.error(error);
         }
     }
     async writeCharacteristic(characteristicName, data) {
         super.writeCharacteristic(characteristicName, data);
         const characteristic = this.#characteristics.get(characteristicName);
-        _console$p.assertWithError(characteristic, `${characteristicName} characteristic not found`);
-        _console$p.log("writing characteristic", characteristic, data);
+        _console$k.assertWithError(characteristic, `${characteristicName} characteristic not found`);
+        _console$k.log("writing characteristic", characteristic, data);
         const characteristicProperties = characteristic.properties ||
             getCharacteristicProperties(characteristicName);
         if (characteristicProperties.writeWithoutResponse) {
-            _console$p.log("writing without response");
+            _console$k.log("writing without response");
             await characteristic.writeValueWithoutResponse(data);
         }
         else {
-            _console$p.log("writing with response");
+            _console$k.log("writing with response");
             await characteristic.writeValueWithResponse(data);
         }
-        _console$p.log("wrote characteristic");
+        _console$k.log("wrote characteristic");
         if (characteristicProperties.read && !characteristicProperties.notify) {
-            _console$p.log("reading value after write...");
+            _console$k.log("reading value after write...");
             await characteristic.readValue();
             if (isInBluefy || isInWebBLE) {
                 this.#onCharacteristicValueChanged(characteristic);
@@ -32441,7 +32461,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         }
     }
     #onGattserverdisconnected() {
-        _console$p.log("gattserverdisconnected");
+        _console$k.log("gattserverdisconnected");
         this.status = "notConnected";
     }
     get canReconnect() {
@@ -32456,18 +32476,18 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             await this.server.connect();
         }
         catch (error) {
-            _console$p.error(error);
+            _console$k.error(error);
             this.isInRange = false;
             return false;
         }
         if (this.isConnected) {
-            _console$p.log("successfully reconnected!");
+            _console$k.log("successfully reconnected!");
             await this.#getServicesAndCharacteristics();
             this.status = "connected";
             return true;
         }
         else {
-            _console$p.log("unable to reconnect");
+            _console$k.log("unable to reconnect");
             this.status = "notConnected";
             return false;
         }
@@ -33671,7 +33691,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
 }
 
 var _a$3;
-const _console$k = createConsole("Device", { log: false });
+const _console$j = createConsole("Device", { log: false });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -33820,7 +33840,7 @@ class Device {
     }
     #initThisEventListeners() {
         this.addEventListener("getMtu", () => {
-            _console$k.log("updating mtu", { mtu: this.mtu });
+            _console$j.log("updating mtu", { mtu: this.mtu });
             this.#firmwareManager.mtu = this.mtu;
             this.#fileTransferManager.mtu = this.mtu;
             this.connectionManager.mtu = this.mtu;
@@ -33834,45 +33854,45 @@ class Device {
                 return;
             }
             if (this.sensorTypes.includes("pressure")) {
-                _console$k.log("requesting required pressure information");
+                _console$j.log("requesting required pressure information");
                 const messages = RequiredPressureMessageTypes.map((messageType) => ({
                     type: messageType,
                 }));
                 this.sendTxMessages(messages, false);
             }
             else {
-                _console$k.log("don't need to request pressure infomration");
+                _console$j.log("don't need to request pressure infomration");
             }
             if (this.sensorTypes.includes("camera")) {
-                _console$k.log("requesting required camera information");
+                _console$j.log("requesting required camera information");
                 const messages = RequiredCameraMessageTypes.map((messageType) => ({
                     type: messageType,
                 }));
                 this.sendTxMessages(messages, false);
             }
             else {
-                _console$k.log("don't need to request camera infomration");
+                _console$j.log("don't need to request camera infomration");
             }
             if (this.sensorTypes.includes("microphone")) {
-                _console$k.log("requesting required microphone information");
+                _console$j.log("requesting required microphone information");
                 const messages = RequiredMicrophoneMessageTypes.map((messageType) => ({
                     type: messageType,
                 }));
                 this.sendTxMessages(messages, false);
             }
             else {
-                _console$k.log("don't need to request microphone infomration");
+                _console$j.log("don't need to request microphone infomration");
             }
             if (this.sensorTypes.includes("buttons") ||
                 this.sensorTypes.includes("touches")) {
-                _console$k.log("requesting number of buttons/touches");
+                _console$j.log("requesting number of buttons/touches");
                 const messages = RequiredSensorMetaDataMessageTypes.map((messageType) => ({
                     type: messageType,
                 }));
                 this.sendTxMessages(messages, false);
             }
             else {
-                _console$k.log("don't need to request number of buttons/touches");
+                _console$j.log("don't need to request number of buttons/touches");
             }
         });
         this.addEventListener("getSensorConfiguration", (event) => {
@@ -33954,7 +33974,7 @@ class Device {
     }
     set connectionManager(newConnectionManager) {
         if (this.connectionManager == newConnectionManager) {
-            _console$k.log("same connectionManager is already assigned");
+            _console$j.log("same connectionManager is already assigned");
             return;
         }
         if (this.connectionManager) {
@@ -33973,7 +33993,7 @@ class Device {
                 this.#onConnectionMessagesSent.bind(this);
         }
         this.#connectionManager = newConnectionManager;
-        _console$k.log("assigned new connectionManager", this.#connectionManager);
+        _console$j.log("assigned new connectionManager", this.#connectionManager);
         this._informationManager.connectionType = this.connectionType;
         this.#fileTransferManager.connectionType = this.connectionType;
         this.#displayManager.connectionType = this.connectionType;
@@ -33982,7 +34002,7 @@ class Device {
         }
     }
     async #sendTxMessages(messages, sendImmediately = true) {
-        _console$k.log("sendTxMessages", messages, { sendImmediately });
+        _console$j.log("sendTxMessages", messages, { sendImmediately });
         await this.#connectionManager?.sendTxMessages(messages, sendImmediately);
         if (sendImmediately) {
             this.#ledManager.onSendTxMessages();
@@ -33991,17 +34011,17 @@ class Device {
     sendTxMessages = this.#sendTxMessages.bind(this);
     async connect(options) {
         if (this.isConnected) {
-            _console$k.log("already connected");
+            _console$j.log("already connected");
             return;
         }
         if (this.connectionStatus == "connecting") {
-            _console$k.log("already connecting");
+            _console$j.log("already connecting");
             return;
         }
         if (options?.reconnect && this.canReconnect) {
             return this.reconnect();
         }
-        _console$k.log("connect options", options);
+        _console$j.log("connect options", options);
         if (options) {
             switch (options.type) {
                 case "webBluetooth":
@@ -34050,13 +34070,13 @@ class Device {
         }
         this.#clear();
         if (options?.type == "client") {
-            _console$k.assertWithError(this.connectionManager.type == "client", "expected clientConnectionManager");
+            _console$j.assertWithError(this.connectionManager.type == "client", "expected clientConnectionManager");
             if (this.connectionManager.type == "client") {
                 this.connectionManager.subType = options.subType;
                 return this.connectionManager.connect();
             }
         }
-        _console$k.log("connectionManager type", this.connectionManager.type);
+        _console$j.log("connectionManager type", this.connectionManager.type);
         return this.connectionManager.connect();
     }
     #isConnected = false;
@@ -34064,7 +34084,7 @@ class Device {
         return this.#isConnected;
     }
     #assertIsConnected() {
-        _console$k.assertWithError(this.isConnected, "notConnected");
+        _console$j.assertWithError(this.isConnected, "notConnected");
     }
     #didReceiveMessageTypes(messageTypes) {
         return messageTypes.every((messageType) => {
@@ -34075,7 +34095,7 @@ class Device {
                     hasConnectionMessage = true;
                 }
                 else {
-                    _console$k.log(`didn't receive "${messageType}" message`);
+                    _console$j.log(`didn't receive "${messageType}" message`);
                 }
             }
             return hasConnectionMessage;
@@ -34115,7 +34135,7 @@ class Device {
         return hasRequiredInformation;
     }
     #requestRequiredInformation() {
-        _console$k.log("requesting required information");
+        _console$j.log("requesting required information");
         const messages = RequiredInformationConnectionMessages.map((messageType) => ({
             type: messageType,
         }));
@@ -34125,41 +34145,43 @@ class Device {
         return this.connectionManager?.canReconnect;
     }
     #assertCanReconnect() {
-        _console$k.assertWithError(this.canReconnect, "cannot reconnect to device");
+        _console$j.assertWithError(this.canReconnect, "cannot reconnect to device");
     }
     async reconnect() {
         if (this.isConnected) {
-            _console$k.log("already connected");
+            _console$j.log("already connected");
             return;
         }
         if (this.connectionStatus == "connecting") {
-            _console$k.log("already connecting");
+            _console$j.log("already connecting");
             return;
         }
         if (!this.canReconnect) {
-            _console$k.warn("cannot reconnect");
+            _console$j.warn("cannot reconnect");
             return false;
         }
-        _console$k.log("attempting to reconnect...");
+        _console$j.log("attempting to reconnect...");
         this.#clear();
-        _console$k.log("reconnecting...");
+        _console$j.log("reconnecting...");
         return this.connectionManager?.reconnect();
     }
     static get CanConnect() {
         return WebBluetoothConnectionManager.isSupported;
     }
     static async Connect() {
-        _console$k.assertWithError(this.CanConnect, `can't connect to any device - must connect to discovered device`);
+        _console$j.assertWithError(this.CanConnect, `can't connect to any device - must connect to discovered device`);
         const device = new _a$3();
-        await device.connect();
-        return device;
+        const isConnected = await device.connect();
+        if (isConnected) {
+            return device;
+        }
     }
     static #ReconnectOnDisconnection = false;
     static get ReconnectOnDisconnection() {
         return this.#ReconnectOnDisconnection;
     }
     static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$k.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        _console$j.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this.#ReconnectOnDisconnection = newReconnectOnDisconnection;
     }
     #reconnectOnDisconnection = _a$3.ReconnectOnDisconnection;
@@ -34167,7 +34189,7 @@ class Device {
         return this.#reconnectOnDisconnection;
     }
     set reconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$k.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        _console$j.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this.#reconnectOnDisconnection = newReconnectOnDisconnection;
     }
     #reconnectIntervalId;
@@ -34176,11 +34198,11 @@ class Device {
     }
     async disconnect() {
         if (this.connectionStatus == "notConnected") {
-            _console$k.log("already not connected");
+            _console$j.log("already not connected");
             return;
         }
         if (this.connectionStatus == "disconnecting") {
-            _console$k.log("already disconnecting");
+            _console$j.log("already disconnecting");
             return;
         }
         if (this.reconnectOnDisconnection) {
@@ -34203,10 +34225,10 @@ class Device {
                 reconnect = false;
                 break;
             default:
-                _console$k.error("uncaught toggleConnection param", arg);
+                _console$j.error("uncaught toggleConnection param", arg);
                 break;
         }
-        _console$k.log("reconnect", { reconnect, options });
+        _console$j.log("reconnect", { reconnect, options });
         switch (this.connectionStatus) {
             case "connecting":
             case "connected":
@@ -34220,7 +34242,7 @@ class Device {
                         await this.reconnect();
                     }
                     catch (error) {
-                        _console$k.error("error trying to reconnect", error);
+                        _console$j.error("error trying to reconnect", error);
                         await this.connect(options);
                     }
                 }
@@ -34247,22 +34269,22 @@ class Device {
             this.connectionStatus == "disconnecting");
     }
     async #onConnectionStatusUpdated(connectionStatus) {
-        _console$k.log({ connectionStatus });
+        _console$j.log({ connectionStatus });
         if (connectionStatus == "notConnected") {
             this.#clearConnection();
             await this.stopRecordingCamera();
             this.stopRecordingMicrophone();
             if (this.canReconnect && this.reconnectOnDisconnection) {
-                _console$k.log("starting reconnect interval...");
+                _console$j.log("starting reconnect interval...");
                 this.#reconnectIntervalId = setInterval(() => {
-                    _console$k.log("attempting reconnect...");
+                    _console$j.log("attempting reconnect...");
                     this.reconnect();
                 }, 1000);
             }
         }
         else {
             if (this.#reconnectIntervalId != undefined) {
-                _console$k.log("clearing reconnect interval");
+                _console$j.log("clearing reconnect interval");
                 clearInterval(this.#reconnectIntervalId);
                 this.#reconnectIntervalId = undefined;
             }
@@ -34319,16 +34341,16 @@ class Device {
         this.#batteryLevel = undefined;
     }
     #clearConnection() {
-        _console$k.log("clearConnection");
+        _console$j.log("clearConnection");
         this.connectionManager?.clear();
         this.latestConnectionMessages.clear();
     }
     #onConnectionMessageReceived(messageType, dataView, isSending) {
-        _console$k.log({ messageType, dataView, isSending });
+        _console$j.log({ messageType, dataView, isSending });
         switch (messageType) {
             case "batteryLevel":
                 const batteryLevel = dataView.getUint8(0);
-                _console$k.log("received battery level", { batteryLevel });
+                _console$j.log("received battery level", { batteryLevel });
                 this.#updateBatteryLevel(batteryLevel);
                 break;
             default:
@@ -34399,14 +34421,14 @@ class Device {
         this.#sendTxMessages();
     }
     _onRemoteConnectionMessageSent(messageType, dataView, isSending = true) {
-        _console$k.log("_onConnectionMessageSent", { messageType }, dataView);
+        _console$j.log("_onConnectionMessageSent", { messageType }, dataView);
         this.#onConnectionMessageReceived(messageType, dataView, isSending);
     }
     #onConnectionMessageSent(message, indirectly) {
-        _console$k.log("onConnectionMessageSent", message, { indirectly });
+        _console$j.log("onConnectionMessageSent", message, { indirectly });
     }
     #onConnectionMessagesSent(messages, indirectly) {
-        _console$k.log("onConnectionMessagesSent", messages, { indirectly });
+        _console$j.log("onConnectionMessagesSent", messages, { indirectly });
     }
     latestConnectionMessages = new Map();
     #deviceInformationManager = new DeviceInformationManager();
@@ -34418,13 +34440,13 @@ class Device {
         return this.#batteryLevel ?? 0;
     }
     #updateBatteryLevel(updatedBatteryLevel) {
-        _console$k.assertTypeWithError(updatedBatteryLevel, "number");
+        _console$j.assertTypeWithError(updatedBatteryLevel, "number");
         if (this.#batteryLevel == updatedBatteryLevel) {
-            _console$k.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
+            _console$j.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
             return;
         }
         this.#batteryLevel = updatedBatteryLevel;
-        _console$k.log({ updatedBatteryLevel: this.#batteryLevel });
+        _console$j.log({ updatedBatteryLevel: this.#batteryLevel });
         this.#dispatchEvent("batteryLevel", { batteryLevel: this.#batteryLevel });
     }
     _informationManager = new InformationManager();
@@ -34503,7 +34525,7 @@ class Device {
         return this.#ClearSensorConfigurationOnLeave;
     }
     static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
-        _console$k.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        _console$j.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
         this.#ClearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
     }
     #clearSensorConfigurationOnLeave = _a$3.ClearSensorConfigurationOnLeave;
@@ -34511,12 +34533,12 @@ class Device {
         return this.#clearSensorConfigurationOnLeave;
     }
     set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
-        _console$k.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        _console$j.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
         this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
     }
     #sensorDataManager = new SensorDataManager();
     #assertPressure() {
-        _console$k.assertWithError(this.hasSensorType("pressure"), "pressure sensorType not included in device");
+        _console$j.assertWithError(this.hasSensorType("pressure"), "pressure sensorType not included in device");
     }
     get numberOfPressureSensors() {
         if (this.hasSensorType("pressure")) {
@@ -34635,7 +34657,7 @@ class Device {
     }
     #fileTransferManager = new FileTransferManager();
     async #onFileConfiguration(fileConfiguration) {
-        _console$k.log("#onFileConfiguration", fileConfiguration);
+        _console$j.log("#onFileConfiguration", fileConfiguration);
         const { fileType, buffer, direction } = fileConfiguration;
         switch (fileType) {
             case "cameraImage":
@@ -34648,11 +34670,11 @@ class Device {
                     const dataView = new DataView(buffer);
                     const parsedSpriteSheet = this.parseDisplaySpriteSheet(dataView, this.pendingDisplaySpriteSheetName);
                     const existingPendingSpriteSheet = this.#displayManager.pendingSpriteSheet;
-                    _console$k.log("existingPendingSpriteSheet", existingPendingSpriteSheet);
+                    _console$j.log("existingPendingSpriteSheet", existingPendingSpriteSheet);
                     this.#displayManager.pendingSpriteSheet = parsedSpriteSheet;
                     await this.uploadDisplaySpriteSheet(parsedSpriteSheet);
                     if (existingPendingSpriteSheet) {
-                        _console$k.log("replacing existingPendingSpriteSheet", existingPendingSpriteSheet);
+                        _console$j.log("replacing existingPendingSpriteSheet", existingPendingSpriteSheet);
                         this.#displayManager.pendingSpriteSheet =
                             existingPendingSpriteSheet;
                     }
@@ -34678,7 +34700,7 @@ class Device {
         });
     }
     async sendFile(fileType, file) {
-        _console$k.assertWithError(this.validFileTypes.includes(fileType), `invalid fileType ${fileType}`);
+        _console$j.assertWithError(this.validFileTypes.includes(fileType), `invalid fileType ${fileType}`);
         const promise = this.waitForEvent("fileTransferComplete");
         const isSending = await this.#fileTransferManager.send(fileType, file);
         if (!isSending) {
@@ -34780,7 +34802,7 @@ class Device {
         return this.#connectionManager?.canUpdateFirmware;
     }
     #assertCanUpdateFirmware() {
-        _console$k.assertWithError(this.canUpdateFirmware, "can't update firmware");
+        _console$j.assertWithError(this.canUpdateFirmware, "can't update firmware");
     }
     #sendSmpMessage(data) {
         this.#assertCanUpdateFirmware();
@@ -34795,7 +34817,7 @@ class Device {
         return this.canUpdateFirmware;
     }
     async reset() {
-        _console$k.assertWithError(this.canReset, "reset is not enabled for this device");
+        _console$j.assertWithError(this.canReset, "reset is not enabled for this device");
         await this.#firmwareManager.reset();
         return this.#connectionManager.disconnect();
     }
@@ -34862,10 +34884,10 @@ class Device {
         return this.#wifiManager.isWifiSecure;
     }
     async reconnectViaWebSockets() {
-        _console$k.assertWithError(this.isWifiConnected, "wifi is not connected");
-        _console$k.assertWithError(this.connectionType != "webSocket", "already connected via webSockets");
-        _console$k.assertTypeWithError(this.ipAddress, "string");
-        _console$k.log("reconnecting via websockets...");
+        _console$j.assertWithError(this.isWifiConnected, "wifi is not connected");
+        _console$j.assertWithError(this.connectionType != "webSocket", "already connected via webSockets");
+        _console$j.assertTypeWithError(this.ipAddress, "string");
+        _console$j.log("reconnecting via websockets...");
         await this.disconnect();
         await this.connect({
             type: "webSocket",
@@ -34874,11 +34896,11 @@ class Device {
         });
     }
     async reconnectViaUDP() {
-        _console$k.assertWithError(isInNode, "udp is only available in node");
-        _console$k.assertWithError(this.isWifiConnected, "wifi is not connected");
-        _console$k.assertWithError(this.connectionType != "udp", "already connected via udp");
-        _console$k.assertTypeWithError(this.ipAddress, "string");
-        _console$k.log("reconnecting via udp...");
+        _console$j.assertWithError(isInNode, "udp is only available in node");
+        _console$j.assertWithError(this.isWifiConnected, "wifi is not connected");
+        _console$j.assertWithError(this.connectionType != "udp", "already connected via udp");
+        _console$j.assertTypeWithError(this.ipAddress, "string");
+        _console$j.log("reconnecting via udp...");
         await this.disconnect();
         await this.connect({
             type: "udp",
@@ -34896,7 +34918,7 @@ class Device {
         return this.#cameraManager.cameraStatus;
     }
     #assertHasCamera() {
-        _console$k.assertWithError(this.hasCamera, "camera not available");
+        _console$j.assertWithError(this.hasCamera, "camera not available");
     }
     async takePicture(sensorRate) {
         this.#assertHasCamera();
@@ -34904,7 +34926,7 @@ class Device {
             sensorRate = 20;
         }
         if (sensorRate == 0 && this.fileTransferStatus != "idle") {
-            _console$k.error("device is currently busy transferring file - cannot request cameraImage");
+            _console$j.error("device is currently busy transferring file - cannot request cameraImage");
             return;
         }
         if (sensorRate != undefined &&
@@ -34974,7 +34996,7 @@ class Device {
         return this.#microphoneManager.microphoneStatus;
     }
     #assertHasMicrophone() {
-        _console$k.assertWithError(this.hasMicrophone, "microphone not available");
+        _console$j.assertWithError(this.hasMicrophone, "microphone not available");
     }
     async startMicrophone(sensorRate) {
         this.#assertHasMicrophone();
@@ -35013,7 +35035,7 @@ class Device {
         return this.#microphoneManager.setMicrophoneConfiguration;
     }
     #assertWebAudioSupport() {
-        _console$k.assertWithError(AudioContext, "WebAudio is not supported");
+        _console$j.assertWithError(AudioContext, "WebAudio is not supported");
     }
     get audioContext() {
         this.#assertWebAudioSupport();
@@ -35066,7 +35088,7 @@ class Device {
         return this.#displayManager.opacities;
     }
     #assertDisplayIsAvailable() {
-        _console$k.assertWithError(this.isDisplayAvailable, "display not available");
+        _console$j.assertWithError(this.isDisplayAvailable, "display not available");
     }
     get displayStatus() {
         this.#assertDisplayIsAvailable();
@@ -35511,7 +35533,7 @@ function Singleton(target, context) {
     };
 }
 
-const _console$j = createConsole("DeviceManager", { log: false });
+const _console$p = createConsole("DeviceManager", { log: false });
 function getDeviceManagerDeviceEventTypes(deviceEventType) {
     return ["device"].map((prefix) => `${prefix}${capitalizeFirstCharacter(deviceEventType)}`);
 }
@@ -35527,7 +35549,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager = (() => {
+let DeviceManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -35583,7 +35605,7 @@ let DeviceManager = (() => {
         }
         set useLocalStorage(newUseLocalStorage) {
             this.#assertLocalStorage();
-            _console$j.assertTypeWithError(newUseLocalStorage, "boolean");
+            _console$p.assertTypeWithError(newUseLocalStorage, "boolean");
             this.#useLocalStorage = newUseLocalStorage;
             if (this.#useLocalStorage && !this.#localStorageConfiguration) {
                 this.#loadFromLocalStorage();
@@ -35597,8 +35619,8 @@ let DeviceManager = (() => {
             return isInBrowser && window.localStorage;
         }
         #assertLocalStorage() {
-            _console$j.assertWithError(isInBrowser, "localStorage is only available in the browser");
-            _console$j.assertWithError(window.localStorage, "localStorage not found");
+            _console$p.assertWithError(isInBrowser, "localStorage is only available in the browser");
+            _console$p.assertWithError(window.localStorage, "localStorage not found");
         }
         #localStorageKey = "BS.Device";
         #SaveToLocalStorage() {
@@ -35609,26 +35631,26 @@ let DeviceManager = (() => {
             this.#assertLocalStorage();
             let localStorageString = localStorage.getItem(this.#localStorageKey);
             if (typeof localStorageString != "string") {
-                _console$j.log("no info found in localStorage");
+                _console$p.log("no info found in localStorage");
                 this.#localStorageConfiguration = Object.assign({}, this.#defaultLocalStorageConfiguration);
                 this.#SaveToLocalStorage();
                 return;
             }
             try {
                 const configuration = JSON.parse(localStorageString);
-                _console$j.log({ configuration });
+                _console$p.log({ configuration });
                 this.#localStorageConfiguration = configuration;
                 if (this.canGetDevices) {
                     await this.getDevices();
                 }
             }
             catch (error) {
-                _console$j.warn(error);
+                _console$p.warn(error);
             }
         }
         #updateLocalStorageConfigurationForDevice(device) {
             if (device.connectionType != "webBluetooth") {
-                _console$j.log("localStorage is only for webBluetooth devices");
+                _console$p.log("localStorage is only for webBluetooth devices");
                 return;
             }
             this.#assertLocalStorage();
@@ -35652,23 +35674,23 @@ let DeviceManager = (() => {
         #getDevicesTimeout = 1500;
         async getDevices() {
             if (!isInBrowser) {
-                _console$j.warn("GetDevices is only available in the browser");
+                _console$p.warn("GetDevices is only available in the browser");
                 return;
             }
             if (!navigator.bluetooth) {
-                _console$j.warn("bluetooth is not available in this browser");
+                _console$p.warn("bluetooth is not available in this browser");
                 return;
             }
             if (isInBluefy) {
-                _console$j.warn("bluefy lists too many devices...");
+                _console$p.warn("bluefy lists too many devices...");
                 return;
             }
             if (!navigator.bluetooth.getDevices) {
-                _console$j.warn("bluetooth.getDevices() is not available in this browser");
+                _console$p.warn("bluetooth.getDevices() is not available in this browser");
                 return;
             }
             if (!this.canGetDevices) {
-                _console$j.log("CanGetDevices is false");
+                _console$p.log("CanGetDevices is false");
                 return;
             }
             if (!this.#localStorageConfiguration) {
@@ -35676,7 +35698,7 @@ let DeviceManager = (() => {
             }
             const configuration = this.#localStorageConfiguration;
             if (!configuration.devices || configuration.devices.length == 0) {
-                _console$j.log("no devices found in configuration");
+                _console$p.log("no devices found in configuration");
                 return;
             }
             let bluetoothDevices = [];
@@ -35684,9 +35706,9 @@ let DeviceManager = (() => {
                 bluetoothDevices = await navigator.bluetooth.getDevices();
             }
             catch (error) {
-                _console$j.warn(error);
+                _console$p.warn(error);
             }
-            _console$j.log({ bluetoothDevices });
+            _console$p.log({ bluetoothDevices });
             if (bluetoothDevices[0] &&
                 typeof bluetoothDevices[0].watchAdvertisements == "function") {
                 const waitAbortController = new AbortController();
@@ -35695,12 +35717,12 @@ let DeviceManager = (() => {
                 bluetoothDevices.forEach(async (bluetoothDevice) => {
                     bluetoothDevice.addEventListener("advertisementreceived", (event) => {
                         const isDevice = event.uuids.includes(serviceUUIDs[0]);
-                        _console$j.log("advertisement received", bluetoothDevice, event, {
+                        _console$p.log("advertisement received", bluetoothDevice, event, {
                             isDevice,
                         });
                         bluetoothDeviceAdvertisementEvents.set(bluetoothDevice, event);
                         if (bluetoothDeviceAdvertisementEvents.size == bluetoothDevices.length) {
-                            _console$j.log("all devices found - aborting early");
+                            _console$p.log("all devices found - aborting early");
                             waitAbortController.abort();
                         }
                     }, {
@@ -35711,9 +35733,9 @@ let DeviceManager = (() => {
                         signal: bluetoothDeviceAdvertisementAbortController.signal,
                     });
                 });
-                _console$j.log(`waiting for advertisements for ${this.#getDevicesTimeout}ms`);
+                _console$p.log(`waiting for advertisements for ${this.#getDevicesTimeout}ms`);
                 await wait(this.#getDevicesTimeout, waitAbortController.signal);
-                _console$j.log(`done waiting for advertisements`);
+                _console$p.log(`done waiting for advertisements`);
                 bluetoothDeviceAdvertisementAbortController.abort();
                 bluetoothDevices = bluetoothDevices.filter((bluetoothDevice) => {
                     return bluetoothDeviceAdvertisementEvents.has(bluetoothDevice);
@@ -35738,7 +35760,7 @@ let DeviceManager = (() => {
                         existingConnectedDevice?.bluetoothId ==
                             existingAvailableDevice.bluetoothId &&
                         existingConnectedDevice != existingAvailableDevice) {
-                        _console$j.log("replacing available device with connected device", {
+                        _console$p.log("replacing available device with connected device", {
                             existingAvailableDevice,
                             existingConnectedDevice,
                         });
@@ -35787,7 +35809,7 @@ let DeviceManager = (() => {
         #onDeviceIsConnected(device) {
             if (device.isConnected) {
                 if (!this.#connectedDevices.includes(device)) {
-                    _console$j.log("adding device", device);
+                    _console$p.log("adding device", device);
                     this.#connectedDevices.push(device);
                     if (this.useLocalStorage && device.connectionType == "webBluetooth") {
                         const deviceInformation = {
@@ -35809,17 +35831,17 @@ let DeviceManager = (() => {
                     this.#dispatchConnectedDevices();
                 }
                 else {
-                    _console$j.log("device already included");
+                    _console$p.log("device already included");
                 }
             }
             else {
                 if (this.#connectedDevices.includes(device)) {
-                    _console$j.log("removing device", device);
+                    _console$p.log("removing device", device);
                     this.#connectedDevices.splice(this.#connectedDevices.indexOf(device), 1);
                     this.#dispatchConnectedDevices();
                 }
                 else {
-                    _console$j.log("device already not included");
+                    _console$p.log("device already not included");
                 }
             }
             if (this.canGetDevices) {
@@ -35827,7 +35849,7 @@ let DeviceManager = (() => {
             }
             if (device.isConnected && !this.availableDevices.includes(device)) {
                 const existingAvailableDevice = this.availableDevices.find((_device) => _device.bluetoothId == device.bluetoothId);
-                _console$j.log({ existingAvailableDevice });
+                _console$p.log({ existingAvailableDevice });
                 if (existingAvailableDevice) {
                     this.availableDevices[this.availableDevices.indexOf(existingAvailableDevice)] = device;
                 }
@@ -35856,24 +35878,24 @@ let DeviceManager = (() => {
             if (!device.isConnected &&
                 !device.isAvailable &&
                 this.#availableDevices.includes(device)) {
-                _console$j.log("removing device from availableDevices...");
+                _console$p.log("removing device from availableDevices...");
                 this.#availableDevices.splice(this.#availableDevices.indexOf(device), 1);
                 this.#dispatchAvailableDevices();
             }
         }
         #pushAvailableDevice(availableDevice) {
-            _console$j.log({ availableDevice });
+            _console$p.log({ availableDevice });
             this.availableDevices.push(availableDevice);
             this.#dispatchEvent("availableDevice", { availableDevice });
         }
         #dispatchAvailableDevices() {
-            _console$j.log({ availableDevices: this.availableDevices });
+            _console$p.log({ availableDevices: this.availableDevices });
             this.#dispatchEvent("availableDevices", {
                 availableDevices: this.availableDevices,
             });
         }
         #dispatchConnectedDevices() {
-            _console$j.log({ connectedDevices: this.connectedDevices });
+            _console$p.log({ connectedDevices: this.connectedDevices });
             this.#dispatchEvent("connectedDevices", {
                 connectedDevices: this.connectedDevices,
             });
@@ -35881,7 +35903,7 @@ let DeviceManager = (() => {
     });
     return _classThis;
 })();
-var DeviceManager$1 = DeviceManager.shared;
+var DeviceManager = DeviceManager$1.shared;
 
 var _a$2;
 const _console$i = createConsole("BaseScanner", { log: false });
@@ -36689,7 +36711,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager$1._checkDeviceAvailability(device);
+            DeviceManager._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -37393,7 +37415,7 @@ class BaseServer {
     constructor() {
         _console$a.assertWithError(scanner$1, "no scanner defined");
         addEventListeners(scanner$1, this.#boundScannerListeners);
-        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
+        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
         addEventListeners(DisplayCanvasHelperManager$1, this.#boundDisplayCanvasHelperManagerEventListeners);
         _a.OnServer(this);
     }
@@ -37473,7 +37495,7 @@ class BaseServer {
         _console$a.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager$1.connectedDevices.forEach((device) => {
+            DeviceManager.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -37553,7 +37575,7 @@ class BaseServer {
     get #discoveredDevicesMessage() {
         const serverMessages = scanner$1.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -37565,7 +37587,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -38131,7 +38153,7 @@ class BaseServer {
                     else {
                         _console$a.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
@@ -38146,7 +38168,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     device = device ?? scanner$1.devices[deviceId];
                     if (!device) {
                         _console$a.error(`no device found with id ${deviceId}`);
@@ -38173,7 +38195,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$a.error(`no device found with id ${deviceId}`);
                         break;
@@ -38197,7 +38219,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$a.error(`no device found with id ${deviceId}`);
                         break;
@@ -40078,7 +40100,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager$1.addEventListener("deviceConnected", (event) => {
+        DeviceManager.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -40295,5 +40317,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager$1 as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager$1 as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, PubSubManager$1 as PubSubManager, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient$1 as WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer$1 as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager$1 as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager$1 as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, PubSubManager$1 as PubSubManager, RangeHelper, RangeHelper2, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient$1 as WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer$1 as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
 //# sourceMappingURL=brilliantwear.module.js.map

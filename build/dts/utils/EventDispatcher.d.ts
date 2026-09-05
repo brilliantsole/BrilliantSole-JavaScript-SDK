@@ -68,6 +68,7 @@ declare class EventDispatcher<Target extends any, EventType extends string, Even
     dispatchEvent<T extends EventType>(type: T, message: EventMessages[T]): void;
     waitForEvent<T extends EventType>(type: T, options?: {
         immediate?: boolean;
+        signal?: AbortSignal;
     }): Promise<ListenerEvent<Target, EventType, EventMessages, T>>;
 }
 export default EventDispatcher;

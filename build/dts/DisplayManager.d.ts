@@ -151,6 +151,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     eventDispatcher: DisplayEventDispatcher;
     get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getDisplaySpriteSheetName" | "setDisplaySpriteSheetName" | "displaySpriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete">(type: T, options?: {
         immediate?: boolean;
+        signal?: AbortSignal;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getDisplaySpriteSheetName" | "setDisplaySpriteSheetName" | "displaySpriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete", DisplayEventMessages, T>>;
     requestRequiredInformation(): void;
     get isAvailable(): boolean;
@@ -158,7 +159,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get pendingContextState(): DisplayContextState;
     serializeContextState(other?: PartialDisplayContextState): DisplayContextCommand[];
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean, isSending?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -172,7 +173,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean, displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
     getMaxCommandDataLength(single?: boolean): number;

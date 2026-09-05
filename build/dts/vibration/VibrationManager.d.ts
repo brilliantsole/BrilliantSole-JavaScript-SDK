@@ -56,10 +56,11 @@ declare class VibrationManager {
     eventDispatcher: VibrationEventDispatcher;
     get waitForEvent(): <T extends "getVibrationLocations" | "triggerVibration">(type: T, options?: {
         immediate?: boolean;
+        signal?: AbortSignal;
     }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<Device, "getVibrationLocations" | "triggerVibration", VibrationEventMessages, T>>;
     triggerVibration(vibrationConfiguration: VibrationConfiguration, sendImmediately?: boolean): Promise<void>;
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;
-    get vibrationLocations(): ("right" | "left" | "front" | "rear")[];
+    get vibrationLocations(): ("left" | "right" | "front" | "rear")[];
     parseMessage(messageType: VibrationMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
 }
 export default VibrationManager;

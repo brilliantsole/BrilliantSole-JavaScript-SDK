@@ -9,7 +9,7 @@ export type BoundGenericEventListeners = {
 export function addEventListeners(
   target: any,
   boundEventListeners: BoundGenericEventListeners,
-  options?: EventListenerOptions,
+  options?: AddEventListenerOptions,
 ) {
   let addEventListener =
     target.addEventListener ||

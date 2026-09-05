@@ -353,12 +353,13 @@ class EventDispatcher<
 
   waitForEvent<T extends EventType>(
     type: T,
-    options: { immediate?: boolean } = {},
+    options: { immediate?: boolean; signal?: AbortSignal } = {},
   ): Promise<ListenerEvent<Target, EventType, EventMessages, T>> {
     return new Promise((resolve) => {
       this.addEventListener(type, resolve, {
         once: true,
         immediate: options.immediate,
+        signal: options.signal,
       });
     });
   }

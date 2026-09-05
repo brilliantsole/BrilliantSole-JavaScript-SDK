@@ -82,7 +82,9 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
   }
   set device(newDevice) {
     if (this.#device == newDevice) {
-      _console.log("tried to assign the same BluetoothDevice");
+      if (this.#device) {
+        _console.log("tried to assign the same BluetoothDevice");
+      }
       return;
     }
     if (this.#device) {
@@ -93,6 +95,12 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     }
     if (newDevice) {
       addEventListeners(newDevice, this.#boundBluetoothDeviceEventListeners);
+    }
+
+    _console.log("set device", newDevice);
+
+    if (this.#device && !newDevice) {
+      this.deviceMap.delete(this.#device);
     }
     this.#device = newDevice;
   }
@@ -108,6 +116,12 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
   #characteristics: Map<BluetoothCharacteristicName, BluetoothCharacteristic> =
     new Map();
 
+  static #DeviceMap: Map<BluetoothDevice, WebBluetoothConnectionManager> =
+    new Map();
+  get deviceMap() {
+    return WebBluetoothConnectionManager.#DeviceMap;
+  }
+
   async connect() {
     const canContinue = super.connect();
     if (!canContinue) {
@@ -115,13 +129,24 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     }
 
     try {
-      const device = await bluetooth!.requestDevice({
-        filters: [{ services: serviceUUIDs }],
-        optionalServices: isInBrowser ? optionalServiceUUIDs : [],
-      });
+      let device = this.device;
+      if (!device) {
+        device = await bluetooth!.requestDevice({
+          filters: [{ services: serviceUUIDs }],
+          optionalServices: isInBrowser ? optionalServiceUUIDs : [],
+        });
+        _console.log("got BluetoothDevice", device);
 
-      _console.log("got BluetoothDevice", device);
-      this.device = device;
+        const existingConnectionManager = this.deviceMap.get(device);
+        if (existingConnectionManager) {
+          _console.warn(
+            "device is already connected",
+            existingConnectionManager,
+          );
+          return false;
+        }
+        this.device = device;
+      }
 
       _console.log("connecting to device...");
       const server = await this.server!.connect();
@@ -131,13 +156,15 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
 
       _console.log("fully connected");
 
+      this.deviceMap.set(this.#device!, this);
+
       this.status = "connected";
       return true;
     } catch (error) {
       _console.error(error);
       this.status = "notConnected";
       this.server?.disconnect();
-      await this.#removeEventListeners();
+      this.device = undefined;
       return false;
     }
   }

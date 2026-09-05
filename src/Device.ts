@@ -771,8 +771,10 @@ class Device {
       `can't connect to any device - must connect to discovered device`,
     );
     const device = new Device();
-    await device.connect();
-    return device;
+    const isConnected = await device.connect();
+    if (isConnected) {
+      return device;
+    }
   }
 
   static #ReconnectOnDisconnection = false;

@@ -43,6 +43,7 @@ declare class InformationManager {
     eventDispatcher: InformationEventDispatcher;
     get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime">(type: T, options?: {
         immediate?: boolean;
+        signal?: AbortSignal;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime", InformationEventMessages, T>>;
     get isCharging(): boolean;
     get batteryCurrent(): number;
@@ -51,7 +52,7 @@ declare class InformationManager {
     get name(): string;
     updateName(updatedName: string): void;
     setName(newName: string): Promise<void>;
-    get type(): "generic" | "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic";
     get typeEnum(): number;
     updateType(updatedType: DeviceType): void;
     setType(newType: DeviceType): Promise<void>;

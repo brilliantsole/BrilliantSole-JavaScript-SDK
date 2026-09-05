@@ -88,6 +88,7 @@ declare class PubSubManager {
     get removeEventListener(): <T extends "*" | "peerConnected" | "peerNotConnected" | "subscribed" | "unsubscribed" | "peerSubscribed" | "peerUnsubscribed" | "published" | "peerPublished">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<PubSubManager, "peerConnected" | "peerNotConnected" | "subscribed" | "unsubscribed" | "peerSubscribed" | "peerUnsubscribed" | "published" | "peerPublished", PubSubManagerEventMessages, T>) => void) => void;
     get waitForEvent(): <T extends "peerConnected" | "peerNotConnected" | "subscribed" | "unsubscribed" | "peerSubscribed" | "peerUnsubscribed" | "published" | "peerPublished">(type: T, options?: {
         immediate?: boolean;
+        signal?: AbortSignal;
     }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<PubSubManager, "peerConnected" | "peerNotConnected" | "subscribed" | "unsubscribed" | "peerSubscribed" | "peerUnsubscribed" | "published" | "peerPublished", PubSubManagerEventMessages, T>>;
     get removeEventListeners(): <T extends "*" | "peerConnected" | "peerNotConnected" | "subscribed" | "unsubscribed" | "peerSubscribed" | "peerUnsubscribed" | "published" | "peerPublished">(type: T) => void;
     get removeAllEventListeners(): () => void;

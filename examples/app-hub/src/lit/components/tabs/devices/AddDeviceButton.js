@@ -31,9 +31,13 @@ class AddDeviceButton extends LitElement {
     return this._disableTransitionsState.disableTransitions;
   }
 
+  /** @type {AbortController?} */
+  _abortController;
   async _onClick() {
     if (this.isConnecting) {
-      // FILL - abort controller
+      console.log("cancelling existing device connection");
+      this._abortController?.abort();
+      this._abortController = undefined;
       return;
     }
 
@@ -49,6 +53,7 @@ class AddDeviceButton extends LitElement {
     } finally {
       this.isConnecting = false;
       this.animationRef.value.play = false;
+      this._abortController = undefined;
     }
   }
 

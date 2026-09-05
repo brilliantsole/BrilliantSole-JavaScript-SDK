@@ -1,23 +1,23 @@
-import * as BS from "../../build/brilliantwear.module.js";
-window.BS = BS;
-// console.log(BS);
+import * as BW from "../../build/brilliantwear.module.js";
+window.BW = BW;
+// console.log(BW);
 
-// const device = new BS.Device();
+// const device = new BW.Device();
 // console.log({ device });
 // window.device = device;
 
-//BS.setAllConsoleLevelFlags({ log: false });
-//BS.setConsoleLevelFlagsForType("PressureDataManager", { log: true });
+// BW.setAllConsoleLevelFlags({ log: false });
+// BW.setConsoleLevelFlagsForType("PressureDataManager", { log: true });
 
-// BS.setConsoleLevelFlagsForType("Device", { log: false });
-// BS.setConsoleLevelFlagsForType("DisplayManager", { log: false });
-// BS.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
-// BS.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
-// BS.setConsoleLevelFlagsForType("DisplayContextCommand", { log: false });
-// BS.setConsoleLevelFlagsForType("BaseServer", { log: false });
-// BS.setConsoleLevelFlagsForType("FileTransferManager", { log: true });
-// BS.setConsoleLevelFlagsForType("BaseClient", { log: true });
-// BS.setConsoleLevelFlagsForType("Device", { log: true });
+// BW.setConsoleLevelFlagsForType("Device", { log: false });
+// BW.setConsoleLevelFlagsForType("DisplayManager", { log: false });
+// BW.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
+// BW.setConsoleLevelFlagsForType("DisplayContextStateHelper", { log: true });
+// BW.setConsoleLevelFlagsForType("DisplayContextCommand", { log: false });
+// BW.setConsoleLevelFlagsForType("BaseServer", { log: false });
+// BW.setConsoleLevelFlagsForType("FileTransferManager", { log: true });
+// BW.setConsoleLevelFlagsForType("BaseClient", { log: true });
+// BW.setConsoleLevelFlagsForType("Device", { log: true });
 
 // GET DEVICES
 /** @type {HTMLTemplateElement} */
@@ -25,7 +25,7 @@ const availableDeviceTemplate = document.getElementById(
   "availableDeviceTemplate",
 );
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {BS.Device[]} availableDevices */
+/** @param {BW.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -68,44 +68,44 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.DeviceManager.getDevices();
+  const availableDevices = await BW.DeviceManager.getDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.DeviceManager.addEventListener("availableDevices", (event) => {
+BW.DeviceManager.addEventListener("availableDevices", (event) => {
   const { availableDevices } = event.message;
   onAvailableDevices(availableDevices);
 });
 
 // DEVICE
 
-/** @type {BS.Device?} */
+/** @type {BW.Device?} */
 let currentDevice;
 
 /** @param {function} callback */
 const onCurrentDevice = (callback) => {
-  BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+  BW.DeviceManager.addEventListener("deviceConnected", (event) => {
     if (event.message.device == currentDevice) {
       callback();
     }
   });
 };
 
-BS.DeviceManager.addEventListener("deviceConnected", (event) => {
+BW.DeviceManager.addEventListener("deviceConnected", (event) => {
   const { device } = event.message;
   if (!currentDevice?.isConnected) {
     onDevice(device);
   }
 });
-BS.DeviceManager.addEventListener("deviceNotConnected", (event) => {
+BW.DeviceManager.addEventListener("deviceNotConnected", (event) => {
   const { device } = event.message;
   if (currentDevice == device) {
     console.log("currentDevice is gone");
     currentDevice.removeAllEventListeners();
-    const nextConnectedDevice = BS.DeviceManager.connectedDevices[0];
+    const nextConnectedDevice = BW.DeviceManager.connectedDevices[0];
     console.log("nextConnectedDevice", nextConnectedDevice);
     if (nextConnectedDevice) {
       onDevice(nextConnectedDevice);
@@ -113,7 +113,7 @@ BS.DeviceManager.addEventListener("deviceNotConnected", (event) => {
   }
 });
 
-/** @param {BS.Device} device */
+/** @param {BW.Device} device */
 const onDevice = (device, replaceCurrentDevice = false) => {
   if (currentDevice?.isConnected) {
     if (!replaceCurrentDevice) {
@@ -134,7 +134,7 @@ toggleConnectionButton.addEventListener("click", async () => {
     currentDevice.toggleConnection();
   } else {
     toggleConnectionButton.innerText = "connecting...";
-    await BS.Device.Connect();
+    await BW.Device.Connect();
     if (!currentDevice) {
       toggleConnectionButton.innerText = "connect";
     }
@@ -354,8 +354,8 @@ onCurrentDevice(() => {
 
 /** @type {HTMLInputElement} */
 const setNameInput = document.getElementById("setNameInput");
-setNameInput.minLength = BS.MinNameLength;
-setNameInput.maxLength = BS.MaxNameLength;
+setNameInput.minLength = BW.MinNameLength;
+setNameInput.maxLength = BW.MaxNameLength;
 
 /** @type {HTMLButtonElement} */
 const setNameButton = document.getElementById("setNameButton");
@@ -413,7 +413,7 @@ const setTypeButton = document.getElementById("setTypeButton");
 const setTypeSelect = document.getElementById("setTypeSelect");
 /** @type {HTMLOptGroupElement} */
 const setTypeSelectOptgroup = setTypeSelect.querySelector("optgroup");
-BS.DeviceTypes.forEach((type) => {
+BW.DeviceTypes.forEach((type) => {
   setTypeSelectOptgroup.appendChild(new Option(type));
 });
 
@@ -471,7 +471,7 @@ onCurrentDevice(() => {
 const sensorTypeConfigurationTemplate = document.getElementById(
   "sensorTypeConfigurationTemplate",
 );
-BS.SensorTypes.forEach((sensorType) => {
+BW.SensorTypes.forEach((sensorType) => {
   /** @type {HTMLElement} */
   const sensorTypeConfigurationContainer =
     sensorTypeConfigurationTemplate.content
@@ -484,8 +484,8 @@ BS.SensorTypes.forEach((sensorType) => {
   const sensorRateInput =
     sensorTypeConfigurationContainer.querySelector(".sensorRate");
   sensorRateInput.value = 0;
-  sensorRateInput.max = BS.MaxSensorRate;
-  sensorRateInput.step = BS.SensorRateStep;
+  sensorRateInput.max = BW.MaxSensorRate;
+  sensorRateInput.step = BW.SensorRateStep;
   sensorRateInput.addEventListener("input", () => {
     const sensorRate = Number(sensorRateInput.value);
     console.log({ sensorType, sensorRate });
@@ -552,7 +552,7 @@ resetPressureRangeButton.addEventListener("click", () => {
 const sensorTypeDataTemplate = document.getElementById(
   "sensorTypeDataTemplate",
 );
-BS.SensorTypes.forEach((sensorType) => {
+BW.SensorTypes.forEach((sensorType) => {
   const sensorTypeDataContainer = sensorTypeDataTemplate.content
     .cloneNode(true)
     .querySelector(".sensorTypeData");
@@ -585,7 +585,7 @@ const vibrationTemplate = document.getElementById("vibrationTemplate");
       ".waveformEffect .sequenceLoopCount",
     );
   waveformEffectSequenceLoopCountInput.max =
-    BS.MaxVibrationWaveformEffectSequenceLoopCount;
+    BW.MaxVibrationWaveformEffectSequenceLoopCount;
 }
 /** @type {HTMLTemplateElement} */
 const vibrationLocationTemplate = document.getElementById(
@@ -601,7 +601,7 @@ const waveformEffectSegmentTemplate = document.getElementById(
   const waveformEffectSelect =
     waveformEffectSegmentTemplate.content.querySelector(".effect");
   const waveformEffectOptgroup = waveformEffectSelect.querySelector("optgroup");
-  BS.VibrationWaveformEffects.forEach((waveformEffect) => {
+  BW.VibrationWaveformEffects.forEach((waveformEffect) => {
     waveformEffectOptgroup.appendChild(new Option(waveformEffect));
   });
 
@@ -609,13 +609,13 @@ const waveformEffectSegmentTemplate = document.getElementById(
   const waveformEffectSegmentDelayInput =
     waveformEffectSegmentTemplate.content.querySelector(".delay");
   waveformEffectSegmentDelayInput.max =
-    BS.MaxVibrationWaveformEffectSegmentDelay;
+    BW.MaxVibrationWaveformEffectSegmentDelay;
 
   /** @type {HTMLInputElement} */
   const waveformEffectLoopCountInput =
     waveformEffectSegmentTemplate.content.querySelector(".loopCount");
   waveformEffectLoopCountInput.max =
-    BS.MaxVibrationWaveformEffectSegmentLoopCount;
+    BW.MaxVibrationWaveformEffectSegmentLoopCount;
 }
 
 /** @type {HTMLTemplateElement} */
@@ -626,7 +626,7 @@ const waveformSegmentTemplate = document.getElementById(
   /** @type {HTMLInputElement} */
   const waveformDurationSegmentInput =
     waveformSegmentTemplate.content.querySelector(".duration");
-  waveformDurationSegmentInput.max = BS.MaxVibrationWaveformSegmentDuration;
+  waveformDurationSegmentInput.max = BW.MaxVibrationWaveformSegmentDuration;
 }
 
 /** @type {HTMLButtonElement} */
@@ -671,7 +671,7 @@ addVibrationButton.addEventListener("click", () => {
   const updateAddWaveformEffectSegmentButton = () => {
     addWaveformEffectSegmentButton.disabled =
       waveformEffectSegmentsContainer.children.length >=
-      BS.MaxNumberOfVibrationWaveformEffectSegments;
+      BW.MaxNumberOfVibrationWaveformEffectSegments;
   };
   addWaveformEffectSegmentButton.addEventListener("click", () => {
     /** @type {HTMLElement} */
@@ -731,7 +731,7 @@ addVibrationButton.addEventListener("click", () => {
   const updateAddWaveformSegmentButton = () => {
     addWaveformSegmentButton.disabled =
       waveformSegmentsContainer.children.length >=
-      BS.MaxNumberOfVibrationWaveformSegments;
+      BW.MaxNumberOfVibrationWaveformSegments;
   };
   addWaveformSegmentButton.addEventListener("click", () => {
     /** @type {HTMLElement} */
@@ -755,7 +755,7 @@ addVibrationButton.addEventListener("click", () => {
   /** @type {HTMLOptGroupElement} */
   const vibrationTypeSelectOptgroup =
     vibrationTypeSelect.querySelector("optgroup");
-  BS.VibrationTypes.forEach((vibrationType) => {
+  BW.VibrationTypes.forEach((vibrationType) => {
     vibrationTypeSelectOptgroup.appendChild(new Option(vibrationType));
   });
 
@@ -763,7 +763,7 @@ addVibrationButton.addEventListener("click", () => {
     let showWaveformContainer = false;
     let showWaveformEffectContainer = false;
 
-    /** @type {BS.VibrationType} */
+    /** @type {BW.VibrationType} */
     const vibrationType = vibrationTypeSelect.value;
     switch (vibrationType) {
       case "waveform":
@@ -790,7 +790,7 @@ addVibrationButton.addEventListener("click", () => {
 
 const triggerVibrationsButton = document.getElementById("triggerVibrations");
 triggerVibrationsButton.addEventListener("click", () => {
-  /** @type {BS.VibrationConfiguration[]} */
+  /** @type {BW.VibrationConfiguration[]} */
   let vibrationConfigurations = [];
   Array.from(vibrationTemplate.parentElement.querySelectorAll(".vibration"))
     .filter(
@@ -798,7 +798,7 @@ triggerVibrationsButton.addEventListener("click", () => {
         vibrationContainer.querySelector(".shouldTrigger").checked,
     )
     .forEach((vibrationContainer) => {
-      /** @type {BS.VibrationConfiguration} */
+      /** @type {BW.VibrationConfiguration} */
       const vibrationConfiguration = {
         locations: [],
       };
@@ -824,7 +824,7 @@ triggerVibrationsButton.addEventListener("click", () => {
               ".waveformEffect .waveformEffectSegment",
             ),
           ).map((waveformEffectSegmentContainer) => {
-            /** @type {BS.VibrationWaveformEffectSegment} */
+            /** @type {BW.VibrationWaveformEffectSegment} */
             const waveformEffectSegment = {
               loopCount: Number(
                 waveformEffectSegmentContainer.querySelector(".loopCount")
@@ -923,7 +923,7 @@ onCurrentDevice(() => {
   );
 });
 
-/** @type {BS.FileType} */
+/** @type {BW.FileType} */
 let fileType;
 
 /** @type {HTMLSelectElement} */
@@ -946,7 +946,7 @@ fileTransferTypesSelect.addEventListener("input", () => {
 /** @type {HTMLOptGroupElement} */
 const fileTransferTypesOptgroup =
   fileTransferTypesSelect.querySelector("optgroup");
-BS.FileTypes.forEach((fileType) => {
+BW.FileTypes.forEach((fileType) => {
   fileTransferTypesOptgroup.appendChild(new Option(fileType));
 });
 fileTransferTypesSelect.dispatchEvent(new Event("input"));
@@ -956,7 +956,7 @@ onCurrentDevice(() => {
     () => {
       fileTransferTypesSelect.querySelectorAll("option").forEach((option) => {
         option.hidden =
-          BS.FileTypes.includes(option.value) &&
+          BW.FileTypes.includes(option.value) &&
           !currentDevice.fileTypes.includes(option.value);
       });
     },
@@ -1048,7 +1048,7 @@ onCurrentDevice(() => {
   );
 });
 
-/** @type {BS.FileTransferDirection} */
+/** @type {BW.FileTransferDirection} */
 let fileTransferDirection;
 /** @type {HTMLSelectElement} */
 const fileTransferDirectionSelect = document.getElementById(
@@ -1167,7 +1167,7 @@ onCurrentDevice(() => {
   );
 });
 
-BS.TfliteTasks.forEach((task) => {
+BW.TfliteTasks.forEach((task) => {
   setTfliteTaskOptgroup.appendChild(new Option(task));
 });
 
@@ -1261,14 +1261,14 @@ const tfliteSensorTypeTemplate = document.getElementById(
 );
 /** @type {Object.<string, HTMLElement>} */
 const tfliteSensorTypeContainers = {};
-/** @type {BS.SensorType[]} */
+/** @type {BW.SensorType[]} */
 let tfliteSensorTypes = [];
 /** @type {HTMLButtonElement} */
 const setTfliteSensorTypesButton = document.getElementById(
   "setTfliteSensorTypes",
 );
 
-BS.TfliteSensorTypes.forEach((sensorType) => {
+BW.TfliteSensorTypes.forEach((sensorType) => {
   const sensorTypeContainer = tfliteSensorTypeTemplate.content
     .cloneNode(true)
     .querySelector(".sensorType");
@@ -1796,12 +1796,12 @@ onCurrentDevice(() => {
 });
 /** @type {HTMLInputElement} */
 const setWifiSSIDInput = document.getElementById("setWifiSSIDInput");
-setWifiSSIDInput.min = BS.MinWifiSSIDLength;
-setWifiSSIDInput.max = BS.MaxWifiSSIDLength;
+setWifiSSIDInput.min = BW.MinWifiSSIDLength;
+setWifiSSIDInput.max = BW.MaxWifiSSIDLength;
 setWifiSSIDInput.addEventListener("input", () => {
   setWifiSSIDButton.disabled = !(
-    setWifiSSIDInput.value.length > BS.MinWifiSSIDLength &&
-    setWifiSSIDInput.value.length < BS.MaxWifiSSIDLength
+    setWifiSSIDInput.value.length > BW.MinWifiSSIDLength &&
+    setWifiSSIDInput.value.length < BW.MaxWifiSSIDLength
   );
 });
 /** @type {HTMLButtonElement} */
@@ -1828,13 +1828,13 @@ onCurrentDevice(() => {
 });
 /** @type {HTMLInputElement} */
 const setWifiPasswordInput = document.getElementById("setWifiPasswordInput");
-setWifiPasswordInput.min = BS.MinWifiPasswordLength;
-setWifiPasswordInput.max = BS.MaxWifiPasswordLength;
+setWifiPasswordInput.min = BW.MinWifiPasswordLength;
+setWifiPasswordInput.max = BW.MaxWifiPasswordLength;
 setWifiPasswordInput.addEventListener("input", () => {
   const length = setWifiPasswordInput.value.length;
   setWifiPasswordButton.disabled = !(
     length == 0 ||
-    (length > BS.MinWifiPasswordLength && length < BS.MaxWifiPasswordLength)
+    (length > BW.MinWifiPasswordLength && length < BW.MaxWifiPasswordLength)
   );
 });
 /** @type {HTMLButtonElement} */
@@ -2200,7 +2200,7 @@ const cameraConfigurationContainer = document.getElementById(
 const cameraConfigurationTypeTemplate = document.getElementById(
   "cameraConfigurationTypeTemplate",
 );
-BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
+BW.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   const cameraConfigurationTypeContainer =
     cameraConfigurationTypeTemplate.content
       .cloneNode(true)
@@ -2314,7 +2314,7 @@ takePictureAfterUpdateCheckbox.addEventListener("input", () => {
 
 /** @type {HTMLInputElement} */
 const cameraWhiteBalanceInput = document.getElementById("cameraWhiteBalance");
-const updateWhiteBalance = BS.ThrottleUtils.throttle(
+const updateWhiteBalance = BW.ThrottleUtils.throttle(
   (config) => {
     if (currentDevice.cameraStatus != "idle") {
       return;
@@ -2594,7 +2594,7 @@ const microphoneConfigurationContainer = document.getElementById(
 const microphoneConfigurationTypeTemplate = document.getElementById(
   "microphoneConfigurationTypeTemplate",
 );
-BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
+BW.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
   const microphoneConfigurationTypeContainer =
     microphoneConfigurationTypeTemplate.content
       .cloneNode(true)
@@ -2613,7 +2613,7 @@ BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
   const optgroup = select.querySelector("optgroup");
   optgroup.label = microphoneConfigurationType;
 
-  BS.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
+  BW.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
     (value) => {
       optgroup.appendChild(new Option(value));
     },
@@ -2905,12 +2905,12 @@ onCurrentDevice(() => {
 });
 
 // DISPLAY CANVAS HELPER
-const displayCanvasHelper = new BS.DisplayCanvasHelper();
+const displayCanvasHelper = new BW.DisplayCanvasHelper();
 // displayCanvasHelper.setBrightness("veryLow");
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
-BS.DeviceManager.addEventListener("deviceConnected", async (event) => {
+BW.DeviceManager.addEventListener("deviceConnected", async (event) => {
   const { device } = event.message;
   if (device.isGlasses && device.isDisplayAvailable) {
     displayCanvasHelper.device = device;
@@ -3012,7 +3012,7 @@ const setDisplayBrightnessSelect = document.getElementById(
 /** @type {HTMLOptGroupElement} */
 const setDisplayBrightnessSelectOptgroup =
   setDisplayBrightnessSelect.querySelector("optgroup");
-BS.DisplayBrightnesses.forEach((displayBrightness) => {
+BW.DisplayBrightnesses.forEach((displayBrightness) => {
   setDisplayBrightnessSelectOptgroup.appendChild(new Option(displayBrightness));
 });
 
@@ -3044,7 +3044,7 @@ setDisplayBrightnessSelect.addEventListener("input", () => {
 const displayColorTemplate = document.getElementById("displayColorTemplate");
 const displayColorsContainer = document.getElementById("displayColors");
 /** @type {string[]} */
-const setDisplayColor = BS.ThrottleUtils.throttle(
+const setDisplayColor = BW.ThrottleUtils.throttle(
   async (colorIndex, colorString) => {
     console.log({ colorIndex, colorString });
     await currentDevice.setDisplayColor(colorIndex, colorString, true);
@@ -3136,7 +3136,7 @@ const displayColorOpacityTemplate = document.getElementById(
 const displayColorOpacitiesContainer = document.getElementById(
   "displayColorOpacities",
 );
-const setDisplayColorOpacity = BS.ThrottleUtils.throttle(
+const setDisplayColorOpacity = BW.ThrottleUtils.throttle(
   (colorIndex, opacity) => {
     console.log({ colorIndex, opacity });
     currentDevice.setDisplayColorOpacity(colorIndex, opacity, true);
@@ -3189,7 +3189,7 @@ const displayOpacityContainer = document.getElementById("displayOpacity");
 const displayOpacitySpan = displayOpacityContainer.querySelector("span");
 const displayOpacityInput = displayOpacityContainer.querySelector("input");
 
-const setDisplayOpacity = BS.ThrottleUtils.throttle(
+const setDisplayOpacity = BW.ThrottleUtils.throttle(
   (opacity) => {
     console.log({ opacity });
     currentDevice.setDisplayOpacity(opacity, true);
@@ -3560,7 +3560,7 @@ const horizontalAlignmentSelect =
 const horizontalAlignmentOptgroup =
   horizontalAlignmentSelect.querySelector("optgroup");
 
-BS.DisplayAlignments.forEach((horizontalAlignment) => {
+BW.DisplayAlignments.forEach((horizontalAlignment) => {
   horizontalAlignmentOptgroup.appendChild(new Option(horizontalAlignment));
 });
 horizontalAlignmentSelect.value = "center";
@@ -3579,7 +3579,7 @@ const verticalAlignmentSelect =
 const verticalAlignmentOptgroup =
   verticalAlignmentSelect.querySelector("optgroup");
 
-BS.DisplayAlignments.forEach((verticalAlignment) => {
+BW.DisplayAlignments.forEach((verticalAlignment) => {
   verticalAlignmentOptgroup.appendChild(new Option(verticalAlignment));
 });
 verticalAlignmentSelect.value = "center";
@@ -3596,7 +3596,7 @@ const segmentStartCapContainer = document.getElementById("segmentStartCap");
 const segmentStartCapSelect = segmentStartCapContainer.querySelector("select");
 const segmentStartCapOptgroup = segmentStartCapSelect.querySelector("optgroup");
 
-BS.DisplaySegmentCaps.forEach((segmentStartCap) => {
+BW.DisplaySegmentCaps.forEach((segmentStartCap) => {
   segmentStartCapOptgroup.appendChild(new Option(segmentStartCap));
 });
 let segmentStartCap = segmentStartCapSelect.value;
@@ -3612,7 +3612,7 @@ const segmentEndCapContainer = document.getElementById("segmentEndCap");
 const segmentEndCapSelect = segmentEndCapContainer.querySelector("select");
 const segmentEndCapOptgroup = segmentEndCapSelect.querySelector("optgroup");
 
-BS.DisplaySegmentCaps.forEach((segmentEndCap) => {
+BW.DisplaySegmentCaps.forEach((segmentEndCap) => {
   segmentEndCapOptgroup.appendChild(new Option(segmentEndCap));
 });
 let segmentEndCap = segmentEndCapSelect.value;
@@ -4378,7 +4378,7 @@ onBitmapCanvasSizeUpdate();
 // LEDS
 const setLedsContainer = document.getElementById("setLeds");
 
-/** @type {Record<BS.LedType, HTMLTemplateElement>} */
+/** @type {Record<BW.LedType, HTMLTemplateElement>} */
 const setLedTemplates = {
   analogSingle: document.getElementById("analogSingleLedTemplate"),
   digitalSingle: document.getElementById("digitalSingleLedTemplate"),
@@ -4409,7 +4409,7 @@ onCurrentDevice(() => {
           console.log("setting led", { index, brightness: +range.value });
           currentDevice.setLed({ index, brightness: +range.value });
         };
-        onRangeInput = BS.ThrottleUtils.throttle(
+        onRangeInput = BW.ThrottleUtils.throttle(
           onRangeInput,
           ledInterval,
           true,
@@ -4425,14 +4425,14 @@ onCurrentDevice(() => {
           console.log("setting led", { index, color: colorInput.value });
           currentDevice.setLed({ index, color: colorInput.value });
         };
-        onColorInput = BS.ThrottleUtils.throttle(
+        onColorInput = BW.ThrottleUtils.throttle(
           onColorInput,
           ledInterval,
           true,
         );
         colorInput?.addEventListener("input", (event) => onColorInput());
         if (colorInput?.disabled) {
-          colorInput.value = BS.rgbToHex(led.maxColor);
+          colorInput.value = BW.rgbToHex(led.maxColor);
         }
         /** @type {HTMLInputElement} */
         const checkbox = setLedContainer.querySelector(
@@ -4452,7 +4452,7 @@ onCurrentDevice(() => {
             brightness: checkbox.checked ? 255 : 0,
           });
         };
-        onCheckboxInput = BS.ThrottleUtils.throttle(
+        onCheckboxInput = BW.ThrottleUtils.throttle(
           onCheckboxInput,
           ledInterval,
           true,
@@ -4494,13 +4494,13 @@ onCurrentDevice(() => {
 
     [range, checkbox, colorInput].forEach((input) => {
       if (colorInput && !colorInput.disabled && !colorInput.isChanging) {
-        colorInput.value = BS.rgbToHex(led.color);
+        colorInput.value = BW.rgbToHex(led.color);
       }
       if (checkbox && !checkbox.isChanging) {
-        checkbox.checked = BS.projectColor(led.color, led.maxColor) > 0;
+        checkbox.checked = BW.projectColor(led.color, led.maxColor) > 0;
       }
       if (range && !range.isChanging) {
-        range.value = BS.projectColor(led.color, led.maxColor) * 255;
+        range.value = BW.projectColor(led.color, led.maxColor) * 255;
       }
     });
   });
@@ -4653,7 +4653,7 @@ onCurrentDevice(() => {
 // PUBSUB
 
 window.allowPeerSubscription = true;
-BS.PubSubManager.peerSubscriptionGuardManager.add(
+BW.PubSubManager.peerSubscriptionGuardManager.add(
   ({ peer, type, data, sendingPeer }) => {
     console.log("allow peerSubscription?", peer, type, data, sendingPeer);
     return window.allowPeerSubscription;
@@ -4661,7 +4661,7 @@ BS.PubSubManager.peerSubscriptionGuardManager.add(
 );
 
 const abortController = new AbortController();
-BS.PubSubManager.subscribe(
+BW.PubSubManager.subscribe(
   "hello",
   (event) => {
     console.log("PUBSUB", event);

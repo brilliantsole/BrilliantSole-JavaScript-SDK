@@ -49,6 +49,7 @@ declare class WifiManager {
     eventDispatcher: WifiEventDispatcher;
     get waitForEvent(): <T extends "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure">(type: T, options?: {
         immediate?: boolean;
+        signal?: AbortSignal;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure", WifiEventMessages, T>>;
     requestRequiredInformation(): void;
     get isWifiAvailable(): boolean;
