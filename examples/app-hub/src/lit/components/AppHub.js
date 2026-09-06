@@ -810,7 +810,9 @@ class AppHub extends LitElement {
       this._resetViewport();
       this._getCSSVariables();
 
+      this._disableTransitionsBeforeUpdate();
       this._updateMainOverlayResizeObservers();
+      this._enableTransitionsAfterUpdate();
       document.documentElement.setAttribute("data-loaded", true);
     });
   }
@@ -1508,6 +1510,24 @@ class AppHub extends LitElement {
     );
   }
 
+  _onTabOverlayResize(event) {
+    /** @type {DOMRectReadOnly} */
+    const rect = event.detail.entries[0].contentRect;
+    let { mainAlign, crossAlign, touchOnly, mouseOnly } =
+      event.target.children[0].dataset;
+    touchOnly = touchOnly != undefined;
+    mouseOnly = mouseOnly != undefined;
+    // console.log("_onTabOverlayResize", rect, {
+    //   mainAlign,
+    //   crossAlign,
+    // });
+
+    document.documentElement.style.setProperty(
+      `--tab-overlay-${mainAlign}-${crossAlign}-height`,
+      `${rect.height}px`,
+    );
+  }
+
   _bluetoothProvider = createBluetoothContextProvider(this, null, () =>
     this._onBluetoothUpdate(),
   );
@@ -1691,7 +1711,11 @@ class AppHub extends LitElement {
               ${ref(this.refs.tabContentResizeObserver)}
               disabled
             >
-              <div id="tabContent" ${ref(this.refs.tabContent)}>
+              <div
+                id="tabContent"
+                ${ref(this.refs.tabContent)}
+                @wa-resize=${this._onTabOverlayResize}
+              >
                 ${this.router.outlet()}
               </div>
             </wa-resize-observer>

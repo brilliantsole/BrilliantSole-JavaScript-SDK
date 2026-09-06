@@ -47,20 +47,21 @@ class DevicesTab extends LitElement {
       </div>
 
       <div class="bw-overlay">
-        <div
-          data-main-align="start"
-          data-cross-align="start"
-          data-tab-view-transition
-        >
-          <wa-resize-observer disabled>
+        <wa-resize-observer>
+          <div
+            data-main-align="start"
+            data-cross-align="start"
+            data-tab-view-transition
+            data-portrait-only
+          >
             <div class="wa-stack wa-gap-2xs" data-align-items>
               <bw-add-client-button></bw-add-client-button>
               <bw-add-device-button
                 data-bluetooth-available-only
               ></bw-add-device-button>
             </div>
-          </wa-resize-observer>
-        </div>
+          </div>
+        </wa-resize-observer>
       </div>
     `;
   }

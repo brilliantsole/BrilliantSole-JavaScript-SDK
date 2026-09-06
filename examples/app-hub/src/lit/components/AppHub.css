@@ -2225,18 +2225,31 @@ bw-tab-breadcrumb {
     var(--main-padding-bottom) + var(--tab-padding-bottom-extra) +
       (var(--wa-space-xs) * sign(abs(var(--tab-padding-bottom-extra))))
   );
+  --tab-padding-top: var(--main-padding-top-base);
 
   @media (pointer: coarse) {
     @media (orientation: landscape) {
       --tab-padding-bottom-extra: max(
-        var(--main-overlay-end-end-height),
-        var(--main-overlay-start-end-height)
+        calc(
+          var(--main-overlay-end-end-height, 0px) +
+            var(--tab-overlay-end-end-height, 0px)
+        ),
+        calc(
+          var(--main-overlay-start-end-height, 0px) +
+            var(--tab-overlay-start-end-height, 0px)
+        )
       );
     }
     @media (orientation: portrait) {
       --tab-padding-bottom-extra: max(
-        var(--main-overlay-start-start-height),
-        var(--main-overlay-start-end-height)
+        calc(
+          var(--main-overlay-start-start-height, 0px) +
+            var(--tab-overlay-start-start-height, 0px)
+        ),
+        calc(
+          var(--main-overlay-start-end-height, 0px) +
+            var(--tab-overlay-start-end-height, 0px)
+        )
       );
     }
   }
@@ -2245,14 +2258,15 @@ bw-tab-breadcrumb {
 #tab {
   overflow-y: scroll;
 
-  padding-top: var(--main-padding-top-base);
-  padding-bottom: var(--tab-padding-bottom);
-
   container-type: size;
   container-name: tab;
 
   width: 100%;
   height: 100%;
+}
+#tabContent {
+  padding-top: var(--tab-padding-top);
+  padding-bottom: var(--tab-padding-bottom);
 }
 
 #tab,
@@ -2323,11 +2337,8 @@ html:not([data-scroll-assist]) :is(#tabBefore, #tabAfter) {
   pointer-events: none;
 
   width: 100cqw;
-  height: 100cqh;
-
-  bottom: var(--main-padding-bottom);
-}
-:root {
+  height: calc(100cqh + var(--tab-padding-bottom) + var(--tab-padding-top));
+  bottom: 0px;
 }
 .bw-overlay > * {
   pointer-events: auto;
@@ -2338,8 +2349,11 @@ html:not([data-scroll-assist]) :is(#tabBefore, #tabAfter) {
   --bw-overlay-transition-timing-function: ease-in;
 }
 @media (orientation: portrait) and (pointer: coarse) {
+  html[data-disable-transitions] .bw-overlay {
+    transition: none !important;
+  }
   .bw-overlay {
-    & > [data-main-align="start"] {
+    & [data-main-align="start"] {
       transition-property: padding-bottom;
       transition-duration: var(--bw-overlay-transition-duration);
       transition-timing-function: var(--bw-overlay-transition-timing-function);
@@ -2354,7 +2368,7 @@ html:not([data-scroll-assist]) :is(#tabBefore, #tabAfter) {
         --main-overlay-start-height: var(--main-overlay-start-end-height);
       }
       --padding: calc(
-        var(--main-overlay-start-height) +
+        var(--wa-space-xs) + var(--main-overlay-start-height) +
           (var(--wa-space-xs) * sign(abs(var(--main-overlay-start-height))))
       );
       padding-bottom: var(--padding);
