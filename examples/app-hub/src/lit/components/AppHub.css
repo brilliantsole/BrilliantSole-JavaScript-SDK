@@ -104,8 +104,11 @@ textarea {
   align-items: center;
 }
 
-[data-main-align],
-[data-cross-align] {
+#mainOverlay :is([data-main-align], [data-cross-align]) {
+  view-transition-name: match-element;
+}
+
+:is(#mainOverlay, .bw-overlay) :is([data-main-align], [data-cross-align]) {
   width: fit-content;
   height: fit-content;
   position: absolute;
@@ -144,10 +147,6 @@ wa-button {
 
 html[data-disable-main-overlay] #mainOverlay {
   display: none;
-}
-
-#mainOverlay :is([data-main-align], [data-cross-align]) {
-  view-transition-name: match-element;
 }
 
 bw-app-hub {
@@ -523,9 +522,15 @@ html[data-header-hidden] {
     }
     [data-main-align="start"] {
       justify-self: var(--justify-start);
+      [data-align-items] {
+        align-items: var(--justify-start);
+      }
     }
     [data-main-align="end"] {
       justify-self: var(--justify-end);
+      [data-align-items] {
+        align-items: var(--justify-end);
+      }
     }
 
     [data-cross-align="center"] {
@@ -546,9 +551,15 @@ html[data-header-hidden] {
 
       [data-main-align="start"] {
         justify-self: var(--justify-end);
+        [data-align-items] {
+          align-items: var(--justify-end);
+        }
       }
       [data-main-align="end"] {
         justify-self: var(--justify-start);
+        [data-align-items] {
+          align-items: var(--justify-start);
+        }
       }
 
       @supports (-webkit-touch-callout: none) {
@@ -673,9 +684,15 @@ html[data-header-hidden] {
     }
     [data-cross-align="start"] {
       justify-self: var(--justify-start);
+      [data-align-items] {
+        align-items: var(--justify-start);
+      }
     }
     [data-cross-align="end"] {
       justify-self: var(--justify-end);
+      [data-align-items] {
+        align-items: var(--justify-end);
+      }
     }
 
     [data-main-align="center"] {
@@ -695,9 +712,15 @@ html[data-header-hidden] {
 
       [data-cross-align="start"] {
         justify-self: var(--justify-end);
+        [data-align-items] {
+          align-items: var(--justify-end);
+        }
       }
       [data-cross-align="end"] {
         justify-self: var(--justify-start);
+        [data-align-items] {
+          align-items: var(--justify-start);
+        }
       }
     }
 
@@ -2226,7 +2249,7 @@ bw-tab-breadcrumb {
   padding-bottom: var(--tab-padding-bottom);
 
   container-type: size;
-  container-name: main;
+  container-name: tab;
 
   width: 100%;
   height: 100%;

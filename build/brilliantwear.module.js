@@ -32271,7 +32271,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
     }
 }
 
-const _console$p = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console$p = createConsole("WebBluetoothConnectionManager", { log: false });
 var bluetooth;
 if (isInBrowser) {
     bluetooth = window.navigator.bluetooth;
@@ -34250,7 +34250,7 @@ class Device {
         }
         else {
             const newNumberOfConnectingDevices = getNumberOfConnectingDevices();
-            console.log({ numberOfConnectingDevices, newNumberOfConnectingDevices });
+            _console$k.log({ numberOfConnectingDevices, newNumberOfConnectingDevices });
             if (newNumberOfConnectingDevices != numberOfConnectingDevices) {
                 const event = await deviceConnectedEventPromise;
                 return event.message.device;

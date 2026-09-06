@@ -77,7 +77,6 @@ class AddDeviceButton extends SignalWatcher(LitElement) {
         ${ref(this.animationRef)}
       >
         <wa-button
-          data-bluetooth-available-only
           variant="brand"
           size="s"
           @click=${this._onClick}

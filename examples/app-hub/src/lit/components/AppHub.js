@@ -810,9 +810,8 @@ class AppHub extends LitElement {
       this._resetViewport();
       this._getCSSVariables();
 
-      document.documentElement.setAttribute("data-loaded", true);
-
       this._updateMainOverlayResizeObservers();
+      document.documentElement.setAttribute("data-loaded", true);
     });
   }
 
@@ -1555,9 +1554,8 @@ class AppHub extends LitElement {
       </header>
 
       <div id="main">
-        <div id="mainOverlay">
+        <div id="mainOverlay" @wa-resize=${this._onMainOverlayResize}>
           <wa-resize-observer
-            @wa-resize=${this._onMainOverlayResize}
             ${ref(this._mainOverlayRefs["start-start"])}
             disabled
           >
@@ -1583,7 +1581,6 @@ class AppHub extends LitElement {
           </wa-resize-observer>
 
           <wa-resize-observer
-            @wa-resize=${this._onMainOverlayResize}
             ${ref(this._mainOverlayRefs["start-center"])}
             disabled
           >
@@ -1595,7 +1592,6 @@ class AppHub extends LitElement {
           </wa-resize-observer>
 
           <wa-resize-observer
-            @wa-resize=${this._onMainOverlayResize}
             ${ref(this._mainOverlayRefs["start-end"])}
             disabled
           >
@@ -1622,7 +1618,6 @@ class AppHub extends LitElement {
           </wa-resize-observer>
 
           <wa-resize-observer
-            @wa-resize=${this._onMainOverlayResize}
             ${ref(this._mainOverlayRefs["center-start"])}
             disabled
           >
@@ -1634,7 +1629,6 @@ class AppHub extends LitElement {
           </wa-resize-observer>
 
           <wa-resize-observer
-            @wa-resize=${this._onMainOverlayResize}
             ${ref(this._mainOverlayRefs["center-center"])}
             disabled
           >
@@ -1646,7 +1640,6 @@ class AppHub extends LitElement {
           </wa-resize-observer>
 
           <wa-resize-observer
-            @wa-resize=${this._onMainOverlayResize}
             ${ref(this._mainOverlayRefs["center-end"])}
             disabled
           >
@@ -1658,7 +1651,6 @@ class AppHub extends LitElement {
           </wa-resize-observer>
 
           <wa-resize-observer
-            @wa-resize=${this._onMainOverlayResize}
             ${ref(this._mainOverlayRefs["end-start"])}
             disabled
           >
@@ -1670,7 +1662,6 @@ class AppHub extends LitElement {
           </wa-resize-observer>
 
           <wa-resize-observer
-            @wa-resize=${this._onMainOverlayResize}
             ${ref(this._mainOverlayRefs["end-center"])}
             disabled
           >
@@ -1681,11 +1672,7 @@ class AppHub extends LitElement {
             ></div>
           </wa-resize-observer>
 
-          <wa-resize-observer
-            @wa-resize=${this._onMainOverlayResize}
-            ${ref(this._mainOverlayRefs["end-end"])}
-            disabled
-          >
+          <wa-resize-observer ${ref(this._mainOverlayRefs["end-end"])} disabled>
             <div data-touch-only data-main-align="end" data-cross-align="end">
               <bw-main-corner-button-flip
                 data-landscape-only
