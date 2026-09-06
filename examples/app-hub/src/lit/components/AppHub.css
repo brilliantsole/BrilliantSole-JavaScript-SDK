@@ -71,6 +71,14 @@ textarea {
   }
 }
 
+@media (pointer: coarse) {
+  @media (orientation: portrait) {
+    [data-not-touch-not-portrait-only] {
+      display: none !important;
+    }
+  }
+}
+
 :dir(ltr) {
   --flex-direction-lrt: row;
   --flex-direction-rtl: row-reverse;
@@ -2337,7 +2345,7 @@ html:not([data-scroll-assist]) :is(#tabBefore, #tabAfter) {
   pointer-events: none;
 
   width: 100cqw;
-  height: calc(100cqh + var(--tab-padding-bottom) + var(--tab-padding-top));
+  height: 100cqh;
   bottom: 0px;
 }
 .bw-overlay > * {

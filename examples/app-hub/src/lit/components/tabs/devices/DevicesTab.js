@@ -6,7 +6,7 @@ const { lit, BW } = await waitForGlobals();
 
 const { LitElement, html } = lit;
 
-import "./AddDeviceButton.js";
+import "./bluetooth/AddDeviceButton.js";
 import "./AddClientButton.js";
 
 class DevicesTab extends LitElement {
@@ -38,12 +38,11 @@ class DevicesTab extends LitElement {
       </p>
       -->
 
-      <div>
+      <div data-not-touch-not-portrait-only>
         <bw-add-device-button
-          data-landscape-only
           data-bluetooth-available-only
         ></bw-add-device-button>
-        <bw-add-client-button data-landscape-only></bw-add-client-button>
+        <bw-add-client-button></bw-add-client-button>
       </div>
 
       <div class="bw-overlay">
@@ -53,6 +52,7 @@ class DevicesTab extends LitElement {
             data-cross-align="start"
             data-tab-view-transition
             data-portrait-only
+            data-touch-only
           >
             <div class="wa-stack wa-gap-2xs" data-align-items>
               <bw-add-client-button></bw-add-client-button>

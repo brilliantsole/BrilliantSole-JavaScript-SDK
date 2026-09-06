@@ -1,4 +1,4 @@
-import { waitForGlobals } from "../../../../utils/cross-origin-storage-utils.js";
+import { waitForGlobals } from "../../../../../utils/cross-origin-storage-utils.js";
 
 const { lit, BW, litRef, litSignals } = await waitForGlobals();
 
@@ -11,7 +11,7 @@ import "https://ka-f.webawesome.com/webawesome@3.12.0/components/button/button.j
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/spinner/spinner.js";
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/animation/animation.js";
 
-import { createDisableTransitionsContextConsumer } from "../../../contexts/disableTransitionsContext.js";
+import { createDisableTransitionsContextConsumer } from "../../../../contexts/disableTransitionsContext.js";
 
 /** @type {import("@lit-labs/signals").Signal.State<Boolean>} */
 const isConnecting = signal(false);
@@ -27,7 +27,7 @@ class AddDeviceButton extends SignalWatcher(LitElement) {
   animationRef = createRef();
 
   _disableTransitionsConsumer = createDisableTransitionsContextConsumer(this);
-  /** @type {import("../../../contexts/disableTransitionsContext.js").DisableTransitionsContextState} */
+  /** @type {import("../../../../contexts/disableTransitionsContext.js").DisableTransitionsContextState} */
   get _disableTransitionsState() {
     return this._disableTransitionsConsumer.value.state;
   }
