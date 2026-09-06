@@ -388,6 +388,8 @@ class AppHub extends LitElement {
     // console.log({ activeTab: this.#activeTab });
     document.documentElement.dataset.activeTab = this.activeTab;
     this._updateMetaColor();
+
+    this._clearTabOverlaySizes();
   }
 
   _screenOrientationProvider = createScreenOrientationContextProvider(
@@ -1510,6 +1512,13 @@ class AppHub extends LitElement {
     );
   }
 
+  _tabOverlaySizes = {};
+  _clearTabOverlaySizes() {
+    for (const name in this._tabOverlaySizes) {
+      document.documentElement.style.removeProperty(name);
+      delete this._tabOverlaySizes[name];
+    }
+  }
   _onTabOverlayResize(event) {
     /** @type {DOMRectReadOnly} */
     const rect = event.detail.entries[0].contentRect;
@@ -1522,10 +1531,10 @@ class AppHub extends LitElement {
     //   crossAlign,
     // });
 
-    document.documentElement.style.setProperty(
-      `--tab-overlay-${mainAlign}-${crossAlign}-height`,
-      `${rect.height}px`,
-    );
+    const name = `--tab-overlay-${mainAlign}-${crossAlign}-height`;
+    const value = rect.height;
+    this._tabOverlaySizes[name] = value;
+    document.documentElement.style.setProperty(name, `${rect.height}px`);
   }
 
   _bluetoothProvider = createBluetoothContextProvider(this, null, () =>
