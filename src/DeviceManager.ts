@@ -439,6 +439,9 @@ class DeviceManager {
   get removeEventListeners() {
     return this.#eventDispatcher.removeEventListeners;
   }
+  get waitForEvent() {
+    return this.#eventDispatcher.waitForEvent;
+  }
   // removeAllEventListeners() {
   //   this.#eventDispatcher.removeAllEventListeners();
   // }

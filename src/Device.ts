@@ -149,6 +149,7 @@ import LedManager, {
   LedMessageTypes,
   SendLedMessagesCallback,
 } from "./led/LedManager.ts";
+import { DeviceManager } from "./index.ts";
 
 const _console = createConsole("Device", { log: false });
 
@@ -782,12 +783,35 @@ class Device {
       `can't connect to any device - must connect to discovered device`,
     );
     const device = new Device();
+    const abortController = new AbortController();
+    const deviceConnectedEventPromise = DeviceManager.waitForEvent(
+      "deviceConnected",
+      {
+        signal: abortController.signal,
+      },
+    );
+    const getNumberOfConnectingDevices = () =>
+      DeviceManager.availableDevices.filter(
+        (device) => device.connectionStatus == "connecting",
+      ).length;
+    const numberOfConnectingDevices = getNumberOfConnectingDevices();
+
     const isConnected = await device.connect({
       type: "webBluetooth",
+      useAvailableDevice: true,
       ...options,
     });
+
     if (isConnected) {
+      abortController.abort();
       return device;
+    } else {
+      const newNumberOfConnectingDevices = getNumberOfConnectingDevices();
+      _console.log({ numberOfConnectingDevices, newNumberOfConnectingDevices });
+      if (newNumberOfConnectingDevices != numberOfConnectingDevices) {
+        const event = await deviceConnectedEventPromise;
+        return event.message.device;
+      }
     }
   }
 

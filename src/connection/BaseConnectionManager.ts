@@ -62,6 +62,7 @@ export interface NobleConnectOptions extends BaseConnectOptions {
 export type ConnectOptions = {
   reconnect?: boolean;
   signal?: AbortSignal;
+  useAvailableDevice?: boolean;
 } & (
   | WebBluetoothConnectOptions
   | WebSocketConnectOptions
@@ -216,7 +217,8 @@ abstract class BaseConnectionManager {
 
     if (this.#status == "notConnected") {
       this.mtu = this.defaultMtu;
-      this.signal = undefined;
+      this._signal = undefined;
+      this._useAvailableDevce = undefined;
     }
   }
 
@@ -269,6 +271,7 @@ abstract class BaseConnectionManager {
     }
     return false;
   }
+  protected _useAvailableDevce?: Boolean;
   async connect(options?: ConnectionManagerConnectOptions) {
     if (this.isConnected) {
       _console.log("already connected");
@@ -279,6 +282,7 @@ abstract class BaseConnectionManager {
       return false;
     }
     this._signal = options?.signal;
+    this._useAvailableDevce = options?.useAvailableDevice;
     // this.assertIsNotConnected();
     // this.#assertIsNotConnecting();
     this.status = "connecting";

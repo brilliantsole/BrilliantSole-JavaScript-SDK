@@ -16835,7 +16835,8 @@ class BaseConnectionManager {
         }
         if (this.#status == "notConnected") {
             this.mtu = this.defaultMtu;
-            this.signal = undefined;
+            this._signal = undefined;
+            this._useAvailableDevce = undefined;
         }
     }
     get isConnected() {
@@ -16873,6 +16874,7 @@ class BaseConnectionManager {
         }
         return false;
     }
+    _useAvailableDevce;
     async connect(options) {
         if (this.isConnected) {
             _console$s.log("already connected");
@@ -16883,6 +16885,7 @@ class BaseConnectionManager {
             return false;
         }
         this._signal = options?.signal;
+        this._useAvailableDevce = options?.useAvailableDevice;
         this.status = "connecting";
         return true;
     }
@@ -17245,7 +17248,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
     }
 }
 
-const _console$p = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console$p = createConsole("WebBluetoothConnectionManager", { log: true });
 var bluetooth;
 if (isInNode) {
     bluetooth = webbluetooth.bluetooth;
@@ -17286,7 +17289,13 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             addEventListeners(newDevice, this.#boundBluetoothDeviceEventListeners);
         }
         _console$p.log("set device", newDevice);
+        if (this.#device) {
+            this.deviceMap.delete(this.#device);
+        }
         this.#device = newDevice;
+        if (this.#device) {
+            this.deviceMap.set(this.#device, this);
+        }
     }
     get server() {
         return this.#device?.gatt;
@@ -17315,12 +17324,17 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
                 _console$p.log("got BluetoothDevice", device);
                 const existingConnectionManager = this.deviceMap.get(device);
                 if (existingConnectionManager) {
-                    _console$p.warn("device is already connected", existingConnectionManager);
-                    if (!existingConnectionManager.isConnected &&
-                        existingConnectionManager.canReconnect) {
-                        existingConnectionManager.reconnect();
+                    _console$p.log("existingConnectionManager", existingConnectionManager);
+                    if (existingConnectionManager.isConnected) {
+                        _console$p.log("device is already connected");
+                        return false;
                     }
-                    return false;
+                    if (existingConnectionManager.canReconnect &&
+                        this._useAvailableDevce) {
+                        _console$p.log("connecting to existing available device");
+                        await existingConnectionManager.reconnect();
+                        return false;
+                    }
                 }
                 this.device = device;
             }
@@ -19482,12 +19496,28 @@ class Device {
     static async Connect(options) {
         _console$j.assertWithError(this.CanConnect, `can't connect to any device - must connect to discovered device`);
         const device = new _a$3();
+        const abortController = new AbortController();
+        const deviceConnectedEventPromise = DeviceManager$1.waitForEvent("deviceConnected", {
+            signal: abortController.signal,
+        });
+        const getNumberOfConnectingDevices = () => DeviceManager$1.availableDevices.filter((device) => device.connectionStatus == "connecting").length;
+        const numberOfConnectingDevices = getNumberOfConnectingDevices();
         const isConnected = await device.connect({
             type: "webBluetooth",
+            useAvailableDevice: true,
             ...options,
         });
         if (isConnected) {
+            abortController.abort();
             return device;
+        }
+        else {
+            const newNumberOfConnectingDevices = getNumberOfConnectingDevices();
+            _console$j.log({ numberOfConnectingDevices, newNumberOfConnectingDevices });
+            if (newNumberOfConnectingDevices != numberOfConnectingDevices) {
+                const event = await deviceConnectedEventPromise;
+                return event.message.device;
+            }
         }
     }
     static #ReconnectOnDisconnection = false;
@@ -20865,7 +20895,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager$1 = (() => {
+let DeviceManager = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -21114,6 +21144,9 @@ let DeviceManager$1 = (() => {
         get removeEventListeners() {
             return this.#eventDispatcher.removeEventListeners;
         }
+        get waitForEvent() {
+            return this.#eventDispatcher.waitForEvent;
+        }
         #onDeviceConnected(deviceEvent) {
             const { target: device } = deviceEvent;
             this.#onDeviceIsConnected(device);
@@ -21219,7 +21252,7 @@ let DeviceManager$1 = (() => {
     });
     return _classThis;
 })();
-var DeviceManager = DeviceManager$1.shared;
+var DeviceManager$1 = DeviceManager.shared;
 
 var _a$2;
 const _console$h = createConsole("BaseScanner", { log: false });
@@ -21850,7 +21883,7 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$f.log("connecting to discoveredDevice...", deviceId);
-        let device = DeviceManager.availableDevices
+        let device = DeviceManager$1.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -21882,7 +21915,7 @@ class NobleScanner extends BaseScanner {
     async disconnectFromDevice(deviceId) {
         super.disconnectFromDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
-        let device = DeviceManager.availableDevices
+        let device = DeviceManager$1.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -22534,7 +22567,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager._checkDeviceAvailability(device);
+            DeviceManager$1._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -23238,7 +23271,7 @@ class BaseServer {
     constructor() {
         _console$7.assertWithError(scanner, "no scanner defined");
         addEventListeners(scanner, this.#boundScannerListeners);
-        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
         addEventListeners(DisplayCanvasHelperManager, this.#boundDisplayCanvasHelperManagerEventListeners);
         _a.OnServer(this);
     }
@@ -23318,7 +23351,7 @@ class BaseServer {
         _console$7.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager.connectedDevices.forEach((device) => {
+            DeviceManager$1.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -23398,7 +23431,7 @@ class BaseServer {
     get #discoveredDevicesMessage() {
         const serverMessages = scanner.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -23410,7 +23443,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -23976,7 +24009,7 @@ class BaseServer {
                     else {
                         _console$7.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
@@ -23991,7 +24024,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
                     device = device ?? scanner.devices[deviceId];
                     if (!device) {
                         _console$7.error(`no device found with id ${deviceId}`);
@@ -24018,7 +24051,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$7.error(`no device found with id ${deviceId}`);
                         break;
@@ -24042,7 +24075,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$7.error(`no device found with id ${deviceId}`);
                         break;
@@ -25225,7 +25258,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager.addEventListener("deviceConnected", (event) => {
+        DeviceManager$1.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -25678,5 +25711,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, PubSubManager, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, PubSubManager, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantwear.node.module.js.map

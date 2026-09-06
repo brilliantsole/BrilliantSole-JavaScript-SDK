@@ -20,7 +20,7 @@ import {
 } from "./bluetoothUUIDs.ts";
 import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
 type WebBluetoothInterface = webbluetooth.Bluetooth | Bluetooth;
 var bluetooth: WebBluetoothInterface | undefined;
@@ -100,10 +100,13 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
 
     _console.log("set device", newDevice);
 
-    // if (this.#device && !newDevice) {
-    //   this.deviceMap.delete(this.#device);
-    // }
+    if (this.#device) {
+      this.deviceMap.delete(this.#device);
+    }
     this.#device = newDevice;
+    if (this.#device) {
+      this.deviceMap.set(this.#device, this);
+    }
   }
 
   get server(): BluetoothRemoteGATTServer | undefined {
@@ -140,17 +143,20 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
 
         const existingConnectionManager = this.deviceMap.get(device);
         if (existingConnectionManager) {
-          _console.warn(
-            "device is already connected",
-            existingConnectionManager,
-          );
-          if (
-            !existingConnectionManager.isConnected &&
-            existingConnectionManager.canReconnect
-          ) {
-            existingConnectionManager.reconnect();
+          _console.log("existingConnectionManager", existingConnectionManager);
+          if (existingConnectionManager.isConnected) {
+            _console.log("device is already connected");
+            return false;
           }
-          return false;
+
+          if (
+            existingConnectionManager.canReconnect &&
+            this._useAvailableDevce
+          ) {
+            _console.log("connecting to existing available device");
+            await existingConnectionManager.reconnect();
+            return false;
+          }
         }
         this.device = device;
       }
