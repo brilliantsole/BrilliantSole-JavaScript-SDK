@@ -247,6 +247,7 @@ class AppHub extends LitElement {
             // );
             this._updateTabContentHeight();
           }
+          this._ignoreTargetDuringNavigation = undefined;
         }, 10);
       },
     },
@@ -1011,6 +1012,7 @@ class AppHub extends LitElement {
       tapLength,
       nodeName: target.nodeName,
       target: target,
+      _ignoreTargetDuringNavigation: this._ignoreTargetDuringNavigation,
     });
 
     let dblclickTarget = target;
@@ -1024,6 +1026,12 @@ class AppHub extends LitElement {
       dblclickTarget.ondblclick = (event) => {
         console.log("intercepted dblclick", event.target);
       };
+    }
+
+    if (this._ignoreTargetDuringNavigation == target) {
+      console.log("ignoring target click during navigation");
+      event.preventDefault();
+      return;
     }
 
     if (
@@ -1171,8 +1179,7 @@ class AppHub extends LitElement {
     }
 
     this._ignoreTouchIdentifier = true;
-
-    this._onGestureDirection(direction, true, true);
+    this._onGestureDirection(direction, true, true, event.target);
   };
 
   /** @param {KeyboardEvent} event */
@@ -1207,13 +1214,14 @@ class AppHub extends LitElement {
    * @param {Direction} direction
    * @param {boolean?} isTouch
    * @param {boolean?} allowOverflow
+   * @param {HTMLElement?} target
    */
-  _onGestureDirection(direction, isTouch, allowOverflow) {
-    // console.log("_onGestureDirection", {
-    //   direction,
-    //   isTouch,
-    //   _touchEnabled: this._touchEnabled,
-    // });
+  _onGestureDirection(direction, isTouch, allowOverflow, target) {
+    console.log("_onGestureDirection", {
+      direction,
+      isTouch,
+      _touchEnabled: this._touchEnabled,
+    });
 
     const currentTabIndex = tabs.indexOf(this.activeTab);
     let newTabIndex = currentTabIndex;
@@ -1300,6 +1308,7 @@ class AppHub extends LitElement {
 
     // console.log({ newTabIndex });
     if (newTabIndex != currentTabIndex) {
+      this._ignoreTargetDuringNavigation = target;
       try {
         const type = tabIndexOffset > 0 ? "next-tab" : "previous-tab";
         const types = [type];
@@ -1307,6 +1316,7 @@ class AppHub extends LitElement {
         navigation.navigate(`/${tabs[newTabIndex]}`, { info: { types } });
       } catch (error) {
         // console.error(error);
+      } finally {
       }
     }
   }
