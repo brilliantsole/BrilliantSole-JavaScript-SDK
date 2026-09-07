@@ -48,10 +48,6 @@ class Card extends LitElement {
     }
   `;
 
-  _onClearClick() {
-    this.dispatchEvent(new Event("clear"));
-  }
-
   render() {
     return html`
       <wa-card>
@@ -61,14 +57,7 @@ class Card extends LitElement {
           <slot></slot>
         </div>
 
-        <wa-button
-          appearance="plain"
-          slot="header-actions"
-          size="m"
-          @click=${this._onClearClick}
-        >
-          <wa-icon name="rotate-left" variant="solid" label="clear"></wa-icon>
-        </wa-button>
+        <slot name="header-actions" slot="header-actions"> </slot>
       </wa-card>
     `;
   }

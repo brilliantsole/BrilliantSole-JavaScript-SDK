@@ -1008,12 +1008,12 @@ class AppHub extends LitElement {
     const currentTime = new Date().getTime();
     const tapLength = currentTime - this._lastTouchTime;
 
-    console.log({
-      tapLength,
-      nodeName: target.nodeName,
-      target: target,
-      _ignoreTargetDuringNavigation: this._ignoreTargetDuringNavigation,
-    });
+    // console.log({
+    //   tapLength,
+    //   nodeName: target.nodeName,
+    //   target: target,
+    //   _ignoreTargetDuringNavigation: this._ignoreTargetDuringNavigation,
+    // });
 
     let dblclickTarget = target;
     switch (target.nodeName) {
@@ -1022,14 +1022,14 @@ class AppHub extends LitElement {
         break;
     }
     if (dblclickTarget && !dblclickTarget.ondblclick) {
-      console.log("adding ondblclick", dblclickTarget);
+      // console.log("adding ondblclick", dblclickTarget);
       dblclickTarget.ondblclick = (event) => {
-        console.log("intercepted dblclick", event.target);
+        // console.log("intercepted dblclick", event.target);
       };
     }
 
     if (this._ignoreTargetDuringNavigation == target) {
-      console.log("ignoring target click during navigation");
+      // console.log("ignoring target click during navigation");
       event.preventDefault();
     }
 
