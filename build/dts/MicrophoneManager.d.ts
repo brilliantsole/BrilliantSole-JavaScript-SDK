@@ -62,7 +62,7 @@ declare class MicrophoneManager {
         signal?: AbortSignal;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "startRecordingMicrophone" | "stopRecordingMicrophone" | "microphoneRecording", MicrophoneEventMessages, T>>;
     requestRequiredInformation(): void;
-    get microphoneStatus(): "vad" | "inferencing" | "idle" | "streaming";
+    get microphoneStatus(): "idle" | "streaming" | "vad" | "inferencing";
     start(): Promise<void>;
     stop(): Promise<void>;
     vad(): Promise<void>;

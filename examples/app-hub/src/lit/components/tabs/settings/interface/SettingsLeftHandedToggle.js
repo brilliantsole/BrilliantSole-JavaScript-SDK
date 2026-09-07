@@ -31,15 +31,15 @@ class SettingsThemeToggle extends LitElement {
   }
 
   ref = createRef();
-  _isLeftHandedConsumer = createIsLeftHandedContextConsumer(this, true, () => {
-    this._updateChecked();
-  });
-
   _updateChecked() {
     if (this.ref.value) {
       this.ref.value.checked = this.checked;
     }
   }
+
+  _isLeftHandedConsumer = createIsLeftHandedContextConsumer(this, true, () => {
+    this._updateChecked();
+  });
 
   /** @type {import("../../../../contexts/isLeftHandedContext.js").IsLeftHandedContextState} */
   get isLeftHandedState() {

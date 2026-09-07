@@ -654,7 +654,7 @@ class Device {
     });
     const isConnectionManagerConnected =
       await this.connectionManager.connect(options);
-    console.log({ isConnectionManagerConnected });
+    _console.log({ isConnectionManagerConnected });
     if (isConnectionManagerConnected) {
       await waitForIsConnected;
     } else {

@@ -7,7 +7,7 @@ const { lit, BW } = await waitForGlobals();
 const { LitElement, html } = lit;
 
 import "./bluetooth/AddDeviceButton.js";
-import "./AddClientButton.js";
+import "./client/AddClientButton.js";
 
 class DevicesTab extends LitElement {
   createRenderRoot() {
@@ -55,8 +55,9 @@ class DevicesTab extends LitElement {
             data-touch-only
           >
             <div class="wa-stack wa-gap-2xs" data-align-items>
-              <bw-add-client-button></bw-add-client-button>
+              <bw-add-client-button use-handedness></bw-add-client-button>
               <bw-add-device-button
+                use-handedness
                 data-bluetooth-available-only
               ></bw-add-device-button>
             </div>

@@ -59,6 +59,7 @@ import { createToggleFullscreenActionButtonContextProvider } from "../contexts/t
 import { createToggleHeaderHiddenActionButtonContextProvider } from "../contexts/toggleHeaderHiddenActionButtonContext.js";
 import { createDirectionContextProvider } from "../contexts/directionContext.js";
 import { createBluetoothContextProvider } from "../contexts/bluetoothContext.js";
+import { waitForAnimationFrames } from "../../utils/rendering.js";
 
 class AppHub extends LitElement {
   createRenderRoot() {
@@ -105,18 +106,17 @@ class AppHub extends LitElement {
       this._resetViewport();
     }
   }
-  _resetViewport() {
+  async _resetViewport() {
     // console.log("_resetViewport");
 
     // document.documentElement.scrollTop = 0;
     // document.body.scrollTop = 0;
     // window.scrollTo(0, 0);
 
-    requestAnimationFrame(() => {
-      document.documentElement.scrollTop = 1;
-      document.body.scrollTop = 1;
-      window.scrollTo(0, 1);
-    });
+    await waitForAnimationFrames();
+    document.documentElement.scrollTop = 1;
+    document.body.scrollTop = 1;
+    window.scrollTo(0, 1);
   }
 
   _onFlipEvent(event) {
@@ -399,7 +399,7 @@ class AppHub extends LitElement {
   );
   /** @type {OrientationType} */
   _screenOrientationType;
-  _onScreenOrientationUpdate() {
+  async _onScreenOrientationUpdate() {
     // console.log("_onScreenOrientationUpdate");
     const { type } = this._screenOrientationProvider.value.state;
     this._screenOrientationType = type;
@@ -410,11 +410,8 @@ class AppHub extends LitElement {
     this._updateHeaderSide();
 
     this._disableTransitionsBeforeUpdate();
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        this._enableTransitionsAfterUpdate();
-      });
-    });
+    await waitForAnimationFrames(2);
+    this._enableTransitionsAfterUpdate();
   }
 
   _fullscreenProvider = createFullscreenContextProvider(this, null, () =>
@@ -703,19 +700,18 @@ class AppHub extends LitElement {
       // console.log("temporarily disabling transitions", value);
     }
   }
-  _enableTransitionsAfterUpdate() {
-    requestAnimationFrame(() => {
-      if (!this._isTemporarilyDisablingTransitions) {
-        return;
-      }
-      this._isTemporarilyDisablingTransitions = false;
+  async _enableTransitionsAfterUpdate() {
+    await waitForAnimationFrames();
+    if (!this._isTemporarilyDisablingTransitions) {
+      return;
+    }
+    this._isTemporarilyDisablingTransitions = false;
 
-      const value = document.documentElement.toggleAttribute(
-        "data-disable-transitions",
-        this._disableTransitions,
-      );
-      // console.log("re-enabling transitions", value);
-    });
+    const value = document.documentElement.toggleAttribute(
+      "data-disable-transitions",
+      this._disableTransitions,
+    );
+    // console.log("re-enabling transitions", value);
   }
 
   _headerSideProvider = createHeaderSideContextProvider(this, null, () => {
@@ -800,23 +796,23 @@ class AppHub extends LitElement {
     this._isHeaderHiddenProvider.value.update({ isHeaderHidden: true });
   }
 
-  firstUpdated() {
+  async firstUpdated() {
     console.log("firstUpdated");
     this._didFirstUpdate = true;
     this._updateTabResizeObserver(true);
-    requestAnimationFrame(() => {
-      this._updateCSSVariables();
-      if (!CSS.supports("interpolate-size: allow-keywords")) {
-        this._updateHeaderCSSVariables();
-      }
-      this._resetViewport();
-      this._getCSSVariables();
 
-      this._disableTransitionsBeforeUpdate();
-      this._updateMainOverlayResizeObservers();
-      this._enableTransitionsAfterUpdate();
-      document.documentElement.setAttribute("data-loaded", true);
-    });
+    await waitForAnimationFrames();
+    this._updateCSSVariables();
+    if (!CSS.supports("interpolate-size: allow-keywords")) {
+      this._updateHeaderCSSVariables();
+    }
+    this._resetViewport();
+    this._getCSSVariables();
+
+    this._disableTransitionsBeforeUpdate();
+    this._updateMainOverlayResizeObservers();
+    this._enableTransitionsAfterUpdate();
+    document.documentElement.setAttribute("data-loaded", true);
   }
 
   /** @type {CSSStyleDeclaration} */
@@ -1360,7 +1356,7 @@ class AppHub extends LitElement {
   _scrollOnResizeAbortController;
   _scrollOnResizeAbortControllerTimeoutInterval = 200;
   _updateTabContentScroll = BW.ThrottleUtils.throttle(
-    (waitForResize) => {
+    async (waitForResize) => {
       // console.log("_updateTabContentScroll", { waitForResize });
 
       if (waitForResize) {
@@ -1399,11 +1395,11 @@ class AppHub extends LitElement {
         return;
       }
       this._waitingForAnimationFrameToScrollTabContent = true;
-      requestAnimationFrame(() => {
-        this._waitingForAnimationFrameToScrollTabContent = false;
-        // console.log("tabContent scrollIntoView");
-        this.refs.tabContent.value.scrollIntoView();
-      });
+
+      await waitForAnimationFrames(1);
+      this._waitingForAnimationFrameToScrollTabContent = false;
+      // console.log("tabContent scrollIntoView");
+      this.refs.tabContent.value.scrollIntoView();
     },
     50,
     true,

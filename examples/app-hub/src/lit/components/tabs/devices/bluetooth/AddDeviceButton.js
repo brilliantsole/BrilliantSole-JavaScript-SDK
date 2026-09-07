@@ -3,7 +3,7 @@ import { waitForGlobals } from "../../../../../utils/cross-origin-storage-utils.
 const { lit, BW, litRef, litSignals } = await waitForGlobals();
 
 const { ref, createRef } = litRef;
-const { SignalWatcher, watch, signal } = litSignals;
+const { SignalWatcher } = litSignals;
 
 const { LitElement, html, css } = lit;
 
@@ -12,17 +12,23 @@ import "https://ka-f.webawesome.com/webawesome@3.12.0/components/spinner/spinner
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/animation/animation.js";
 
 import { createDisableTransitionsContextConsumer } from "../../../../contexts/disableTransitionsContext.js";
-
-/** @type {import("@lit-labs/signals").Signal.State<Boolean>} */
-const isConnecting = signal(false);
-
-/** @type {import("@lit-labs/signals").Signal.State<AbortController?>} */
-const abortController = signal();
+import {
+  addDeviceAbortControllerSignal,
+  isAddingDeviceSignal,
+} from "./AddDeviceSignals.js";
+import { createIsLeftHandedContextConsumer } from "../../../../contexts/isLeftHandedContext.js";
+import { waitForAnimationFrames } from "../../../../../utils/rendering.js";
+import { createDirectionContextConsumer } from "../../../../contexts/directionContext.js";
 
 class AddDeviceButton extends SignalWatcher(LitElement) {
   createRenderRoot() {
     return this;
   }
+
+  static properties = {
+    isLeftHanded: { type: Boolean },
+    useHandedness: { type: Boolean, attribute: "use-handedness" },
+  };
 
   animationRef = createRef();
 
@@ -35,12 +41,25 @@ class AddDeviceButton extends SignalWatcher(LitElement) {
     return this._disableTransitionsState.disableTransitions;
   }
 
+  _isLeftHandedConsumer = createIsLeftHandedContextConsumer(
+    this,
+    true,
+    async () => {
+      await waitForAnimationFrames(2);
+      this.isLeftHanded = this.isLeftHandedState.isLeftHanded;
+    },
+  );
+  /** @type {import("../../../../contexts/isLeftHandedContext.js").IsLeftHandedContextState} */
+  get isLeftHandedState() {
+    return this._isLeftHandedConsumer.value.state;
+  }
+
   async _onClick() {
-    const _abortController = abortController.get();
-    if (_abortController) {
+    const abortController = addDeviceAbortControllerSignal.get();
+    if (abortController) {
       console.log("cancelling existing device connection");
-      _abortController.abort();
-      abortController.set();
+      abortController.abort();
+      addDeviceAbortControllerSignal.set();
       return;
     }
 
@@ -48,27 +67,44 @@ class AddDeviceButton extends SignalWatcher(LitElement) {
       if (!this.disableTransitions) {
         this.animationRef.value.play = true;
       }
-      isConnecting.set(true);
+      isAddingDeviceSignal.set(true);
 
-      const _abortController = new AbortController();
-      abortController.set(_abortController);
+      const abortController = new AbortController();
+      addDeviceAbortControllerSignal.set(abortController);
 
       const device = await BW.Device.Connect({
-        signal: _abortController.signal,
+        signal: abortController.signal,
       });
     } catch (error) {
       console.error("failed to connect to device", error);
     } finally {
-      isConnecting.set(false);
-      this.animationRef.value.play = false;
-      abortController.set();
+      isAddingDeviceSignal.set(false);
+      if (this.animationRef.value) {
+        this.animationRef.value.play = false;
+      }
+      addDeviceAbortControllerSignal.set();
     }
   }
 
+  _directionConsumer = createDirectionContextConsumer(this, true);
+  /** @type {import("../../../../contexts/directionContext.js").DirectionContextState} */
+  get directionState() {
+    return this._directionConsumer.value.state;
+  }
+
   render() {
-    const slot = isConnecting.get()
-      ? html`<wa-spinner slot="start"></wa-spinner>`
-      : html`<wa-icon slot="start" name="plus"></wa-icon>`;
+    const isAddingDevice = isAddingDeviceSignal.get();
+    let slotName = "start";
+    if (this.useHandedness) {
+      if (this.directionState.isLeftToRight) {
+        slotName = this.isLeftHanded ? "start" : "end";
+      } else {
+        slotName = !this.isLeftHanded ? "start" : "end";
+      }
+    }
+    const slot = isAddingDevice
+      ? html`<wa-spinner slot=${slotName}></wa-spinner>`
+      : html`<wa-icon slot=${slotName} name="plus"></wa-icon>`;
     return html`
       <wa-animation
         name="pulse"
@@ -82,7 +118,7 @@ class AddDeviceButton extends SignalWatcher(LitElement) {
           @click=${this._onClick}
           ?disabled=${!BW.Device.CanConnect}
         >
-          ${slot} ${this.isConnecting ? "Adding Device" : "Add Device"}
+          ${slot} ${isAddingDevice ? "Adding Device" : "Add Device"}
         </wa-button>
       </wa-animation>
     `;
