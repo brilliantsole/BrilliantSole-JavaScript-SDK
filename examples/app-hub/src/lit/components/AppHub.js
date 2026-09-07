@@ -1031,7 +1031,6 @@ class AppHub extends LitElement {
     if (this._ignoreTargetDuringNavigation == target) {
       console.log("ignoring target click during navigation");
       event.preventDefault();
-      return;
     }
 
     if (
