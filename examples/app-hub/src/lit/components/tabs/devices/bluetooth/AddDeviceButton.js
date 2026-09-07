@@ -80,7 +80,7 @@ class AddDeviceButton extends SignalWatcher(LitElement) {
     } finally {
       isAddingDeviceSignal.set(false);
       if (this.animationRef.value) {
-        this.animationRef.value.play = false;
+        this.animationRef.value.cancel();
       }
       addDeviceAbortControllerSignal.set();
     }

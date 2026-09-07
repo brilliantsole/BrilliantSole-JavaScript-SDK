@@ -986,7 +986,7 @@ class AppHub extends LitElement {
   /** @param {TouchEvent} event */
   _onTouchEnd = (event) => {
     // console.log("_onTouchEnd", event);
-    const { changedTouches, touches } = event;
+    const { changedTouches, touches, target } = event;
 
     if (changedTouches.length != 1) {
       return;
@@ -1007,13 +1007,30 @@ class AppHub extends LitElement {
     const currentTime = new Date().getTime();
     const tapLength = currentTime - this._lastTouchTime;
 
-    // console.log({ tapLength, nodeName: event.target.nodeName });
+    console.log({
+      tapLength,
+      nodeName: target.nodeName,
+      target: target,
+    });
+
+    let dblclickTarget = target;
+    switch (target.nodeName) {
+      case "WA-BUTTON":
+        dblclickTarget = target.shadowRoot.querySelector("button");
+        break;
+    }
+    if (dblclickTarget && !dblclickTarget.ondblclick) {
+      console.log("adding ondblclick", dblclickTarget);
+      dblclickTarget.ondblclick = (event) => {
+        console.log("intercepted dblclick", event.target);
+      };
+    }
 
     if (
       isIOS &&
       tapLength < this._doubleTapTimeThreshold &&
       tapLength > 0 &&
-      !event.target.nodeName.includes("BUTTON")
+      !target.nodeName.includes("BUTTON")
     ) {
       const screenDelta = {
         screenX: screenX - this._lastTouchPosition.screenX,
