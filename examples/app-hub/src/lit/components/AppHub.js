@@ -1043,10 +1043,10 @@ class AppHub extends LitElement {
     if (activeElement) {
       isActiveElementInput = document.activeElement.nodeName.includes("INPUT");
     }
-    console.log({
-      isActiveElementInput,
-      activeElement: document.activeElement,
-    });
+    // console.log({
+    //   isActiveElementInput,
+    //   activeElement: document.activeElement,
+    // });
 
     if (
       isIOS &&
@@ -1454,11 +1454,11 @@ class AppHub extends LitElement {
 
   /** @param {FocusEvent} event */
   _onFocusIn(event) {
-    console.log(event.type, event.target);
+    // console.log(event.type, event.target);
   }
   /** @param {FocusEvent} event */
   _onFocusOut(event) {
-    console.log(event.type, event.relatedTarget);
+    // console.log(event.type, event.relatedTarget);
   }
 
   _onScroll = BW.ThrottleUtils.debounce((event) => {

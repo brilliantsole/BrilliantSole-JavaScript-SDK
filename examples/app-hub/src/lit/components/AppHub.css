@@ -2233,7 +2233,7 @@ bw-tab-breadcrumb {
   --tab-padding-bottom-extra: 0px;
   --tab-padding-bottom: calc(
     var(--main-padding-bottom) + var(--tab-padding-bottom-extra) +
-      (var(--wa-space-xs) * sign(abs(var(--tab-padding-bottom-extra))))
+      (var(--wa-space-xs) * 2 * sign(abs(var(--tab-padding-bottom-extra))))
   );
   --tab-padding-top: var(--main-padding-top-base);
 
@@ -2421,4 +2421,8 @@ html[data-bluetooth-scanning] [data-bluetooth-not-scanning-only] {
 wa-card {
   padding: 0;
   --spacing: var(--wa-space-xs);
+}
+
+[data-hidden] {
+  display: none;
 }

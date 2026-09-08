@@ -2,8 +2,9 @@ import { waitForGlobals } from "../../../../utils/cross-origin-storage-utils.js"
 import { createBluetoothContextConsumer } from "../../../contexts/bluetoothContext.js";
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/resize-observer/resize-observer.js";
 
-const { lit, BW, litSignals } = await waitForGlobals();
+const { lit, BW, litSignals, litRef } = await waitForGlobals();
 const { SignalWatcher } = litSignals;
+const { ref, createRef } = litRef;
 
 const { LitElement, html, nothing } = lit;
 
@@ -28,11 +29,10 @@ class DevicesTab extends SignalWatcher(LitElement) {
     return this.bluetoothState.isEnabled;
   }
 
+  clientInputRef = createRef();
+
   render() {
     const isAddingClient = isAddingClientSignal.get();
-    const addClient = isAddingClient
-      ? html`<bw-client-input></bw-client-input>`
-      : nothing;
 
     return html`
       <!--
@@ -55,7 +55,12 @@ class DevicesTab extends SignalWatcher(LitElement) {
         <bw-add-client-button></bw-add-client-button>
       </div>
 
-      <div class="clients">${addClient}</div>
+      <div class="clients">
+        <bw-client-input
+          ?data-hidden=${!isAddingClient}
+          ${ref(this.clientInputRef)}
+        ></bw-client-input>
+      </div>
 
       <div class="bw-overlay">
         <wa-resize-observer>
