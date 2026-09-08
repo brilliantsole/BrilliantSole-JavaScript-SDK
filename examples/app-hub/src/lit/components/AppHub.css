@@ -40,8 +40,10 @@ legend {
     0
   ); /* Fallback for older engines */
 
-  user-select: none;
-  -webkit-user-select: none;
+  @media (pointer: coarse) {
+    user-select: none;
+    -webkit-user-select: none;
+  }
 }
 
 input,
@@ -2414,4 +2416,9 @@ html:not([data-bluetooth-scanning]) [data-bluetooth-scanning-only] {
 }
 html[data-bluetooth-scanning] [data-bluetooth-not-scanning-only] {
   display: none;
+}
+
+wa-card {
+  padding: 0;
+  --spacing: var(--wa-space-xs);
 }

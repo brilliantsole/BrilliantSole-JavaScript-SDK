@@ -294,6 +294,11 @@ class AppHub extends LitElement {
     window.addEventListener("pageshow", this._resetViewport, options);
     document.addEventListener("scroll", this._onScroll, options);
 
+    document.addEventListener("click", this._onClick, options);
+
+    document.addEventListener("focusin", this._onFocusIn, options);
+    document.addEventListener("focusout", this._onFocusOut, options);
+
     this.addEventListener("bw-flip", this._onFlipEvent, options);
 
     document.addEventListener(
@@ -504,7 +509,7 @@ class AppHub extends LitElement {
       isPositionTooLate = performance.now() - position.timeStamp > 500;
     }
 
-    console.log({ systemTheme, selectedTheme, isPositionTooLate }, position);
+    // console.log({ systemTheme, selectedTheme, isPositionTooLate }, position);
 
     const showLightClassName =
       selectedTheme == "light" ||
@@ -959,7 +964,7 @@ class AppHub extends LitElement {
   _doubleTapTimeThreshold = 700;
   _lastTouchPosition;
   _doubleTapDistanceThreshold = 800;
-  _allowedNodeNames = ["BUTTON", "SWITCH", "CHECKBOX"];
+  _allowedNodeNames = ["BUTTON", "SWITCH", "CHECKBOX", "DROPDOWN"];
   /** @type {{identifier: number, screenX: number, screenY: number, timeStamp: number}?} */
   _initialTouchPosition;
   /** @param {TouchEvent} event */
@@ -1033,11 +1038,23 @@ class AppHub extends LitElement {
       event.preventDefault();
     }
 
+    let isActiveElementInput = false;
+    const { activeElement } = document;
+    if (activeElement) {
+      isActiveElementInput = document.activeElement.nodeName.includes("INPUT");
+    }
+    console.log({
+      isActiveElementInput,
+      activeElement: document.activeElement,
+    });
+
     if (
       isIOS &&
       tapLength < this._doubleTapTimeThreshold &&
       tapLength > 0 &&
-      !target.nodeName.includes("BUTTON")
+      !target.nodeName.includes("BUTTON") &&
+      !target.nodeName.includes("INPUT") &&
+      !isActiveElementInput
     ) {
       const screenDelta = {
         screenX: screenX - this._lastTouchPosition.screenX,
@@ -1216,11 +1233,11 @@ class AppHub extends LitElement {
    * @param {HTMLElement?} target
    */
   _onGestureDirection(direction, isTouch, allowOverflow, target) {
-    console.log("_onGestureDirection", {
-      direction,
-      isTouch,
-      _touchEnabled: this._touchEnabled,
-    });
+    // console.log("_onGestureDirection", {
+    //   direction,
+    //   isTouch,
+    //   _touchEnabled: this._touchEnabled,
+    // });
 
     const currentTabIndex = tabs.indexOf(this.activeTab);
     let newTabIndex = currentTabIndex;
@@ -1430,6 +1447,19 @@ class AppHub extends LitElement {
     50,
     true,
   );
+
+  _onClick(event) {
+    // for some reason you need this to focus out of an input element on iOS
+  }
+
+  /** @param {FocusEvent} event */
+  _onFocusIn(event) {
+    console.log(event.type, event.target);
+  }
+  /** @param {FocusEvent} event */
+  _onFocusOut(event) {
+    console.log(event.type, event.relatedTarget);
+  }
 
   _onScroll = BW.ThrottleUtils.debounce((event) => {
     if (!isIOS) {
