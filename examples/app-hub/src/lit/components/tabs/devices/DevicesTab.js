@@ -48,18 +48,24 @@ class DevicesTab extends SignalWatcher(LitElement) {
       </p>
       -->
 
-      <div data-not-touch-not-portrait-only>
-        <bw-add-device-button
-          data-bluetooth-available-only
-        ></bw-add-device-button>
-        <bw-add-client-button></bw-add-client-button>
-      </div>
+      <div class="wa-stack wa-gap-xs">
+        <div
+          data-not-touch-not-portrait-only
+          class="wa-cluster wa-gap-xs bw-justify-content"
+          data-tab-view-transition-container
+        >
+          <bw-add-device-button
+            data-bluetooth-available-only
+          ></bw-add-device-button>
+          <bw-add-client-button></bw-add-client-button>
+        </div>
 
-      <div class="clients">
-        <bw-client-input
-          ?data-hidden=${!isAddingClient}
-          ${ref(this.clientInputRef)}
-        ></bw-client-input>
+        <div class="clients">
+          <bw-client-input
+            ?data-hidden=${!isAddingClient}
+            ${ref(this.clientInputRef)}
+          ></bw-client-input>
+        </div>
       </div>
 
       <div class="bw-overlay">

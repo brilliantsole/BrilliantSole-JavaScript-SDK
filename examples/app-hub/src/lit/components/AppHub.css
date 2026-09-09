@@ -2203,12 +2203,20 @@ html:active-view-transition-type(theme) {
     justify-content: var(--justify-start);
   }
 }
+
 @media (pointer: coarse) {
   html[data-left-handed] .bw-grid-lanes {
     justify-content: var(--justify-end);
     @media (orientation: portrait) {
       justify-items: var(--justify-end);
     }
+  }
+
+  .bw-justify-content {
+    justify-content: var(--justify-start);
+  }
+  html[data-left-handed] .bw-justify-content {
+    justify-content: var(--justify-end);
   }
 }
 
@@ -2393,6 +2401,9 @@ html:active-view-transition-type(
   header-hidden
 ) {
   [data-tab-view-transition] {
+    view-transition-name: match-element;
+  }
+  [data-tab-view-transition-container] > * {
     view-transition-name: match-element;
   }
 }

@@ -13,6 +13,7 @@ import "https://ka-f.webawesome.com/webawesome@3.12.0/components/animation/anima
 
 import {
   addClientConfigSignal,
+  defaultAddClientConfig,
   isAddingClientSignal,
 } from "./AddClientSignals.js";
 import { waitForAnimationFrames } from "../../../../../utils/rendering.js";
@@ -114,8 +115,11 @@ class ClientInput extends SignalWatcher(LitElement) {
         console.log({ connectionStatus });
         this.connectionStatus = connectionStatus;
         if (connectionStatus == "connected") {
-          const url = new URL(client.webSocket.url);
-          this.inputRef.value.value = url.host;
+          this.inputRef.value.value = client.url.host;
+          if (this.isAddingClient) {
+            isAddingClientSignal.set(false);
+            addClientConfigSignal.set({ ...defaultAddClientConfig });
+          }
         }
       },
       options,
@@ -143,6 +147,10 @@ class ClientInput extends SignalWatcher(LitElement) {
       },
       options,
     );
+  }
+  /** @type {import('../../../../../../../../build/brilliantwear.module.js').WebSocketClient} */
+  get _client() {
+    return this.client;
   }
   /**
    * @param {boolean} createIfNotFound
@@ -235,11 +243,12 @@ class ClientInput extends SignalWatcher(LitElement) {
   /** @returns {import("./AddClientSignals.js").ClientConfig} */
   getClientConfig() {
     if (this._client) {
-      const { protocol, host } = new URL(this._client.webSocket.url);
-      return {
-        protocol,
-        host,
-      };
+      if (this._client.url) {
+        const { protocol, host } = this._client.url;
+        return { protocol, host };
+      } else {
+        throw "client doesn't have a url";
+      }
     } else {
       return addClientConfigSignal.get();
     }

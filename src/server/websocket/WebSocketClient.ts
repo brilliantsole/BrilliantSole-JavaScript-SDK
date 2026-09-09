@@ -60,6 +60,8 @@ class WebSocketClient extends BaseClient {
     return this.#readyState == WebSocket.CLOSED;
   }
 
+  url: URL | undefined;
+
   connect(
     url: string | URL = `${
       location.protocol.includes("https") ? "wss" : "ws"
@@ -72,6 +74,7 @@ class WebSocketClient extends BaseClient {
     }
     this._connectionStatus = "connecting";
 
+    this.url = undefined;
     this.webSocket = new WebSocket(url);
   }
 
@@ -152,6 +155,7 @@ class WebSocketClient extends BaseClient {
     _console.log("webSocket.open", event);
     this.#pingTimer.start();
     //this._connectionStatus = "connected";
+    this.url = new URL(this.webSocket!.url);
     this._sendRequiredMessages();
   }
   async #onWebSocketMessage(event: ws.MessageEvent) {

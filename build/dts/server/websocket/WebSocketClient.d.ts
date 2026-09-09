@@ -8,6 +8,7 @@ declare class WebSocketClient extends BaseClient {
     set webSocket(newWebSocket: WebSocket | undefined);
     get isConnected(): boolean;
     get isDisconnected(): boolean;
+    url: URL | undefined;
     connect(url?: string | URL): void;
     disconnect(): void;
     reconnect(): void;
