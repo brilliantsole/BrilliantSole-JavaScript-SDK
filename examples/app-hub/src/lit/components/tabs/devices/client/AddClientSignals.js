@@ -7,12 +7,12 @@ export const isAddingClientSignal = signal(true);
 
 /**
  * @typedef {Object} ClientConfig
- * @property {"ws" | "wss"} protocol
+ * @property {"ws:" | "wss:"} protocol
  * @property {string} host
  */
 /** @type {ClientConfig} */
 export const defaultAddClientConfig = {
-  protocol: "wss",
+  protocol: "wss:",
   host: "",
 };
 /** @type {import("@lit-labs/signals").Signal.State<ClientConfig>} */

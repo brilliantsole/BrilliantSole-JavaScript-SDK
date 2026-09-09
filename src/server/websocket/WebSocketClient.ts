@@ -65,6 +65,8 @@ class WebSocketClient extends BaseClient {
       location.protocol.includes("https") ? "wss" : "ws"
     }://${location.host}`,
   ) {
+    _console.log("connect", { url });
+
     if (this.webSocket) {
       this.assertDisconnection();
     }
@@ -74,19 +76,34 @@ class WebSocketClient extends BaseClient {
   }
 
   disconnect() {
-    this.assertConnection();
-    if (this.reconnectOnDisconnection) {
-      this.reconnectOnDisconnection = false;
-      this.webSocket!.addEventListener(
-        "close",
-        () => {
-          this.reconnectOnDisconnection = true;
-        },
-        { once: true },
-      );
+    switch (this.connectionStatus) {
+      case "connecting":
+      case "connected":
+        break;
+      default:
+        return;
     }
-    this._connectionStatus = "disconnecting";
-    this.webSocket!.close();
+
+    if (this.isWaitingToReattemptConnection) {
+      this.#clearReconnectTimeout();
+    }
+
+    if (this.webSocket && this.webSocket.readyState != WebSocket.CLOSED) {
+      if (this.reconnectOnDisconnection) {
+        this.reconnectOnDisconnection = false;
+        this.webSocket.addEventListener(
+          "close",
+          () => {
+            this.reconnectOnDisconnection = true;
+          },
+          { once: true },
+        );
+      }
+      this._connectionStatus = "disconnecting";
+      this.webSocket.close();
+    } else {
+      this._connectionStatus = "notConnected";
+    }
   }
 
   reconnect() {
@@ -95,7 +112,7 @@ class WebSocketClient extends BaseClient {
   }
 
   toggleConnection(url?: ServerURL) {
-    if (this.isConnected) {
+    if (this.isConnected || this.connectionStatus == "connecting") {
       this.disconnect();
     } else if (url && this.webSocket?.url == url) {
       this.reconnect();
@@ -145,20 +162,43 @@ class WebSocketClient extends BaseClient {
     const dataView = new DataView(arrayBuffer);
     this.#parseWebSocketMessage(dataView);
   }
+  #reconnectTimeout: ReturnType<typeof setTimeout> | undefined;
+  #clearReconnectTimeout() {
+    if (this.#reconnectTimeout != undefined) {
+      clearTimeout(this.#reconnectTimeout);
+      this.#reconnectTimeout = undefined;
+    }
+    this._isWaitingToReattemptConnection = false;
+  }
   #onWebSocketClose(event: ws.CloseEvent) {
     _console.log("webSocket.close", event);
-
-    this._connectionStatus = "notConnected";
-
-    this.#pingTimer.stop();
-    if (this.reconnectOnDisconnection) {
-      setTimeout(() => {
-        this.reconnect();
-      }, webSocketReconnectTimeout);
-    }
+    this.#onWebSocketClosed();
   }
   #onWebSocketError(event: ws.ErrorEvent) {
     _console.error("webSocket.error", event);
+    this.#onWebSocketClosed();
+  }
+
+  #onWebSocketClosed() {
+    _console.log("onWebSocketClosed");
+
+    if (this._connectionStatus == "notConnected") {
+      return;
+    }
+
+    this.#pingTimer.stop();
+    if (this.reconnectOnDisconnection) {
+      this.#clearReconnectTimeout();
+      this._isWaitingToReattemptConnection = true;
+      this.#reconnectTimeout = setTimeout(() => {
+        this._isWaitingToReattemptConnection = false;
+        if (this.reconnectOnDisconnection) {
+          this.reconnect();
+        }
+      }, webSocketReconnectTimeout);
+    }
+
+    this._connectionStatus = "notConnected";
   }
 
   // PARSING

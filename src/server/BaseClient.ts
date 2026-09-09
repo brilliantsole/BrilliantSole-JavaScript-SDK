@@ -26,6 +26,7 @@ import ClientConnectionManager from "../connection/ClientConnectionManager.ts";
 import DeviceManager from "../DeviceManager.ts";
 import {
   ClientConnectionType,
+  ConnectionStatus,
   ConnectionTypes,
 } from "../connection/BaseConnectionManager.ts";
 import { serverMtus, ServerTypes } from "./BaseServer.ts";
@@ -159,17 +160,39 @@ abstract class BaseClient {
   abstract reconnect(): void;
   abstract toggleConnection(url?: ServerURL): void;
 
-  private static _reconnectOnDisconnection = true;
-  static get ReconnectOnDisconnection() {
-    return this._reconnectOnDisconnection;
+  private static _defaultReconnectOnDisconnection = true;
+  static get DefaultReconnectOnDisconnection() {
+    return this._defaultReconnectOnDisconnection;
   }
-  static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-    _console.assertTypeWithError(newReconnectOnDisconnection, "boolean");
-    this._reconnectOnDisconnection = newReconnectOnDisconnection;
+  static set DefaultReconnectOnDisconnection(
+    newDefaultReconnectOnDisconnection,
+  ) {
+    _console.assertTypeWithError(newDefaultReconnectOnDisconnection, "boolean");
+    this._defaultReconnectOnDisconnection = newDefaultReconnectOnDisconnection;
+  }
+
+  #_isWaitingToReattemptConnection = false;
+  protected get _isWaitingToReattemptConnection() {
+    return this.#_isWaitingToReattemptConnection;
+  }
+  protected set _isWaitingToReattemptConnection(
+    newIsWaitingToReattemptConnection,
+  ) {
+    _console.assertTypeWithError(newIsWaitingToReattemptConnection, "boolean");
+    _console.log({ newIsWaitingToReattemptConnection });
+    if (
+      this.#_isWaitingToReattemptConnection == newIsWaitingToReattemptConnection
+    ) {
+      return;
+    }
+    this.#_isWaitingToReattemptConnection = newIsWaitingToReattemptConnection;
+  }
+  get isWaitingToReattemptConnection() {
+    return this._isWaitingToReattemptConnection;
   }
 
   protected _reconnectOnDisconnection =
-    this.baseConstructor.ReconnectOnDisconnection;
+    this.baseConstructor.DefaultReconnectOnDisconnection;
   get reconnectOnDisconnection() {
     return this._reconnectOnDisconnection;
   }
@@ -185,12 +208,19 @@ abstract class BaseClient {
   protected get _connectionStatus() {
     return this.#_connectionStatus;
   }
+  get #latestConnectionStatus() {
+    return (
+      this.#eventDispatcher.latestEvents["connectionStatus"]?.message
+        .connectionStatus ?? this.connectionStatus
+    );
+  }
   protected set _connectionStatus(newConnectionStatus) {
     _console.assertTypeWithError(newConnectionStatus, "string");
     _console.log({ newConnectionStatus });
-    if (this.#_connectionStatus == newConnectionStatus) {
+    if (this.#latestConnectionStatus == newConnectionStatus) {
       return;
     }
+
     this.#_connectionStatus = newConnectionStatus;
 
     this.#dispatchEvent("connectionStatus", {
@@ -210,7 +240,10 @@ abstract class BaseClient {
         break;
     }
   }
-  get connectionStatus() {
+  get connectionStatus(): ConnectionStatus {
+    if (this.isWaitingToReattemptConnection) {
+      return "connecting";
+    }
     return this._connectionStatus;
   }
 

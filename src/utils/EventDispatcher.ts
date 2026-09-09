@@ -141,6 +141,9 @@ class EventDispatcher<
       message: EventMessages[K];
     };
   }> = {};
+  get latestEvents() {
+    return this.#latestEvents;
+  }
 
   #target!: Target;
   #validEventTypes!: readonly EventType[];

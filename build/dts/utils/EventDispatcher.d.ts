@@ -60,6 +60,11 @@ export type EventDispatcherListenerObject = {
 } & EventDispatcherOptions;
 declare class EventDispatcher<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> {
     #private;
+    get latestEvents(): Partial<{ [K in EventType]: {
+        type: K;
+        target: Target;
+        message: EventMessages[K];
+    }; }>;
     constructor(target: Target, validEventTypes: readonly EventType[]);
     addEventListener<T extends EventType | WildcardEventType>(type: T, listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void, options?: EventDispatcherOptions): void;
     removeEventListener<T extends EventType | WildcardEventType>(type: T, listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void): void;

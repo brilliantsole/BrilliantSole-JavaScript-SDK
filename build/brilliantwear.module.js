@@ -232,6 +232,9 @@ const DefaultEventDispatcherOptions = {
 class EventDispatcher {
     #listeners = {};
     #latestEvents = {};
+    get latestEvents() {
+        return this.#latestEvents;
+    }
     #target;
     #validEventTypes;
     constructor(target, validEventTypes) {
@@ -36488,15 +36491,30 @@ class BaseClient {
     assertDisconnection() {
         _console$d.assertWithError(this.isDisconnected, "not disconnected");
     }
-    static _reconnectOnDisconnection = true;
-    static get ReconnectOnDisconnection() {
-        return this._reconnectOnDisconnection;
+    static _defaultReconnectOnDisconnection = true;
+    static get DefaultReconnectOnDisconnection() {
+        return this._defaultReconnectOnDisconnection;
     }
-    static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$d.assertTypeWithError(newReconnectOnDisconnection, "boolean");
-        this._reconnectOnDisconnection = newReconnectOnDisconnection;
+    static set DefaultReconnectOnDisconnection(newDefaultReconnectOnDisconnection) {
+        _console$d.assertTypeWithError(newDefaultReconnectOnDisconnection, "boolean");
+        this._defaultReconnectOnDisconnection = newDefaultReconnectOnDisconnection;
     }
-    _reconnectOnDisconnection = this.baseConstructor.ReconnectOnDisconnection;
+    #_isWaitingToReattemptConnection = false;
+    get _isWaitingToReattemptConnection() {
+        return this.#_isWaitingToReattemptConnection;
+    }
+    set _isWaitingToReattemptConnection(newIsWaitingToReattemptConnection) {
+        _console$d.assertTypeWithError(newIsWaitingToReattemptConnection, "boolean");
+        _console$d.log({ newIsWaitingToReattemptConnection });
+        if (this.#_isWaitingToReattemptConnection == newIsWaitingToReattemptConnection) {
+            return;
+        }
+        this.#_isWaitingToReattemptConnection = newIsWaitingToReattemptConnection;
+    }
+    get isWaitingToReattemptConnection() {
+        return this._isWaitingToReattemptConnection;
+    }
+    _reconnectOnDisconnection = this.baseConstructor.DefaultReconnectOnDisconnection;
     get reconnectOnDisconnection() {
         return this._reconnectOnDisconnection;
     }
@@ -36508,10 +36526,14 @@ class BaseClient {
     get _connectionStatus() {
         return this.#_connectionStatus;
     }
+    get #latestConnectionStatus() {
+        return (this.#eventDispatcher.latestEvents["connectionStatus"]?.message
+            .connectionStatus ?? this.connectionStatus);
+    }
     set _connectionStatus(newConnectionStatus) {
         _console$d.assertTypeWithError(newConnectionStatus, "string");
         _console$d.log({ newConnectionStatus });
-        if (this.#_connectionStatus == newConnectionStatus) {
+        if (this.#latestConnectionStatus == newConnectionStatus) {
             return;
         }
         this.#_connectionStatus = newConnectionStatus;
@@ -36531,6 +36553,9 @@ class BaseClient {
         }
     }
     get connectionStatus() {
+        if (this.isWaitingToReattemptConnection) {
+            return "connecting";
+        }
         return this._connectionStatus;
     }
     static RequiredMessageTypes = [
@@ -40288,6 +40313,7 @@ class WebSocketClient extends BaseClient {
         return this.#readyState == WebSocket.CLOSED;
     }
     connect(url = `${location.protocol.includes("https") ? "wss" : "ws"}://${location.host}`) {
+        _console.log("connect", { url });
         if (this.webSocket) {
             this.assertDisconnection();
         }
@@ -40295,22 +40321,36 @@ class WebSocketClient extends BaseClient {
         this.webSocket = new WebSocket(url);
     }
     disconnect() {
-        this.assertConnection();
-        if (this.reconnectOnDisconnection) {
-            this.reconnectOnDisconnection = false;
-            this.webSocket.addEventListener("close", () => {
-                this.reconnectOnDisconnection = true;
-            }, { once: true });
+        switch (this.connectionStatus) {
+            case "connecting":
+            case "connected":
+                break;
+            default:
+                return;
         }
-        this._connectionStatus = "disconnecting";
-        this.webSocket.close();
+        if (this.isWaitingToReattemptConnection) {
+            this.#clearReconnectTimeout();
+        }
+        if (this.webSocket && this.webSocket.readyState != WebSocket.CLOSED) {
+            if (this.reconnectOnDisconnection) {
+                this.reconnectOnDisconnection = false;
+                this.webSocket.addEventListener("close", () => {
+                    this.reconnectOnDisconnection = true;
+                }, { once: true });
+            }
+            this._connectionStatus = "disconnecting";
+            this.webSocket.close();
+        }
+        else {
+            this._connectionStatus = "notConnected";
+        }
     }
     reconnect() {
         this.assertDisconnection();
         this.connect(this.webSocket.url);
     }
     toggleConnection(url) {
-        if (this.isConnected) {
+        if (this.isConnected || this.connectionStatus == "connecting") {
             this.disconnect();
         }
         else if (url && this.webSocket?.url == url) {
@@ -40349,18 +40389,39 @@ class WebSocketClient extends BaseClient {
         const dataView = new DataView(arrayBuffer);
         this.#parseWebSocketMessage(dataView);
     }
+    #reconnectTimeout;
+    #clearReconnectTimeout() {
+        if (this.#reconnectTimeout != undefined) {
+            clearTimeout(this.#reconnectTimeout);
+            this.#reconnectTimeout = undefined;
+        }
+        this._isWaitingToReattemptConnection = false;
+    }
     #onWebSocketClose(event) {
         _console.log("webSocket.close", event);
-        this._connectionStatus = "notConnected";
-        this.#pingTimer.stop();
-        if (this.reconnectOnDisconnection) {
-            setTimeout(() => {
-                this.reconnect();
-            }, webSocketReconnectTimeout);
-        }
+        this.#onWebSocketClosed();
     }
     #onWebSocketError(event) {
         _console.error("webSocket.error", event);
+        this.#onWebSocketClosed();
+    }
+    #onWebSocketClosed() {
+        _console.log("onWebSocketClosed");
+        if (this._connectionStatus == "notConnected") {
+            return;
+        }
+        this.#pingTimer.stop();
+        if (this.reconnectOnDisconnection) {
+            this.#clearReconnectTimeout();
+            this._isWaitingToReattemptConnection = true;
+            this.#reconnectTimeout = setTimeout(() => {
+                this._isWaitingToReattemptConnection = false;
+                if (this.reconnectOnDisconnection) {
+                    this.reconnect();
+                }
+            }, webSocketReconnectTimeout);
+        }
+        this._connectionStatus = "notConnected";
     }
     #parseWebSocketMessage(dataView) {
         parseMessage(dataView, WebSocketMessageTypes$1, this.#onServerMessage.bind(this), null, true);

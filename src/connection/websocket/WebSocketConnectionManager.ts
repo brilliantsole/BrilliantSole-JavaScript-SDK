@@ -14,7 +14,6 @@ import { parseMessage } from "../../utils/ParseUtils.ts";
 import { Timer } from "../../utils/Timer.ts";
 import BaseConnectionManager, {
   ConnectionManagerConnectOptions,
-  ConnectionType,
 } from "../BaseConnectionManager.ts";
 import type * as ws from "ws";
 

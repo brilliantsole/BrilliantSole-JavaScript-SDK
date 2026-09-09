@@ -14,6 +14,7 @@ import {
   isAddingClientSignal,
 } from "./AddClientSignals.js";
 import { waitForAnimationFrames } from "../../../../../utils/rendering.js";
+import { createDirectionContextConsumer } from "../../../../contexts/directionContext.js";
 
 class ClientInput extends SignalWatcher(LitElement) {
   static styles = css`
@@ -61,6 +62,7 @@ class ClientInput extends SignalWatcher(LitElement) {
     client: { attribute: false },
     isValid: { type: Boolean },
     connectionStatus: {},
+    isDropdownShowing: { type: Boolean },
   };
 
   inputRef = createRef();
@@ -108,8 +110,6 @@ class ClientInput extends SignalWatcher(LitElement) {
 
     this.connectionStatus = "notConnected";
 
-    console.log(this);
-
     this.abortController = new AbortController();
 
     /** @type {AddEventListenerOptions} */
@@ -140,8 +140,8 @@ class ClientInput extends SignalWatcher(LitElement) {
       }
       this.url = undefined;
       try {
-        const _url = `${protocol}://${host}`;
-        console.log({ _url });
+        const _url = `${protocol}//${host}`;
+        // console.log({ _url });
         const url = new URL(_url);
         const hostname = url.hostname;
         const validHostname =
@@ -149,9 +149,9 @@ class ClientInput extends SignalWatcher(LitElement) {
           hostname.includes(".") ||
           /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname);
 
-        console.log(url, "url");
+        // console.log(url, "url");
         isValid =
-          url.protocol === `${protocol}:` &&
+          url.protocol === protocol &&
           validHostname &&
           url.pathname === "/" &&
           !url.search &&
@@ -160,10 +160,10 @@ class ClientInput extends SignalWatcher(LitElement) {
           this.url = url;
         }
       } catch (error) {
-        console.log("error creating url", error);
+        // console.log("error creating url", error);
         isValid = false;
       }
-      console.log({ isValid }, this.url);
+      // console.log({ isValid }, this.url);
       this.isValid = isValid;
     });
 
@@ -217,13 +217,11 @@ class ClientInput extends SignalWatcher(LitElement) {
     console.log("toggleConnection");
 
     const client = this.getClient(true);
-    console.log("client", client);
-
     client.toggleConnection(this.url.origin);
   }
 
   onKeyDown(event) {
-    console.log(event);
+    // console.log(event);
     switch (event.key) {
       case "Enter":
         if (!this.isClientConnected) {
@@ -234,9 +232,21 @@ class ClientInput extends SignalWatcher(LitElement) {
     }
   }
 
+  onDropdownHide() {
+    this.isDropdownShowing = false;
+  }
+  onDropdownShow() {
+    this.isDropdownShowing = true;
+  }
+
+  _directionConsumer = createDirectionContextConsumer(this, true);
+  /** @type {import("../../../../contexts/directionContext.js").DirectionContextState} */
+  get directionState() {
+    return this._directionConsumer.value.state;
+  }
+
   render() {
-    let disabled = this.connectionStatus != "notConnected";
-    console.log({ disabled });
+    const disabled = this.connectionStatus != "notConnected";
 
     const clientConfig = this.getClientConfig();
     // console.log("clientConfig", clientConfig);
@@ -246,11 +256,11 @@ class ClientInput extends SignalWatcher(LitElement) {
       case "notConnected":
       case "connected":
         endSlot = html`<wa-icon
-            name="globe"
-            ?valid=${this.isValid}
-            ?connected=${this.isClientConnected}
-          ></wa-icon>
-        </wa-button>`;
+              name="globe"
+              ?valid=${this.isValid}
+              ?connected=${this.isClientConnected}
+            ></wa-icon>
+          </wa-button>`;
         break;
       case "connecting":
       case "disconnecting":
@@ -259,6 +269,8 @@ class ClientInput extends SignalWatcher(LitElement) {
     }
 
     return html`
+      <option>option</option>
+      </datalist>
       <wa-input
         appearance="filled-outline"
         type="url"
@@ -276,34 +288,42 @@ class ClientInput extends SignalWatcher(LitElement) {
         ${ref(this.inputRef)}
       >
         <wa-button appearance="plain" slot="trigger">
-          ${clientConfig.protocol}://
+          ${clientConfig.protocol}//
           <wa-icon slot="start" library="system" name="chevron-down"></wa-icon>
         </wa-button>
 
         <wa-dropdown
+          @wa-show=${this.onDropdownShow}
+          @wa-hide=${this.onDropdownHide}
           slot="start"
           value=${clientConfig.protocol}
           @wa-select=${this.onSelectProtocol}
         >
           <wa-button appearance="plain" slot="trigger" ?disabled=${disabled}>
-            ${clientConfig.protocol}://
+            ${clientConfig.protocol}//
             <wa-icon
               slot="start"
               library="system"
-              name=${disabled ? "chevron-right" : "chevron-down"}
+              name=${
+                this.isDropdownShowing
+                  ? "chevron-down"
+                  : this.directionState.isLeftToRight
+                    ? "chevron-right"
+                    : "chevron-left"
+              }
             ></wa-icon>
           </wa-button>
 
           <wa-dropdown-item
-            value="wss"
+            value="wss:"
             type="checkbox"
-            ?checked=${clientConfig.protocol == "wss"}
+            ?checked=${clientConfig.protocol == "wss:"}
             >wss</wa-dropdown-item
           >
           <wa-dropdown-item
-            value="ws"
+            value="ws:"
             type="checkbox"
-            ?checked=${clientConfig.protocol == "ws"}
+            ?checked=${clientConfig.protocol == "ws:"}
             >ws</wa-dropdown-item
           >
         </wa-dropdown>
