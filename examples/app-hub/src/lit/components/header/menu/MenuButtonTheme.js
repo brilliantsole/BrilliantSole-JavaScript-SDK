@@ -105,6 +105,7 @@ class MenuButtonTheme extends LitElement {
       </wa-dropdown-item>
     </wa-dropdown>`;
   }
+
   renderToggle() {
     return html`<bw-header-button
       icon-name=${this.iconName}

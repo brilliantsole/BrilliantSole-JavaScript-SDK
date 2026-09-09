@@ -2286,6 +2286,11 @@ bw-tab-breadcrumb {
   padding-top: var(--tab-padding-top);
   padding-bottom: var(--tab-padding-bottom);
 }
+html[data-scroll-assist] {
+  #tabContent {
+    padding-bottom: 0px;
+  }
+}
 
 #tab,
 bw-tab-breadcrumb {
@@ -2315,6 +2320,7 @@ bw-tab-breadcrumb {
 
 :root {
   --tab-content-height: 0px;
+  --tab-content-height-difference: max(100cqh - var(--tab-content-height), 0px);
 
   --tab-vertical-padding-before: 0px;
   --tab-vertical-padding-after: 0px;
@@ -2327,7 +2333,8 @@ bw-tab-breadcrumb {
 #tabAfter {
   height: var(--tab-vertical-padding-after);
 }
-#tab {
+
+html:not([data-scroll-assist]) #tab {
   scroll-padding-top: var(--main-padding-top-base);
 }
 html:not([data-scroll-assist]) :is(#tabBefore, #tabAfter) {
@@ -2340,7 +2347,11 @@ html:not([data-scroll-assist]) :is(#tabBefore, #tabAfter) {
       --tab-vertical-padding-before: calc(
         100cqh - var(--tab-vertical-padding-before-offset)
       );
-      --tab-vertical-padding-after: calc(100cqh - var(--tab-content-height));
+      --tab-vertical-padding-after: calc(
+        var(--tab-content-height-difference) +
+          (1 - sign(abs(var(--tab-content-height-difference)))) *
+          var(--tab-padding-bottom-extra)
+      );
     }
   }
 }

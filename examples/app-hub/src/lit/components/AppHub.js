@@ -1390,9 +1390,14 @@ class AppHub extends LitElement {
     }
   }
   _onTabContentResize(event) {
+    const entry = event.detail.entries[0];
+    if (entry.target != this.refs.tabContent.value) {
+      return;
+    }
+
     /** @type {DOMRectReadOnly} */
-    const rect = event.detail.entries[0].contentRect;
-    // console.log("_onTabContentResize", rect);
+    const rect = entry.contentRect;
+    // console.log("_onTabContentResize", rect, entry);
     const { height } = rect;
     this._updateTabContentHeight(height);
   }
