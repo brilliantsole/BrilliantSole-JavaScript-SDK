@@ -8,6 +8,8 @@ const { ref, createRef } = litRef;
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/input/input.js";
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/dropdown/dropdown.js";
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/spinner/spinner.js";
+import "https://ka-f.webawesome.com/webawesome@3.12.0/components/divider/divider.js";
+import "https://ka-f.webawesome.com/webawesome@3.12.0/components/animation/animation.js";
 
 import {
   addClientConfigSignal,
@@ -46,8 +48,11 @@ class ClientInput extends SignalWatcher(LitElement) {
     }
 
     [slot="end"] {
+      display: flex;
+      flex-direction: row;
       margin-inline-start: var(--wa-space-3xs);
-      wa-icon {
+
+      [data-connection] wa-icon {
         &:not([valid]) {
           color: var(--wa-color-danger-on-quiet);
         }
@@ -56,16 +61,37 @@ class ClientInput extends SignalWatcher(LitElement) {
         }
       }
     }
+
+    wa-dropdown-item[value="delete"] {
+      padding-inline-start: 0.5em;
+      font-weight: var(--wa-font-weight-bold);
+    }
+
+    :host([scanning]) [data-toggle-scan] {
+      wa-icon {
+        color: var(--wa-color-brand-on-quiet);
+      }
+    }
+    :host(:not([connection-status="connected"])) [data-toggle-scan] {
+      display: none;
+    }
   `;
 
   static properties = {
     client: { attribute: false },
     isValid: { type: Boolean },
-    connectionStatus: {},
+    connectionStatus: { reflect: true, attribute: "connection-status" },
     isDropdownShowing: { type: Boolean },
+    isScanning: { type: Boolean, reflect: true, attribute: "scanning" },
+    isScanningAvailable: {
+      type: Boolean,
+      reflect: true,
+      attribute: "scanning-available",
+    },
   };
 
   inputRef = createRef();
+  animationRef = createRef();
 
   get isClientConnected() {
     return this.connectionStatus == "connected";
@@ -77,14 +103,41 @@ class ClientInput extends SignalWatcher(LitElement) {
       return;
     }
     console.log("addClientEventListeners", client);
+    const options = {
+      ...this.clientAddEventListenerOptions,
+      immediate,
+    };
     client.addEventListener(
       "connectionStatus",
       (event) => {
         const { connectionStatus } = event.message;
-        console.log("clientConnectionStatus", { connectionStatus });
+        console.log({ connectionStatus });
         this.connectionStatus = connectionStatus;
       },
-      { ...this.clientAddEventListenerOptions, immediate },
+      options,
+    );
+    client.addEventListener(
+      "isScanningAvailable",
+      (event) => {
+        const { isScanningAvailable } = event.message;
+        console.log({ isScanningAvailable });
+        this.isScanningAvailable = isScanningAvailable;
+      },
+      options,
+    );
+    client.addEventListener(
+      "isScanning",
+      (event) => {
+        const { isScanning } = event.message;
+        console.log({ isScanning });
+        this.isScanning = isScanning;
+        if (this.isScanning) {
+          this.animationRef.value.play = true;
+        } else {
+          this.animationRef.value.cancel();
+        }
+      },
+      options,
     );
   }
   /**
@@ -191,8 +244,13 @@ class ClientInput extends SignalWatcher(LitElement) {
   onSelectProtocol(event) {
     const { item } = event.detail;
     // console.log("onSelectProtocol", item, { value: item.value });
+    const { value } = item;
+    if (value == "delete") {
+      // FILL
+      return;
+    }
     const addClientConfig = addClientConfigSignal.get();
-    addClientConfig.protocol = item.value;
+    addClientConfig.protocol = value;
     addClientConfigSignal.set({ ...addClientConfig });
   }
 
@@ -245,17 +303,22 @@ class ClientInput extends SignalWatcher(LitElement) {
     return this._directionConsumer.value.state;
   }
 
+  toggleScan() {
+    const client = this.getClient();
+    client.toggleScan();
+  }
+
   render() {
     const disabled = this.connectionStatus != "notConnected";
 
     const clientConfig = this.getClientConfig();
     // console.log("clientConfig", clientConfig);
 
-    let endSlot = nothing;
+    let connectionElement = nothing;
     switch (this.connectionStatus) {
       case "notConnected":
       case "connected":
-        endSlot = html`<wa-icon
+        connectionElement = html`<wa-icon
               name="globe"
               ?valid=${this.isValid}
               ?connected=${this.isClientConnected}
@@ -264,13 +327,11 @@ class ClientInput extends SignalWatcher(LitElement) {
         break;
       case "connecting":
       case "disconnecting":
-        endSlot = html`<wa-spinner></wa-spinner>`;
+        connectionElement = html`<wa-spinner></wa-spinner>`;
         break;
     }
 
     return html`
-      <option>option</option>
-      </datalist>
       <wa-input
         appearance="filled-outline"
         type="url"
@@ -304,13 +365,11 @@ class ClientInput extends SignalWatcher(LitElement) {
             <wa-icon
               slot="start"
               library="system"
-              name=${
-                this.isDropdownShowing
-                  ? "chevron-down"
-                  : this.directionState.isLeftToRight
-                    ? "chevron-right"
-                    : "chevron-left"
-              }
+              name=${this.isDropdownShowing
+                ? "chevron-down"
+                : this.directionState.isLeftToRight
+                  ? "chevron-right"
+                  : "chevron-left"}
             ></wa-icon>
           </wa-button>
 
@@ -326,16 +385,41 @@ class ClientInput extends SignalWatcher(LitElement) {
             ?checked=${clientConfig.protocol == "ws:"}
             >ws</wa-dropdown-item
           >
+          <wa-divider></wa-divider>
+
+          <wa-dropdown-item value="delete" variant="danger">
+            <wa-icon slot="icon" name="trash"></wa-icon>
+            Delete
+          </wa-dropdown-item>
         </wa-dropdown>
-        <wa-button
-          slot="end"
-          label="toggle client connection"
-          appearance="plain"
-          @click=${this.onEndClick}
-          ?disabled=${!this.isValid}
-        >
-          ${endSlot}
-        </wa-button>
+        <div slot="end">
+          <wa-animation
+            name="pulse"
+            easing="ease-in-out"
+            duration="1000"
+            ${ref(this.animationRef)}
+          >
+            ${this.isScanningAvailable
+              ? html`<wa-button
+                  label="toggle client scan"
+                  appearance="plain"
+                  data-toggle-scan
+                  @click=${this.toggleScan}
+                >
+                  <wa-icon name="bluetooth" family="brands"></wa-icon>
+                </wa-button>`
+              : nothing}
+          </wa-animation>
+          <wa-button
+            data-connection
+            label="toggle client connection"
+            appearance="plain"
+            @click=${this.onEndClick}
+            ?disabled=${!this.isValid}
+          >
+            ${connectionElement}
+          </wa-button>
+        </div>
       </wa-input>
     `;
   }
