@@ -358,6 +358,7 @@ class ClientInput extends SignalWatcher(LitElement) {
         </wa-button>
 
         <wa-dropdown
+          @dblclick=${() => {}}
           @wa-show=${this.onDropdownShow}
           @wa-hide=${this.onDropdownHide}
           slot="start"

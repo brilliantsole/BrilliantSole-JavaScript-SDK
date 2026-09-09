@@ -1021,6 +1021,7 @@ class AppHub extends LitElement {
     // });
 
     let dblclickTarget = target;
+    // console.log("target.nodeName", target.nodeName);
     switch (target.nodeName) {
       case "WA-BUTTON":
         dblclickTarget = target.shadowRoot.querySelector("button");
