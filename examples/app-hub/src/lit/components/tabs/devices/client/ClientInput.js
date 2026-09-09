@@ -44,6 +44,11 @@ class ClientInput extends SignalWatcher(LitElement) {
       opacity: 0.5;
     }
 
+    wa-input::part(input) {
+      width: inherit;
+      text-overflow: ellipsis;
+    }
+
     [checked] {
       font-weight: var(--wa-font-weight-bold);
     }
@@ -65,7 +70,7 @@ class ClientInput extends SignalWatcher(LitElement) {
 
     wa-dropdown-item[value="delete"] {
       padding-inline-start: 0.5em;
-      font-weight: var(--wa-font-weight-bold);
+      font-weight: var(--wa-font-weight-semibold);
     }
 
     :host([scanning]) [data-toggle-scan] {
