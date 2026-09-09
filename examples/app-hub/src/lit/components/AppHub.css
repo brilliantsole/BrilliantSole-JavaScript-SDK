@@ -2233,7 +2233,7 @@ html:active-view-transition-type(theme) {
 }
 
 bw-tab-breadcrumb {
-  padding-top: var(--main-padding-top);
+  padding-top: var(--wa-space-2xs);
   background-color: var(--background-color);
 }
 
@@ -2296,6 +2296,10 @@ html[data-scroll-assist] {
 bw-tab-breadcrumb {
   padding-left: var(--main-padding-left);
   padding-right: var(--main-padding-right);
+}
+bw-tab-breadcrumb {
+  padding-left: var(--wa-space-xs);
+  padding-right: var(--wa-space-xs);
 }
 
 @media (pointer: coarse) {
