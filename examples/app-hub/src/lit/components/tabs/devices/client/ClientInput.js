@@ -113,6 +113,10 @@ class ClientInput extends SignalWatcher(LitElement) {
         const { connectionStatus } = event.message;
         console.log({ connectionStatus });
         this.connectionStatus = connectionStatus;
+        if (connectionStatus == "connected") {
+          const url = new URL(client.webSocket.url);
+          this.inputRef.value.value = url.host;
+        }
       },
       options,
     );
@@ -337,7 +341,7 @@ class ClientInput extends SignalWatcher(LitElement) {
         type="url"
         inputmode="url"
         with-clear
-        placeholder="192.168.5.10"
+        placeholder="192.168.x.x"
         enterkeyhint="go"
         autocapitalize="off"
         autocomplete="off"
@@ -360,7 +364,7 @@ class ClientInput extends SignalWatcher(LitElement) {
           value=${clientConfig.protocol}
           @wa-select=${this.onSelectProtocol}
         >
-          <wa-button appearance="plain" slot="trigger" ?disabled=${disabled}>
+          <wa-button appearance="plain" slot="trigger">
             ${clientConfig.protocol}//
             <wa-icon
               slot="start"
@@ -377,12 +381,14 @@ class ClientInput extends SignalWatcher(LitElement) {
             value="wss:"
             type="checkbox"
             ?checked=${clientConfig.protocol == "wss:"}
+            ?disabled=${disabled}
             >wss</wa-dropdown-item
           >
           <wa-dropdown-item
             value="ws:"
             type="checkbox"
             ?checked=${clientConfig.protocol == "ws:"}
+            ?disabled=${disabled}
             >ws</wa-dropdown-item
           >
           <wa-divider></wa-divider>
