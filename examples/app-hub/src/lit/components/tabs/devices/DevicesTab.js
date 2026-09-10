@@ -61,6 +61,7 @@ class DevicesTab extends SignalWatcher(LitElement) {
 
     const styles = {
       "--bw-grid-lane-width": "16em",
+      "justify-items": "stretch !important",
     };
 
     return html`
