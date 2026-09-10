@@ -1,5 +1,6 @@
 import { waitForGlobals } from "../../../../utils/cross-origin-storage-utils.js";
 import { createBluetoothContextConsumer } from "../../../contexts/bluetoothContext.js";
+
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/resize-observer/resize-observer.js";
 
 const { lit, BW, litSignals, litRepeat, litStyleMap } = await waitForGlobals();
@@ -13,6 +14,7 @@ import "./bluetooth/AddDeviceButton.js";
 import "./client/AddClientButton.js";
 
 import "./client/ClientInput.js";
+import "./device/DeviceCard.js";
 
 import {
   isAddingClientSignal,
@@ -74,15 +76,23 @@ class DevicesTab extends SignalWatcher(LitElement) {
     /** @type {AddEventListenerOptions} */
     const options = { signal: this._abortController.signal };
 
+    this._updateClients();
+
     BW.ClientManager.addEventListener(
       "clientIsConnected",
       (event) => {
-        this.clients = BW.ClientManager.clients.filter(
-          (client) => client.type == "webSocket" && client.hasConnectedOnce,
-        );
+        this._updateClients();
         this.requestUpdate();
       },
-      { immediate: true },
+      { ...options },
+    );
+
+    BW.DeviceManager.addEventListener(
+      "availableDevices",
+      (event) => {
+        this.requestUpdate();
+      },
+      { ...options, immediate: true },
     );
 
     this.addEventListener(
@@ -102,11 +112,21 @@ class DevicesTab extends SignalWatcher(LitElement) {
 
   /** @type {import("../../../../../../../build/brilliantwear.module.js").WebSocketClient[]} */
   clients = [];
+  _updateClients() {
+    this.clients = BW.ClientManager.clients.filter(
+      (client) => client.type == "webSocket" && client.hasConnectedOnce,
+    );
+  }
+
+  get devices() {
+    return BW.DeviceManager.availableDevices;
+  }
+
   render() {
     const isAddingClient = isAddingClientSignal.get();
-    console.log({ isAddingClient }, this.clients);
+    console.log({ isAddingClient }, this.clients, this.devices);
 
-    const styles = {
+    const clientsStyles = {
       "--bw-grid-lane-width": "17em",
       "justify-items": "stretch !important",
     };
@@ -139,7 +159,7 @@ class DevicesTab extends SignalWatcher(LitElement) {
 
         <div
           class="bw-grid-lanes"
-          style="${styleMap(styles)}"
+          style="${styleMap(clientsStyles)}"
           data-manual-width
         >
           ${repeat(
@@ -151,6 +171,19 @@ class DevicesTab extends SignalWatcher(LitElement) {
           ${isAddingClient
             ? html` <bw-client-input data-pop-on-enter></bw-client-input>`
             : nothing}
+        </div>
+
+        <div
+          class="bw-grid-lanes"
+          style="${styleMap(clientsStyles)}"
+          data-manual-width
+        >
+          ${repeat(
+            this.devices,
+            (device) => device,
+            (device) =>
+              html`<bw-device-card .device=${device}></bw-device-card>`,
+          )}
         </div>
       </div>
 
