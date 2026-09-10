@@ -2182,11 +2182,17 @@ html:active-view-transition-type(theme) {
   --hand-direction: ltr;
 }
 .bw-grid-lanes {
+  --bw-grid-lane-width: 13em;
+
   @supports (hanging-punctuation: first) and (-webkit-appearance: none) {
-    grid-template-columns: repeat(auto-fit, var(--bw-grid-lane-width, 13em));
+    grid-template-columns: repeat(auto-fit, var(--bw-grid-lane-width));
   }
   @supports not ((hanging-punctuation: first) and (-webkit-appearance: none)) {
     grid-template-columns: repeat(auto-fit, min-content);
+  }
+
+  &[data-manual-width] {
+    grid-template-columns: repeat(auto-fit, var(--bw-grid-lane-width));
   }
 
   /* grid-template-columns: repeat(auto-fill, 300px); */
@@ -2514,7 +2520,6 @@ html:active-view-transition-type(add-client, remove-client) {
     opacity: 0;
     transform: scale(var(--appear-transition-scale));
   }
-
   to {
     opacity: 1;
     transform: scale(1);
@@ -2525,10 +2530,9 @@ html:active-view-transition-type(add-client, remove-client) {
     opacity: 1;
     transform: scale(1);
   }
-
   to {
     opacity: 0;
-    transform: scale(0);
+    transform: scale(var(--appear-transition-scale));
   }
 }
 

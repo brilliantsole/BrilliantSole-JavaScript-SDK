@@ -107,7 +107,7 @@ class DevicesTab extends SignalWatcher(LitElement) {
     console.log({ isAddingClient }, this.clients);
 
     const styles = {
-      "--bw-grid-lane-width": "16em",
+      "--bw-grid-lane-width": "17em",
       "justify-items": "stretch !important",
     };
 
@@ -137,7 +137,11 @@ class DevicesTab extends SignalWatcher(LitElement) {
           <bw-add-client-button></bw-add-client-button>
         </div>
 
-        <div class="bw-grid-lanes" style="${styleMap(styles)}">
+        <div
+          class="bw-grid-lanes"
+          style="${styleMap(styles)}"
+          data-manual-width
+        >
           ${repeat(
             this.clients.filter((client) => client.type == "webSocket"),
             (client) => client,

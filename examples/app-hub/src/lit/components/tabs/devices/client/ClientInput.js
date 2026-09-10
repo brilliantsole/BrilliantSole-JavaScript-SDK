@@ -82,10 +82,26 @@ class ClientInput extends SignalWatcher(LitElement) {
     :host([scanning]) [data-toggle-scan] {
       wa-icon {
         color: var(--wa-color-brand-on-quiet);
+        animation: pulse 1.5s ease-in-out infinite;
       }
+    }
+    [data-toggle-scan] wa-icon {
+      padding: 0;
+      margin: 0;
     }
     :host(:not([connection-status="connected"])) [data-toggle-scan] {
       display: none;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.3);
+      }
     }
   `;
 
@@ -160,11 +176,11 @@ class ClientInput extends SignalWatcher(LitElement) {
         const { isScanning } = event.message;
         console.log({ isScanning });
         this.isScanning = isScanning;
-        if (this.isScanning) {
-          this.animationRef.value.play = true;
-        } else {
-          this.animationRef.value.cancel();
-        }
+        // if (this.isScanning) {
+        //   this.animationRef.value.play = true;
+        // } else {
+        //   this.animationRef.value.cancel();
+        // }
       },
       options,
     );
