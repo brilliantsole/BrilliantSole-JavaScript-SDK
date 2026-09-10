@@ -73,8 +73,6 @@ class WebSocketClient extends BaseClient {
       this.assertDisconnection();
     }
     this._connectionStatus = "connecting";
-
-    this.url = undefined;
     this.webSocket = new WebSocket(url);
   }
 

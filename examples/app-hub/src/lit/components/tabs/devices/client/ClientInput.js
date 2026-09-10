@@ -275,6 +275,7 @@ class ClientInput extends SignalWatcher(LitElement) {
 
   /** @returns {import("./AddClientSignals.js").ClientConfig} */
   getClientConfig() {
+    console.log("getClientConfig", this._client?.url);
     if (this.isAddingClient) {
       return addClientConfigSignal.get();
     } else if (this._client) {
