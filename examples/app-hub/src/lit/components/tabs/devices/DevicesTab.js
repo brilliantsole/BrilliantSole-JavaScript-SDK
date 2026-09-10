@@ -14,7 +14,12 @@ import "./client/AddClientButton.js";
 
 import "./client/ClientInput.js";
 
-import { isAddingClientSignal } from "./client/AddClientSignals.js";
+import {
+  isAddingClientSignal,
+  addClientConfigSignal,
+  defaultAddClientConfig,
+} from "./client/AddClientSignals.js";
+import { createDisableViewTransitionsContextConsumer } from "../../../contexts/disableViewTransitionsContext.js";
 
 class DevicesTab extends SignalWatcher(LitElement) {
   createRenderRoot() {
@@ -28,6 +33,38 @@ class DevicesTab extends SignalWatcher(LitElement) {
   }
   get isBluetoothEnabled() {
     return this.bluetoothState.isEnabled;
+  }
+
+  _disableViewTransitionsConsumer =
+    createDisableViewTransitionsContextConsumer(this);
+  /** @type {import("../../../contexts/disableViewTransitionsContext.js").DisableViewTransitionsContextState} */
+  get disableViewTransitionsState() {
+    return this._disableViewTransitionsConsumer.value.state;
+  }
+  get disableViewTransitions() {
+    return this.disableViewTransitionsState.disableViewTransitions;
+  }
+
+  async _toggleAddClient(manual) {
+    const newIsAddingClient = !isAddingClientSignal.get();
+    const update = () => {
+      isAddingClientSignal.set(newIsAddingClient);
+      if (!newIsAddingClient) {
+        addClientConfigSignal.set({ ...defaultAddClientConfig });
+      }
+    };
+    if (this.disableViewTransitions || !manual) {
+      update();
+    } else {
+      const types = [newIsAddingClient ? "add-client" : "remove-client"];
+      console.log("types", types);
+      await document.startViewTransition({
+        update: async () => {
+          update();
+        },
+        types,
+      }).finished;
+    }
   }
 
   connectedCallback() {
@@ -46,6 +83,16 @@ class DevicesTab extends SignalWatcher(LitElement) {
         this.requestUpdate();
       },
       { immediate: true },
+    );
+
+    this.addEventListener(
+      "bw-toggle-add-client",
+      (event) => {
+        const { manual } = event.detail;
+        event.stopPropagation();
+        this._toggleAddClient(manual);
+      },
+      options,
     );
   }
   disconnectedCallback() {
@@ -98,7 +145,7 @@ class DevicesTab extends SignalWatcher(LitElement) {
               html`<bw-client-input .client=${client}></bw-client-input>`,
           )}
           ${isAddingClient
-            ? html` <bw-client-input></bw-client-input>`
+            ? html` <bw-client-input data-pop-on-enter></bw-client-input>`
             : nothing}
         </div>
       </div>

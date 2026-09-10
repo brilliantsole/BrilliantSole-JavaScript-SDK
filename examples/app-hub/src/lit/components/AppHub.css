@@ -114,10 +114,6 @@ textarea {
   align-items: center;
 }
 
-#mainOverlay :is([data-main-align], [data-cross-align]) {
-  view-transition-name: match-element;
-}
-
 :is(#mainOverlay, .bw-overlay) :is([data-main-align], [data-cross-align]) {
   width: fit-content;
   height: fit-content;
@@ -2117,7 +2113,7 @@ html:not([data-fullscreen-enabled])
     transform: var(--slide-on-enter-translate-y);
   }
 }
-html:not([data-loaded]) [data-slide-on-enter] {
+html:not([data-loaded]) :is([data-slide-on-enter]) {
   @starting-style {
     transform: none !important;
   }
@@ -2430,6 +2426,9 @@ html:active-view-transition-type(
   [data-tab-view-transition-container] > * {
     view-transition-name: match-element;
   }
+  #mainOverlay :is([data-main-align], [data-cross-align]) {
+    view-transition-name: match-element;
+  }
 }
 
 html:not([data-bluetooth-enabled]) [data-bluetooth-enabled-only] {
@@ -2460,4 +2459,100 @@ wa-card {
 
 [data-hidden] {
   display: none;
+}
+
+:root {
+  --appear-transition-duration: 120ms;
+  --appear-transition-timing-function: ease;
+  --appear-transition-scale: 0.8;
+}
+html[data-loaded]:not([data-changing-pathname]) {
+  &[data-disable-view-transitions]:not([data-disable-transitions]) {
+    [data-pop-on-enter] {
+      display: block;
+      opacity: 1;
+      transform: scale(1);
+
+      transition:
+        opacity var(--appear-transition-duration),
+        transform var(--appear-transition-duration),
+        display var(--appear-transition-duration) allow-discrete;
+      transition-timing-function: ease-out;
+    }
+
+    @starting-style {
+      [data-pop-on-enter] {
+        opacity: 0;
+        transform: scale(var(--appear-transition-scale));
+      }
+    }
+  }
+}
+
+html:active-view-transition-type(add-client, remove-client) {
+  --animation-duration: var(--appear-transition-duration);
+  --animation-timing-function: var(--appear-transition-timing-function);
+
+  bw-client-input {
+    view-transition-name: match-element;
+    &:not([data-pop-on-enter]) {
+      view-transition-class: existing-element;
+    }
+    &[data-pop-on-enter] {
+      view-transition-class: appearing-element;
+    }
+  }
+
+  &::view-transition-group(.existing-element) {
+    animation-duration: var(--animation-duration);
+    animation-timing-function: var(--animation-timing-function);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(var(--appear-transition-scale));
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes pop-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+
+html:active-view-transition-type(add-client, remove-client) {
+  &:active-view-transition-type(add-client) {
+    &::view-transition-new(.appearing-element) {
+      animation-name: pop-in;
+      animation-duration: var(--appear-transition-duration);
+      animation-timing-function: ease-out;
+    }
+    &::view-transition-old(.appearing-element) {
+      display: none;
+      animation: none;
+    }
+  }
+  &:active-view-transition-type(remove-client) {
+    &::view-transition-old(.appearing-element) {
+      animation-name: pop-out;
+      animation-duration: var(--appear-transition-duration);
+      animation-timing-function: ease-in;
+    }
+    &::view-transition-new(.appearing-element) {
+      display: none;
+      animation: none;
+    }
+  }
 }

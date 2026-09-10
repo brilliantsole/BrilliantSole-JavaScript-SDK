@@ -13,11 +13,11 @@ import "https://ka-f.webawesome.com/webawesome@3.12.0/components/animation/anima
 
 import {
   addClientConfigSignal,
-  defaultAddClientConfig,
   isAddingClientSignal,
 } from "./AddClientSignals.js";
 import { waitForAnimationFrames } from "../../../../../utils/rendering.js";
 import { createDirectionContextConsumer } from "../../../../contexts/directionContext.js";
+import { noOp } from "../../../../../utils/lit-utils.js";
 
 class ClientInput extends SignalWatcher(LitElement) {
   static styles = css`
@@ -109,9 +109,14 @@ class ClientInput extends SignalWatcher(LitElement) {
     return this.connectionStatus == "connected";
   }
 
-  _remove() {
-    addClientConfigSignal.set({ ...defaultAddClientConfig });
-    isAddingClientSignal.set(false);
+  _remove(manual) {
+    this.dispatchEvent(
+      new CustomEvent("bw-toggle-add-client", {
+        bubbles: true,
+        composed: true,
+        detail: { manual },
+      }),
+    );
   }
 
   async addClientEventListeners(immediate) {
@@ -275,7 +280,6 @@ class ClientInput extends SignalWatcher(LitElement) {
 
   /** @returns {import("./AddClientSignals.js").ClientConfig} */
   getClientConfig() {
-    console.log("getClientConfig", this._client?.url);
     if (this.isAddingClient) {
       return addClientConfigSignal.get();
     } else if (this._client) {
@@ -295,7 +299,7 @@ class ClientInput extends SignalWatcher(LitElement) {
     // console.log("onSelectProtocol", item, { value: item.value });
     const { value } = item;
     if (value == "remove") {
-      this._remove();
+      this._remove(true);
       return;
     }
     const addClientConfig = addClientConfigSignal.get();
@@ -404,7 +408,7 @@ class ClientInput extends SignalWatcher(LitElement) {
         </wa-button>
 
         <wa-dropdown
-          @dblclick=${() => {}}
+          @dblclick=${noOp}
           @wa-show=${this.onDropdownShow}
           @wa-hide=${this.onDropdownHide}
           slot="start"

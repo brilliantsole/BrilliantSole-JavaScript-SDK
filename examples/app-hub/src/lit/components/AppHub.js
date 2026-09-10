@@ -222,6 +222,17 @@ class AppHub extends LitElement {
     {
       defaultPath,
       beforeGoto: (pathname, activeTab) => {
+        document.documentElement.toggleAttribute(
+          "data-changing-pathname",
+          true,
+        );
+        if (this.activeTab != activeTab) {
+          document.documentElement.toggleAttribute(
+            "data-changing-active-tab",
+            true,
+          );
+        }
+
         this._activeTabProvider.value.update({ activeTab });
         this._navigationStateProvider.value.update(
           navigation.currentEntry.getState(),
@@ -236,6 +247,7 @@ class AppHub extends LitElement {
       },
       afterGoto: (pathname, activeTab) => {
         console.log("after", pathname, { activeTab });
+        const isActiveTabDifferent = this.activeTab != activeTab;
         this.activeTab = activeTab;
 
         this._updateTabContentScrollOnResize = true;
@@ -249,6 +261,19 @@ class AppHub extends LitElement {
           }
           this._ignoreTargetDuringNavigation = undefined;
         }, 10);
+
+        waitForAnimationFrames(1).then(() => {
+          document.documentElement.toggleAttribute(
+            "data-changing-pathname",
+            false,
+          );
+          if (isActiveTabDifferent) {
+            document.documentElement.toggleAttribute(
+              "data-changing-active-tab",
+              false,
+            );
+          }
+        });
       },
     },
   );

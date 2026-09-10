@@ -9,6 +9,7 @@ import { createIsLeftHandedContextConsumer } from "../../../../contexts/isLeftHa
 import { waitForAnimationFrames } from "../../../../../utils/rendering.js";
 import { isAddingClientSignal } from "./AddClientSignals.js";
 import { createDirectionContextConsumer } from "../../../../contexts/directionContext.js";
+import { createDisableViewTransitionsContextConsumer } from "../../../../contexts/disableViewTransitionsContext.js";
 
 class AddClientButton extends SignalWatcher(LitElement) {
   createRenderRoot() {
@@ -20,8 +21,24 @@ class AddClientButton extends SignalWatcher(LitElement) {
     useHandedness: { type: Boolean, attribute: "use-handedness" },
   };
 
+  _disableViewTransitionsConsumer =
+    createDisableViewTransitionsContextConsumer(this);
+  /** @type {import("../../../../contexts/disableViewTransitionsContext.js").DisableViewTransitionsContextState} */
+  get disableViewTransitionsState() {
+    return this._disableViewTransitionsConsumer.value.state;
+  }
+  get disableViewTransitions() {
+    return this.disableViewTransitionsState.disableViewTransitions;
+  }
+
   async _onClick() {
-    isAddingClientSignal.set(!isAddingClientSignal.get());
+    this.dispatchEvent(
+      new CustomEvent("bw-toggle-add-client", {
+        bubbles: true,
+        composed: true,
+        detail: { manual: true },
+      }),
+    );
   }
 
   _isLeftHandedConsumer = createIsLeftHandedContextConsumer(
