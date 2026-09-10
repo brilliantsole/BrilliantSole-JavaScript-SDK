@@ -2,9 +2,10 @@ import { waitForGlobals } from "../../../../utils/cross-origin-storage-utils.js"
 import { createBluetoothContextConsumer } from "../../../contexts/bluetoothContext.js";
 import "https://ka-f.webawesome.com/webawesome@3.12.0/components/resize-observer/resize-observer.js";
 
-const { lit, BW, litSignals, litRef } = await waitForGlobals();
-const { SignalWatcher } = litSignals;
-const { ref, createRef } = litRef;
+const { lit, BW, litSignals, litRepeat, litStyleMap } = await waitForGlobals();
+const { SignalWatcher, signal } = litSignals;
+const { repeat } = litRepeat;
+const { styleMap } = litStyleMap;
 
 const { LitElement, html, nothing } = lit;
 
@@ -29,10 +30,38 @@ class DevicesTab extends SignalWatcher(LitElement) {
     return this.bluetoothState.isEnabled;
   }
 
-  clientInputRef = createRef();
+  connectedCallback() {
+    super.connectedCallback();
 
+    this._abortController = new AbortController();
+    /** @type {AddEventListenerOptions} */
+    const options = { signal: this._abortController.signal };
+
+    BW.ClientManager.addEventListener(
+      "clientIsConnected",
+      (event) => {
+        this.clients = BW.ClientManager.clients.filter(
+          (client) => client.type == "webSocket" && client.hasConnectedOnce,
+        );
+        this.requestUpdate();
+      },
+      { immediate: true },
+    );
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._abortController.abort();
+  }
+
+  /** @type {import("../../../../../../../build/brilliantwear.module.js").WebSocketClient[]} */
+  clients = [];
   render() {
     const isAddingClient = isAddingClientSignal.get();
+    console.log({ isAddingClient }, this.clients);
+
+    const styles = {
+      "--bw-grid-lane-width": "16em",
+    };
 
     return html`
       <!--
@@ -60,11 +89,16 @@ class DevicesTab extends SignalWatcher(LitElement) {
           <bw-add-client-button></bw-add-client-button>
         </div>
 
-        <div class="clients">
-          <bw-client-input
-            ?data-hidden=${!isAddingClient}
-            ${ref(this.clientInputRef)}
-          ></bw-client-input>
+        <div class="bw-grid-lanes" style="${styleMap(styles)}">
+          ${repeat(
+            this.clients.filter((client) => client.type == "webSocket"),
+            (client) => client,
+            (client) =>
+              html`<bw-client-input .client=${client}></bw-client-input>`,
+          )}
+          ${isAddingClient
+            ? html` <bw-client-input></bw-client-input>`
+            : nothing}
         </div>
       </div>
 

@@ -592,13 +592,22 @@ html[data-header-hidden] {
     }
     /* weird Android Chrome issue for rtl on fullscreen :/ */
     @supports not (-webkit-touch-callout: none) {
+      :dir(rtl) {
+        --header-padding-right-extra: var(--wa-space-2xs);
+        --header-padding-left-extra: var(--wa-space-2xs);
+      }
       :dir(rtl):fullscreen {
         --header-padding-right-base: var(--wa-space-2xs);
         --header-padding-left-base: var(--wa-space-2xs);
       }
+
       :dir(ltr) {
         --header-padding-right-base: var(--wa-space-2xs);
         --header-padding-left-base: var(--wa-space-2xs);
+      }
+      :dir(ltr):fullscreen {
+        --header-padding-right-extra: var(--wa-space-2xs);
+        --header-padding-left-extra: var(--wa-space-2xs);
       }
     }
 
@@ -2178,7 +2187,7 @@ html:active-view-transition-type(theme) {
 }
 .bw-grid-lanes {
   @supports (hanging-punctuation: first) and (-webkit-appearance: none) {
-    grid-template-columns: repeat(auto-fit, 13em);
+    grid-template-columns: repeat(auto-fit, var(--bw-grid-lane-width, 13em));
   }
   @supports not ((hanging-punctuation: first) and (-webkit-appearance: none)) {
     grid-template-columns: repeat(auto-fit, min-content);
@@ -2297,10 +2306,10 @@ bw-tab-breadcrumb {
   padding-left: var(--main-padding-left);
   padding-right: var(--main-padding-right);
 }
-bw-tab-breadcrumb {
+/* bw-tab-breadcrumb {
   padding-left: var(--wa-space-xs);
   padding-right: var(--wa-space-xs);
-}
+} */
 
 @media (pointer: coarse) {
   #tab,

@@ -40,12 +40,18 @@ class ClientInput extends SignalWatcher(LitElement) {
       opacity: initial;
     }
 
+    :host([connection-status="connected"]) wa-input::part(input-wrapper) {
+      border-color: var(--wa-color-brand-on-quiet);
+    }
+    :host(:not([valid])) wa-input::part(input-wrapper) {
+      border-color: var(--wa-color-danger-on-quiet);
+    }
+
     wa-input::part(input):disabled {
       opacity: 0.5;
     }
 
     wa-input::part(input) {
-      width: inherit;
       text-overflow: ellipsis;
     }
 
@@ -68,7 +74,7 @@ class ClientInput extends SignalWatcher(LitElement) {
       }
     }
 
-    wa-dropdown-item[value="delete"] {
+    wa-dropdown-item[value="remove"] {
       padding-inline-start: 0.5em;
       font-weight: var(--wa-font-weight-semibold);
     }
@@ -85,7 +91,7 @@ class ClientInput extends SignalWatcher(LitElement) {
 
   static properties = {
     client: { attribute: false },
-    isValid: { type: Boolean },
+    isValid: { type: Boolean, attribute: "valid", reflect: true },
     connectionStatus: { reflect: true, attribute: "connection-status" },
     isDropdownShowing: { type: Boolean },
     isScanning: { type: Boolean, reflect: true, attribute: "scanning" },
@@ -103,11 +109,17 @@ class ClientInput extends SignalWatcher(LitElement) {
     return this.connectionStatus == "connected";
   }
 
-  addClientEventListeners(immediate) {
+  _remove() {
+    addClientConfigSignal.set({ ...defaultAddClientConfig });
+    isAddingClientSignal.set(false);
+  }
+
+  async addClientEventListeners(immediate) {
     const client = this.getClient();
     if (!client) {
       return;
     }
+    await this.updateComplete;
     console.log("addClientEventListeners", client);
     const options = {
       ...this.clientAddEventListenerOptions,
@@ -122,8 +134,7 @@ class ClientInput extends SignalWatcher(LitElement) {
         if (connectionStatus == "connected") {
           this.inputRef.value.value = client.url.host;
           if (this.isAddingClient) {
-            isAddingClientSignal.set(false);
-            addClientConfigSignal.set({ ...defaultAddClientConfig });
+            this._remove();
           }
         }
       },
@@ -200,42 +211,59 @@ class ClientInput extends SignalWatcher(LitElement) {
       }
     });
 
-    this.updateEffect(() => {
-      const clientConfig = addClientConfigSignal.get();
-      // console.log("clientConfig", clientConfig);
-      let { host, protocol } = clientConfig;
-      let isValid = false;
-      if (!host) {
-        host = location.host;
-      }
-      this.url = undefined;
-      try {
-        const _url = `${protocol}//${host}`;
-        // console.log({ _url });
-        const url = new URL(_url);
-        const hostname = url.hostname;
-        const validHostname =
-          hostname === "localhost" ||
-          hostname.includes(".") ||
-          /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname);
-
-        // console.log(url, "url");
-        isValid =
-          url.protocol === protocol &&
-          validHostname &&
-          url.pathname === "/" &&
-          !url.search &&
-          !url.hash;
-        if (isValid) {
-          this.url = url;
+    if (this._client) {
+      this.isValid = true;
+      this.url = this._client.url;
+    } else {
+      this.updateEffect(() => {
+        const clientConfig = addClientConfigSignal.get();
+        // console.log("clientConfig", clientConfig);
+        let { host, protocol } = clientConfig;
+        let isValid = false;
+        if (!host) {
+          host = location.host;
         }
-      } catch (error) {
-        // console.log("error creating url", error);
-        isValid = false;
-      }
-      // console.log({ isValid }, this.url);
-      this.isValid = isValid;
-    });
+        this.url = undefined;
+        try {
+          const _url = `${protocol}//${host}`;
+          // console.log({ _url });
+          const url = new URL(_url);
+          const hostname = url.hostname;
+          const validHostname =
+            hostname === "localhost" ||
+            hostname.includes(".") ||
+            /^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname);
+
+          // console.log(url, "url");
+          isValid =
+            url.protocol === protocol &&
+            validHostname &&
+            url.pathname === "/" &&
+            !url.search &&
+            !url.hash;
+
+          isValid =
+            isValid &&
+            !BW.ClientManager.clients
+              .filter((client) => client.type == "webSocket")
+              .some((client) => {
+                if (client.url) {
+                  return (
+                    client.url.protocol == protocol && client.url.host == host
+                  );
+                }
+              });
+          if (isValid) {
+            this.url = url;
+          }
+        } catch (error) {
+          // console.log("error creating url", error);
+          isValid = false;
+        }
+        // console.log({ isValid }, this.url);
+        this.isValid = isValid;
+      });
+    }
 
     this.addClientEventListeners(true);
   }
@@ -247,7 +275,9 @@ class ClientInput extends SignalWatcher(LitElement) {
 
   /** @returns {import("./AddClientSignals.js").ClientConfig} */
   getClientConfig() {
-    if (this._client) {
+    if (this.isAddingClient) {
+      return addClientConfigSignal.get();
+    } else if (this._client) {
       if (this._client.url) {
         const { protocol, host } = this._client.url;
         return { protocol, host };
@@ -255,7 +285,7 @@ class ClientInput extends SignalWatcher(LitElement) {
         throw "client doesn't have a url";
       }
     } else {
-      return addClientConfigSignal.get();
+      throw "no client";
     }
   }
 
@@ -263,8 +293,8 @@ class ClientInput extends SignalWatcher(LitElement) {
     const { item } = event.detail;
     // console.log("onSelectProtocol", item, { value: item.value });
     const { value } = item;
-    if (value == "delete") {
-      // FILL
+    if (value == "remove") {
+      this._remove();
       return;
     }
     const addClientConfig = addClientConfigSignal.get();
@@ -327,7 +357,8 @@ class ClientInput extends SignalWatcher(LitElement) {
   }
 
   render() {
-    const disabled = this.connectionStatus != "notConnected";
+    const disabled =
+      !this.isAddingClient || this.connectionStatus != "notConnected";
 
     const clientConfig = this.getClientConfig();
     // console.log("clientConfig", clientConfig);
@@ -379,7 +410,11 @@ class ClientInput extends SignalWatcher(LitElement) {
           value=${clientConfig.protocol}
           @wa-select=${this.onSelectProtocol}
         >
-          <wa-button appearance="plain" slot="trigger">
+          <wa-button
+            appearance="plain"
+            slot="trigger"
+            ?disabled=${isAddingClientSignal && disabled}
+          >
             ${clientConfig.protocol}//
             <wa-icon
               slot="start"
@@ -406,12 +441,13 @@ class ClientInput extends SignalWatcher(LitElement) {
             ?disabled=${disabled}
             >ws</wa-dropdown-item
           >
-          <wa-divider></wa-divider>
-
-          <wa-dropdown-item value="delete" variant="danger">
-            <wa-icon slot="icon" name="trash"></wa-icon>
-            Delete
-          </wa-dropdown-item>
+          ${this.isAddingClient
+            ? html`<wa-divider></wa-divider>
+                <wa-dropdown-item value="remove" variant="danger">
+                  <wa-icon slot="icon" name="trash"></wa-icon>
+                  Remove
+                </wa-dropdown-item>`
+            : nothing}
         </wa-dropdown>
         <div slot="end">
           <wa-animation

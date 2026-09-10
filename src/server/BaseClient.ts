@@ -204,6 +204,10 @@ abstract class BaseClient {
   abstract sendToServer(...messages: ServerMessageOrMessageType[]): void;
 
   // CONNECTION STATUS
+  #hasConnectedOnce = false;
+  get hasConnectedOnce() {
+    return this.#hasConnectedOnce;
+  }
   #_connectionStatus: ClientConnectionStatus = "notConnected";
   protected get _connectionStatus() {
     return this.#_connectionStatus;
@@ -222,6 +226,9 @@ abstract class BaseClient {
     }
 
     this.#_connectionStatus = newConnectionStatus;
+    if (this.#_connectionStatus == "connected") {
+      this.#hasConnectedOnce = true;
+    }
 
     this.#dispatchEvent("connectionStatus", {
       connectionStatus: this.connectionStatus,
@@ -230,6 +237,7 @@ abstract class BaseClient {
 
     switch (newConnectionStatus) {
       case "connected":
+
       case "notConnected":
         this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
         if (this.isConnected) {

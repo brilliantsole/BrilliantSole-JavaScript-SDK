@@ -36522,6 +36522,10 @@ class BaseClient {
         _console$d.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this._reconnectOnDisconnection = newReconnectOnDisconnection;
     }
+    #hasConnectedOnce = false;
+    get hasConnectedOnce() {
+        return this.#hasConnectedOnce;
+    }
     #_connectionStatus = "notConnected";
     get _connectionStatus() {
         return this.#_connectionStatus;
@@ -36537,6 +36541,9 @@ class BaseClient {
             return;
         }
         this.#_connectionStatus = newConnectionStatus;
+        if (this.#_connectionStatus == "connected") {
+            this.#hasConnectedOnce = true;
+        }
         this.#dispatchEvent("connectionStatus", {
             connectionStatus: this.connectionStatus,
         });
