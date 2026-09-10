@@ -2424,7 +2424,8 @@ html:active-view-transition-type(
   right-handed,
   left-handed,
   header-visible,
-  header-hidden
+  header-hidden,
+
 ) {
   [data-tab-view-transition] {
     view-transition-name: match-element;
@@ -2432,6 +2433,16 @@ html:active-view-transition-type(
   [data-tab-view-transition-container] > * {
     view-transition-name: match-element;
   }
+}
+
+html:active-view-transition-type(
+  right-handed,
+  left-handed,
+  header-visible,
+  header-hidden,
+  next-tab,
+  previous-tab
+) {
   #mainOverlay :is([data-main-align], [data-cross-align]) {
     view-transition-name: match-element;
   }
