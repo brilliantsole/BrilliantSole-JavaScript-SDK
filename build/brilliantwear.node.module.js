@@ -21288,18 +21288,12 @@ class BaseScanner {
     constructor() {
         this.#assertIsSubclass();
         this.#assertIsSupported();
-        addEventListeners(this, this.#boundEventListeners);
     }
-    #boundEventListeners = {
-        discoveredDevice: this.#onDiscoveredDevice.bind(this),
-        isScanning: this.#onIsScanning.bind(this),
-        isScanningAvailable: this.#onIsScanningAvailable.bind(this),
-    };
     #eventDispatcher = new EventDispatcher(this, ScannerEventTypes);
     get addEventListener() {
         return this.#eventDispatcher.addEventListener;
     }
-    get dispatchEvent() {
+    get #dispatchEvent() {
         return this.#eventDispatcher.dispatchEvent;
     }
     get removeEventListener() {
@@ -21343,7 +21337,7 @@ class BaseScanner {
         _console$h.log("stopScan");
         return true;
     }
-    #onIsScanning(event) {
+    _onIsScanning() {
         if (this.isScanning) {
             this.#discoveredDevices = {};
             this.#discoveredDeviceTimestamps = {};
@@ -21357,8 +21351,12 @@ class BaseScanner {
         else {
             this.#eventDispatcher.dispatchEvent("notScanning", {});
         }
+        this.#dispatchEvent("isScanning", { isScanning: this.isScanning });
     }
-    #onIsScanningAvailable(event) {
+    _onIsScanningAvailable() {
+        this.#dispatchEvent("isScanningAvailable", {
+            isScanningAvailable: this.isScanningAvailable,
+        });
         if (this.isScanningAvailable) {
             this.#eventDispatcher.dispatchEvent("scanningAvailable", {});
         }
@@ -21379,11 +21377,11 @@ class BaseScanner {
     #assertValidDiscoveredDeviceId(discoveredDeviceId) {
         _console$h.assertWithError(this.#discoveredDevices[discoveredDeviceId], `no discovered device with id "${discoveredDeviceId}"`);
     }
-    #onDiscoveredDevice(event) {
-        const { discoveredDevice } = event.message;
+    _onDiscoveredDevice(discoveredDevice) {
         this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
         this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
         this.#checkDiscoveredDevicesExpirationTimer.start();
+        this.#dispatchEvent("discoveredDevice", { discoveredDevice });
     }
     #discoveredDeviceTimestamps = {};
     static #DiscoveredDeviceExpirationTimeout = 5000;
@@ -21407,7 +21405,7 @@ class BaseScanner {
                 _console$h.log("discovered device timeout");
                 delete this.#discoveredDevices[id];
                 delete this.#discoveredDeviceTimestamps[id];
-                this.dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
+                this.#dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
             }
         });
     }
@@ -21718,7 +21716,7 @@ class NobleScanner extends BaseScanner {
             return;
         }
         this.#_isScanning = newIsScanning;
-        this.dispatchEvent("isScanning", { isScanning: this.isScanning });
+        this._onIsScanning();
     }
     get isScanning() {
         return this.#isScanning;
@@ -21735,9 +21733,7 @@ class NobleScanner extends BaseScanner {
         }
         this.#_nobleState = newNobleState;
         _console$f.log({ newNobleState });
-        this.dispatchEvent("isScanningAvailable", {
-            isScanningAvailable: this.isScanningAvailable,
-        });
+        this._onIsScanningAvailable();
     }
     #boundNobleListeners = {
         scanStart: this.#onNobleScanStart.bind(this),
@@ -21821,15 +21817,20 @@ class NobleScanner extends BaseScanner {
             _console$f.log("skipping device - no deviceType");
             return;
         }
-        const discoveredDevice = {
+        let discoveredDevice;
+        const connect = (connectionType) => {
+            this.connectToDevice(discoveredDevice.bluetoothId, connectionType);
+        };
+        discoveredDevice = {
             name: noblePeripheral.advertisement.localName,
             bluetoothId: noblePeripheral.id,
             deviceType,
             rssi: noblePeripheral.rssi,
             ipAddress,
             isWifiSecure,
+            connect,
         };
-        this.dispatchEvent("discoveredDevice", { discoveredDevice });
+        this._onDiscoveredDevice(discoveredDevice);
     }
     constructor() {
         super();
@@ -21893,7 +21894,6 @@ class NobleScanner extends BaseScanner {
         if (!device) {
             _console$f.log("creating device for discoveredDevice...", deviceId);
             device = this.#createDevice(noblePeripheral);
-            this.#devices[deviceId] = device;
             const { ipAddress, isWifiSecure } = this.discoveredDevices[device.bluetoothId];
             if (connectionType && connectionType != "noble" && ipAddress) {
                 await device.connect({ type: connectionType, ipAddress, isWifiSecure });
@@ -21927,10 +21927,14 @@ class NobleScanner extends BaseScanner {
         }
     }
     #createDevice(noblePeripheral) {
+        const deviceId = noblePeripheral.id;
+        const discoveredDevice = this.discoveredDevices[deviceId];
         const device = new Device();
         const nobleConnectionManager = new NobleConnectionManager();
         nobleConnectionManager.noblePeripheral = noblePeripheral;
         device.connectionManager = nobleConnectionManager;
+        discoveredDevice.device = device;
+        this.#devices[deviceId] = device;
         return device;
     }
 }
@@ -22527,12 +22531,22 @@ class BaseClient {
             Object.assign(this.#discoveredDevices[discoveredDevice.bluetoothId], discoveredDevice);
         }
         else {
+            const onDevice = () => {
+                const { device } = discoveredDevice;
+                if (!device) {
+                    return;
+                }
+                const connectionManager = device.connectionManager;
+                connectionManager.discoveredDevice = discoveredDevice;
+            };
             discoveredDevice.connect = (connectionType) => {
                 _console$a.log("discoveredDevice.connect", { connectionType });
                 const device = this.connectToDevice(discoveredDevice.bluetoothId, connectionType);
                 discoveredDevice.device = device;
+                onDevice();
             };
             discoveredDevice.device = this.#devices[discoveredDevice.bluetoothId];
+            onDevice();
             this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
         }
         this.#dispatchEvent("discoveredDevice", { discoveredDevice });
@@ -22583,7 +22597,7 @@ class BaseClient {
         const device = new Device();
         const discoveredDevice = this.#discoveredDevices[bluetoothId];
         const clientConnectionManager = new ClientConnectionManager();
-        clientConnectionManager.discoveredDevice = Object.assign({}, discoveredDevice);
+        clientConnectionManager.discoveredDevice = discoveredDevice;
         clientConnectionManager.client = this;
         clientConnectionManager.bluetoothId = bluetoothId;
         clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(this, bluetoothId);

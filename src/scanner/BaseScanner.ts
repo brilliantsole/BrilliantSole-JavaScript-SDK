@@ -1,7 +1,6 @@
 import EventDispatcher, {
   EventDispatcherTypes,
 } from "../utils/EventDispatcher.ts";
-import { addEventListeners } from "../utils/EventUtils.ts";
 import { createConsole } from "../utils/Console.ts";
 import { Timer } from "../utils/Timer.ts";
 import { DeviceType } from "../InformationManager.ts";
@@ -96,14 +95,7 @@ abstract class BaseScanner {
   constructor() {
     this.#assertIsSubclass();
     this.#assertIsSupported();
-    addEventListeners(this, this.#boundEventListeners);
   }
-
-  #boundEventListeners: BoundScannerEventListeners = {
-    discoveredDevice: this.#onDiscoveredDevice.bind(this),
-    isScanning: this.#onIsScanning.bind(this),
-    isScanningAvailable: this.#onIsScanningAvailable.bind(this),
-  };
 
   // EVENT DISPATCHER
   #eventDispatcher: ScannerEventDispatcher = new EventDispatcher(
@@ -113,7 +105,7 @@ abstract class BaseScanner {
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
   }
-  protected get dispatchEvent() {
+  get #dispatchEvent() {
     return this.#eventDispatcher.dispatchEvent;
   }
   get removeEventListener() {
@@ -165,7 +157,7 @@ abstract class BaseScanner {
     return true;
     //this.#assertIsScanning();
   }
-  #onIsScanning(event: ScannerEventMap["isScanning"]) {
+  protected _onIsScanning() {
     if (this.isScanning) {
       this.#discoveredDevices = {};
       this.#discoveredDeviceTimestamps = {};
@@ -178,8 +170,12 @@ abstract class BaseScanner {
     } else {
       this.#eventDispatcher.dispatchEvent("notScanning", {});
     }
+    this.#dispatchEvent("isScanning", { isScanning: this.isScanning });
   }
-  #onIsScanningAvailable(event: ScannerEventMap["isScanningAvailable"]) {
+  protected _onIsScanningAvailable() {
+    this.#dispatchEvent("isScanningAvailable", {
+      isScanningAvailable: this.isScanningAvailable,
+    });
     if (this.isScanningAvailable) {
       this.#eventDispatcher.dispatchEvent("scanningAvailable", {});
     } else {
@@ -207,11 +203,11 @@ abstract class BaseScanner {
     );
   }
 
-  #onDiscoveredDevice(event: ScannerEventMap["discoveredDevice"]) {
-    const { discoveredDevice } = event.message;
+  protected _onDiscoveredDevice(discoveredDevice: DiscoveredDevice) {
     this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
     this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
     this.#checkDiscoveredDevicesExpirationTimer.start();
+    this.#dispatchEvent("discoveredDevice", { discoveredDevice });
   }
 
   #discoveredDeviceTimestamps: { [id: string]: number } = {};
@@ -240,7 +236,7 @@ abstract class BaseScanner {
         _console.log("discovered device timeout");
         delete this.#discoveredDevices[id];
         delete this.#discoveredDeviceTimestamps[id];
-        this.dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
+        this.#dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
       }
     });
   }

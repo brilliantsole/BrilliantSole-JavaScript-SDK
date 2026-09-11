@@ -505,6 +505,15 @@ abstract class BaseClient {
         discoveredDevice,
       );
     } else {
+      const onDevice = () => {
+        const { device } = discoveredDevice;
+        if (!device) {
+          return;
+        }
+        const connectionManager =
+          device.connectionManager as ClientConnectionManager;
+        connectionManager.discoveredDevice = discoveredDevice;
+      };
       discoveredDevice.connect = (connectionType) => {
         _console.log("discoveredDevice.connect", { connectionType });
         const device = this.connectToDevice(
@@ -512,8 +521,11 @@ abstract class BaseClient {
           connectionType,
         );
         discoveredDevice.device = device;
+        onDevice();
       };
       discoveredDevice.device = this.#devices[discoveredDevice.bluetoothId];
+      onDevice();
+
       this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
     }
     this.#dispatchEvent("discoveredDevice", { discoveredDevice });
@@ -575,10 +587,7 @@ abstract class BaseClient {
     const device = new Device();
     const discoveredDevice = this.#discoveredDevices[bluetoothId];
     const clientConnectionManager = new ClientConnectionManager();
-    clientConnectionManager.discoveredDevice = Object.assign(
-      {},
-      discoveredDevice,
-    );
+    clientConnectionManager.discoveredDevice = discoveredDevice;
     clientConnectionManager.client = this;
     clientConnectionManager.bluetoothId = bluetoothId;
     clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(
