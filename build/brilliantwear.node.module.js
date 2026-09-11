@@ -22405,7 +22405,7 @@ class BaseClient {
                     _console$a.log({ discoveredDeviceString });
                     const discoveredDevice = JSON.parse(discoveredDeviceString);
                     _console$a.log({ discoveredDevice });
-                    this.onDiscoveredDevice(discoveredDevice);
+                    this.#onDiscoveredDevice(discoveredDevice);
                 }
                 break;
             case "expiredDiscoveredDevice":
@@ -22521,9 +22521,20 @@ class BaseClient {
     get discoveredDevices() {
         return this.#discoveredDevices;
     }
-    onDiscoveredDevice(discoveredDevice) {
+    #onDiscoveredDevice(discoveredDevice) {
         _console$a.log({ discoveredDevice });
-        this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+        if (this.#discoveredDevices[discoveredDevice.bluetoothId]) {
+            Object.assign(this.#discoveredDevices[discoveredDevice.bluetoothId], discoveredDevice);
+        }
+        else {
+            discoveredDevice.connect = (connectionType) => {
+                _console$a.log("discoveredDevice.connect", { connectionType });
+                const device = this.connectToDevice(discoveredDevice.bluetoothId, connectionType);
+                discoveredDevice.device = device;
+            };
+            discoveredDevice.device = this.#devices[discoveredDevice.bluetoothId];
+            this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+        }
         this.#dispatchEvent("discoveredDevice", { discoveredDevice });
     }
     requestDiscoveredDevices() {
@@ -22541,9 +22552,9 @@ class BaseClient {
         this.#dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
     }
     connectToDevice(bluetoothId, connectionType) {
-        return this.requestConnectionToDevice(bluetoothId, connectionType);
+        return this.#requestConnectionToDevice(bluetoothId, connectionType);
     }
-    requestConnectionToDevice(bluetoothId, connectionType) {
+    #requestConnectionToDevice(bluetoothId, connectionType) {
         this.assertConnection();
         _console$a.assertTypeWithError(bluetoothId, "string");
         const device = this.#getOrCreateDevice(bluetoothId);
@@ -22647,7 +22658,7 @@ const ClientManagerEventTypes = [
     ...ClientManagerClientEventTypes,
     ...BaseClientManagerEventTypes,
 ];
-let ClientManager = (() => {
+let ClientManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -22715,7 +22726,7 @@ let ClientManager = (() => {
     });
     return _classThis;
 })();
-var ClientManager$1 = ClientManager.shared;
+var ClientManager = ClientManager$1.shared;
 
 class GuardManager {
     #guards = [];
@@ -22823,7 +22834,7 @@ let PubSubManager = (() => {
         static shared;
         _init() {
             addEventListeners(ServerManager_default, this.#boundServerManagerListeners);
-            addEventListeners(ClientManager$1, this.#boundClientManagerListeners);
+            addEventListeners(ClientManager, this.#boundClientManagerListeners);
         }
         #listeners = {};
         #peers = [];
@@ -23019,7 +23030,7 @@ let PubSubManager = (() => {
             _console$8.log("#sendPeerMessage", peer, messages);
             const data = createPubSubManagerMessage(...messages);
             const serverMessage = { type: "pubSub", data };
-            if (ClientManager$1.clients.includes(peer)) {
+            if (ClientManager.clients.includes(peer)) {
                 const client = peer;
                 client.sendToServer(serverMessage);
             }
@@ -25743,5 +25754,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager$1 as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, PubSubManager$1 as PubSubManager, RangeHelper, RangeHelper2, scanner$1 as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, PubSubManager$1 as PubSubManager, RangeHelper, RangeHelper2, scanner$1 as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantwear.node.module.js.map

@@ -1,7 +1,7 @@
 import { ClientDeviceMessage, ServerMessageOrMessageType } from "./ServerUtils.ts";
 import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
-import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
+import { DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
 import { ClientConnectionType, ConnectionStatus } from "../connection/BaseConnectionManager.ts";
 export declare const ClientTypes: readonly ["window", "webSocket", "udp"];
 export type ClientType = (typeof ClientTypes)[number];
@@ -82,10 +82,8 @@ declare abstract class BaseClient {
     stopScan(): void;
     toggleScan(): void;
     get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
-    protected onDiscoveredDevice(discoveredDevice: DiscoveredDevice): void;
     requestDiscoveredDevices(): void;
     connectToDevice(bluetoothId: string, connectionType?: ClientConnectionType): Device;
-    protected requestConnectionToDevice(bluetoothId: string, connectionType?: ClientConnectionType): Device;
     protected sendConnectToDeviceMessage(bluetoothId: string, connectionType?: ClientConnectionType): void;
     createDevice(bluetoothId: string): Device;
     protected onConnectedBluetoothDeviceIds(bluetoothIds: string[]): Device[];

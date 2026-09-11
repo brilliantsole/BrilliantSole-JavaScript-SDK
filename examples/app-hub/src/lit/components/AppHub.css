@@ -2424,8 +2424,7 @@ html:active-view-transition-type(
   right-handed,
   left-handed,
   header-visible,
-  header-hidden,
-
+  header-hidden
 ) {
   [data-tab-view-transition] {
     view-transition-name: match-element;

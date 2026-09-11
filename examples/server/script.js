@@ -1,11 +1,11 @@
-import * as BS from "../../build/brilliantwear.module.js";
-window.BS = BS;
-console.log({ BS });
-//BS.setAllConsoleLevelFlags({ log: true });
+import * as BW from "../../build/brilliantwear.module.js";
+window.BW = BW;
+console.log({ BW });
+//BW.setAllConsoleLevelFlags({ log: true });
 
 // CLIENT
 
-const client = new BS.WebSocketClient();
+const client = new BW.WebSocketClient();
 console.log({ client });
 window.client = client;
 
@@ -135,7 +135,7 @@ client.addEventListener("discoveredDevice", (event) => {
       }
     });
 
-    /** @param {BS.Device} device */
+    /** @param {BW.Device} device */
     const onDevice = (device) => {
       console.log("onDevice", device);
       device.addEventListener("connectionStatus", () => {
@@ -146,7 +146,7 @@ client.addEventListener("discoveredDevice", (event) => {
       delete discoveredDeviceContainer._onDevice;
     };
 
-    /** @param {BS.Device} device */
+    /** @param {BW.Device} device */
     const updateToggleConnectionButton = (device) => {
       console.log({ deviceConnectionStatus: device.connectionStatus });
       switch (device.connectionStatus) {
@@ -179,7 +179,7 @@ client.addEventListener("discoveredDevice", (event) => {
   updateDiscoveredDeviceContainer(discoveredDevice);
 });
 
-/** @param {BS.DiscoveredDevice} discoveredDevice */
+/** @param {BW.DiscoveredDevice} discoveredDevice */
 function updateDiscoveredDeviceContainer(discoveredDevice) {
   const discoveredDeviceContainer =
     discoveredDeviceContainers[discoveredDevice.bluetoothId];
@@ -197,7 +197,7 @@ function updateDiscoveredDeviceContainer(discoveredDevice) {
     discoveredDevice.deviceType;
 }
 
-/** @param {BS.DiscoveredDevice} discoveredDevice */
+/** @param {BW.DiscoveredDevice} discoveredDevice */
 function removeDiscoveredDeviceContainer(discoveredDevice) {
   const discoveredDeviceContainer =
     discoveredDeviceContainers[discoveredDevice.bluetoothId];
@@ -232,7 +232,7 @@ client.addEventListener("isScanning", () => {
   }
 });
 
-BS.DeviceManager.addEventListener("deviceIsConnected", (event) => {
+BW.DeviceManager.addEventListener("deviceIsConnected", (event) => {
   const device = event.message.device;
   console.log("deviceIsConnected", device);
   const discoveredDeviceContainer =
@@ -274,7 +274,7 @@ const connectedDevicesContainer = document.getElementById("connectedDevices");
 /** @type {Object.<string, HTMLElement>} */
 let connectedDeviceContainers = {};
 
-BS.DeviceManager.addEventListener("connectedDevices", (event) => {
+BW.DeviceManager.addEventListener("connectedDevices", (event) => {
   const { connectedDevices } = event.message;
   console.log({ connectedDevices });
 
@@ -363,8 +363,8 @@ BS.DeviceManager.addEventListener("connectedDevices", (event) => {
         const sensorRateInput =
           sensorTypeConfigurationContainer.querySelector(".sensorRate");
         sensorRateInput.value = 0;
-        sensorRateInput.max = BS.MaxSensorRate;
-        sensorRateInput.step = BS.SensorRateStep;
+        sensorRateInput.max = BW.MaxSensorRate;
+        sensorRateInput.step = BW.SensorRateStep;
         sensorRateInput.addEventListener("input", () => {
           const sensorRate = Number(sensorRateInput.value);
           console.log({ sensorType, sensorRate });
@@ -558,7 +558,7 @@ BS.DeviceManager.addEventListener("connectedDevices", (event) => {
       /** @type {HTMLTemplateElement} */
       const cameraConfigurationTypeTemplate =
         deviceCameraContainer.querySelector(".cameraConfigurationTypeTemplate");
-      BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
+      BW.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
         const cameraConfigurationTypeContainer =
           cameraConfigurationTypeTemplate.content
             .cloneNode(true)
@@ -651,7 +651,7 @@ BS.DeviceManager.addEventListener("connectedDevices", (event) => {
       const cameraWhiteBalanceInput = deviceCameraContainer.querySelector(
         ".cameraWhiteBalance",
       );
-      const updateWhiteBalance = BS.ThrottleUtils.throttle(
+      const updateWhiteBalance = BW.ThrottleUtils.throttle(
         (config) => {
           if (device.cameraStatus != "idle") {
             return;
@@ -758,7 +758,7 @@ BS.DeviceManager.addEventListener("connectedDevices", (event) => {
         deviceMicrophoneContainer.querySelector(
           ".microphoneConfigurationTypeTemplate",
         );
-      BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
+      BW.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
         const microphoneConfigurationTypeContainer =
           microphoneConfigurationTypeTemplate.content
             .cloneNode(true)
@@ -778,7 +778,7 @@ BS.DeviceManager.addEventListener("connectedDevices", (event) => {
         const optgroup = select.querySelector("optgroup");
         optgroup.label = microphoneConfigurationType;
 
-        BS.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
+        BW.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
           (value) => {
             optgroup.appendChild(new Option(value));
           },
@@ -1026,7 +1026,7 @@ BS.DeviceManager.addEventListener("connectedDevices", (event) => {
           device.maxFileLength / 1024
         ).toLocaleString();
       };
-      /** @type {BS.FileType} */
+      /** @type {BW.FileType} */
       let fileType;
 
       /** @type {HTMLSelectElement} */
@@ -1112,7 +1112,7 @@ BS.DeviceManager.addEventListener("connectedDevices", (event) => {
         updateToggleFileTransferButton();
       });
 
-      /** @type {BS.FileTransferDirection} */
+      /** @type {BW.FileTransferDirection} */
       let fileTransferDirection;
       /** @type {HTMLSelectElement} */
       const fileTransferDirectionSelect =
@@ -1188,7 +1188,7 @@ BS.DeviceManager.addEventListener("connectedDevices", (event) => {
         ".setTfliteTaskButton",
       );
 
-      BS.TfliteTasks.forEach((task) => {
+      BW.TfliteTasks.forEach((task) => {
         setTfliteTaskOptgroup.appendChild(new Option(task));
       });
 
@@ -1250,7 +1250,7 @@ BS.DeviceManager.addEventListener("connectedDevices", (event) => {
       );
       /** @type {Object.<string, HTMLElement>} */
       const tfliteSensorTypeContainers = {};
-      /** @type {BS.SensorType[]} */
+      /** @type {BW.SensorType[]} */
       let tfliteSensorTypes = [];
       /** @type {HTMLButtonElement} */
       const setTfliteSensorTypesButton = deviceTfliteContainer.querySelector(

@@ -5,7 +5,10 @@ import { addEventListeners } from "../utils/EventUtils.ts";
 import { createConsole } from "../utils/Console.ts";
 import { Timer } from "../utils/Timer.ts";
 import { DeviceType } from "../InformationManager.ts";
-import { ConnectionType } from "../connection/BaseConnectionManager.ts";
+import {
+  ClientConnectionType,
+  ConnectionType,
+} from "../connection/BaseConnectionManager.ts";
 import Device from "../Device.ts";
 
 const _console = createConsole("BaseScanner", { log: false });
@@ -29,6 +32,8 @@ export interface DiscoveredDevice {
   rssi: number;
   ipAddress?: string;
   isWifiSecure?: boolean;
+  device?: Device;
+  connect(connectionType?: ClientConnectionType): void;
 }
 
 interface ScannerDiscoveredDeviceEventMessage {

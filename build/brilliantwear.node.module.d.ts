@@ -2182,6 +2182,8 @@ interface DiscoveredDevice {
     rssi: number;
     ipAddress?: string;
     isWifiSecure?: boolean;
+    device?: Device;
+    connect(connectionType?: ClientConnectionType): void;
 }
 interface ScannerDiscoveredDeviceEventMessage {
     discoveredDevice: DiscoveredDevice;
@@ -2371,10 +2373,8 @@ declare abstract class BaseClient {
     stopScan(): void;
     toggleScan(): void;
     get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
-    protected onDiscoveredDevice(discoveredDevice: DiscoveredDevice): void;
     requestDiscoveredDevices(): void;
     connectToDevice(bluetoothId: string, connectionType?: ClientConnectionType): Device;
-    protected requestConnectionToDevice(bluetoothId: string, connectionType?: ClientConnectionType): Device;
     protected sendConnectToDeviceMessage(bluetoothId: string, connectionType?: ClientConnectionType): void;
     createDevice(bluetoothId: string): Device;
     protected onConnectedBluetoothDeviceIds(bluetoothIds: string[]): Device[];

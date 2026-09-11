@@ -354,7 +354,7 @@ abstract class BaseClient {
           );
           _console.log({ discoveredDevice });
 
-          this.onDiscoveredDevice(discoveredDevice);
+          this.#onDiscoveredDevice(discoveredDevice);
         }
         break;
       case "expiredDiscoveredDevice":
@@ -497,9 +497,25 @@ abstract class BaseClient {
     return this.#discoveredDevices;
   }
 
-  protected onDiscoveredDevice(discoveredDevice: DiscoveredDevice) {
+  #onDiscoveredDevice(discoveredDevice: DiscoveredDevice) {
     _console.log({ discoveredDevice });
-    this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+    if (this.#discoveredDevices[discoveredDevice.bluetoothId]) {
+      Object.assign(
+        this.#discoveredDevices[discoveredDevice.bluetoothId],
+        discoveredDevice,
+      );
+    } else {
+      discoveredDevice.connect = (connectionType) => {
+        _console.log("discoveredDevice.connect", { connectionType });
+        const device = this.connectToDevice(
+          discoveredDevice.bluetoothId,
+          connectionType,
+        );
+        discoveredDevice.device = device;
+      };
+      discoveredDevice.device = this.#devices[discoveredDevice.bluetoothId];
+      this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+    }
     this.#dispatchEvent("discoveredDevice", { discoveredDevice });
   }
   requestDiscoveredDevices() {
@@ -519,9 +535,9 @@ abstract class BaseClient {
 
   // DEVICE CONNECTION
   connectToDevice(bluetoothId: string, connectionType?: ClientConnectionType) {
-    return this.requestConnectionToDevice(bluetoothId, connectionType);
+    return this.#requestConnectionToDevice(bluetoothId, connectionType);
   }
-  protected requestConnectionToDevice(
+  #requestConnectionToDevice(
     bluetoothId: string,
     connectionType?: ClientConnectionType,
   ) {

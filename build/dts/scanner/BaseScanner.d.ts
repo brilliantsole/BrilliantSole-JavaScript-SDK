@@ -1,6 +1,6 @@
 import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
 import { DeviceType } from "../InformationManager.ts";
-import { ConnectionType } from "../connection/BaseConnectionManager.ts";
+import { ClientConnectionType, ConnectionType } from "../connection/BaseConnectionManager.ts";
 import Device from "../Device.ts";
 export declare const ScannerEventTypes: readonly ["isScanningAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice", "scanningAvailable", "scanningNotAvailable", "scanning", "notScanning"];
 export type ScannerEventType = (typeof ScannerEventTypes)[number];
@@ -11,6 +11,8 @@ export interface DiscoveredDevice {
     rssi: number;
     ipAddress?: string;
     isWifiSecure?: boolean;
+    device?: Device;
+    connect(connectionType?: ClientConnectionType): void;
 }
 interface ScannerDiscoveredDeviceEventMessage {
     discoveredDevice: DiscoveredDevice;
