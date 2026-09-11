@@ -24,10 +24,7 @@ let isLinux = false;
 import noble from "@stoprocent/noble";
 import { DeviceTypes } from "../InformationManager.ts";
 import DeviceManager from "../DeviceManager.ts";
-import {
-  ClientConnectionType,
-  ConnectionType,
-} from "../connection/BaseConnectionManager.ts";
+import { ClientConnectionType } from "../connection/BaseConnectionManager.ts";
 isSupported = true;
 import os from "os";
 const platform = os.platform();

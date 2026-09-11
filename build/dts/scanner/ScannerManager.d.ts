@@ -1,0 +1,47 @@
+import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
+import { AddPrefixToInterfaceKeys, ExtendInterfaceValues, IfAny } from "../utils/TypeScriptUtils.ts";
+import { ScannerEventType, ScannerEventMessages } from "./BaseScanner.ts";
+import { Scanner } from "./Scanner.ts";
+import { Client } from "../server/Client.ts";
+export type ScannerLike = Scanner | Client;
+interface BaseScannerManagerScannerEventMessage {
+    scanner: ScannerLike;
+}
+type ScannerManagerScannerEventMessages = ExtendInterfaceValues<AddPrefixToInterfaceKeys<ScannerEventMessages, "scanner">, BaseScannerManagerScannerEventMessage>;
+export declare const wildcardScannerEventType: "scanner*";
+export type WildcardScannerEventType = typeof wildcardScannerEventType;
+export type WildcardScannerEventMessage<BaseMessage> = {
+    [K in ScannerEventType]: BaseMessage & (K extends keyof ScannerEventMessages ? IfAny<ScannerEventMessages[K], {}, ScannerEventMessages[K]> : {}) & {
+        scannerEventType: K;
+        scanner: ScannerLike;
+    };
+}[ScannerEventType];
+interface BaseScannerManagerEventMessages {
+    scanner: {
+        scanner: ScannerLike;
+    };
+    scanners: {
+        scanners: ScannerLike[];
+    };
+    [wildcardScannerEventType]: WildcardScannerEventMessage<BaseScannerManagerScannerEventMessage>;
+}
+export declare const ScannerManagerEventTypes: readonly [...("scannerDiscoveredDevice" | "scannerExpiredDiscoveredDevice" | "scannerIsScanningAvailable" | "scannerIsScanning" | "scannerScanning" | "scannerNotScanning" | "scannerScanningAvailable" | "scannerScanningNotAvailable")[], "scanner", "scanners", "scanner*"];
+export type ScannerManagerEventType = (typeof ScannerManagerEventTypes)[number];
+export type ScannerManagerEventMessages = ScannerManagerScannerEventMessages & BaseScannerManagerEventMessages;
+export type ScannerManagerEventDisptcherTypes = EventDispatcherTypes<ScannerManager, ScannerManagerEventType, ScannerManagerEventMessages>;
+export type ScannerManagerEvent = ScannerManagerEventDisptcherTypes["Event"];
+export type ScannerManagerEventMap = ScannerManagerEventDisptcherTypes["EventMap"];
+export type ScannerManagerEventListenerMap = ScannerManagerEventDisptcherTypes["EventListenerMap"];
+export type ScannerManagerEventDispatcher = ScannerManagerEventDisptcherTypes["EventDispatcher"];
+export type BoundScannerManagerEventListeners = ScannerManagerEventDisptcherTypes["BoundEventListeners"];
+declare class ScannerManager {
+    #private;
+    static readonly shared: ScannerManager;
+    constructor();
+    get scanners(): ScannerLike[];
+    get addEventListener(): <T extends "scanner*" | "scanner" | "scannerDiscoveredDevice" | "scannerExpiredDiscoveredDevice" | "scannerIsScanningAvailable" | "scannerIsScanning" | "scannerScanning" | "scannerNotScanning" | "scannerScanningAvailable" | "scannerScanningNotAvailable" | "scanners" | "*">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<ScannerManager, "scanner*" | "scanner" | "scannerDiscoveredDevice" | "scannerExpiredDiscoveredDevice" | "scannerIsScanningAvailable" | "scannerIsScanning" | "scannerScanning" | "scannerNotScanning" | "scannerScanningAvailable" | "scannerScanningNotAvailable" | "scanners", ScannerManagerEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "scanner*" | "scanner" | "scannerDiscoveredDevice" | "scannerExpiredDiscoveredDevice" | "scannerIsScanningAvailable" | "scannerIsScanning" | "scannerScanning" | "scannerNotScanning" | "scannerScanningAvailable" | "scannerScanningNotAvailable" | "scanners" | "*">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<ScannerManager, "scanner*" | "scanner" | "scannerDiscoveredDevice" | "scannerExpiredDiscoveredDevice" | "scannerIsScanningAvailable" | "scannerIsScanning" | "scannerScanning" | "scannerNotScanning" | "scannerScanningAvailable" | "scannerScanningNotAvailable" | "scanners", ScannerManagerEventMessages, T>) => void) => void;
+    get removeEventListeners(): <T extends "scanner*" | "scanner" | "scannerDiscoveredDevice" | "scannerExpiredDiscoveredDevice" | "scannerIsScanningAvailable" | "scannerIsScanning" | "scannerScanning" | "scannerNotScanning" | "scannerScanningAvailable" | "scannerScanningNotAvailable" | "scanners" | "*">(type: T) => void;
+}
+declare const _default: ScannerManager;
+export default _default;

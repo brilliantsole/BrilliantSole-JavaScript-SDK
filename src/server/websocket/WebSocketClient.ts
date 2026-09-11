@@ -77,6 +77,7 @@ class WebSocketClient extends BaseClient {
   }
 
   disconnect() {
+    _console.log("disconnect", { connectionStatus: this.connectionStatus });
     switch (this.connectionStatus) {
       case "connecting":
       case "connected":
@@ -113,6 +114,9 @@ class WebSocketClient extends BaseClient {
   }
 
   toggleConnection(url?: ServerURL) {
+    _console.log("toggleConnection", url, {
+      connectionStatus: this.connectionStatus,
+    });
     if (this.isConnected || this.connectionStatus == "connecting") {
       this.disconnect();
     } else if (url && this.webSocket?.url == url) {
@@ -166,6 +170,7 @@ class WebSocketClient extends BaseClient {
   }
   #reconnectTimeout: ReturnType<typeof setTimeout> | undefined;
   #clearReconnectTimeout() {
+    _console.log("#clearReconnectTimeout");
     if (this.#reconnectTimeout != undefined) {
       clearTimeout(this.#reconnectTimeout);
       this.#reconnectTimeout = undefined;
@@ -174,15 +179,17 @@ class WebSocketClient extends BaseClient {
   }
   #onWebSocketClose(event: ws.CloseEvent) {
     _console.log("webSocket.close", event);
-    this.#onWebSocketClosed();
+    this.#onWebSocketClosed(event);
   }
   #onWebSocketError(event: ws.ErrorEvent) {
     _console.error("webSocket.error", event);
-    this.#onWebSocketClosed();
+    this.#onWebSocketClosed(event);
   }
 
-  #onWebSocketClosed() {
-    _console.log("onWebSocketClosed");
+  #onWebSocketClosed(event: ws.CloseEvent | ws.ErrorEvent) {
+    _console.log("onWebSocketClosed", event, {
+      connectionStatus: this.connectionStatus,
+    });
 
     if (this._connectionStatus == "notConnected") {
       return;

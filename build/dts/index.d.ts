@@ -16,6 +16,8 @@ import { default as ClientManager } from "./server/ClientManager.ts";
 export { ClientManager };
 import { default as PubSubManager } from "./pubSub/PubSubManager.ts";
 export { PubSubManager };
+import { default as ScannerManager } from "./scanner/ScannerManager.ts";
+export { ScannerManager };
 /** BROWSER_START */
 import { default as WindowManagerServer } from "./window/WindowManagerServer.ts";
 export { WindowManagerServer };
@@ -113,13 +115,13 @@ export { ConnectionManager, ConnectionManagers };
 import { DiscoveredDevice } from "./scanner/BaseScanner.ts";
 export { DiscoveredDevice };
 /** NODE_START */
-import { default as Scanner } from "./scanner/Scanner.ts";
 import { default as WebSocketServer } from "./server/websocket/WebSocketServer.ts";
 import { default as UDPServer } from "./server/udp/UDPServer.ts";
-export { Scanner };
 export { WebSocketServer };
 export { UDPServer };
 /** NODE_END */
+import { default as scanner } from "./scanner/Scanner.ts";
+export { scanner };
 import { Server, Servers, ServerClient, ServerEvent, ServerEventDispatcher, ServerEventDispatcherTypes, ServerEventListenerMap, ServerEventMap, BoundServerEventListeners } from "./server/Server.ts";
 export { Server, Servers, ServerClient, ServerEvent, ServerEventDispatcher, ServerEventDispatcherTypes, ServerEventListenerMap, ServerEventMap, BoundServerEventListeners, };
 import { Client, Clients } from "./server/Client.ts";

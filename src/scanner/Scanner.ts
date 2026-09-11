@@ -1,18 +1,20 @@
 import { createConsole } from "../utils/Console.ts";
 import NobleScanner from "./NobleScanner.ts";
-import BaseScanner from "./BaseScanner.ts";
 import NullScanner from "./NullScanner.ts";
 
 const _console = createConsole("Scanner", { log: false });
 
-let scanner: BaseScanner;
+export const Scanners = [NullScanner, NobleScanner] as const;
+export type Scanner = InstanceType<(typeof Scanners)[number]>;
+
+let scanner: Scanner;
 
 if (NobleScanner.isSupported) {
   _console.log("using NobleScanner");
-  scanner = new NobleScanner() as BaseScanner;
+  scanner = new NobleScanner();
 } else {
   _console.log("Scanner not available");
-  scanner = new NullScanner() as BaseScanner;
+  scanner = new NullScanner();
 }
 
 export default scanner;

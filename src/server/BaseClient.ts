@@ -212,22 +212,24 @@ abstract class BaseClient {
   protected get _connectionStatus() {
     return this.#_connectionStatus;
   }
-  get #latestConnectionStatus() {
-    return (
-      this.#eventDispatcher.latestEvents["connectionStatus"]?.message
-        .connectionStatus ?? this.connectionStatus
-    );
+  get #latestDispatchedConnectionStatus() {
+    return this.#eventDispatcher.latestEvents["connectionStatus"]?.message
+      .connectionStatus;
   }
   protected set _connectionStatus(newConnectionStatus) {
     _console.assertTypeWithError(newConnectionStatus, "string");
     _console.log({ newConnectionStatus });
-    if (this.#latestConnectionStatus == newConnectionStatus) {
-      return;
-    }
 
     this.#_connectionStatus = newConnectionStatus;
     if (this.#_connectionStatus == "connected") {
       this.#hasConnectedOnce = true;
+    }
+
+    if (this.#latestDispatchedConnectionStatus == this.connectionStatus) {
+      _console.log(
+        `redundant assignment "${this.#latestDispatchedConnectionStatus}" - skipping dispatch`,
+      );
+      return;
     }
 
     this.#dispatchEvent("connectionStatus", {
@@ -237,7 +239,6 @@ abstract class BaseClient {
 
     switch (newConnectionStatus) {
       case "connected":
-
       case "notConnected":
         this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
         if (this.isConnected) {
