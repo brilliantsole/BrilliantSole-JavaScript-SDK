@@ -7,9 +7,7 @@ export type NobleState = (typeof NobleStates)[number];
 declare class NobleScanner extends BaseScanner {
     #private;
     static get isSupported(): boolean;
-    get isScanning(): boolean;
     constructor();
-    get isScanningAvailable(): boolean;
     startScan(): boolean;
     stopScan(): boolean;
     get canReset(): boolean;

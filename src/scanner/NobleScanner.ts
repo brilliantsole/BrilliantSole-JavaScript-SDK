@@ -51,24 +51,6 @@ class NobleScanner extends BaseScanner {
     return isSupported;
   }
 
-  // SCANNING
-  #_isScanning = false;
-  get #isScanning() {
-    return this.#_isScanning;
-  }
-  set #isScanning(newIsScanning) {
-    _console.assertTypeWithError(newIsScanning, "boolean");
-    if (this.isScanning == newIsScanning) {
-      _console.log("duplicate isScanning assignment");
-      return;
-    }
-    this.#_isScanning = newIsScanning;
-    this._onIsScanning();
-  }
-  get isScanning() {
-    return this.#isScanning;
-  }
-
   // NOBLE STATE
   #_nobleState: NobleState = "unknown";
   get #nobleState() {
@@ -82,7 +64,7 @@ class NobleScanner extends BaseScanner {
     }
     this.#_nobleState = newNobleState;
     _console.log({ newNobleState });
-    this._onIsScanningAvailable();
+    this._isScanningAvailable = this.#isScanningAvailable;
   }
 
   // NOBLE LISTENERS
@@ -94,11 +76,11 @@ class NobleScanner extends BaseScanner {
   };
   #onNobleScanStart() {
     _console.log("OnNobleScanStart");
-    this.#isScanning = true;
+    this._isScanning = true;
   }
   #onNobleScanStop() {
     _console.log("OnNobleScanStop");
-    this.#isScanning = false;
+    this._isScanning = false;
   }
   #onNobleStateChange(state: NobleState) {
     _console.log("onNobleStateChange", state);
@@ -178,19 +160,16 @@ class NobleScanner extends BaseScanner {
       return;
     }
 
-    let discoveredDevice: DiscoveredDevice;
-    const connect = (connectionType?: ClientConnectionType) => {
-      this.connectToDevice(discoveredDevice.bluetoothId, connectionType);
-    };
-    discoveredDevice = {
+    // @ts-expect-error
+    const discoveredDevice: DiscoveredDevice = {
       name: noblePeripheral.advertisement.localName,
       bluetoothId: noblePeripheral.id,
       deviceType,
       rssi: noblePeripheral.rssi,
       ipAddress,
       isWifiSecure,
-      connect,
     };
+    discoveredDevice.device = this.#devices[discoveredDevice.bluetoothId];
     this._onDiscoveredDevice(discoveredDevice);
   }
 
@@ -202,7 +181,7 @@ class NobleScanner extends BaseScanner {
   }
 
   // AVAILABILITY
-  get isScanningAvailable() {
+  get #isScanningAvailable() {
     return this.#nobleState == "poweredOn";
   }
 

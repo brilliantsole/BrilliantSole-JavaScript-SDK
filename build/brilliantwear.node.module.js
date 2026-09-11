@@ -19500,10 +19500,10 @@ class Device {
         _console$j.assertWithError(this.CanConnect, `can't connect to any device - must connect to discovered device`);
         const device = new _a$3();
         const abortController = new AbortController();
-        const deviceConnectedEventPromise = DeviceManager$1.waitForEvent("deviceConnected", {
+        const deviceConnectedEventPromise = DeviceManager.waitForEvent("deviceConnected", {
             signal: abortController.signal,
         });
-        const getNumberOfConnectingDevices = () => DeviceManager$1.availableDevices.filter((device) => device.connectionStatus == "connecting").length;
+        const getNumberOfConnectingDevices = () => DeviceManager.availableDevices.filter((device) => device.connectionStatus == "connecting").length;
         const numberOfConnectingDevices = getNumberOfConnectingDevices();
         const isConnected = await device.connect({
             type: "webBluetooth",
@@ -20898,7 +20898,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager = (() => {
+let DeviceManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -21255,7 +21255,7 @@ let DeviceManager = (() => {
     });
     return _classThis;
 })();
-var DeviceManager$1 = DeviceManager.shared;
+var DeviceManager = DeviceManager$1.shared;
 
 var _a$2;
 const _console$h = createConsole("BaseScanner", { log: false });
@@ -21302,14 +21302,55 @@ class BaseScanner {
     get waitForEvent() {
         return this.#eventDispatcher.waitForEvent;
     }
+    #isScanningAvailable = false;
     get isScanningAvailable() {
-        return false;
+        return this.#isScanningAvailable;
+    }
+    set _isScanningAvailable(newIsScanningAvailable) {
+        _console$h.assertTypeWithError(newIsScanningAvailable, "boolean");
+        if (this.#isScanningAvailable == newIsScanningAvailable) {
+            return;
+        }
+        this.#isScanningAvailable = newIsScanningAvailable;
+        _console$h.log("isScanningAvailable", this.isScanningAvailable);
+        this.#dispatchEvent("isScanningAvailable", {
+            isScanningAvailable: this.isScanningAvailable,
+        });
+        if (this.isScanningAvailable) {
+            this.#eventDispatcher.dispatchEvent("scanningAvailable", {});
+        }
+        else {
+            this.#eventDispatcher.dispatchEvent("scanningNotAvailable", {});
+        }
     }
     #assertIsAvailable() {
         _console$h.assertWithError(this.isScanningAvailable, "scanner not available");
     }
+    #isScanning = false;
     get isScanning() {
-        return false;
+        return this.#isScanning;
+    }
+    set _isScanning(newIsScanning) {
+        _console$h.assertTypeWithError(newIsScanning, "boolean");
+        if (this.#isScanning == newIsScanning) {
+            return;
+        }
+        this.#isScanning = newIsScanning;
+        _console$h.log("isScanning", this.isScanning);
+        if (this.isScanning) {
+            this.#discoveredDevices = {};
+            this.#discoveredDeviceTimestamps = {};
+        }
+        else {
+            this.#checkDiscoveredDevicesExpirationTimer.stop();
+        }
+        if (this.isScanning) {
+            this.#eventDispatcher.dispatchEvent("scanning", {});
+        }
+        else {
+            this.#eventDispatcher.dispatchEvent("notScanning", {});
+        }
+        this.#dispatchEvent("isScanning", { isScanning: this.isScanning });
     }
     #assertIsScanning() {
         _console$h.assertWithError(this.isScanning, "not scanning");
@@ -21337,33 +21378,6 @@ class BaseScanner {
         _console$h.log("stopScan");
         return true;
     }
-    _onIsScanning() {
-        if (this.isScanning) {
-            this.#discoveredDevices = {};
-            this.#discoveredDeviceTimestamps = {};
-        }
-        else {
-            this.#checkDiscoveredDevicesExpirationTimer.stop();
-        }
-        if (this.isScanning) {
-            this.#eventDispatcher.dispatchEvent("scanning", {});
-        }
-        else {
-            this.#eventDispatcher.dispatchEvent("notScanning", {});
-        }
-        this.#dispatchEvent("isScanning", { isScanning: this.isScanning });
-    }
-    _onIsScanningAvailable() {
-        this.#dispatchEvent("isScanningAvailable", {
-            isScanningAvailable: this.isScanningAvailable,
-        });
-        if (this.isScanningAvailable) {
-            this.#eventDispatcher.dispatchEvent("scanningAvailable", {});
-        }
-        else {
-            this.#eventDispatcher.dispatchEvent("scanningNotAvailable", {});
-        }
-    }
     #discoveredDevices = {};
     get discoveredDevices() {
         return this.#discoveredDevices;
@@ -21378,7 +21392,15 @@ class BaseScanner {
         _console$h.assertWithError(this.#discoveredDevices[discoveredDeviceId], `no discovered device with id "${discoveredDeviceId}"`);
     }
     _onDiscoveredDevice(discoveredDevice) {
-        this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+        if (this.#discoveredDevices[discoveredDevice.bluetoothId]) {
+            Object.assign(this.#discoveredDevices[discoveredDevice.bluetoothId], discoveredDevice);
+        }
+        else {
+            this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+            discoveredDevice.connect = (connectionType) => {
+                this.connectToDevice(discoveredDevice.bluetoothId, connectionType);
+            };
+        }
         this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
         this.#checkDiscoveredDevicesExpirationTimer.start();
         this.#dispatchEvent("discoveredDevice", { discoveredDevice });
@@ -21705,22 +21727,6 @@ class NobleScanner extends BaseScanner {
     static get isSupported() {
         return isSupported;
     }
-    #_isScanning = false;
-    get #isScanning() {
-        return this.#_isScanning;
-    }
-    set #isScanning(newIsScanning) {
-        _console$f.assertTypeWithError(newIsScanning, "boolean");
-        if (this.isScanning == newIsScanning) {
-            _console$f.log("duplicate isScanning assignment");
-            return;
-        }
-        this.#_isScanning = newIsScanning;
-        this._onIsScanning();
-    }
-    get isScanning() {
-        return this.#isScanning;
-    }
     #_nobleState = "unknown";
     get #nobleState() {
         return this.#_nobleState;
@@ -21733,7 +21739,7 @@ class NobleScanner extends BaseScanner {
         }
         this.#_nobleState = newNobleState;
         _console$f.log({ newNobleState });
-        this._onIsScanningAvailable();
+        this._isScanningAvailable = this.#isScanningAvailable;
     }
     #boundNobleListeners = {
         scanStart: this.#onNobleScanStart.bind(this),
@@ -21743,11 +21749,11 @@ class NobleScanner extends BaseScanner {
     };
     #onNobleScanStart() {
         _console$f.log("OnNobleScanStart");
-        this.#isScanning = true;
+        this._isScanning = true;
     }
     #onNobleScanStop() {
         _console$f.log("OnNobleScanStop");
-        this.#isScanning = false;
+        this._isScanning = false;
     }
     #onNobleStateChange(state) {
         _console$f.log("onNobleStateChange", state);
@@ -21817,19 +21823,15 @@ class NobleScanner extends BaseScanner {
             _console$f.log("skipping device - no deviceType");
             return;
         }
-        let discoveredDevice;
-        const connect = (connectionType) => {
-            this.connectToDevice(discoveredDevice.bluetoothId, connectionType);
-        };
-        discoveredDevice = {
+        const discoveredDevice = {
             name: noblePeripheral.advertisement.localName,
             bluetoothId: noblePeripheral.id,
             deviceType,
             rssi: noblePeripheral.rssi,
             ipAddress,
             isWifiSecure,
-            connect,
         };
+        discoveredDevice.device = this.#devices[discoveredDevice.bluetoothId];
         this._onDiscoveredDevice(discoveredDevice);
     }
     constructor() {
@@ -21837,7 +21839,7 @@ class NobleScanner extends BaseScanner {
         addEventListeners(noble__default, this.#boundNobleListeners);
         addEventListeners(this, this.#boundBaseScannerListeners);
     }
-    get isScanningAvailable() {
+    get #isScanningAvailable() {
         return this.#nobleState == "poweredOn";
     }
     startScan() {
@@ -21887,7 +21889,7 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$f.log("connecting to discoveredDevice...", deviceId);
-        let device = DeviceManager$1.availableDevices
+        let device = DeviceManager.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -21918,7 +21920,7 @@ class NobleScanner extends BaseScanner {
     async disconnectFromDevice(deviceId) {
         super.disconnectFromDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
-        let device = DeviceManager$1.availableDevices
+        let device = DeviceManager.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -21960,16 +21962,16 @@ class NullScanner extends BaseScanner {
 }
 
 const _console$e = createConsole("Scanner", { log: false });
-let scanner;
+let scanner$1;
 if (NobleScanner.isSupported) {
     _console$e.log("using NobleScanner");
-    scanner = new NobleScanner();
+    scanner$1 = new NobleScanner();
 }
 else {
     _console$e.log("Scanner not available");
-    scanner = new NullScanner();
+    scanner$1 = new NullScanner();
 }
-var scanner$1 = scanner;
+var scanner = scanner$1;
 
 const _console$d = createConsole("DisplayCanvasHelperManager", { log: false });
 function getDisplayCanvasHelperManagerDisplayCanvasHelperEventTypes(displayCanvasHelperEventType) {
@@ -21986,7 +21988,7 @@ const DisplayCanvasHelperManagerEventTypes = [
     ...DisplayCanvasHelperManagerDisplayCanvasHelperEventTypes,
     ...BaseDisplayCanvasHelperManagerEventTypes,
 ];
-let DisplayCanvasHelperManager = (() => {
+let DisplayCanvasHelperManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -22060,7 +22062,7 @@ let DisplayCanvasHelperManager = (() => {
     });
     return _classThis;
 })();
-var DisplayCanvasHelperManager$1 = DisplayCanvasHelperManager.shared;
+var DisplayCanvasHelperManager = DisplayCanvasHelperManager$1.shared;
 
 const _console$c = createConsole("PubSubManagerUtils", { log: false });
 const PubSubManagerMessageTypes = [
@@ -22446,7 +22448,7 @@ class BaseClient {
                 break;
             case "pubSub":
                 {
-                    const responseMessage = PubSubManager$1._parsePeerMessage(
+                    const responseMessage = PubSubManager._parsePeerMessage(
                     this, dataView);
                     if (responseMessage) {
                         responseMessages.push({ type: "pubSub", data: responseMessage });
@@ -22624,7 +22626,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager$1._checkDeviceAvailability(device);
+            DeviceManager._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -22672,7 +22674,7 @@ const ClientManagerEventTypes = [
     ...ClientManagerClientEventTypes,
     ...BaseClientManagerEventTypes,
 ];
-let ClientManager$1 = (() => {
+let ClientManager = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -22740,7 +22742,7 @@ let ClientManager$1 = (() => {
     });
     return _classThis;
 })();
-var ClientManager = ClientManager$1.shared;
+var ClientManager$1 = ClientManager.shared;
 
 class GuardManager {
     #guards = [];
@@ -22812,7 +22814,7 @@ function doesBasePubSubManagerOptionsIncludePeer(options, peer) {
     }
     return true;
 }
-let PubSubManager = (() => {
+let PubSubManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -22848,7 +22850,7 @@ let PubSubManager = (() => {
         static shared;
         _init() {
             addEventListeners(ServerManager_default, this.#boundServerManagerListeners);
-            addEventListeners(ClientManager, this.#boundClientManagerListeners);
+            addEventListeners(ClientManager$1, this.#boundClientManagerListeners);
         }
         #listeners = {};
         #peers = [];
@@ -23044,7 +23046,7 @@ let PubSubManager = (() => {
             _console$8.log("#sendPeerMessage", peer, messages);
             const data = createPubSubManagerMessage(...messages);
             const serverMessage = { type: "pubSub", data };
-            if (ClientManager.clients.includes(peer)) {
+            if (ClientManager$1.clients.includes(peer)) {
                 const client = peer;
                 client.sendToServer(serverMessage);
             }
@@ -23275,7 +23277,7 @@ let PubSubManager = (() => {
     });
     return _classThis;
 })();
-var PubSubManager$1 = PubSubManager.shared;
+var PubSubManager = PubSubManager$1.shared;
 
 var _a;
 const RequiredDeviceInformationMessageTypes = [
@@ -23326,10 +23328,10 @@ class BaseServer {
     }
     static OnServer;
     constructor() {
-        _console$7.assertWithError(scanner$1, "no scanner defined");
-        addEventListeners(scanner$1, this.#boundScannerListeners);
-        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
-        addEventListeners(DisplayCanvasHelperManager$1, this.#boundDisplayCanvasHelperManagerEventListeners);
+        _console$7.assertWithError(scanner, "no scanner defined");
+        addEventListeners(scanner, this.#boundScannerListeners);
+        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        addEventListeners(DisplayCanvasHelperManager, this.#boundDisplayCanvasHelperManagerEventListeners);
         _a.OnServer(this);
     }
     #requiredMessageTypesSentToClients = new Map();
@@ -23408,7 +23410,7 @@ class BaseServer {
         _console$7.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager$1.connectedDevices.forEach((device) => {
+            DeviceManager.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -23451,7 +23453,7 @@ class BaseServer {
     get #isScanningAvailableMessage() {
         return createServerMessage({
             type: "isScanningAvailable",
-            data: scanner$1.isScanningAvailable,
+            data: scanner.isScanningAvailable,
         });
     }
     #onScannerIsScanning(event) {
@@ -23460,7 +23462,7 @@ class BaseServer {
     get #isScanningMessage() {
         return createServerMessage({
             type: "isScanning",
-            data: scanner$1.isScanning,
+            data: scanner.isScanning,
         });
     }
     #onScannerDiscoveredDevice(event) {
@@ -23486,9 +23488,9 @@ class BaseServer {
         });
     }
     get #discoveredDevicesMessage() {
-        const serverMessages = scanner$1.discoveredDevicesArray
+        const serverMessages = scanner.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -23500,7 +23502,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -24023,7 +24025,7 @@ class BaseServer {
                     this.#requiredMessageTypesSentToClients
                         .get(client)
                         .add("isScanningAvailable");
-                    if (scanner$1.isScanningAvailable) {
+                    if (scanner.isScanningAvailable) {
                         if (this.#allowServerToClient(client, "isScanning")) {
                             responseMessages.push(this.#isScanningMessage);
                             this.#requiredMessageTypesSentToClients
@@ -24042,10 +24044,10 @@ class BaseServer {
                 }
                 break;
             case "startScan":
-                scanner$1.startScan();
+                scanner.startScan();
                 break;
             case "stopScan":
-                scanner$1.stopScan();
+                scanner.stopScan();
                 break;
             case "discoveredDevices":
                 if (this.#allowServerToClient(client, "discoveredDevices")) {
@@ -24066,12 +24068,12 @@ class BaseServer {
                     else {
                         _console$7.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
                     else {
-                        scanner$1.connectToDevice(deviceId, connectionType);
+                        scanner.connectToDevice(deviceId, connectionType);
                     }
                 }
                 break;
@@ -24081,8 +24083,8 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
-                    device = device ?? scanner$1.devices[deviceId];
+                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    device = device ?? scanner.devices[deviceId];
                     if (!device) {
                         _console$7.error(`no device found with id ${deviceId}`);
                         break;
@@ -24108,7 +24110,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$7.error(`no device found with id ${deviceId}`);
                         break;
@@ -24132,7 +24134,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$7.error(`no device found with id ${deviceId}`);
                         break;
@@ -24173,7 +24175,7 @@ class BaseServer {
                 break;
             case "pubSub":
                 {
-                    const responseMessage = PubSubManager$1._parsePeerMessage(
+                    const responseMessage = PubSubManager._parsePeerMessage(
                     client, dataView);
                     if (responseMessage) {
                         responseMessages.push(createServerMessage({ type: "pubSub", data: responseMessage }));
@@ -24952,7 +24954,7 @@ let ServerManager = (() => {
     return _classThis;
 })();
 var ServerManager_default = ServerManager.shared;
-PubSubManager$1._init();
+PubSubManager._init();
 
 const _console$5 = createConsole("DevicePairPressureSensorDataManager", {
     log: false,
@@ -25315,7 +25317,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager$1.addEventListener("deviceConnected", (event) => {
+        DeviceManager.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -25768,5 +25770,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, PubSubManager$1 as PubSubManager, RangeHelper, RangeHelper2, scanner$1 as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager$1 as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, PubSubManager, RangeHelper, RangeHelper2, scanner as Scanner, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantwear.node.module.js.map

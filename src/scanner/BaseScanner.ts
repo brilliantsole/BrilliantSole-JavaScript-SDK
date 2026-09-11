@@ -116,16 +116,59 @@ abstract class BaseScanner {
   }
 
   // AVAILABILITY
+  #isScanningAvailable = false;
   get isScanningAvailable() {
-    return false;
+    return this.#isScanningAvailable;
+  }
+  protected set _isScanningAvailable(newIsScanningAvailable: boolean) {
+    _console.assertTypeWithError(newIsScanningAvailable, "boolean");
+    if (this.#isScanningAvailable == newIsScanningAvailable) {
+      return;
+    }
+
+    this.#isScanningAvailable = newIsScanningAvailable;
+    _console.log("isScanningAvailable", this.isScanningAvailable);
+
+    this.#dispatchEvent("isScanningAvailable", {
+      isScanningAvailable: this.isScanningAvailable,
+    });
+    if (this.isScanningAvailable) {
+      this.#eventDispatcher.dispatchEvent("scanningAvailable", {});
+    } else {
+      this.#eventDispatcher.dispatchEvent("scanningNotAvailable", {});
+    }
   }
   #assertIsAvailable() {
     _console.assertWithError(this.isScanningAvailable, "scanner not available");
   }
 
   // SCANNING
+  #isScanning = false;
   get isScanning() {
-    return false;
+    return this.#isScanning;
+  }
+  protected set _isScanning(newIsScanning: boolean) {
+    _console.assertTypeWithError(newIsScanning, "boolean");
+    if (this.#isScanning == newIsScanning) {
+      return;
+    }
+
+    this.#isScanning = newIsScanning;
+    _console.log("isScanning", this.isScanning);
+
+    if (this.isScanning) {
+      this.#discoveredDevices = {};
+      this.#discoveredDeviceTimestamps = {};
+    } else {
+      this.#checkDiscoveredDevicesExpirationTimer.stop();
+    }
+
+    if (this.isScanning) {
+      this.#eventDispatcher.dispatchEvent("scanning", {});
+    } else {
+      this.#eventDispatcher.dispatchEvent("notScanning", {});
+    }
+    this.#dispatchEvent("isScanning", { isScanning: this.isScanning });
   }
   #assertIsScanning() {
     _console.assertWithError(this.isScanning, "not scanning");
@@ -157,31 +200,6 @@ abstract class BaseScanner {
     return true;
     //this.#assertIsScanning();
   }
-  protected _onIsScanning() {
-    if (this.isScanning) {
-      this.#discoveredDevices = {};
-      this.#discoveredDeviceTimestamps = {};
-    } else {
-      this.#checkDiscoveredDevicesExpirationTimer.stop();
-    }
-
-    if (this.isScanning) {
-      this.#eventDispatcher.dispatchEvent("scanning", {});
-    } else {
-      this.#eventDispatcher.dispatchEvent("notScanning", {});
-    }
-    this.#dispatchEvent("isScanning", { isScanning: this.isScanning });
-  }
-  protected _onIsScanningAvailable() {
-    this.#dispatchEvent("isScanningAvailable", {
-      isScanningAvailable: this.isScanningAvailable,
-    });
-    if (this.isScanningAvailable) {
-      this.#eventDispatcher.dispatchEvent("scanningAvailable", {});
-    } else {
-      this.#eventDispatcher.dispatchEvent("scanningNotAvailable", {});
-    }
-  }
 
   // DISCOVERED DEVICES
   #discoveredDevices: DiscoveredDevicesMap = {};
@@ -204,7 +222,18 @@ abstract class BaseScanner {
   }
 
   protected _onDiscoveredDevice(discoveredDevice: DiscoveredDevice) {
-    this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+    if (this.#discoveredDevices[discoveredDevice.bluetoothId]) {
+      Object.assign(
+        this.#discoveredDevices[discoveredDevice.bluetoothId],
+        discoveredDevice,
+      );
+    } else {
+      this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+      discoveredDevice.connect = (connectionType?: ClientConnectionType) => {
+        this.connectToDevice(discoveredDevice.bluetoothId, connectionType);
+      };
+    }
+
     this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
     this.#checkDiscoveredDevicesExpirationTimer.start();
     this.#dispatchEvent("discoveredDevice", { discoveredDevice });

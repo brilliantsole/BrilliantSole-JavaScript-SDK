@@ -53,11 +53,11 @@ declare abstract class BaseScanner {
         signal?: AbortSignal;
     }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<BaseScanner, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning", ScannerEventMessages, T>>;
     get isScanningAvailable(): boolean;
+    protected set _isScanningAvailable(newIsScanningAvailable: boolean);
     get isScanning(): boolean;
+    protected set _isScanning(newIsScanning: boolean);
     startScan(): boolean;
     stopScan(): boolean;
-    protected _onIsScanning(): void;
-    protected _onIsScanningAvailable(): void;
     get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
     get discoveredDevicesArray(): DiscoveredDevice[];
     protected _onDiscoveredDevice(discoveredDevice: DiscoveredDevice): void;
