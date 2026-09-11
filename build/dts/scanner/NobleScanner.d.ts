@@ -1,7 +1,6 @@
 import BaseScanner from "./BaseScanner.ts";
 import Device from "../Device.ts";
 import { ClientConnectionType } from "../connection/BaseConnectionManager.ts";
-/** NODE_END */
 export declare const NobleStates: readonly ["unknown", "resetting", "unsupported", "unauthorized", "poweredOff", "poweredOn"];
 export type NobleState = (typeof NobleStates)[number];
 declare class NobleScanner extends BaseScanner {

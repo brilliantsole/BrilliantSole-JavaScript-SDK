@@ -110,8 +110,9 @@ class HeaderButton extends LitElement {
 customElements.define("bw-header-button", HeaderButton);
 
 /**
-<wa-badge
-        variant="danger"
+ <wa-badge
+        .variant=${this.variant}
+        appearance="accent"
         style="font-size: var(--wa-font-size-3xs);"
         pill
         ><wa-icon family=${this.iconFamily} name=${this.iconName}></wa-icon

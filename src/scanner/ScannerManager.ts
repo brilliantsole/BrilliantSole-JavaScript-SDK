@@ -18,6 +18,7 @@ import {
   BoundScannerEventListeners,
   ScannerEventMap,
   ScannerEventMessages,
+  DiscoveredDevicesMap,
 } from "./BaseScanner.ts";
 import {
   default as ClientManager,
@@ -25,12 +26,9 @@ import {
 } from "../server/ClientManager.ts";
 
 import { capitalizeFirstCharacter } from "../utils/stringUtils.ts";
-import { default as scanner, Scanner } from "./Scanner.ts";
-import { Client } from "../server/Client.ts";
+import { default as scanner, ScannerLike } from "./Scanner.ts";
 
 const _console = createConsole("ScannerManager", { log: true });
-
-export type ScannerLike = Scanner | Client;
 
 interface BaseScannerManagerScannerEventMessage {
   scanner: ScannerLike;
@@ -60,6 +58,7 @@ export type WildcardScannerEventType = typeof wildcardScannerEventType;
 const BaseScannerManagerEventTypes = [
   "scanner",
   "scanners",
+  "discoveredDevices",
   wildcardScannerEventType,
 ] as const;
 type BaseScannerManagerEventType =
@@ -78,6 +77,7 @@ export type WildcardScannerEventMessage<BaseMessage> = {
 interface BaseScannerManagerEventMessages {
   scanner: { scanner: ScannerLike };
   scanners: { scanners: ScannerLike[] };
+  discoveredDevices: { discoveredDevices: DiscoveredDevicesMap };
   [wildcardScannerEventType]: WildcardScannerEventMessage<BaseScannerManagerScannerEventMessage>;
 }
 
@@ -119,8 +119,15 @@ class ScannerManager {
     return this.#scanners;
   }
 
+  #discoveredDevices: DiscoveredDevicesMap = {};
+  get discoveredDevices() {
+    return this.#discoveredDevices;
+  }
+
   #boundScannerEventListeners: BoundScannerEventListeners = {
     [wildcardEventType]: this.#onScannerEvent.bind(this),
+    discoveredDevice: this.#onDiscoveredDevice.bind(this),
+    expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
   };
   #onScanner(scanner: ScannerLike) {
     _console.log("onScanner", scanner);
@@ -134,6 +141,28 @@ class ScannerManager {
       });
     }
   }
+  #onDiscoveredDevice(scannerEvent: ScannerEventMap["discoveredDevice"]) {
+    const { type: scannerEventType, target: scanner, message } = scannerEvent;
+    const { discoveredDevice } = message;
+    _console.log("#onDiscoveredDevice", discoveredDevice);
+    this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+    if (message.firstTime) {
+      this.#dispatchEvent("discoveredDevices", {
+        discoveredDevices: this.#discoveredDevices,
+      });
+    }
+  }
+  #onExpiredDiscoveredDevice(
+    scannerEvent: ScannerEventMap["expiredDiscoveredDevice"],
+  ) {
+    const { type: scannerEventType, target: scanner, message } = scannerEvent;
+    const { discoveredDevice } = message;
+    _console.log("#onExpiredDiscoveredDevice", discoveredDevice);
+    delete this.#discoveredDevices[discoveredDevice.bluetoothId];
+    this.#dispatchEvent("discoveredDevices", {
+      discoveredDevices: this.#discoveredDevices,
+    });
+  }
   #onScannerEvent(scannerEvent: ScannerEventMap[WildcardEventType]) {
     const { type: scannerEventType, target: scanner, message } = scannerEvent;
 
@@ -141,7 +170,7 @@ class ScannerManager {
       return;
     }
 
-    _console.log("onScannerEvent", scannerEvent);
+    _console.log("#onScannerEvent", scannerEvent);
 
     // @ts-expect-error
     this.#dispatchEvent(wildcardScannerEventType, {

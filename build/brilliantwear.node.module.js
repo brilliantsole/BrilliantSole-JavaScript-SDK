@@ -21264,6 +21264,7 @@ const ScannerEventTypes = [
     "isScanning",
     "discoveredDevice",
     "expiredDiscoveredDevice",
+    "discoveredDevices",
     "scanningAvailable",
     "scanningNotAvailable",
     "scanning",
@@ -21392,7 +21393,8 @@ class BaseScanner {
         _console$i.assertWithError(this.#discoveredDevices[discoveredDeviceId], `no discovered device with id "${discoveredDeviceId}"`);
     }
     _onDiscoveredDevice(discoveredDevice) {
-        if (this.#discoveredDevices[discoveredDevice.bluetoothId]) {
+        const exists = Boolean(this.#discoveredDevices[discoveredDevice.bluetoothId]);
+        if (exists) {
             Object.assign(this.#discoveredDevices[discoveredDevice.bluetoothId], discoveredDevice);
         }
         else {
@@ -21400,10 +21402,20 @@ class BaseScanner {
             discoveredDevice.connect = (connectionType) => {
                 this.connectToDevice(discoveredDevice.bluetoothId, connectionType);
             };
+            discoveredDevice.scanner = this;
         }
+        discoveredDevice = this.#discoveredDevices[discoveredDevice.bluetoothId];
         this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
         this.#checkDiscoveredDevicesExpirationTimer.start();
-        this.#dispatchEvent("discoveredDevice", { discoveredDevice });
+        this.#dispatchEvent("discoveredDevice", {
+            discoveredDevice,
+            firstTime: !exists,
+        });
+        if (!exists) {
+            this.#dispatchEvent("discoveredDevices", {
+                discoveredDevices: this.#discoveredDevices,
+            });
+        }
     }
     #discoveredDeviceTimestamps = {};
     static #DiscoveredDeviceExpirationTimeout = 5000;
@@ -22242,6 +22254,9 @@ class BaseClient {
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = false;
         }
+        for (const bluetoothId in this.#discoveredDevices) {
+            this.#onExpiredDiscoveredDevice(bluetoothId);
+        }
         this.#receivedMessageTypes.length = 0;
     }
     #devices = {};
@@ -22530,10 +22545,12 @@ class BaseClient {
     }
     #onDiscoveredDevice(discoveredDevice) {
         _console$b.log({ discoveredDevice });
-        if (this.#discoveredDevices[discoveredDevice.bluetoothId]) {
+        const exists = Boolean(this.#discoveredDevices[discoveredDevice.bluetoothId]);
+        if (exists) {
             Object.assign(this.#discoveredDevices[discoveredDevice.bluetoothId], discoveredDevice);
         }
         else {
+            discoveredDevice.scanner = this;
             const onDevice = () => {
                 const { device } = discoveredDevice;
                 if (!device) {
@@ -22552,7 +22569,16 @@ class BaseClient {
             onDevice();
             this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
         }
-        this.#dispatchEvent("discoveredDevice", { discoveredDevice });
+        discoveredDevice = this.#discoveredDevices[discoveredDevice.bluetoothId];
+        this.#dispatchEvent("discoveredDevice", {
+            discoveredDevice,
+            firstTime: !exists,
+        });
+        if (!exists) {
+            this.#dispatchEvent("discoveredDevices", {
+                discoveredDevices: this.discoveredDevices,
+            });
+        }
     }
     requestDiscoveredDevices() {
         this.sendToServer({ type: "discoveredDevices" });
@@ -22675,7 +22701,7 @@ const ClientManagerEventTypes = [
     ...ClientManagerClientEventTypes,
     ...BaseClientManagerEventTypes,
 ];
-let ClientManager$1 = (() => {
+let ClientManager = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -22743,7 +22769,7 @@ let ClientManager$1 = (() => {
     });
     return _classThis;
 })();
-var ClientManager = ClientManager$1.shared;
+var ClientManager$1 = ClientManager.shared;
 
 class GuardManager {
     #guards = [];
@@ -22851,7 +22877,7 @@ let PubSubManager = (() => {
         static shared;
         _init() {
             addEventListeners(ServerManager_default, this.#boundServerManagerListeners);
-            addEventListeners(ClientManager, this.#boundClientManagerListeners);
+            addEventListeners(ClientManager$1, this.#boundClientManagerListeners);
         }
         #listeners = {};
         #peers = [];
@@ -23047,7 +23073,7 @@ let PubSubManager = (() => {
             _console$9.log("#sendPeerMessage", peer, messages);
             const data = createPubSubManagerMessage(...messages);
             const serverMessage = { type: "pubSub", data };
-            if (ClientManager.clients.includes(peer)) {
+            if (ClientManager$1.clients.includes(peer)) {
                 const client = peer;
                 client.sendToServer(serverMessage);
             }
@@ -24957,7 +24983,7 @@ let ServerManager = (() => {
 var ServerManager_default = ServerManager.shared;
 PubSubManager$1._init();
 
-const _console = createConsole("ScannerManager", { log: true });
+const _console$6 = createConsole("ScannerManager", { log: true });
 function getScannerManagerScannerEventTypes(scannerEventType) {
     return ["scanner"].map((prefix) => `${prefix}${capitalizeFirstCharacter(scannerEventType)}`);
 }
@@ -24966,6 +24992,7 @@ const wildcardScannerEventType = "scanner*";
 const BaseScannerManagerEventTypes = [
     "scanner",
     "scanners",
+    "discoveredDevices",
     wildcardScannerEventType,
 ];
 const ScannerManagerEventTypes = [
@@ -24989,20 +25016,26 @@ let ScannerManager = (() => {
         static shared;
         constructor() {
             this.#onScanner(scanner$1);
-            addEventListeners(ClientManager, this.#boundClientManagerListeners);
+            addEventListeners(ClientManager$1, this.#boundClientManagerListeners);
         }
         #scanners = [];
         get scanners() {
             return this.#scanners;
         }
+        #discoveredDevices = {};
+        get discoveredDevices() {
+            return this.#discoveredDevices;
+        }
         #boundScannerEventListeners = {
             [wildcardEventType]: this.#onScannerEvent.bind(this),
+            discoveredDevice: this.#onDiscoveredDevice.bind(this),
+            expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
         };
         #onScanner(scanner) {
-            _console.log("onScanner", scanner);
+            _console$6.log("onScanner", scanner);
             addEventListeners(scanner, this.#boundScannerEventListeners);
             if (!this.#scanners.includes(scanner)) {
-                _console.log("adding scanner", scanner);
+                _console$6.log("adding scanner", scanner);
                 this.#scanners.push(scanner);
                 this.#dispatchEvent("scanner", { scanner });
                 this.#dispatchEvent("scanners", {
@@ -25010,12 +25043,32 @@ let ScannerManager = (() => {
                 });
             }
         }
+        #onDiscoveredDevice(scannerEvent) {
+            const { type: scannerEventType, target: scanner, message } = scannerEvent;
+            const { discoveredDevice } = message;
+            _console$6.log("#onDiscoveredDevice", discoveredDevice);
+            this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+            if (message.firstTime) {
+                this.#dispatchEvent("discoveredDevices", {
+                    discoveredDevices: this.#discoveredDevices,
+                });
+            }
+        }
+        #onExpiredDiscoveredDevice(scannerEvent) {
+            const { type: scannerEventType, target: scanner, message } = scannerEvent;
+            const { discoveredDevice } = message;
+            _console$6.log("#onExpiredDiscoveredDevice", discoveredDevice);
+            delete this.#discoveredDevices[discoveredDevice.bluetoothId];
+            this.#dispatchEvent("discoveredDevices", {
+                discoveredDevices: this.#discoveredDevices,
+            });
+        }
         #onScannerEvent(scannerEvent) {
             const { type: scannerEventType, target: scanner, message } = scannerEvent;
             if (!ScannerEventTypes.includes(scannerEventType)) {
                 return;
             }
-            _console.log("onScannerEvent", scannerEvent);
+            _console$6.log("#onScannerEvent", scannerEvent);
             this.#dispatchEvent(wildcardScannerEventType, {
                 ...message,
                 scanner: scanner,
@@ -25033,7 +25086,7 @@ let ScannerManager = (() => {
         };
         #onClient(event) {
             const { message } = event;
-            _console.log("#onClient", message);
+            _console$6.log("#onClient", message);
             this.#onScanner(message.client);
         }
         #eventDispatcher = new EventDispatcher(this, ScannerManagerEventTypes);
@@ -25054,7 +25107,7 @@ let ScannerManager = (() => {
 })();
 var ScannerManager_default = ScannerManager.shared;
 
-const _console$6 = createConsole("DevicePairPressureSensorDataManager", {
+const _console$5 = createConsole("DevicePairPressureSensorDataManager", {
     log: false,
 });
 class DevicePairPressureSensorDataManager {
@@ -25072,14 +25125,14 @@ class DevicePairPressureSensorDataManager {
     onDevicePressureData(event) {
         const { pressure, timestamp } = event.message;
         const { side } = event.target;
-        _console$6.log({ pressure, side });
+        _console$5.log({ pressure, side });
         this.#rawPressure[side] = pressure;
         this.#pressureTimestamps[side] = timestamp;
         if (this.#hasAllPressureData) {
             return this.#updatePressureData();
         }
         else {
-            _console$6.log("doesn't have all pressure data yet...");
+            _console$5.log("doesn't have all pressure data yet...");
         }
     }
     get #hasAllPressureData() {
@@ -25143,12 +25196,12 @@ class DevicePairPressureSensorDataManager {
             pressureData.normalizedCenter =
                 this.#centerOfPressureHelper.updateAndGetNormalization(pressureData.center);
         }
-        _console$6.log({ devicePairPressureData: pressureData });
+        _console$5.log({ devicePairPressureData: pressureData });
         return pressureData;
     }
 }
 
-const _console$5 = createConsole("DevicePairSensorDataManager", { log: false });
+const _console$4 = createConsole("DevicePairSensorDataManager", { log: false });
 const DevicePairSensorTypes = ["pressure", "sensorData"];
 const DevicePairSensorDataEventTypes = DevicePairSensorTypes;
 class DevicePairSensorDataManager {
@@ -25163,7 +25216,7 @@ class DevicePairSensorDataManager {
     }
     onDeviceSensorData(event) {
         const { timestamp, sensorType } = event.message;
-        _console$5.log({ sensorType, timestamp, event });
+        _console$4.log({ sensorType, timestamp, event });
         if (!this.#timestamps[sensorType]) {
             this.#timestamps[sensorType] = {};
         }
@@ -25174,7 +25227,7 @@ class DevicePairSensorDataManager {
                 value = this.pressureSensorDataManager.onDevicePressureData(event);
                 break;
             default:
-                _console$5.log(`uncaught sensorType "${sensorType}"`);
+                _console$4.log(`uncaught sensorType "${sensorType}"`);
                 break;
         }
         if (value) {
@@ -25191,12 +25244,12 @@ class DevicePairSensorDataManager {
             });
         }
         else {
-            _console$5.log("no value received");
+            _console$4.log("no value received");
         }
     }
 }
 
-const _console$4 = createConsole("DevicePair", { log: false });
+const _console$3 = createConsole("DevicePair", { log: false });
 function getDevicePairDeviceEventTypes(deviceEventType) {
     return ["device", ...Sides].map((prefix) => `${prefix}${capitalizeFirstCharacter(deviceEventType)}`);
 }
@@ -25261,7 +25314,7 @@ class DevicePair {
         return this.isPartiallyConnected && !this.isConnected;
     }
     #assertIsConnected() {
-        _console$4.assertWithError(this.isConnected, "devicePair must be connected");
+        _console$3.assertWithError(this.isConnected, "devicePair must be connected");
     }
     #isDeviceCorrectType(device) {
         switch (this.type) {
@@ -25273,13 +25326,13 @@ class DevicePair {
     }
     assignDevice(device) {
         if (!this.#isDeviceCorrectType(device)) {
-            _console$4.log(`device is incorrect type ${device.type} for ${this.type} devicePair`);
+            _console$3.log(`device is incorrect type ${device.type} for ${this.type} devicePair`);
             return;
         }
         const side = device.side;
         const currentDevice = this[side];
         if (device == currentDevice) {
-            _console$4.log("device already assigned");
+            _console$3.log("device already assigned");
             return;
         }
         if (currentDevice) {
@@ -25294,7 +25347,7 @@ class DevicePair {
                 this.#right = device;
                 break;
         }
-        _console$4.log(`assigned ${side} ${this.type} device`, device);
+        _console$3.log(`assigned ${side} ${this.type} device`, device);
         this.resetPressureRange();
         this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
         this.#dispatchEvent("deviceIsConnected", {
@@ -25315,7 +25368,7 @@ class DevicePair {
             if (this[side] != device) {
                 return false;
             }
-            _console$4.log(`removing ${side} ${this.type} device`, device);
+            _console$3.log(`removing ${side} ${this.type} device`, device);
             removeEventListeners(device, this.#boundDeviceEventListeners);
             switch (side) {
                 case "left":
@@ -25484,7 +25537,7 @@ const ConnectionManagers = [
     UDPConnectionManager,
 ];
 
-const _console$3 = createConsole("WebSocketServer", { log: false });
+const _console$2 = createConsole("WebSocketServer", { log: false });
 class WebSocketServer extends BaseServer {
     static type = "webSocket";
     type = WebSocketServer.type;
@@ -25494,17 +25547,17 @@ class WebSocketServer extends BaseServer {
     }
     set server(newServer) {
         if (this.#server == newServer) {
-            _console$3.log("redundant WebSocket server assignment");
+            _console$2.log("redundant WebSocket server assignment");
             return;
         }
-        _console$3.log("assigning WebSocket server...");
+        _console$2.log("assigning WebSocket server...");
         if (this.#server) {
-            _console$3.log("clearing existing WebSocket server...");
+            _console$2.log("clearing existing WebSocket server...");
             removeEventListeners(this.#server, this.#boundWebSocketServerListeners);
         }
         addEventListeners(newServer, this.#boundWebSocketServerListeners);
         this.#server = newServer;
-        _console$3.log("assigned WebSocket server");
+        _console$2.log("assigned WebSocket server");
     }
     #boundWebSocketServerListeners = {
         close: this.#onWebSocketServerClose.bind(this),
@@ -25514,10 +25567,10 @@ class WebSocketServer extends BaseServer {
         listening: this.#onWebSocketServerListening.bind(this),
     };
     #onWebSocketServerClose() {
-        _console$3.log("server.close");
+        _console$2.log("server.close");
     }
     #onWebSocketServerConnection(client) {
-        _console$3.log("server.connection");
+        _console$2.log("server.connection");
         client.isAlive = true;
         client.pingClientTimer = new Timer(() => this.#pingClient(client), webSocketPingTimeout);
         client.pingClientTimer.start();
@@ -25525,12 +25578,12 @@ class WebSocketServer extends BaseServer {
         this._onClientConnected(client);
     }
     #onWebSocketServerError(error) {
-        _console$3.error(error);
+        _console$2.error(error);
     }
     #onWebSocketServerHeaders() {
     }
     #onWebSocketServerListening() {
-        _console$3.log("server.listening");
+        _console$2.log("server.listening");
     }
     #boundWebSocketClientListeners = {
         open: this.#onWebSocketClientOpen.bind(this),
@@ -25539,29 +25592,29 @@ class WebSocketServer extends BaseServer {
         error: this.#onWebSocketClientError.bind(this),
     };
     #onWebSocketClientOpen(event) {
-        _console$3.log("client.open");
+        _console$2.log("client.open");
     }
     #onWebSocketClientMessage(event) {
-        _console$3.log("client.message");
+        _console$2.log("client.message");
         const client = event.target;
         client.isAlive = true;
         client.pingClientTimer.restart();
         const dataView = new DataView(dataToArrayBuffer(event.data));
-        _console$3.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
+        _console$2.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
         this.#parseWebSocketClientMessage(client, dataView);
     }
     #onWebSocketClientClose(event) {
-        _console$3.log("client.close");
+        _console$2.log("client.close");
         const client = event.target;
         client.pingClientTimer.stop();
         removeEventListeners(client, this.#boundWebSocketClientListeners);
         this._onClientNotConnected(client);
     }
     #onWebSocketClientError(event) {
-        _console$3.error("client.error", event.message);
+        _console$2.error("client.error", event.message);
     }
     #parseWebSocketClientMessage(client, dataView) {
-        _console$3.log("parseWebSocketClientMessage", client, dataView);
+        _console$2.log("parseWebSocketClientMessage", client, dataView);
         const clientContext = {
             responseMessages: [],
             client,
@@ -25573,7 +25626,7 @@ class WebSocketServer extends BaseServer {
     }
     #onClientMessage(messageType, dataView, context) {
         const { responseMessages, client, broadcastMessages, localBroadcastMessages, } = context;
-        _console$3.log("onClientMessage", { messageType });
+        _console$2.log("onClientMessage", { messageType });
         switch (messageType) {
             case "ping":
                 responseMessages.push(webSocketPongMessage);
@@ -25604,21 +25657,21 @@ class WebSocketServer extends BaseServer {
                 }
                 break;
             default:
-                _console$3.error(`uncaught messageType "${messageType}"`);
+                _console$2.error(`uncaught messageType "${messageType}"`);
                 break;
         }
     }
     #sendToClient(client, arrayBuffer) {
         if (arrayBuffer.byteLength == 0) {
-            _console$3.log("nothing to send back");
+            _console$2.log("nothing to send back");
             return false;
         }
-        _console$3.log(`sending ${arrayBuffer.byteLength} bytes to client`);
+        _console$2.log(`sending ${arrayBuffer.byteLength} bytes to client`);
         try {
             client.send(arrayBuffer);
         }
         catch (error) {
-            _console$3.log("error sending message", error);
+            _console$2.log("error sending message", error);
             return false;
         }
         return true;
@@ -25645,7 +25698,7 @@ class WebSocketServer extends BaseServer {
     }
 }
 
-const _console$2 = createConsole("UDPUtils", { log: false });
+const _console$1 = createConsole("UDPUtils", { log: false });
 const removeUDPClientTimeout = 4_000;
 const UDPServerMessageTypes = [
     "ping",
@@ -25654,13 +25707,13 @@ const UDPServerMessageTypes = [
     "serverMessage",
 ];
 function createUDPServerMessage(...messages) {
-    _console$2.log("createUDPServerMessage", ...messages);
+    _console$1.log("createUDPServerMessage", ...messages);
     return createMessage(UDPServerMessageTypes, true, ...messages);
 }
 createUDPServerMessage("ping");
 const udpPongMessage = createUDPServerMessage("pong");
 
-const _console$1 = createConsole("UDPServer", { log: false });
+const _console = createConsole("UDPServer", { log: false });
 class UDPServer extends BaseServer {
     static type = "udp";
     type = UDPServer.type;
@@ -25673,12 +25726,12 @@ class UDPServer extends BaseServer {
                 ...remoteInfo,
                 isAlive: true,
                 removeSelfTimer: new Timer(() => {
-                    _console$1.log("removing client due to timeout...");
+                    _console.log("removing client due to timeout...");
                     this.#removeClient(client);
                 }, removeUDPClientTimeout),
                 lastTimeSentData: 0,
             };
-            _console$1.log("created new client", client);
+            _console.log("created new client", client);
             this._onClientConnected(client);
         }
         return client;
@@ -25697,17 +25750,17 @@ class UDPServer extends BaseServer {
     }
     set socket(newSocket) {
         if (this.#socket == newSocket) {
-            _console$1.log("redundant udp socket assignment");
+            _console.log("redundant udp socket assignment");
             return;
         }
-        _console$1.log("assigning udp socket...");
+        _console.log("assigning udp socket...");
         if (this.#socket) {
-            _console$1.log("clearing existing udp socket...");
+            _console.log("clearing existing udp socket...");
             removeEventListeners(this.#socket, this.#boundSocketListeners);
         }
         addEventListeners(newSocket, this.#boundSocketListeners);
         this.#socket = newSocket;
-        _console$1.log("assigned udp socket");
+        _console.log("assigned udp socket");
     }
     #boundSocketListeners = {
         close: this.#onSocketClose.bind(this),
@@ -25717,23 +25770,23 @@ class UDPServer extends BaseServer {
         message: this.#onSocketMessage.bind(this),
     };
     #onSocketClose() {
-        _console$1.log("socket close");
+        _console.log("socket close");
     }
     #onSocketConnect() {
-        _console$1.log("socket connect");
+        _console.log("socket connect");
     }
     #onSocketError(error) {
-        _console$1.error("socket error", error);
+        _console.error("socket error", error);
     }
     #onSocketListening() {
         const address = this.#socket.address();
-        _console$1.log(`socket listening on port ${address.address}:${address.port}`);
+        _console.log(`socket listening on port ${address.address}:${address.port}`);
     }
     #onSocketMessage(message, remoteInfo) {
-        _console$1.log(`received ${message.length} bytes from ${this.#remoteInfoToString(remoteInfo)}`);
+        _console.log(`received ${message.length} bytes from ${this.#remoteInfoToString(remoteInfo)}`);
         const client = this.#getClientByRemoteInfo(remoteInfo, true);
         if (!client) {
-            _console$1.error("no client found");
+            _console.error("no client found");
             return;
         }
         client.removeSelfTimer.restart();
@@ -25741,7 +25794,7 @@ class UDPServer extends BaseServer {
         this.#parseUDPClientMessage(client, dataView);
     }
     #parseUDPClientMessage(client, dataView) {
-        _console$1.log("parseWebSocketClientMessage", client, dataView);
+        _console.log("parseWebSocketClientMessage", client, dataView);
         const clientContext = {
             responseMessages: [],
             client,
@@ -25753,7 +25806,7 @@ class UDPServer extends BaseServer {
     }
     #onClientMessage(messageType, dataView, context) {
         const { client, responseMessages, broadcastMessages, localBroadcastMessages, } = context;
-        _console$1.log(`received "${messageType}" message from ${client.address}:${client.port}`);
+        _console.log(`received "${messageType}" message from ${client.address}:${client.port}`);
         switch (messageType) {
             case "ping":
                 responseMessages.push(this.#createPongMessage(context));
@@ -25787,7 +25840,7 @@ class UDPServer extends BaseServer {
                 }
                 break;
             default:
-                _console$1.error(`uncaught messageType "${messageType}"`);
+                _console.error(`uncaught messageType "${messageType}"`);
                 break;
         }
     }
@@ -25798,7 +25851,7 @@ class UDPServer extends BaseServer {
     #parseRemoteReceivePort(dataView, client) {
         const receivePort = dataView.getUint16(0);
         client.receivePort = receivePort;
-        _console$1.log(`updated ${client.address}:${client.port} receivePort to ${receivePort}`);
+        _console.log(`updated ${client.address}:${client.port} receivePort to ${receivePort}`);
         const responseDataView = new DataView(new ArrayBuffer(2));
         responseDataView.setUint16(0, client.receivePort);
         return createUDPServerMessage({
@@ -25808,26 +25861,26 @@ class UDPServer extends BaseServer {
     }
     #sendToClient(client, arrayBuffer) {
         if (arrayBuffer.byteLength == 0) {
-            _console$1.log("no response to send");
+            _console.log("no response to send");
             return false;
         }
         if (client.receivePort == undefined) {
-            _console$1.log("client has no defined receivePort");
+            _console.log("client has no defined receivePort");
             return false;
         }
-        _console$1.log(`sending ${arrayBuffer.byteLength} bytes to ${this.#clientToString(client)}...`);
+        _console.log(`sending ${arrayBuffer.byteLength} bytes to ${this.#clientToString(client)}...`);
         try {
             this.#socket.send(new Uint8Array(arrayBuffer), client.receivePort, client.address, (error, bytes) => {
                 if (error) {
-                    _console$1.error("error sending data", error);
+                    _console.error("error sending data", error);
                     return;
                 }
-                _console$1.log(`sent ${bytes} bytes`);
+                _console.log(`sent ${bytes} bytes`);
                 client.lastTimeSentData = Date.now();
             });
         }
         catch (error) {
-            _console$1.error("serious error sending data", error);
+            _console.error("serious error sending data", error);
             return false;
         }
         return true;
@@ -25845,7 +25898,7 @@ class UDPServer extends BaseServer {
         return didSend;
     }
     #removeClient(client) {
-        _console$1.log(`removing client ${this.#clientToString(client)}...`);
+        _console.log(`removing client ${this.#clientToString(client)}...`);
         client.removeSelfTimer.stop();
         this._onClientNotConnected(client);
     }
@@ -25868,5 +25921,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, PubSubManager$1 as PubSubManager, RangeHelper, RangeHelper2, ScannerManager_default as ScannerManager, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, scanner$1 as scanner, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager$1 as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, PubSubManager$1 as PubSubManager, RangeHelper, RangeHelper2, ScannerManager_default as ScannerManager, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, scanner$1 as scanner, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantwear.node.module.js.map

@@ -32,6 +32,7 @@ import {
   valueToUInt32DataView,
 } from "../utils/ParseUtils.ts";
 import {
+  ClientConnectionType,
   ConnectionMessageType,
   ConnectionMessageTypes,
   ConnectionTypes,
@@ -1386,7 +1387,10 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
             // @ts-expect-error
             device.connect({ type: connectionType, reconnect: true });
           } else {
-            scanner.connectToDevice(deviceId, connectionType);
+            scanner.connectToDevice(
+              deviceId,
+              connectionType as ClientConnectionType,
+            );
           }
         }
         break;

@@ -117,6 +117,9 @@ abstract class BaseClient {
       connectionManager.isConnected = false;
       // device.removeAllEventListeners();
     }
+    for (const bluetoothId in this.#discoveredDevices) {
+      this.#onExpiredDiscoveredDevice(bluetoothId);
+    }
     this.#receivedMessageTypes.length = 0;
     //this.#devices = {};
   }
@@ -500,12 +503,18 @@ abstract class BaseClient {
 
   #onDiscoveredDevice(discoveredDevice: DiscoveredDevice) {
     _console.log({ discoveredDevice });
-    if (this.#discoveredDevices[discoveredDevice.bluetoothId]) {
+    const exists = Boolean(
+      this.#discoveredDevices[discoveredDevice.bluetoothId],
+    );
+    if (exists) {
       Object.assign(
         this.#discoveredDevices[discoveredDevice.bluetoothId],
         discoveredDevice,
       );
     } else {
+      // @ts-expect-error
+      discoveredDevice.scanner = this;
+
       const onDevice = () => {
         const { device } = discoveredDevice;
         if (!device) {
@@ -515,6 +524,7 @@ abstract class BaseClient {
           device.connectionManager as ClientConnectionManager;
         connectionManager.discoveredDevice = discoveredDevice;
       };
+
       discoveredDevice.connect = (connectionType) => {
         _console.log("discoveredDevice.connect", { connectionType });
         const device = this.connectToDevice(
@@ -529,7 +539,16 @@ abstract class BaseClient {
 
       this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
     }
-    this.#dispatchEvent("discoveredDevice", { discoveredDevice });
+    discoveredDevice = this.#discoveredDevices[discoveredDevice.bluetoothId];
+    this.#dispatchEvent("discoveredDevice", {
+      discoveredDevice,
+      firstTime: !exists,
+    });
+    if (!exists) {
+      this.#dispatchEvent("discoveredDevices", {
+        discoveredDevices: this.discoveredDevices,
+      });
+    }
   }
   requestDiscoveredDevices() {
     this.sendToServer({ type: "discoveredDevices" });

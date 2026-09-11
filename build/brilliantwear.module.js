@@ -34237,10 +34237,10 @@ class Device {
         _console$l.assertWithError(this.CanConnect, `can't connect to any device - must connect to discovered device`);
         const device = new _a$3();
         const abortController = new AbortController();
-        const deviceConnectedEventPromise = DeviceManager$1.waitForEvent("deviceConnected", {
+        const deviceConnectedEventPromise = DeviceManager.waitForEvent("deviceConnected", {
             signal: abortController.signal,
         });
-        const getNumberOfConnectingDevices = () => DeviceManager$1.availableDevices.filter((device) => device.connectionStatus == "connecting").length;
+        const getNumberOfConnectingDevices = () => DeviceManager.availableDevices.filter((device) => device.connectionStatus == "connecting").length;
         const numberOfConnectingDevices = getNumberOfConnectingDevices();
         const isConnected = await device.connect({
             type: "webBluetooth",
@@ -35635,7 +35635,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager = (() => {
+let DeviceManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -35992,7 +35992,7 @@ let DeviceManager = (() => {
     });
     return _classThis;
 })();
-var DeviceManager$1 = DeviceManager.shared;
+var DeviceManager = DeviceManager$1.shared;
 
 var _a$2;
 const _console$j = createConsole("BaseScanner", { log: false });
@@ -36001,6 +36001,7 @@ const ScannerEventTypes = [
     "isScanning",
     "discoveredDevice",
     "expiredDiscoveredDevice",
+    "discoveredDevices",
     "scanningAvailable",
     "scanningNotAvailable",
     "scanning",
@@ -36129,7 +36130,8 @@ class BaseScanner {
         _console$j.assertWithError(this.#discoveredDevices[discoveredDeviceId], `no discovered device with id "${discoveredDeviceId}"`);
     }
     _onDiscoveredDevice(discoveredDevice) {
-        if (this.#discoveredDevices[discoveredDevice.bluetoothId]) {
+        const exists = Boolean(this.#discoveredDevices[discoveredDevice.bluetoothId]);
+        if (exists) {
             Object.assign(this.#discoveredDevices[discoveredDevice.bluetoothId], discoveredDevice);
         }
         else {
@@ -36137,10 +36139,20 @@ class BaseScanner {
             discoveredDevice.connect = (connectionType) => {
                 this.connectToDevice(discoveredDevice.bluetoothId, connectionType);
             };
+            discoveredDevice.scanner = this;
         }
+        discoveredDevice = this.#discoveredDevices[discoveredDevice.bluetoothId];
         this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
         this.#checkDiscoveredDevicesExpirationTimer.start();
-        this.#dispatchEvent("discoveredDevice", { discoveredDevice });
+        this.#dispatchEvent("discoveredDevice", {
+            discoveredDevice,
+            firstTime: !exists,
+        });
+        if (!exists) {
+            this.#dispatchEvent("discoveredDevices", {
+                discoveredDevices: this.#discoveredDevices,
+            });
+        }
     }
     #discoveredDeviceTimestamps = {};
     static #DiscoveredDeviceExpirationTimeout = 5000;
@@ -36232,7 +36244,7 @@ const DisplayCanvasHelperManagerEventTypes = [
     ...DisplayCanvasHelperManagerDisplayCanvasHelperEventTypes,
     ...BaseDisplayCanvasHelperManagerEventTypes,
 ];
-let DisplayCanvasHelperManager = (() => {
+let DisplayCanvasHelperManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -36306,7 +36318,7 @@ let DisplayCanvasHelperManager = (() => {
     });
     return _classThis;
 })();
-var DisplayCanvasHelperManager$1 = DisplayCanvasHelperManager.shared;
+var DisplayCanvasHelperManager = DisplayCanvasHelperManager$1.shared;
 
 const _console$g = createConsole("PubSubManagerUtils", { log: false });
 const PubSubManagerMessageTypes = [
@@ -36485,6 +36497,9 @@ class BaseClient {
             const device = this.#devices[id];
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = false;
+        }
+        for (const bluetoothId in this.#discoveredDevices) {
+            this.#onExpiredDiscoveredDevice(bluetoothId);
         }
         this.#receivedMessageTypes.length = 0;
     }
@@ -36693,7 +36708,7 @@ class BaseClient {
                 break;
             case "pubSub":
                 {
-                    const responseMessage = PubSubManager$1._parsePeerMessage(
+                    const responseMessage = PubSubManager._parsePeerMessage(
                     this, dataView);
                     if (responseMessage) {
                         responseMessages.push({ type: "pubSub", data: responseMessage });
@@ -36774,10 +36789,12 @@ class BaseClient {
     }
     #onDiscoveredDevice(discoveredDevice) {
         _console$e.log({ discoveredDevice });
-        if (this.#discoveredDevices[discoveredDevice.bluetoothId]) {
+        const exists = Boolean(this.#discoveredDevices[discoveredDevice.bluetoothId]);
+        if (exists) {
             Object.assign(this.#discoveredDevices[discoveredDevice.bluetoothId], discoveredDevice);
         }
         else {
+            discoveredDevice.scanner = this;
             const onDevice = () => {
                 const { device } = discoveredDevice;
                 if (!device) {
@@ -36796,7 +36813,16 @@ class BaseClient {
             onDevice();
             this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
         }
-        this.#dispatchEvent("discoveredDevice", { discoveredDevice });
+        discoveredDevice = this.#discoveredDevices[discoveredDevice.bluetoothId];
+        this.#dispatchEvent("discoveredDevice", {
+            discoveredDevice,
+            firstTime: !exists,
+        });
+        if (!exists) {
+            this.#dispatchEvent("discoveredDevices", {
+                discoveredDevices: this.discoveredDevices,
+            });
+        }
     }
     requestDiscoveredDevices() {
         this.sendToServer({ type: "discoveredDevices" });
@@ -36871,7 +36897,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager$1._checkDeviceAvailability(device);
+            DeviceManager._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -37059,7 +37085,7 @@ function doesBasePubSubManagerOptionsIncludePeer(options, peer) {
     }
     return true;
 }
-let PubSubManager = (() => {
+let PubSubManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -37522,7 +37548,7 @@ let PubSubManager = (() => {
     });
     return _classThis;
 })();
-var PubSubManager$1 = PubSubManager.shared;
+var PubSubManager = PubSubManager$1.shared;
 
 var _a;
 const RequiredDeviceInformationMessageTypes = [
@@ -37575,8 +37601,8 @@ class BaseServer {
     constructor() {
         _console$b.assertWithError(scanner, "no scanner defined");
         addEventListeners(scanner, this.#boundScannerListeners);
-        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
-        addEventListeners(DisplayCanvasHelperManager$1, this.#boundDisplayCanvasHelperManagerEventListeners);
+        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
+        addEventListeners(DisplayCanvasHelperManager, this.#boundDisplayCanvasHelperManagerEventListeners);
         _a.OnServer(this);
     }
     #requiredMessageTypesSentToClients = new Map();
@@ -37655,7 +37681,7 @@ class BaseServer {
         _console$b.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager$1.connectedDevices.forEach((device) => {
+            DeviceManager.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -37735,7 +37761,7 @@ class BaseServer {
     get #discoveredDevicesMessage() {
         const serverMessages = scanner.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -37747,7 +37773,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -38313,7 +38339,7 @@ class BaseServer {
                     else {
                         _console$b.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
@@ -38328,7 +38354,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     device = device ?? scanner.devices[deviceId];
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
@@ -38355,7 +38381,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -38379,7 +38405,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$b.error(`no device found with id ${deviceId}`);
                         break;
@@ -38420,7 +38446,7 @@ class BaseServer {
                 break;
             case "pubSub":
                 {
-                    const responseMessage = PubSubManager$1._parsePeerMessage(
+                    const responseMessage = PubSubManager._parsePeerMessage(
                     client, dataView);
                     if (responseMessage) {
                         responseMessages.push(createServerMessage({ type: "pubSub", data: responseMessage }));
@@ -39199,9 +39225,9 @@ let ServerManager = (() => {
     return _classThis;
 })();
 var ServerManager_default = ServerManager.shared;
-PubSubManager$1._init();
+PubSubManager._init();
 
-const _console = createConsole("ScannerManager", { log: true });
+const _console$9 = createConsole("ScannerManager", { log: true });
 function getScannerManagerScannerEventTypes(scannerEventType) {
     return ["scanner"].map((prefix) => `${prefix}${capitalizeFirstCharacter(scannerEventType)}`);
 }
@@ -39210,6 +39236,7 @@ const wildcardScannerEventType = "scanner*";
 const BaseScannerManagerEventTypes = [
     "scanner",
     "scanners",
+    "discoveredDevices",
     wildcardScannerEventType,
 ];
 const ScannerManagerEventTypes = [
@@ -39239,14 +39266,20 @@ let ScannerManager = (() => {
         get scanners() {
             return this.#scanners;
         }
+        #discoveredDevices = {};
+        get discoveredDevices() {
+            return this.#discoveredDevices;
+        }
         #boundScannerEventListeners = {
             [wildcardEventType]: this.#onScannerEvent.bind(this),
+            discoveredDevice: this.#onDiscoveredDevice.bind(this),
+            expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
         };
         #onScanner(scanner) {
-            _console.log("onScanner", scanner);
+            _console$9.log("onScanner", scanner);
             addEventListeners(scanner, this.#boundScannerEventListeners);
             if (!this.#scanners.includes(scanner)) {
-                _console.log("adding scanner", scanner);
+                _console$9.log("adding scanner", scanner);
                 this.#scanners.push(scanner);
                 this.#dispatchEvent("scanner", { scanner });
                 this.#dispatchEvent("scanners", {
@@ -39254,12 +39287,32 @@ let ScannerManager = (() => {
                 });
             }
         }
+        #onDiscoveredDevice(scannerEvent) {
+            const { type: scannerEventType, target: scanner, message } = scannerEvent;
+            const { discoveredDevice } = message;
+            _console$9.log("#onDiscoveredDevice", discoveredDevice);
+            this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+            if (message.firstTime) {
+                this.#dispatchEvent("discoveredDevices", {
+                    discoveredDevices: this.#discoveredDevices,
+                });
+            }
+        }
+        #onExpiredDiscoveredDevice(scannerEvent) {
+            const { type: scannerEventType, target: scanner, message } = scannerEvent;
+            const { discoveredDevice } = message;
+            _console$9.log("#onExpiredDiscoveredDevice", discoveredDevice);
+            delete this.#discoveredDevices[discoveredDevice.bluetoothId];
+            this.#dispatchEvent("discoveredDevices", {
+                discoveredDevices: this.#discoveredDevices,
+            });
+        }
         #onScannerEvent(scannerEvent) {
             const { type: scannerEventType, target: scanner, message } = scannerEvent;
             if (!ScannerEventTypes.includes(scannerEventType)) {
                 return;
             }
-            _console.log("onScannerEvent", scannerEvent);
+            _console$9.log("#onScannerEvent", scannerEvent);
             this.#dispatchEvent(wildcardScannerEventType, {
                 ...message,
                 scanner: scanner,
@@ -39277,7 +39330,7 @@ let ScannerManager = (() => {
         };
         #onClient(event) {
             const { message } = event;
-            _console.log("#onClient", message);
+            _console$9.log("#onClient", message);
             this.#onScanner(message.client);
         }
         #eventDispatcher = new EventDispatcher(this, ScannerManagerEventTypes);
@@ -39298,22 +39351,22 @@ let ScannerManager = (() => {
 })();
 var ScannerManager_default = ScannerManager.shared;
 
-const _console$9 = createConsole("WindowManagerUtils", { log: false });
+const _console$8 = createConsole("WindowManagerUtils", { log: false });
 const WindowManagerMessageTypes = [
     "ping",
     "pong",
     "serverMessage",
 ];
 function createWindowManagerMessage(...messages) {
-    _console$9.log("createWindowManagerMessage", ...messages);
+    _console$8.log("createWindowManagerMessage", ...messages);
     return createMessage(WindowManagerMessageTypes, true, ...messages);
 }
 const windowManagerMessageKey = "BrilliantWear";
 const windowManagerPingMessage = createWindowManagerMessage("ping");
 const windowManagerPongMessage = createWindowManagerMessage("pong");
 
-const _console$8 = createConsole("WindowServer", { log: false });
-let WindowServer = (() => {
+const _console$7 = createConsole("WindowServer", { log: false });
+let WindowServer$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -39358,12 +39411,12 @@ let WindowServer = (() => {
         };
         #onWindowManagerServerClientConnected(event) {
             const { client } = event.message;
-            _console$8.log("onWindowManagerServerClientConnected", client);
+            _console$7.log("onWindowManagerServerClientConnected", client);
             this._onClientConnected(client);
         }
         #onWindowManagerServerClientNotConnected(event) {
             const { client } = event.message;
-            _console$8.log("onWindowManagerServerClientNotConnected", client);
+            _console$7.log("onWindowManagerServerClientNotConnected", client);
             this._onClientNotConnected(client);
         }
         static {
@@ -39372,9 +39425,9 @@ let WindowServer = (() => {
     };
     return WindowServer = _classThis;
 })();
-var WindowServer$1 = WindowServer.shared;
+var WindowServer = WindowServer$1.shared;
 
-const _console$7 = createConsole("WindowManagerServer", { log: false });
+const _console$6 = createConsole("WindowManagerServer", { log: false });
 const WindowManagerServerEventTypes = [
     "clientConnected",
     "clientNotConnected",
@@ -39411,7 +39464,7 @@ let WindowManagerServer = (() => {
         }
         removeAllEventListeners() {
             this.#eventDispatcher.removeAllEventListeners();
-            WindowServer$1._init();
+            WindowServer._init();
         }
         static shared;
         constructor() {
@@ -39453,10 +39506,10 @@ let WindowManagerServer = (() => {
         }
         #sendToClient(client, arrayBuffer) {
             if (arrayBuffer.byteLength == 0) {
-                _console$7.log("nothing to send to client");
+                _console$6.log("nothing to send to client");
                 return false;
             }
-            _console$7.log("sendToClient", client, arrayBuffer);
+            _console$6.log("sendToClient", client, arrayBuffer);
             const { messageChannel, iframe, didSendMessagePort } = client;
             if (messageChannel && didSendMessagePort) {
                 messageChannel.port1.postMessage(arrayBuffer, {
@@ -39492,7 +39545,7 @@ let WindowManagerServer = (() => {
             if (event.source == window.parent) {
                 return;
             }
-            _console$7.log("onWindowMessage", event);
+            _console$6.log("onWindowMessage", event);
             const data = event.data[windowManagerMessageKey];
             if (!data) {
                 return;
@@ -39505,7 +39558,7 @@ let WindowManagerServer = (() => {
             if (!client) {
                 const iframe = this.#iframes.find((iframe) => iframe.contentWindow == event.source);
                 if (!iframe) {
-                    _console$7.error("no iframe found for event", event);
+                    _console$6.error("no iframe found for event", event);
                     return;
                 }
                 client = await this.#createClient(iframe);
@@ -39513,24 +39566,24 @@ let WindowManagerServer = (() => {
                     return;
                 }
             }
-            _console$7.log("onWindowMessage", client, data);
+            _console$6.log("onWindowMessage", client, data);
             const dataView = new DataView(data);
-            _console$7.log(`received ${dataView.byteLength} bytes via window`, dataView.buffer);
+            _console$6.log(`received ${dataView.byteLength} bytes via window`, dataView.buffer);
             this.#parseClientMessage(client, dataView);
         }
         async #waitForClientToLoad(client) {
-            _console$7.log("waitForClientToLoad", client);
+            _console$6.log("waitForClientToLoad", client);
             await this.#waitForiframeToLoad(client.iframe);
         }
         async #waitForiframeToLoad(iframe) {
-            _console$7.log("waitForiframeToLoad", iframe);
+            _console$6.log("waitForiframeToLoad", iframe);
             await new Promise((resolve) => {
                 if (iframe.contentDocument?.readyState === "complete") {
-                    _console$7.log("iframe complete");
+                    _console$6.log("iframe complete");
                     resolve();
                 }
                 else {
-                    _console$7.log("waiting for iframe to load...");
+                    _console$6.log("waiting for iframe to load...");
                     iframe.addEventListener("load", () => resolve(), { once: true });
                 }
             });
@@ -39547,7 +39600,7 @@ let WindowManagerServer = (() => {
             return client;
         }
         #destroyClient(client) {
-            _console$7.log("onClientNotConnected", client);
+            _console$6.log("onClientNotConnected", client);
             const { messageChannel } = client;
             if (messageChannel) {
                 messageChannel.port1.close();
@@ -39569,26 +39622,26 @@ let WindowManagerServer = (() => {
         #iframes = [];
         #onIframeAdded(iframe) {
             if (this.#iframes.includes(iframe)) {
-                _console$7.log("redundant iframe added", iframe);
+                _console$6.log("redundant iframe added", iframe);
                 return;
             }
-            _console$7.log("iframe added", iframe);
+            _console$6.log("iframe added", iframe);
             this.#iframes.push(iframe);
         }
         addIframe(iframe) {
-            _console$7.log("addIframe", iframe);
+            _console$6.log("addIframe", iframe);
             this.#onIframeAdded(iframe);
         }
         #onIframeRemoved(iframe) {
             if (!this.#iframes.includes(iframe)) {
                 return;
             }
-            _console$7.log("iframe removed", iframe);
+            _console$6.log("iframe removed", iframe);
             this.#iframes.splice(this.#iframes.indexOf(iframe));
             removeEventListeners(iframe, this.#boundIframeEventListeners);
             const client = this.#getClientByiFrame(iframe);
             if (!client) {
-                _console$7.error("no client found for iframe", iframe);
+                _console$6.error("no client found for iframe", iframe);
                 return;
             }
             this.#destroyClient(client);
@@ -39597,17 +39650,17 @@ let WindowManagerServer = (() => {
             load: this.#onIframeLoad.bind(this),
         };
         #onIframeLoad(event) {
-            _console$7.log("onIframeLoad", event);
+            _console$6.log("onIframeLoad", event);
             const iframe = event.currentTarget;
             const client = this.#getClientByiFrame(iframe);
             if (!client) {
                 return;
             }
-            _console$7.log("onIframeLoad client", client);
+            _console$6.log("onIframeLoad client", client);
             this.#destroyClient(client);
         }
         #createMessageChannel(client) {
-            _console$7.log("createMessageChannel", client);
+            _console$6.log("createMessageChannel", client);
             const messageChannel = new MessageChannel();
             addEventListeners(messageChannel.port1, this.#boundMessageChannelPortEventListeners);
             messageChannel.port1.start();
@@ -39621,16 +39674,16 @@ let WindowManagerServer = (() => {
             const port = event.currentTarget;
             const client = this.#getClientByMessagePort(port);
             if (!client) {
-                _console$7.error("no client found for port", port);
+                _console$6.error("no client found for port", port);
                 return;
             }
             const arrayBuffer = event.data;
             const dataView = new DataView(arrayBuffer);
-            _console$7.log(`received ${dataView.byteLength} bytes via port`, dataView.buffer, client);
+            _console$6.log(`received ${dataView.byteLength} bytes via port`, dataView.buffer, client);
             this.#parseClientMessage(client, dataView);
         }
         #parseClientMessage(client, dataView) {
-            _console$7.log("#parseClientMessage", client, dataView);
+            _console$6.log("#parseClientMessage", client, dataView);
             const clientContext = {
                 responseMessages: [],
                 client,
@@ -39640,11 +39693,11 @@ let WindowManagerServer = (() => {
             };
             parseMessage(dataView, WindowManagerMessageTypes, this.#onClientMessage.bind(this), clientContext, true);
             client.transfer = clientContext.transfer;
-            WindowServer$1.sendClientContext(clientContext);
+            WindowServer.sendClientContext(clientContext);
         }
         #onClientMessage(messageType, dataView, clientContext) {
             const { responseMessages, transfer, client, localBroadcastMessages, broadcastMessages, } = clientContext;
-            _console$7.log("onClientMessage", { messageType }, clientContext);
+            _console$6.log("onClientMessage", { messageType }, clientContext);
             switch (messageType) {
                 case "ping":
                     this.#createMessageChannel(client);
@@ -39654,7 +39707,7 @@ let WindowManagerServer = (() => {
                 case "pong":
                     break;
                 case "serverMessage":
-                    const _clientContext = WindowServer$1.parseClientMessage(client, dataView);
+                    const _clientContext = WindowServer.parseClientMessage(client, dataView);
                     if (_clientContext) {
                         if (_clientContext.responseMessages.length > 0) {
                             responseMessages.push(createWindowManagerMessage({
@@ -39677,7 +39730,7 @@ let WindowManagerServer = (() => {
                     }
                     break;
                 default:
-                    _console$7.error(`uncaught messageType "${messageType}"`);
+                    _console$6.error(`uncaught messageType "${messageType}"`);
                     break;
             }
         }
@@ -39685,9 +39738,9 @@ let WindowManagerServer = (() => {
     return _classThis;
 })();
 var WindowManagerServer_default = WindowManagerServer.shared;
-WindowServer$1._init();
+WindowServer._init();
 
-const _console$6 = createConsole("WindowManagerClient", { log: false });
+const _console$5 = createConsole("WindowManagerClient", { log: false });
 const WindowManagerClientConnectionStatuses = [
     "notConnected",
     "connecting",
@@ -39700,7 +39753,7 @@ const WindowManagerClientEventTypes = [
     "isConnected",
     "serverMessage",
 ];
-let WindowManagerClient = (() => {
+let WindowManagerClient$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -39751,7 +39804,7 @@ let WindowManagerClient = (() => {
             if (event.source != window.parent) {
                 return;
             }
-            _console$6.log("onWindowMessage", event);
+            _console$5.log("onWindowMessage", event);
             const arrayBuffer = event.data[windowManagerMessageKey];
             if (!arrayBuffer) {
                 return;
@@ -39760,9 +39813,9 @@ let WindowManagerClient = (() => {
             if (ports?.length > 0) {
                 this.#onMessagePort(ports[0]);
             }
-            _console$6.log("onWindowMessage", arrayBuffer, ports);
+            _console$5.log("onWindowMessage", arrayBuffer, ports);
             const dataView = new DataView(arrayBuffer);
-            _console$6.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
+            _console$5.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
             this.#parseWindowManagerMessage(dataView);
         }
         #port;
@@ -39775,7 +39828,7 @@ let WindowManagerClient = (() => {
                 this.#port.close();
             }
             this.#port = port;
-            _console$6.log("port", this.#port);
+            _console$5.log("port", this.#port);
             addEventListeners(this.#port, this.#boundMessageChannelPortEventListeners);
             this.#port.start();
         }
@@ -39783,22 +39836,22 @@ let WindowManagerClient = (() => {
             message: this.#onMessagePortMessage.bind(this),
         };
         #onMessagePortMessage(event) {
-            _console$6.log("onMessagePortMessage", event);
+            _console$5.log("onMessagePortMessage", event);
             const port = event.currentTarget;
             if (this.#port != port) {
-                _console$6.error("received message from wrong port");
+                _console$5.error("received message from wrong port");
                 return;
             }
             const arrayBuffer = event.data;
             const dataView = new DataView(arrayBuffer);
-            _console$6.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
+            _console$5.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
             this.#parseWindowManagerMessage(dataView);
         }
         #parseWindowManagerMessage(dataView) {
             parseMessage(dataView, WindowManagerMessageTypes, this.#onWindowManagerMessage.bind(this), null, true);
         }
         #onWindowManagerMessage(messageType, dataView) {
-            _console$6.log("#onWindowManagerMessage", { messageType }, dataView);
+            _console$5.log("#onWindowManagerMessage", { messageType }, dataView);
             switch (messageType) {
                 case "ping":
                     this.#pong();
@@ -39810,7 +39863,7 @@ let WindowManagerClient = (() => {
                     this.#dispatchEvent("serverMessage", { dataView });
                     break;
                 default:
-                    _console$6.error(`uncaught messageType "${messageType}"`);
+                    _console$5.error(`uncaught messageType "${messageType}"`);
                     break;
             }
         }
@@ -39819,8 +39872,8 @@ let WindowManagerClient = (() => {
             return this.#connectionStatus;
         }
         set connectionStatus(newConnectionStatus) {
-            _console$6.assertTypeWithError(newConnectionStatus, "string");
-            _console$6.log({ newConnectionStatus });
+            _console$5.assertTypeWithError(newConnectionStatus, "string");
+            _console$5.log({ newConnectionStatus });
             if (this.#connectionStatus == newConnectionStatus) {
                 return;
             }
@@ -39844,15 +39897,15 @@ let WindowManagerClient = (() => {
             return !this.isConnected;
         }
         #assertConnection() {
-            _console$6.assertWithError(this.isConnected, "notConnected");
+            _console$5.assertWithError(this.isConnected, "notConnected");
         }
         #assertDisconnection() {
-            _console$6.assertWithError(this.isDisconnected, "not disconnected");
+            _console$5.assertWithError(this.isDisconnected, "not disconnected");
         }
         connect() {
-            _console$6.log("connect");
+            _console$5.log("connect");
             if (this.#connectionStatus == "connecting") {
-                _console$6.log("already connecting");
+                _console$5.log("already connecting");
                 return;
             }
             this.connectionStatus = "connecting";
@@ -39860,7 +39913,7 @@ let WindowManagerClient = (() => {
             this.#connectPingTimer.start();
         }
         disconnect() {
-            _console$6.log("disconnect");
+            _console$5.log("disconnect");
             if (this.#connectionStatus == "connecting") {
                 this.#connectPingTimer.stop();
                 this.connectionStatus = "notConnected";
@@ -39873,13 +39926,13 @@ let WindowManagerClient = (() => {
         #maxNumberOfConnectPingAttempts = 3;
         #numberOfConnectPingAttempts = 0;
         #connectPing() {
-            _console$6.log("#connectPing");
+            _console$5.log("#connectPing");
             this.#numberOfConnectPingAttempts++;
             if (this.#numberOfConnectPingAttempts <= this.#maxNumberOfConnectPingAttempts) {
                 this.#ping();
             }
             else {
-                _console$6.log("pinged too many times - stopping");
+                _console$5.log("pinged too many times - stopping");
                 this.disconnect();
             }
         }
@@ -39893,7 +39946,7 @@ let WindowManagerClient = (() => {
             if (message != windowManagerPingMessage) {
                 this.#assertConnection();
             }
-            _console$6.log("sendMessage", message, { transfer });
+            _console$5.log("sendMessage", message, { transfer });
             if (this.#port) {
                 this.#port.postMessage(message, { transfer });
             }
@@ -39904,24 +39957,24 @@ let WindowManagerClient = (() => {
             }
         }
         sendMessage(...messages) {
-            _console$6.log("sendMessage", ...messages);
+            _console$5.log("sendMessage", ...messages);
             this.#sendMessage(createWindowManagerMessage(...messages));
         }
         #ping() {
-            _console$6.log("#ping");
+            _console$5.log("#ping");
             this.#sendMessage(windowManagerPingMessage);
         }
         #pong() {
-            _console$6.log("#pong");
+            _console$5.log("#pong");
             this.#sendMessage(windowManagerPongMessage);
         }
     });
     return _classThis;
 })();
-var WindowManagerClient$1 = WindowManagerClient.shared;
+var WindowManagerClient = WindowManagerClient$1.shared;
 
-const _console$5 = createConsole("WindowClient", { log: false });
-let WindowClient$1 = (() => {
+const _console$4 = createConsole("WindowClient", { log: false });
+let WindowClient = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -39941,7 +39994,7 @@ let WindowClient$1 = (() => {
         constructor() {
             super();
             this._connectionStatus = "connecting";
-            addEventListeners(WindowManagerClient$1, this.#boundWindowEventListeners);
+            addEventListeners(WindowManagerClient, this.#boundWindowEventListeners);
         }
         #boundWindowEventListeners = {
             connectionStatus: this.#onWindowManagerClientConnectionStatus.bind(this),
@@ -39949,7 +40002,7 @@ let WindowClient$1 = (() => {
         };
         #onWindowManagerClientConnectionStatus(event) {
             const { connectionStatus } = event.message;
-            _console$5.log("onWindowManagerClientConnectionStatus", { connectionStatus });
+            _console$4.log("onWindowManagerClientConnectionStatus", { connectionStatus });
             switch (connectionStatus) {
                 case "connected":
                     this._sendRequiredMessages();
@@ -39957,14 +40010,14 @@ let WindowClient$1 = (() => {
             }
         }
         #onWindowManagerClientServerMessage(event) {
-            _console$5.log("onWindowManagerClientServerMessage", event.message.dataView);
+            _console$4.log("onWindowManagerClientServerMessage", event.message.dataView);
             this.parseMessage(event.message.dataView);
         }
         get isConnected() {
-            return WindowManagerClient$1.isConnected;
+            return WindowManagerClient.isConnected;
         }
         get isDisconnected() {
-            return WindowManagerClient$1.isDisconnected;
+            return WindowManagerClient.isDisconnected;
         }
         connect() {
             this.#onConnectionCommand();
@@ -39982,8 +40035,8 @@ let WindowClient$1 = (() => {
             throw new Error("WindowClient connection is automatic");
         }
         sendToServer(...messages) {
-            _console$5.log("sendToServer", messages);
-            WindowManagerClient$1.sendMessage({
+            _console$4.log("sendToServer", messages);
+            WindowManagerClient.sendMessage({
                 type: "serverMessage",
                 data: createServerMessage(...messages),
             });
@@ -39994,9 +40047,9 @@ let WindowClient$1 = (() => {
     };
     return WindowClient = _classThis;
 })();
-var WindowClient_default = WindowClient$1.shared;
+var WindowClient_default = WindowClient.shared;
 
-const _console$4 = createConsole("DevicePairPressureSensorDataManager", {
+const _console$3 = createConsole("DevicePairPressureSensorDataManager", {
     log: false,
 });
 class DevicePairPressureSensorDataManager {
@@ -40014,14 +40067,14 @@ class DevicePairPressureSensorDataManager {
     onDevicePressureData(event) {
         const { pressure, timestamp } = event.message;
         const { side } = event.target;
-        _console$4.log({ pressure, side });
+        _console$3.log({ pressure, side });
         this.#rawPressure[side] = pressure;
         this.#pressureTimestamps[side] = timestamp;
         if (this.#hasAllPressureData) {
             return this.#updatePressureData();
         }
         else {
-            _console$4.log("doesn't have all pressure data yet...");
+            _console$3.log("doesn't have all pressure data yet...");
         }
     }
     get #hasAllPressureData() {
@@ -40085,12 +40138,12 @@ class DevicePairPressureSensorDataManager {
             pressureData.normalizedCenter =
                 this.#centerOfPressureHelper.updateAndGetNormalization(pressureData.center);
         }
-        _console$4.log({ devicePairPressureData: pressureData });
+        _console$3.log({ devicePairPressureData: pressureData });
         return pressureData;
     }
 }
 
-const _console$3 = createConsole("DevicePairSensorDataManager", { log: false });
+const _console$2 = createConsole("DevicePairSensorDataManager", { log: false });
 const DevicePairSensorTypes = ["pressure", "sensorData"];
 const DevicePairSensorDataEventTypes = DevicePairSensorTypes;
 class DevicePairSensorDataManager {
@@ -40105,7 +40158,7 @@ class DevicePairSensorDataManager {
     }
     onDeviceSensorData(event) {
         const { timestamp, sensorType } = event.message;
-        _console$3.log({ sensorType, timestamp, event });
+        _console$2.log({ sensorType, timestamp, event });
         if (!this.#timestamps[sensorType]) {
             this.#timestamps[sensorType] = {};
         }
@@ -40116,7 +40169,7 @@ class DevicePairSensorDataManager {
                 value = this.pressureSensorDataManager.onDevicePressureData(event);
                 break;
             default:
-                _console$3.log(`uncaught sensorType "${sensorType}"`);
+                _console$2.log(`uncaught sensorType "${sensorType}"`);
                 break;
         }
         if (value) {
@@ -40133,12 +40186,12 @@ class DevicePairSensorDataManager {
             });
         }
         else {
-            _console$3.log("no value received");
+            _console$2.log("no value received");
         }
     }
 }
 
-const _console$2 = createConsole("DevicePair", { log: false });
+const _console$1 = createConsole("DevicePair", { log: false });
 function getDevicePairDeviceEventTypes(deviceEventType) {
     return ["device", ...Sides].map((prefix) => `${prefix}${capitalizeFirstCharacter(deviceEventType)}`);
 }
@@ -40203,7 +40256,7 @@ class DevicePair {
         return this.isPartiallyConnected && !this.isConnected;
     }
     #assertIsConnected() {
-        _console$2.assertWithError(this.isConnected, "devicePair must be connected");
+        _console$1.assertWithError(this.isConnected, "devicePair must be connected");
     }
     #isDeviceCorrectType(device) {
         switch (this.type) {
@@ -40215,13 +40268,13 @@ class DevicePair {
     }
     assignDevice(device) {
         if (!this.#isDeviceCorrectType(device)) {
-            _console$2.log(`device is incorrect type ${device.type} for ${this.type} devicePair`);
+            _console$1.log(`device is incorrect type ${device.type} for ${this.type} devicePair`);
             return;
         }
         const side = device.side;
         const currentDevice = this[side];
         if (device == currentDevice) {
-            _console$2.log("device already assigned");
+            _console$1.log("device already assigned");
             return;
         }
         if (currentDevice) {
@@ -40236,7 +40289,7 @@ class DevicePair {
                 this.#right = device;
                 break;
         }
-        _console$2.log(`assigned ${side} ${this.type} device`, device);
+        _console$1.log(`assigned ${side} ${this.type} device`, device);
         this.resetPressureRange();
         this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
         this.#dispatchEvent("deviceIsConnected", {
@@ -40257,7 +40310,7 @@ class DevicePair {
             if (this[side] != device) {
                 return false;
             }
-            _console$2.log(`removing ${side} ${this.type} device`, device);
+            _console$1.log(`removing ${side} ${this.type} device`, device);
             removeEventListeners(device, this.#boundDeviceEventListeners);
             switch (side) {
                 case "left":
@@ -40357,7 +40410,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager$1.addEventListener("deviceConnected", (event) => {
+        DeviceManager.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -40425,10 +40478,10 @@ const ConnectionManagers = [
 ];
 
 const Servers = [
-    WindowServer,
+    WindowServer$1,
 ];
 
-const _console$1 = createConsole("WebSocketClient", { log: false });
+const _console = createConsole("WebSocketClient", { log: false });
 class WebSocketClient extends BaseClient {
     static type = "webSocket";
     type = WebSocketClient.type;
@@ -40438,16 +40491,16 @@ class WebSocketClient extends BaseClient {
     }
     set webSocket(newWebSocket) {
         if (this.#webSocket == newWebSocket) {
-            _console$1.log("redundant webSocket assignment");
+            _console.log("redundant webSocket assignment");
             return;
         }
-        _console$1.log("assigning webSocket", newWebSocket);
+        _console.log("assigning webSocket", newWebSocket);
         if (this.#webSocket) {
             removeEventListeners(this.#webSocket, this.#boundWebSocketEventListeners);
         }
         addEventListeners(newWebSocket, this.#boundWebSocketEventListeners);
         this.#webSocket = newWebSocket;
-        _console$1.log("assigned webSocket");
+        _console.log("assigned webSocket");
     }
     get #readyState() {
         return this.webSocket?.readyState;
@@ -40460,7 +40513,7 @@ class WebSocketClient extends BaseClient {
     }
     url;
     connect(url = `${location.protocol.includes("https") ? "wss" : "ws"}://${location.host}`) {
-        _console$1.log("connect", { url });
+        _console.log("connect", { url });
         if (this.webSocket) {
             this.assertDisconnection();
         }
@@ -40468,7 +40521,7 @@ class WebSocketClient extends BaseClient {
         this.webSocket = new WebSocket(url);
     }
     disconnect() {
-        _console$1.log("disconnect", { connectionStatus: this.connectionStatus });
+        _console.log("disconnect", { connectionStatus: this.connectionStatus });
         switch (this.connectionStatus) {
             case "connecting":
             case "connected":
@@ -40498,7 +40551,7 @@ class WebSocketClient extends BaseClient {
         this.connect(this.webSocket.url);
     }
     toggleConnection(url) {
-        _console$1.log("toggleConnection", url, {
+        _console.log("toggleConnection", url, {
             connectionStatus: this.connectionStatus,
         });
         if (this.isConnected || this.connectionStatus == "connecting") {
@@ -40517,7 +40570,7 @@ class WebSocketClient extends BaseClient {
         this.#pingTimer.restart();
     }
     sendToServer(...messages) {
-        _console$1.log("sendToServer", messages);
+        _console.log("sendToServer", messages);
         this.#sendMessage(createWebSocketMessage$1({
             type: "serverMessage",
             data: createServerMessage(...messages),
@@ -40530,20 +40583,20 @@ class WebSocketClient extends BaseClient {
         error: this.#onWebSocketError.bind(this),
     };
     #onWebSocketOpen(event) {
-        _console$1.log("webSocket.open", event);
+        _console.log("webSocket.open", event);
         this.#pingTimer.start();
         this.url = new URL(this.webSocket.url);
         this._sendRequiredMessages();
     }
     async #onWebSocketMessage(event) {
-        _console$1.log("webSocket.message", event);
+        _console.log("webSocket.message", event);
         const arrayBuffer = await event.data.arrayBuffer();
         const dataView = new DataView(arrayBuffer);
         this.#parseWebSocketMessage(dataView);
     }
     #reconnectTimeout;
     #clearReconnectTimeout() {
-        _console$1.log("#clearReconnectTimeout");
+        _console.log("#clearReconnectTimeout");
         if (this.#reconnectTimeout != undefined) {
             clearTimeout(this.#reconnectTimeout);
             this.#reconnectTimeout = undefined;
@@ -40551,15 +40604,15 @@ class WebSocketClient extends BaseClient {
         this._isWaitingToReattemptConnection = false;
     }
     #onWebSocketClose(event) {
-        _console$1.log("webSocket.close", event);
+        _console.log("webSocket.close", event);
         this.#onWebSocketClosed(event);
     }
     #onWebSocketError(event) {
-        _console$1.error("webSocket.error", event);
+        _console.error("webSocket.error", event);
         this.#onWebSocketClosed(event);
     }
     #onWebSocketClosed(event) {
-        _console$1.log("onWebSocketClosed", event, {
+        _console.log("onWebSocketClosed", event, {
             connectionStatus: this.connectionStatus,
         });
         if (this._connectionStatus == "notConnected") {
@@ -40592,7 +40645,7 @@ class WebSocketClient extends BaseClient {
                 this.parseMessage(dataView);
                 break;
             default:
-                _console$1.error(`uncaught messageType "${messageType}"`);
+                _console.error(`uncaught messageType "${messageType}"`);
                 break;
         }
     }
@@ -40606,7 +40659,7 @@ class WebSocketClient extends BaseClient {
 }
 
 const Clients = [
-    WindowClient$1,
+    WindowClient,
     WebSocketClient,
 ];
 
@@ -40619,5 +40672,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager$1 as DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, PubSubManager$1 as PubSubManager, RangeHelper, RangeHelper2, ScannerManager_default as ScannerManager, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient$1 as WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer$1 as WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, scanner, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
+export { CameraCommands, CameraConfigurationTypes, CenterOfPressureModel, ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBezierCurveTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayCanvasHelperManager, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, Glyph, LedTypes, LedValueTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneBitDepths, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneSampleRates, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, PubSubManager, RangeHelper, RangeHelper2, ScannerManager_default as ScannerManager, SensorRateStep, SensorTypes, ServerManager_default as ServerManager, Servers, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, Timer, TxRxMessageTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, WindowClient_default as WindowClient, WindowManagerClient, WindowManagerServer_default as WindowManagerServer, WindowServer, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, concatenateArrayBuffers, displayCurveTypeToNumberOfControlPoints, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getSvgStringFromDataUrl, getTensorFlowModel, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, intersectWireframes, isTensorFlowAvailable, isTensorFlowModelAvailable, isValidSVG, isWireframePolygon, listTensorflowModels, maxDisplayScale, mergeWireframes, parseFont, pixelDepthToNumberOfColors, projectColor, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, scanner, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, svgToDisplayContextCommands, svgToSprite, svgToSpriteSheet, wait, wildcardEventType };
 //# sourceMappingURL=brilliantwear.module.js.map

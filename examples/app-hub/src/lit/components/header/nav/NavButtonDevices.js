@@ -28,8 +28,7 @@ class NavButtonDevices extends LitElement {
       href="/devices"
       icon-name=${name}
       icon-family=${family}
-      variant=${tabVariants["devices"]}
-      saturation=${this.isBluetoothEnabled ? nothing : 0.2}
+      variant=${this.isBluetoothEnabled ? tabVariants["devices"] : "neutral"}
     >
       Devices
     </bw-header-button>`;

@@ -92,7 +92,16 @@ class DevicesTab extends SignalWatcher(LitElement) {
       (event) => {
         this.requestUpdate();
       },
-      { ...options, immediate: true },
+      { ...options },
+    );
+
+    BW.ScannerManager.addEventListener(
+      "discoveredDevices",
+      (event) => {
+        console.log("discoveredDevices");
+        this.requestUpdate();
+      },
+      { ...options },
     );
 
     this.addEventListener(
