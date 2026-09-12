@@ -78,6 +78,14 @@ declare class DiscoveredDevice {
         immediate?: boolean;
         signal?: AbortSignal;
     }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<DiscoveredDevice, "expired" | "rssi" | "name" | "deviceType" | "ipAddress" | "isWifiSecure" | "device" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", DiscoveredDeviceEventMessages, T>>;
+    toJSON(): {
+        bluetoothId: string;
+        name: string | undefined;
+        deviceType: "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic" | undefined;
+        rssi: number | undefined;
+        ipAddress: string | undefined;
+        isWifiSecure: boolean | undefined;
+    };
 }
 export type DiscoveredDevicesMap = {
     [bluetoothId: string]: DiscoveredDevice;

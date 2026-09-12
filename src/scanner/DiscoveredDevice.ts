@@ -8,13 +8,12 @@ import { ScannerLike } from "./Scanner.ts";
 import {
   ConnectionEventTypes,
   ConnectionStatus,
-  ConnectionStatusEventMessages,
   ConnectionType,
 } from "../connection/BaseConnectionManager.ts";
 import ClientConnectionManager from "../connection/ClientConnectionManager.ts";
 import { addEventListeners } from "../utils/EventUtils.ts";
 
-const _console = createConsole("DiscoveredDevice", { log: true });
+const _console = createConsole("DiscoveredDevice", { log: false });
 
 export const DiscoveredDeviceEventTypes = [
   "expired",
@@ -199,8 +198,6 @@ class DiscoveredDevice {
     this.scanner = scanner;
     this.#device = device;
     this.update(metadata);
-    _console.log("created discoveredDevice", this);
-    // FILL - add to DiscoveredDeviceManager
   }
 
   async connect(connectionType?: ConnectionType) {
@@ -251,6 +248,19 @@ class DiscoveredDevice {
   }
   get waitForEvent() {
     return this.#eventDispatcher.waitForEvent;
+  }
+
+  toJSON() {
+    const { bluetoothId, name, deviceType, rssi, ipAddress, isWifiSecure } =
+      this;
+    return {
+      bluetoothId,
+      name,
+      deviceType,
+      rssi,
+      ipAddress,
+      isWifiSecure,
+    };
   }
 }
 
