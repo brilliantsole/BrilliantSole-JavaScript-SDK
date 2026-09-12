@@ -19500,10 +19500,10 @@ class Device {
         _console$k.assertWithError(this.CanConnect, `can't connect to any device - must connect to discovered device`);
         const device = new _a$3();
         const abortController = new AbortController();
-        const deviceConnectedEventPromise = DeviceManager$1.waitForEvent("deviceConnected", {
+        const deviceConnectedEventPromise = DeviceManager.waitForEvent("deviceConnected", {
             signal: abortController.signal,
         });
-        const getNumberOfConnectingDevices = () => DeviceManager$1.availableDevices.filter((device) => device.connectionStatus == "connecting").length;
+        const getNumberOfConnectingDevices = () => DeviceManager.availableDevices.filter((device) => device.connectionStatus == "connecting").length;
         const numberOfConnectingDevices = getNumberOfConnectingDevices();
         const isConnected = await device.connect({
             type: "webBluetooth",
@@ -20890,6 +20890,7 @@ const DeviceManagerDeviceEventTypes = DeviceEventTypes.flatMap((eventType) => ge
 const wildcardDeviceEventType = "device*";
 const BaseDeviceManagerEventTypes = [
     "availableDevice",
+    "unavailableDevice",
     "availableDevices",
     "connectedDevices",
     wildcardDeviceEventType,
@@ -20898,7 +20899,7 @@ const DeviceManagerEventTypes = [
     ...DeviceManagerDeviceEventTypes,
     ...BaseDeviceManagerEventTypes,
 ];
-let DeviceManager = (() => {
+let DeviceManager$1 = (() => {
     let _classDecorators = [Singleton];
     let _classDescriptor;
     let _classExtraInitializers = [];
@@ -20939,9 +20940,7 @@ let DeviceManager = (() => {
             if (connectionStatus == "notConnected" &&
                 !device.canReconnect &&
                 this.#availableDevices.includes(device)) {
-                const deviceIndex = this.#availableDevices.indexOf(device);
-                this.#availableDevices.splice(deviceIndex, 1);
-                this.#dispatchAvailableDevices();
+                this.#removeAvailableDevice(device);
             }
         }
         #connectedDevices = [];
@@ -21090,7 +21089,7 @@ let DeviceManager = (() => {
                     return bluetoothDeviceAdvertisementEvents.has(bluetoothDevice);
                 });
             }
-            const _availableDevices = this.availableDevices.slice();
+            let didUpdateAvailableDevices = false;
             bluetoothDevices.forEach((bluetoothDevice) => {
                 if (!bluetoothDevice.gatt) {
                     return;
@@ -21115,11 +21114,13 @@ let DeviceManager = (() => {
                             existingConnectedDevice,
                         });
                         this.availableDevices[this.#availableDevices.indexOf(existingAvailableDevice)] = existingConnectedDevice;
+                        didUpdateAvailableDevices = true;
                     }
                     return;
                 }
                 if (existingConnectedDevice) {
-                    this.#pushAvailableDevice(existingConnectedDevice);
+                    this.#pushAvailableDevice(existingConnectedDevice, false);
+                    didUpdateAvailableDevices = true;
                     return;
                 }
                 const device = new Device();
@@ -21130,9 +21131,10 @@ let DeviceManager = (() => {
                 }
                 device._informationManager.updateType(deviceInformation.type);
                 device.connectionManager = connectionManager;
-                this.#pushAvailableDevice(device);
+                this.#pushAvailableDevice(device, false);
+                didUpdateAvailableDevices = true;
             });
-            if (_availableDevices.length != this.availableDevices.length) {
+            if (didUpdateAvailableDevices) {
                 this.#dispatchAvailableDevices();
             }
             return this.availableDevices;
@@ -21191,9 +21193,7 @@ let DeviceManager = (() => {
             }
             else {
                 if (this.#connectedDevices.includes(device)) {
-                    _console$j.log("removing device", device);
-                    this.#connectedDevices.splice(this.#connectedDevices.indexOf(device), 1);
-                    this.#dispatchConnectedDevices();
+                    this.#removeConnectedDevice(device);
                 }
                 else {
                     _console$j.log("device already not included");
@@ -21206,10 +21206,11 @@ let DeviceManager = (() => {
                 const existingAvailableDevice = this.availableDevices.find((_device) => _device.bluetoothId == device.bluetoothId);
                 _console$j.log({ existingAvailableDevice });
                 if (existingAvailableDevice) {
-                    this.availableDevices[this.availableDevices.indexOf(existingAvailableDevice)] = device;
+                    this.#availableDevices[this.#availableDevices.indexOf(existingAvailableDevice)] = device;
+                    this.#dispatchEvent("availableDevice", { device });
                 }
                 else {
-                    this.#pushAvailableDevice(device);
+                    this.#pushAvailableDevice(device, false);
                 }
                 this.#dispatchAvailableDevices();
             }
@@ -21233,21 +21234,57 @@ let DeviceManager = (() => {
             if (!device.isConnected &&
                 !device.isAvailable &&
                 this.#availableDevices.includes(device)) {
-                _console$j.log("removing device from availableDevices...");
-                this.#availableDevices.splice(this.#availableDevices.indexOf(device), 1);
+                this.#removeAvailableDevice(device);
+            }
+        }
+        #pushAvailableDevice(device, dispatchAvailableDevices = true) {
+            if (this.#availableDevices.includes(device)) {
+                return;
+            }
+            _console$j.log("#pushAvailableDevice", device);
+            this.#availableDevices.push(device);
+            this.#dispatchEvent("availableDevice", { device });
+            if (dispatchAvailableDevices) {
                 this.#dispatchAvailableDevices();
             }
         }
-        #pushAvailableDevice(availableDevice) {
-            _console$j.log({ availableDevice });
-            this.availableDevices.push(availableDevice);
-            this.#dispatchEvent("availableDevice", { availableDevice });
+        #removeAvailableDevice(device, dispatchAvailableDevices = true) {
+            if (!this.#availableDevices.includes(device)) {
+                return;
+            }
+            _console$j.log("#removeAvailableDevice", device);
+            const deviceIndex = this.#availableDevices.indexOf(device);
+            this.#availableDevices.splice(deviceIndex, 1);
+            this.#dispatchEvent("unavailableDevice", { device });
+            if (dispatchAvailableDevices) {
+                this.#dispatchAvailableDevices();
+            }
         }
         #dispatchAvailableDevices() {
             _console$j.log({ availableDevices: this.availableDevices });
             this.#dispatchEvent("availableDevices", {
                 availableDevices: this.availableDevices,
             });
+        }
+        #pushConnectedDevice(device, dispatchConnectedDevices = true) {
+            if (this.#connectedDevices.includes(device)) {
+                return;
+            }
+            _console$j.log("#pushConnectedDevice", device);
+            this.#connectedDevices.push(device);
+            if (dispatchConnectedDevices) {
+                this.#dispatchConnectedDevices();
+            }
+        }
+        #removeConnectedDevice(device, dispatchConnectedDevices = true) {
+            if (!this.#connectedDevices.includes(device)) {
+                return;
+            }
+            _console$j.log("#removeConnectedDevice", device);
+            this.#connectedDevices.splice(this.#connectedDevices.indexOf(device), 1);
+            if (dispatchConnectedDevices) {
+                this.#dispatchConnectedDevices();
+            }
         }
         #dispatchConnectedDevices() {
             _console$j.log({ connectedDevices: this.connectedDevices });
@@ -21258,7 +21295,7 @@ let DeviceManager = (() => {
     });
     return _classThis;
 })();
-var DeviceManager$1 = DeviceManager.shared;
+var DeviceManager = DeviceManager$1.shared;
 
 var _a$2;
 const _console$i = createConsole("BaseScanner", { log: false });
@@ -21904,7 +21941,7 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$g.log("connecting to discoveredDevice...", deviceId);
-        let device = DeviceManager$1.availableDevices
+        let device = DeviceManager.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -21935,7 +21972,7 @@ class NobleScanner extends BaseScanner {
     async disconnectFromDevice(deviceId) {
         super.disconnectFromDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
-        let device = DeviceManager$1.availableDevices
+        let device = DeviceManager.availableDevices
             .filter((device) => device.connectionType == "noble")
             .find((device) => device.bluetoothId == deviceId);
         device = device ?? this.#devices[deviceId];
@@ -22656,7 +22693,7 @@ class BaseClient {
             const device = this.#getOrCreateDevice(bluetoothId);
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
-            DeviceManager$1._checkDeviceAvailability(device);
+            DeviceManager._checkDeviceAvailability(device);
             return device;
         });
     }
@@ -23360,7 +23397,7 @@ class BaseServer {
     constructor() {
         _console$8.assertWithError(scanner$1, "no scanner defined");
         addEventListeners(scanner$1, this.#boundScannerListeners);
-        addEventListeners(DeviceManager$1, this.#boundDeviceManagerListeners);
+        addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
         addEventListeners(DisplayCanvasHelperManager$1, this.#boundDisplayCanvasHelperManagerEventListeners);
         _a.OnServer(this);
     }
@@ -23440,7 +23477,7 @@ class BaseServer {
         _console$8.log(`currently have ${this.clients.length} clients`);
         if (this.clients.length == 0 &&
             this.clearSensorConfigurationsWhenNoClients) {
-            DeviceManager$1.connectedDevices.forEach((device) => {
+            DeviceManager.connectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -23520,7 +23557,7 @@ class BaseServer {
     get #discoveredDevicesMessage() {
         const serverMessages = scanner$1.discoveredDevicesArray
             .filter((discoveredDevice) => {
-            const existingConnectedDevice = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+            const existingConnectedDevice = DeviceManager.connectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
             return !existingConnectedDevice;
         })
             .map((discoveredDevice) => {
@@ -23532,7 +23569,7 @@ class BaseServer {
         return createServerMessage({
             type: "connectedDevices",
             data: JSON.stringify({
-                connectedDevices: DeviceManager$1.connectedDevices.map((device) => device.bluetoothId),
+                connectedDevices: DeviceManager.connectedDevices.map((device) => device.bluetoothId),
             }),
         });
     }
@@ -24098,7 +24135,7 @@ class BaseServer {
                     else {
                         _console$8.log(`connecting to device with id ${deviceId}...`);
                     }
-                    const device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     if (device) {
                         device.connect({ type: connectionType, reconnect: true });
                     }
@@ -24113,7 +24150,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    let device = DeviceManager$1.availableDevices.find((device) => device.bluetoothId == deviceId);
+                    let device = DeviceManager.availableDevices.find((device) => device.bluetoothId == deviceId);
                     device = device ?? scanner$1.devices[deviceId];
                     if (!device) {
                         _console$8.error(`no device found with id ${deviceId}`);
@@ -24140,7 +24177,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$8.error(`no device found with id ${deviceId}`);
                         break;
@@ -24164,7 +24201,7 @@ class BaseServer {
                     if (!deviceId) {
                         break;
                     }
-                    const device = DeviceManager$1.connectedDevices.find((device) => device.bluetoothId == deviceId);
+                    const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console$8.error(`no device found with id ${deviceId}`);
                         break;
@@ -25471,7 +25508,7 @@ class DevicePair {
         return this.#gloves;
     }
     static {
-        DeviceManager$1.addEventListener("deviceConnected", (event) => {
+        DeviceManager.addEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
                 this.#insoles.assignDevice(device);
@@ -25924,5 +25961,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { ClientManager$1 as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, PubSubManager$1 as PubSubManager, RangeHelper, RangeHelper2, ScannerManager_default as ScannerManager, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, scanner$1 as scanner, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
+export { ClientManager$1 as ClientManager, Clients, ConnectionEventTypes, ConnectionManagers, ConnectionMessageTypes, Device, DeviceEventTypes, DeviceManager, DevicePair, DevicePairTypes, DisplayContextCommandTypes, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, LedTypes, LedValueTypes, PubSubManager$1 as PubSubManager, RangeHelper, RangeHelper2, ScannerManager_default as ScannerManager, ServerManager_default as ServerManager, Servers, ThrottleUtils, TxRxMessageTypes, UDPServer, WebSocketServer, englishRegex, fontToSpriteSheet, getFontMaxHeight, getFontMetrics, getFontUnicodeRange, getMaxSpriteSheetSize, getTensorFlowModel, hexToRGB, isTensorFlowAvailable, isTensorFlowModelAvailable, listTensorflowModels, parseFont, projectColor, rgbToHex, scanner$1 as scanner, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, simplifyCurves, simplifyPoints, simplifyPointsAsCubicCurveControlPoints, stringToSprites, wildcardEventType };
 //# sourceMappingURL=brilliantwear.node.module.js.map

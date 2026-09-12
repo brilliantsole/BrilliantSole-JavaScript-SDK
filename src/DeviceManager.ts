@@ -66,6 +66,7 @@ export type WildcardDeviceEventType = typeof wildcardDeviceEventType;
 
 const BaseDeviceManagerEventTypes = [
   "availableDevice",
+  "unavailableDevice",
   "availableDevices",
   "connectedDevices",
   wildcardDeviceEventType,
@@ -83,7 +84,8 @@ export type WildcardDeviceEventMessage<BaseMessage> = {
 }[DeviceEventType];
 
 interface BaseDeviceManagerEventMessages {
-  availableDevice: { availableDevice: Device };
+  availableDevice: { device: Device };
+  unavailableDevice: { device: Device };
   availableDevices: { availableDevices: Device[] };
   connectedDevices: { connectedDevices: Device[] };
   [wildcardDeviceEventType]: WildcardDeviceEventMessage<BaseDeviceManagerDeviceEventMessage>;
@@ -158,9 +160,7 @@ class DeviceManager {
       !device.canReconnect &&
       this.#availableDevices.includes(device)
     ) {
-      const deviceIndex = this.#availableDevices.indexOf(device);
-      this.#availableDevices.splice(deviceIndex, 1);
-      this.#dispatchAvailableDevices();
+      this.#removeAvailableDevice(device);
     }
   }
 
@@ -361,7 +361,7 @@ class DeviceManager {
       });
     }
 
-    const _availableDevices = this.availableDevices.slice();
+    let didUpdateAvailableDevices = false;
 
     bluetoothDevices.forEach((bluetoothDevice) => {
       if (!bluetoothDevice.gatt) {
@@ -397,12 +397,14 @@ class DeviceManager {
           this.availableDevices[
             this.#availableDevices.indexOf(existingAvailableDevice)
           ] = existingConnectedDevice;
+          didUpdateAvailableDevices = true;
         }
         return;
       }
 
       if (existingConnectedDevice) {
-        this.#pushAvailableDevice(existingConnectedDevice);
+        this.#pushAvailableDevice(existingConnectedDevice, false);
+        didUpdateAvailableDevices = true;
         return;
       }
 
@@ -416,9 +418,10 @@ class DeviceManager {
       // @ts-expect-error
       device._informationManager.updateType(deviceInformation.type);
       device.connectionManager = connectionManager;
-      this.#pushAvailableDevice(device);
+      this.#pushAvailableDevice(device, false);
+      didUpdateAvailableDevices = true;
     });
-    if (_availableDevices.length != this.availableDevices.length) {
+    if (didUpdateAvailableDevices) {
       this.#dispatchAvailableDevices();
     }
     return this.availableDevices;
@@ -489,12 +492,7 @@ class DeviceManager {
       }
     } else {
       if (this.#connectedDevices.includes(device)) {
-        _console.log("removing device", device);
-        this.#connectedDevices.splice(
-          this.#connectedDevices.indexOf(device),
-          1,
-        );
-        this.#dispatchConnectedDevices();
+        this.#removeConnectedDevice(device);
       } else {
         _console.log("device already not included");
       }
@@ -508,11 +506,12 @@ class DeviceManager {
       );
       _console.log({ existingAvailableDevice });
       if (existingAvailableDevice) {
-        this.availableDevices[
-          this.availableDevices.indexOf(existingAvailableDevice)
+        this.#availableDevices[
+          this.#availableDevices.indexOf(existingAvailableDevice)
         ] = device;
+        this.#dispatchEvent("availableDevice", { device });
       } else {
-        this.#pushAvailableDevice(device);
+        this.#pushAvailableDevice(device, false);
       }
       this.#dispatchAvailableDevices();
     }
@@ -543,22 +542,59 @@ class DeviceManager {
       !device.isAvailable &&
       this.#availableDevices.includes(device)
     ) {
-      _console.log("removing device from availableDevices...");
-      this.#availableDevices.splice(this.#availableDevices.indexOf(device), 1);
-      this.#dispatchAvailableDevices();
+      this.#removeAvailableDevice(device);
     }
   }
 
-  #pushAvailableDevice(availableDevice: Device) {
-    _console.log({ availableDevice });
-    this.availableDevices.push(availableDevice);
-    this.#dispatchEvent("availableDevice", { availableDevice });
+  #pushAvailableDevice(device: Device, dispatchAvailableDevices = true) {
+    if (this.#availableDevices.includes(device)) {
+      return;
+    }
+    _console.log("#pushAvailableDevice", device);
+    this.#availableDevices.push(device);
+    this.#dispatchEvent("availableDevice", { device });
+    if (dispatchAvailableDevices) {
+      this.#dispatchAvailableDevices();
+    }
+  }
+  #removeAvailableDevice(device: Device, dispatchAvailableDevices = true) {
+    if (!this.#availableDevices.includes(device)) {
+      return;
+    }
+    _console.log("#removeAvailableDevice", device);
+    const deviceIndex = this.#availableDevices.indexOf(device);
+    this.#availableDevices.splice(deviceIndex, 1);
+    this.#dispatchEvent("unavailableDevice", { device });
+    if (dispatchAvailableDevices) {
+      this.#dispatchAvailableDevices();
+    }
   }
   #dispatchAvailableDevices() {
     _console.log({ availableDevices: this.availableDevices });
     this.#dispatchEvent("availableDevices", {
       availableDevices: this.availableDevices,
     });
+  }
+
+  #pushConnectedDevice(device: Device, dispatchConnectedDevices = true) {
+    if (this.#connectedDevices.includes(device)) {
+      return;
+    }
+    _console.log("#pushConnectedDevice", device);
+    this.#connectedDevices.push(device);
+    if (dispatchConnectedDevices) {
+      this.#dispatchConnectedDevices();
+    }
+  }
+  #removeConnectedDevice(device: Device, dispatchConnectedDevices = true) {
+    if (!this.#connectedDevices.includes(device)) {
+      return;
+    }
+    _console.log("#removeConnectedDevice", device);
+    this.#connectedDevices.splice(this.#connectedDevices.indexOf(device), 1);
+    if (dispatchConnectedDevices) {
+      this.#dispatchConnectedDevices();
+    }
   }
   #dispatchConnectedDevices() {
     _console.log({ connectedDevices: this.connectedDevices });

@@ -110,7 +110,7 @@ const availableDeviceContainerTemplate = document.getElementById(
   "availableDeviceContainerTemplate",
 );
 BS.DeviceManager.addEventListener("availableDevice", (event) => {
-  const { availableDevice: device } = event.message;
+  const { device } = event.message;
   console.log("availableDevice", device);
 
   const availableDeviceContainer = availableDeviceContainerTemplate.content

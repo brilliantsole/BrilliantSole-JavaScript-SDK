@@ -11,17 +11,14 @@ const { signal } = litSignals;
 export const deviceBluetoothIdsSignal = signal([]);
 
 BW.DeviceManager.addEventListener("availableDevice", (event) => {
-  const { availableDevice } = event.message;
-  console.log("availableDevice", availableDevice);
+  const { device } = event.message;
+  console.log("availableDevice", device);
 
   const deviceBluetoothIds = deviceBluetoothIdsSignal.get();
-  if (deviceBluetoothIds.includes(availableDevice.bluetoothId)) {
+  if (deviceBluetoothIds.includes(device.bluetoothId)) {
     return;
   }
-  deviceBluetoothIdsSignal.set([
-    ...deviceBluetoothIds,
-    availableDevice.bluetoothId,
-  ]);
+  deviceBluetoothIdsSignal.set([...deviceBluetoothIds, device.bluetoothId]);
 });
 
 BW.ScannerManager.addEventListener("scannerDiscoveredDevice", (event) => {
