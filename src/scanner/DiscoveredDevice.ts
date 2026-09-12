@@ -203,7 +203,18 @@ class DiscoveredDevice {
     this.update(metadata);
   }
 
+  get isConnected() {
+    return this.device?.isConnected ?? false;
+  }
+  get connectionStatus() {
+    return this.device?.connectionStatus ?? "notConnected";
+  }
+
   async connect(connectionType?: ConnectionType) {
+    if (this.connectionStatus != "notConnected") {
+      return;
+    }
+
     const device = await this.scanner.connectToDevice(
       this.bluetoothId,
       // @ts-expect-error

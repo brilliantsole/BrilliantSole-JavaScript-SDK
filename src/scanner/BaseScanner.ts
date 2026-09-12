@@ -273,7 +273,10 @@ abstract class BaseScanner {
     const now = Date.now();
     entries.forEach(([id, discoveredDevice]) => {
       const timestamp = this.#discoveredDeviceTimestamps[id];
-      if (now - timestamp > this.#discoveredDeviceExpirationTimeout) {
+      if (
+        now - timestamp > this.#discoveredDeviceExpirationTimeout &&
+        !discoveredDevice.isConnected
+      ) {
         _console.log("discovered device timeout");
         delete this.#discoveredDevices[id];
         delete this.#discoveredDeviceTimestamps[id];

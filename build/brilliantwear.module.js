@@ -36160,7 +36160,16 @@ class DiscoveredDevice {
         this.#device = device;
         this.update(metadata);
     }
+    get isConnected() {
+        return this.device?.isConnected ?? false;
+    }
+    get connectionStatus() {
+        return this.device?.connectionStatus ?? "notConnected";
+    }
     async connect(connectionType) {
+        if (this.connectionStatus != "notConnected") {
+            return;
+        }
         const device = await this.scanner.connectToDevice(this.bluetoothId,
         connectionType);
         if (device) {
@@ -36405,7 +36414,8 @@ class BaseScanner {
         const now = Date.now();
         entries.forEach(([id, discoveredDevice]) => {
             const timestamp = this.#discoveredDeviceTimestamps[id];
-            if (now - timestamp > this.#discoveredDeviceExpirationTimeout) {
+            if (now - timestamp > this.#discoveredDeviceExpirationTimeout &&
+                !discoveredDevice.isConnected) {
                 _console$f.log("discovered device timeout");
                 delete this.#discoveredDevices[id];
                 delete this.#discoveredDeviceTimestamps[id];
@@ -37057,6 +37067,9 @@ class BaseClient {
         const discoveredDevice = this.#discoveredDevices[bluetoothId];
         if (!discoveredDevice) {
             _console$c.warn(`no discoveredDevice found with id "${bluetoothId}"`);
+            return;
+        }
+        if (discoveredDevice.isConnected) {
             return;
         }
         _console$c.log({ expiredDiscoveredDevice: discoveredDevice });

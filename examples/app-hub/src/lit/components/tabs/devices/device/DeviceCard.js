@@ -37,6 +37,17 @@ class DeviceCard extends LitElement {
     /** @type {AddEventListenerOptions} */
     const options = { signal: this._abortController.signal };
 
+    BW.ScannerManager.addEventListener(
+      "scannerDiscoveredDevice",
+      (event) => {
+        const { discoveredDevice } = event.message;
+        if (discoveredDevice.bluetoothId == this.bluetoothId) {
+          console.log("wowzers");
+        }
+      },
+      options,
+    );
+
     if (this.discoveredDevice) {
       this.discoveredDevice.addEventListener(
         "rssi",

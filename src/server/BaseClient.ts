@@ -547,6 +547,9 @@ abstract class BaseClient {
       _console.warn(`no discoveredDevice found with id "${bluetoothId}"`);
       return;
     }
+    if (discoveredDevice.isConnected) {
+      return;
+    }
     _console.log({ expiredDiscoveredDevice: discoveredDevice });
     delete this.#discoveredDevices[bluetoothId];
     discoveredDevice._expire();
