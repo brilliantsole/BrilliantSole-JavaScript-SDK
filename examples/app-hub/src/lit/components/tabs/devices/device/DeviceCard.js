@@ -19,29 +19,37 @@ class DeviceCard extends LitElement {
     bluetoothId: {},
   };
 
-  connectedCallback() {
-    super.connectedCallback();
-
-    this.device = this.getDevice();
-
-    this._abortController = new AbortController();
-    /** @type {AddEventListenerOptions} */
-    const options = { signal: this._abortController.signal };
-
-    // FILL
-  }
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    this._abortController.abort();
-  }
-
-  getDevice() {
+  _getDevice() {
     return BW.DeviceManager.availableDevices.find(
       (device) => device.bluetoothId == this.bluetoothId,
     );
   }
   get discoveredDevice() {
     return BW.ScannerManager.discoveredDevices[this.bluetoothId];
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+
+    this.device = this._getDevice();
+
+    this._abortController = new AbortController();
+    /** @type {AddEventListenerOptions} */
+    const options = { signal: this._abortController.signal };
+
+    if (this.discoveredDevice) {
+      this.discoveredDevice.addEventListener(
+        "rssi",
+        (event) => console.log(event.message.rssi),
+        options,
+      );
+    }
+
+    // FILL
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._abortController.abort();
   }
 
   render() {

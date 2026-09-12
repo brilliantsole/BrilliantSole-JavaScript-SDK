@@ -112,8 +112,8 @@ import { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, Con
 export { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes, };
 import { ConnectionManager, ConnectionManagers } from "./connection/ConnectionManager.ts";
 export { ConnectionManager, ConnectionManagers };
-import { DiscoveredDevice } from "./scanner/BaseScanner.ts";
-export { DiscoveredDevice };
+import { default as DiscoveredDevice, DiscoveredDeviceMetadata } from "./scanner/DiscoveredDevice.ts";
+export { DiscoveredDevice, DiscoveredDeviceMetadata };
 /** NODE_START */
 import { default as WebSocketServer } from "./server/websocket/WebSocketServer.ts";
 import { default as UDPServer } from "./server/udp/UDPServer.ts";

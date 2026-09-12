@@ -20,6 +20,20 @@ BW.DeviceManager.addEventListener("availableDevice", (event) => {
   }
   deviceBluetoothIdsSignal.set([...deviceBluetoothIds, device.bluetoothId]);
 });
+BW.DeviceManager.addEventListener("unavailableDevice", (event) => {
+  const { device } = event.message;
+  console.log("unavailableDevice", device);
+
+  const deviceBluetoothIds = deviceBluetoothIdsSignal.get();
+  if (!deviceBluetoothIds.includes(device.bluetoothId)) {
+    return;
+  }
+  deviceBluetoothIdsSignal.set(
+    deviceBluetoothIds.filter(
+      (bluetoothId) => device.bluetoothId != bluetoothId,
+    ),
+  );
+});
 
 BW.ScannerManager.addEventListener("scannerDiscoveredDevice", (event) => {
   const { discoveredDevice, firstTime } = event.message;
@@ -43,16 +57,14 @@ BW.ScannerManager.addEventListener(
     const { discoveredDevice } = event.message;
     console.log("scannerExpiredDiscoveredDevice", discoveredDevice);
 
-    const device = BW.DeviceManager.connectedDevices.find(
-      (device) => device.bluetoothId == discoveredDevice.bluetoothId,
-    );
-    if (device) {
+    const deviceBluetoothIds = deviceBluetoothIdsSignal.get();
+    if (!deviceBluetoothIds.includes(discoveredDevice.bluetoothId)) {
       return;
     }
-
-    const deviceBluetoothIds = deviceBluetoothIdsSignal
-      .get()
-      .filter((bluetoothId) => bluetoothId != discoveredDevice.bluetoothId);
-    deviceBluetoothIdsSignal.set(deviceBluetoothIds);
+    deviceBluetoothIdsSignal.set(
+      deviceBluetoothIds.filter(
+        (bluetoothId) => bluetoothId != discoveredDevice.bluetoothId,
+      ),
+    );
   },
 );

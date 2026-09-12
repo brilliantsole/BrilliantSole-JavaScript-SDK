@@ -17,8 +17,6 @@ import {
   stringToArrayBuffer,
 } from "../utils/ArrayBufferUtils.ts";
 import {
-  DiscoveredDevice,
-  DiscoveredDevicesMap,
   ScannerEventMessages,
   ScannerEventTypes,
 } from "../scanner/BaseScanner.ts";
@@ -31,6 +29,10 @@ import {
 } from "../connection/BaseConnectionManager.ts";
 import { serverMtus, ServerTypes } from "./BaseServer.ts";
 import { default as PubSubManager } from "../pubSub/PubSubManager.ts";
+import DiscoveredDevice, {
+  DiscoveredDeviceMetadata,
+  DiscoveredDevicesMap,
+} from "../scanner/DiscoveredDevice.ts";
 
 const _console = createConsole("BaseClient", { log: false });
 
@@ -125,7 +127,7 @@ abstract class BaseClient {
   }
 
   // DEVICES
-  #devices: { [deviceId: string]: Device } = {};
+  #devices: { [bluetoothId: string]: Device } = {};
   get devices() {
     return this.#devices;
   }
@@ -353,12 +355,12 @@ abstract class BaseClient {
           );
           _console.log({ discoveredDeviceString });
 
-          const discoveredDevice: DiscoveredDevice = JSON.parse(
+          const discoveredDeviceMetadata: DiscoveredDeviceMetadata = JSON.parse(
             discoveredDeviceString,
           );
-          _console.log({ discoveredDevice });
+          _console.log({ discoveredDeviceMetadata });
 
-          this.#onDiscoveredDevice(discoveredDevice);
+          this.#onDiscoveredDevice(discoveredDeviceMetadata);
         }
         break;
       case "expiredDiscoveredDevice":
@@ -501,45 +503,25 @@ abstract class BaseClient {
     return this.#discoveredDevices;
   }
 
-  #onDiscoveredDevice(discoveredDevice: DiscoveredDevice) {
-    _console.log({ discoveredDevice });
-    const exists = Boolean(
-      this.#discoveredDevices[discoveredDevice.bluetoothId],
-    );
-    if (exists) {
-      Object.assign(
-        this.#discoveredDevices[discoveredDevice.bluetoothId],
-        discoveredDevice,
-      );
+  #onDiscoveredDevice(discoveredDeviceMetadata: DiscoveredDeviceMetadata) {
+    _console.log({ discoveredDeviceMetadata });
+    let discoveredDevice =
+      this.#discoveredDevices[discoveredDeviceMetadata.bluetoothId];
+    let exists = Boolean(discoveredDevice);
+    if (discoveredDevice) {
+      discoveredDevice.update(discoveredDeviceMetadata);
     } else {
-      // @ts-expect-error
-      discoveredDevice.scanner = this;
+      discoveredDevice = new DiscoveredDevice(
+        // @ts-expect-error
+        this,
+        discoveredDeviceMetadata,
+        this.devices[discoveredDeviceMetadata.bluetoothId],
+      );
 
-      const onDevice = () => {
-        const { device } = discoveredDevice;
-        if (!device) {
-          return;
-        }
-        const connectionManager =
-          device.connectionManager as ClientConnectionManager;
-        connectionManager.discoveredDevice = discoveredDevice;
-      };
-
-      discoveredDevice.connect = (connectionType) => {
-        _console.log("discoveredDevice.connect", { connectionType });
-        const device = this.connectToDevice(
-          discoveredDevice.bluetoothId,
-          connectionType,
-        );
-        discoveredDevice.device = device;
-        onDevice();
-      };
-      discoveredDevice.device = this.#devices[discoveredDevice.bluetoothId];
-      onDevice();
-
-      this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+      this.#discoveredDevices[discoveredDeviceMetadata.bluetoothId] =
+        discoveredDevice;
     }
-    discoveredDevice = this.#discoveredDevices[discoveredDevice.bluetoothId];
+
     this.#dispatchEvent("discoveredDevice", {
       discoveredDevice,
       firstTime: !exists,
@@ -562,6 +544,7 @@ abstract class BaseClient {
     }
     _console.log({ expiredDiscoveredDevice: discoveredDevice });
     delete this.#discoveredDevices[bluetoothId];
+    discoveredDevice._expire();
     this.#dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
   }
 
@@ -603,11 +586,9 @@ abstract class BaseClient {
   }
 
   // DEVICE CONNECTION
-  createDevice(bluetoothId: string) {
+  #createDevice(bluetoothId: string) {
     const device = new Device();
-    const discoveredDevice = this.#discoveredDevices[bluetoothId];
     const clientConnectionManager = new ClientConnectionManager();
-    clientConnectionManager.discoveredDevice = discoveredDevice;
     clientConnectionManager.client = this;
     clientConnectionManager.bluetoothId = bluetoothId;
     clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(
@@ -627,7 +608,7 @@ abstract class BaseClient {
   #getOrCreateDevice(bluetoothId: string) {
     let device = this.#devices[bluetoothId];
     if (!device) {
-      device = this.createDevice(bluetoothId);
+      device = this.#createDevice(bluetoothId);
       this.#devices[bluetoothId] = device;
     }
     return device;

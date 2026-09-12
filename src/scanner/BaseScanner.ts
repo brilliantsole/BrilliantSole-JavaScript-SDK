@@ -3,13 +3,12 @@ import EventDispatcher, {
 } from "../utils/EventDispatcher.ts";
 import { createConsole } from "../utils/Console.ts";
 import { Timer } from "../utils/Timer.ts";
-import { DeviceType } from "../InformationManager.ts";
-import {
-  ClientConnectionType,
-  ConnectionType,
-} from "../connection/BaseConnectionManager.ts";
+import { ConnectionType } from "../connection/BaseConnectionManager.ts";
 import Device from "../Device.ts";
-import { ScannerLike } from "./Scanner.ts";
+import DiscoveredDevice, {
+  DiscoveredDeviceMetadata,
+  DiscoveredDevicesMap,
+} from "./DiscoveredDevice.ts";
 
 const _console = createConsole("BaseScanner", { log: false });
 
@@ -26,20 +25,8 @@ export const ScannerEventTypes = [
 ] as const;
 export type ScannerEventType = (typeof ScannerEventTypes)[number];
 
-export interface DiscoveredDevice {
-  scanner: ScannerLike;
-  bluetoothId: string;
-  name: string;
-  deviceType: DeviceType;
-  rssi: number;
-  ipAddress?: string;
-  isWifiSecure?: boolean;
-  device?: Device;
-  connect(connectionType?: ClientConnectionType): void;
-}
-
 export interface ScannerEventMessages {
-  discoveredDevice: { discoveredDevice: DiscoveredDevice; firstTime: Boolean };
+  discoveredDevice: { discoveredDevice: DiscoveredDevice; firstTime: boolean };
   expiredDiscoveredDevice: { discoveredDevice: DiscoveredDevice };
   discoveredDevices: { discoveredDevices: DiscoveredDevicesMap };
   isScanningAvailable: { isScanningAvailable: boolean };
@@ -63,8 +50,6 @@ export type ScannerEventDispatcher =
   ScannerEventDispatcherTypes["EventDispatcher"];
 export type BoundScannerEventListeners =
   ScannerEventDispatcherTypes["BoundEventListeners"];
-
-export type DiscoveredDevicesMap = { [deviceId: string]: DiscoveredDevice };
 
 abstract class BaseScanner {
   // IS SUPPORTED
@@ -221,27 +206,27 @@ abstract class BaseScanner {
     );
   }
 
-  protected _onDiscoveredDevice(discoveredDevice: DiscoveredDevice) {
-    const exists = Boolean(
-      this.#discoveredDevices[discoveredDevice.bluetoothId],
-    );
-    if (exists) {
-      Object.assign(
-        this.#discoveredDevices[discoveredDevice.bluetoothId],
-        discoveredDevice,
-      );
+  protected _onDiscoveredDevice(
+    discoveredDeviceMetadata: DiscoveredDeviceMetadata,
+  ) {
+    let discoveredDevice =
+      this.#discoveredDevices[discoveredDeviceMetadata.bluetoothId];
+    let exists = Boolean(discoveredDevice);
+    if (discoveredDevice) {
+      discoveredDevice.update(discoveredDeviceMetadata);
     } else {
+      discoveredDevice = new DiscoveredDevice(
+        // @ts-expect-error
+        this,
+        discoveredDeviceMetadata,
+        this.devices[discoveredDeviceMetadata.bluetoothId],
+      );
       this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
-      discoveredDevice.connect = (connectionType?: ClientConnectionType) => {
-        this.connectToDevice(discoveredDevice.bluetoothId, connectionType);
-      };
-      // @ts-expect-error
-      discoveredDevice.scanner = this;
     }
-    discoveredDevice = this.#discoveredDevices[discoveredDevice.bluetoothId];
 
     this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
     this.#checkDiscoveredDevicesExpirationTimer.start();
+
     this.#dispatchEvent("discoveredDevice", {
       discoveredDevice,
       firstTime: !exists,
@@ -279,16 +264,17 @@ abstract class BaseScanner {
         _console.log("discovered device timeout");
         delete this.#discoveredDevices[id];
         delete this.#discoveredDeviceTimestamps[id];
+        discoveredDevice._expire();
         this.#dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
       }
     });
   }
 
   // DEVICE CONNECTION
-  async connectToDevice(deviceId: string, connectionType?: ConnectionType) {
+  async connectToDevice(bluetoothId: string, connectionType?: ConnectionType) {
     this.#assertIsAvailable();
   }
-  async disconnectFromDevice(deviceId: string) {
+  async disconnectFromDevice(bluetoothId: string) {
     this.#assertIsAvailable();
   }
 

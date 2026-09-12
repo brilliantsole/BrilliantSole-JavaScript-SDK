@@ -47,10 +47,10 @@ declare class WifiManager {
     constructor();
     sendMessages: SendWifiMessagesCallback;
     eventDispatcher: WifiEventDispatcher;
-    get waitForEvent(): <T extends "isWifiAvailable" | "getWifiSSID" | "getWifiPassword" | "isWifiConnected" | "ipAddress" | "setWifiSSID" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiSecure">(type: T, options?: {
+    get waitForEvent(): <T extends "ipAddress" | "isWifiSecure" | "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected">(type: T, options?: {
         immediate?: boolean;
         signal?: AbortSignal;
-    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "isWifiAvailable" | "getWifiSSID" | "getWifiPassword" | "isWifiConnected" | "ipAddress" | "setWifiSSID" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiSecure", WifiEventMessages, T>>;
+    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "ipAddress" | "isWifiSecure" | "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected", WifiEventMessages, T>>;
     requestRequiredInformation(): void;
     get isWifiAvailable(): boolean;
     get wifiSSID(): string;

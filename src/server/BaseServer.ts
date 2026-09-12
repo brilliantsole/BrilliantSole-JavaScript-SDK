@@ -42,7 +42,6 @@ import {
 } from "../connection/BaseConnectionManager.ts";
 import {
   BoundScannerEventListeners,
-  DiscoveredDevice,
   ScannerEventMap,
 } from "../scanner/BaseScanner.ts";
 import {
@@ -2743,3 +2742,4 @@ export default BaseServer;
 
 import { default as ServerManager } from "./ServerManager.ts";
 import BaseClient from "./BaseClient.ts";
+import { DiscoveredDevice } from "../index.ts";

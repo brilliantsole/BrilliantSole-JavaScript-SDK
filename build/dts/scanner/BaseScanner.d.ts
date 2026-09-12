@@ -1,25 +1,13 @@
 import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
-import { DeviceType } from "../InformationManager.ts";
-import { ClientConnectionType, ConnectionType } from "../connection/BaseConnectionManager.ts";
+import { ConnectionType } from "../connection/BaseConnectionManager.ts";
 import Device from "../Device.ts";
-import { ScannerLike } from "./Scanner.ts";
+import DiscoveredDevice, { DiscoveredDeviceMetadata, DiscoveredDevicesMap } from "./DiscoveredDevice.ts";
 export declare const ScannerEventTypes: readonly ["isScanningAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice", "discoveredDevices", "scanningAvailable", "scanningNotAvailable", "scanning", "notScanning"];
 export type ScannerEventType = (typeof ScannerEventTypes)[number];
-export interface DiscoveredDevice {
-    scanner: ScannerLike;
-    bluetoothId: string;
-    name: string;
-    deviceType: DeviceType;
-    rssi: number;
-    ipAddress?: string;
-    isWifiSecure?: boolean;
-    device?: Device;
-    connect(connectionType?: ClientConnectionType): void;
-}
 export interface ScannerEventMessages {
     discoveredDevice: {
         discoveredDevice: DiscoveredDevice;
-        firstTime: Boolean;
+        firstTime: boolean;
     };
     expiredDiscoveredDevice: {
         discoveredDevice: DiscoveredDevice;
@@ -44,9 +32,6 @@ export type ScannerEventMap = ScannerEventDispatcherTypes["EventMap"];
 export type ScannerEventListenerMap = ScannerEventDispatcherTypes["EventListenerMap"];
 export type ScannerEventDispatcher = ScannerEventDispatcherTypes["EventDispatcher"];
 export type BoundScannerEventListeners = ScannerEventDispatcherTypes["BoundEventListeners"];
-export type DiscoveredDevicesMap = {
-    [deviceId: string]: DiscoveredDevice;
-};
 declare abstract class BaseScanner {
     #private;
     protected get baseConstructor(): typeof BaseScanner;
@@ -67,10 +52,10 @@ declare abstract class BaseScanner {
     stopScan(): boolean;
     get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
     get discoveredDevicesArray(): DiscoveredDevice[];
-    protected _onDiscoveredDevice(discoveredDevice: DiscoveredDevice): void;
+    protected _onDiscoveredDevice(discoveredDeviceMetadata: DiscoveredDeviceMetadata): void;
     static get DiscoveredDeviceExpirationTimeout(): number;
-    connectToDevice(deviceId: string, connectionType?: ConnectionType): Promise<void>;
-    disconnectFromDevice(deviceId: string): Promise<void>;
+    connectToDevice(bluetoothId: string, connectionType?: ConnectionType): Promise<void>;
+    disconnectFromDevice(bluetoothId: string): Promise<void>;
     abstract devices: {
         [bluetoothId: string]: Device;
     };

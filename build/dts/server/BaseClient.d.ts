@@ -1,8 +1,9 @@
 import { ClientDeviceMessage, ServerMessageOrMessageType } from "./ServerUtils.ts";
 import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
-import { DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
+import { ScannerEventMessages } from "../scanner/BaseScanner.ts";
 import { ClientConnectionType, ConnectionStatus } from "../connection/BaseConnectionManager.ts";
+import { DiscoveredDevicesMap } from "../scanner/DiscoveredDevice.ts";
 export declare const ClientTypes: readonly ["window", "webSocket", "udp"];
 export type ClientType = (typeof ClientTypes)[number];
 export declare const ClientConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
@@ -42,7 +43,7 @@ declare abstract class BaseClient {
     static get clientMtu(): number;
     get clientMtu(): number;
     get devices(): {
-        [deviceId: string]: Device;
+        [bluetoothId: string]: Device;
     };
     get addEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "discoveredDevices" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "discoveredDevices" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning", ClientEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
     get removeEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "discoveredDevices" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "discoveredDevices" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning", ClientEventMessages, T>) => void) => void;
@@ -85,7 +86,6 @@ declare abstract class BaseClient {
     requestDiscoveredDevices(): void;
     connectToDevice(bluetoothId: string, connectionType?: ClientConnectionType): Device;
     protected sendConnectToDeviceMessage(bluetoothId: string, connectionType?: ClientConnectionType): void;
-    createDevice(bluetoothId: string): Device;
     protected onConnectedBluetoothDeviceIds(bluetoothIds: string[]): Device[];
     disconnectFromDevice(bluetoothId: string): void;
     protected requestDisconnectionFromDevice(bluetoothId: string): Device;

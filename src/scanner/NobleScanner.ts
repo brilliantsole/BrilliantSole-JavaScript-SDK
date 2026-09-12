@@ -1,7 +1,4 @@
-import BaseScanner, {
-  DiscoveredDevice,
-  ScannerEventMap,
-} from "./BaseScanner.ts";
+import BaseScanner, { ScannerEventMap } from "./BaseScanner.ts";
 import { createConsole } from "../utils/Console.ts";
 import { addEventListeners } from "../utils/EventUtils.ts";
 import {
@@ -33,6 +30,7 @@ _console.log({ platform, filterManually, filterServiceUuid });
 import { DeviceTypes } from "../InformationManager.ts";
 import DeviceManager from "../DeviceManager.ts";
 import { ClientConnectionType } from "../connection/BaseConnectionManager.ts";
+import { DiscoveredDeviceMetadata } from "../index.ts";
 
 export const NobleStates = [
   "unknown",
@@ -158,8 +156,7 @@ class NobleScanner extends BaseScanner {
       return;
     }
 
-    // @ts-expect-error
-    const discoveredDevice: DiscoveredDevice = {
+    const discoveredDeviceMetadata: DiscoveredDeviceMetadata = {
       name: noblePeripheral.advertisement.localName,
       bluetoothId: noblePeripheral.id,
       deviceType,
@@ -167,8 +164,7 @@ class NobleScanner extends BaseScanner {
       ipAddress,
       isWifiSecure,
     };
-    discoveredDevice.device = this.#devices[discoveredDevice.bluetoothId];
-    this._onDiscoveredDevice(discoveredDevice);
+    this._onDiscoveredDevice(discoveredDeviceMetadata);
   }
 
   // CONSTRUCTOR
@@ -246,21 +242,21 @@ class NobleScanner extends BaseScanner {
     return this.#devices;
   }
   async connectToDevice(
-    deviceId: string,
+    bluetoothId: string,
     connectionType?: ClientConnectionType,
   ) {
-    super.connectToDevice(deviceId, connectionType);
-    this.#assertValidNoblePeripheralId(deviceId);
-    const noblePeripheral = this.#noblePeripherals[deviceId];
-    _console.log("connecting to discoveredDevice...", deviceId);
+    super.connectToDevice(bluetoothId, connectionType);
+    this.#assertValidNoblePeripheralId(bluetoothId);
+    const noblePeripheral = this.#noblePeripherals[bluetoothId];
+    _console.log("connecting to discoveredDevice...", bluetoothId);
 
     let device = DeviceManager.availableDevices
       .filter((device) => device.connectionType == "noble")
-      .find((device) => device.bluetoothId == deviceId);
-    device = device ?? this.#devices[deviceId];
+      .find((device) => device.bluetoothId == bluetoothId);
+    device = device ?? this.#devices[bluetoothId];
 
     if (!device) {
-      _console.log("creating device for discoveredDevice...", deviceId);
+      _console.log("creating device for discoveredDevice...", bluetoothId);
       device = this.#createDevice(noblePeripheral);
       const { ipAddress, isWifiSecure } =
         this.discoveredDevices[device.bluetoothId!];
@@ -285,14 +281,14 @@ class NobleScanner extends BaseScanner {
     }
   }
 
-  async disconnectFromDevice(deviceId: string) {
-    super.disconnectFromDevice(deviceId);
-    this.#assertValidNoblePeripheralId(deviceId);
+  async disconnectFromDevice(bluetoothId: string) {
+    super.disconnectFromDevice(bluetoothId);
+    this.#assertValidNoblePeripheralId(bluetoothId);
 
     let device = DeviceManager.availableDevices
       .filter((device) => device.connectionType == "noble")
-      .find((device) => device.bluetoothId == deviceId);
-    device = device ?? this.#devices[deviceId];
+      .find((device) => device.bluetoothId == bluetoothId);
+    device = device ?? this.#devices[bluetoothId];
 
     if (device) {
       await device.disconnect();
@@ -306,7 +302,8 @@ class NobleScanner extends BaseScanner {
     const nobleConnectionManager = new NobleConnectionManager();
     nobleConnectionManager.noblePeripheral = noblePeripheral;
     device.connectionManager = nobleConnectionManager;
-    discoveredDevice.device = device;
+    // @ts-expect-error
+    discoveredDevice._device = device;
     this.#devices[deviceId] = device;
     return device;
   }

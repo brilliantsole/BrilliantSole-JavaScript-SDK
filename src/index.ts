@@ -548,8 +548,11 @@ import {
 } from "./connection/ConnectionManager.ts";
 export { ConnectionManager, ConnectionManagers };
 
-import { DiscoveredDevice } from "./scanner/BaseScanner.ts";
-export { DiscoveredDevice };
+import {
+  default as DiscoveredDevice,
+  DiscoveredDeviceMetadata,
+} from "./scanner/DiscoveredDevice.ts";
+export { DiscoveredDevice, DiscoveredDeviceMetadata };
 
 /** NODE_START */
 import { default as WebSocketServer } from "./server/websocket/WebSocketServer.ts";

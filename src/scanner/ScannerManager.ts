@@ -18,7 +18,6 @@ import {
   BoundScannerEventListeners,
   ScannerEventMap,
   ScannerEventMessages,
-  DiscoveredDevicesMap,
 } from "./BaseScanner.ts";
 import {
   default as ClientManager,
@@ -27,6 +26,7 @@ import {
 
 import { capitalizeFirstCharacter } from "../utils/stringUtils.ts";
 import { default as scanner, ScannerLike } from "./Scanner.ts";
+import { DiscoveredDevicesMap } from "./DiscoveredDevice.ts";
 
 const _console = createConsole("ScannerManager", { log: false });
 
