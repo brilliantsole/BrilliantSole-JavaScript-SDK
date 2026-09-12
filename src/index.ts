@@ -69,9 +69,6 @@ export { PubSubManager };
 import { default as ScannerManager } from "./scanner/ScannerManager.ts";
 export { ScannerManager };
 
-import { default as DiscoveredDeviceManager } from "./scanner/DiscoveredDeviceManager.ts";
-export { DiscoveredDeviceManager };
-
 /** BROWSER_START */
 
 import { default as WindowManagerServer } from "./window/WindowManagerServer.ts";

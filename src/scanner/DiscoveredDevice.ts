@@ -22,6 +22,7 @@ export const DiscoveredDeviceEventTypes = [
   "deviceType",
   "ipAddress",
   "isWifiSecure",
+  "update",
   "device",
   ...ConnectionEventTypes,
 ] as const;
@@ -36,6 +37,7 @@ export interface DiscoveredDeviceEventMessages {
   ipAddress: { ipAddress: string };
   isWifiSecure: { isWifiSecure: boolean };
   device: { device: Device };
+  update: { keys: (keyof DiscoveredDeviceMetadata)[] };
   connectionStatus: { connectionStatus: ConnectionStatus; device: Device };
   connected: { device: Device };
   notConnected: { device: Device };
@@ -224,12 +226,24 @@ class DiscoveredDevice {
   update(metadata: DiscoveredDeviceMetadata) {
     _console.log("update discoveredDevice", metadata);
 
+    const keys: (keyof DiscoveredDeviceMetadata)[] = [];
+    const _keys = Object.keys(metadata) as (keyof DiscoveredDeviceMetadata)[];
+    _keys.forEach((key) => {
+      const value = metadata[key];
+      if (this[key] != value) {
+        keys.push(key);
+      }
+    });
+
     this.#bluetoothId = metadata.bluetoothId;
     this.#deviceType = metadata.deviceType;
     this.#ipAddress = metadata.ipAddress;
     this.#isWifiSecure = metadata.isWifiSecure;
     this.#name = metadata.name;
     this.#rssi = metadata.rssi;
+
+    _console.log("keys", keys);
+    this.#dispatchEvent("update", { keys });
   }
 
   // EVENT DISPATCHER

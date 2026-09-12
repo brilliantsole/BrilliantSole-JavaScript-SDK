@@ -43,6 +43,11 @@ class DeviceCard extends LitElement {
         (event) => console.log(event.message.rssi),
         options,
       );
+      this.discoveredDevice.addEventListener(
+        "connected",
+        (event) => console.log(event.message),
+        options,
+      );
     }
 
     // FILL
