@@ -7,6 +7,7 @@ import { ConnectionType } from "../connection/BaseConnectionManager.ts";
 import Device from "../Device.ts";
 import DiscoveredDevice, {
   DiscoveredDeviceMetadata,
+  DiscoveredDeviceMetadataKeys,
   DiscoveredDevicesMap,
 } from "./DiscoveredDevice.ts";
 
@@ -16,6 +17,7 @@ export const ScannerEventTypes = [
   "isScanningAvailable",
   "isScanning",
   "discoveredDevice",
+  "discoveredDeviceUpdate",
   "expiredDiscoveredDevice",
   "discoveredDevices",
   "scanningAvailable",
@@ -26,7 +28,11 @@ export const ScannerEventTypes = [
 export type ScannerEventType = (typeof ScannerEventTypes)[number];
 
 export interface ScannerEventMessages {
-  discoveredDevice: { discoveredDevice: DiscoveredDevice; firstTime: boolean };
+  discoveredDevice: { discoveredDevice: DiscoveredDevice };
+  discoveredDeviceUpdate: {
+    discoveredDevice: DiscoveredDevice;
+    keys: DiscoveredDeviceMetadataKeys;
+  };
   expiredDiscoveredDevice: { discoveredDevice: DiscoveredDevice };
   discoveredDevices: { discoveredDevices: DiscoveredDevicesMap };
   isScanningAvailable: { isScanningAvailable: boolean };
@@ -209,11 +215,19 @@ abstract class BaseScanner {
   protected _onDiscoveredDevice(
     discoveredDeviceMetadata: DiscoveredDeviceMetadata,
   ) {
+    _console.log("_onDiscoveredDevice", discoveredDeviceMetadata);
+
     let discoveredDevice =
       this.#discoveredDevices[discoveredDeviceMetadata.bluetoothId];
     let exists = Boolean(discoveredDevice);
     if (discoveredDevice) {
-      discoveredDevice.update(discoveredDeviceMetadata);
+      const keys = discoveredDevice.update(discoveredDeviceMetadata);
+      if (keys.length > 0) {
+        this.#dispatchEvent("discoveredDeviceUpdate", {
+          discoveredDevice,
+          keys,
+        });
+      }
     } else {
       discoveredDevice = new DiscoveredDevice(
         // @ts-expect-error
@@ -227,11 +241,10 @@ abstract class BaseScanner {
     this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
     this.#checkDiscoveredDevicesExpirationTimer.start();
 
-    this.#dispatchEvent("discoveredDevice", {
-      discoveredDevice,
-      firstTime: !exists,
-    });
     if (!exists) {
+      this.#dispatchEvent("discoveredDevice", {
+        discoveredDevice,
+      });
       this.#dispatchEvent("discoveredDevices", {
         discoveredDevices: this.#discoveredDevices,
       });

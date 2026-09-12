@@ -36,10 +36,7 @@ BW.DeviceManager.addEventListener("unavailableDevice", (event) => {
 });
 
 BW.ScannerManager.addEventListener("scannerDiscoveredDevice", (event) => {
-  const { discoveredDevice, firstTime } = event.message;
-  if (!firstTime) {
-    return;
-  }
+  const { discoveredDevice } = event.message;
   console.log("scannerDiscoveredDevice", discoveredDevice);
 
   const deviceBluetoothIds = deviceBluetoothIdsSignal.get();

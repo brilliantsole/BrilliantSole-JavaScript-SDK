@@ -509,7 +509,13 @@ abstract class BaseClient {
       this.#discoveredDevices[discoveredDeviceMetadata.bluetoothId];
     let exists = Boolean(discoveredDevice);
     if (discoveredDevice) {
-      discoveredDevice.update(discoveredDeviceMetadata);
+      const keys = discoveredDevice.update(discoveredDeviceMetadata);
+      if (keys.length > 0) {
+        this.#dispatchEvent("discoveredDeviceUpdate", {
+          discoveredDevice,
+          keys,
+        });
+      }
     } else {
       discoveredDevice = new DiscoveredDevice(
         // @ts-expect-error
@@ -522,11 +528,10 @@ abstract class BaseClient {
         discoveredDevice;
     }
 
-    this.#dispatchEvent("discoveredDevice", {
-      discoveredDevice,
-      firstTime: !exists,
-    });
     if (!exists) {
+      this.#dispatchEvent("discoveredDevice", {
+        discoveredDevice,
+      });
       this.#dispatchEvent("discoveredDevices", {
         discoveredDevices: this.discoveredDevices,
       });

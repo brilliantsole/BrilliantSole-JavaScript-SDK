@@ -375,6 +375,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     isScanningAvailable: this.#onScannerIsAvailable.bind(this),
     isScanning: this.#onScannerIsScanning.bind(this),
     discoveredDevice: this.#onScannerDiscoveredDevice.bind(this),
+    discoveredDeviceUpdate: this.#onScannerDiscoveredDeviceUpdate.bind(this),
     expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
   };
 
@@ -406,8 +407,18 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
 
   #onScannerDiscoveredDevice(event: ScannerEventMap["discoveredDevice"]) {
     const { discoveredDevice } = event.message;
-    _console.log(discoveredDevice);
-
+    _console.log("#onScannerDiscoveredDevice", discoveredDevice);
+    this.#broadcastDiscoveredDevice(discoveredDevice);
+  }
+  #onScannerDiscoveredDeviceUpdate(
+    event: ScannerEventMap["discoveredDeviceUpdate"],
+  ) {
+    const { discoveredDevice, keys } = event.message;
+    _console.log("#onScannerDiscoveredDeviceUpdate", discoveredDevice, keys);
+    this.#broadcastDiscoveredDevice(discoveredDevice);
+  }
+  #broadcastDiscoveredDevice(discoveredDevice: DiscoveredDevice) {
+    _console.log("#broadcastDiscoveredDevice", discoveredDevice);
     this.broadcast(
       this.#createDiscoveredDeviceMessage(discoveredDevice),
       this.#filterServerToClients("discoveredDevice"),

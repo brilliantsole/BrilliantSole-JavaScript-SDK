@@ -15,6 +15,16 @@ import { addEventListeners } from "../utils/EventUtils.ts";
 
 const _console = createConsole("DiscoveredDevice", { log: false });
 
+export interface DiscoveredDeviceMetadata {
+  bluetoothId: string;
+  name: string;
+  deviceType: DeviceType;
+  rssi: number;
+  ipAddress?: string;
+  isWifiSecure?: boolean;
+}
+export type DiscoveredDeviceMetadataKeys = (keyof DiscoveredDeviceMetadata)[];
+
 export const DiscoveredDeviceEventTypes = [
   "expired",
   "rssi",
@@ -37,7 +47,7 @@ export interface DiscoveredDeviceEventMessages {
   ipAddress: { ipAddress: string };
   isWifiSecure: { isWifiSecure: boolean };
   device: { device: Device };
-  update: { keys: (keyof DiscoveredDeviceMetadata)[] };
+  update: { keys: DiscoveredDeviceMetadataKeys };
   connectionStatus: { connectionStatus: ConnectionStatus; device: Device };
   connected: { device: Device };
   notConnected: { device: Device };
@@ -60,15 +70,6 @@ export type DiscoveredDeviceEventDispatcher =
   DiscoveredDeviceEventDispatcherTypes["EventDispatcher"];
 export type BoundDiscoveredDeviceEventListeners =
   DiscoveredDeviceEventDispatcherTypes["BoundEventListeners"];
-
-export interface DiscoveredDeviceMetadata {
-  bluetoothId: string;
-  name: string;
-  deviceType: DeviceType;
-  rssi: number;
-  ipAddress?: string;
-  isWifiSecure?: boolean;
-}
 
 class DiscoveredDevice {
   scanner: ScannerLike;
@@ -110,9 +111,9 @@ class DiscoveredDevice {
     return this.#_rssi;
   }
   set #rssi(newRssi: number) {
-    if (this.rssi == newRssi) {
-      return;
-    }
+    // if (this.rssi == newRssi) {
+    //   return;
+    // }
     this.#_rssi = newRssi;
     if (this.rssi != undefined) {
       this.#dispatchEvent("rssi", { rssi: this.rssi });
@@ -226,11 +227,11 @@ class DiscoveredDevice {
   update(metadata: DiscoveredDeviceMetadata) {
     _console.log("update discoveredDevice", metadata);
 
-    const keys: (keyof DiscoveredDeviceMetadata)[] = [];
-    const _keys = Object.keys(metadata) as (keyof DiscoveredDeviceMetadata)[];
+    const keys: DiscoveredDeviceMetadataKeys = [];
+    const _keys = Object.keys(metadata) as DiscoveredDeviceMetadataKeys;
     _keys.forEach((key) => {
       const value = metadata[key];
-      if (this[key] != value) {
+      if (this[key] != value || key == "rssi") {
         keys.push(key);
       }
     });
@@ -244,6 +245,8 @@ class DiscoveredDevice {
 
     _console.log("keys", keys);
     this.#dispatchEvent("update", { keys });
+
+    return keys;
   }
 
   // EVENT DISPATCHER

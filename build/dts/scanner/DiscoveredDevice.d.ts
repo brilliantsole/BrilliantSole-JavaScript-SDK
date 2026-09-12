@@ -3,6 +3,15 @@ import { default as Device } from "../Device.ts";
 import { EventDispatcherTypes } from "../utils/EventDispatcher.ts";
 import { ScannerLike } from "./Scanner.ts";
 import { ConnectionStatus, ConnectionType } from "../connection/BaseConnectionManager.ts";
+export interface DiscoveredDeviceMetadata {
+    bluetoothId: string;
+    name: string;
+    deviceType: DeviceType;
+    rssi: number;
+    ipAddress?: string;
+    isWifiSecure?: boolean;
+}
+export type DiscoveredDeviceMetadataKeys = (keyof DiscoveredDeviceMetadata)[];
 export declare const DiscoveredDeviceEventTypes: readonly ["expired", "rssi", "name", "deviceType", "ipAddress", "isWifiSecure", "update", "device", "notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected"];
 export type DiscoveredDeviceEventType = (typeof DiscoveredDeviceEventTypes)[number];
 export interface DiscoveredDeviceEventMessages {
@@ -26,7 +35,7 @@ export interface DiscoveredDeviceEventMessages {
         device: Device;
     };
     update: {
-        keys: (keyof DiscoveredDeviceMetadata)[];
+        keys: DiscoveredDeviceMetadataKeys;
     };
     connectionStatus: {
         connectionStatus: ConnectionStatus;
@@ -51,14 +60,6 @@ export type DiscoveredDeviceEventMap = DiscoveredDeviceEventDispatcherTypes["Eve
 export type DiscoveredDeviceEventListenerMap = DiscoveredDeviceEventDispatcherTypes["EventListenerMap"];
 export type DiscoveredDeviceEventDispatcher = DiscoveredDeviceEventDispatcherTypes["EventDispatcher"];
 export type BoundDiscoveredDeviceEventListeners = DiscoveredDeviceEventDispatcherTypes["BoundEventListeners"];
-export interface DiscoveredDeviceMetadata {
-    bluetoothId: string;
-    name: string;
-    deviceType: DeviceType;
-    rssi: number;
-    ipAddress?: string;
-    isWifiSecure?: boolean;
-}
 declare class DiscoveredDevice {
     #private;
     scanner: ScannerLike;
@@ -74,7 +75,7 @@ declare class DiscoveredDevice {
     constructor(scanner: ScannerLike, metadata: DiscoveredDeviceMetadata, device?: Device);
     connect(connectionType?: ConnectionType): Promise<void>;
     _expire(): void;
-    update(metadata: DiscoveredDeviceMetadata): void;
+    update(metadata: DiscoveredDeviceMetadata): DiscoveredDeviceMetadataKeys;
     get addEventListener(): <T extends "expired" | "rssi" | "name" | "deviceType" | "ipAddress" | "isWifiSecure" | "update" | "device" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "*">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<DiscoveredDevice, "expired" | "rssi" | "name" | "deviceType" | "ipAddress" | "isWifiSecure" | "update" | "device" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", DiscoveredDeviceEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
     get removeEventListener(): <T extends "expired" | "rssi" | "name" | "deviceType" | "ipAddress" | "isWifiSecure" | "update" | "device" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "*">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<DiscoveredDevice, "expired" | "rssi" | "name" | "deviceType" | "ipAddress" | "isWifiSecure" | "update" | "device" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected", DiscoveredDeviceEventMessages, T>) => void) => void;
     get waitForEvent(): <T extends "expired" | "rssi" | "name" | "deviceType" | "ipAddress" | "isWifiSecure" | "update" | "device" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, options?: {
