@@ -35,3 +35,7 @@ class NavButtonDevices extends LitElement {
   }
 }
 customElements.define("bw-nav-button-devices", NavButtonDevices);
+
+// variant=${tabVariants["devices"]}
+// saturation=${this.isBluetoothEnabled ? nothing : 0.2}
+// variant=${this.isBluetoothEnabled ? tabVariants["devices"] : "neutral"}

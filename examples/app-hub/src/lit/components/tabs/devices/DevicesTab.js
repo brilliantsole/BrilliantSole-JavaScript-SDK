@@ -22,6 +22,9 @@ import {
   defaultAddClientConfig,
 } from "./client/AddClientSignals.js";
 import { createDisableViewTransitionsContextConsumer } from "../../../contexts/disableViewTransitionsContext.js";
+import { deviceBluetoothIdsSignal } from "./DevicesSignals.js";
+
+/** @typedef {import("../../../../../../../build/brilliantwear.module.js").WebSocketClient} WebSocketClient */
 
 class DevicesTab extends SignalWatcher(LitElement) {
   createRenderRoot() {
@@ -59,7 +62,7 @@ class DevicesTab extends SignalWatcher(LitElement) {
       update();
     } else {
       const types = [newIsAddingClient ? "add-client" : "remove-client"];
-      console.log("types", types);
+      // console.log("types", types);
       await document.startViewTransition({
         update: async () => {
           update();
@@ -81,25 +84,8 @@ class DevicesTab extends SignalWatcher(LitElement) {
     BW.ClientManager.addEventListener(
       "clientIsConnected",
       (event) => {
-        this._updateClients();
-        this.requestUpdate();
-      },
-      { ...options },
-    );
-
-    BW.DeviceManager.addEventListener(
-      "availableDevices",
-      (event) => {
-        this.requestUpdate();
-      },
-      { ...options },
-    );
-
-    BW.ScannerManager.addEventListener(
-      "discoveredDevices",
-      (event) => {
-        console.log("discoveredDevices");
-        this.requestUpdate();
+        console.log("clientIsConnected");
+        this._updateClients(true);
       },
       { ...options },
     );
@@ -119,21 +105,21 @@ class DevicesTab extends SignalWatcher(LitElement) {
     this._abortController.abort();
   }
 
-  /** @type {import("../../../../../../../build/brilliantwear.module.js").WebSocketClient[]} */
+  /** @type {WebSocketClient[]} */
   clients = [];
-  _updateClients() {
+  _updateClients(requestUpdate = false) {
     this.clients = BW.ClientManager.clients.filter(
       (client) => client.type == "webSocket" && client.hasConnectedOnce,
     );
-  }
-
-  get devices() {
-    return BW.DeviceManager.availableDevices;
+    if (requestUpdate) {
+      this.requestUpdate();
+    }
   }
 
   render() {
     const isAddingClient = isAddingClientSignal.get();
-    console.log({ isAddingClient }, this.clients, this.devices);
+    const deviceBluetoothIds = deviceBluetoothIdsSignal.get();
+    console.log({ isAddingClient }, this.clients, deviceBluetoothIds);
 
     const clientsStyles = {
       "--bw-grid-lane-width": "17em",
@@ -188,10 +174,12 @@ class DevicesTab extends SignalWatcher(LitElement) {
           data-manual-width
         >
           ${repeat(
-            this.devices,
-            (device) => device,
-            (device) =>
-              html`<bw-device-card .device=${device}></bw-device-card>`,
+            deviceBluetoothIds,
+            (bluetoothId) => bluetoothId,
+            (bluetoothId) =>
+              html`<bw-device-card
+                .bluetoothId=${bluetoothId}
+              ></bw-device-card>`,
           )}
         </div>
       </div>

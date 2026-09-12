@@ -40,7 +40,7 @@ class TabBreadcrumb extends LitElement {
     return this._navigationStateConsumer.value.state;
   }
   _onNavigationStateUpdate() {
-    console.log("_onNavigationStateUpdate");
+    // console.log("_onNavigationStateUpdate");
     this.routeSegments = this.navigationState.route.split("/").filter(Boolean);
     this.formattedRouteSegments = this.routeSegments.map((string) =>
       capitalize(string),

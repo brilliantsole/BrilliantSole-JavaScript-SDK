@@ -7,34 +7,46 @@ const { styleMap } = litStyleMap;
 
 const { LitElement, html, nothing } = lit;
 
+/** @typedef {import("../../../../../../../../build/brilliantwear.module.js").Device} Device */
+/** @typedef {import("../../../../../../../../build/brilliantwear.module.js").DiscoveredDevice} DiscoveredDevice */
+
 class DeviceCard extends LitElement {
   createRenderRoot() {
     return this;
   }
 
   static properties = {
-    device: { attribute: false },
+    bluetoothId: {},
   };
 
   connectedCallback() {
     super.connectedCallback();
 
+    this.device = this.getDevice();
+
     this._abortController = new AbortController();
     /** @type {AddEventListenerOptions} */
     const options = { signal: this._abortController.signal };
+
+    // FILL
   }
   disconnectedCallback() {
     super.disconnectedCallback();
     this._abortController.abort();
   }
 
-  /** @type {import("../../../../../../../../build/brilliantwear.module.js").Device} */
-  get _device() {
-    return this.device;
+  getDevice() {
+    return BW.DeviceManager.availableDevices.find(
+      (device) => device.bluetoothId == this.bluetoothId,
+    );
+  }
+  get discoveredDevice() {
+    return BW.ScannerManager.discoveredDevices[this.bluetoothId];
   }
 
   render() {
-    return html`${this._device.name}`;
+    console.log(this.discoveredDevice, this.device);
+    return html`${this.bluetoothId}`;
   }
 }
 

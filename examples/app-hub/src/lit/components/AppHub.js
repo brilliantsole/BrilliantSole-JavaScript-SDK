@@ -80,7 +80,7 @@ class AppHub extends LitElement {
   );
   _onAnchorHeaderUpdate() {
     const { anchorHeader } = this._anchorHeaderProvider.value.state;
-    console.log("_onAnchorHeaderUpdate", { anchorHeader });
+    // console.log("_onAnchorHeaderUpdate", { anchorHeader });
     this._anchorHeader = anchorHeader;
     if (this._overrideAnchorHeader) {
       return;
@@ -125,7 +125,7 @@ class AppHub extends LitElement {
     this._flip(overrideAnchorHeader);
   }
   _flip(overrideAnchorHeader) {
-    console.log("_flip", { overrideAnchorHeader });
+    // console.log("_flip", { overrideAnchorHeader });
 
     let newIsLeftHanded = this.isLeftHanded;
     let newAnchorHeader = this.anchorHeader;
@@ -142,7 +142,7 @@ class AppHub extends LitElement {
         break;
     }
 
-    console.log({ newIsLeftHanded, newAnchorHeader });
+    // console.log({ newIsLeftHanded, newAnchorHeader });
 
     const forceLeftHanded =
       newAnchorHeader != this.anchorHeader && !newAnchorHeader;
@@ -163,7 +163,7 @@ class AppHub extends LitElement {
   );
   _onDisableTransitionsUpdate() {
     const { disableTransitions } = this._disableTransitionsProvider.value.state;
-    console.log({ disableTransitions });
+    // console.log({ disableTransitions });
     this._disableTransitions = disableTransitions;
     const value = document.documentElement.toggleAttribute(
       "data-disable-transitions",
@@ -179,7 +179,7 @@ class AppHub extends LitElement {
   _onDisableViewTransitionsUpdate() {
     const { disableViewTransitions } =
       this._disableViewTransitionsProvider.value.state;
-    console.log({ disableViewTransitions });
+    // console.log({ disableViewTransitions });
     this._disableViewTransitions = disableViewTransitions;
     document.documentElement.toggleAttribute(
       "data-disable-view-transitions",
@@ -246,7 +246,7 @@ class AppHub extends LitElement {
         );
       },
       afterGoto: (pathname, activeTab) => {
-        console.log("after", pathname, { activeTab });
+        // console.log("after", pathname, { activeTab });
         const isActiveTabDifferent = this.activeTab != activeTab;
         this.activeTab = activeTab;
 
@@ -682,7 +682,7 @@ class AppHub extends LitElement {
   }
   _onIsLeftHandedUpdate() {
     const { isLeftHanded } = this._isLeftHandedProvider.value.state;
-    console.log({ isLeftHanded });
+    // console.log({ isLeftHanded });
     const update = () => {
       document.documentElement.toggleAttribute(
         "data-left-handed",
@@ -828,7 +828,7 @@ class AppHub extends LitElement {
   }
 
   async firstUpdated() {
-    console.log("firstUpdated");
+    // console.log("firstUpdated");
     this._didFirstUpdate = true;
     this._updateTabResizeObserver(true);
 
@@ -858,9 +858,9 @@ class AppHub extends LitElement {
   }
 
   _updateActiveTab() {
-    console.log("_updateActiveTab");
+    // console.log("_updateActiveTab");
     const { activeTab } = this._activeTabProvider.value.state;
-    console.log({ activeTab });
+    // console.log({ activeTab });
   }
 
   _batteryManagerProvider = createBatteryManagerContextProvider(
@@ -1631,11 +1631,11 @@ class AppHub extends LitElement {
   _onBluetoothUpdate() {
     const { isBluetoothAvailable, isBluetoothEnabled, isBluetoothScanning } =
       this._bluetoothState;
-    console.log({
-      isBluetoothAvailable,
-      isBluetoothEnabled,
-      isBluetoothScanning,
-    });
+    // console.log({
+    //   isBluetoothAvailable,
+    //   isBluetoothEnabled,
+    //   isBluetoothScanning,
+    // });
     document.documentElement.toggleAttribute(
       "data-bluetooth-available",
       isBluetoothAvailable,

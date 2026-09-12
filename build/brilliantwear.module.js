@@ -35827,6 +35827,7 @@ let DeviceManager$1 = (() => {
                     return bluetoothDeviceAdvertisementEvents.has(bluetoothDevice);
                 });
             }
+            const _availableDevices = this.availableDevices.slice();
             bluetoothDevices.forEach((bluetoothDevice) => {
                 if (!bluetoothDevice.gatt) {
                     return;
@@ -35868,7 +35869,9 @@ let DeviceManager$1 = (() => {
                 device.connectionManager = connectionManager;
                 this.#pushAvailableDevice(device);
             });
-            this.#dispatchAvailableDevices();
+            if (_availableDevices.length != this.availableDevices.length) {
+                this.#dispatchAvailableDevices();
+            }
             return this.availableDevices;
         }
         #eventDispatcher = new EventDispatcher(this, DeviceManagerEventTypes);

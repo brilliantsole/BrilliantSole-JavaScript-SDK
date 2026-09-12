@@ -28,7 +28,7 @@ import {
 import { capitalizeFirstCharacter } from "../utils/stringUtils.ts";
 import { default as scanner, ScannerLike } from "./Scanner.ts";
 
-const _console = createConsole("ScannerManager", { log: true });
+const _console = createConsole("ScannerManager", { log: false });
 
 interface BaseScannerManagerScannerEventMessage {
   scanner: ScannerLike;

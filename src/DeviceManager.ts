@@ -361,6 +361,8 @@ class DeviceManager {
       });
     }
 
+    const _availableDevices = this.availableDevices.slice();
+
     bluetoothDevices.forEach((bluetoothDevice) => {
       if (!bluetoothDevice.gatt) {
         return;
@@ -416,7 +418,9 @@ class DeviceManager {
       device.connectionManager = connectionManager;
       this.#pushAvailableDevice(device);
     });
-    this.#dispatchAvailableDevices();
+    if (_availableDevices.length != this.availableDevices.length) {
+      this.#dispatchAvailableDevices();
+    }
     return this.availableDevices;
   }
 

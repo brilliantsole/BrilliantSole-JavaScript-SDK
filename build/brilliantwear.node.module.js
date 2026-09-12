@@ -21090,6 +21090,7 @@ let DeviceManager = (() => {
                     return bluetoothDeviceAdvertisementEvents.has(bluetoothDevice);
                 });
             }
+            const _availableDevices = this.availableDevices.slice();
             bluetoothDevices.forEach((bluetoothDevice) => {
                 if (!bluetoothDevice.gatt) {
                     return;
@@ -21131,7 +21132,9 @@ let DeviceManager = (() => {
                 device.connectionManager = connectionManager;
                 this.#pushAvailableDevice(device);
             });
-            this.#dispatchAvailableDevices();
+            if (_availableDevices.length != this.availableDevices.length) {
+                this.#dispatchAvailableDevices();
+            }
             return this.availableDevices;
         }
         #eventDispatcher = new EventDispatcher(this, DeviceManagerEventTypes);
@@ -24983,7 +24986,7 @@ let ServerManager = (() => {
 var ServerManager_default = ServerManager.shared;
 PubSubManager$1._init();
 
-const _console$6 = createConsole("ScannerManager", { log: true });
+const _console$6 = createConsole("ScannerManager", { log: false });
 function getScannerManagerScannerEventTypes(scannerEventType) {
     return ["scanner"].map((prefix) => `${prefix}${capitalizeFirstCharacter(scannerEventType)}`);
 }
