@@ -341,7 +341,7 @@ class ClientInput extends SignalWatcher(LitElement) {
   }
 
   toggleConnection() {
-    console.log("toggleConnection");
+    // console.log("toggleConnection");
 
     const client = this.getClient(true);
     client.toggleConnection(this.url.origin);

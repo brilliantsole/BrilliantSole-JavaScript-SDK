@@ -1,6 +1,5 @@
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.ts";
 import { createConsole } from "../../utils/Console.ts";
-import { isInNode } from "../../utils/environment.ts";
 import {
   addEventListeners,
   removeEventListeners,

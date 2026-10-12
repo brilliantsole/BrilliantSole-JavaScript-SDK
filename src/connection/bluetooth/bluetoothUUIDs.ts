@@ -1,4 +1,4 @@
-import { isInBrowser, isInNode } from "../../utils/environment.ts";
+import { isInBrowser } from "../../utils/environment.ts";
 import { createConsole } from "../../utils/Console.ts";
 
 const _console = createConsole("bluetoothUUIDs", { log: false });
@@ -17,8 +17,53 @@ if (isInBrowser) {
 }
 /** BROWSER_END */
 
-/** LS_START */
-if (typeof BluetoothUUID == undefined) {
+if (typeof BluetoothUUID == "undefined") {
+  function toUUID(uuid: number | string): string {
+    if (typeof uuid === "number") {
+      uuid = uuid.toString(16).padStart(4, "0");
+    }
+
+    switch (uuid) {
+      case "battery_service":
+        uuid = "180F";
+        break;
+      case "battery_level":
+        uuid = "2A19";
+        break;
+
+      case "device_information":
+        uuid = "180A";
+        break;
+      case "manufacturer_name_string":
+        uuid = "2A29";
+        break;
+      case "model_number_string":
+        uuid = "2A24";
+        break;
+      case "hardware_revision_string":
+        uuid = "2A27";
+        break;
+      case "firmware_revision_string":
+        uuid = "2A26";
+        break;
+      case "software_revision_string":
+        uuid = "2A28";
+        break;
+      case "pnp_id":
+        uuid = "2A50";
+        break;
+      case "serial_number_string":
+        uuid = "2A25";
+        break;
+    }
+
+    if (/^[0-9a-fA-F]{4,8}$/.test(uuid)) {
+      uuid = `0000${uuid.padStart(4, "0")}-0000-1000-8000-00805f9b34fb`;
+    }
+
+    return uuid.toLowerCase();
+  }
+
   BluetoothUUID = {
     getService: (uuid: number | string): string => toUUID(uuid),
     getCharacteristic: (uuid: number | string): string => toUUID(uuid),
@@ -26,19 +71,6 @@ if (typeof BluetoothUUID == undefined) {
     canonicalUUID: (alias: string | number) => toUUID(alias),
   };
 }
-
-function toUUID(uuid: number | string): string {
-  if (typeof uuid === "number") {
-    uuid = uuid.toString(16).padStart(4, "0");
-  }
-
-  if (/^[0-9a-fA-F]{4,8}$/.test(uuid)) {
-    return `0000${uuid.padStart(8, "0")}-0000-1000-8000-00805f9b34fb`;
-  }
-
-  return uuid.toLowerCase();
-}
-/** LS_END */
 
 function generateBluetoothUUID(value: string): BluetoothServiceUUID {
   _console.assertTypeWithError(value, "string");
@@ -162,6 +194,7 @@ export function getServiceNameFromUUID(
     if (!serviceUUID.includes("-")) {
       serviceInfoUUID = serviceInfoUUID.replaceAll("-", "");
     }
+    // _console.log("comparing", { serviceUUID, serviceInfoUUID });
     return serviceUUID == serviceInfoUUID;
   });
 }

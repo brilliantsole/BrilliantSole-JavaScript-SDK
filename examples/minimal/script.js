@@ -23,12 +23,21 @@ device.addEventListener("isConnected", () => {
     : "connect";
 });
 device.addEventListener("connected", () => {
-  device.setSensorConfiguration({ gameRotation: 20 });
+  device.setSensorConfiguration({ gameRotation: 20, pressure: 20 });
 });
 const quaternionSpan = document.getElementById("quaternion");
 device.addEventListener("gameRotation", (event) => {
   quaternionSpan.innerText = JSON.stringify(
     event.message.gameRotationEuler,
+    null,
+    2,
+  );
+});
+
+const pressureSpan = document.getElementById("pressure");
+device.addEventListener("pressure", (event) => {
+  pressureSpan.innerText = JSON.stringify(
+    event.message.pressure.sensors.map((sensor) => sensor.rawValue),
     null,
     2,
   );

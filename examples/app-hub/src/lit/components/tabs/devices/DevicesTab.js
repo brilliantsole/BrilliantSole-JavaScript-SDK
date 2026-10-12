@@ -88,7 +88,7 @@ class DevicesTab extends LitElement {
       update(true);
     } else {
       const types = [manual ? "toggle-client-manual" : "toggle-client"];
-      console.log("types", types);
+      // console.log("types", types);
       this._addClientViewTransition = document.startViewTransition({
         update: async () => {
           update();
@@ -101,23 +101,23 @@ class DevicesTab extends LitElement {
   }
 
   _onIsScanningAvailableUpdate() {
-    console.log("_onIsScanningAvailableUpdate");
+    // console.log("_onIsScanningAvailableUpdate");
     this.isScanningAvailable = isScanningAvailableSignal.get();
   }
   _onIsScanningUpdate() {
-    console.log("_onIsScanningUpdate");
+    // console.log("_onIsScanningUpdate");
     this.isScanning = isScanningSignal.get();
   }
 
   /** @type {string[]} */
   availableDeviceBluetoothIds = [];
   async _onDeviceBluetoothIdsUpdate(requestUpdate = true) {
-    console.log("_onDeviceBluetoothIdsUpdate", { requestUpdate });
+    // console.log("_onDeviceBluetoothIdsUpdate", { requestUpdate });
     this.availableDeviceBluetoothIds = availableDeviceBluetoothIdsSignal.get();
-    console.log(
-      "this.availableDeviceBluetoothIds",
-      this.availableDeviceBluetoothIds,
-    );
+    // console.log(
+    //   "this.availableDeviceBluetoothIds",
+    //   this.availableDeviceBluetoothIds,
+    // );
 
     if (requestUpdate) {
       const update = async (noViewTransition) => {
@@ -134,7 +134,7 @@ class DevicesTab extends LitElement {
         update(Boolean(this._viewTransition));
       } else {
         const types = ["devices-update"];
-        console.log("types", types);
+        // console.log("types", types);
         this._devicesViewTransition = document.startViewTransition({
           update: async () => {
             update();
@@ -213,7 +213,7 @@ class DevicesTab extends LitElement {
     this.clients = BW.ClientManager.clients.filter(
       (client) => client.type == "webSocket" && client.hasConnectedOnce,
     );
-    console.log("_updateClients", this.clients);
+    // console.log("_updateClients", this.clients);
     await waitForAnimationFrames(2);
     if (requestUpdate && !this._viewTransition) {
       this.requestUpdate();
@@ -223,12 +223,12 @@ class DevicesTab extends LitElement {
   render() {
     const isAddingClient = isAddingClientSignal.get();
     const availableDeviceBluetoothIds = this.availableDeviceBluetoothIds;
-    console.log({ isAddingClient }, this.clients, availableDeviceBluetoothIds);
+    // console.log({ isAddingClient }, this.clients, availableDeviceBluetoothIds);
 
-    console.log({
-      isScanningAvailable: this.isScanningAvailable,
-      isScanning: this.isScanning,
-    });
+    // console.log({
+    //   isScanningAvailable: this.isScanningAvailable,
+    //   isScanning: this.isScanning,
+    // });
 
     const clientsStyles = {
       "--bw-grid-lane-width": "17em",

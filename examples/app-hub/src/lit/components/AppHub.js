@@ -1073,7 +1073,7 @@ class AppHub extends LitElement {
     if (dblclickTarget && !dblclickTarget.ondblclick) {
       // console.log("adding ondblclick", dblclickTarget);
       dblclickTarget.ondblclick = (event) => {
-        // console.log("intercepted dblclick", event.target);
+        console.log("intercepted dblclick", event.target);
       };
     }
 
@@ -1143,7 +1143,7 @@ class AppHub extends LitElement {
   /** @type {{identifier: number, screenX: number, screenY: number, timeStamp: number, initialScreenX: number, initialScreenY: number, initialTouchedHeader?: boolean, distanceToHeader: number}?} */
   _latestTouchMove;
   _ignoreTouchIdentifier;
-  _touchMoveMagnitudeThreshold = 8;
+  _touchMoveMagnitudeThreshold = 2;
   _touchMoveAngleThreshold = 0.6;
   _touchMoveDistanceToHeaderThreshold = 40;
   /** @param {TouchEvent} event */
@@ -1209,7 +1209,11 @@ class AppHub extends LitElement {
       // console.log({ distanceToHeader });
       this._latestTouchMove.distanceToHeader = distanceToHeader;
     }
-    // console.log({ angle, magnitude });
+    // console.log({
+    //   angle,
+    //   magnitude,
+    //   reachedThreshold: magnitude >= this._touchMoveMagnitudeThreshold,
+    // });
     if (magnitude < this._touchMoveMagnitudeThreshold) {
       return;
     }
@@ -1239,6 +1243,7 @@ class AppHub extends LitElement {
     }
 
     this._ignoreTouchIdentifier = true;
+    // console.log("_ignoreTouchIdentifier", this._ignoreTouchIdentifier);
     this._onGestureDirection(direction, true, true, event.target);
   };
 
@@ -1535,7 +1540,7 @@ class AppHub extends LitElement {
     if (!isIOS) {
       return;
     }
-    console.log("scroll", window.scrollY);
+    // console.log("scroll", window.scrollY);
     if (window.scrollY == 1 || window.scrollY == 0) {
       return;
     }

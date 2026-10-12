@@ -1533,14 +1533,14 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
         {
           const { string: bluetoothId } = parseStringFromDataView(dataView);
           if (!bluetoothId) {
-            _console.error("no string found in message");
+            _console.log("no string found in message");
             break;
           }
           const device = DeviceManager.connectedDevices.find(
             (device) => device.bluetoothId == bluetoothId,
           );
           if (!device) {
-            _console.error(`no device found with id ${bluetoothId}`);
+            _console.log(`no device found with id ${bluetoothId}`);
             break;
           }
 

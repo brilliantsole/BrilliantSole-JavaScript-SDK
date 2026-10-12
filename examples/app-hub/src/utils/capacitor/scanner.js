@@ -3,6 +3,12 @@ import { waitForGlobals } from "../../utils/cross-origin-storage-utils.js";
 const { BW } = await waitForGlobals();
 
 /** @typedef {import("../../../../../build/brilliantwear.module.js").ConnectionType} ConnectionType */
+/** @typedef {import("../../../../../build/brilliantwear.module.js").BluetoothUUIDs.BluetoothServiceName} BluetoothServiceName */
+/** @typedef {import("../../../../../build/brilliantwear.module.js").BluetoothUUIDs.BluetoothCharacteristicName} BluetoothCharacteristicName */
+/** @typedef {import("../../../../../build/brilliantwear.module.js").ConnectionManagerConnectOptions} ConnectionManagerConnectOptions */
+
+/** @typedef {import("@capgo/capacitor-bluetooth-low-energy").BleService} BleService */
+/** @typedef {import("@capgo/capacitor-bluetooth-low-energy").BleCharacteristic} BleCharacteristic */
 
 import { Capacitor } from "@capacitor/core";
 console.log("Capacitor", Capacitor);
@@ -16,18 +22,239 @@ class BluetoothLowEnergyConnectionManager
   /** @param {string} bluetoothId */
   constructor(bluetoothId) {
     super();
-    this.bluetoothId = bluetoothId;
+    this.#bluetoothId = bluetoothId;
   }
 
-  // FILL
+  #bluetoothId;
+  get bluetoothId() {
+    return this.#bluetoothId;
+  }
+
+  #isConnected = false;
+  set _isConnected(newIsConnected) {
+    if (this.#isConnected == newIsConnected) {
+      return;
+    }
+    this.#isConnected = newIsConnected;
+    if (!this.#isConnected) {
+      this.status = "notConnected";
+    }
+  }
+  get isConnected() {
+    return this.#isConnected;
+  }
+
+  /** @type {Map<BluetoothServiceName, BleService>} */
+  #services = new Map();
+  /** @type {Map<BluetoothCharacteristicName, {service: BleService, characteristic: BleCharacteristic}>} */
+  #characteristics = new Map();
+
+  get #hasAllCharacteristics() {
+    return BW.BluetoothUUIDs.allCharacteristicNames.every(
+      (characteristicName) => {
+        if (characteristicName == "smp") {
+          return true;
+        }
+        return this.#characteristics.has(characteristicName);
+      },
+    );
+  }
+
+  get canUpdateFirmware() {
+    return this.#characteristics.has("smp");
+  }
+
+  /** @param {ConnectionManagerConnectOptions?} options */
+  async connect(options) {
+    this.#canReconnect = false;
+
+    console.log("connect", { options });
+    const canConnect = await super.connect(options);
+    if (!canConnect) {
+      console.log("can't connect");
+      return false;
+    }
+    const deviceId = this.bluetoothId;
+    console.log("connecting", { deviceId });
+    await BluetoothLowEnergy.connect({ deviceId });
+    if (this._checkSignalIfAborted()) {
+      return false;
+    }
+    console.log("connected", { deviceId });
+    await BluetoothLowEnergy.discoverServices({ deviceId });
+    if (this._checkSignalIfAborted()) {
+      return false;
+    }
+    console.log("discovered services", { deviceId });
+    const getServicesResult = await BluetoothLowEnergy.getServices({
+      deviceId,
+    });
+    console.log("getServicesResult", { deviceId }, getServicesResult);
+    for (const service of getServicesResult.services) {
+      const serviceName = BW.BluetoothUUIDs.getServiceNameFromUUID(
+        service.uuid,
+      );
+      if (serviceName) {
+        this.#services.set(serviceName, service);
+        for (const characteristic of service.characteristics) {
+          const characteristicName =
+            BW.BluetoothUUIDs.getCharacteristicNameFromUUID(
+              characteristic.uuid,
+            );
+          if (characteristicName) {
+            console.log("got characteristic", {
+              characteristicName,
+              serviceName,
+            });
+
+            this.#characteristics.set(characteristicName, {
+              service,
+              characteristic,
+            });
+
+            if (characteristic.properties.notify) {
+              console.log("starting notifications", characteristic);
+              await BluetoothLowEnergy.startCharacteristicNotifications({
+                deviceId,
+                service: service.uuid,
+                characteristic: characteristic.uuid,
+              });
+              if (this._checkSignalIfAborted()) {
+                return false;
+              }
+            }
+            if (characteristic.properties.read) {
+              const readResult = await BluetoothLowEnergy.readCharacteristic({
+                deviceId,
+                service: service.uuid,
+                characteristic: characteristic.uuid,
+              });
+              if (this._checkSignalIfAborted()) {
+                return false;
+              }
+              console.log("readResult", readResult, {
+                serviceName,
+                characteristicName,
+              });
+              this.onCharacteristicValueChanged(
+                characteristicName,
+                new DataView(Uint8Array.from(readResult.value).buffer),
+              );
+            }
+          } else {
+            console.error(
+              `no characteristicName found for ${characteristic.uuid}`,
+              characteristic,
+            );
+          }
+        }
+      } else {
+        console.error(`no serviceName found for ${service.uuid}`, service);
+      }
+    }
+    if (!this.#hasAllCharacteristics) {
+      console.error("didn't get all characteristics");
+      this.status = "notConnected";
+      return false;
+    }
+    console.log("got all characteristics");
+    this.status = "connected";
+    this.#canReconnect = true;
+    return true;
+  }
+  async disconnect() {
+    const canContinue = await super.disconnect();
+    if (!canContinue) {
+      return false;
+    }
+    const deviceId = this.bluetoothId;
+    await BluetoothLowEnergy.disconnect({ deviceId });
+    return true;
+  }
+
+  /**
+   * @param {string} service
+   * @param {string} characteristic
+   * @param {number[]} value
+   */
+  _onCharacteristicValueChanged(service, characteristic, value) {
+    // console.log(
+    //   "_onCharacteristicValueChanged",
+    //   { service, characteristic },
+    //   value,
+    // );
+    const serviceName = BW.BluetoothUUIDs.getServiceNameFromUUID(service);
+    if (!serviceName) {
+      console.error(`invalid service "${service}"`);
+      return;
+    }
+    const characteristicName =
+      BW.BluetoothUUIDs.getCharacteristicNameFromUUID(characteristic);
+    if (!characteristicName) {
+      console.error(`invalid characteristic "${characteristic}"`);
+      return;
+    }
+    // console.log({ serviceName, characteristicName });
+    this.onCharacteristicValueChanged(
+      characteristicName,
+      new DataView(Uint8Array.from(value).buffer),
+    );
+  }
+
+  /**
+   * @param {BluetoothCharacteristicName} characteristicName
+   * @param {ArrayBuffer} data
+   */
+  async writeCharacteristic(characteristicName, data) {
+    super.writeCharacteristic(characteristicName, data);
+
+    // console.log("writeCharacteristic", { characteristicName }, data);
+
+    const { bluetoothId: deviceId } = this;
+    const characteristicInfo = this.#characteristics.get(characteristicName);
+    if (!characteristicInfo) {
+      console.error(`no characteristic found for "${characteristicName}"`);
+      return;
+    }
+    const { uuid: service } = characteristicInfo.service;
+    const { uuid: characteristic } = characteristicInfo.characteristic;
+
+    const value = Array.from(new Uint8Array(data));
+
+    // console.log(
+    //   "writeCharacteristic",
+    //   {
+    //     deviceId,
+    //     service,
+    //     characteristic,
+    //   },
+    //   value,
+    // );
+
+    BluetoothLowEnergy.writeCharacteristic({
+      deviceId,
+      service,
+      characteristic,
+      value,
+    });
+  }
+
+  #canReconnect = false;
+  get canReconnect() {
+    return this.#canReconnect;
+  }
+  async reconnect() {
+    if (!this.canReconnect) {
+      return false;
+    }
+    console.log("reconnecting");
+    return this.connect();
+  }
 }
 const isWeb = Capacitor.getPlatform() == "web";
 document.documentElement.toggleAttribute("data-web", isWeb);
 
 class BluetoothLowEnergyScanner extends BW.BaseScanner {
-  // FILL - connect/disconnect
-  // FILL - connectionManager
-
   constructor() {
     super();
 
@@ -37,13 +264,19 @@ class BluetoothLowEnergyScanner extends BW.BaseScanner {
 
     BluetoothLowEnergy.addListener("deviceScanned", (event) => {
       const { device } = event;
-      console.log("deviceScanned", device);
-      const { deviceId, name, manufacturerData, serviceUuids, rssi } = device;
+      // console.log("deviceScanned", device);
+      const {
+        deviceId: bluetoothId,
+        name,
+        manufacturerData,
+        serviceUuids,
+        rssi,
+      } = device;
       const discoveredDeviceMetadata =
         this._parseManufacturerData(manufacturerData);
-      console.log("discoveredDeviceMetadata", discoveredDeviceMetadata);
+      // console.log("discoveredDeviceMetadata", discoveredDeviceMetadata);
       this._onDiscoveredDevice({
-        bluetoothId: deviceId,
+        bluetoothId,
         name,
         rssi,
         ...discoveredDeviceMetadata,
@@ -51,28 +284,55 @@ class BluetoothLowEnergyScanner extends BW.BaseScanner {
     });
 
     BluetoothLowEnergy.addListener("deviceConnected", (event) => {
-      console.log("deviceConnected", event);
-      const { deviceId } = event;
-      // FILL
+      // console.log("deviceConnected", event);
+      const { deviceId: bluetoothId } = event;
+      const connectionManager = this.#getConnectionManager(bluetoothId);
+      if (connectionManager) {
+        connectionManager._isConnected = true;
+      }
     });
     BluetoothLowEnergy.addListener("deviceDisconnected", (event) => {
-      console.log("deviceDisconnected", event);
-      const { deviceId } = event;
-      // FILL
+      // console.log("deviceDisconnected", event);
+      const { deviceId: bluetoothId } = event;
+      const connectionManager = this.#getConnectionManager(bluetoothId);
+      if (connectionManager) {
+        connectionManager._isConnected = false;
+      }
     });
     BluetoothLowEnergy.addListener("characteristicChanged", (event) => {
-      console.log("characteristicChanged", event);
-      const { deviceId, service, characteristic, value } = event;
-      // FILL
+      // console.log("characteristicChanged", event);
+      const { deviceId: bluetoothId, service, characteristic, value } = event;
+      const connectionManager = this.#getConnectionManager(bluetoothId);
+      if (connectionManager) {
+        connectionManager._onCharacteristicValueChanged(
+          service,
+          characteristic,
+          value,
+        );
+      }
     });
 
     this.#initialize();
   }
 
+  #getConnectionManager(bluetoothId) {
+    /** @type {BluetoothLowEnergyConnectionManager | undefined} */
+    const connectionManager =
+      this.discoveredDevices[bluetoothId]?.device?.connectionManager;
+    if (!connectionManager) {
+      // TODO: - create device instead?
+      console.error(
+        `no connectionManager found with bluetoothId ${bluetoothId}`,
+      );
+      return;
+    }
+    return connectionManager;
+  }
+
   async #initialize() {
     await BluetoothLowEnergy.initialize();
     const { available } = await BluetoothLowEnergy.isAvailable();
-    console.log({ available });
+    // console.log({ available });
     if (available) {
       await this.#checkEnabledTimer.start(true);
       if (this.isScanningAvailable) {
@@ -82,7 +342,7 @@ class BluetoothLowEnergyScanner extends BW.BaseScanner {
   }
 
   async #checkEnabled() {
-    console.log("#checkEnabled");
+    // console.log("#checkEnabled");
     const { enabled } = await BluetoothLowEnergy.isEnabled();
     // console.log({ enabled });
     this._isScanning = this.isScanning && enabled;
@@ -111,11 +371,12 @@ class BluetoothLowEnergyScanner extends BW.BaseScanner {
     return true;
   }
 
-  /** @param { string} bluetoothId */
+  /** @param { string } bluetoothId */
   _createConnectionManager(bluetoothId) {
-    const bluetoothLowEnergyConnectionManager =
-      new BluetoothLowEnergyConnectionManager(bluetoothId);
-    return bluetoothLowEnergyConnectionManager;
+    const connectionManager = new BluetoothLowEnergyConnectionManager(
+      bluetoothId,
+    );
+    return connectionManager;
   }
 }
 
@@ -139,4 +400,4 @@ if (true || !isWeb) {
   console.log("scanner", scanner);
 }
 
-// FILL - select which as the default
+// BW.setConsoleLevelFlagsForType("Device", { log: true });

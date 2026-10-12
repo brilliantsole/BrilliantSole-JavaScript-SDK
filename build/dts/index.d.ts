@@ -114,8 +114,8 @@ export declare const ThrottleUtils: {
 };
 import { LedType, LedTypes, LedValue, LedValueType, LedValueTypes, LedConfiguration, Led } from "./led/LedManager.ts";
 export { LedType, LedTypes, LedValue, LedValueType, LedValueTypes, LedConfiguration, Led, };
-import { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes, ConnectionStatus, ConnectionStatuses } from "./connection/BaseConnectionManager.ts";
-export { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes, ConnectionStatus, ConnectionStatuses, };
+import { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes, ConnectionStatus, ConnectionStatuses, ConnectionManagerConnectOptions } from "./connection/BaseConnectionManager.ts";
+export { ConnectionMessageType, ConnectionMessageTypes, ConnectionEventType, ConnectionEventTypes, TxRxMessageType, TxRxMessageTypes, ConnectionStatus, ConnectionStatuses, ConnectionManagerConnectOptions, };
 import { default as BluetoothConnectionManager } from "./connection/bluetooth/BluetoothConnectionManager.ts";
 export { BluetoothConnectionManager };
 import * as BluetoothUUIDs from "./connection/bluetooth/bluetoothUUIDs.ts";

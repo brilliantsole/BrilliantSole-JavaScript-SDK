@@ -17034,22 +17034,54 @@ _a$4 = BaseConnectionManager;
 const _console$t = createConsole("bluetoothUUIDs", { log: false });
 var BluetoothUUID;
 BluetoothUUID = webbluetooth.BluetoothUUID;
-if (typeof BluetoothUUID == undefined) {
+if (typeof BluetoothUUID == "undefined") {
+    function toUUID(uuid) {
+        if (typeof uuid === "number") {
+            uuid = uuid.toString(16).padStart(4, "0");
+        }
+        switch (uuid) {
+            case "battery_service":
+                uuid = "180F";
+                break;
+            case "battery_level":
+                uuid = "2A19";
+                break;
+            case "device_information":
+                uuid = "180A";
+                break;
+            case "manufacturer_name_string":
+                uuid = "2A29";
+                break;
+            case "model_number_string":
+                uuid = "2A24";
+                break;
+            case "hardware_revision_string":
+                uuid = "2A27";
+                break;
+            case "firmware_revision_string":
+                uuid = "2A26";
+                break;
+            case "software_revision_string":
+                uuid = "2A28";
+                break;
+            case "pnp_id":
+                uuid = "2A50";
+                break;
+            case "serial_number_string":
+                uuid = "2A25";
+                break;
+        }
+        if (/^[0-9a-fA-F]{4,8}$/.test(uuid)) {
+            uuid = `0000${uuid.padStart(4, "0")}-0000-1000-8000-00805f9b34fb`;
+        }
+        return uuid.toLowerCase();
+    }
     BluetoothUUID = {
         getService: (uuid) => toUUID(uuid),
         getCharacteristic: (uuid) => toUUID(uuid),
         getDescriptor: (uuid) => toUUID(uuid),
         canonicalUUID: (alias) => toUUID(alias),
     };
-}
-function toUUID(uuid) {
-    if (typeof uuid === "number") {
-        uuid = uuid.toString(16).padStart(4, "0");
-    }
-    if (/^[0-9a-fA-F]{4,8}$/.test(uuid)) {
-        return `0000${uuid.padStart(8, "0")}-0000-1000-8000-00805f9b34fb`;
-    }
-    return uuid.toLowerCase();
 }
 function generateBluetoothUUID(value) {
     _console$t.assertTypeWithError(value, "string");
@@ -17138,7 +17170,7 @@ function getServiceNameFromUUID(serviceUUID) {
 const characteristicUUIDs = [];
 const allCharacteristicUUIDs = [];
 const characteristicNames = [];
-const allCharacteristicNames = [];
+const allCharacteristicNames$1 = [];
 Object.values(bluetoothUUIDs.services).forEach((serviceInfo) => {
     if (!serviceInfo.characteristics) {
         return;
@@ -17151,7 +17183,7 @@ Object.values(bluetoothUUIDs.services).forEach((serviceInfo) => {
             characteristicNames.push(characteristicName);
         }
         allCharacteristicUUIDs.push(characteristicInfo.uuid);
-        allCharacteristicNames.push(characteristicName);
+        allCharacteristicNames$1.push(characteristicName);
     });
 }, []);
 function getCharacteristicNameFromUUID(characteristicUUID) {
@@ -17216,7 +17248,7 @@ const serviceDataUUID = "0000";
 
 var bluetoothUUIDs$1 = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    allCharacteristicNames: allCharacteristicNames,
+    allCharacteristicNames: allCharacteristicNames$1,
     allCharacteristicUUIDs: allCharacteristicUUIDs,
     allServiceUUIDs: allServiceUUIDs,
     characteristicNames: characteristicNames,
@@ -24080,12 +24112,12 @@ class BaseServer {
                 {
                     const { string: bluetoothId } = parseStringFromDataView(dataView);
                     if (!bluetoothId) {
-                        _console$a.error("no string found in message");
+                        _console$a.log("no string found in message");
                         break;
                     }
                     const device = DeviceManager.connectedDevices.find((device) => device.bluetoothId == bluetoothId);
                     if (!device) {
-                        _console$a.error(`no device found with id ${bluetoothId}`);
+                        _console$a.log(`no device found with id ${bluetoothId}`);
                         break;
                     }
                     const messages = [];
@@ -25303,7 +25335,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     };
     #characteristics = new Map();
     get #hasAllCharacteristics() {
-        return allCharacteristicNames.every((characteristicName) => {
+        return allCharacteristicNames$1.every((characteristicName) => {
             if (characteristicName == "smp") {
                 return true;
             }

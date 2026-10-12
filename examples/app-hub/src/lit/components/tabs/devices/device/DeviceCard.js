@@ -96,7 +96,7 @@ class DeviceCard extends LitElement {
     if (this._device == device) {
       return;
     }
-    console.log("_onDevice", device);
+    // console.log("_onDevice", device);
     this._device = device;
 
     if (this._deviceAbortController) {
@@ -467,7 +467,7 @@ class DeviceCard extends LitElement {
     return this.connectionStatus ?? "notConnected";
   }
   toggleConnection() {
-    console.log("toggleConnection");
+    // console.log("toggleConnection");
     if (this._device) {
       this._device.toggleConnection();
     } else {

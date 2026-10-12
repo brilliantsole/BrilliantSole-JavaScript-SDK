@@ -559,6 +559,7 @@ import {
   TxRxMessageTypes,
   ConnectionStatus,
   ConnectionStatuses,
+  ConnectionManagerConnectOptions,
 } from "./connection/BaseConnectionManager.ts";
 export {
   ConnectionMessageType,
@@ -569,6 +570,7 @@ export {
   TxRxMessageTypes,
   ConnectionStatus,
   ConnectionStatuses,
+  ConnectionManagerConnectOptions,
 };
 
 import { default as BluetoothConnectionManager } from "./connection/bluetooth/BluetoothConnectionManager.ts";

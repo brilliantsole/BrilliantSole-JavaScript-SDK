@@ -28,7 +28,7 @@ class NavButtonDevices extends SignalWatcher(LitElement) {
     const { name, family } = tabIcons["devices"];
 
     const deviceBluetoothIds = connectedDeviceBluetoothIdsSignal.get();
-    console.log("deviceBluetoothIds", deviceBluetoothIds);
+    // console.log("deviceBluetoothIds", deviceBluetoothIds);
 
     const variant = this.isBluetoothEnabled
       ? tabVariants["devices"]
