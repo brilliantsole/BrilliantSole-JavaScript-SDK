@@ -301,7 +301,9 @@ abstract class BaseScanner {
     }
 
     this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
-    this.#checkDiscoveredDevicesExpirationTimer.start();
+    if (this.isScanning) {
+      this.#checkDiscoveredDevicesExpirationTimer.start();
+    }
 
     if (!exists) {
       this.#dispatchEvent("discoveredDevice", {

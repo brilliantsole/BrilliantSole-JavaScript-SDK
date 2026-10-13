@@ -36,7 +36,7 @@ const {
   onProviderHostConnection: (provider, abortController) => {
     const update = async () => {
       const bluetoothState = await getBluetoothState();
-      console.log({ bluetoothState });
+      // console.log({ bluetoothState });
       provider.value.update(bluetoothState);
     };
 

@@ -8,8 +8,8 @@ import { default as Device, DeviceEvent, DeviceEventType, DeviceEventTypes, Devi
 export { Device, DeviceEvent, DeviceEventType, DeviceEventTypes, DeviceEventMap, DeviceEventListenerMap, BoundDeviceEventListeners, };
 import { isTensorFlowAvailable, listTensorflowModels, isTensorFlowModelAvailable, getTensorFlowModel } from "./utils/Tensorflow.ts";
 export { isTensorFlowAvailable, listTensorflowModels, isTensorFlowModelAvailable, getTensorFlowModel, };
-import { default as DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners } from "./DeviceManager.ts";
-export { DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners, };
+import { default as DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners, LocalStorageDeviceInformation } from "./DeviceManager.ts";
+export { DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners, LocalStorageDeviceInformation, };
 import { default as ServerManager } from "./server/ServerManager.ts";
 export { ServerManager };
 import { default as ClientManager } from "./server/ClientManager.ts";

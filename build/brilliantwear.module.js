@@ -36610,6 +36610,7 @@ class BaseScanner {
         if (dataView.byteLength >= 3) {
             const deviceTypeEnum = dataView.getUint8(2);
             deviceType = DeviceTypes[deviceTypeEnum];
+            _console$h.log({ deviceType });
         }
         if (dataView.byteLength >= 3 + 4) {
             ipAddress = new Uint8Array(dataView.buffer.slice(3, 3 + 4)).join(".");
@@ -36643,7 +36644,9 @@ class BaseScanner {
             this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
         }
         this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
-        this.#checkDiscoveredDevicesExpirationTimer.start();
+        if (this.isScanning) {
+            this.#checkDiscoveredDevicesExpirationTimer.start();
+        }
         if (!exists) {
             this.#dispatchEvent("discoveredDevice", {
                 discoveredDevice,

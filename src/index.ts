@@ -48,6 +48,7 @@ import {
   DeviceManagerEventMap,
   DeviceManagerEventListenerMap,
   BoundDeviceManagerEventListeners,
+  LocalStorageDeviceInformation,
 } from "./DeviceManager.ts";
 export {
   DeviceManager,
@@ -55,6 +56,7 @@ export {
   DeviceManagerEventMap,
   DeviceManagerEventListenerMap,
   BoundDeviceManagerEventListeners,
+  LocalStorageDeviceInformation,
 };
 
 import { default as ServerManager } from "./server/ServerManager.ts";

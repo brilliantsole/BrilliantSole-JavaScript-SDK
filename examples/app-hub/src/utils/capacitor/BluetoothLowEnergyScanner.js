@@ -24,10 +24,17 @@ class BluetoothLowEnergyConnectionManager
     return this.#bluetoothId;
   }
 
-  /** @param {string} bluetoothId */
-  constructor(bluetoothId) {
+  /** @type {BluetoothLowEnergyScanner} */
+  #scanner;
+
+  /**
+   * @param {string} bluetoothId
+   * @param {BluetoothLowEnergyScanner} scanner
+   */
+  constructor(bluetoothId, scanner) {
     super();
     this.#bluetoothId = bluetoothId;
+    this.#scanner = scanner;
   }
 
   #isConnected = false;
@@ -38,6 +45,9 @@ class BluetoothLowEnergyConnectionManager
     this.#isConnected = newIsConnected;
     if (!this.#isConnected) {
       this.status = "notConnected";
+    }
+    if (this.isConnected) {
+      this.#scanner._save();
     }
   }
   get isConnected() {
@@ -332,6 +342,7 @@ class BluetoothLowEnergyScanner extends BW.BaseScanner {
 
   async #initialize() {
     await BluetoothLowEnergy.initialize({ mode: "central" });
+    await this.#load();
     const { available } = await BluetoothLowEnergy.isAvailable();
     // console.log({ available });
     if (available) {
@@ -376,8 +387,68 @@ class BluetoothLowEnergyScanner extends BW.BaseScanner {
   _createConnectionManager(bluetoothId) {
     const connectionManager = new BluetoothLowEnergyConnectionManager(
       bluetoothId,
+      this,
     );
     return connectionManager;
+  }
+
+  #useLocalStorage = true;
+  #storageKey = "BW.BluetoothLowEnergyScanner.bleDevices";
+  _save() {
+    /** @type {LocalStorageDeviceInformation[]} */
+    const devicesInformation = [];
+
+    this.discoveredDevicesArray.forEach((discoveredDevice) => {
+      const { device, name, deviceType, bluetoothId } = discoveredDevice;
+      if (!device) {
+        return;
+      }
+      devicesInformation.push({
+        bluetoothId,
+        type: deviceType,
+        name,
+      });
+    });
+
+    const devicesInformationString = JSON.stringify(devicesInformation);
+    if (this.#useLocalStorage) {
+      localStorage.setItem(this.#storageKey, devicesInformationString);
+    } else {
+      sessionStorage.setItem(this.#storageKey, devicesInformationString);
+    }
+  }
+  async #load() {
+    let devicesInformationString;
+    if (this.#useLocalStorage) {
+      devicesInformationString = localStorage.getItem(this.#storageKey);
+    } else {
+      devicesInformationString = sessionStorage.getItem(this.#storageKey);
+    }
+    if (!devicesInformationString) {
+      return;
+    }
+    // console.log({ devicesInformationString });
+
+    /** @type {LocalStorageDeviceInformation[]} */
+    const devicesInformation = JSON.parse(devicesInformationString);
+    // console.log({ devicesInformation });
+    const getConnectedDevicesResult =
+      await BluetoothLowEnergy.getConnectedDevices();
+    const bleDevices = getConnectedDevicesResult.devices;
+    // connecting to device doesn't work - requires scanning first
+    return;
+    bleDevices.forEach((bleDevice) => {
+      const deviceInformation = devicesInformation.find(
+        (deviceInformation) =>
+          deviceInformation.bluetoothId == bleDevice.deviceId,
+      );
+      this._onDiscoveredDevice({
+        bluetoothId: bleDevice.deviceId,
+        name: bleDevice.name ?? deviceInformation.name,
+        deviceType: deviceInformation.type,
+        rssi: 0,
+      });
+    });
   }
 }
 

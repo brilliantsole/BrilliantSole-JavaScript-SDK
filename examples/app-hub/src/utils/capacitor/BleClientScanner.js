@@ -9,7 +9,9 @@ const isWeb = Capacitor.getPlatform() == "web";
 /** @typedef {import("../../../../../build/brilliantwear.module.js").BluetoothUUIDs.BluetoothServiceName} BluetoothServiceName */
 /** @typedef {import("../../../../../build/brilliantwear.module.js").BluetoothUUIDs.BluetoothCharacteristicName} BluetoothCharacteristicName */
 /** @typedef {import("../../../../../build/brilliantwear.module.js").ConnectionManagerConnectOptions} ConnectionManagerConnectOptions */
+/** @typedef {import("../../../../../build/brilliantwear.module.js").LocalStorageDeviceInformation} LocalStorageDeviceInformation */
 
+/** @typedef {import("@capacitor-community/bluetooth-le").BleDevice} BleDevice */
 /** @typedef {import("@capacitor-community/bluetooth-le").BleService} BleService */
 /** @typedef {import("@capacitor-community/bluetooth-le").BleCharacteristic} BleCharacteristic */
 
@@ -22,10 +24,17 @@ class BleClientConnectionManager extends BW.BluetoothConnectionManager {
     return this.#bluetoothId;
   }
 
-  /** @param {string} bluetoothId */
-  constructor(bluetoothId) {
+  /** @type {BleClientScanner} */
+  #scanner;
+
+  /**
+   * @param {string} bluetoothId
+   * @param {BleClientScanner} scanner
+   */
+  constructor(bluetoothId, scanner) {
     super();
     this.#bluetoothId = bluetoothId;
+    this.#scanner = scanner;
   }
 
   #isConnected = false;
@@ -36,6 +45,9 @@ class BleClientConnectionManager extends BW.BluetoothConnectionManager {
     this.#isConnected = newIsConnected;
     if (!this.#isConnected) {
       this.status = "notConnected";
+    }
+    if (this.isConnected) {
+      this.#scanner._save();
     }
   }
   get isConnected() {
@@ -255,6 +267,7 @@ class BleClientScanner extends BW.BaseScanner {
 
   async #initialize() {
     await BleClient.initialize();
+    await this.#load();
     await BleClient.startEnabledNotifications((enabled) => {
       this.#onIsEnabled(enabled);
     });
@@ -337,8 +350,67 @@ class BleClientScanner extends BW.BaseScanner {
 
   /** @param { string } bluetoothId */
   _createConnectionManager(bluetoothId) {
-    const connectionManager = new BleClientConnectionManager(bluetoothId);
+    const connectionManager = new BleClientConnectionManager(bluetoothId, this);
     return connectionManager;
+  }
+
+  #useLocalStorage = true;
+  #storageKey = "BW.BleClientScanner.bleDevices";
+  _save() {
+    /** @type {LocalStorageDeviceInformation[]} */
+    const devicesInformation = [];
+
+    this.discoveredDevicesArray.forEach((discoveredDevice) => {
+      const { device, name, deviceType, bluetoothId } = discoveredDevice;
+      if (!device) {
+        return;
+      }
+      devicesInformation.push({
+        bluetoothId,
+        type: deviceType,
+        name,
+      });
+    });
+
+    const devicesInformationString = JSON.stringify(devicesInformation);
+    if (this.#useLocalStorage) {
+      localStorage.setItem(this.#storageKey, devicesInformationString);
+    } else {
+      sessionStorage.setItem(this.#storageKey, devicesInformationString);
+    }
+  }
+  async #load() {
+    let devicesInformationString;
+    if (this.#useLocalStorage) {
+      devicesInformationString = localStorage.getItem(this.#storageKey);
+    } else {
+      devicesInformationString = sessionStorage.getItem(this.#storageKey);
+    }
+    if (!devicesInformationString) {
+      return;
+    }
+    // console.log({ devicesInformationString });
+
+    /** @type {LocalStorageDeviceInformation[]} */
+    const devicesInformation = JSON.parse(devicesInformationString);
+    // console.log({ devicesInformation });
+    const bleDevices = await BleClient.getDevices(
+      devicesInformation.map(
+        (deviceInformation) => deviceInformation.bluetoothId,
+      ),
+    );
+    bleDevices.forEach((bleDevice) => {
+      const deviceInformation = devicesInformation.find(
+        (deviceInformation) =>
+          deviceInformation.bluetoothId == bleDevice.deviceId,
+      );
+      this._onDiscoveredDevice({
+        bluetoothId: bleDevice.deviceId,
+        name: bleDevice.name ?? deviceInformation.name,
+        deviceType: deviceInformation.type,
+        rssi: 0,
+      });
+    });
   }
 }
 
