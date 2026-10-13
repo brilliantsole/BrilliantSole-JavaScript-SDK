@@ -254,7 +254,7 @@ abstract class BaseScanner {
     if (dataView.byteLength >= 3) {
       const deviceTypeEnum = dataView.getUint8(2);
       deviceType = DeviceTypes[deviceTypeEnum];
-      _console;
+      _console.log({ deviceType });
     }
     if (dataView.byteLength >= 3 + 4) {
       ipAddress = new Uint8Array(dataView.buffer.slice(3, 3 + 4)).join(".");

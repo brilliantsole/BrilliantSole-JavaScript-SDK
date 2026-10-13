@@ -5,7 +5,7 @@ const { BW } = await waitForGlobals(true);
 const isBluetoothAvailable = Boolean(
   await navigator.bluetooth?.getAvailability(),
 );
-console.log({ isBluetoothAvailable });
+// console.log({ isBluetoothAvailable });
 document.documentElement.toggleAttribute(
   "data-bluetooth-available",
   isBluetoothAvailable,
