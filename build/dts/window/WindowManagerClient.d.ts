@@ -23,13 +23,13 @@ export type WindowManagerClientEventDispatcher = WindowManagerClientEventDispatc
 export type BoundWindowManagerClientEventListeners = WindowManagerClientEventDispatcherTypes["BoundEventListeners"];
 declare class WindowManagerClient {
     #private;
-    get addEventListener(): <T extends "*" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<WindowManagerClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage", WindowManagerClientEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "*" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<WindowManagerClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage", WindowManagerClientEventMessages, T>) => void) => void;
+    get addEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "*" | "serverMessage">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<WindowManagerClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage", WindowManagerClientEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "*" | "serverMessage">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<WindowManagerClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage", WindowManagerClientEventMessages, T>) => void) => void;
     get waitForEvent(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage">(type: T, options?: {
         immediate?: boolean;
         signal?: AbortSignal;
     }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<WindowManagerClient, "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage", WindowManagerClientEventMessages, T>>;
-    get removeEventListeners(): <T extends "*" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "serverMessage">(type: T) => void;
+    get removeEventListeners(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "*" | "serverMessage">(type: T) => void;
     get removeAllEventListeners(): () => void;
     static readonly shared: WindowManagerClient;
     constructor();

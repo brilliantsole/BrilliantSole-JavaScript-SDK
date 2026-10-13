@@ -18,12 +18,12 @@ const observer = new MutationObserver((mutations) => {
       if (node.nodeType !== Node.ELEMENT_NODE) continue;
 
       if (node.matches("wa-zoomable-frame")) {
-        console.log("Found wa-zoomable-frame:", node);
+        // console.log("Found wa-zoomable-frame:", node);
         onWaZoomableFrame(node);
       }
 
       for (const el of node.querySelectorAll?.("wa-zoomable-frame") ?? []) {
-        console.log("Found wa-zoomable-frame:", el);
+        // console.log("Found wa-zoomable-frame:", el);
         onWaZoomableFrame(el);
       }
     }

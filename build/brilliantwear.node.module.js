@@ -21207,7 +21207,7 @@ let DeviceManager$1 = (() => {
                 const connectionManager = new WebBluetoothConnectionManager();
                 connectionManager.device = bluetoothDevice;
                 if (bluetoothDevice.name) {
-                    device._informationManager.updateName(bluetoothDevice.name);
+                    device._informationManager.updateName(deviceInformation.name ?? bluetoothDevice.name);
                 }
                 device._informationManager.updateType(deviceInformation.type);
                 device.connectionManager = connectionManager;

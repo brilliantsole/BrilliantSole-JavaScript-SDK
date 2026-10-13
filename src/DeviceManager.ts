@@ -439,7 +439,9 @@ class DeviceManager {
       connectionManager.device = bluetoothDevice;
       if (bluetoothDevice.name) {
         // @ts-expect-error
-        device._informationManager.updateName(bluetoothDevice.name);
+        device._informationManager.updateName(
+          deviceInformation.name ?? bluetoothDevice.name,
+        );
       }
       // @ts-expect-error
       device._informationManager.updateType(deviceInformation.type);
