@@ -294,11 +294,11 @@ export class Router extends litRouter.Routes {
   _onNavigate = (event) => {
     const { destination, navigationType, info, canIntercept } = event;
     const { currentEntry } = navigation;
-    console.log("_onNavigate", destination, {
-      navigationType,
-      info,
-      canIntercept,
-    });
+    // console.log("_onNavigate", destination, {
+    //   navigationType,
+    //   info,
+    //   canIntercept,
+    // });
 
     if (navigationType == "reload") {
       return;
