@@ -42,12 +42,12 @@ declare abstract class BaseScanner {
     readonly connectionType: ConnectionType;
     readonly isClient = false;
     constructor();
-    get addEventListener(): <T extends "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDeviceUpdate" | "expiredDiscoveredDevice" | "discoveredDevices" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseScanner, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDeviceUpdate" | "expiredDiscoveredDevice" | "discoveredDevices" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning", ScannerEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
-    get removeEventListener(): <T extends "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDeviceUpdate" | "expiredDiscoveredDevice" | "discoveredDevices" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseScanner, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDeviceUpdate" | "expiredDiscoveredDevice" | "discoveredDevices" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning", ScannerEventMessages, T>) => void) => void;
-    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDeviceUpdate" | "expiredDiscoveredDevice" | "discoveredDevices" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning">(type: T, options?: {
+    get addEventListener(): <T extends "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDevices" | "expiredDiscoveredDevice" | "discoveredDeviceUpdate" | "scanning" | "notScanning" | "scanningAvailable" | "scanningNotAvailable">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseScanner, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDevices" | "expiredDiscoveredDevice" | "discoveredDeviceUpdate" | "scanning" | "notScanning" | "scanningAvailable" | "scanningNotAvailable", ScannerEventMessages, T>) => void, options?: import("../utils/EventDispatcher.ts").EventDispatcherOptions) => void;
+    get removeEventListener(): <T extends "*" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDevices" | "expiredDiscoveredDevice" | "discoveredDeviceUpdate" | "scanning" | "notScanning" | "scanningAvailable" | "scanningNotAvailable">(type: T, listener: (event: import("../utils/EventDispatcher.ts").ListenerEvent<BaseScanner, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDevices" | "expiredDiscoveredDevice" | "discoveredDeviceUpdate" | "scanning" | "notScanning" | "scanningAvailable" | "scanningNotAvailable", ScannerEventMessages, T>) => void) => void;
+    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDevices" | "expiredDiscoveredDevice" | "discoveredDeviceUpdate" | "scanning" | "notScanning" | "scanningAvailable" | "scanningNotAvailable">(type: T, options?: {
         immediate?: boolean;
         signal?: AbortSignal;
-    }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<BaseScanner, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDeviceUpdate" | "expiredDiscoveredDevice" | "discoveredDevices" | "scanningAvailable" | "scanningNotAvailable" | "scanning" | "notScanning", ScannerEventMessages, T>>;
+    }) => Promise<import("../utils/EventDispatcher.ts").ListenerEvent<BaseScanner, "isScanningAvailable" | "isScanning" | "discoveredDevice" | "discoveredDevices" | "expiredDiscoveredDevice" | "discoveredDeviceUpdate" | "scanning" | "notScanning" | "scanningAvailable" | "scanningNotAvailable", ScannerEventMessages, T>>;
     get isScanningAvailable(): boolean;
     protected set _isScanningAvailable(newIsScanningAvailable: boolean);
     get isScanning(): boolean;
@@ -58,7 +58,7 @@ declare abstract class BaseScanner {
     get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
     get discoveredDevicesArray(): DiscoveredDevice[];
     protected _parseManufacturerData(dataView: DataView | string): {
-        deviceType: "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic" | undefined;
+        deviceType: "generic" | "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | undefined;
         ipAddress: string | undefined;
         isWifiSecure: boolean | undefined;
     };

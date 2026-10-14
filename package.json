@@ -1,6 +1,6 @@
 {
   "name": "brilliantsole",
-  "version": "0.0.78",
+  "version": "0.0.79",
   "description": "JavaScript SDK for BrilliantWear Devices",
   "main": "./build/brilliantwear.module.js",
   "module": "./build/brilliantwear.module.js",
