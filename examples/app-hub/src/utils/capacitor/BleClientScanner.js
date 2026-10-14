@@ -296,10 +296,9 @@ class BleClientScanner extends BW.BaseScanner {
         allowDuplicates: true,
       },
       (result) => {
-        // console.log("scan result", result);
+        console.log("scan result", result);
         const {
           device,
-          localName: name,
           rssi,
           manufacturerData: manufacturerDataMap,
           uuids,
@@ -330,7 +329,7 @@ class BleClientScanner extends BW.BaseScanner {
         // });
         this._onDiscoveredDevice({
           bluetoothId: device.deviceId,
-          name,
+          name: device.name,
           rssi,
           ...discoveredDeviceMetadata,
         });

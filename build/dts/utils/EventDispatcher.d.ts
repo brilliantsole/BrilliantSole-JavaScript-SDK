@@ -66,6 +66,7 @@ declare class EventDispatcher<Target extends any, EventType extends string, Even
         target: Target;
         message: EventMessages[K];
     }; }>;
+    getLatestMessage<K extends EventType>(type: K): EventMessages[K] | undefined;
     constructor(target: Target, validEventTypes: readonly EventType[]);
     addEventListener<T extends EventType | WildcardEventType>(type: T, listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void, options?: EventDispatcherOptions): void;
     removeEventListener<T extends EventType | WildcardEventType>(type: T, listener: (event: ListenerEvent<Target, EventType, EventMessages, T>) => void): void;

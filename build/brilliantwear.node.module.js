@@ -214,6 +214,9 @@ class EventDispatcher {
     get latestEvents() {
         return this.#latestEvents;
     }
+    getLatestMessage(type) {
+        return this.#latestEvents[type]?.message;
+    }
     #target;
     #validEventTypes;
     constructor(target, validEventTypes) {
@@ -10400,6 +10403,7 @@ let DisplayCanvasHelper = (() => {
                 await this.#updateCanvas(true, false);
                 await this.#updateDevice(true, true);
             }
+            await this.draw();
             _console$z.log("finished setting device", newDevice);
             this.#isSettingDevice = false;
             this.#setIsReady(this.device?.isDisplayReady ?? true);
@@ -14702,13 +14706,16 @@ let DisplayManager = (() => {
         }
         async show(sendImmediately = true, waitUntilReady = false, isSending, displayCanvasHelper) {
             _console$x.log("showDisplay", { sendImmediately, waitUntilReady, isSending });
-            if (this.#shouldWait(isSending)) {
-                await this.#show(sendImmediately, isSending);
-                return;
-            }
             let promise;
             if (waitUntilReady) {
                 promise = this.waitForEvent("displayReady");
+            }
+            if (this.#shouldWait(isSending)) {
+                await this.#show(sendImmediately, isSending);
+                if (waitUntilReady) {
+                    await promise;
+                }
+                return;
             }
             this.#isReady = false;
             this.#lastShowRequestTime = Date.now();
@@ -14729,13 +14736,16 @@ let DisplayManager = (() => {
                 waitUntilReady,
                 isSending,
             });
-            if (this.#shouldWait(isSending)) {
-                await this.#clear(sendImmediately, isSending);
-                return;
-            }
             let promise;
             if (waitUntilReady) {
                 promise = this.waitForEvent("displayReady");
+            }
+            if (this.#shouldWait(isSending)) {
+                await this.#clear(sendImmediately, isSending);
+                if (waitUntilReady) {
+                    await promise;
+                }
+                return;
             }
             this.#isReady = false;
             this.#lastShowRequestTime = Date.now();
@@ -14895,6 +14905,7 @@ let DisplayManager = (() => {
             }
             const differences = this.#contextStateHelper.update(partialState);
             if (differences.length == 0) {
+                _console$x.log("redundant fillColor");
                 return;
             }
             await this.#selectFillColor(fillColorIndex, sendImmediately, isSending);
@@ -20034,6 +20045,9 @@ class Device {
     }
     get hasSensorType() {
         return this.#sensorConfigurationManager.hasSensorType;
+    }
+    get getLatestMessage() {
+        return this.#eventDispatcher.getLatestMessage;
     }
     async clearSensorConfiguration() {
         this.#assertIsConnected();

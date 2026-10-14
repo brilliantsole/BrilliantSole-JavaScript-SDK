@@ -294,7 +294,7 @@ class AppHub extends LitElement {
       document.head.appendChild(this._themeColorMeta);
     }
 
-    console.log("AppHub", this);
+    // console.log("AppHub", this);
   }
 
   async _updateMetaColor() {
@@ -1073,7 +1073,7 @@ class AppHub extends LitElement {
     if (dblclickTarget && !dblclickTarget.ondblclick) {
       // console.log("adding ondblclick", dblclickTarget);
       dblclickTarget.ondblclick = (event) => {
-        console.log("intercepted dblclick", event.target);
+        // console.log("intercepted dblclick", event.target);
       };
     }
 

@@ -113,10 +113,17 @@ const displayCanvasHelper = new BW.DisplayCanvasHelper();
 displayCanvasHelper.canvas = document.getElementById("displayCanvas");
 /** @param {DisplayManagerInterface} displayManager */
 const drawCallback = (displayManager) => {
-  console.log("draw", displayManager, { isDrawing: displayManager.isDrawing });
+  let x = 0;
+  let orientation =
+    displayManager.device?.getLatestMessage("orientation")?.orientation;
+  if (orientation) {
+    x = 100 + orientation.roll * 5;
+  } else {
+    x = getTimeOscillator() * 50;
+  }
+  // console.log("draw", displayManager, { isDrawing: displayManager.isDrawing });
   displayManager.setColor(1, "white");
   displayManager.selectFillColor(1);
-  const x = getTimeOscillator() * 50;
   displayManager.drawCircle(100 + x, 100, 20);
 };
 displayCanvasHelper.addEventListener("device", () =>
@@ -125,6 +132,6 @@ displayCanvasHelper.addEventListener("device", () =>
 displayCanvasHelper.setDrawCallback(drawCallback);
 window.displayCanvasHelper = displayCanvasHelper;
 console.log("displayCanvasHelper", displayCanvasHelper);
-BW.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
+// BW.setConsoleLevelFlagsForType("DisplayCanvasHelper", { log: true });
 // BW.setConsoleLevelFlagsForType("DisplayManager", { log: true });
 displayCanvasHelper.draw();

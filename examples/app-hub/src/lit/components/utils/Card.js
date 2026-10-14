@@ -26,6 +26,7 @@ class Card extends LitElement {
       padding-top: var(--wa-space-3xs);
       padding-bottom: var(--wa-space-3xs);
       padding-inline-end: 0px;
+      min-height: 3rem;
     }
     wa-card h3 {
       margin: 0;

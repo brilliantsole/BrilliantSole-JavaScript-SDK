@@ -97,12 +97,12 @@ export const SensorDataEventTypes = [
 ] as const;
 export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 
-interface BaseSensorDataEventMessage {
+export interface BaseSensorDataEventMessage {
   timestamp: number;
   isLast: boolean;
 }
 
-type BaseSensorDataEventMessages = BarometerSensorDataEventMessages &
+export type BaseSensorDataEventMessages = BarometerSensorDataEventMessages &
   MotionSensorDataEventMessages &
   PressureDataEventMessages &
   ButtonSensorDataEventMessages &

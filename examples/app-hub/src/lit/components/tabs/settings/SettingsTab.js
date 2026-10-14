@@ -8,6 +8,7 @@ const { LitElement, html } = lit;
 import "./appearance/SettingsAppearance.js";
 import "./interface/SettingsInterface.js";
 import "./gestures/SettingsGestures.js";
+import "./system/SettingsSystem.js";
 import "./action-buttons/SettingsActionButtons.js";
 
 class SettingsTab extends LitElement {
@@ -35,6 +36,7 @@ class SettingsTab extends LitElement {
       <div class="bw-grid-lanes">
         <bw-settings-appearance></bw-settings-appearance>
         ${settingsInterface} ${settingsGestures} ${settingsActionButtons}
+        <bw-settings-system></bw-settings-system>
       </div>
     `;
   }

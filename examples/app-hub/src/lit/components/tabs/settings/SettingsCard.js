@@ -9,6 +9,7 @@ import "../../utils/Card.js";
 class SettingsCard extends LitElement {
   static properties = {
     label: {},
+    hideClear: { type: Boolean, attribute: "hide-clear" },
   };
 
   _onClearClick() {
@@ -19,6 +20,7 @@ class SettingsCard extends LitElement {
     return html`<bw-card label=${this.label}>
       <slot></slot>
       <wa-button
+        ?hidden=${this.hideClear}
         appearance="plain"
         slot="header-actions"
         size="m"

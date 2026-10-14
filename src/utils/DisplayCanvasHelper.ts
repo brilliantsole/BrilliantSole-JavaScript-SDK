@@ -527,6 +527,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.#updateCanvas(true, false);
       await this.#updateDevice(true, true);
     }
+    await this.draw();
     _console.log("finished setting device", newDevice);
     this.#isSettingDevice = false;
 
@@ -912,7 +913,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#setIsReady(true);
     }
   }
-  #interval = 50; // can remove when working with better smart
+  #interval = 50; // can remove when working with better glasses
   get interval() {
     return this.#interval;
   }

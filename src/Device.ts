@@ -31,6 +31,8 @@ import SensorDataManager, {
   SensorDataMessageType,
   SensorDataMessageTypes,
   SensorType,
+  BaseSensorDataEventMessages,
+  BaseSensorDataEventMessage,
   ContinuousSensorTypes,
   SensorDataEventDispatcher,
   RequiredPressureMessageTypes,
@@ -1338,6 +1340,10 @@ class Device {
   }
   get hasSensorType() {
     return this.#sensorConfigurationManager.hasSensorType;
+  }
+
+  get getLatestMessage() {
+    return this.#eventDispatcher.getLatestMessage;
   }
 
   async clearSensorConfiguration() {

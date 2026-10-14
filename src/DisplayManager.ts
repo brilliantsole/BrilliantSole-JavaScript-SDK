@@ -879,14 +879,17 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     _console.log("showDisplay", { sendImmediately, waitUntilReady, isSending });
 
-    if (this.#shouldWait(isSending)) {
-      await this.#show(sendImmediately, isSending);
-      return;
-    }
-
     let promise: Promise<DisplayEventMessages["displayReady"]> | undefined;
     if (waitUntilReady) {
       promise = this.waitForEvent("displayReady");
+    }
+
+    if (this.#shouldWait(isSending)) {
+      await this.#show(sendImmediately, isSending);
+      if (waitUntilReady) {
+        await promise;
+      }
+      return;
     }
 
     this.#isReady = false;
@@ -920,14 +923,17 @@ class DisplayManager implements DisplayManagerInterface {
       isSending,
     });
 
-    if (this.#shouldWait(isSending)) {
-      await this.#clear(sendImmediately, isSending);
-      return;
-    }
-
     let promise: Promise<DisplayEventMessages["displayReady"]> | undefined;
     if (waitUntilReady) {
       promise = this.waitForEvent("displayReady");
+    }
+
+    if (this.#shouldWait(isSending)) {
+      await this.#clear(sendImmediately, isSending);
+      if (waitUntilReady) {
+        await promise;
+      }
+      return;
     }
 
     this.#isReady = false;
@@ -1233,6 +1239,7 @@ class DisplayManager implements DisplayManagerInterface {
     }
     const differences = this.#contextStateHelper.update(partialState);
     if (differences.length == 0) {
+      _console.log("redundant fillColor");
       return;
     }
     await this.#selectFillColor(fillColorIndex, sendImmediately, isSending);

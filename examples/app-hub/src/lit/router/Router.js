@@ -290,11 +290,22 @@ export class Router extends litRouter.Routes {
     saveCurrentNavigationEntryStateToSessionStorage();
   }
 
-  /** @param {NavigationEventMap["navigate"]} e */
-  _onNavigate = (e) => {
-    const { destination, navigationType, info } = e;
+  /** @param {NavigationEventMap["navigate"]} event */
+  _onNavigate = (event) => {
+    const { destination, navigationType, info, canIntercept } = event;
     const { currentEntry } = navigation;
-    // console.log("_onNavigate", destination, { navigationType, info });
+    console.log("_onNavigate", destination, {
+      navigationType,
+      info,
+      canIntercept,
+    });
+
+    if (navigationType == "reload") {
+      return;
+    }
+    if (!canIntercept) {
+      return;
+    }
 
     const url = new URL(destination.url);
 
@@ -304,7 +315,7 @@ export class Router extends litRouter.Routes {
     }
 
     // Let browser handle downloads, external targets, etc.
-    if (e.downloadRequest || e.hashChange) {
+    if (event.downloadRequest || event.hashChange) {
       return;
     }
 
@@ -326,7 +337,7 @@ export class Router extends litRouter.Routes {
     if (navigationType == "traverse" && !destinationState) {
       console.warn("no destinationState for traversal");
       try {
-        e.preventDefault();
+        event.preventDefault();
       } catch (error) {}
       return;
     }
@@ -342,9 +353,9 @@ export class Router extends litRouter.Routes {
     // });
 
     if (currentState.route == route) {
-      console.log("redundant route - skipping");
+      console.log(`redundant route ${route} - skipping`);
       try {
-        e.preventDefault();
+        event.preventDefault();
       } catch (error) {}
       const state = {
         ...currentState,
@@ -358,7 +369,7 @@ export class Router extends litRouter.Routes {
 
     if (isBase) {
       // console.log("about to intercept navigation");
-      e.intercept({
+      event.intercept({
         handler: async () => {
           // console.log("routeHandler", { route }, tabs);
 
@@ -404,7 +415,7 @@ export class Router extends litRouter.Routes {
       });
     } else {
       try {
-        e.preventDefault();
+        event.preventDefault();
       } catch (error) {}
       const state = { route };
       try {

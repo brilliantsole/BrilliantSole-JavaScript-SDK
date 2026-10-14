@@ -146,6 +146,10 @@ class EventDispatcher<
     return this.#latestEvents;
   }
 
+  getLatestMessage<K extends EventType>(type: K): EventMessages[K] | undefined {
+    return this.#latestEvents[type]?.message;
+  }
+
   #target!: Target;
   #validEventTypes!: readonly EventType[];
 
