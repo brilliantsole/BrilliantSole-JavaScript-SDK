@@ -737,8 +737,8 @@ html[data-header-hidden] {
       }
 
       :root {
-        --cross-axis-flex-direction: column-reverse;
-        --cross-opposite-axis-flex-direction: column;
+        /* --cross-axis-flex-direction: column-reverse;
+        --cross-opposite-axis-flex-direction: column; */
       }
 
       /* [data-cross-align="start"] {
