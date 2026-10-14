@@ -43,6 +43,7 @@ import {
   assertSpritePaletteSwap,
   assertSpriteSheetPalette,
   assertSpriteSheetPaletteSwap,
+  DisplayDrawCallback,
   DisplayManagerInterface,
   drawSpriteFromSpriteSheet,
   getSprite,
@@ -139,6 +140,7 @@ export const DisplayCanvasHelperEventTypes = [
   "deviceSpriteSheetUploadProgress",
   "deviceSpriteSheetUploadComplete",
   "deviceUpdated",
+  "draw",
 ] as const;
 export type DisplayCanvasHelperEventType =
   (typeof DisplayCanvasHelperEventTypes)[number];
@@ -207,6 +209,8 @@ export interface DisplayCanvasHelperEventMessages {
   deviceUpdated: {
     device: Device;
   };
+
+  draw: {};
 }
 
 export type DisplayCanvasHelperEventDispatcherTypes = EventDispatcherTypes<
@@ -660,6 +664,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     await this.#updateDeviceOpacity(false, updateSelf);
     await this.#updateDeviceContextState(false, false, updateSelf);
     await this.#updateDeviceBrightness(false, updateSelf);
+    await this.#updateDeviceDrawCallback(updateSelf);
     await this.#updateDeviceSpriteSheets(updateSelf);
     await this.#updateDeviceSelectedSpriteSheet(false, false, updateSelf);
     _console.log("deviceUpdated");
@@ -5007,6 +5012,17 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   async #resetBrightness() {
     await this.setBrightness("medium");
   }
+  async #updateDeviceDrawCallback(updateSelf?: boolean) {
+    if (!this.device?.isConnected) {
+      return;
+    }
+    _console.log("#updateDeviceDrawCallback", { updateSelf });
+    if (updateSelf) {
+      this.setDrawCallback(this.deviceDisplayManager!.drawCallback);
+    } else {
+      this.deviceDisplayManager!.setDrawCallback(this.drawCallback);
+    }
+  }
   async #updateDeviceBrightness(
     sendImmediately?: boolean,
     updateSelf?: boolean,
@@ -5553,6 +5569,52 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       if (sendImmediately) {
         this.#onSentContextCommands();
       }
+    }
+  }
+
+  // DRAW
+  #isDrawing = false;
+  get isDrawing() {
+    return this.#isDrawing;
+  }
+  #isWaitingToDraw = false;
+  get isWaitingToDraw() {
+    return this.#isWaitingToDraw;
+  }
+
+  #drawCallback?: DisplayDrawCallback;
+  get drawCallback() {
+    return this.#drawCallback;
+  }
+  setDrawCallback(drawCallback?: DisplayDrawCallback) {
+    _console.log("setDraw", drawCallback);
+    this.#drawCallback = drawCallback;
+  }
+
+  async draw() {
+    if (this.#isDrawing) {
+      _console.log("already drawing - flagging isWaitingToDraw");
+      this.#isWaitingToDraw = true;
+      return;
+    }
+    this.#isWaitingToDraw = false;
+    this.#isDrawing = true;
+
+    _console.log("draw");
+    this.#dispatchEvent("draw", {});
+
+    if (this.#drawCallback) {
+      await this.#drawCallback(this);
+    } else {
+      _console.error("no drawCallback defined");
+    }
+    await this.show(true, true);
+    _console.log("finished draw");
+
+    this.#isDrawing = false;
+    if (this.#isWaitingToDraw) {
+      _console.log("drawing again due to flagged isWaitingToDraw");
+      this.draw();
     }
   }
 }

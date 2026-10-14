@@ -1,8 +1,8 @@
 import * as BS from "../../build/brilliantwear.module.js";
 
-BS.setConsoleLevelFlagsForType("WindowManagerClient", { log: true });
-BS.setConsoleLevelFlagsForType("BaseClient", { log: true });
-BS.setConsoleLevelFlagsForType("DisplayManagerInterface", { log: false });
+// BS.setConsoleLevelFlagsForType("WindowManagerClient", { log: true });
+// BS.setConsoleLevelFlagsForType("BaseClient", { log: true });
+// BS.setConsoleLevelFlagsForType("DisplayManagerInterface", { log: false });
 
 /** @typedef {(device: BS.Device)=>void} DeviceCallback */
 /** @typedef {(device: BS.Device)=>boolean} DeviceFilterCallback */
@@ -291,7 +291,7 @@ const draw = async () => {
   }
 
   if (isDrawing) {
-    //console.warn("busy drawing");
+    // console.warn("busy drawing");
     isWaitingToRedraw = true;
     return;
   }

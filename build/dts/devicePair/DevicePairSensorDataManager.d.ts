@@ -25,7 +25,7 @@ export type DevicePairSensorDataEventDispatcher = EventDispatcher<DevicePair, De
 declare class DevicePairSensorDataManager {
     #private;
     eventDispatcher: DevicePairSensorDataEventDispatcher;
-    get dispatchEvent(): <T extends "pressure" | "sensorData">(type: T, message: DevicePairSensorDataEventMessages[T]) => void;
+    get dispatchEvent(): <T extends "sensorData" | "pressure">(type: T, message: DevicePairSensorDataEventMessages[T]) => void;
     pressureSensorDataManager: DevicePairPressureSensorDataManager;
     resetPressureRange(): void;
     onDeviceSensorData(event: DeviceEventMap["sensorData"]): void;

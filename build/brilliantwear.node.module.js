@@ -5721,6 +5721,10 @@ class VibrationManager {
         if (!Array.isArray(vibrationConfigurations)) {
             vibrationConfigurations = [vibrationConfigurations];
         }
+        if (this.vibrationLocations.length == 0) {
+            _console$I.log("device doesn't have any vibrationLocations");
+            return;
+        }
         if (vibrationConfigurations.length == 0) {
             _console$I.log("empty vibrationConfigurations");
             return;
@@ -9942,6 +9946,7 @@ const DisplayCanvasHelperEventTypes = [
     "deviceSpriteSheetUploadProgress",
     "deviceSpriteSheetUploadComplete",
     "deviceUpdated",
+    "draw",
 ];
 function ForwardToDeviceIfClient(lastIndex) {
     return function (originalMethod, context) {
@@ -10502,6 +10507,7 @@ let DisplayCanvasHelper = (() => {
             await this.#updateDeviceOpacity(false, updateSelf);
             await this.#updateDeviceContextState(false, false, updateSelf);
             await this.#updateDeviceBrightness(false, updateSelf);
+            await this.#updateDeviceDrawCallback(updateSelf);
             await this.#updateDeviceSpriteSheets(updateSelf);
             await this.#updateDeviceSelectedSpriteSheet(false, false, updateSelf);
             _console$z.log("deviceUpdated");
@@ -12992,6 +12998,18 @@ let DisplayCanvasHelper = (() => {
         async #resetBrightness() {
             await this.setBrightness("medium");
         }
+        async #updateDeviceDrawCallback(updateSelf) {
+            if (!this.device?.isConnected) {
+                return;
+            }
+            _console$z.log("#updateDeviceDrawCallback", { updateSelf });
+            if (updateSelf) {
+                this.setDrawCallback(this.deviceDisplayManager.drawCallback);
+            }
+            else {
+                this.deviceDisplayManager.setDrawCallback(this.drawCallback);
+            }
+        }
         async #updateDeviceBrightness(sendImmediately, updateSelf) {
             if (!this.device?.isConnected) {
                 return;
@@ -13291,6 +13309,46 @@ let DisplayCanvasHelper = (() => {
                 if (sendImmediately) {
                     this.#onSentContextCommands();
                 }
+            }
+        }
+        #isDrawing = false;
+        get isDrawing() {
+            return this.#isDrawing;
+        }
+        #isWaitingToDraw = false;
+        get isWaitingToDraw() {
+            return this.#isWaitingToDraw;
+        }
+        #drawCallback;
+        get drawCallback() {
+            return this.#drawCallback;
+        }
+        setDrawCallback(drawCallback) {
+            _console$z.log("setDraw", drawCallback);
+            this.#drawCallback = drawCallback;
+        }
+        async draw() {
+            if (this.#isDrawing) {
+                _console$z.log("already drawing - flagging isWaitingToDraw");
+                this.#isWaitingToDraw = true;
+                return;
+            }
+            this.#isWaitingToDraw = false;
+            this.#isDrawing = true;
+            _console$z.log("draw");
+            this.#dispatchEvent("draw", {});
+            if (this.#drawCallback) {
+                await this.#drawCallback(this);
+            }
+            else {
+                _console$z.error("no drawCallback defined");
+            }
+            await this.show(true, true);
+            _console$z.log("finished draw");
+            this.#isDrawing = false;
+            if (this.#isWaitingToDraw) {
+                _console$z.log("drawing again due to flagged isWaitingToDraw");
+                this.draw();
             }
         }
     };
@@ -14029,6 +14087,7 @@ const DisplayEventTypes = [
     "displaySpriteSheetUploadStart",
     "displaySpriteSheetUploadProgress",
     "displaySpriteSheetUploadComplete",
+    "displayDraw",
 ];
 const MinSpriteSheetNameLength = 1;
 const MaxSpriteSheetNameLength = 30;
@@ -14120,6 +14179,8 @@ let DisplayManager = (() => {
     let _selectSpritePaletteSwap_decorators;
     let _startSprite_decorators;
     let _endSprite_decorators;
+    let _setDrawCallback_decorators;
+    let _draw_decorators;
     return class DisplayManager {
         static {
             const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(null) : void 0;
@@ -14200,6 +14261,8 @@ let DisplayManager = (() => {
             _selectSpritePaletteSwap_decorators = [ForwardToHelper];
             _startSprite_decorators = [ForwardToHelper];
             _endSprite_decorators = [ForwardToHelper];
+            _setDrawCallback_decorators = [ForwardToHelper];
+            _draw_decorators = [ForwardToHelper];
             __esDecorate(this, null, _setContextState_decorators, { kind: "method", name: "setContextState", static: false, private: false, access: { has: obj => "setContextState" in obj, get: obj => obj.setContextState }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _setBrightness_decorators, { kind: "method", name: "setBrightness", static: false, private: false, access: { has: obj => "setBrightness" in obj, get: obj => obj.setBrightness }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _show_decorators, { kind: "method", name: "show", static: false, private: false, access: { has: obj => "show" in obj, get: obj => obj.show }, metadata: _metadata }, null, _instanceExtraInitializers);
@@ -14277,12 +14340,19 @@ let DisplayManager = (() => {
             __esDecorate(this, null, _selectSpritePaletteSwap_decorators, { kind: "method", name: "selectSpritePaletteSwap", static: false, private: false, access: { has: obj => "selectSpritePaletteSwap" in obj, get: obj => obj.selectSpritePaletteSwap }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _startSprite_decorators, { kind: "method", name: "startSprite", static: false, private: false, access: { has: obj => "startSprite" in obj, get: obj => obj.startSprite }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(this, null, _endSprite_decorators, { kind: "method", name: "endSprite", static: false, private: false, access: { has: obj => "endSprite" in obj, get: obj => obj.endSprite }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(this, null, _setDrawCallback_decorators, { kind: "method", name: "setDrawCallback", static: false, private: false, access: { has: obj => "setDrawCallback" in obj, get: obj => obj.setDrawCallback }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(this, null, _draw_decorators, { kind: "method", name: "draw", static: false, private: false, access: { has: obj => "draw" in obj, get: obj => obj.draw }, metadata: _metadata }, null, _instanceExtraInitializers);
             if (_metadata) Object.defineProperty(this, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
         }
-        constructor() {
+        constructor(device) {
             autoBind$1(this);
+            this.#device = device;
         }
-        sendMessages = __runInitializers(this, _instanceExtraInitializers);
+        #device = __runInitializers(this, _instanceExtraInitializers);
+        get device() {
+            return this.#device;
+        }
+        sendMessages;
         eventDispatcher;
         get #dispatchEvent() {
             return this.eventDispatcher.dispatchEvent;
@@ -16457,6 +16527,46 @@ let DisplayManager = (() => {
         }
         set mtu(newMtu) {
             this.#mtu = newMtu;
+        }
+        #isDrawing = false;
+        get isDrawing() {
+            return this.#isDrawing;
+        }
+        #isWaitingToDraw = false;
+        get isWaitingToDraw() {
+            return this.#isWaitingToDraw;
+        }
+        #drawCallback;
+        get drawCallback() {
+            return this.#drawCallback;
+        }
+        setDrawCallback(drawCallback, displayCanvasHelper) {
+            _console$x.log("setDrawCallback", drawCallback);
+            this.#drawCallback = drawCallback;
+        }
+        async draw(displayCanvasHelper) {
+            if (this.#isDrawing) {
+                _console$x.log("already drawing - flagging isWaitingToDraw");
+                this.#isWaitingToDraw = true;
+                return;
+            }
+            this.#isWaitingToDraw = false;
+            this.#isDrawing = true;
+            _console$x.log("draw");
+            this.#dispatchEvent("displayDraw", {});
+            if (this.#drawCallback) {
+                await this.#drawCallback(this);
+            }
+            else {
+                _console$x.error("no drawCallback defined");
+            }
+            await this.show(true, true);
+            _console$x.log("finished draw");
+            this.#isDrawing = false;
+            if (this.#isWaitingToDraw) {
+                _console$x.log("drawing again due to flagged isWaitingToDraw");
+                this.draw(displayCanvasHelper);
+            }
         }
     };
 })();
@@ -20474,7 +20584,7 @@ class Device {
     toggleMicrophoneRecording() {
         this.#microphoneManager.toggleRecording();
     }
-    #displayManager = new DisplayManager();
+    #displayManager = new DisplayManager(this);
     get isDisplayAvailable() {
         return this.#displayManager.isAvailable;
     }
@@ -20548,6 +20658,26 @@ class Device {
     get clearDisplay() {
         this.#assertDisplayIsAvailable();
         return this.#displayManager.clear;
+    }
+    get isWaitingToDrawDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.isWaitingToDraw;
+    }
+    get isDrawingDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.isDrawing;
+    }
+    get drawDisplay() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.draw;
+    }
+    get setDrawDisplayCallback() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.setDrawCallback;
+    }
+    get drawDisplayCallback() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.drawCallback;
     }
     get setDisplayColor() {
         this.#assertDisplayIsAvailable();
@@ -20831,6 +20961,10 @@ class Device {
     }
     get displayManager() {
         return this.#displayManager;
+    }
+    get displayCanvasHelper() {
+        this.#assertDisplayIsAvailable();
+        return this.#displayManager.displayCanvasHelper;
     }
     get uploadDisplaySpriteSheet() {
         this.#assertDisplayIsAvailable();
@@ -23826,7 +23960,7 @@ class BaseServer {
     };
     #onDisplayCanvasHelperDeviceConnected(staticDisplayCanvasHelperEvent) {
         const { device } = staticDisplayCanvasHelperEvent.message;
-        console.log("#onDisplayCanvasHelperDeviceConnected", staticDisplayCanvasHelperEvent);
+        _console$a.log("#onDisplayCanvasHelperDeviceConnected", staticDisplayCanvasHelperEvent);
         this.#onDoneTransferringFile(device, undefined);
     }
     #boundScannerManagerListeners = {

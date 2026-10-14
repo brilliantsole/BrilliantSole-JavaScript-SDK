@@ -4,8 +4,11 @@ import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, Displ
 import { DisplaySprite, DisplaySpriteLines, DisplaySpriteLinesMetrics, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
 import { DisplayScaleDirection, DisplayCropDirection, DisplayColorRGBOrString } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
+import { default as Device } from "../Device.ts";
+export type DisplayDrawCallback = (displayManager: DisplayManagerInterface) => Promise<void>;
 export interface DisplayManagerInterface {
     get isReady(): boolean;
+    get device(): Device | undefined;
     get contextState(): DisplayContextState;
     serializeContextState(other?: PartialDisplayContextState): DisplayContextCommand[];
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean, isSending?: boolean): Promise<void>;
@@ -13,6 +16,11 @@ export interface DisplayManagerInterface {
     flushContextCommands(isSending?: boolean): Promise<void>;
     get brightness(): DisplayBrightness;
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
+    setDrawCallback(drawCallback?: DisplayDrawCallback): void;
+    get drawCallback(): DisplayDrawCallback | undefined;
+    draw(): Promise<void>;
+    get isWaitingToDraw(): boolean;
+    get isDrawing(): boolean;
     show(sendImmediately?: boolean, waitUntilReady?: boolean, isSending?: boolean): Promise<void>;
     clear(sendImmediately?: boolean, waitUntilReady?: boolean, isSending?: boolean): Promise<void>;
     get colors(): string[];

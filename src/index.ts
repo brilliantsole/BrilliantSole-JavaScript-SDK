@@ -311,6 +311,9 @@ export {
   DisplayBezierCurveTypes,
 };
 
+import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
+export { DisplayManagerInterface };
+
 import { wait, Timer } from "./utils/Timer.ts";
 export { wait, Timer };
 

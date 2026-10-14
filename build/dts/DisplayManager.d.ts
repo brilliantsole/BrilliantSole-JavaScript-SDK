@@ -4,7 +4,7 @@ import { Vector2 } from "./utils/MathUtils.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection, DisplayColorRGBOrString } from "./utils/DisplayUtils.ts";
 import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap, PartialDisplayContextState } from "./utils/DisplayContextState.ts";
 import { DisplayContextCommand } from "./utils/DisplayContextCommand.ts";
-import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
+import { DisplayDrawCallback, DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 import { BaseExtendedFileConfiguration, BaseFileConfiguration, OnParseFileCallback, SendFileCallback } from "./FileTransferManager.ts";
 import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap, DisplaySpriteSheet, DisplaySpriteLines } from "./utils/DisplaySpriteSheetUtils.ts";
 import { default as DisplayCanvasHelper } from "./utils/DisplayCanvasHelper.ts";
@@ -74,7 +74,7 @@ export declare const DisplayInformationValues: {
     pixelDepth: readonly ["1", "2", "4"];
 };
 export declare const RequiredDisplayMessageTypes: DisplayMessageType[];
-export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "getDisplaySpriteSheetName", "setDisplaySpriteSheetName", "displaySpriteSheetIndex", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity", "displaySpriteSheetUploadStart", "displaySpriteSheetUploadProgress", "displaySpriteSheetUploadComplete"];
+export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "getDisplaySpriteSheetName", "setDisplaySpriteSheetName", "displaySpriteSheetIndex", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity", "displaySpriteSheetUploadStart", "displaySpriteSheetUploadProgress", "displaySpriteSheetUploadComplete", "displayDraw"];
 export type DisplayEventType = (typeof DisplayEventTypes)[number];
 export interface DisplayEventMessages {
     isDisplayAvailable: {
@@ -123,6 +123,7 @@ export interface DisplayEventMessages {
         spriteSheetName: string;
         spriteSheet: DisplaySpriteSheet;
     };
+    displayDraw: {};
     displayContextCommands: {
         displayContextCommands: DisplayContextCommand[];
     };
@@ -146,13 +147,14 @@ export type DisplaySpriteSheetFileConfiguration = BaseFileConfiguration & BaseDi
 export type ExtendedDisplaySpriteSheetFileConfiguration = BaseExtendedFileConfiguration & BaseDisplaySpriteSheetFileConfiguration;
 declare class DisplayManager implements DisplayManagerInterface {
     #private;
-    constructor();
+    constructor(device: Device);
+    get device(): Device;
     sendMessages: SendDisplayMessagesCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "getDisplaySpriteSheetName" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "displayContextCommands" | "displayCommand" | "setDisplayBrightness" | "setDisplaySpriteSheetName" | "displaySpriteSheetIndex">(type: T, options?: {
+    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getDisplaySpriteSheetName" | "setDisplaySpriteSheetName" | "displaySpriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "displayDraw">(type: T, options?: {
         immediate?: boolean;
         signal?: AbortSignal;
-    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "getDisplaySpriteSheetName" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "displayContextCommands" | "displayCommand" | "setDisplayBrightness" | "setDisplaySpriteSheetName" | "displaySpriteSheetIndex", DisplayEventMessages, T>>;
+    }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getDisplaySpriteSheetName" | "setDisplaySpriteSheetName" | "displaySpriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "displayDraw", DisplayEventMessages, T>>;
     requestRequiredInformation(): void;
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
@@ -348,5 +350,10 @@ declare class DisplayManager implements DisplayManagerInterface {
     reset(): void;
     get mtu(): number;
     set mtu(newMtu: number);
+    get isDrawing(): boolean;
+    get isWaitingToDraw(): boolean;
+    get drawCallback(): DisplayDrawCallback | undefined;
+    setDrawCallback(drawCallback?: DisplayDrawCallback, displayCanvasHelper?: DisplayCanvasHelper): void;
+    draw(displayCanvasHelper?: DisplayCanvasHelper): Promise<void>;
 }
 export default DisplayManager;

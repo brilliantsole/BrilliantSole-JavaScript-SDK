@@ -575,6 +575,10 @@ class VibrationManager {
     if (!Array.isArray(vibrationConfigurations)) {
       vibrationConfigurations = [vibrationConfigurations];
     }
+    if (this.vibrationLocations.length == 0) {
+      _console.log("device doesn't have any vibrationLocations");
+      return;
+    }
     if (vibrationConfigurations.length == 0) {
       _console.log("empty vibrationConfigurations");
       return;

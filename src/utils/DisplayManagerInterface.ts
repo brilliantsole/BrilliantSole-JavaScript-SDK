@@ -37,10 +37,18 @@ import {
 } from "./DisplayUtils.ts";
 import { degToRad, Vector2 } from "./MathUtils.ts";
 
+import { default as Device } from "../Device.ts";
+
 const _console = createConsole("DisplayManagerInterface", { log: false });
+
+export type DisplayDrawCallback = (
+  displayManager: DisplayManagerInterface,
+) => Promise<void>;
 
 export interface DisplayManagerInterface {
   get isReady(): boolean;
+
+  get device(): Device | undefined;
 
   get contextState(): DisplayContextState;
   serializeContextState(
@@ -62,6 +70,12 @@ export interface DisplayManagerInterface {
     newDisplayBrightness: DisplayBrightness,
     sendImmediately?: boolean,
   ): Promise<void>;
+
+  setDrawCallback(drawCallback?: DisplayDrawCallback): void;
+  get drawCallback(): DisplayDrawCallback | undefined;
+  draw(): Promise<void>;
+  get isWaitingToDraw(): boolean;
+  get isDrawing(): boolean;
 
   show(
     sendImmediately?: boolean,

@@ -78,6 +78,7 @@ import {
   assertSpritePaletteSwap,
   assertSpriteSheetPalette,
   assertSpriteSheetPaletteSwap,
+  DisplayDrawCallback,
   DisplayManagerInterface,
   drawSpriteFromSpriteSheet,
   getSprite,
@@ -258,6 +259,7 @@ export const DisplayEventTypes = [
   "displaySpriteSheetUploadStart",
   "displaySpriteSheetUploadProgress",
   "displaySpriteSheetUploadComplete",
+  "displayDraw",
 ] as const;
 export type DisplayEventType = (typeof DisplayEventTypes)[number];
 
@@ -307,6 +309,7 @@ export interface DisplayEventMessages {
     spriteSheetName: string;
     spriteSheet: DisplaySpriteSheet;
   };
+  displayDraw: {};
   displayContextCommands: {
     displayContextCommands: DisplayContextCommand[];
   };
@@ -358,8 +361,14 @@ function ForwardToHelper(
 }
 
 class DisplayManager implements DisplayManagerInterface {
-  constructor() {
+  constructor(device: Device) {
     autoBind(this);
+    this.#device = device;
+  }
+
+  #device!: Device;
+  get device() {
+    return this.#device;
   }
 
   sendMessages!: SendDisplayMessagesCallback;
@@ -4476,6 +4485,57 @@ class DisplayManager implements DisplayManagerInterface {
   }
   set mtu(newMtu: number) {
     this.#mtu = newMtu;
+  }
+
+  // DRAW
+  #isDrawing = false;
+  get isDrawing() {
+    return this.#isDrawing;
+  }
+  #isWaitingToDraw = false;
+  get isWaitingToDraw() {
+    return this.#isWaitingToDraw;
+  }
+
+  #drawCallback?: DisplayDrawCallback;
+  get drawCallback() {
+    return this.#drawCallback;
+  }
+  @ForwardToHelper
+  setDrawCallback(
+    drawCallback?: DisplayDrawCallback,
+    displayCanvasHelper?: DisplayCanvasHelper,
+  ) {
+    _console.log("setDrawCallback", drawCallback);
+    this.#drawCallback = drawCallback;
+  }
+
+  @ForwardToHelper
+  async draw(displayCanvasHelper?: DisplayCanvasHelper) {
+    if (this.#isDrawing) {
+      _console.log("already drawing - flagging isWaitingToDraw");
+      this.#isWaitingToDraw = true;
+      return;
+    }
+    this.#isWaitingToDraw = false;
+    this.#isDrawing = true;
+
+    _console.log("draw");
+    this.#dispatchEvent("displayDraw", {});
+
+    if (this.#drawCallback) {
+      await this.#drawCallback(this);
+    } else {
+      _console.error("no drawCallback defined");
+    }
+    await this.show(true, true);
+    _console.log("finished draw");
+
+    this.#isDrawing = false;
+    if (this.#isWaitingToDraw) {
+      _console.log("drawing again due to flagged isWaitingToDraw");
+      this.draw(displayCanvasHelper);
+    }
   }
 }
 

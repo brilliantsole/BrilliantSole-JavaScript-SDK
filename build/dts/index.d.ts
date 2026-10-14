@@ -66,6 +66,8 @@ import { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, Microph
 export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MicrophoneBitDepth, MicrophoneBitDepths, MicrophoneSampleRate, MicrophoneSampleRates, };
 import { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, MinSpriteSheetNameLength, MaxSpriteSheetNameLength, DisplayBitmap, DisplaySpriteColorPair, DisplayWireframeEdge, DisplayWireframe, DisplayBezierCurveType, DisplayBezierCurveTypes } from "./DisplayManager.ts";
 export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, MinSpriteSheetNameLength, MaxSpriteSheetNameLength, DisplayBitmap, DisplaySpriteColorPair, DisplayWireframeEdge, DisplayWireframe, DisplayBezierCurveType, DisplayBezierCurveTypes, };
+import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
+export { DisplayManagerInterface };
 import { wait, Timer } from "./utils/Timer.ts";
 export { wait, Timer };
 import { DisplaySegmentCap, DisplaySegmentCaps, DisplayAlignment, DisplayAlignments, DisplayDirection, DisplayDirections } from "./utils/DisplayContextState.ts";

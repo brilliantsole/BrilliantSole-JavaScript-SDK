@@ -1086,7 +1086,7 @@ abstract class BaseServer<ServerClient extends BaseServerClient> {
     staticDisplayCanvasHelperEvent: DisplayCanvasHelperManagerEventMap["displayCanvasHelperDeviceConnected"],
   ) {
     const { device } = staticDisplayCanvasHelperEvent.message;
-    console.log(
+    _console.log(
       "#onDisplayCanvasHelperDeviceConnected",
       staticDisplayCanvasHelperEvent,
     );

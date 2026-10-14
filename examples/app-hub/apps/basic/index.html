@@ -37,6 +37,11 @@
     html:not([data-bluetooth-available]) [data-hide-on-bluetooth-unavailable] {
       display: none;
     }
+
+    #displayCanvas {
+      background-color: black;
+      max-height: 200px;
+    }
   </style>
   <body>
     <h1>Minimal Example</h1>
@@ -44,6 +49,10 @@
       connect
     </button>
     <button disabled id="toggleQuaternion">enable quaternion</button>
+    <button disabled id="toggleOrientation">enable orientation</button>
     <label>quaternion: <span id="quaternion"></span></label>
+
+    <br />
+    <canvas id="displayCanvas" width="640" height="400"></canvas>
   </body>
 </html>

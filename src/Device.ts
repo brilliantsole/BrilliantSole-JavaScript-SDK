@@ -1985,7 +1985,7 @@ class Device {
   }
 
   // DISPLAY
-  #displayManager = new DisplayManager();
+  #displayManager = new DisplayManager(this);
 
   get isDisplayAvailable() {
     return this.#displayManager.isAvailable;
@@ -2063,6 +2063,27 @@ class Device {
   get clearDisplay() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.clear;
+  }
+
+  get isWaitingToDrawDisplay() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.isWaitingToDraw;
+  }
+  get isDrawingDisplay() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.isDrawing;
+  }
+  get drawDisplay() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.draw;
+  }
+  get setDrawDisplayCallback() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setDrawCallback;
+  }
+  get drawDisplayCallback() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawCallback;
   }
 
   get setDisplayColor() {
@@ -2363,6 +2384,10 @@ class Device {
   get displayManager() {
     // return this.#displayManager as DisplayManagerInterface;
     return this.#displayManager;
+  }
+  get displayCanvasHelper() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.displayCanvasHelper;
   }
 
   get uploadDisplaySpriteSheet() {
