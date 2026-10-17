@@ -1,6 +1,6 @@
 {
   "name": "brilliantwear",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "JavaScript SDK for BrilliantWear Devices",
   "main": "./build/brilliantwear.module.js",
   "module": "./build/brilliantwear.module.js",
@@ -8,6 +8,11 @@
   "types": "./build/index.d.ts",
   "type": "module",
   "exports": {
+    ".": {
+      "import": "./build/brilliantwear.module.js",
+      "default": "./build/brilliantwear.module.js",
+      "types": "./build/index.d.ts"
+    },
     "./browser": {
       "import": "./build/brilliantwear.module.js",
       "default": "./build/brilliantwear.module.js",
