@@ -388,6 +388,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     } catch (error) {
       _console.error(error);
       this.isInRange = false;
+      this.status = "notConnected";
       return false;
     }
 

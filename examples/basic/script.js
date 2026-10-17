@@ -2020,7 +2020,8 @@ onCurrentDevice(() => {
   );
 });
 const updateTakePictureButton = () => {
-  takePictureButton.disabled = !currentDevice.isConnected;
+  takePictureButton.disabled =
+    !currentDevice.isConnected || currentDevice.isCameraDisabled;
   // currentDevice.sensorConfiguration.camera == 0 ||
   // currentDevice.cameraStatus != "idle";
 };
@@ -2755,7 +2756,10 @@ enableMicrophoneVadButton.addEventListener("click", () => {
 });
 
 const updateMicrophoneButtons = () => {
-  let disabled = !currentDevice.isConnected || !currentDevice.hasMicrophone;
+  let disabled =
+    !currentDevice.isConnected ||
+    !currentDevice.hasMicrophone ||
+    currentDevice.isMicrophoneDisabled;
 
   startMicrophoneButton.disabled =
     disabled || currentDevice.microphoneStatus == "streaming";

@@ -197,7 +197,8 @@ declare class Device {
     reconnectViaUDP(): Promise<void>;
     private get _cameraManager();
     get hasCamera(): boolean;
-    get cameraStatus(): "idle" | "asleep" | "focusing" | "takingPicture";
+    get isCameraDisabled(): boolean;
+    get cameraStatus(): "idle" | "disabled" | "asleep" | "focusing" | "takingPicture";
     takePicture(sensorRate?: number): Promise<void>;
     get autoPicture(): boolean;
     set autoPicture(newAutoPicture: boolean);
@@ -214,7 +215,8 @@ declare class Device {
     get stopRecordingCamera(): () => Promise<void>;
     get toggleCameraRecording(): (audioStream?: MediaStream) => void;
     get hasMicrophone(): boolean;
-    get microphoneStatus(): "vad" | "inferencing" | "idle" | "streaming";
+    get isMicrophoneDisabled(): boolean;
+    get microphoneStatus(): "vad" | "inferencing" | "idle" | "streaming" | "disabled";
     startMicrophone(sensorRate?: number): Promise<void>;
     stopMicrophone(): Promise<void>;
     enableMicrophoneVad(): Promise<void>;

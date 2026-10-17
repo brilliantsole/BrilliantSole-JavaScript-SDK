@@ -1178,7 +1178,7 @@ type ExtendedTfliteFileConfiguration = BaseExtendedFileConfiguration & BaseTflit
 
 declare const CameraCommands: readonly ["focus", "takePicture", "stop", "sleep", "wake"];
 type CameraCommand = (typeof CameraCommands)[number];
-declare const CameraStatuses: readonly ["idle", "focusing", "takingPicture", "asleep"];
+declare const CameraStatuses: readonly ["idle", "focusing", "takingPicture", "asleep", "disabled"];
 type CameraStatus = (typeof CameraStatuses)[number];
 declare const CameraDataTypes: readonly ["headerSize", "header", "imageSize", "image", "footerSize", "footer"];
 type CameraDataType = (typeof CameraDataTypes)[number];
@@ -2006,7 +2006,7 @@ declare function intersectWireframes(a: DisplayWireframe, b: DisplayWireframe, i
 
 declare const MicrophoneCommands: readonly ["start", "stop", "vad", "inferencing"];
 type MicrophoneCommand = (typeof MicrophoneCommands)[number];
-declare const MicrophoneStatuses: readonly ["idle", "streaming", "vad", "inferencing"];
+declare const MicrophoneStatuses: readonly ["idle", "streaming", "vad", "inferencing", "disabled"];
 type MicrophoneStatus = (typeof MicrophoneStatuses)[number];
 declare const MicrophoneConfigurationTypes: readonly ["sampleRate", "bitDepth"];
 type MicrophoneConfigurationType = (typeof MicrophoneConfigurationTypes)[number];
@@ -2786,7 +2786,8 @@ declare class Device {
     reconnectViaUDP(): Promise<void>;
     private get _cameraManager();
     get hasCamera(): boolean;
-    get cameraStatus(): "idle" | "asleep" | "focusing" | "takingPicture";
+    get isCameraDisabled(): boolean;
+    get cameraStatus(): "idle" | "disabled" | "asleep" | "focusing" | "takingPicture";
     takePicture(sensorRate?: number): Promise<void>;
     get autoPicture(): boolean;
     set autoPicture(newAutoPicture: boolean);
@@ -2803,7 +2804,8 @@ declare class Device {
     get stopRecordingCamera(): () => Promise<void>;
     get toggleCameraRecording(): (audioStream?: MediaStream) => void;
     get hasMicrophone(): boolean;
-    get microphoneStatus(): "vad" | "inferencing" | "idle" | "streaming";
+    get isMicrophoneDisabled(): boolean;
+    get microphoneStatus(): "vad" | "inferencing" | "idle" | "streaming" | "disabled";
     startMicrophone(sensorRate?: number): Promise<void>;
     stopMicrophone(): Promise<void>;
     enableMicrophoneVad(): Promise<void>;

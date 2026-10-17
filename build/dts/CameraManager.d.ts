@@ -5,7 +5,7 @@ export declare const CameraSensorTypes: readonly ["camera"];
 export type CameraSensorType = (typeof CameraSensorTypes)[number];
 export declare const CameraCommands: readonly ["focus", "takePicture", "stop", "sleep", "wake"];
 export type CameraCommand = (typeof CameraCommands)[number];
-export declare const CameraStatuses: readonly ["idle", "focusing", "takingPicture", "asleep"];
+export declare const CameraStatuses: readonly ["idle", "focusing", "takingPicture", "asleep", "disabled"];
 export type CameraStatus = (typeof CameraStatuses)[number];
 export declare const CameraDataTypes: readonly ["headerSize", "header", "imageSize", "image", "footerSize", "footer"];
 export type CameraDataType = (typeof CameraDataTypes)[number];
@@ -84,7 +84,7 @@ declare class CameraManager {
         signal?: AbortSignal;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "cameraImage" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "isRecordingCamera" | "startRecordingCamera" | "stopRecordingCamera" | "cameraRecording" | "autoPicture", CameraEventMessages, T>>;
     requestRequiredInformation(sendImmediately?: boolean): void;
-    get cameraStatus(): "idle" | "asleep" | "focusing" | "takingPicture";
+    get cameraStatus(): "idle" | "disabled" | "asleep" | "focusing" | "takingPicture";
     focus(): Promise<void>;
     takePicture(): Promise<void>;
     stop(): Promise<void>;
@@ -109,5 +109,6 @@ declare class CameraManager {
     parseMessage(messageType: CameraMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     clear(): void;
     onFileConfiguration(fileConfiguration: ExtendedCameraImageFileConfiguration): Promise<void>;
+    get isDisabled(): boolean;
 }
 export default CameraManager;

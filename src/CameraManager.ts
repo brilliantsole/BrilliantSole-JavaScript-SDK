@@ -37,6 +37,7 @@ export const CameraStatuses = [
   "focusing",
   "takingPicture",
   "asleep",
+  "disabled",
 ] as const;
 export type CameraStatus = (typeof CameraStatuses)[number];
 
@@ -255,12 +256,19 @@ class CameraManager {
       `camera is not awake - currently ${this.#cameraStatus}`,
     );
   }
+  #assertIsNotDisabled() {
+    _console.assertWithError(
+      this.#cameraStatus != "disabled",
+      `camera is not awake - currently ${this.#cameraStatus}`,
+    );
+  }
   async focus() {
     this.#assertIsAwake();
     await this.#sendCameraCommand("focus");
   }
   async takePicture() {
     this.#assertIsAwake();
+    // this.#assertIsNotDisabled();
     await this.#sendCameraCommand("takePicture");
   }
   async stop() {
@@ -957,6 +965,10 @@ class CameraManager {
       immediate: true,
     });
     this.onParseFile({ fileType: "cameraImage", cameraImage });
+  }
+
+  get isDisabled() {
+    return this.cameraStatus == "disabled";
   }
 }
 

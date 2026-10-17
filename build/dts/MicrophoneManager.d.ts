@@ -4,7 +4,7 @@ export declare const MicrophoneSensorTypes: readonly ["microphone"];
 export type MicrophoneSensorType = (typeof MicrophoneSensorTypes)[number];
 export declare const MicrophoneCommands: readonly ["start", "stop", "vad", "inferencing"];
 export type MicrophoneCommand = (typeof MicrophoneCommands)[number];
-export declare const MicrophoneStatuses: readonly ["idle", "streaming", "vad", "inferencing"];
+export declare const MicrophoneStatuses: readonly ["idle", "streaming", "vad", "inferencing", "disabled"];
 export type MicrophoneStatus = (typeof MicrophoneStatuses)[number];
 export declare const MicrophoneConfigurationTypes: readonly ["sampleRate", "bitDepth"];
 export type MicrophoneConfigurationType = (typeof MicrophoneConfigurationTypes)[number];
@@ -62,7 +62,7 @@ declare class MicrophoneManager {
         signal?: AbortSignal;
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "startRecordingMicrophone" | "stopRecordingMicrophone" | "microphoneRecording", MicrophoneEventMessages, T>>;
     requestRequiredInformation(): void;
-    get microphoneStatus(): "vad" | "inferencing" | "idle" | "streaming";
+    get microphoneStatus(): "vad" | "inferencing" | "idle" | "streaming" | "disabled";
     start(): Promise<void>;
     stop(): Promise<void>;
     vad(): Promise<void>;
@@ -83,6 +83,7 @@ declare class MicrophoneManager {
     startRecording(): void;
     stopRecording(): void;
     toggleRecording(): void;
+    get isDisabled(): boolean;
     clear(): void;
 }
 export default MicrophoneManager;

@@ -28,6 +28,7 @@ export const MicrophoneStatuses = [
   "streaming",
   "vad",
   "inferencing",
+  "disabled",
 ] as const;
 export type MicrophoneStatus = (typeof MicrophoneStatuses)[number];
 
@@ -199,6 +200,12 @@ class MicrophoneManager {
       `microphone is idle`,
     );
   }
+  #assertIsNotDisabled() {
+    _console.assertWithError(
+      this.#microphoneStatus != "disabled",
+      `microphone is disabled`,
+    );
+  }
   #assertIsStreaming() {
     _console.assertWithError(
       this.#microphoneStatus == "streaming",
@@ -207,6 +214,7 @@ class MicrophoneManager {
   }
 
   async start() {
+    // this.#assertIsNotDisabled();
     await this.#sendMicrophoneCommand("start");
   }
   async stop() {
@@ -630,6 +638,10 @@ class MicrophoneManager {
     } else {
       this.startRecording();
     }
+  }
+
+  get isDisabled() {
+    return this.#microphoneStatus == "disabled";
   }
 
   clear() {

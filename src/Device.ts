@@ -1818,6 +1818,9 @@ class Device {
   get hasCamera() {
     return this.sensorTypes.includes("camera");
   }
+  get isCameraDisabled() {
+    return this.#cameraManager.isDisabled;
+  }
   get cameraStatus() {
     return this.#cameraManager.cameraStatus;
   }
@@ -1906,6 +1909,9 @@ class Device {
   #microphoneManager = new MicrophoneManager();
   get hasMicrophone() {
     return this.sensorTypes.includes("microphone");
+  }
+  get isMicrophoneDisabled() {
+    return this.#microphoneManager.isDisabled;
   }
   get microphoneStatus() {
     return this.#microphoneManager.microphoneStatus;

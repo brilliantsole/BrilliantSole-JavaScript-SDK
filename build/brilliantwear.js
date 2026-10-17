@@ -2729,6 +2729,7 @@
 	    "focusing",
 	    "takingPicture",
 	    "asleep",
+	    "disabled",
 	];
 	const CameraDataTypes = [
 	    "headerSize",
@@ -2847,6 +2848,9 @@
 	    }
 	    #assertIsAwake() {
 	        _console$R.assertWithError(this.#cameraStatus != "asleep", `camera is not awake - currently ${this.#cameraStatus}`);
+	    }
+	    #assertIsNotDisabled() {
+	        _console$R.assertWithError(this.#cameraStatus != "disabled", `camera is not awake - currently ${this.#cameraStatus}`);
 	    }
 	    async focus() {
 	        this.#assertIsAwake();
@@ -3422,6 +3426,9 @@
 	        });
 	        this.onParseFile({ fileType: "cameraImage", cameraImage });
 	    }
+	    get isDisabled() {
+	        return this.cameraStatus == "disabled";
+	    }
 	}
 	_a$7 = CameraManager;
 
@@ -3548,6 +3555,7 @@
 	    "streaming",
 	    "vad",
 	    "inferencing",
+	    "disabled",
 	];
 	const MicrophoneConfigurationTypes = ["sampleRate", "bitDepth"];
 	const MicrophoneSampleRates = ["8000", "16000"];
@@ -3641,6 +3649,9 @@
 	    }
 	    #assertIsNotIdle() {
 	        _console$Q.assertWithError(this.#microphoneStatus != "idle", `microphone is idle`);
+	    }
+	    #assertIsNotDisabled() {
+	        _console$Q.assertWithError(this.#microphoneStatus != "disabled", `microphone is disabled`);
 	    }
 	    #assertIsStreaming() {
 	        _console$Q.assertWithError(this.#microphoneStatus == "streaming", `microphone is not recording - currently ${this.#microphoneStatus}`);
@@ -3945,6 +3956,9 @@
 	        else {
 	            this.startRecording();
 	        }
+	    }
+	    get isDisabled() {
+	        return this.#microphoneStatus == "disabled";
 	    }
 	    clear() {
 	        this.#microphoneStatus = undefined;
@@ -32695,6 +32709,7 @@
 	        catch (error) {
 	            _console$r.error(error);
 	            this.isInRange = false;
+	            this.status = "notConnected";
 	            return false;
 	        }
 	        if (this.isConnected) {
@@ -35191,6 +35206,9 @@
 	    get hasCamera() {
 	        return this.sensorTypes.includes("camera");
 	    }
+	    get isCameraDisabled() {
+	        return this.#cameraManager.isDisabled;
+	    }
 	    get cameraStatus() {
 	        return this.#cameraManager.cameraStatus;
 	    }
@@ -35268,6 +35286,9 @@
 	    #microphoneManager = new MicrophoneManager();
 	    get hasMicrophone() {
 	        return this.sensorTypes.includes("microphone");
+	    }
+	    get isMicrophoneDisabled() {
+	        return this.#microphoneManager.isDisabled;
 	    }
 	    get microphoneStatus() {
 	        return this.#microphoneManager.microphoneStatus;
