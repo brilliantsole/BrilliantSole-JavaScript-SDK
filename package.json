@@ -1,6 +1,6 @@
 {
   "name": "brilliantwear",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "JavaScript SDK for BrilliantWear Devices",
   "main": "./build/brilliantwear.module.js",
   "module": "./build/brilliantwear.module.js",
@@ -112,10 +112,6 @@
     "package.json",
     "README.md",
     "LICENSE",
-    "src",
-    "build",
-    "examples",
-    "assets",
-    "tflite-converter"
+    "build"
   ]
 }

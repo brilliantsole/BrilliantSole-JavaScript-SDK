@@ -60,6 +60,7 @@ declare class Device {
     get isConnected(): boolean;
     get canReconnect(): boolean | undefined;
     reconnect(): Promise<boolean | undefined>;
+    static get WebBluetoothAvailabile(): boolean;
     static get CanConnect(): boolean;
     static Connect(options?: ConnectOptions): Promise<Device | undefined>;
     static get ReconnectOnDisconnection(): boolean;

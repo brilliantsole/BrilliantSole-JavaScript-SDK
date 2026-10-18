@@ -34427,8 +34427,23 @@
 	        _console$m.log("reconnecting...");
 	        return this.connectionManager?.reconnect();
 	    }
+	    static {
+	        navigator.bluetooth?.getAvailability().then((available) => {
+	            _console$m.log("WebBluetoothAvailabile", available);
+	            this.#WebBluetoothAvailabile = available;
+	        });
+	        navigator.bluetooth?.addEventListener("availabilitychanged", async () => {
+	            const available = await navigator.bluetooth.getAvailability();
+	            _console$m.log("WebBluetoothAvailabile", available);
+	            this.#WebBluetoothAvailabile = available;
+	        });
+	    }
+	    static #WebBluetoothAvailabile = false;
+	    static get WebBluetoothAvailabile() {
+	        return this.#WebBluetoothAvailabile;
+	    }
 	    static get CanConnect() {
-	        return Boolean(navigator.bluetooth?.requestDevice);
+	        return this.#WebBluetoothAvailabile;
 	    }
 	    static async Connect(options) {
 	        _console$m.assertWithError(this.CanConnect, `can't connect to any device - must connect to discovered device`);

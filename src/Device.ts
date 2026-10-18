@@ -809,8 +809,23 @@ class Device {
     return this.connectionManager?.reconnect();
   }
 
+  static {
+    navigator.bluetooth?.getAvailability().then((available) => {
+      _console.log("WebBluetoothAvailabile", available);
+      this.#WebBluetoothAvailabile = available;
+    });
+    navigator.bluetooth?.addEventListener("availabilitychanged", async () => {
+      const available = await navigator.bluetooth.getAvailability();
+      _console.log("WebBluetoothAvailabile", available);
+      this.#WebBluetoothAvailabile = available;
+    });
+  }
+  static #WebBluetoothAvailabile = false;
+  static get WebBluetoothAvailabile() {
+    return this.#WebBluetoothAvailabile;
+  }
   static get CanConnect() {
-    return Boolean(navigator.bluetooth?.requestDevice);
+    return this.#WebBluetoothAvailabile;
   }
   static async Connect(options?: ConnectOptions) {
     _console.assertWithError(
