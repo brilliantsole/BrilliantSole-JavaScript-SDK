@@ -28,6 +28,7 @@ export type CameraEventType = (typeof CameraEventTypes)[number];
 export interface CameraImage {
     blob: Blob;
     url: string;
+    _url?: string;
     arrayBuffer: ArrayBuffer;
     timestamp: number;
     latency: number;
@@ -58,6 +59,7 @@ export interface CameraEventMessages {
         configuration: CameraConfiguration;
         blob: Blob;
         url: string;
+        _url?: string;
     };
     autoPicture: {
         autoPicture: boolean;
@@ -85,11 +87,11 @@ declare class CameraManager {
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "cameraImage" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "isRecordingCamera" | "startRecordingCamera" | "stopRecordingCamera" | "cameraRecording" | "autoPicture", CameraEventMessages, T>>;
     requestRequiredInformation(sendImmediately?: boolean): void;
     get cameraStatus(): "idle" | "disabled" | "asleep" | "focusing" | "takingPicture";
-    focus(): Promise<void>;
-    takePicture(): Promise<void>;
-    stop(): Promise<void>;
-    sleep(): Promise<void>;
-    wake(): Promise<void>;
+    focus(sendImmediately?: boolean): Promise<void>;
+    takePicture(sendImmediately?: boolean): Promise<void>;
+    stop(sendImmediately?: boolean): Promise<void>;
+    sleep(sendImmediately?: boolean): Promise<void>;
+    wake(sendImmediately?: boolean): Promise<void>;
     get sensorRate(): number;
     set sensorRate(newSensorRate: number);
     buildCameraMetaData(): ArrayBuffer;

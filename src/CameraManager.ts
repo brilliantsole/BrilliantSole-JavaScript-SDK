@@ -110,6 +110,7 @@ export type CameraEventType = (typeof CameraEventTypes)[number];
 export interface CameraImage {
   blob: Blob;
   url: string;
+  _url?: string;
   arrayBuffer: ArrayBuffer;
   timestamp: number;
   latency: number;
@@ -135,6 +136,7 @@ export interface CameraEventMessages {
     configuration: CameraConfiguration;
     blob: Blob;
     url: string;
+    _url?: string;
   };
   autoPicture: {
     autoPicture: boolean;
@@ -262,26 +264,26 @@ class CameraManager {
       `camera is not awake - currently ${this.#cameraStatus}`,
     );
   }
-  async focus() {
+  async focus(sendImmediately?: boolean) {
     this.#assertIsAwake();
-    await this.#sendCameraCommand("focus");
+    await this.#sendCameraCommand("focus", sendImmediately);
   }
-  async takePicture() {
+  async takePicture(sendImmediately?: boolean) {
     this.#assertIsAwake();
     // this.#assertIsNotDisabled();
-    await this.#sendCameraCommand("takePicture");
+    await this.#sendCameraCommand("takePicture", sendImmediately);
   }
-  async stop() {
+  async stop(sendImmediately?: boolean) {
     this.#assertIsAwake();
-    await this.#sendCameraCommand("stop");
+    await this.#sendCameraCommand("stop", sendImmediately);
   }
-  async sleep() {
+  async sleep(sendImmediately?: boolean) {
     this.#assertIsAwake();
-    await this.#sendCameraCommand("sleep");
+    await this.#sendCameraCommand("sleep", sendImmediately);
   }
-  async wake() {
+  async wake(sendImmediately?: boolean) {
     this.#assertIsAsleep();
-    await this.#sendCameraCommand("wake");
+    await this.#sendCameraCommand("wake", sendImmediately);
   }
 
   // CAMERA DATA
@@ -443,11 +445,13 @@ class CameraManager {
     const blob = new Blob([imageData], { type: "image/jpg" });
     _console.log("created blob", blob);
 
-    const url = URL.createObjectURL(blob);
-    _console.log("created url", url);
-
     const cameraImage: CameraImage = {
-      url,
+      get url() {
+        if (!this._url) {
+          this._url = URL.createObjectURL(this.blob);
+        }
+        return this._url;
+      },
       blob,
       timestamp,
       latency: now - timestamp,
@@ -801,12 +805,16 @@ class CameraManager {
             const blob = new Blob(this.#recordingChunks, {
               type: this.#recordingMediaRecorder?.mimeType,
             });
-            const url = URL.createObjectURL(blob);
             this.#dispatchEvent("cameraRecording", {
               imageFrames,
               configuration: structuredClone(this.cameraConfiguration),
               blob,
-              url,
+              get url() {
+                if (!this._url) {
+                  this._url = URL.createObjectURL(this.blob);
+                }
+                return this._url;
+              },
             });
             this.#recordingCanvasStream
               ?.getVideoTracks()
@@ -871,13 +879,17 @@ class CameraManager {
           const videoData = await fs.readFile(filename);
 
           const blob = new Blob([videoData], { type: "video/mp4" });
-          const url = URL.createObjectURL(blob);
 
           this.#dispatchEvent("cameraRecording", {
             imageFrames,
             configuration: structuredClone(this.cameraConfiguration),
             blob,
-            url,
+            get url() {
+              if (!this._url) {
+                this._url = URL.createObjectURL(this.blob);
+              }
+              return this._url;
+            },
           });
           await fs.unlink(filename);
         }

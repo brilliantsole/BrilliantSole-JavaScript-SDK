@@ -2852,25 +2852,25 @@
 	    #assertIsNotDisabled() {
 	        _console$R.assertWithError(this.#cameraStatus != "disabled", `camera is not awake - currently ${this.#cameraStatus}`);
 	    }
-	    async focus() {
+	    async focus(sendImmediately) {
 	        this.#assertIsAwake();
-	        await this.#sendCameraCommand("focus");
+	        await this.#sendCameraCommand("focus", sendImmediately);
 	    }
-	    async takePicture() {
+	    async takePicture(sendImmediately) {
 	        this.#assertIsAwake();
-	        await this.#sendCameraCommand("takePicture");
+	        await this.#sendCameraCommand("takePicture", sendImmediately);
 	    }
-	    async stop() {
+	    async stop(sendImmediately) {
 	        this.#assertIsAwake();
-	        await this.#sendCameraCommand("stop");
+	        await this.#sendCameraCommand("stop", sendImmediately);
 	    }
-	    async sleep() {
+	    async sleep(sendImmediately) {
 	        this.#assertIsAwake();
-	        await this.#sendCameraCommand("sleep");
+	        await this.#sendCameraCommand("sleep", sendImmediately);
 	    }
-	    async wake() {
+	    async wake(sendImmediately) {
 	        this.#assertIsAsleep();
-	        await this.#sendCameraCommand("wake");
+	        await this.#sendCameraCommand("wake", sendImmediately);
 	    }
 	    #sensorRate = 0;
 	    get sensorRate() {
@@ -3009,10 +3009,13 @@
 	        this.#didBuildImage = true;
 	        const blob = new Blob([imageData], { type: "image/jpg" });
 	        _console$R.log("created blob", blob);
-	        const url = URL.createObjectURL(blob);
-	        _console$R.log("created url", url);
 	        const cameraImage = {
-	            url,
+	            get url() {
+	                if (!this._url) {
+	                    this._url = URL.createObjectURL(this.blob);
+	                }
+	                return this._url;
+	            },
 	            blob,
 	            timestamp,
 	            latency: now - timestamp,
@@ -3282,12 +3285,16 @@
 	                        const blob = new Blob(this.#recordingChunks, {
 	                            type: this.#recordingMediaRecorder?.mimeType,
 	                        });
-	                        const url = URL.createObjectURL(blob);
 	                        this.#dispatchEvent("cameraRecording", {
 	                            imageFrames,
 	                            configuration: structuredClone(this.cameraConfiguration),
 	                            blob,
-	                            url,
+	                            get url() {
+	                                if (!this._url) {
+	                                    this._url = URL.createObjectURL(this.blob);
+	                                }
+	                                return this._url;
+	                            },
 	                        });
 	                        this.#recordingCanvasStream
 	                            ?.getVideoTracks()
@@ -3348,12 +3355,16 @@
 	                    await promise;
 	                    const videoData = await fs.readFile(filename);
 	                    const blob = new Blob([videoData], { type: "video/mp4" });
-	                    const url = URL.createObjectURL(blob);
 	                    this.#dispatchEvent("cameraRecording", {
 	                        imageFrames,
 	                        configuration: structuredClone(this.cameraConfiguration),
 	                        blob,
-	                        url,
+	                        get url() {
+	                            if (!this._url) {
+	                                this._url = URL.createObjectURL(this.blob);
+	                            }
+	                            return this._url;
+	                        },
 	                    });
 	                    await fs.unlink(filename);
 	                }
@@ -3656,26 +3667,26 @@
 	    #assertIsStreaming() {
 	        _console$Q.assertWithError(this.#microphoneStatus == "streaming", `microphone is not recording - currently ${this.#microphoneStatus}`);
 	    }
-	    async start() {
-	        await this.#sendMicrophoneCommand("start");
+	    async start(sendImmediately) {
+	        await this.#sendMicrophoneCommand("start", sendImmediately);
 	    }
-	    async stop() {
+	    async stop(sendImmediately) {
 	        if (this.microphoneStatus == "idle") {
 	            _console$Q.log("microphone is already idle");
 	            return;
 	        }
-	        await this.#sendMicrophoneCommand("stop");
+	        await this.#sendMicrophoneCommand("stop", sendImmediately);
 	    }
-	    async vad() {
-	        await this.#sendMicrophoneCommand("vad");
+	    async vad(sendImmediately) {
+	        await this.#sendMicrophoneCommand("vad", sendImmediately);
 	    }
-	    async toggle() {
+	    async toggle(sendImmediately) {
 	        switch (this.microphoneStatus) {
 	            case "idle":
-	                this.start();
+	                this.start(sendImmediately);
 	                break;
 	            case "streaming":
-	                this.stop();
+	                this.stop(sendImmediately);
 	                break;
 	        }
 	    }
@@ -3935,12 +3946,16 @@
 	            const arrayBuffer = concatenateArrayBuffers(...this.#microphoneRecordingData);
 	            const samples = new Float32Array(arrayBuffer);
 	            const blob = float32ArrayToWav(samples, Number(this.sampleRate), 1);
-	            const url = URL.createObjectURL(blob);
 	            this.#dispatchEvent("microphoneRecording", {
+	                get url() {
+	                    if (!this._url) {
+	                        this._url = URL.createObjectURL(this.blob);
+	                    }
+	                    return this._url;
+	                },
 	                samples,
 	                configuration: structuredClone(this.microphoneConfiguration),
 	                blob,
-	                url,
 	            });
 	        }
 	        this.#microphoneRecordingData = undefined;
@@ -34427,26 +34442,15 @@
 	        _console$m.log("reconnecting...");
 	        return this.connectionManager?.reconnect();
 	    }
-	    static {
-	        navigator.bluetooth?.getAvailability().then((available) => {
-	            _console$m.log("WebBluetoothAvailabile", available);
-	            this.#WebBluetoothAvailabile = available;
-	        });
-	        navigator.bluetooth?.addEventListener("availabilitychanged", async () => {
-	            const available = await navigator.bluetooth.getAvailability();
-	            _console$m.log("WebBluetoothAvailabile", available);
-	            this.#WebBluetoothAvailabile = available;
-	        });
-	    }
-	    static #WebBluetoothAvailabile = false;
-	    static get WebBluetoothAvailabile() {
-	        return this.#WebBluetoothAvailabile;
-	    }
-	    static get CanConnect() {
-	        return this.#WebBluetoothAvailabile;
+	    static async CanConnect() {
+	        if (!navigator.bluetooth) {
+	            return false;
+	        }
+	        return navigator.bluetooth.getAvailability();
 	    }
 	    static async Connect(options) {
-	        _console$m.assertWithError(this.CanConnect, `can't connect to any device - must connect to discovered device`);
+	        const canConnect = await this.CanConnect();
+	        _console$m.assertWithError(canConnect, `can't connect to any device - must connect to discovered device`);
 	        const device = new _a$3();
 	        const abortController = new AbortController();
 	        const deviceConnectedEventPromise = DeviceManager$1.waitForEvent("deviceConnected", {
@@ -34595,7 +34599,17 @@
 	        }
 	        _a$3.OnDeviceConnectionStatusUpdated(this, connectionStatus);
 	    }
+	    #connectionAbortController = new AbortController();
+	    get connectionAbortSignal() {
+	        return this.#connectionAbortController.signal;
+	    }
 	    #dispatchConnectionEvents(includeIsConnected = false) {
+	        if (includeIsConnected) {
+	            if (!this.isConnected) {
+	                this.#connectionAbortController.abort();
+	                this.#connectionAbortController = new AbortController();
+	            }
+	        }
 	        this.#dispatchEvent("connectionStatus", {
 	            connectionStatus: this.connectionStatus,
 	        });
@@ -35230,7 +35244,7 @@
 	    #assertHasCamera() {
 	        _console$m.assertWithError(this.hasCamera, "camera not available");
 	    }
-	    async takePicture(sensorRate) {
+	    async takePicture(sensorRate, sendImmediately) {
 	        this.#assertHasCamera();
 	        if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
 	            sensorRate = 20;
@@ -35243,7 +35257,7 @@
 	            this.sensorConfiguration.camera != sensorRate) {
 	            this.setSensorConfiguration({ camera: sensorRate }, false, false);
 	        }
-	        await this.#cameraManager.takePicture();
+	        await this.#cameraManager.takePicture(sendImmediately);
 	    }
 	    get autoPicture() {
 	        return this.#cameraManager.autoPicture;
@@ -35251,7 +35265,7 @@
 	    set autoPicture(newAutoPicture) {
 	        this.#cameraManager.autoPicture = newAutoPicture;
 	    }
-	    async focusCamera(sensorRate) {
+	    async focusCamera(sensorRate, sendImmediately) {
 	        this.#assertHasCamera();
 	        if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
 	            sensorRate = 20;
@@ -35260,19 +35274,19 @@
 	            this.sensorConfiguration.camera != sensorRate) {
 	            this.setSensorConfiguration({ camera: sensorRate }, false, false);
 	        }
-	        await this.#cameraManager.focus();
+	        await this.#cameraManager.focus(sendImmediately);
 	    }
-	    async stopCamera() {
+	    async stopCamera(sendImmediately) {
 	        this.#assertHasCamera();
-	        await this.#cameraManager.stop();
+	        await this.#cameraManager.stop(sendImmediately);
 	    }
-	    async wakeCamera() {
+	    async wakeCamera(sendImmediately) {
 	        this.#assertHasCamera();
-	        await this.#cameraManager.wake();
+	        await this.#cameraManager.wake(sendImmediately);
 	    }
-	    async sleepCamera() {
+	    async sleepCamera(sendImmediately) {
 	        this.#assertHasCamera();
-	        await this.#cameraManager.sleep();
+	        await this.#cameraManager.sleep(sendImmediately);
 	    }
 	    get cameraConfiguration() {
 	        return this.#cameraManager.cameraConfiguration;
@@ -35311,7 +35325,7 @@
 	    #assertHasMicrophone() {
 	        _console$m.assertWithError(this.hasMicrophone, "microphone not available");
 	    }
-	    async startMicrophone(sensorRate) {
+	    async startMicrophone(sensorRate, sendImmediately) {
 	        this.#assertHasMicrophone();
 	        if (sensorRate == undefined && this.sensorConfiguration.microphone == 0) {
 	            sensorRate = 5;
@@ -35320,23 +35334,23 @@
 	            this.sensorConfiguration.microphone != sensorRate) {
 	            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
 	        }
-	        await this.#microphoneManager.start();
+	        await this.#microphoneManager.start(sendImmediately);
 	    }
-	    async stopMicrophone() {
+	    async stopMicrophone(sendImmediately) {
 	        this.#assertHasMicrophone();
-	        await this.#microphoneManager.stop();
+	        await this.#microphoneManager.stop(sendImmediately);
 	    }
-	    async enableMicrophoneVad() {
+	    async enableMicrophoneVad(sendImmediately) {
 	        this.#assertHasMicrophone();
-	        await this.#microphoneManager.vad();
+	        await this.#microphoneManager.vad(sendImmediately);
 	    }
-	    async toggleMicrophone(sensorRate = 20) {
+	    async toggleMicrophone(sensorRate = 20, sendImmediately) {
 	        this.#assertHasMicrophone();
 	        if (this.sensorConfiguration.microphone == 0 &&
 	            this.sensorConfiguration.microphone != sensorRate) {
 	            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
 	        }
-	        await this.#microphoneManager.toggle();
+	        await this.#microphoneManager.toggle(sendImmediately);
 	    }
 	    get microphoneConfiguration() {
 	        return this.#microphoneManager.microphoneConfiguration;

@@ -809,27 +809,16 @@ class Device {
     return this.connectionManager?.reconnect();
   }
 
-  static {
-    navigator.bluetooth?.getAvailability().then((available) => {
-      _console.log("WebBluetoothAvailabile", available);
-      this.#WebBluetoothAvailabile = available;
-    });
-    navigator.bluetooth?.addEventListener("availabilitychanged", async () => {
-      const available = await navigator.bluetooth.getAvailability();
-      _console.log("WebBluetoothAvailabile", available);
-      this.#WebBluetoothAvailabile = available;
-    });
-  }
-  static #WebBluetoothAvailabile = false;
-  static get WebBluetoothAvailabile() {
-    return this.#WebBluetoothAvailabile;
-  }
-  static get CanConnect() {
-    return this.#WebBluetoothAvailabile;
+  static async CanConnect() {
+    if (!navigator.bluetooth) {
+      return false;
+    }
+    return navigator.bluetooth.getAvailability();
   }
   static async Connect(options?: ConnectOptions) {
+    const canConnect = await this.CanConnect();
     _console.assertWithError(
-      this.CanConnect,
+      canConnect,
       `can't connect to any device - must connect to discovered device`,
     );
     const device = new Device();
@@ -1008,7 +997,17 @@ class Device {
     Device.OnDeviceConnectionStatusUpdated(this, connectionStatus);
   }
 
+  #connectionAbortController = new AbortController();
+  get connectionAbortSignal() {
+    return this.#connectionAbortController.signal;
+  }
   #dispatchConnectionEvents(includeIsConnected: boolean = false) {
+    if (includeIsConnected) {
+      if (!this.isConnected) {
+        this.#connectionAbortController.abort();
+        this.#connectionAbortController = new AbortController();
+      }
+    }
     this.#dispatchEvent("connectionStatus", {
       connectionStatus: this.connectionStatus,
     });
@@ -1842,7 +1841,7 @@ class Device {
   #assertHasCamera() {
     _console.assertWithError(this.hasCamera, "camera not available");
   }
-  async takePicture(sensorRate?: number) {
+  async takePicture(sensorRate?: number, sendImmediately?: boolean) {
     this.#assertHasCamera();
     if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
       sensorRate = 20;
@@ -1859,7 +1858,7 @@ class Device {
     ) {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
-    await this.#cameraManager.takePicture();
+    await this.#cameraManager.takePicture(sendImmediately);
   }
   get autoPicture() {
     return this.#cameraManager.autoPicture;
@@ -1867,7 +1866,7 @@ class Device {
   set autoPicture(newAutoPicture) {
     this.#cameraManager.autoPicture = newAutoPicture;
   }
-  async focusCamera(sensorRate?: number) {
+  async focusCamera(sensorRate?: number, sendImmediately?: boolean) {
     this.#assertHasCamera();
     if (sensorRate == undefined && this.sensorConfiguration.camera == 0) {
       sensorRate = 20;
@@ -1878,19 +1877,19 @@ class Device {
     ) {
       this.setSensorConfiguration({ camera: sensorRate }, false, false);
     }
-    await this.#cameraManager.focus();
+    await this.#cameraManager.focus(sendImmediately);
   }
-  async stopCamera() {
+  async stopCamera(sendImmediately?: boolean) {
     this.#assertHasCamera();
-    await this.#cameraManager.stop();
+    await this.#cameraManager.stop(sendImmediately);
   }
-  async wakeCamera() {
+  async wakeCamera(sendImmediately?: boolean) {
     this.#assertHasCamera();
-    await this.#cameraManager.wake();
+    await this.#cameraManager.wake(sendImmediately);
   }
-  async sleepCamera() {
+  async sleepCamera(sendImmediately?: boolean) {
     this.#assertHasCamera();
-    await this.#cameraManager.sleep();
+    await this.#cameraManager.sleep(sendImmediately);
   }
 
   get cameraConfiguration() {
@@ -1935,7 +1934,7 @@ class Device {
     _console.assertWithError(this.hasMicrophone, "microphone not available");
   }
 
-  async startMicrophone(sensorRate?: number) {
+  async startMicrophone(sensorRate?: number, sendImmediately?: boolean) {
     this.#assertHasMicrophone();
     if (sensorRate == undefined && this.sensorConfiguration.microphone == 0) {
       sensorRate = 5;
@@ -1946,17 +1945,17 @@ class Device {
     ) {
       this.setSensorConfiguration({ microphone: sensorRate }, false, false);
     }
-    await this.#microphoneManager.start();
+    await this.#microphoneManager.start(sendImmediately);
   }
-  async stopMicrophone() {
+  async stopMicrophone(sendImmediately?: boolean) {
     this.#assertHasMicrophone();
-    await this.#microphoneManager.stop();
+    await this.#microphoneManager.stop(sendImmediately);
   }
-  async enableMicrophoneVad() {
+  async enableMicrophoneVad(sendImmediately?: boolean) {
     this.#assertHasMicrophone();
-    await this.#microphoneManager.vad();
+    await this.#microphoneManager.vad(sendImmediately);
   }
-  async toggleMicrophone(sensorRate: number = 20) {
+  async toggleMicrophone(sensorRate: number = 20, sendImmediately?: boolean) {
     this.#assertHasMicrophone();
     if (
       this.sensorConfiguration.microphone == 0 &&
@@ -1964,7 +1963,7 @@ class Device {
     ) {
       this.setSensorConfiguration({ microphone: sensorRate }, false, false);
     }
-    await this.#microphoneManager.toggle();
+    await this.#microphoneManager.toggle(sendImmediately);
   }
 
   get microphoneConfiguration() {

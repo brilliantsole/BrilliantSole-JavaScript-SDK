@@ -126,7 +126,7 @@ class AddDeviceButton extends SignalWatcher(LitElement) {
           variant="brand"
           size="s"
           @click=${this._onClick}
-          ?disabled=${!this.isBluetoothEnabled || !BW.Device.CanConnect}
+          ?disabled=${!this.isBluetoothEnabled}
         >
           ${slot} ${isAddingDevice ? "Adding Device" : "Add Device"}
         </wa-button>

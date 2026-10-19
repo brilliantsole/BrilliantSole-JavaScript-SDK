@@ -46,6 +46,7 @@ export interface MicrophoneEventMessages {
         configuration: MicrophoneConfiguration;
         blob: Blob;
         url: string;
+        _url?: string;
     };
     startRecordingMicrophone: {};
     stopRecordingMicrophone: {};
@@ -63,10 +64,10 @@ declare class MicrophoneManager {
     }) => Promise<import("./utils/EventDispatcher.ts").ListenerEvent<Device, "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "startRecordingMicrophone" | "stopRecordingMicrophone" | "microphoneRecording", MicrophoneEventMessages, T>>;
     requestRequiredInformation(): void;
     get microphoneStatus(): "vad" | "inferencing" | "idle" | "streaming" | "disabled";
-    start(): Promise<void>;
-    stop(): Promise<void>;
-    vad(): Promise<void>;
-    toggle(): Promise<void>;
+    start(sendImmediately?: boolean): Promise<void>;
+    stop(sendImmediately?: boolean): Promise<void>;
+    vad(sendImmediately?: boolean): Promise<void>;
+    toggle(sendImmediately?: boolean): Promise<void>;
     get microphoneConfiguration(): MicrophoneConfiguration;
     get availableMicrophoneConfigurationTypes(): ("sampleRate" | "bitDepth")[];
     get bitDepth(): "8" | "16" | undefined;

@@ -1195,6 +1195,7 @@ type CameraConfigurationRanges = {
 interface CameraImage {
     blob: Blob;
     url: string;
+    _url?: string;
     arrayBuffer: ArrayBuffer;
     timestamp: number;
     latency: number;
@@ -1225,6 +1226,7 @@ interface CameraEventMessages {
         configuration: CameraConfiguration;
         blob: Blob;
         url: string;
+        _url?: string;
     };
     autoPicture: {
         autoPicture: boolean;
@@ -2048,6 +2050,7 @@ interface MicrophoneEventMessages {
         configuration: MicrophoneConfiguration;
         blob: Blob;
         url: string;
+        _url?: string;
     };
     startRecordingMicrophone: {};
     stopRecordingMicrophone: {};
@@ -2703,8 +2706,7 @@ declare class Device {
     get isConnected(): boolean;
     get canReconnect(): boolean | undefined;
     reconnect(): Promise<boolean | undefined>;
-    static get WebBluetoothAvailabile(): boolean;
-    static get CanConnect(): boolean;
+    static CanConnect(): Promise<boolean>;
     static Connect(options?: ConnectOptions): Promise<Device | undefined>;
     static get ReconnectOnDisconnection(): boolean;
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
@@ -2716,6 +2718,7 @@ declare class Device {
     toggleConnection(reconnect?: boolean): Promise<void>;
     get connectionStatus(): ConnectionStatus;
     get isConnectionBusy(): boolean;
+    get connectionAbortSignal(): AbortSignal;
     _onRemoteConnectionMessageSent(messageType: ConnectionMessageType, dataView: DataView<ArrayBuffer>, isSending?: boolean): void;
     latestConnectionMessages: Map<ConnectionMessageType, DataView>;
     get deviceInformation(): DeviceInformation;
@@ -2843,13 +2846,13 @@ declare class Device {
     get hasCamera(): boolean;
     get isCameraDisabled(): boolean;
     get cameraStatus(): "idle" | "disabled" | "asleep" | "focusing" | "takingPicture";
-    takePicture(sensorRate?: number): Promise<void>;
+    takePicture(sensorRate?: number, sendImmediately?: boolean): Promise<void>;
     get autoPicture(): boolean;
     set autoPicture(newAutoPicture: boolean);
-    focusCamera(sensorRate?: number): Promise<void>;
-    stopCamera(): Promise<void>;
-    wakeCamera(): Promise<void>;
-    sleepCamera(): Promise<void>;
+    focusCamera(sensorRate?: number, sendImmediately?: boolean): Promise<void>;
+    stopCamera(sendImmediately?: boolean): Promise<void>;
+    wakeCamera(sendImmediately?: boolean): Promise<void>;
+    sleepCamera(sendImmediately?: boolean): Promise<void>;
     get cameraConfiguration(): CameraConfiguration;
     get availableCameraConfigurationTypes(): ("brightness" | "resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain" | "autoWhiteBalanceEnabled" | "autoGainEnabled" | "exposure" | "autoExposureEnabled" | "autoExposureLevel" | "saturation" | "contrast" | "sharpness")[];
     get cameraConfigurationRanges(): CameraConfigurationRanges;
@@ -2861,10 +2864,10 @@ declare class Device {
     get hasMicrophone(): boolean;
     get isMicrophoneDisabled(): boolean;
     get microphoneStatus(): "vad" | "inferencing" | "idle" | "streaming" | "disabled";
-    startMicrophone(sensorRate?: number): Promise<void>;
-    stopMicrophone(): Promise<void>;
-    enableMicrophoneVad(): Promise<void>;
-    toggleMicrophone(sensorRate?: number): Promise<void>;
+    startMicrophone(sensorRate?: number, sendImmediately?: boolean): Promise<void>;
+    stopMicrophone(sendImmediately?: boolean): Promise<void>;
+    enableMicrophoneVad(sendImmediately?: boolean): Promise<void>;
+    toggleMicrophone(sensorRate?: number, sendImmediately?: boolean): Promise<void>;
     get microphoneConfiguration(): MicrophoneConfiguration;
     get availableMicrophoneConfigurationTypes(): ("sampleRate" | "bitDepth")[];
     get setMicrophoneConfiguration(): (newMicrophoneConfiguration: MicrophoneConfiguration) => Promise<void>;

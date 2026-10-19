@@ -2142,6 +2142,9 @@ onCurrentDevice(() => {
   currentDevice.addEventListener(
     "cameraImage",
     (event) => {
+      if (cameraImage.src) {
+        URL.revokeObjectURL(cameraImage.src);
+      }
       cameraImage.src = event.message.url;
     },
     { immediate: true },

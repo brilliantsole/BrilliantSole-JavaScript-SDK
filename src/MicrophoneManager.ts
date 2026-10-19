@@ -96,6 +96,7 @@ export interface MicrophoneEventMessages {
     configuration: MicrophoneConfiguration;
     blob: Blob;
     url: string;
+    _url?: string;
   };
   startRecordingMicrophone: {};
   stopRecordingMicrophone: {};
@@ -213,28 +214,28 @@ class MicrophoneManager {
     );
   }
 
-  async start() {
+  async start(sendImmediately?: boolean) {
     // this.#assertIsNotDisabled();
-    await this.#sendMicrophoneCommand("start");
+    await this.#sendMicrophoneCommand("start", sendImmediately);
   }
-  async stop() {
+  async stop(sendImmediately?: boolean) {
     if (this.microphoneStatus == "idle") {
       _console.log("microphone is already idle");
       return;
     }
     // TODO: - stop recording?
-    await this.#sendMicrophoneCommand("stop");
+    await this.#sendMicrophoneCommand("stop", sendImmediately);
   }
-  async vad() {
-    await this.#sendMicrophoneCommand("vad");
+  async vad(sendImmediately?: boolean) {
+    await this.#sendMicrophoneCommand("vad", sendImmediately);
   }
-  async toggle() {
+  async toggle(sendImmediately?: boolean) {
     switch (this.microphoneStatus) {
       case "idle":
-        this.start();
+        this.start(sendImmediately);
         break;
       case "streaming":
-        this.stop();
+        this.stop(sendImmediately);
         break;
     }
   }
@@ -618,12 +619,16 @@ class MicrophoneManager {
       const samples = new Float32Array(arrayBuffer);
 
       const blob = float32ArrayToWav(samples, Number(this.sampleRate)!, 1);
-      const url = URL.createObjectURL(blob);
       this.#dispatchEvent("microphoneRecording", {
+        get url() {
+          if (!this._url) {
+            this._url = URL.createObjectURL(this.blob);
+          }
+          return this._url;
+        },
         samples,
         configuration: structuredClone(this.microphoneConfiguration),
         blob,
-        url,
       });
     }
     this.#microphoneRecordingData = undefined;
