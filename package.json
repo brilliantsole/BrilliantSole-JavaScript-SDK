@@ -1,6 +1,6 @@
 {
   "name": "brilliantwear",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "JavaScript SDK for BrilliantWear Devices",
   "main": "./build/brilliantwear.module.js",
   "module": "./build/brilliantwear.module.js",
